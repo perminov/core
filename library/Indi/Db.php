@@ -1,0 +1,58 @@
+<?php
+class Indi_Db {
+	/**
+	 * Store singleton instance
+	 *
+	 * @var Indi_Db
+	 */
+	protected static $_instance = null;
+
+	/**
+	 * Store PDO object
+	 *
+	 * @var PDO
+	 */
+	protected static $_pdo = null;
+
+	/**
+	 * @static
+	 * @param array $config
+	 * @return null|Indi_Db
+	 */
+	public static function factory($config = array())
+	{
+		if (null === self::$_instance) {
+			self::$_instance = new self();
+			self::$_pdo = new PDO($config->adapter . ':dbname=' . $config->dbname . ';host=' . $config->host, $config->username, $config->password);
+		}
+
+		return self::$_instance;
+	}
+
+	public function query($sql) {
+		$sql = trim($sql);
+		if (preg_match('/^UPDATE|DELETE/', $sql)) {
+			$affected = self::$_pdo->exec($sql);
+			if ($affected === false) {
+				echo array_pop(self::$_pdo->errorInfo()) . '<br>';
+				echo "SQL query: " . $sql . '<br>';
+				die();
+			}
+			return $affected;
+		} else {
+			$stmt = self::$_pdo->query($sql);
+			if (!$stmt) {
+				echo array_pop(self::$_pdo->errorInfo()) . '<br>';
+				echo "SQL query: " . $sql . '<br>';
+				die();
+			}
+			$stmt->setFetchMode(PDO::FETCH_ASSOC);
+
+			return $stmt;
+		}
+	}
+
+	public function getPDO() {
+		return self::$_pdo;
+	}
+}

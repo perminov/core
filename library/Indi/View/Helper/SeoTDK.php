@@ -1,0 +1,138 @@
+<?php
+class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
+	public $title = array();
+	public function seoTDK($what = 'title'){
+		if ($this->view->row) {
+			$title = array();
+			if ($this->view->row->useSystemSeoSolution != 'y') {
+				return $this->view->row->{'seo' . ucfirst($what)};
+			} else {
+				$parts = Misc::loadModel('Seo'. ucfirst($what))->fetchAll('`fsection2factionId`="' . $this->view->section2actionId . '"', 'move');
+				$parts->setForeignRowsbyForeignKeys('fieldId,sibling');
+				$this->title = array();
+				static $siblingRow;
+				if (!is_array($siblingRow)) $siblingRow = array();
+				if ($parts->count()) {
+					foreach ($parts as $part) {
+						if ($part->type == 's') {
+							$title[] = $part->prefix . $part->static . $part->postfix;
+						} else {
+							if ($part->where == 'c') {
+								if ($this->view->trail->getItem()->section->entityId == $part->entityId) {
+									$title[] = $part->prefix . $this->view->row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+									$siblingRow[$this->view->trail->getItem()->model->info('name') . 'Id'] = $this->view->row;
+								} else {
+									$model = Entity::getModelById($part->entityId);
+									$pkn = $model->info('name') . 'Id';
+									$pkv = $this->view->row->$pkn;
+									if (!$siblingRow[$pkn]) {
+										$row = $model->fetchRow('`id` = "' . $pkv . '"');
+										$siblingRow[$pkn] = $row;
+									} else {
+										$row = $siblingRow[$pkn];
+									}
+									$title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+								}
+							} else if ($part->where == 's'){
+								$model = Entity::getModelById($part->entityId);
+								$siblingModel = Entity::getModelById($part->foreign['sibling']['entityId']);
+								$pkn = $model->info('name') . 'Id';
+								$pkv = $siblingRow[$siblingModel->info('name') . 'Id']->$pkn;
+								$row = $model->fetchRow('`id` = "' . $pkv . '"');
+								$title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+							}
+						}
+					}
+				}
+				$xhtml = implode(' ', $title);
+			}
+		} else {
+
+			$this->title = array();
+			$this->cr = Indi_Uri::sys2seo('href="' . $_SERVER['REQUEST_URI'] . '"', true);
+			$this->view->trail->contextRows = $this->cr;
+			if( ! is_array($this->cr)) {
+				$this->cr = array();
+				$entity = Entity::getInstance();
+				for($i = 0; $i < count($this->view->trail->items); $i++){
+					$item = $this->view->trail->getItem($i);
+					if ($item->row) $this->cr[$entity->fetchRow('`table` = "' . $item->model->info('name') . '"')->id] = $item->row;
+				}
+			}
+			$this->constructSeoForRowsetActions($what, 0);
+			$xhtml = implode(' ', $this->title);
+		}
+		return $xhtml;
+	}
+	function constructSeoForRowsetActions($what, $parentId = 0){
+		$parts = Misc::loadModel('Seo'. ucfirst($what))->fetchAll('`seo'. ucfirst($what) . 'Id` = "' . $parentId . '" AND `fsection2factionId`="' . $this->view->section2actionId . '"', 'move');
+		$parts->setForeignRowsbyForeignKeys('fieldId,sibling');
+		static $siblingRow;
+		if (!is_array($siblingRow)) $siblingRow = array();
+		if ($parts->count()) {
+			$orNotYetFound = true;
+			foreach ($parts as $part) {
+				$row = null;
+				// ���������������� ���� '�' (�� ���� 'AND')
+				if ($part->need == 'a') {
+					// ���� ��������� - �����������
+					if ($part->type == 's') {
+						$this->title[] = $part->prefix . $part->static . $part->postfix;
+					// ���� ��������� - ������������
+					} else if ($part->type == 'd') {
+						// ���� ������������� ����� ������ � ���������
+						if ($part->where == 'c') {
+							// ���� �� ��� ������
+							if ($this->cr[$part->entityId]) {
+								$model = Entity::getModelById($part->entityId);
+								$pkn = $model->info('name') . 'Id';
+								$row = $this->cr[$part->entityId];
+								$siblingRow[$pkn] = $row;
+								if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+							}
+						// ���� ������������� ����� ������ � sibling ����������
+						} else if ($part->where == 's') {
+							$model = Entity::getModelById($part->entityId);
+							$siblingModel = Entity::getModelById($part->foreign['sibling']['entityId']);
+							$pkn = $model->info('name') . 'Id';
+							$pkv = $siblingRow[$siblingModel->info('name') . 'Id']->$pkn;
+							$row = $model->fetchRow('`id` = "' . $pkv . '"');
+							if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+						}
+					}
+				} else if($part->need == 'o') {
+					if ($part->type == 's' && $orNotYetFound) {
+						$this->title[] = $part->prefix . $part->static . $part->postfix;
+					// ���� ��������� - ������������
+					} else if ($part->type == 'd' && is_array($this->cr) && in_array($part->entityId, array_keys($this->cr)) && $orNotYetFound) {
+						$orNotYetFound = false;
+						$model = Entity::getModelById($part->entityId);
+						$pkn = $model->info('name') . 'Id';
+						// ���� ������������� ����� ������ � ���������
+						if ($part->where == 'c') {
+							// ���� �� ��� ������
+							if ($this->cr[$part->entityId]) {
+								$model = Entity::getModelById($part->entityId);
+								$pkn = $model->info('name') . 'Id';
+								$row = $this->cr[$part->entityId];
+								$siblingRow[$pkn] = $row;
+								if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+							}							
+						// ���� ������������� ����� ������ � sibling ����������
+						} else if ($part->where == 's') {
+							$model = Entity::getModelById($part->entityId);
+							$siblingModel = Entity::getModelById($part->foreign['sibling']['entityId']);
+							$pkn = $model->info('name') . 'Id';
+							$pkv = $siblingRow[$siblingModel->info('name') . 'Id']->$pkn;
+							$row = $model->fetchRow('`id` = "' . $pkv . '"');
+							if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+						}
+					}
+				}
+				$prevNeed = $part->need;
+				if ($prevNeed == 'a') $orNotYetFound = true;
+				if ($row) $this->constructSeoForRowsetActions($what, $part->id);
+			}
+		}
+	}
+}

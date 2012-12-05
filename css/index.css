@@ -1,0 +1,6 @@
+td{padding: 10px;} input{border: 1px solid grey;}
+tr{vertical-align: top;}
+div.autocomplete-wrapper{display: none; z-index: 1000; border: 1px solid grey; position: absolute;}
+#map{border: 1px solid grey;}
+div.dd{border: 1px solid grey; width: 300px; line-height: 7px; border-left-width: 0px; display: inline; margin:0; padding-bottom: 1px;font-size: 12px;cursor: pointer;}
+.suggestions{max-height: 300px; overflow-y: auto; min-width: 100px;}

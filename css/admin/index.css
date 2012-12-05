@@ -1,0 +1,153 @@
+.main {
+    font-size: 9pt; font-family: tahoma
+}
+.zakl_text {
+    font-weight: bold; font-size: 8pt; padding-top: 1px; font-family: tahoma
+}
+.white {
+    color: #ffffff
+}
+.menu {
+    font-size: 8pt; font-family: tahoma
+}
+.menu_dir {
+    font-weight: bold
+}
+.menu_ico {
+    padding-right: 9px; text-align: right
+}
+.content {
+    padding-right: 12px; padding-left: 12px; padding-bottom: 20px; padding-top: 30px
+}
+.but_text {
+    font-weight: bold; font-size: 8pt; color: #cc3300; font-family: tahoma
+}
+input {
+    font-size: 8pt; height: 19px; width:250px;
+}
+.table_topics {
+    font-weight: bold; font-size: 12px; color: #ffffff; font-family: tahoma; background-color: #999999
+}
+.incorrectMessage {
+    color: red; font-size: 12px; font-family: tahoma; background-color: #ffdddd; border: 1px solid red; padding: 5px;
+}
+.title {
+    font-weight: normal; font-size: 14pt; color: #000000; font-family: tahoma; vertical-align: bottom; float: left;
+}
+.form_table {
+	font-weight: normal; font-size: 12px; color: #000000; font-family: tahoma;
+}
+.form_table tr {
+	background-color: #e5e5e5; 	
+}
+.info {
+    background-color: #e5e5e5; font-weight: normal; font-size: 12px; color: #000000; font-family: tahoma;
+}
+.info_3 {
+    font-weight: normal; font-size: 8pt; color: #000000; font-family: tahoma; background-color: #e5e5e5
+}
+.info_4 {
+    font-weight: normal; font-size: 8pt; color: #000000; font-family: tahoma; background-color: #e5f3e5
+}
+.info_5 {
+    font-weight: normal; font-size: 8pt; color: #000000; font-family: tahoma; background-color: #f3e5e5
+}
+.info_1 {
+    font-weight: normal; font-size: 8pt; color: #000000; font-family: tahoma; background-color: #d2e9ff
+}
+.info_2 {
+    font-weight: normal; font-size: 8pt; color: #000000; font-family: tahoma; background-color: #99ccff
+}
+textarea {
+    font-weight: normal; font-size: 9pt; color: #000000; font-family: tahoma
+}
+a:hover {
+    text-decoration: none
+}
+select { font-size: 9pt;}
+
+.pager
+{
+	font: 10pt arial;
+	float: right; 
+	display: inline;
+	vertical-align: bottom;
+	margin-top: 0px;
+	position: relative;
+	top: 7px;
+}
+.pager a
+{
+	width: 3px;
+	text-decoration: none;
+}
+.pager a.current
+{
+	font: bold;
+	text-decoration: none;
+}
+.listHeader{
+	position: relative;
+	display: block;
+	width: 90%;
+}
+.suggestions {
+	display: none; 
+	position: absolute;
+	background-color: white;
+	border: 1px solid gray;
+}
+.suggestions ul li {
+	list-style-type: none;
+	list-style-position: outside;
+	cursor: default;
+}
+.suggestions ul li.selected {
+	background-color: #236;
+	color: white;
+}
+.suggestions ul{
+	padding: 0px;
+	margin: 0px;
+}
+.suggestions.dselect ul{
+	padding-left: 3px;
+	font-size: 9pt;
+}
+.suggestions.dselect ul li {
+	height: 14px;
+	line-height: 14px;
+	font-family: arial;
+	padding-top: 1px;
+}
+.dselect-lookup {
+	position: relative; 
+	border: none; 
+	height: 15px; 
+	font-size: 9pt; 
+	top: 4px; 
+	left: 5px; 
+	outline: none; 
+	width: 100%;
+	cursor: default;
+}
+.dselect-div{
+	position: absolute;
+}
+.suggestions.dselect{
+	overflow-y: auto;
+	max-height: 150px;
+}
+.dselect-info{
+	position: relative;
+	top: -10px;
+	float: right;
+	font-size: 10px;
+}
+.dselect-loader{
+	position: relative;
+	top: -1px;
+	right: 2px;
+}
+
+

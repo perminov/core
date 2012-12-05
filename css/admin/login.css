@@ -1,0 +1,21 @@
+input {
+	border-right: #999999 1px solid;
+	border-top: #999999 1px solid;
+	font-size: 8pt;
+	border-left: #999999 1px solid;
+	border-bottom: #999999 1px solid;
+	height: 19px;
+}
+td {
+    font-size:13px;
+    font-family:tahoma;
+}
+.info {
+    background-color: #e7eaed;
+}
+.tbl {
+    border-bottom: #000000 1px inset;
+    border-left: #000000 1px inset;
+    border-right: #000000 1px inset;
+    border-top: #000000 1px inset;
+}

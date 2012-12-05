@@ -1,0 +1,20 @@
+[general]
+domain = nozend
+
+[db]
+adapter = mysql
+host = localhost
+username = nozend
+password = nozend
+dbname   = nozend
+
+[view]
+encoding = utf-8
+scriptPath = application/views
+viewSuffix = php
+
+[upload]
+uploadPath = core/data/upload
+
+[ckeditor]
+uploadPath = fck

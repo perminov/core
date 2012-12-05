@@ -1,0 +1,1 @@
+<?phpclass JoinFkForIndependentRowset extends Indi_Db_Table{	protected $_rowClass = 'JoinFkForIndependentRowset_Row';}

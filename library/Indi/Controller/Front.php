@@ -1,0 +1,905 @@
+<?php
+class Indi_Controller_Front extends Indi_Controller{
+	public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
+	public $datePattern = "/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/";
+	public $urlPattern = "/^\b([\d\w\.\/\+\-\?\:]*)((ht|f)tp(s|)\:\/\/|[\d\d\d|\d\d]\.[\d\d\d|\d\d]\.|www\.|\.tv|\.ac|\.com|\.edu|\.gov|\.int|\.mil|\.net|\.org|\.biz|\.info|\.name|\.pro|\.museum|\.co|\.ru)([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;\b]*)$/";
+	public function preDispatch(){
+		header('Access-Control-Allow-Origin: *');
+		// Фильтруем POST
+		$this->post = filter($this->post);
+		// Делаем паттерны видимыми во view
+		$this->view->patterns = array('email' => $this->emailPattern, 'date' => $this->datePattern, 'url' => $this->urlPattern);
+
+		$config = Indi_Registry::get('config');
+		$this->domain = $config['general']->domain;
+		$this->view->domain = $this->domain;
+		define('I', 'i');
+		if (!$_SESSION['userId'] && substr($this->controller, 0, 2) == 'my') {
+			header('Location: http://' . $this->domain);
+			die();
+		}
+		parent::preDispatch();
+		// Определяем текущий раздел, ищем его в базе
+		$this->section = Misc::loadModel('Fsection')->fetchRow('`alias` = "' . $this->controller . '"');
+		$this->view->section = $this->section;
+		if ($this->section->type == 's' && $this->action == 'index') {
+			$this->action = $this->section->index;
+			eval('$this->identifier = ' . $this->section->where . ';');
+		}
+		Indi_Registry::set('request', $this->params);
+		// Определяем текущее действие, ищем его в базе
+		$this->action = Misc::loadModel('Faction')->fetchRow('`alias` = "' . $this->action . '"');
+		if(!Misc::loadModel('Fsection2faction')->fetchRow('`fsectionid` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"')) {
+			$this->action = null;
+		}
+		$this->view->action = $this->action;
+		// Трейл
+		$this->trail = new Indi_Trail_Frontend($this->section->alias, $this->identifier, $this->action->alias, null, $this->params);
+
+		$this->view->trail = $this->trail;
+		// Определяем текущее id записи из таблицы fsection2faction, ищем его в базе чтобы по нему вытащить
+		// данные о том, какие  зависимые количества, зависимые множества и записи - соответствующие внешним
+		// ключам, нужно автоматически выташить
+		$this->section2action = Misc::loadModel('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"');
+		
+		// Для хэлперов seoTitle, seoKeywords и seoDescription
+		$this->view->section2actionId = $this->section2action->id;
+		// Если к разделу прикреплена сущность, то назначаем текущаю модель, соответствующую этой сущности
+		if ($this->section->entityId) $this->model = Misc::loadModel(ucfirst($this->section->getForeignRowByForeignKey('entityId')->table));
+
+		// Таймстамп для xml-конфигов flash-карт
+		$this->view->xmlTimestamp = Misc::loadModel('Fconfig')->fetchRow('`alias` = "xmlTimestamp"')->value;
+
+		// попытка авторизации
+		if ($this->post['login']) $this->loginAttempt();
+		// попытка восстановления пароля
+		if ($this->post['recovery']) $this->recoveryAttempt();
+		// попытка регистрации
+		if ($this->post['register']) $this->registerAttempt();
+		// попытка подписки
+		if ($this->post['subscribe']) $this->subscribeAttempt();
+		// попытка смены пароля
+		if ($this->post['changePassword']) $this->passwordAttempt();
+		// корректировка rowsetParams
+		if ($this->post['rowsetParams']) $this->rowsetParams();
+		// попытка авторизации через вконтакте
+		if ($this->post['authType'] == 'vk') $this->vkAuthAttempt();
+		// попытка авторизации через facebook
+		if ($this->post['authType'] == 'fb') $this->fbAuthAttempt();
+		// попытка авторизации через my.mail.ru
+		if ($this->post['authType'] == 'mm') $this->mmAuthAttempt();
+		// Стандартные задачи
+		$this->preMaintenance();
+		$this->maintenance();
+
+		// Если ли у пользователя непрочитанные сообщения
+		if ($_SESSION['userId']){
+			$this->view->newMessages = Misc::loadModel('Message')->useDefaultFetchMethod()->fetchAll('`userId` = "' . $_SESSION['userId'] . '" AND `read` = "n" AND `deletedByReceiver`="n"')->count();
+		}
+		
+		$this->view->request = $this->params();
+	}
+	public function vkAuthAttempt(){
+		if ($user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['params'][0]['uid'] . '" AND `sn`="vk"')) {
+			$_SESSION['userId'] = $user->id;
+			$_SESSION['nick'] = $user->title;
+			$_SESSION['sn'] = 'vkontakte';
+			$user->lastVisit = date('Y-m-d H:i:s');
+			$user->save();
+			die('window.location.reload();');
+		} else {
+			i($this->post);
+			$this->post = $this->post['params'][0];
+			$user = Misc::loadModel('User')->createRow();
+			$user->identifier = $this->post['uid'];
+			$user->sn = 'vk';
+			$user->email = $this->post['uid'] . '@vk.com';
+			$user->name = $this->post['first_name'];
+			$user->surname = $this->post['last_name'];
+			$user->title = $this->post['nickname'];
+			$gender = array('n', 'f', 'm');
+			$user->gender = $gender[$this->post['sex']];
+			list($day, $month, $year) = explode('.', $this->post['bdate']);
+			$user->birth = ($day && $month && $year) ? date('Y-m-d', mkdate(0,0,0, $month, $day, $year)) : '0000-00-00';
+			$user->registration = date('Y-m-d');
+			if ($this->post['countryTitle']) {
+				if ($countryId = Misc::loadModel('Country')->fetchRow('`title` = "' . $this->post['countryTitle'] . '"')->id) {
+					$user->countryId = $countryId;
+					if ($this->post['cityTitle']) {
+						$user->city = $this->post['cityTitle'] . ', ' . $this->post['countryTitle'];
+						if ($cityId = Misc::loadModel('City')->fetchRow('`title` = "' . $this->post['cityTitle'] . '"')->id){
+							$user->cityId = $cityId;
+						}
+					}
+				}
+			}
+			$user->lastVisit = date('Y-m-d H:i:s');
+			$user->style = 'e';
+			$user->activated = 1;
+			$user->activationCode = Misc::generateRandomSequence();
+			$user->notifyPm = 0;
+			$user->notifyAnswer = 0;
+			$user->save();
+			$user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['uid'] . '" AND `sn` = "vk"');
+			if ($this->post['photo_big']) {
+				Indi_Image::getEntityImageByUrl($this->post['photo_big'], 'user', $user->id, 'avatar', array('type'=>'image'));
+			}
+			$_SESSION['userId'] = $user->id;
+			$_SESSION['nick'] = $user->title;
+			$_SESSION['sn'] = 'vkontakte';
+			die('window.location.reload();');
+		}
+		d($this->post);
+		die();
+	}
+	public function fbAuthAttempt(){
+//		d($this->post);
+//		die();
+		if ($user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['params']['id'] . '" AND `sn`="fb"')) {
+			$_SESSION['userId'] = $user->id;
+			$_SESSION['nick'] = $user->title;
+			$_SESSION['sn'] = 'facebook';
+			$user->lastVisit = date('Y-m-d H:i:s');
+			$user->save();
+			die('window.location.reload();');
+		} else {
+			$this->post = $this->post['params'];
+			$user = Misc::loadModel('User')->createRow();
+			$user->identifier = $this->post['id'];
+			$user->sn = 'fb';
+			$user->name = $this->post['first_name'];
+			$user->email = $this->post['email'];
+			$user->surname = $this->post['last_name'];
+			$user->title = $this->post['name'];
+			$user->gender = substr($this->post['gender'], 0, 1);
+//			list($day, $month, $year) = explode('.', $this->post['bdate']);
+//			$user->birth = ($day && $month && $year) ? date('Y-m-d', mkdate(0,0,0, $month, $day, $year)) : '0000-00-00';
+			$user->birth = '0000-00-00';
+			$user->registration = date('Y-m-d');
+			$location = explode(', ', $this->post['location']['name']);
+			if ($cityTitle = str_replace('г. ', '', $location[0])) {
+				if ($city = Misc::loadModel('City')->fetchRow('`title` = "' . $cityTitle . '"')){
+					$user->cityId = $city->id;
+					$user->countryId = $city->countryId;
+					$countryTitle = Misc::loadModel('Country')->fetchRow('`id` = "' . $city->countryId . '"')->title;
+					$user->city = $cityTitle . ', ' . $countryTitle;
+				}
+			}
+			$user->lastVisit = date('Y-m-d H:i:s');
+			$user->style = 'e';
+			$user->activated = 1;
+			$user->activationCode = Misc::generateRandomSequence();
+			$user->notifyPm = 0;
+			$user->notifyAnswer = 0;
+			$user->save();
+			$user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['id'] . '" AND `sn` = "fb"');
+			Indi_Image::getEntityImageByUrl('http://graph.facebook.com/' . $this->post['id'] . '/picture?type=large&ext.jpg', 'user', $user->id, 'avatar');
+			$_SESSION['userId'] = $user->id;
+			$_SESSION['nick'] = $user->title;
+			$_SESSION['sn'] = 'facebook';
+			die('window.location.reload();');
+		}
+	}
+	public function mmAuthAttempt(){
+		if ($user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['params']['uid'] . '" AND `sn`="mm"')) {
+			$_SESSION['userId'] = $user->id;
+			$_SESSION['nick'] = $user->title;
+			$_SESSION['sn'] = 'mymailru';
+			$user->lastVisit = date('Y-m-d H:i:s');
+			$user->save();
+		} else {
+			$this->post = $this->post['params'];
+			$user = Misc::loadModel('User')->createRow();
+			$user->identifier = $this->post['uid'];
+			$user->sn = 'mm';
+			$user->name = $this->post['first_name'];
+			$user->surname = $this->post['last_name'];
+			$user->title = $this->post['nick'];
+			$user->email = $this->post['email'];
+			$user->gender = $this->post['sex'] ? 'f' : 'm';
+			$user->birth = implode('-', array_reverse(explode('.', $this->post['birthday'])));
+			$user->registration = date('Y-m-d');
+			if ($this->post['location']) {
+/*				if ($cityTitle = str_replace('г. ', '', $location[0])) {
+					if ($city = Misc::loadModel('City')->fetchRow('`title` = "' . $cityTitle . '"')){
+						$user->cityId = $city->id;
+						$user->countryId = $city->countryId;
+						$countryTitle = Misc::loadModel('Country')->fetchRow('`id` = "' . $city->countryId . '"')->title;
+						$user->city = $cityTitle . ', ' . $countryTitle;
+					}
+				}*/
+			}
+			$user->lastVisit = date('Y-m-d H:i:s');
+			$user->style = 'e';
+			$user->activated = 1;
+			$user->activationCode = Misc::generateRandomSequence();
+			$user->notifyPm = 0;
+			$user->notifyAnswer = 0;
+			$user->save();
+			if ($this->post['has_pic']) Indi_Image::getEntityImageByUrl($this->post['pic_big'] . '&ext.jpg', 'user', $user->id, 'avatar');
+			$_SESSION['userId'] = $user->id;
+			$_SESSION['nick'] = $user->title;
+			$_SESSION['sn'] = 'mymailru';
+		}
+		die('window.location.reload();');
+	}
+	public function loginAttempt(){
+		if (!$this->post['justReload']) {
+			if (!$this->post['title']) {
+				$error['title'] = 'Укажите Ваш логин';
+			} else if (!$this->post['password']) {
+				$error['password'] = 'Введите пароль';
+			} else if (!($user = Misc::loadModel('User')->fetchRow('`title` = "' . $this->post['title'] . '"'))){
+				$error['title'] = 'Неправильный логин';
+			} else if ($user->password != $this->post['password']) {
+				$error['password'] = 'Неправильный пароль';
+			} else if (!$user->activated) {
+				$error['password'] = 'Вы еще не активировали Ваш аккаунт';
+			}
+			if ($error) {
+				$this->view->error = $error;
+				$this->view->post = $this->post;
+				echo $this->view->loginPopup();
+				die();
+			} else {
+				if ($this->post['remember']) {
+					setcookie('login', $user->title, time()+60*60*24*30*2, '/');
+					setcookie('password', $user->password, time()+60*60*24*30*2, '/');
+				} else {
+					unset($_COOKIE['login']);
+					unset($_COOKIE['password']);
+					setcookie('login', null, -1, '/');
+					setcookie('password', null, -1, '/');
+				}
+				$_SESSION['userId'] = $user->id;
+				$_SESSION['nick'] = $user->title;
+				$user->lastVisit = date('Y-m-d H:i:s');
+				$user->save();
+				echo '
+				<script>
+					$("#modal").hide();
+					$("#authDepending").load("/index/entered/");
+					$("#oldsubmit").hide();
+					$("#newsubmit").show();
+					$("#review-submit").removeClass("login-link3").attr("onclick","checkForm()");
+					';
+				if ($this->section->alias == 'posts') {
+					echo '$("#new-message-div").load("./auth/1/part/md/");';
+					echo '$("#new-reply-script").load("./auth/1/part/rs/");';
+					echo '$(".new-message-button").css("display","block");';
+				} else if ($this->section->alias == 'topics') {
+					echo '$("#new-topic-button").css({"color": "white", "display": "block"});';
+					echo '$(".guest-text").css("display","none");';
+					echo '$("#forumFooter").load("/forum/footer/");';
+				} else if ($this->section->alias == 'forum') {
+					echo '$("#forumFooter").load("/forum/footer/");';
+				} else if ($this->section->alias == 'articles' && $this->action->alias == 'details') {
+					echo '$("#new-comment").load("/articles/newcomment/")';
+				}
+				echo '
+				</script>';
+				die();
+			}
+		}
+		echo $this->view->loginPopup();
+		die();
+	}
+	public function recoveryAttempt(){
+		if (!$this->post['justReload']) {
+			if (!$this->post['email']) {
+				$error['email'] = 'Укажите Ваш E-mail';
+			} else if (!preg_match($this->emailPattern, $this->post['email'])) {
+				$error['email'] = 'Неправильный формат';
+	/*		} else if (!$this->post['birth']) {
+				$error['birth'] = 'Укажите дату рождения';
+			} else if (!preg_match($this->datePattern, $this->post['birth'])) {
+				$error['birth'] = 'Укажите дату в формате гггг-мм-дд'; */
+			} else if (!$this->post['captcha']) {
+				$error['captcha'] = 'Введите код с картинки';
+			} else if ($this->post['captcha'] != $_SESSION['recovery']) {
+				$error['captcha'] = 'Неправильный код';
+	/*		} else if (!($user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '" AND `birth` = "' . $this->post['birth'] . '"'))){
+				$error['email'] = 'Сочетания Email и даты рождения не найдены';*/
+			} else if (!($user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"'))){
+				$error['email'] = 'Пользователь с таким email не зарегистрирован';
+			}
+			if ($error) {
+				$this->view->error = $error;
+				$this->view->post = $this->post;
+			} else {
+				$subject = 'Ваш забытый пароль к аккаунту на сайте ТуроПлан.ru';
+				$message = $this->view->mailRecovery($user);
+
+//				$ok = Misc::mail($user->email, iconv('UTF-8','KOI8-R', 'Туроплан <info@turoplan.ru>'), iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message));
+				$ok = mail($user->email, iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message), iconv('UTF-8','KOI8-R', 'From: Туроплан <info@turoplan.ru>' . "\r\n" . 'Content-Type: text/html; charset=koi8-r' . "\r\n" . 'Content-Length: ' . strlen($message)));
+				$this->view->result = 'Ваш пароль был выслан на указанный адрес электронной почты';
+				$this->view->post = array('recovery' => true);// = $this->post;
+			}
+		}
+		echo $this->view->recoveryPopup();
+		die();
+	}
+	public function registerAttempt(){
+		if (!$this->post['justReload']) {
+			if (!trim($this->post['title'])) {
+				$error['title'] = 'Укажите Ваш логин';
+			} else if (strlen(iconv('UTF-8', 'WINDOWS-1251', trim($this->post['title']))) < 3) {
+				$error['title'] = 'Логин должен быть не менее 3-х символов';
+			} else if (strlen(iconv('UTF-8', 'WINDOWS-1251', trim($this->post['title']))) > 20) {
+				$error['title'] = 'Логин должен быть не более 20-ти символов';
+			} else if (Misc::loadModel('User')->fetchRow('`title` = "' . str_replace(array('#','"'), array('','&quot;'), strip_tags($this->post['title'])) . '"')) {
+				$error['title'] = 'Этот логин уже занят';
+			} else if (!$this->post['email']) {
+				$error['email'] = 'Укажите Ваш E-mail';
+			} else if (!preg_match($this->emailPattern, $this->post['email'])) {
+				$error['email'] = 'Неправильный формат';
+			} else if (Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"')) {
+				$error['email'] = 'Этот E-mail уже используется';
+			} else if (!$this->post['city'] || !$this->post['cityId']) {
+				$error['city'] = 'Укажите Ваш город';
+			} else if (!trim($this->post['password'])) {
+				$error['password'] = 'Введите пароль';
+			} else if (strlen($this->post['password']) < 6) {
+				$error['password'] = 'Пароль должен быть не менее 6-х символов';
+			} else if (!$this->post['passwordConfirm']) {
+				$error['passwordConfirm'] = 'Подтвердите пароль';
+			} else if ($this->post['passwordConfirm'] != $this->post['password']) {
+				$error['passwordConfirm'] = 'Пароли не совпадают';
+			} else if (!trim($this->post['captcha'])) {
+				$error['captcha'] = 'Введите код с картинки';
+			} else if ($this->post['captcha'] != $_SESSION['register']) {
+				$error['captcha'] = 'Неправильный код';
+			} else if (!$this->post['agreement'] || $this->post['agreement'] == 'false') {
+//				d($this->post);
+				$error['agreement'] = 'Подтвердите';
+			}
+			if ($error) {
+				$this->view->error = $error;
+				$this->view->post = $this->post;
+			} else {
+				$activationCode = Misc::generateRandomSequence();
+				$user = Misc::loadModel('User')->createRow();
+				$user->title = $this->post['title'];
+				$user->email = $this->post['email'];
+				$user->city = $this->post['city'];
+				$user->cityId = $this->post['cityId'];
+				if (!$user->cityId) $user->cityId = 0;
+				$user->countryId = Misc::loadModel('City')->fetchRow('`id` = "' . $this->post['cityId'] . '"')->countryId;
+				if (!$user->countryId) $user->countryId = 0;
+				$user->password = $this->post['password'];
+				$user->registration = date('Y-m-d');
+				$user->lastVisit = date('Y-m-d');
+				$user->activationCode = $activationCode;
+				$user->save();
+				$user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"');
+
+				$subject = 'Вы успешно зарегистрировались на сайте ТуроПлан.ru';
+				$message = $this->view->mailRegistration($user);
+				@mail($user->email, iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message), iconv('UTF-8','KOI8-R', 'From: Туроплан <info@turoplan.ru>' . "\r\n" . 'Content-Type: text/html; charset=koi8-r' . "\r\n" . 'Content-Length: ' . strlen($message)));
+				$_SESSION['naUserId'] = $user->id;
+				//$_SESSION['nick'] = $user->title;
+				$this->view->result = 'Вы успешно зарегистрировались на сайте ТуроПлан.ru.';
+				$this->view->post = array('register' => true);
+			}
+		}
+		echo $this->view->registerPopup();
+		die();
+	}	
+	
+	public function subscribeAttempt(){
+		$required = array('email');
+		// проверка ввода
+		if (!$this->post['email'] || $this->post['email'] == 'Введите Ваш E-mail...') {
+			$error = 'Укажите Ваш E-mail';
+
+		// проверка формата
+		} else if(!preg_match($this->emailPattern, $this->post['email'], $regs)){
+			$error = 'Введенный Вами E-mail имеет неправильный формат';
+
+		// проверка не существует ли уже в базе подписчиков
+		} else if (Misc::loadModel('Subscriber')->fetchRow('`title` = "' . $regs[0] . '"')) {
+			$error = 'Введенный Вами E-mail уже присутствует среди подписчиков';
+		}
+		if (!$error) {
+			$query = 'INSERT INTO `subscriber` SET';
+			$set = array();
+			$save = array('email');
+			$this->post['date'] = date('Y-m-d');
+			foreach ($this->post as $field => $value) {
+				if (in_array($field, $save)) {
+					if ($field == 'email') $field = 'title';
+					$set[] = '`' . $field . '` = "' . str_replace('"', '&quot;', strip_tags($value)) . '"';
+				}
+			}
+			$set[] = '`date` = CURDATE()';
+			$query .= implode(', ', $set);
+			$this->db->query($query);
+			if ($user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"')) {
+				$user->subscribed = 1;
+				$user->save();
+			}
+			$this->view->resultSubscribe = '<font color="green">Теперь Вы в базе подписчиков</font>';
+			$this->view->successSubscribe = true;
+		} else {
+			$this->view->subscribeError = $error;
+			$this->view->postSubscribe = $this->post;
+		}
+		die($this->view->blockSubscribe($this->view->successSubscribe));
+	}
+	public function passwordAttempt(){
+		if (!$this->post['justReload']) {
+			$user = $user = Misc::loadModel('User')->fetchRow('`id` = "' . $_SESSION['userId'] . '"');
+			if (!$this->post['currentPassword']) {
+				$error['currentPassword'] = 'Укажите текущий пароль';
+			} else if ($user->password != $this->post['currentPassword']) {
+				$error['currentPassword'] = 'Текущий пароль указан неправильно';
+			} else if (!$this->post['newPassword']) {
+				$error['newPassword'] = 'Укажите новый пароль';
+			} else if (!$this->post['newPasswordConfirm']) {
+				$error['newPasswordConfirm'] = 'Подтвердите пароль';
+			} else if ($this->post['newPassword'] != $this->post['newPasswordConfirm']) {
+				$error['newPasswordConfirm'] = 'Пароли не совпадают';
+			}
+			if ($error) {
+				$this->view->error = $error;
+				$this->view->post = $this->post;
+			} else {
+				$user->password = $this->post['newPassword'];
+				$user->save();
+				$subject = 'Ваш новый пароль к аккаунту на сайте ТуроПлан.ru';
+				$message = $this->view->mailPassword($user);
+				@mail($user->email, iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message), iconv('UTF-8','KOI8-R', 'From: Туроплан <info@turoplan.ru>' . "\r\n" . 'Content-Type: text/html; charset=koi8-r' . "\r\n" . 'Content-Length: ' . strlen($message)));
+				$this->view->result = 'Новый пароль был выслан на Ваш адрес электронной почты';
+				$this->view->post = array('changePassword' => true);
+			}
+		}
+		echo $this->view->passwordPopup();
+		die();
+	}
+	
+	public function postDispatch(){
+		$this->view->section = $this->section;
+		$this->view->indexParams = $_SESSION['indexParams'][$this->section->alias];
+//		d($_SESSION['indexParams'][$this->section->alias]);
+		if ($this->section2action->imposition) $this->view->imposition = $this->section2action->imposition;
+		$this->view->rowset = $this->rowset;
+		if($this->action->alias != 'index' && $this->identifier) $this->view->row = $this->trail->getItem()->row;
+		$this->view->params = $this->params;
+		$this->view->request = $this->getRequest();
+		$this->view->controller = $this->controller;
+		$this->view->staticPages = Misc::loadModel('Staticpage')->fetchAll('`toggle` = "y"', 'title')->toArray();
+		$this->view->footer1 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer1"');
+		$this->view->footer2 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer2"');
+		$this->view->visitors = $this->visitors();
+		if ($this->row) $this->view->row = $this->row;
+		if ($this->section2action->type != 'j') {
+			if (!$this->view->action->alias) {
+				$this->view->action = new stdClass();
+				$this->view->action->alias = 'index';
+				$this->view->controller = 'error';
+				$this->view->bodyClass = 'not-found-page';
+			}
+//			if ($_SERVER['REMOTE_ADDR'] == '109.184.137.246') {
+//				$out = $this->view->render('indexm' . ($this->view->imposition ? $this->view->imposition : '') . '.php');           
+//			} else {
+				$out = $this->view->render('index.php');
+//			}
+		} else {
+			$out = $this->view->render($this->section->alias . '/' . $this->action->alias . '.php');
+		}
+		if ($GLOBALS['enableSeoUrls'] == 'true') $out = Indi_Uri::sys2seo($out);
+		$out = $this->subdomainMaintenance($out);
+		$out = $this->httpsMaintenance($out);
+		//echo mt();
+        die($out);
+	}
+	public function getOrder($orderById, $dir, $condition = null){
+		if (!$this->masterOrder) {
+			if (!$orderById) return null;
+	//		$this->post['sort'] = 'identifier';
+			$this->post['dir'] = $dir;
+			// check if field (that is to be sorted by) store relation
+			$entityId = false;	
+			$orderBy = Misc::loadModel('OrderBy')->fetchRow('`id` = "' . $orderById . '"');
+			if ($orderBy->orderBy == "e") return $orderBy->expression . ' ' . $this->post['dir'];
+			$field = $orderBy->getForeignRowByForeignKey('fieldId');
+		} else {
+			if ($this->section->orderBy == 'e') {
+				return $this->section->orderExpression;
+			} else {
+				$field = $this->section->getForeignRowByForeignKey('orderColumn');
+				$this->post['dir'] = $this->section->orderDirection;
+			}
+		}
+		if($field->relation || $field->satellite) {
+			$entityId = $field->relation;
+			$fieldId  = $field->id;
+			$satellite = $field->satellite;
+		}
+
+		// get distinct entity ids that will be used to initialize models and retrieve rowsets
+		if ($entityId) {
+			// get distinct ids of foreign rows
+			$info = Entity::getInstance()->getModelById($this->section->entityId)->info();
+			$query = 'SELECT DISTINCT `' . $field->alias . '` AS `id` FROM `' . $info['name'] . '` WHERE 1 ' . ($condition ? ' AND ' . $condition : '');
+			$result = $this->db->query($query)->fetchAll();
+			if (count($result)) {
+				// get distinct foreign key values, to avoid twice or more calculating title for equal ids
+				for ($i = 0; $i < count($result); $i++) $ids[] = $result[$i]['id'];
+
+				// create temporary table
+				$tmpTable = 'sorting';
+
+				$query = 'DROP TABLE IF EXISTS `' . $tmpTable . '`;';
+				$this->db->query($query);
+
+				$query = 'CREATE TEMPORARY TABLE `' . $tmpTable . '` (`id` VARCHAR(255) NOT NULL, `title` VARCHAR(255) NOT NULL);';
+				$this->db->query($query);
+
+				$query = ' INSERT INTO `' . $tmpTable . '` ';
+				if ($entityId == 6) {
+					$condition  = '`alias` IN ("' . implode('","', $ids) . '")';
+					$condition .= ' AND `fieldId` = "' . $fieldId . '"';
+					$query .= 'VALUES ';
+					$foreignRowset = Entity::getInstance()->getModelById($entityId)->fetchAll($condition);
+					foreach ($foreignRowset as $foreignRow) {
+						$values[] = '("' . $foreignRow->alias . '","' . $foreignRow->getTitle() . '")';
+					}
+					$query .= implode(',', $values) . ';';
+				} else {
+					// in this block we investigate - have the 'getTitle' method been redeclared in child *_Row class, so if no - it
+					// mean that we can get titles for foreign keys  directly from 'title' column on corresponding foreign table
+					// and there is no need to preform any modifications on them before output in json format
+					// this shit is need it to avoid unneeded abuse to mysql server - to improve performance
+					$entity = Entity::getInstance()->fetchRow('`id` = "' . $entityId . '"')->toArray();
+					$info = Entity::getModelById($entityId)->info();
+					$modelsDirPath = trim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . '/application/';
+
+					// get filename of row class
+					$file = $backendModulePath . 'models/' . str_replace('_', '/', $info['rowClass']) . '.php';
+					if (file_exists($file)) $code = file_get_contents($file);
+
+					// if function 'getTitle' was not redeclared
+					if (!strpos($code, 'function getTitle(')) {
+						$foreignTableInfo = Entity::getModelById($entityId)->info();
+						$query .= 'SELECT `id`,`title` FROM `' . $foreignTableInfo['name'] . '` WHERE `id` IN (' . implode(',', $ids) . ');';
+					} else {
+						// prepare and put data into temporary table
+						$foreignRowset = Entity::getModelById($entityId)->fetchAll('`id` IN (' . implode(',', $ids) . ')');
+						
+						$query .= 'VALUES ';
+						foreach ($foreignRowset as $foreignRow) {
+							$values[] = '(' . $foreignRow->id . ', "' . str_replace('"', '&quote;', $foreignRow->getTitle()) . '")';
+						}
+						$query .= implode(',', $values) . ';';
+					}
+				}
+				$this->db->query($query);
+
+				// sort data in temporary table by 'title' field
+				$result = $this->db->query('SELECT `id`,`title` FROM `' . $tmpTable . '` ORDER BY `title` ' . $this->post['dir'])->fetchAll();
+
+				$query = 'DROP TABLE `' . $tmpTable . '`;';
+				$this->db->query($query);
+
+				// get array of ids
+				$ids = array();
+				for ($i = 0; $i < count($result); $i++) $ids[] = $result[$i]['id'];
+		
+				$order = 'POSITION(CONCAT("\'", `' . $field->alias . '`	, "\'") IN "\'' . implode("','", $ids) . '\'") ASC';
+			} else $ids = array();
+			
+		// if column store foreign keys that are pointing to variable entties
+		} else if ($satellite){
+			$rowset = $this->trail->getItem()->model->fetchAll('1 ' . ($condition ? ' AND ' . $condition : ''));
+			$tmp = array();
+			foreach ($rowset as $row) {
+				$tmp[] = array('id' => $row->id, 'title' => $row->getForeignRowByForeignKey($this->post['sort'])->getTitle());
+			}
+			if (count($tmp)) {
+				// create temporary table
+				$tmpTable = 'sorting';
+
+				$query = 'DROP TABLE IF EXISTS `' . $tmpTable . '`;';
+				$this->db->query($query);
+
+				$query = 'CREATE TEMPORARY TABLE `' . $tmpTable . '` (`id` VARCHAR(255) NOT NULL, `title` VARCHAR(255) NOT NULL);';
+				$this->db->query($query);
+
+				$query = 'INSERT INTO `' . $tmpTable . '` ';
+				$values = array();
+				for ($i = 0; $i < count($tmp); $i ++) {
+					$values[] = '(' . $tmp[$i]['id'] . ', "' . $tmp[$i]['title'] . '")';
+				}
+				$query .= 'VALUES ' . implode(', ', $values) . ';';
+				$this->db->query($query);
+
+				// sort data in temporary table by 'title' field
+				$result = $this->db->query('SELECT `id`,`title` FROM `' . $tmpTable . '` ORDER BY `title` ' . $this->post['dir'])->fetchAll();
+
+				$query = 'DROP TABLE `' . $tmpTable . '`;';
+				$this->db->query($query);
+
+				// get array of ids
+				$ids = array();
+				for ($i = 0; $i < count($result); $i++) $ids[] = $result[$i]['id'];
+		
+				$order = 'POSITION(CONCAT("\'", `id`, "\'") IN "\'' . implode("','", $ids) . '\'") ASC';
+			}
+		} else {
+			$order = $field->alias . ' ' . $this->post['dir'];
+		}
+        $order = trim($order) ? $order : null;
+		return $order;
+	}
+	public function getRowsetParams(){
+		if (isset($this->post['indexPage'])) {
+			$previousPage = $_SESSION['indexParams'][$this->section->alias]['page'];
+			$_SESSION['indexParams'][$this->section->alias]['page'] = Misc::number($this->post['indexPage']);
+			
+		}
+		if (isset($this->post['indexLimit'])) {
+			if ($this->post['indexLimit'] != $_SESSION['indexParams'][$this->section->alias]['limit']) $_SESSION['indexParams'][$this->section->alias]['page'] = 1;
+			$_SESSION['indexParams'][$this->section->alias]['limit'] = Misc::number($this->post['indexLimit']);
+		}
+		if ($this->rowsetFilter && is_array($this->rowsetFilter)){
+			foreach ($this->rowsetFilter as $index => $value) {
+//				if (array_key_exists($index, $this->post['indexWhere'])) $this->post['indexWhere'][$index] = $value;
+			}
+		}
+		if ($this->trail->getItem(1)){
+			$this->post['indexWhere'][1] = '`' . $this->trail->getItem(1)->model->info('name') . 'Id` = "' . $this->trail->getItem(1)->row->id .'"';
+		}
+		if ($this->section->filter) {
+			if (preg_match('/\$/', $this->section->filter)) {
+				eval('$this->section->filter = \'' . $this->section->filter . '\';');
+			}
+			$this->post['indexWhere'][2] = $this->section->filter;
+		}
+		if (isset($this->post['indexWhere'])){
+			foreach ($this->post['indexWhere'] as $filterParam => $requiredValue) {
+				if (!$requiredValue) {
+					unset($_SESSION['indexParams'][$this->section->alias]['where'][$filterParam]);
+				} else {
+					if ($_SESSION['indexParams'][$this->section->alias]['where'][$filterParam] != $requiredValue) {
+						$_SESSION['indexParams'][$this->section->alias]['page'] = 1;
+					}
+					$_SESSION['indexParams'][$this->section->alias]['where'][$filterParam] = $requiredValue;
+				}
+			}
+		}
+		if (isset($this->post['indexOrder'])) {
+			if (!isset($_SESSION['indexParams'][$this->section->alias]['order'])){
+				$_SESSION['indexParams'][$this->section->alias]['dir'] = $this->section->orderBy == 'c' ? $this->section->orderDirection : 'ASC';
+			} else if ($_SESSION['indexParams'][$this->section->alias]['order'] == $this->post['indexOrder'] && $previousPage == $this->post['indexPage']) {
+				$_SESSION['indexParams'][$this->section->alias]['dir'] = $_SESSION['indexParams'][$this->section->alias]['dir'] == 'ASC' ? 'DESC' : 'ASC';
+			}
+			$_SESSION['indexParams'][$this->section->alias]['order'] = Misc::number($this->post['indexOrder']);
+		} else {
+			if ($this->section->orderBy == 'c') {
+				$_SESSION['indexParams'][$this->section->alias]['order'] = Misc::loadModel('OrderBy')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `fieldId` = "' . $this->section->orderColumn . '"')->id;
+				$_SESSION['indexParams'][$this->section->alias]['dir'] = $this->section->orderDirection;
+			} else {
+				$_SESSION['indexParams'][$this->section->alias]['order'] = $this->section->orderExpression;
+				if (stripos($this->section->orderExpression, 'asc') === false && stripos($this->section->orderExpression, 'desc') === false) {
+					$_SESSION['indexParams'][$this->section->alias]['dir'] = 'ASC';
+				}
+			}
+		}
+		if (!$_SESSION['indexParams'][$this->section->alias]['page']) $_SESSION['indexParams'][$this->section->alias]['page'] = 1;
+		if (!$_SESSION['indexParams'][$this->section->alias]['limit']) $_SESSION['indexParams'][$this->section->alias]['limit'] = $this->section->defaultLimit;
+		if (!$_SESSION['indexParams'][$this->section->alias]['where']) $_SESSION['indexParams'][$this->section->alias]['where'] = null;
+		if (!$_SESSION['indexParams'][$this->section->alias]['order']) {
+			if ($this->section->orderBy == 'e' || $this->section->orderColumn) {
+				$this->masterOrder = true;
+			} else {
+				$_SESSION['indexParams'][$this->section->alias]['order'] = key($this->section->getOrder());
+			}
+		}
+		$where = null;
+		if (is_array($_SESSION['indexParams'][$this->section->alias]['where'])) {
+			foreach ($_SESSION['indexParams'][$this->section->alias]['where'] as $filterParam => $requiredValue) {
+				if (Misc::number($filterParam) == $filterParam) {
+					$where[] = $requiredValue;
+				} else {
+					if (strpos($filterParam, 'From') && $this->section->getFilter(str_replace('From', '', $filterParam))->type == 'b'){
+						$where[] = '`' . str_replace('From', '', $filterParam) . '` >= "' . $requiredValue . '"';
+					} else if (strpos($filterParam, 'To') && $this->section->getFilter(str_replace('To', '', $filterParam))->type == 'b') {
+						$where[] = '`' . str_replace('To', '', $filterParam) . '` <= "' . $requiredValue . '"';
+					} else {
+						$findInSet = false;
+						foreach ($this->trail->getItem()->fields as $field) if ($field['alias'] == $filterParam && $field['storeRelationAbility'] == 'many') $findInSet = true;
+						if ($findInSet) {
+							$idsToFind = explode(',', $requiredValue);
+							$find = array();
+							for ($i = 0; $i < count($idsToFind); $i++) {
+								$find[] = 'FIND_IN_SET("' . $idsToFind[$i] . '", `' . $filterParam . '`)';
+							}
+							$where[] = implode(' AND ',  $find);
+						} else {
+							$where[] = '`' . $filterParam . '` LIKE "' . $requiredValue . '"';
+						}
+					}
+				}
+			}
+			if (is_array($where)) $where = implode(' AND ', $where);
+		}
+		$page = $_SESSION['indexParams'][$this->section->alias]['page'];
+		$limit = $_SESSION['indexParams'][$this->section->alias]['limit'];
+		$order = $_SESSION['indexParams'][$this->section->alias]['order'];
+		$dir = $_SESSION['indexParams'][$this->section->alias]['dir'];
+		return array('page' => $page, 'limit' => $limit, 'order' => $order, 'where' => $where, 'dir' => $dir);
+	}
+	public function maintenance(){
+		// Выдергивание независимых множеств
+		$this->setIndependentRowsets();
+		if (is_object($this->model) && get_class($this->model) != 'stdClass' && !$this->noMaintenance) {
+			if ($this->action->maintenance == 'rs') {
+	//		if ($this->model && $this->section->type == 'r' && $this->action->alias == 'index') {
+				// get rowset params and get rowset according to them
+				$rp = $this->getRowsetParams();
+				if ($tree = $this->model->getTreeColumnName()) {
+					$this->rowset = $this->model->fetchTree($tree, 0, false, true, 0, 'move');
+				} else {
+					if ($this->exclusiveRowsetParams) {
+						$this->rowset = $this->model->fetchAll($this->exclusiveRowsetParams['where'], $this->exclusiveRowsetParams['order'], $this->exclusiveRowsetParams['limit'], $this->exclusiveRowsetParams['page']);
+					} else {
+						$this->rowset = $this->model->fetchAll($rp['where'], trim($this->getOrder($rp['order'], $rp['dir'])), $rp['limit'], $rp['page']);
+					}
+				}
+				// set dependent counts or related items
+				$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
+				if ($info->count()) $this->rowset->setDependentCounts($info);
+				
+				// set dependent rowsets of related items
+				$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
+				if ($info->count()) $this->rowset->setDependentRowsets($info);
+
+				// set join needed foreign rows on foreign keys
+				$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
+				if ($info->count()) $this->rowset->setForeignRowsByForeignKeys($info);
+//			} else if ($this->model && $this->identifier) {
+			} else if ($this->action->maintenance == 'r') {
+				//get row
+				if ($this->row = $this->model->fetchRow('`id` = "' . (int) $this->identifier . '"')) {
+					// set dependent counts or related items
+					$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
+					if ($info->count()) $this->row->setDependentCounts($info);
+					
+					// set dependent rowsets of related items
+					$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
+					if ($info->count()) $this->row->setDependentRowsets($info);
+					// set join needed foreign rows on foreign keys
+					$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
+					if ($info->count()) $this->row->setForeignRowsByForeignKeys($info);
+					
+					$this->view->row = $this->row;
+				} else {
+					readfile('http://' . $_SERVER['HTTP_HOST'] . '/404/');
+					die('No row found');
+				}
+			}
+		}
+		if ($this->section->type == 's') {
+			$this->{$this->section->index . 'Action()'};
+			eval('$this->' . $this->section->index . 'Action();');
+		}
+	}
+	
+/*	public function indexAction(){
+
+		if ($this->model) {
+			// get rowset params and get rowset according to them
+			$rp = $this->getRowsetParams();
+			if ($tree = $this->model->getTreeColumnName()) {
+				$this->rowset = $this->model->fetchTree($tree, 0, false, true, 0, 'move');
+			} else {
+				$this->rowset = $this->model->fetchAll($rp['where'], trim($this->getOrder($rp['order'], $rp['dir'])), $rp['limit'], $rp['page']);
+			}
+			// set dependent counts or related items
+			$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
+			if ($info->count()) $this->rowset->setDependentCounts($info);
+			
+			// set dependent rowsets of related items
+			$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
+			if ($info->count()) $this->rowset->setDependentRowsets($info);
+			
+			// set join needed foreign rows on foreign keys
+			$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
+			if ($info->count()) $this->rowset->setForeignRowsByForeignKeys($info);
+		}
+	}
+	public function detailsAction(){
+		if ($this->model && $this->identifier) {
+			//get row
+			$this->row = $this->model->fetchRow('`id` = "' . (int) $this->identifier . '"');
+
+			// set dependent counts or related items
+			$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
+			if ($info->count()) $this->row->setDependentCounts($info);
+			
+			// set dependent rowsets of related items
+			$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
+			if ($info->count()) $this->row->setDependentRowsets($info);
+			// set join needed foreign rows on foreign keys
+			$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
+			if ($info->count()) $this->row->setForeignRowsByForeignKeys($info);
+			
+			$this->view->row = $this->row;
+		}
+	}*/
+	public function setIndependentRowsets(){
+		if ($this->section2action) {
+			$info = $this->section2action->getInfoAboutIndependentCountsToBeGot();
+			$join = Misc::loadModel('JoinFkForIndependentRowset');
+			foreach ($info as $entity) {
+				if ($entity->calculatedColumns) {
+					if (preg_match('/\$/', $entity->calculatedColumns)) {
+						eval('$calc = \'' . $entity->calculatedColumns . '\';');
+					} else {
+						$calc = $entity->calculatedColumns;
+					}
+				} else {
+					$calc = null;
+				}
+
+				if ($entity->filter) {
+					if (preg_match('/\$/', $entity->filter)) {
+						eval('$entity->filter = \'' . $entity->filter . '\';');
+					}
+					$where = $entity->filter;
+				} else {
+					$where = null;
+				}
+				$order = $entity->orderBy == 'c' && $entity->getForeignRowByForeignKey('fieldId')->alias ? $entity->getForeignRowByForeignKey('fieldId')->alias  . ' ' . $entity->orderDirection : $entity->expression;
+				if (preg_match('/\$/', $order)) {
+					eval('$order = \'' . $order . '\';');
+				}
+
+				$limit = $entity->limit ? $entity->limit : null;
+				$page = $_SESSION['rowsetParams'][$this->section->alias][$this->action->alias]['independent'][$entity->alias]['page'];if (!$page) $page = 1;
+				
+				$rowset = Entity::getModelById($entity->entityId)->useDefaultFetchMethod()->fetchAll($where, $order ? $order : null, $limit, $page, $calc);
+				$joins = $join->fetchAll('`independentRowsetId` = "' . $entity->id . '"');
+				if ($joins->count()) {
+					$rowset->setForeignRowsByForeignKeys($joins);
+				}
+				$independentRowsets[$entity->alias] = $entity->returnAs == 'o' ? $rowset : $rowset->toArray();
+			}
+			$this->view->independentRowsets = $independentRowsets;
+		}
+	}
+	public function __call($action, $arguments) {
+		if($this->action->alias != str_replace('Action','', $action)){
+//			die('asd');
+		}
+	}
+	public function preMaintenance(){
+	}
+	public function rowsetParams(){
+		$_SESSION['rowsetParams'][$this->section->alias][$this->action->alias]['independent'][$this->post['rowsetAlias']]['page'] = $this->post['page'];
+		die();
+	}
+	public function subdomainMaintenance($html){
+		$config = Indi_Registry::get('config');
+		if (Indi_Registry::isRegistered('subdomains')) {
+			$subdomains = Indi_Registry::get('subdomains');
+			for ($i = 0; $i < count($subdomains); $i++) {
+				$html = preg_replace('/(href|action)="\/' . $subdomains[$i] . '\//', '$1="http://' . $subdomains[$i] . '.' . $config['general']->domain .'/', $html);
+			}
+		}
+		if (Indi_Registry::isRegistered('subdomain')) {
+			$html = preg_replace('/(href|action)="\//', '$1="http://' . $config['general']->domain.'/', $html);
+		}
+		return $html;
+	}
+	public function httpsMaintenance($html) {
+		if ($_SERVER['SERVER_PORT'] == 443) {
+			$config = Indi_Registry::get('config');
+			$html = preg_replace('/(<link.*href=)"\//ui', '$1"https://' . $config['general']->domain . '/', $html);
+			$html = preg_replace('/(<link.*)href="http:/ui', '$1 href="https:', $html);
+			$html = preg_replace('/(<script.*)src="http:/ui', '$1 src="https:', $html);
+		}
+		return $html;
+	}
+}

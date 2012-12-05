@@ -1,0 +1,31 @@
+<?php
+class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
+{
+    public function formField($field)
+    {
+		if (!in_array($field->alias, $this->view->trail->getItem()->disabledFields)) {
+			$elementRow = $field->getForeignRowByForeignKey('elementId');
+			$params = $field->getParams();
+			if ($params['wide']) {
+				$xhtml = '<tr class="info" id="tr-' . $field->alias . '">';
+				$xhtml .= '<td width="100%" id="td-wide-' . $field->alias . '" colspan="2">';
+				$xhtml .= $field->title . ':<br>';
+				$xhtml .= $this->view->{'form' . ucfirst($elementRow->alias)}($field->alias);
+				$xhtml .= '</td>';
+				$xhtml .= '</tr>';
+			} else {
+				$xhtml = '<tr class="info" id="tr-' . $field->alias . '">';
+				$xhtml .= '<td width="50%" id="td-left-' . $field->alias . '">';
+				$xhtml .= $field->title . ':';
+				$xhtml .= '</td>';
+				$xhtml .= '<td id="td-right-' . $field->alias . '">';
+				$xhtml .= $this->view->{'form' . ucfirst($elementRow->alias)}($field->alias);
+				$xhtml .= '</td>';
+				$xhtml .= '</tr>';
+			}
+			return $xhtml;
+		} else {
+			return '';
+		}
+    }    
+}

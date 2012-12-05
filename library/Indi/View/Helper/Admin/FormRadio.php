@@ -1,0 +1,35 @@
+<?php
+class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
+{
+    public function formRadio($name = 'toggle', $texts = 'Да,Нет', $values = 'y,n', $value = 'y', $meta = false, $attrib = '', $add = null)
+    {
+		if (isset($this->view->row->$name)){
+			$value = $this->view->row->$name;
+			$field = $this->view->trail->getItem()->getFieldByAlias($name);
+			if(empty($value)) {
+				$value = $field->defaultValue;
+			}
+			if ($field->relation == 6) {
+				$enumset = Misc::loadModel('Enumset');
+				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', 'move')->toArray();
+				$texts = $values = array();
+				for ($i = 0; $i < count ($array); $i++) {
+					$texts[] =  str_replace(',', '&sbquo;', $array[$i]['title']);
+					$values[] =  $array[$i]['alias'];
+					$attrib[] = ' onclick="javascript: ' . (trim($array[$i]['javascript'] . '' . $field->javascript) ? str_replace('"', '\'', trim($array[$i]['javascript'] . '' . $field->javascript)) : "void(0)") . '"'; 
+				}
+				$texts = implode(',' , $texts);
+				$values = implode(',' , $values);
+			} else {
+			    $data  = $this->view->row->getDropdownData($name, $this->view->trail);
+				$texts = implode(',', array_values($data));
+				$values = implode(',', array_keys($data));
+			}
+		}
+		$rowsHeightLimit = 10;
+		if (count($data) > $rowsHeightLimit) $xhtml .= '<div style="overflow-y: scroll; height: ' . (17 * $rowsHeightLimit) . 'px;">';
+		$xhtml .= $this->view->formRadios($name, $texts, $values, $value, $meta, $attrib, $add);
+		if (count($data) > $rowsHeightLimit) $xhtml .= '</div>';
+		return $xhtml;
+    }
+}

@@ -1,0 +1,35 @@
+###################
+## General stuff ##
+###################
+DirectoryIndex index.php
+AddDefaultCharset UTF-8
+Options FollowSymLinks
+<Files config.ini>
+  Deny from all 
+</Files>
+
+###################
+## Rewrite rules ##
+###################
+RewriteEngine On
+
+RewriteCond %{DOCUMENT_ROOT}/www%{REQUEST_URI} -s [OR]
+RewriteCond %{DOCUMENT_ROOT}/www%{REQUEST_URI} -l [OR]
+RewriteCond %{DOCUMENT_ROOT}/www%{REQUEST_URI} -d
+RewriteRule ^(.*)$ www/$1 [NC,L]
+
+RewriteCond %{DOCUMENT_ROOT}/core%{REQUEST_URI} -s [OR]
+RewriteCond %{DOCUMENT_ROOT}/core%{REQUEST_URI} -l [OR]
+RewriteCond %{DOCUMENT_ROOT}/core%{REQUEST_URI} -d
+RewriteRule ^(.*)$ core/$1 [NC,L]
+
+RewriteCond %{REQUEST_FILENAME} !-s
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/www/index.php -s
+RewriteRule ^.*$ www/index.php [NC,L]
+
+RewriteCond %{REQUEST_FILENAME} !-s
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteCond %{DOCUMENT_ROOT}/www/index.php !-s
+RewriteRule ^.*$ core/index.php [NC,L]                                              
