@@ -30,10 +30,10 @@ class Indi_View_Helper_FormRadios extends Indi_View_Helper_Abstract
 			
 			// texts passed to helper should be comma separated
 			// if texts are not set default values are 'y,n'
-			$texts = $texts ? explode(',', $texts) : array ('Yes','No');
+			$texts = $texts ? (is_array($texts) ? $texts : explode(',', $texts)) : array ('Yes','No');
 
 			// values passed to helper by parameter should be comma separated
-			$values = $values ? explode(',', $values) : null;
+			$values = $values ? (is_array($values) ? $values : explode(',', $values)) : null;
 
 			// else default values are 'y','n'
 			$values = $values ? $values : array('y', 'n');

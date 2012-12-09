@@ -24,7 +24,12 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->section = $this->section;
 		if ($this->section->type == 's' && $this->action == 'index') {
 			$this->action = $this->section->index;
-			eval('$this->identifier = ' . $this->section->where . ';');
+			if (preg_match('/^\$/', $this->section->where)) {
+				eval('$this->identifier = ' . $this->section->where . ';');
+			} else {
+				eval('$where = "' . $this->section->where . '";');
+				$this->identifier = Entity::getModelById($this->section->entityId)->fetchRow($where)->id;
+			}
 		}
 		Indi_Registry::set('request', $this->params);
 		// Определяем текущее действие, ищем его в базе
@@ -471,6 +476,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->footer1 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer1"');
 		$this->view->footer2 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer2"');
 		$this->view->visitors = $this->visitors();
+		$this->view->get = $this->get;
 		if ($this->row) $this->view->row = $this->row;
 		if ($this->section2action->type != 'j') {
 			if (!$this->view->action->alias) {
@@ -761,7 +767,12 @@ class Indi_Controller_Front extends Indi_Controller{
 //			} else if ($this->model && $this->identifier) {
 			} else if ($this->action->maintenance == 'r') {
 				//get row
-				if ($this->row = $this->model->fetchRow('`id` = "' . (int) $this->identifier . '"')) {
+				if (Misc::number($this->identifier) == (int) $this->identifier) {
+					$where = '`id` = "' . (int) $this->identifier . '"';
+				} else {
+					$where = $this->identifier;
+				}
+				if ($this->row = $this->model->fetchRow($where)) {
 					// set dependent counts or related items
 					$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
 					if ($info->count()) $this->row->setDependentCounts($info);

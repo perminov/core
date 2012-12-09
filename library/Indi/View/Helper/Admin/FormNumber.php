@@ -28,7 +28,7 @@ class Indi_View_Helper_Admin_FormNumber extends Indi_View_Helper_FormElement
                    . ' id="' . $this->view->escape($id) . '"'
                    . ' value="' . $this->view->escape($value) . '"'
                    . $this->_htmlAttribs($attribs)
-                   . ' style="width: ' . ($params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $params['maxlength'] . '" onchange="this.value=number(this.value);" /> ' . $params['measure'];
+                   . ' style="width: ' . ($params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $params['maxlength'] . '" ' . ($params['readonly'] == 'true' ? ' readonly' : '') . ' onchange="this.value=number(this.value);" /> ' . $params['measure'];
         }
         
         return $xhtml;

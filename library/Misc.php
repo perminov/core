@@ -1,6 +1,8 @@
 <?php
-function lcfirst($value){
-	return strtolower(substr($value, 0, 1)) . substr($value, 1);
+if (!function_exists('lcfirst')) {
+	function lcfirst($value){
+		return strtolower(substr($value, 0, 1)) . substr($value, 1);
+	}
 }
 function onlyme(){
 	return $_SERVER['REMOTE_ADDR'] == '109.184.137.246';

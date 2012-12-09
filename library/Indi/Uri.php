@@ -28,7 +28,7 @@ class Indi_Uri {
 
 		$controllerClassName = ($params['module'] == 'front' ? '' : $params['module'] . '_') . ucfirst($params['section']) . 'Controller';
 		if (!class_exists($controllerClassName)) {
-			eval('class ' . ucfirst($controllerClassName) . ' extends Indi_Controller_' . ($params['module'] == 'front' ? 'Frontend' : 'Admin') . '{}');
+			eval('class ' . ucfirst($controllerClassName) . ' extends Indi_Controller_' . ($params['module'] == 'front' ? 'Front' : 'Admin') . '{}');
 		}
 
 		$controller = new $controllerClassName($params);

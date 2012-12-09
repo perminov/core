@@ -228,10 +228,16 @@ class Indi_Controller_Admin extends Indi_Controller{
      */
     public function toggleAction()
     {
+		$this->preToggle();
         $this->row->toggle();
+		$this->postToggle();
 		$this->redirectToIndex();
 	}
     
+	public function preToggle(){
+	}
+	public function postToggle(){
+	}
     /**
      * Provide delete action
      *
