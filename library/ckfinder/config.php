@@ -60,7 +60,15 @@ Examples:
 
 ATTENTION: The trailing slash is required.
 */
-$baseUrl = '/data/upload/fck/';
+
+include_once($_SERVER['DOCUMENT_ROOT'] . '/core/library/Misc.php');
+foreach (array('www', 'core') as $p) {
+	if (($cnf = $_SERVER['DOCUMENT_ROOT'] . '/' . $p . '/application/config.ini') && is_file($cnf)) {
+		$cnf = @Misc::ini($cnf);
+		break;
+	}
+}
+$baseUrl = '/' . $cnf['upload']->uploadPath . '/' . $cnf['ckeditor']->uploadPath .'/';
 
 /*
 $baseDir : the path to the local directory (in the server) which points to the
