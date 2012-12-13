@@ -634,18 +634,6 @@ abstract class Indi_Image
         // absolute upload path in filesystem
         $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
 
-/*		$info = pathinfo($url);
-		d(get_headers($url, 1));
-		while(!$info['extension']) {
-			$headers = get_headers($url, 1);
-			d($headers);
-			$info = pathinfo($url);
-			if ($info['Location']) {
-				$url = $info['Location'];
-				$info = pathinfo($url);
-			}
-		}*/
-
 		if ($requirements['type']) {
 			$info = explode('/', Indi_Image::m_content_type($url));
 			if ($info[0] != $requirements['type']) {

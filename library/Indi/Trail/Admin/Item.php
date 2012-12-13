@@ -49,30 +49,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
             if ($entityTitle) {
 
 				// set up model
-                $className = ucfirst($entityTitle);
-
-				// if file in which model is declared doesn't exists, so there will be performed emulation of it initialization
-				$systemModelsDir = $_SERVER['DOCUMENT_ROOT'] . '/www' . '/application/models/';
-				$modelClassName = $className;
-				$modelFileName = $className . '.php';
-				$modelFilePath = $systemModelsDir . $modelFileName;
-				
-				if (!in_array($modelClassName, get_declared_classes())){
-					if (file_exists($modelFilePath)) {
-						if (!class_exists($modelClassName))
-							require($modelFilePath);  
-					} else {
-						$entityRow = Entity::getInstance()->fetchRow('`table` = "' . strtolower($modelClassName) . '"');
-						if ($entityRow) {
-							$extends = $entityRow->extends ? $entityRow->extends : 'Indi_Db_Table';
-							eval('class ' . $modelClassName . ' extends ' . $extends . '{}');
-						} else {
-							throw new Exception('Model is not in entities table');
-						}
-					}
-				}
-				
-				$this->model = new $className();
+				$this->model = Misc::loadModel(ucfirst($entityTitle));
                 
                 // set up row
                 if ($rowIdentifier) {
