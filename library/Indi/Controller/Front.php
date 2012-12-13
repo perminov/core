@@ -645,7 +645,10 @@ class Indi_Controller_Front extends Indi_Controller{
 			
 		}
 		if (isset($this->post['indexLimit'])) {
-			if ($this->post['indexLimit'] != $_SESSION['indexParams'][$this->section->alias]['limit']) $_SESSION['indexParams'][$this->section->alias]['page'] = 1;
+			if ($this->post['indexLimit'] != $_SESSION['indexParams'][$this->section->alias]['limit']) {
+				$_SESSION['indexParams'][$this->section->alias]['page'] = 1;
+				$noDirChange = true;
+			}
 			$_SESSION['indexParams'][$this->section->alias]['limit'] = Misc::number($this->post['indexLimit']);
 		}
 		if ($this->rowsetFilter && is_array($this->rowsetFilter)){
@@ -678,7 +681,11 @@ class Indi_Controller_Front extends Indi_Controller{
 			if (!isset($_SESSION['indexParams'][$this->section->alias]['order'])){
 				$_SESSION['indexParams'][$this->section->alias]['dir'] = $this->section->orderBy == 'c' ? $this->section->orderDirection : 'ASC';
 			} else if ($_SESSION['indexParams'][$this->section->alias]['order'] == $this->post['indexOrder'] && $previousPage == $this->post['indexPage']) {
-				$_SESSION['indexParams'][$this->section->alias]['dir'] = $_SESSION['indexParams'][$this->section->alias]['dir'] == 'ASC' ? 'DESC' : 'ASC';
+				if (isset($this->post['indexDir'])) {
+					$_SESSION['indexParams'][$this->section->alias]['dir'] = in_array($this->post['indexDir'], array('DESC', 'ASC')) ? $this->post['indexDir'] : 'ASC';
+				} else {
+					$_SESSION['indexParams'][$this->section->alias]['dir'] = $_SESSION['indexParams'][$this->section->alias]['dir'] == 'ASC' ? ($noDirChange ? 'ASC' : 'DESC') : ($noDirChange ? 'DESC' : 'ASC');
+				}
 			}
 			$_SESSION['indexParams'][$this->section->alias]['order'] = Misc::number($this->post['indexOrder']);
 		} else {
@@ -797,48 +804,6 @@ class Indi_Controller_Front extends Indi_Controller{
 		}
 	}
 	
-/*	public function indexAction(){
-
-		if ($this->model) {
-			// get rowset params and get rowset according to them
-			$rp = $this->getRowsetParams();
-			if ($tree = $this->model->getTreeColumnName()) {
-				$this->rowset = $this->model->fetchTree($tree, 0, false, true, 0, 'move');
-			} else {
-				$this->rowset = $this->model->fetchAll($rp['where'], trim($this->getOrder($rp['order'], $rp['dir'])), $rp['limit'], $rp['page']);
-			}
-			// set dependent counts or related items
-			$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
-			if ($info->count()) $this->rowset->setDependentCounts($info);
-			
-			// set dependent rowsets of related items
-			$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
-			if ($info->count()) $this->rowset->setDependentRowsets($info);
-			
-			// set join needed foreign rows on foreign keys
-			$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
-			if ($info->count()) $this->rowset->setForeignRowsByForeignKeys($info);
-		}
-	}
-	public function detailsAction(){
-		if ($this->model && $this->identifier) {
-			//get row
-			$this->row = $this->model->fetchRow('`id` = "' . (int) $this->identifier . '"');
-
-			// set dependent counts or related items
-			$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
-			if ($info->count()) $this->row->setDependentCounts($info);
-			
-			// set dependent rowsets of related items
-			$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
-			if ($info->count()) $this->row->setDependentRowsets($info);
-			// set join needed foreign rows on foreign keys
-			$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
-			if ($info->count()) $this->row->setForeignRowsByForeignKeys($info);
-			
-			$this->view->row = $this->row;
-		}
-	}*/
 	public function setIndependentRowsets(){
 		if ($this->section2action) {
 			$info = $this->section2action->getInfoAboutIndependentCountsToBeGot();

@@ -126,7 +126,7 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
 	public function __isset($columnName)
 	{
 		$columnName = $this->_transformColumn($columnName);
-		return array_key_exists($columnName, $this->_data);
+		return isset($this->_data[$columnName]);
 	}
 
 	public function delete() {
