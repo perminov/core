@@ -54,9 +54,9 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 			$subsectionIds[] = $countToGet->sectionId;
 			$where[] = $countToGet->where;
 		}
-		$subsections = Misc::loadModel('Section')->fetchAll('`id` IN (' . implode(',', $subsectionIds) . ')');
+		$subsections = Misc::loadModel('Section')->fetchAll('`id` IN (' . implode(',', $subsectionIds) . ')', 'FIND_IN_SET(`id`, "' . implode(',', $subsectionIds) . '")');
 		foreach ($subsections as $subsection) $entityIds[] = $subsection->entityId;
-		$entities = Misc::loadModel('Entity')->fetchAll('`id` IN (' . implode(',', $entityIds) . ')');
+		$entities = Misc::loadModel('Entity')->fetchAll('`id` IN (' . implode(',', $entityIds) . ')', 'FIND_IN_SET(`id`, "' . implode(',', $entityIds) . '")');
 		foreach ($entities as $entity) $tables[] = $entity->table;
 		$data = $this->toArray();
 		$ids = array();

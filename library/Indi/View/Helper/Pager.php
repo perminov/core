@@ -20,7 +20,7 @@ class Indi_View_Helper_Pager extends Indi_View_Helper_Abstract
         $limit      = $limit ? $limit : $this->view->indexParams['limit'];
         $pageNumber = $pageNumber ? $pageNumber : $this->view->indexParams['page'];
 		$this->currentPage = $pageNumber;
-        
+
         $this->pageNumber = $pageNumber;
 
         if ($foundRows) {
@@ -29,7 +29,7 @@ class Indi_View_Helper_Pager extends Indi_View_Helper_Abstract
             $pagesNumber = ceil($foundRows / $limit);
             if ($pagesNumber > 1) {
 				if ($pageNumber > 1) {
-					$xhtml .= '<a class="previous-link" href="#" onclick="' . $this->getPageUrl($pageNumber - 1, $js) . '">Предыдущая</a>';
+					$xhtml .= '<a class="previous-link" href="#" onclick="' . $this->getPageUrl($pageNumber - 1, $js) . '">Предыдущая</a> ';
 				}
 				$xhtml .= '<span class="pages">';
 
@@ -80,7 +80,7 @@ class Indi_View_Helper_Pager extends Indi_View_Helper_Abstract
 				$xhtml .= '</span>';
 				
 				if ($pageNumber < $pagesNumber) {
-					$xhtml .= '<a class="next-link" href="#" onclick="' . $this->getPageUrl($pageNumber + 1, $js) . '">Следующая</a>';
+					$xhtml .= ' <a class="next-link" href="#" onclick="' . $this->getPageUrl($pageNumber + 1, $js) . '">Следующая</a>';
 				}
             }
             $xhtml .= '</div>';

@@ -235,7 +235,7 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 			$limit = (is_null($page) ? ($count ? '0' : $page) : $count * ($page - 1)) . ($count ? ',' : '') . $count;
 
 			// the SQL_CALC_FOUND_ROWS flag
-			if ($count != 1 && !is_null($page)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
+			if (!is_null($page)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
 		}
 
 		$sql = 'SELECT ' . $calcFoundRows . '* FROM `' . $this->_name . '`'
@@ -300,5 +300,17 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 	public function useDefaultFetchMethod($use = true) {
 		$this->useDefaultFetchMethod = $use;
 		return $this;
+	}
+
+	public function getOptions($entityId, $fieldAlias, $usedOnly = false) {
+		if ($usedOnly) {
+			$entity = Entity::getInstance()->getModelById($entityId);
+			$used = self::$_defaultDb->query('SELECT DISTINCT `' . $fieldAlias . '` FROM `' . $entity->info('name') . '`')->fetchAll();
+			foreach ($used as $use) $distinct[] = current($use);
+			$where = 'FIND_IN_SET(`id`, "' . implode(',', $distinct) . '")';
+		}
+		$rs = $this->fetchAll($where, '`title`');
+		foreach ($rs as $r) $options[$r->id] = $r->getTitle();
+		return $options;
 	}
 }

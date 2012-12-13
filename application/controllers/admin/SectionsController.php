@@ -20,9 +20,9 @@ class Admin_SectionsController extends Indi_Controller_Admin
                                        }
                                    }
 					for ($i = 0; $i < count($fields); $i++) {
-                                       if (in_array($fields[$i]['elementId'], array(6, 13, 14))) {
+                                       if (in_array($fields[$i]['elementId'], array(6, 13))) {
                                            if ($fields[$i]['elementId'] == 6 && $fields[$i]['alias'] == 'title') {} else {
-                                               $exclusions[] = $fields[$i]['alias']; echo $fields[$i]['alias'] . '-html,text,upload<br>';
+                                               $exclusions[] = $fields[$i]['alias']; //echo $fields[$i]['alias'] . '-html,text,upload<br>';
                                            }
                                        }
                                        $parentSection = $this->trail->getItem()->model->fetchRow('`id` = "' . $this->post['sectionId'] . '"');

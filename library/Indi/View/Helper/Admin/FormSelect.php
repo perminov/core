@@ -14,7 +14,19 @@ class Indi_View_Helper_Admin_FormSelect extends Indi_View_Helper_FormElement
 		$attribs['noempty'] = @eregi('ENUM', $field->getForeignRowByForeignKey('columnTypeId')->type) == 1 ? true : false; 
 
 		$options = $options ? $options : $this->view->row->getDropdownData($name, $this->view->trail, array('value' => $attribs['value']));
-        if (!is_array($options)) $options = array();
+		if($field->columnTypeId == 10) {
+			$jss = Misc::loadModel('Enumset')->fetchAll('`fieldId` = "' . $field->id . '" AND FIND_IN_SET(`alias`, "' . implode(',', array_keys($options)) . '")');
+
+			ob_start();?>var <?=$this->name?>Handler = function (){
+				switch(this.value) {<?foreach($jss as $option){?>
+					case '<?=$option->alias?>':
+						<?=$option->javascript?>;
+						break;
+					<?}?>
+				}
+			}<?$enumsetJs = ob_get_clean();
+		}
+		if (!is_array($options)) $options = array();
         $options = array_reverse($options, true);
         if ($attribs['noempty'] !== true) {
             if (!$attribs['defaultvalue']) $attribs['defaultvalue'] = 0;
@@ -119,6 +131,9 @@ class Indi_View_Helper_Admin_FormSelect extends Indi_View_Helper_FormElement
 				}
 				if (!$field->isSatellite() && $field->javascript){
 					$xhtml .= "<script>\$('#". $field->alias ."').change(function(){". str_replace(array('"', "\n", "\r"), array('\"',"",""), $field->javascript) . "}); \$('#". $field->alias ."').change();</script>";
+				}
+				if (isset($enumsetJs)) {
+					$xhtml .= '<script>' . $enumsetJs . ";$(document).ready(function(){\$('#". $this->name ."').change(" .$this->name . "Handler);\$('#". $this->name ."').change();});</script>";
 				}
 			}
         }

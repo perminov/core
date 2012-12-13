@@ -1,7 +1,7 @@
 <?php
 class Indi_View_Helper_Admin_Image extends Indi_View_Helper_Abstract
 {
-    public function image($entity = null, $id = null, $name = null, $copy = null, $silence = true)
+    public function image($entity = null, $id = null, $name = null, $copy = null, $silence = true, $width = null, $height = null)
     {
         static $index = null;
 
@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_Image extends Indi_View_Helper_Abstract
             }
         }
 
-        $xhtml = Indi_Image::image($entity, $id, $name, $copy, $silence);
+        $xhtml = Indi_Image::image($entity, $id, $name, $copy, $silence, $width, $height);
         
         return $xhtml;
     }

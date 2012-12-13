@@ -153,6 +153,7 @@ abstract class Indi_Image
     public function createEntityImagesDir($dir)
     {    
         if (!mkdir($dir, 0777)) {
+			die('Cannot create dir ' . $dir);
             throw new Exception($e->__toString());
         }
     }
@@ -430,7 +431,7 @@ abstract class Indi_Image
         $color = str_replace(array('\\','#'), array('', ''), $color);
         return array(hexdec(substr($color, 0, 2)), hexdec(substr($color, 2, 2)), hexdec(substr($color, 4, 2)));
     }
-    public function image($entity, $id, $key = null, $copy = null, $silence = true)
+    public function image($entity, $id, $key = null, $copy = null, $silence = true, $width = null, $height = null)
     {
         if ($id) {
 			$config = Indi_Registry::get('config');
@@ -450,7 +451,18 @@ abstract class Indi_Image
 					$file = glob($path);
                     if (count($file)) {
                         $pathinfo = pathinfo($file[0]);
-                        $xhtml = '<img src="' . $relative . $name . '.' .$pathinfo['extension'] . '" width="200" alt="" />';
+						$mtime = substr(filemtime($file[0]), -3);
+						if ($width || $height) {
+							if ($width) {
+								$size = ' width="' . $width . '"';
+							}
+							if ($height) {
+								$size .= ' height="' . $height . '"';
+							}
+						} else {
+							$size = '';
+						}
+                        $xhtml = '<img src="' . $relative . $name . '.' .$pathinfo['extension'] . '?'.$mtime.'" ' . $size . ' alt="" />';
                     } else if (!$silence) {
                         $xhtml = 'Cannot find any file on pattern ' . $path;
                     }

@@ -1,12 +1,10 @@
 <?php
 class Indi_View_Helper_FormSelect extends Indi_View_Helper_FormElement{
 	public function formSelect($name = '', $options = array(), $value = 0, $attribs = array()){
-		if (isset($attribs['zero'])){
-			$zero = $attribs['zero'];
-			unset($attribs['zero']);
-		}
+
 		if (isset($attribs['zeroLabel'])){
 			$zeroLabel = $attribs['zeroLabel'];
+			$zero = '%';
 			unset($attribs['zeroLabel']);
 		}
 		$html = '<select name="' . $name . '" id="' . $name . '" ' . $this->_htmlAttribs($attribs) . '>';

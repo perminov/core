@@ -7,6 +7,8 @@ class Filter_Row extends Indi_Db_Table_Row{
 		$table = Entity::getInstance()->getModelById($entityId)->info('name');
 		if (strpos($columnType, 'ENUM') !== false || strpos($columnType, 'SET') !== false) {
 			$options = Misc::loadModel('Enumset')->getOptions($table, $this->fieldId, $this->displayOptions == 'u' ? true : false);
+		} else if ($field->storeRelationAbility == 'one'){
+			$options = Entity::getInstance()->getModelById($field->relation)->getOptions($entityId, $field->alias, $this->displayOptions == 'u' ? true : false);
 		}
 		return $options;
 	}	

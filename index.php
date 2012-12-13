@@ -11,7 +11,7 @@ $dirs = array('../www/', '../core/'); $subs = array('library', 'application/cont
 foreach($dirs as $d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include_path(); set_include_path(implode($p, $inc));
 
 // Set autoloading
-function autoloader($class){if(!@include_once (str_replace('_','/',$class).'.php')) if (strpos($class, 'admin') === false) d(debug_backtrace());}
+function autoloader($class){if(!@include_once (str_replace('_','/',$class).'.php')) if (strpos($class, 'admin') === false) echo "";}
 spl_autoload_register('autoloader');
 
 // Load misc features

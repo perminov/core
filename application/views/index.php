@@ -14,11 +14,11 @@
 </head>
 <body>
 <?
-	echo $this->siteHeader();
+  echo $this->siteHeader();
   $core = rtrim($_SERVER['DOCUMENT_ROOT'] . '/', '\\/') . '/core/application/views/' . $this->controller . '/' . ($this->controller == 'error' ? 'index' : $this->action->alias) . '.php';
-  $www  = preg_replace('/www(\/application)/', 'core$1', $core);
+  $www  = preg_replace('/core(\/application)/', 'www$1', $core);
   include(is_file($www) ? $www : $core);
-	echo $this->siteFooter();                
+  echo $this->siteFooter();
 ?>
 </body>
 </html>

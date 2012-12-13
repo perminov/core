@@ -18,7 +18,7 @@ class Admin_EnumsetController extends Indi_Controller_Admin{
 					`alias` = "' . $defaultValue . '",
 					`title` = "Укажите наименование для значения по умолчанию - \'' . $defaultValue . '\'"';
 				$this->db->query($query);
-				d($query);
+				//d($query);
 			}
 			$query  = 'ALTER TABLE `' . $this->trail->getItem(2)->row->table . '` ';
 			$query .= 'CHANGE `' . $this->trail->getItem(1)->row->alias . '` `' . $this->trail->getItem(1)->row->alias . '` ';
@@ -27,11 +27,11 @@ class Admin_EnumsetController extends Indi_Controller_Admin{
 			$query .= ' CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ';
 			$query .= (($type == 'ENUM' || ($type == 'SET' && $defaultValue != '')) ? 'DEFAULT ' . "'" . $defaultValue . "'" : '');
 			$this->db->query($query);
-			d($query);
+			//d($query);
 			if (trim($columnTypeRow->type) != $type && strpos($columnTypeRow->type, 'ENUM') !== false) {
 				$query = 'UPDATE `field` SET `columnTypeId` = (SELECT `id` FROM `columnType` WHERE `type`="ENUM" LIMIT 1) WHERE `id` = "' . $this->trail->getItem(1)->row->id . '"';
 				$this->db->query($query);
-				d($query);
+				//d($query);
 			}
 		}
 	}
