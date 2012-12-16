@@ -28,6 +28,17 @@ class Indi_Uri {
 			}
 		}
 
+		if ($params['module'] != 'admin') {
+			$fsectionM = Misc::loadModel('Fsection');
+			$fsectionA = $fsectionM->fetchAll('`alias` IN ("' . $params['section'] . '", "static")', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',static")')->toArray();
+			if ($fsectionA[0]['alias'] == 'static') {
+				$staticA = Misc::loadModel('Staticpage')->fetchAll('`alias` IN ("' . $params['section'] . '", "404") AND `toggle` = "y"')->toArray();
+				$params['section'] = 'static';
+				$params['action'] = 'details';
+				$params['id'] = $staticA[0]['id'];
+			}
+		}
+
 		$controllerClassName = ($params['module'] == 'front' ? '' : $params['module'] . '_') . ucfirst($params['section']) . 'Controller';
 		if (!class_exists($controllerClassName)) {
 			eval('class ' . ucfirst($controllerClassName) . ' extends Indi_Controller_' . ($params['module'] == 'front' ? 'Front' : 'Admin') . '{}');

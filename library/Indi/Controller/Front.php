@@ -496,7 +496,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		if ($GLOBALS['enableSeoUrls'] == 'true') $out = Indi_Uri::sys2seo($out);
 		$out = $this->subdomainMaintenance($out);
 		$out = $this->httpsMaintenance($out);
-		//echo mt();
+		if (isset($this->get['p']))echo mt();
         die($out);
 	}
 	public function getOrder($orderById, $dir, $condition = null){
