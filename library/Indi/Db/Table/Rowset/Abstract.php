@@ -230,8 +230,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
 	{
 		$offset = (int) $offset;
 		if ($offset < 0 || $offset >= $this->_count) {
-			require_once 'Indi/Db/Table/Rowset/Exception.php';
-			throw new Indi_Db_Table_Rowset_Exception("Illegal index $offset");
+			throw new Exception("Illegal index $offset");
 		}
 		$this->_pointer = $offset;
 

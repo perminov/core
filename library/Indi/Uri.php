@@ -1,8 +1,8 @@
 <?php
 class Indi_Uri {
 	public function dispatch(){
-
 		$this->preDispatch();
+
 		$uri = parse_url('http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
 		$uri = explode('/', trim($uri['path'], '/'));
 
@@ -21,8 +21,10 @@ class Indi_Uri {
 			} else if ($i == 1) {
 				$params['action'] = $uri[$i];
 			} else if (count($uri) > $i) {
-				$params[$uri[$i]] = $uri[$i + 1];
-				$i++;
+				if ($uri[$i]) {
+					$params[$uri[$i]] = $uri[$i + 1];
+					$i++;
+				}
 			}
 		}
 
@@ -61,6 +63,7 @@ class Indi_Uri {
 	public function checkSeoUrlsMode(){
 		list($first) = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 		if ($first != 'admin') {
+			$this->setDbCacheUsageIfNeed();
 			$this->adjustUriIfSubdomain();
 			$GLOBALS['enableSeoUrls'] = current(Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "enableSeoUrls"')->fetch());
 			if ($GLOBALS['enableSeoUrls'] == 'true') $_SERVER['REQUEST_URI'] = $this->seo2sys($_SERVER['REQUEST_URI']);
@@ -80,6 +83,12 @@ class Indi_Uri {
 		}
 		Indi_Registry::set('subdomains', $subdomainsArray);
 		Indi_Registry::set('subdomain', $subdomain);
+	}
+
+	public function setDbCacheUsageIfNeed(){
+		$useCache = Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "useCache"')->fetch();
+		Indi_Db::$useCache = !(!is_array($useCache) || current($useCache) != 'true');
+		Indi_Cache::load();
 	}
 
 	public function seo2sys($seo){
