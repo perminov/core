@@ -15,6 +15,15 @@ class Indi_Db {
 	protected static $_pdo = null;
 
 	/**
+	 * Store queries count
+	 *
+	 * @var Indi_Db
+	 */
+	protected static $queryCount = 0;
+
+	public static $useCache = false;
+
+	/**
 	 * @static
 	 * @param array $config
 	 * @return null|Indi_Db
@@ -25,12 +34,32 @@ class Indi_Db {
 			self::$_instance = new self();
 			self::$_pdo = new PDO($config->adapter . ':dbname=' . $config->dbname . ';host=' . $config->host, $config->username, $config->password);
 		}
-
 		return self::$_instance;
+	}
+
+	public function shouldUseCache($sql) {
+		$sql = preg_replace("/\n/", " ", $sql);
+		preg_match('/^SELECT (.*) FROM `(.*)` +WHERE(.*)$/', $sql, $matches);
+		if (in_array($matches[2], array(
+			"entity","field", "fsection","orderBy",
+			"dependentCount","joinFk","dependentRowset",
+			"faction","fsection2faction","independentRowset",
+			"joinFkForIndependentRowset","joinFkForDependentRowset",
+			"dependentCountForDependentRowset","fconfig","seoTitle",
+			"seoKeyword","seoDescription"
+								  ))) {
+			if (file_exists(Indi_Cache::fname(ucfirst($matches[2])))) {
+				return $matches;
+			}
+		}
+		return false;
 	}
 
 	public function query($sql) {
 		$sql = trim($sql);
+		if (Indi_Db::$useCache == true && $params = self::shouldUseCache($sql)) {
+			return Indi_Cache::fetcher($params);
+		}
 		if (preg_match('/^UPDATE|DELETE/', $sql)) {
 			$affected = self::$_pdo->exec($sql);
 			if ($affected === false) {

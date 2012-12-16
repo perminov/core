@@ -380,6 +380,9 @@ class Indi_Controller_Admin extends Indi_Controller{
             die();
             throw new Exception('Cannot save into "' . $this->section->foreignRows->entityId->table . '" table');
         }
+
+		$this->updateCacheIfNeed();
+
 		$this->postSave();
         if ($redirect) {
             if ($this->trail->getItem(1)->row) {
@@ -946,4 +949,35 @@ class Indi_Controller_Admin extends Indi_Controller{
             $this->view->assign('only',true);
         }
     }
+
+	public function updateCacheIfNeed(){
+		// Get table name
+		$table = $this->trail->getItem()->model->info('name');
+
+		if ($table == 'entity') {
+			// Сколько было кэшей в списке
+			$tablesName = Indi_Cache::fname('tables');
+			require_once($tablesName);
+			$was = $GLOBALS['cache']['tables'];
+			// Сколько должно теперь быть
+			$rs = $this->db->query('SELECT `table` FROM `entity` WHERE `useCache` = "1"')->fetchAll();
+			foreach ($rs as $r) $now[] = $r['table'];
+			// Генерим дополнительные файлы кэша, если нужно
+			$add = array_diff($now, $was);
+			foreach ($add as $new) Indi_Cache::update(ucfirst($new));
+			// Удаляем старые файлы кэша, елси нужно
+			$rem = array_diff($was, $now);
+			foreach ($rem as $del) unlink(Indi_Cache::fname(ucfirst($del)));
+			// Обновляем кэш списка кэшей
+			$php = '<?php $GLOBALS["cache"]["tables"] = array("' . implode('","', $now) . '");';
+			$fp = fopen($tablesName, 'w');
+			fwrite($fp, $php);
+			fclose($fp);
+		}
+
+		// Update cache if need
+		if (Misc::loadModel('Entity')->fetchRow('`table` = "' . $table .'" AND `system` = "y"')->useCache) {
+			Indi_Cache::update(get_class($this->trail->getItem()->model));
+		}
+	}
 }

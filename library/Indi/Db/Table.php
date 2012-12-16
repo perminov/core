@@ -238,7 +238,7 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 			if (!is_null($page)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
 		}
 
-		$sql = 'SELECT ' . $calcFoundRows . '* FROM `' . $this->_name . '`'
+		$sql = 'SELECT ' . ($limit ? $calcFoundRows : '') . '* FROM `' . $this->_name . '`'
 				. ($where ? ' WHERE ' . $where : '')
 				. ($order ? ' ORDER BY ' . $order : '')
 				. ($limit ? ' LIMIT ' . $limit : '');
@@ -248,7 +248,7 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 			'table'   => $this,
 			'data'     => $data,
 			'rowClass' => $this->_rowClass,
-			'foundRows'=> current(self::$_defaultDb->query('SELECT FOUND_ROWS()')->fetch())
+			'foundRows'=> $limit ? current(self::$_defaultDb->query('SELECT FOUND_ROWS()')->fetch()) : count($data)
 		);
 		if ($special) d($sql . "\n", 'a');
 		return new $this->_rowsetClass($data);

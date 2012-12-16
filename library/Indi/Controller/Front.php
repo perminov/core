@@ -34,7 +34,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		Indi_Registry::set('request', $this->params);
 		// Определяем текущее действие, ищем его в базе
 		$this->action = Misc::loadModel('Faction')->fetchRow('`alias` = "' . $this->action . '"');
-		if(!Misc::loadModel('Fsection2faction')->fetchRow('`fsectionid` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"')) {
+		if(!Misc::loadModel('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"')) {
 			$this->action = null;
 		}
 		$this->view->action = $this->action;
@@ -496,7 +496,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		if ($GLOBALS['enableSeoUrls'] == 'true') $out = Indi_Uri::sys2seo($out);
 		$out = $this->subdomainMaintenance($out);
 		$out = $this->httpsMaintenance($out);
-		//echo mt();
+		if (isset($this->get['p']))echo mt();
         die($out);
 	}
 	public function getOrder($orderById, $dir, $condition = null){

@@ -362,7 +362,7 @@ class Misc
 					require($modelFilePath2);
 			} else {
 
-				$entityRow = Entity::getInstance()->fetchRow('`table` = "' . strtolower($modelClassName) . '"');
+				$entityRow = Entity::getInstance()->fetchRow('`table` = "' . lcfirst($modelClassName) . '"');
 				if ($entityRow) {
 					$extends = $entityRow->extends ? $entityRow->extends : 'Indi_Db_Table';
 					eval('class ' . $modelClassName . ' extends ' . $extends . '{}');
