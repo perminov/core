@@ -172,9 +172,6 @@ class Indi_Controller{
     {
 	}
 
-    public function index1Action()
-    {
-    }
     public function modifyRowsetCondition($condition)
     {
         return $condition;
