@@ -62,7 +62,7 @@ class Indi_Uri {
 	public function setCookieDomain(){
 		$config = Indi_Registry::get('config');
 		$domain = $config['general']->domain;
-		ini_set('session.cookie_domain', (strpos($domain, '.') === false ? '' : '.') . $domain);
+		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
 	}
 
 	public function startSession() {
