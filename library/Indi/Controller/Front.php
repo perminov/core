@@ -1,24 +1,13 @@
 <?php
 class Indi_Controller_Front extends Indi_Controller{
-	public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
-	public $datePattern = "/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/";
-	public $urlPattern = "/^\b([\d\w\.\/\+\-\?\:]*)((ht|f)tp(s|)\:\/\/|[\d\d\d|\d\d]\.[\d\d\d|\d\d]\.|www\.|\.tv|\.ac|\.com|\.edu|\.gov|\.int|\.mil|\.net|\.org|\.biz|\.info|\.name|\.pro|\.museum|\.co|\.ru)([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;\b]*)$/";
 	public function preDispatch(){
+		parent::preDispatch();
+		// Для XHR
 		header('Access-Control-Allow-Origin: *');
+		
 		// Фильтруем POST
 		$this->post = filter($this->post);
-		// Делаем паттерны видимыми во view
-		$this->view->patterns = array('email' => $this->emailPattern, 'date' => $this->datePattern, 'url' => $this->urlPattern);
-
-		$config = Indi_Registry::get('config');
-		$this->domain = $config['general']->domain;
-		$this->view->domain = $this->domain;
-		define('I', 'i');
-		if (!$_SESSION['userId'] && substr($this->controller, 0, 2) == 'my') {
-			header('Location: http://' . $this->domain);
-			die();
-		}
-		parent::preDispatch();
+		
 		// Определяем текущий раздел, ищем его в базе
 		$this->section = Misc::loadModel('Fsection')->fetchRow('`alias` = "' . $this->controller . '"');
 		$this->view->section = $this->section;
@@ -32,12 +21,14 @@ class Indi_Controller_Front extends Indi_Controller{
 			}
 		}
 		Indi_Registry::set('request', $this->params);
+		
 		// Определяем текущее действие, ищем его в базе
 		$this->action = Misc::loadModel('Faction')->fetchRow('`alias` = "' . $this->action . '"');
 		if(!Misc::loadModel('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"')) {
 			$this->action = null;
 		}
 		$this->view->action = $this->action;
+		
 		// Трейл
 		$this->trail = new Indi_Trail_Frontend($this->section->alias, $this->identifier, $this->action->alias, null, $this->params);
 
@@ -46,426 +37,22 @@ class Indi_Controller_Front extends Indi_Controller{
 		// данные о том, какие  зависимые количества, зависимые множества и записи - соответствующие внешним
 		// ключам, нужно автоматически выташить
 		$this->section2action = Misc::loadModel('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"');
-		
 		// Для хэлперов seoTitle, seoKeywords и seoDescription
 		$this->view->section2actionId = $this->section2action->id;
+
 		// Если к разделу прикреплена сущность, то назначаем текущаю модель, соответствующую этой сущности
 		if ($this->section->entityId) $this->model = Misc::loadModel(ucfirst($this->section->getForeignRowByForeignKey('entityId')->table));
 
-		// Таймстамп для xml-конфигов flash-карт
-		$this->view->xmlTimestamp = Misc::loadModel('Fconfig')->fetchRow('`alias` = "xmlTimestamp"')->value;
-
-		// попытка авторизации
-		if ($this->post['login']) $this->loginAttempt();
-		// попытка восстановления пароля
-		if ($this->post['recovery']) $this->recoveryAttempt();
-		// попытка регистрации
-		if ($this->post['register']) $this->registerAttempt();
-		// попытка подписки
-		if ($this->post['subscribe']) $this->subscribeAttempt();
-		// попытка смены пароля
-		if ($this->post['changePassword']) $this->passwordAttempt();
-		// корректировка rowsetParams
-		if ($this->post['rowsetParams']) $this->rowsetParams();
-		// попытка авторизации через вконтакте
-		if ($this->post['authType'] == 'vk') $this->vkAuthAttempt();
-		// попытка авторизации через facebook
-		if ($this->post['authType'] == 'fb') $this->fbAuthAttempt();
-		// попытка авторизации через my.mail.ru
-		if ($this->post['authType'] == 'mm') $this->mmAuthAttempt();
 		// Стандартные задачи
 		$this->preMaintenance();
 		$this->maintenance();
 
-		// Если ли у пользователя непрочитанные сообщения
-		if ($_SESSION['userId']){
-			$this->view->newMessages = Misc::loadModel('Message')->useDefaultFetchMethod()->fetchAll('`userId` = "' . $_SESSION['userId'] . '" AND `read` = "n" AND `deletedByReceiver`="n"')->count();
-		}
-		
-		$this->view->request = $this->params();
-	}
-	public function vkAuthAttempt(){
-		if ($user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['params'][0]['uid'] . '" AND `sn`="vk"')) {
-			$_SESSION['userId'] = $user->id;
-			$_SESSION['nick'] = $user->title;
-			$_SESSION['sn'] = 'vkontakte';
-			$user->lastVisit = date('Y-m-d H:i:s');
-			$user->save();
-			die('window.location.reload();');
-		} else {
-			i($this->post);
-			$this->post = $this->post['params'][0];
-			$user = Misc::loadModel('User')->createRow();
-			$user->identifier = $this->post['uid'];
-			$user->sn = 'vk';
-			$user->email = $this->post['uid'] . '@vk.com';
-			$user->name = $this->post['first_name'];
-			$user->surname = $this->post['last_name'];
-			$user->title = $this->post['nickname'];
-			$gender = array('n', 'f', 'm');
-			$user->gender = $gender[$this->post['sex']];
-			list($day, $month, $year) = explode('.', $this->post['bdate']);
-			$user->birth = ($day && $month && $year) ? date('Y-m-d', mkdate(0,0,0, $month, $day, $year)) : '0000-00-00';
-			$user->registration = date('Y-m-d');
-			if ($this->post['countryTitle']) {
-				if ($countryId = Misc::loadModel('Country')->fetchRow('`title` = "' . $this->post['countryTitle'] . '"')->id) {
-					$user->countryId = $countryId;
-					if ($this->post['cityTitle']) {
-						$user->city = $this->post['cityTitle'] . ', ' . $this->post['countryTitle'];
-						if ($cityId = Misc::loadModel('City')->fetchRow('`title` = "' . $this->post['cityTitle'] . '"')->id){
-							$user->cityId = $cityId;
-						}
-					}
-				}
-			}
-			$user->lastVisit = date('Y-m-d H:i:s');
-			$user->style = 'e';
-			$user->activated = 1;
-			$user->activationCode = Misc::generateRandomSequence();
-			$user->notifyPm = 0;
-			$user->notifyAnswer = 0;
-			$user->save();
-			$user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['uid'] . '" AND `sn` = "vk"');
-			if ($this->post['photo_big']) {
-				Indi_Image::getEntityImageByUrl($this->post['photo_big'], 'user', $user->id, 'avatar', array('type'=>'image'));
-			}
-			$_SESSION['userId'] = $user->id;
-			$_SESSION['nick'] = $user->title;
-			$_SESSION['sn'] = 'vkontakte';
-			die('window.location.reload();');
-		}
-		d($this->post);
-		die();
-	}
-	public function fbAuthAttempt(){
-//		d($this->post);
-//		die();
-		if ($user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['params']['id'] . '" AND `sn`="fb"')) {
-			$_SESSION['userId'] = $user->id;
-			$_SESSION['nick'] = $user->title;
-			$_SESSION['sn'] = 'facebook';
-			$user->lastVisit = date('Y-m-d H:i:s');
-			$user->save();
-			die('window.location.reload();');
-		} else {
-			$this->post = $this->post['params'];
-			$user = Misc::loadModel('User')->createRow();
-			$user->identifier = $this->post['id'];
-			$user->sn = 'fb';
-			$user->name = $this->post['first_name'];
-			$user->email = $this->post['email'];
-			$user->surname = $this->post['last_name'];
-			$user->title = $this->post['name'];
-			$user->gender = substr($this->post['gender'], 0, 1);
-//			list($day, $month, $year) = explode('.', $this->post['bdate']);
-//			$user->birth = ($day && $month && $year) ? date('Y-m-d', mkdate(0,0,0, $month, $day, $year)) : '0000-00-00';
-			$user->birth = '0000-00-00';
-			$user->registration = date('Y-m-d');
-			$location = explode(', ', $this->post['location']['name']);
-			if ($cityTitle = str_replace('г. ', '', $location[0])) {
-				if ($city = Misc::loadModel('City')->fetchRow('`title` = "' . $cityTitle . '"')){
-					$user->cityId = $city->id;
-					$user->countryId = $city->countryId;
-					$countryTitle = Misc::loadModel('Country')->fetchRow('`id` = "' . $city->countryId . '"')->title;
-					$user->city = $cityTitle . ', ' . $countryTitle;
-				}
-			}
-			$user->lastVisit = date('Y-m-d H:i:s');
-			$user->style = 'e';
-			$user->activated = 1;
-			$user->activationCode = Misc::generateRandomSequence();
-			$user->notifyPm = 0;
-			$user->notifyAnswer = 0;
-			$user->save();
-			$user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['id'] . '" AND `sn` = "fb"');
-			Indi_Image::getEntityImageByUrl('http://graph.facebook.com/' . $this->post['id'] . '/picture?type=large&ext.jpg', 'user', $user->id, 'avatar');
-			$_SESSION['userId'] = $user->id;
-			$_SESSION['nick'] = $user->title;
-			$_SESSION['sn'] = 'facebook';
-			die('window.location.reload();');
-		}
-	}
-	public function mmAuthAttempt(){
-		if ($user = Misc::loadModel('User')->fetchRow('`identifier` = "' . $this->post['params']['uid'] . '" AND `sn`="mm"')) {
-			$_SESSION['userId'] = $user->id;
-			$_SESSION['nick'] = $user->title;
-			$_SESSION['sn'] = 'mymailru';
-			$user->lastVisit = date('Y-m-d H:i:s');
-			$user->save();
-		} else {
-			$this->post = $this->post['params'];
-			$user = Misc::loadModel('User')->createRow();
-			$user->identifier = $this->post['uid'];
-			$user->sn = 'mm';
-			$user->name = $this->post['first_name'];
-			$user->surname = $this->post['last_name'];
-			$user->title = $this->post['nick'];
-			$user->email = $this->post['email'];
-			$user->gender = $this->post['sex'] ? 'f' : 'm';
-			$user->birth = implode('-', array_reverse(explode('.', $this->post['birthday'])));
-			$user->registration = date('Y-m-d');
-			if ($this->post['location']) {
-/*				if ($cityTitle = str_replace('г. ', '', $location[0])) {
-					if ($city = Misc::loadModel('City')->fetchRow('`title` = "' . $cityTitle . '"')){
-						$user->cityId = $city->id;
-						$user->countryId = $city->countryId;
-						$countryTitle = Misc::loadModel('Country')->fetchRow('`id` = "' . $city->countryId . '"')->title;
-						$user->city = $cityTitle . ', ' . $countryTitle;
-					}
-				}*/
-			}
-			$user->lastVisit = date('Y-m-d H:i:s');
-			$user->style = 'e';
-			$user->activated = 1;
-			$user->activationCode = Misc::generateRandomSequence();
-			$user->notifyPm = 0;
-			$user->notifyAnswer = 0;
-			$user->save();
-			if ($this->post['has_pic']) Indi_Image::getEntityImageByUrl($this->post['pic_big'] . '&ext.jpg', 'user', $user->id, 'avatar');
-			$_SESSION['userId'] = $user->id;
-			$_SESSION['nick'] = $user->title;
-			$_SESSION['sn'] = 'mymailru';
-		}
-		die('window.location.reload();');
-	}
-	public function loginAttempt(){
-		if (!$this->post['justReload']) {
-			if (!$this->post['title']) {
-				$error['title'] = 'Укажите Ваш логин';
-			} else if (!$this->post['password']) {
-				$error['password'] = 'Введите пароль';
-			} else if (!($user = Misc::loadModel('User')->fetchRow('`title` = "' . $this->post['title'] . '"'))){
-				$error['title'] = 'Неправильный логин';
-			} else if ($user->password != $this->post['password']) {
-				$error['password'] = 'Неправильный пароль';
-			} else if (!$user->activated) {
-				$error['password'] = 'Вы еще не активировали Ваш аккаунт';
-			}
-			if ($error) {
-				$this->view->error = $error;
-				$this->view->post = $this->post;
-				echo $this->view->loginPopup();
-				die();
-			} else {
-				if ($this->post['remember']) {
-					setcookie('login', $user->title, time()+60*60*24*30*2, '/');
-					setcookie('password', $user->password, time()+60*60*24*30*2, '/');
-				} else {
-					unset($_COOKIE['login']);
-					unset($_COOKIE['password']);
-					setcookie('login', null, -1, '/');
-					setcookie('password', null, -1, '/');
-				}
-				$_SESSION['userId'] = $user->id;
-				$_SESSION['nick'] = $user->title;
-				$user->lastVisit = date('Y-m-d H:i:s');
-				$user->save();
-				echo '
-				<script>
-					$("#modal").hide();
-					$("#authDepending").load("/index/entered/");
-					$("#oldsubmit").hide();
-					$("#newsubmit").show();
-					$("#review-submit").removeClass("login-link3").attr("onclick","checkForm()");
-					';
-				if ($this->section->alias == 'posts') {
-					echo '$("#new-message-div").load("./auth/1/part/md/");';
-					echo '$("#new-reply-script").load("./auth/1/part/rs/");';
-					echo '$(".new-message-button").css("display","block");';
-				} else if ($this->section->alias == 'topics') {
-					echo '$("#new-topic-button").css({"color": "white", "display": "block"});';
-					echo '$(".guest-text").css("display","none");';
-					echo '$("#forumFooter").load("/forum/footer/");';
-				} else if ($this->section->alias == 'forum') {
-					echo '$("#forumFooter").load("/forum/footer/");';
-				} else if ($this->section->alias == 'articles' && $this->action->alias == 'details') {
-					echo '$("#new-comment").load("/articles/newcomment/")';
-				}
-				echo '
-				</script>';
-				die();
-			}
-		}
-		echo $this->view->loginPopup();
-		die();
-	}
-	public function recoveryAttempt(){
-		if (!$this->post['justReload']) {
-			if (!$this->post['email']) {
-				$error['email'] = 'Укажите Ваш E-mail';
-			} else if (!preg_match($this->emailPattern, $this->post['email'])) {
-				$error['email'] = 'Неправильный формат';
-	/*		} else if (!$this->post['birth']) {
-				$error['birth'] = 'Укажите дату рождения';
-			} else if (!preg_match($this->datePattern, $this->post['birth'])) {
-				$error['birth'] = 'Укажите дату в формате гггг-мм-дд'; */
-			} else if (!$this->post['captcha']) {
-				$error['captcha'] = 'Введите код с картинки';
-			} else if ($this->post['captcha'] != $_SESSION['recovery']) {
-				$error['captcha'] = 'Неправильный код';
-	/*		} else if (!($user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '" AND `birth` = "' . $this->post['birth'] . '"'))){
-				$error['email'] = 'Сочетания Email и даты рождения не найдены';*/
-			} else if (!($user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"'))){
-				$error['email'] = 'Пользователь с таким email не зарегистрирован';
-			}
-			if ($error) {
-				$this->view->error = $error;
-				$this->view->post = $this->post;
-			} else {
-				$subject = 'Ваш забытый пароль к аккаунту на сайте ТуроПлан.ru';
-				$message = $this->view->mailRecovery($user);
-
-//				$ok = Misc::mail($user->email, iconv('UTF-8','KOI8-R', 'Туроплан <info@turoplan.ru>'), iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message));
-				$ok = mail($user->email, iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message), iconv('UTF-8','KOI8-R', 'From: Туроплан <info@turoplan.ru>' . "\r\n" . 'Content-Type: text/html; charset=koi8-r' . "\r\n" . 'Content-Length: ' . strlen($message)));
-				$this->view->result = 'Ваш пароль был выслан на указанный адрес электронной почты';
-				$this->view->post = array('recovery' => true);// = $this->post;
-			}
-		}
-		echo $this->view->recoveryPopup();
-		die();
-	}
-	public function registerAttempt(){
-		if (!$this->post['justReload']) {
-			if (!trim($this->post['title'])) {
-				$error['title'] = 'Укажите Ваш логин';
-			} else if (strlen(iconv('UTF-8', 'WINDOWS-1251', trim($this->post['title']))) < 3) {
-				$error['title'] = 'Логин должен быть не менее 3-х символов';
-			} else if (strlen(iconv('UTF-8', 'WINDOWS-1251', trim($this->post['title']))) > 20) {
-				$error['title'] = 'Логин должен быть не более 20-ти символов';
-			} else if (Misc::loadModel('User')->fetchRow('`title` = "' . str_replace(array('#','"'), array('','&quot;'), strip_tags($this->post['title'])) . '"')) {
-				$error['title'] = 'Этот логин уже занят';
-			} else if (!$this->post['email']) {
-				$error['email'] = 'Укажите Ваш E-mail';
-			} else if (!preg_match($this->emailPattern, $this->post['email'])) {
-				$error['email'] = 'Неправильный формат';
-			} else if (Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"')) {
-				$error['email'] = 'Этот E-mail уже используется';
-			} else if (!$this->post['city'] || !$this->post['cityId']) {
-				$error['city'] = 'Укажите Ваш город';
-			} else if (!trim($this->post['password'])) {
-				$error['password'] = 'Введите пароль';
-			} else if (strlen($this->post['password']) < 6) {
-				$error['password'] = 'Пароль должен быть не менее 6-х символов';
-			} else if (!$this->post['passwordConfirm']) {
-				$error['passwordConfirm'] = 'Подтвердите пароль';
-			} else if ($this->post['passwordConfirm'] != $this->post['password']) {
-				$error['passwordConfirm'] = 'Пароли не совпадают';
-			} else if (!trim($this->post['captcha'])) {
-				$error['captcha'] = 'Введите код с картинки';
-			} else if ($this->post['captcha'] != $_SESSION['register']) {
-				$error['captcha'] = 'Неправильный код';
-			} else if (!$this->post['agreement'] || $this->post['agreement'] == 'false') {
-//				d($this->post);
-				$error['agreement'] = 'Подтвердите';
-			}
-			if ($error) {
-				$this->view->error = $error;
-				$this->view->post = $this->post;
-			} else {
-				$activationCode = Misc::generateRandomSequence();
-				$user = Misc::loadModel('User')->createRow();
-				$user->title = $this->post['title'];
-				$user->email = $this->post['email'];
-				$user->city = $this->post['city'];
-				$user->cityId = $this->post['cityId'];
-				if (!$user->cityId) $user->cityId = 0;
-				$user->countryId = Misc::loadModel('City')->fetchRow('`id` = "' . $this->post['cityId'] . '"')->countryId;
-				if (!$user->countryId) $user->countryId = 0;
-				$user->password = $this->post['password'];
-				$user->registration = date('Y-m-d');
-				$user->lastVisit = date('Y-m-d');
-				$user->activationCode = $activationCode;
-				$user->save();
-				$user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"');
-
-				$subject = 'Вы успешно зарегистрировались на сайте ТуроПлан.ru';
-				$message = $this->view->mailRegistration($user);
-				@mail($user->email, iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message), iconv('UTF-8','KOI8-R', 'From: Туроплан <info@turoplan.ru>' . "\r\n" . 'Content-Type: text/html; charset=koi8-r' . "\r\n" . 'Content-Length: ' . strlen($message)));
-				$_SESSION['naUserId'] = $user->id;
-				//$_SESSION['nick'] = $user->title;
-				$this->view->result = 'Вы успешно зарегистрировались на сайте ТуроПлан.ru.';
-				$this->view->post = array('register' => true);
-			}
-		}
-		echo $this->view->registerPopup();
-		die();
-	}	
-	
-	public function subscribeAttempt(){
-		$required = array('email');
-		// проверка ввода
-		if (!$this->post['email'] || $this->post['email'] == 'Введите Ваш E-mail...') {
-			$error = 'Укажите Ваш E-mail';
-
-		// проверка формата
-		} else if(!preg_match($this->emailPattern, $this->post['email'], $regs)){
-			$error = 'Введенный Вами E-mail имеет неправильный формат';
-
-		// проверка не существует ли уже в базе подписчиков
-		} else if (Misc::loadModel('Subscriber')->fetchRow('`title` = "' . $regs[0] . '"')) {
-			$error = 'Введенный Вами E-mail уже присутствует среди подписчиков';
-		}
-		if (!$error) {
-			$query = 'INSERT INTO `subscriber` SET';
-			$set = array();
-			$save = array('email');
-			$this->post['date'] = date('Y-m-d');
-			foreach ($this->post as $field => $value) {
-				if (in_array($field, $save)) {
-					if ($field == 'email') $field = 'title';
-					$set[] = '`' . $field . '` = "' . str_replace('"', '&quot;', strip_tags($value)) . '"';
-				}
-			}
-			$set[] = '`date` = CURDATE()';
-			$query .= implode(', ', $set);
-			$this->db->query($query);
-			if ($user = Misc::loadModel('User')->fetchRow('`email` = "' . $this->post['email'] . '"')) {
-				$user->subscribed = 1;
-				$user->save();
-			}
-			$this->view->resultSubscribe = '<font color="green">Теперь Вы в базе подписчиков</font>';
-			$this->view->successSubscribe = true;
-		} else {
-			$this->view->subscribeError = $error;
-			$this->view->postSubscribe = $this->post;
-		}
-		die($this->view->blockSubscribe($this->view->successSubscribe));
-	}
-	public function passwordAttempt(){
-		if (!$this->post['justReload']) {
-			$user = $user = Misc::loadModel('User')->fetchRow('`id` = "' . $_SESSION['userId'] . '"');
-			if (!$this->post['currentPassword']) {
-				$error['currentPassword'] = 'Укажите текущий пароль';
-			} else if ($user->password != $this->post['currentPassword']) {
-				$error['currentPassword'] = 'Текущий пароль указан неправильно';
-			} else if (!$this->post['newPassword']) {
-				$error['newPassword'] = 'Укажите новый пароль';
-			} else if (!$this->post['newPasswordConfirm']) {
-				$error['newPasswordConfirm'] = 'Подтвердите пароль';
-			} else if ($this->post['newPassword'] != $this->post['newPasswordConfirm']) {
-				$error['newPasswordConfirm'] = 'Пароли не совпадают';
-			}
-			if ($error) {
-				$this->view->error = $error;
-				$this->view->post = $this->post;
-			} else {
-				$user->password = $this->post['newPassword'];
-				$user->save();
-				$subject = 'Ваш новый пароль к аккаунту на сайте ТуроПлан.ru';
-				$message = $this->view->mailPassword($user);
-				@mail($user->email, iconv('UTF-8','KOI8-R', $subject), iconv('UTF-8','KOI8-R', $message), iconv('UTF-8','KOI8-R', 'From: Туроплан <info@turoplan.ru>' . "\r\n" . 'Content-Type: text/html; charset=koi8-r' . "\r\n" . 'Content-Length: ' . strlen($message)));
-				$this->view->result = 'Новый пароль был выслан на Ваш адрес электронной почты';
-				$this->view->post = array('changePassword' => true);
-			}
-		}
-		echo $this->view->passwordPopup();
-		die();
+		$this->view->request = $this->params;
 	}
 	
 	public function postDispatch(){
 		$this->view->section = $this->section;
 		$this->view->indexParams = $_SESSION['indexParams'][$this->section->alias];
-//		d($_SESSION['indexParams'][$this->section->alias]);
 		if ($this->section2action->imposition) $this->view->imposition = $this->section2action->imposition;
 		$this->view->rowset = $this->rowset;
 		if($this->action->alias != 'index' && $this->identifier) $this->view->row = $this->trail->getItem()->row;
@@ -478,6 +65,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->visitors = $this->visitors();
 		$this->view->get = $this->get;
 		if ($this->row) $this->view->row = $this->row;
+		// Если действие обычное
 		if ($this->section2action->type != 'j') {
 			if (!$this->view->action->alias) {
 				$this->view->action = new stdClass();
@@ -485,11 +73,8 @@ class Indi_Controller_Front extends Indi_Controller{
 				$this->view->controller = 'error';
 				$this->view->bodyClass = 'not-found-page';
 			}
-//			if ($_SERVER['REMOTE_ADDR'] == '109.184.137.246') {
-//				$out = $this->view->render('indexm' . ($this->view->imposition ? $this->view->imposition : '') . '.php');           
-//			} else {
-				$out = $this->view->render('index.php');
-//			}
+			$out = $this->view->render('index.php');
+		// Иначе если действие предназначено для обработки XHR, рендерим только вью действия, без хэдэра и футера
 		} else {
 			$out = $this->view->render($this->section->alias . '/' . $this->action->alias . '.php');
 		}
@@ -803,7 +388,6 @@ class Indi_Controller_Front extends Indi_Controller{
 			eval('$this->' . $this->section->index . 'Action();');
 		}
 	}
-	
 	public function setIndependentRowsets(){
 		if ($this->section2action) {
 			$info = $this->section2action->getInfoAboutIndependentCountsToBeGot();
@@ -846,9 +430,6 @@ class Indi_Controller_Front extends Indi_Controller{
 		}
 	}
 	public function __call($action, $arguments) {
-		if($this->action->alias != str_replace('Action','', $action)){
-//			die('asd');
-		}
 	}
 	public function preMaintenance(){
 	}
