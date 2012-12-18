@@ -75,6 +75,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 var row = 'asd';
 Ext.onReady(function general(){
 	var gridWidth = document.getElementById('trail').clientWidth-12;
+	var gridWidth = document.getElementById('trail').clientWidth-12;
 	var gridHeight = document.getElementById('centerTr').clientHeight-130;
 	var <?php echo $this->view->trail->getItem()->section->alias?>Store = new Ext.data.JsonStore({
         root: 'blocks',

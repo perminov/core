@@ -87,6 +87,7 @@ class Indi_Auth{
                 `ac`.`toggle` = 'y' AS `actionToggle`,
                 `sa`.`id` > 0 AS `section2actionExists`,
                 `sa`.`toggle` = 'y' AS `section2actionToggle`,
+                `p`.`title` AS `profile`,
                 POSITION(CONCAT('\'', `p`.`id`, '\'') IN CONCAT('\'', REPLACE(`sa`.`profileIds`, ',', '\',\''), '\'')) > 0 AS `granted`,
 				`s`.`sectionId` as `sectionId`
             FROM `admin` `a` 
@@ -110,6 +111,7 @@ class Indi_Auth{
 			  `a`.`toggle`='y' AS `adminToggle`,
 			  `p`.`id` AS `profileExists`,
 			  `p`.`toggle`='y' AS `profileToggle`,
+              `p`.`title` AS `profile`,
 			  COUNT(`sa`.`sectionId`) > 0 AS `atLeastOneSectionAccessible`
 			FROM `admin` `a` 
 			  LEFT JOIN `profile` `p` ON (`p`.`id` = `a`.`profileId`)
@@ -137,6 +139,7 @@ class Indi_Auth{
                 `ac`.`toggle` = 'y' AS `actionToggle`,
                 `sa`.`id` > 0 AS `section2actionExists`,
                 `sa`.`toggle` = 'y' AS `section2actionToggle`,
+                `p`.`title` AS `profile`,
                 POSITION(CONCAT('\'', `p`.`id`, '\'') IN CONCAT('\'', REPLACE(`sa`.`profileIds`, ',', '\',\''), '\'')) > 0 AS `granted`,
 				`s`.`sectionId` as `sectionId`
             FROM `" . $admin['alternate'] . "` `a` 

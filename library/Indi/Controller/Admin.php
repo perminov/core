@@ -56,9 +56,9 @@ class Indi_Controller_Admin extends Indi_Controller{
 //        $condition = $condition ? ' AND ' . $condition : '';
         
 		// set up info for pagination
-		if (isset($this->post['limit'])) {
-			$this->limit = $this->post['limit'];
-			$this->start = $this->post['start'];
+		if (isset($this->get['limit'])) {
+			$this->limit = $this->get['limit'];
+			$this->start = $this->get['start'];
 		}
 
 		$section = Misc::loadModel('Section');
@@ -684,25 +684,24 @@ class Indi_Controller_Admin extends Indi_Controller{
 			}
 		}
 		
-		$jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data).'})';
-		return $jsonData;
+		$jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
+		return json_encode($jsonData);
 	}
 
 	function setGridTitlesByCustomLogic(&$data){}
 
 	public function getOrderForJsonRowset($condition = null){
+		//$this->get['sort'] = ;
+		if ($this->get['sort']) {
+			$sort = current(json_decode($this->get['sort'], 1));
+			$this->post['sort'] = $sort['property'];
+			$this->post['dir'] = $sort['direction'];
+		}
 //		$this->post['sort'] = 'identifier';
 //		$this->post['dir'] = 'ASC';
 		// get info about columns that will be presented in grid
 		$gridFields = $this->trail->getItem()->gridFields->toArray();
-/*					$fp = fopen($_SERVER['DOCUMENT_ROOT'] . '/www' . "/tmp.txt","w");
-					ob_start();
-					d($order);
-					d($this->post);
-					$out = ob_get_clean();
-					fwrite($fp, $out);
-					fclose($fp);*/
-		
+
 		// check if field (that is to be sorted by) store relation
 		$entityId = false;		
 		for ($i = 0; $i < count($gridFields); $i++) {
@@ -873,7 +872,7 @@ class Indi_Controller_Admin extends Indi_Controller{
     public function assign()
     {
         $section = new Section();
-        $this->view->assign('admin', $this->admin['title']);
+        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
         $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $title = $this->config->project;
