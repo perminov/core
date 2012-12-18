@@ -583,7 +583,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 		// get info about columns that wiil be presented in grid
 		$gridFields = $this->trail->getItem()->gridFields->toArray();
 		$gridFieldsAliases = array('id'); for ($i = 0; $i < count ($gridFields); $i++) $gridFieldsAliases[] = $gridFields[$i]['alias'];
-		
+
 		// get info about all columns that are exists at the present moment in $data
 		$columns = count($data) ? array_keys($data[0]) : array();
 
@@ -683,8 +683,28 @@ class Indi_Controller_Admin extends Indi_Controller{
 				$i++;
 			}
 		}
-		
-		$jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data).'})';
+
+		// Set up grid fields that are not stored in db, such as fileupload field
+		$nonDbGridFieldAliases = array();
+		foreach ($gridFields as $gridField) {
+			if ($gridField['columnTypeId'] == 0) {
+				if ($gridField['elementId'] == 14) {
+					$nonDbGridFieldAliases[] = $gridField['alias'];
+				}
+			}
+		}
+
+		$uploadPath = Indi_Image::getUploadPath();
+		$entity = $this->trail->getItem()->model->info('name');
+		for ($j = 0; $j < count($nonDbGridFieldAliases); $j++) {
+			for($i = 0; $i < count($data); $i++) {
+				$tileGridMode = true;
+				$data[$i][$nonDbGridFieldAliases[$j]] = Indi_View_Helper_Admin_IndexFile::indexFile($nonDbGridFieldAliases[$j], null, true, $entity, $data[$i]['id']);
+			}
+		}
+//		d($nonDbGridFieldAliases);
+
+		$jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data) . '})';
 		return $jsonData;
 	}
 
