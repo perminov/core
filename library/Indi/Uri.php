@@ -99,7 +99,7 @@ class Indi_Uri {
 	public function setDbCacheUsageIfNeed(){
 		$useCache = Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "useCache"')->fetch();
 		Indi_Db::$useCache = !(!is_array($useCache) || current($useCache) != 'true');
-		Indi_Cache::load();
+		if (Indi_Db::$useCache) Indi_Cache::load();
 	}
 
 	public function seo2sys($seo){
