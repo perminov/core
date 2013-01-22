@@ -302,12 +302,16 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 		return $this;
 	}
 
-	public function getOptions($entityId, $fieldAlias, $usedOnly = false) {
+	public function getOptions($entityId = 0, $fieldAlias = '', $usedOnly = false, $where = '') {
 		if ($usedOnly) {
 			$entity = Entity::getInstance()->getModelById($entityId);
-			$used = self::$_defaultDb->query('SELECT DISTINCT `' . $fieldAlias . '` FROM `' . $entity->info('name') . '`')->fetchAll();
+			$used = self::$_defaultDb->query('SELECT DISTINCT `' . $fieldAlias . '` FROM `' . $entity->info('name') . '`' . ($sql ? $sql : ''))->fetchAll();
 			foreach ($used as $use) $distinct[] = current($use);
 			$where = 'FIND_IN_SET(`id`, "' . implode(',', $distinct) . '")';
+		} else if ($where) {
+			if (preg_match('/\$/', $where)) {
+				eval('$where = \'' . $where . '\';');
+			}
 		}
 		$rs = $this->fetchAll($where, '`title`');
 		foreach ($rs as $r) $options[$r->id] = $r->getTitle();

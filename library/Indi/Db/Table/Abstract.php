@@ -129,10 +129,13 @@ abstract class Indi_Db_Table_Abstract {
 		return $info[$key];
 	}
 
-	public function createRow() {
+	public function createRow($input = array()) {
+		foreach ($this->info('cols') as $col) {
+			$data[$col] = $input[$col];
+		}
 		$data = array(
 			'table'   => $this,
-			'data'     => array()
+			'data'     => $data
 		);
 		$rowClass = $this->getRowClass();
 		if (!class_exists($rowClass)) {

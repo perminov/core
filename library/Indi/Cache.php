@@ -1,5 +1,6 @@
 <?php
 class Indi_Cache {
+	public static $useCache;
 	public function update($modelName){
 		$rs = Misc::loadModel($modelName)->fetchAll()->toArray();
 		$fields = array_keys($rs[0]);

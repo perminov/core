@@ -1,7 +1,6 @@
 <?php
 class Indi_View_Helper_FormSelect extends Indi_View_Helper_FormElement{
 	public function formSelect($name = '', $options = array(), $value = 0, $attribs = array()){
-
 		if (isset($attribs['zeroLabel'])){
 			$zeroLabel = $attribs['zeroLabel'];
 			$zero = '%';
@@ -11,13 +10,15 @@ class Indi_View_Helper_FormSelect extends Indi_View_Helper_FormElement{
 		if ($zero) {
 			$html .= '<option value="' . $zero . '">' . $zeroLabel . '</option>';
 		}
-		if (!is_array($options)) {
+		if (!is_array($options) || !count($options)) {
 			$field = Misc::loadModel('Field')->fetchRow('`entityId` = "' . $this->view->section->entityId . '" AND `alias` = "' . $name . '"');
 			$columnType = $field->getForeignRowByForeignKey('columnTypeId')->type;
 			if (strpos($columnType, 'ENUM') !== false || strpos($columnType, 'SET') !== false) {
 				$options = Misc::loadModel('Enumset')->getOptions(null, $field->id);
+			} else {
+				$options = Entity::getModelById($field->relation)->getOptions();
 			}
-			if ($value === null) {
+			if ($value == 0) {
 				$value = $this->view->post[$name];
 				if (!$value) $value = $this->view->row->$name;
 			}

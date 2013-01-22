@@ -11,6 +11,7 @@ class Admin_AuxillaryController extends Indi_Controller
      */
     public function calendarAction()
     {
+		header('Access-Control-Allow-Origin: *');
 		$p = '/js/admin/';
         $out = '        
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">

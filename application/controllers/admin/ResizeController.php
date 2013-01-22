@@ -1,9 +1,14 @@
 <?php
 class Admin_ResizeController extends Indi_Controller_Admin{
 	public function preSave(){
-		$this->was  = $this->row->toArray();
+		if ($this->row) {
+			$this->was  = $this->row->toArray();
+		} else {
+			$this->was = false;
+		}
 	}
 	public function postSave(){
+		if ($this->was == false) return;
 		$this->became = $this->trail->getItem()->model->fetchRow('`id` = "' . $this->identifier . '"')->toArray();
 		unset($this->was['_sectionId']);
 		if ($this->was != $this->became) {
