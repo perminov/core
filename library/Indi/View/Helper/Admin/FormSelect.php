@@ -80,7 +80,7 @@ class Indi_View_Helper_Admin_FormSelect extends Indi_View_Helper_FormElement
         } else {
             // enabled.
             // the surrounding select element first.
-            $xhtml = '<select'
+            $xhtml = '<span class="select"><select'
                    . ' name="' . $this->view->escape($name) . '"'
                    . ' id="' . $this->view->escape($id) . '"';
             if ($attribs['change'] === true) {
@@ -121,7 +121,7 @@ class Indi_View_Helper_Admin_FormSelect extends Indi_View_Helper_FormElement
             // add the options to the xhtml and close the select
             $xhtml .= implode("\n\t", $list) . "\n";
 
-			$selectCloseTag = "</select>";
+			$selectCloseTag = "</select></span>";
 			if (!$attribs['optionsOnly']) {
 				$xhtml = $selectOpenTag . $xhtml . $selectCloseTag;
 				if ($field->satellite) {

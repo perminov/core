@@ -39,28 +39,30 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
             // else value is set to first in valies list
             $value = $value ? $value : $default;
         }
-        $xhtml = '';
+        $xhtml = '<field><input type="hidden" name="' . $name . '" id="' . $name . '">';
         for ($i = 0; $i < count($values); $i++) {
 			if ($values[$i] == $value) {
 				$checked = ' checked="checked"';
 				$checkedIndex = $i;
 			} else {
 				$checked = '';
-				$uncheckedIndex = $i;
 			}
-//			$checked = $values[$i] == $value ? ' checked="checked"' : '';
-//          $id = ' id="' . $name . ucwords($values[$i]) . $add .'"';
 
 			$id = ' id="' . $name . ucwords($values[$i]) .'"';
-//            $label = '<label for="' . $name . ucwords($values[$i]) . $add .'" id="' . $name . ucwords($values[$i]) . $add . 'Label">' . $texts[$i] . '</label>&nbsp;';
-            $label = '<label for="' . $name . ucwords($values[$i]) .'" id="' . $name . ucwords($values[$i]) . 'Label">' . $texts[$i] . '</label>&nbsp;';
-            $xhtml .= '<input style= "width:13px; height: 12px;" type="radio" name="' . $name . '" value="' . $values[$i] . '" ' . $checked . $id . (is_array($attrib) ? $attrib[$i] : $attrib) .  ' ' . $add . '>' . $label . '<br>';
-			if ($checked) {
-//				$xhtml .= '<script>$(document).ready(function(){ $("#' . $name . ucwords($values[$i]) . '").click()})</script>';
-			}
+            $label = '<label id="' . $name . ucwords($values[$i]) . 'Label">' . $texts[$i] . '</label>&nbsp;';
+//            $xhtml .= '<span class="radio"><input style= "width:13px; " type="radio" name="' . $name . '" value="' . $values[$i] . '" ' . $checked . $id . (is_array($attrib) ? $attrib[$i] : $attrib) .  ' ' . $add . '>' . $label . '</span>';
+            $xhtml .= '<span class="radio' . ($checked?' checked':'') . '" val="' . $values[$i] . '" type="radio" ' . $checked . $id . (is_array($attrib) ? $attrib[$i] : $attrib) .  ' ' . $add . '>' . $label . '</span>';
 		}
-//		$xhtml .= '<script>$(function(){ $("#' . $name . ucwords($values[$uncheckedIndex]) . '").click()})</script>';
-		$xhtml .= '<script>$(function(){ $("#' . $name . ucwords($values[$checkedIndex]) . '").click()})</script>';
+		$xhtml .= '<js>
+		$("span.radio").click(function(){
+			$(this).parent().find("input").val($(this).attr("val"));
+			$(this).parent().find("span.radio").removeAttr("checked").removeClass("checked");
+			$(this).attr("checked", "checked").addClass("checked");
+
+		});
+		</js>';
+		$xhtml .= '<js>$(function(){ $("#' . $name . ucwords($values[$checkedIndex]) . '").click()})</js>';
+		$xhtml .= '</field>';
         return $xhtml;
     }
 }

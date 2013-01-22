@@ -33,23 +33,41 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$types = array('image' => 'gif,png,jpg', 'flash' => 'swf', 'video' => 'avi,mpg,mp4,3gp');
 			$info = pathinfo($file);
 			foreach ($types as $type => $extensions) if (in_array($info['extension'], explode(',', $extensions))) break;
+			$xhtml = '<field>';
 			switch ($type) {
 				case 'image':
-					$xhtml = $this->view->image($entity, $id, $name, $copy, $silence) . '<br>';
+					$uploaded = $this->view->image($entity, $id, $name, $copy, $silence) . '<br>';
 					break;
 				case 'flash':
-					$xhtml = $this->view->flash($entity, $id, $name, $silence) . '<br>';
+					$uploaded = $this->view->flash($entity, $id, $name, $silence) . '<br>';
 					break;
 				case 'video':
-					$xhtml = 'Video in format ' . $info['extension'] . ' - <a href="' . $relative . $info['basename'] . '" target="_blank">Download</a> ,';
+					$uploaded = 'Video in format ' . $info['extension'] . ' - <a href="' . $relative . $info['basename'] . '" target="_blank">Download</a> ,';
 					break;
 				default:
-					$xhtml = 'File in format ' . $info['extension'] . ' - <a href="' . $relative . $info['basename'] . '" target="_blank">Download</a> ,';
+					$uploaded = 'File in format ' . $info['extension'] . ' - <a href="' . $relative . $info['basename'] . '" target="_blank">Download</a> ,';
 					break;
 			}
-			$xhtml .= '<input type="checkbox" name="image[]" value="' . $name . '" id="image' . $name . '" style="width:13px; height: 13px; position: relative; top: 3px;"/><label for="image' . $name . '">delete</label><br>';
+
+			$xhtml .= '<controls class="upload">';
+			$xhtml .= '<input type="hidden" name="image[]" value="' . $name . '" id="image' . $name . '">';
+			$xhtml .= '<span class="checkbox" style="display: inline;"><label for="image' . $name . '">Удалить</label></span>';
+			$xhtml .= '<js>$("span.checkbox").click(function(){
+				if ($(this).parents("field").find("input[type=hidden]").attr("checked") == "checked") {
+					$(this).parents("field").find("input[type=hidden]").removeAttr("checked").attr("disabled", "disabled");
+					$(this).removeClass("checked");
+				} else {
+					$(this).parents("field").find("input").attr("checked", "checked").removeAttr("disabled");
+					$(this).addClass("checked");
+				}
+			})</js>';
+		} else {
+			$xhtml .= '<controls>';
 		}
         $xhtml .= '<input type="file" name="image[' . $name .']"/>';
+		$xhtml .= '</controls>';
+		$xhtml .= $uploaded;
+		$xhtml .= '</field>';
         return $xhtml;
     }
 }

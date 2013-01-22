@@ -109,17 +109,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                 // if this section have parent section, we should fetch only records, related to parent row
                 // for example if we want to see cities, we must define in WHAT country these cities are located
-/*                if ($this->trail->getItem(1)->row) {
-                    if ($this->specialParentCondition) {
-                        $condition = $this->specialParentCondition;
-                    } else {
-                        $condition = '`' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
-                    }
-                } else {
-                    $condition = null;
-                }*/
-                // if this section have parent section, we should fetch only records, related to parent row
-                // for example if we want to see cities, we must define in WHAT country these cities are located
                 if ($this->trail->getItem(1)->row) {
                     if ($this->specialParentCondition) {
                         $condition[] = $this->specialParentCondition;
@@ -128,15 +117,6 @@ class Indi_Controller_Admin extends Indi_Controller{
                     }
                 }
 				
-/*				$this->rowsetCondition = $this->trail->getItem()->section->filter;
-                if ($this->rowsetCondition) {
-                    if ($condition) {
-                        $condition .= ' AND ' . $this->rowsetCondition;
-                    } else {
-                        $condition = $this->rowsetCondition;
-                    }
-                }
-                $condition .= $this->rsc;*/
                 if ($this->rowsetCondition) $condition[] = $this->rowsetCondition;
                 if ($this->trail->getItem()->section->filter) $condition[] = $this->trail->getItem()->section->filter;
 				if ($this->rsc) $condition[] = $this->rsc;
@@ -175,20 +155,15 @@ class Indi_Controller_Admin extends Indi_Controller{
 			$condition[] = '`' . $this->trail->getItem()->treeColumn . '`="' . $this->row->{$this->trail->getItem()->treeColumn} . '"';
 		}
         if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
-//      if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
-//          $condition = $condition . ($this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId') ? ' AND ' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"' : '');
             $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
         }
 		if ($this->trail->getItem()->section->filter) {
 			$condition[] = $this->trail->getItem()->section->filter;
 		}
 		$steps = $this->params['steps'];
-		if (!$steps) $steps = 1;
-//		for ($i = 0; $i < $steps; $i++) {
-			$this->row->move('down', implode(' AND ', $condition));
-			$this->postMove();
-//		}
+		$this->row->move('down', implode(' AND ', $condition));
+		$this->postMove();
         $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
 
     }
@@ -205,20 +180,14 @@ class Indi_Controller_Admin extends Indi_Controller{
 			$condition[] = '`' . $this->trail->getItem()->treeColumn . '`="' . $this->row->{$this->trail->getItem()->treeColumn} . '"';
 		}
         if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
-//      if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
-//          $condition = $condition . ($this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId') ? ' AND ' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"' : '');
             $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
         }
 		if ($this->trail->getItem()->section->filter) {
 			$condition[] = ' AND ' . $this->trail->getItem()->section->filter;
 		}
-		$steps = $this->params['steps'];
-		if (!$steps) $steps = 1;
-//		for ($i = 0; $i < $steps; $i++) {
-			$this->row->move('up', implode(' AND ', $condition));
-			$this->postMove();
-//		}
+		$this->row->move('up', implode(' AND ', $condition));
+		$this->postMove();
         $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
 
@@ -468,10 +437,6 @@ class Indi_Controller_Admin extends Indi_Controller{
                 $this->identifier = $this->trail->getItem()->model->insert($this->post);
             }
             
-            // entity images actions
-//            if ($this->files['image']['name'][0] !== '') {
-//                Indi_Registry::set('post', Array('image' => 1));
-//            }
             Indi_Image::deleteEntityImagesIfChecked();
             Indi_Image::uploadEntityImagesIfBrowsed();
             
@@ -500,8 +465,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 		if ($this->params['json']) {
 			$this->view->jsonData = $this->prepareJsonDataForIndexAction();
 		} else {
-//			session_destroy();
-//			d($_SESSION);
 		}
     }
     
@@ -511,7 +474,7 @@ class Indi_Controller_Admin extends Indi_Controller{
      */
     public function formAction()
     {
-	//		$this->post['field'] = 'defaultSort';
+//		$this->post['field'] = 'defaultSort';
 //		$this->post['satellite'] = 93;
 		if ($this->params['json']) {
 			$fields = $this->trail->getItem()->fields;
@@ -848,21 +811,22 @@ class Indi_Controller_Admin extends Indi_Controller{
         $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
 	}
 	public function postDispatch(){
-        if ($this->action == 'form') {
-            $session = Indi_Session::namespaceGet('incorrect', $this->controller);
-            Indi_Session::namespaceUnset('incorrect', $this->controller);
-            $this->view->incorrectMessage = $session->message;
-            if ($this->row && is_array($session->request)) {
-                foreach ($session->request as $key => $value) $this->row->$key = $value;
-            }            
-        }
         // assign general template data
         $this->assign();
-        $out = $this->view->render('index.php');           
+		if ($this->action == 'index') {
+			$out = $this->view->render('index.php');
+		} else {
+			ob_start(); $this->view->renderContent(); $out = ob_get_clean();
+		}
 		if ($GLOBALS['cmsOnlyMode']) {
 			$out = preg_replace('/("|\')\/admin/', '$1', $out);
 		};
-        die($out);
+		if ($this->action == 'index') {
+			die($out);
+		} else {
+			preg_match_all('~<js>([^j]+)</js>~', $out, $js);
+			die(json_encode(array('html' => $out, 'title' => 'Часть света', 'js' => $js[1])));
+		}
 	}
     /**
 	  * Assigns admin name, date, menu, trail and all

@@ -33,7 +33,8 @@ class Indi_View_Helper_Admin_GridColumns extends Indi_View_Helper_Abstract{
 					text: "' . $actions[$i]['title'] . '",
 					'.(file_exists($buttonIconsPath . $actions[$i]['alias'] . '.gif') ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
 					handler: function(){
-						var row = ' . $this->view->trail->getItem()->section->alias . 'Grid.getSelectionModel().getSelected();
+						console.log();
+						var row = grid.getSelectionModel().getSelection()[0].data;
                                           ' .
 						(
 						$actions[$i]['rowRequired'] == 'y' ?
@@ -42,7 +43,7 @@ class Indi_View_Helper_Admin_GridColumns extends Indi_View_Helper_Abstract{
 							return;
 						}
 						if (' . $actions[$i]['condition'] . ') {
-		                    			window.location = "/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/";
+                   			createForm("/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/");
 						} else {
 							return false;
 						}
