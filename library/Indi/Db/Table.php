@@ -271,24 +271,24 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
      * @param int $level - needed for tree indentation
      * @return Indi_Db_Table_Rowset object
      */
-    public function fetchTree($treeKeyName, $parentId = 0, $onlyToggledOn = false, $recursive = true, $level = 0, $order = null, $condition = null)
-    {
-        static $data;
-        $rowset = $this->fetchAll(($parentId ? '`' . $treeKeyName . '` = "' . $parentId . '"' : '`' . $treeKeyName . '` = 0') . ($onlyToggledOn ? 'AND `toggle`="y"' : '') . ($condition ? ' AND ' . $condition : ''), $order);
-        if ($recursive) {
-            foreach ($rowset as $row) {
-                $row->indent = Misc::indent($level);
-                $data[] = $row->toArray();
-                $this->fetchTree($treeKeyName, $row->id, $onlyToggledOn, $recursive, $level+1, $order, $condition);
-            }
-            if ($parentId == 0) {
-                $data = array ('table' => $this, 'data' => $data, 'rowClass' => $this->_rowClass, 'stored' => true);
-                return new $this->_rowsetClass($data);
-            }
-        }
-        return $rowset;
-    }
-    public function getTreeColumnName(){
+	public function fetchTree($treeKeyName, $parentId = 0, $onlyToggledOn = false, $recursive = true, $level = 0, $order = null, $condition = null)
+	{
+		static $data;
+		$rowset = $this->fetchAll(($parentId ? '`' . $treeKeyName . '` = "' . $parentId . '"' : '`' . $treeKeyName . '` = 0') . ($onlyToggledOn ? ' AND `toggle`="y"' : '') . ($condition ? ' AND ' . $condition : ''), $order);
+		if ($recursive) {
+			foreach ($rowset as $row) {
+				$row->indent = Misc::indent($level);
+				$data[] = $row->toArray();
+				$this->fetchTree($treeKeyName, $row->id, $onlyToggledOn, $recursive, $level+1, $order, $condition);
+			}
+			if ($parentId == 0) {
+				$data = array ('table' => $this, 'data' => $data, 'rowClass' => $this->_rowClass, 'stored' => true, 'foundRows' => count($data));
+				return new $this->_rowsetClass($data);
+			}
+		}
+		return $rowset;
+	}
+	public function getTreeColumnName(){
         $treeColumnName = $this->info('name') . 'Id';
         return $this->fieldExists($treeColumnName) ? $treeColumnName : null;
     }

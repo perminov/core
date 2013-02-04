@@ -8,7 +8,7 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
      * @var mixed (null,int)
      */
     public $foundRows = null;
-    
+
     /**
      * Constructor.
      * 

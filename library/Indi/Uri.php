@@ -32,16 +32,31 @@ class Indi_Uri {
 			$fsectionM = Misc::loadModel('Fsection');
 			$fsectionA = $fsectionM->fetchAll('`alias` IN ("' . $params['section'] . '", "static")', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',static")')->toArray();
 			if ($fsectionA[0]['alias'] == 'static') {
-				$staticA = Misc::loadModel('Staticpage')->fetchAll('`alias` IN ("' . $params['section'] . '", "404") AND `toggle` = "y"')->toArray();
+				$staticA = Misc::loadModel('Staticpage')->fetchAll('`alias` IN ("' . $params['section'] . '", "404") AND `toggle` = "y"', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',404")')->toArray();
 				$params['section'] = 'static';
 				$params['action'] = 'details';
 				$params['id'] = $staticA[0]['id'];
 			}
+		} else {
+			$sectionM = Misc::loadModel('Section');
+			$sectionR = $sectionM->fetchRow('`alias` = "' . $params['section'] . '"');
+			if ($sectionR) $sectionA = $sectionR->toArray();
 		}
 
-		$controllerClassName = ($params['module'] == 'front' ? '' : $params['module'] . '_') . ucfirst($params['section']) . 'Controller';
+		$controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
 		if (!class_exists($controllerClassName)) {
-			eval('class ' . ucfirst($controllerClassName) . ' extends Indi_Controller_' . ($params['module'] == 'front' ? 'Front' : 'Admin') . '{}');
+			if ($params['module'] == 'admin') {
+				if ($sectionA) {
+					$extendClass = $sectionA['extends'];
+				} else {
+					$extendClass = 'Project_Controller_Admin';
+				}
+				if (!class_exists($extendClass)) $extendClass = 'Indi_Controller_Admin';
+			} else {
+				$extendClass = 'Project_Controller_Front';
+				if (!class_exists($extendClass)) $extendClass = preg_replace('/^Project/', 'Indi', $extendClass);
+			}
+			eval('class ' . ucfirst($controllerClassName) . ' extends ' . $extendClass . '{}');
 		}
 
 		$controller = new $controllerClassName($params);
