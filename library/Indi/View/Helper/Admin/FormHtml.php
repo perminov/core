@@ -7,13 +7,16 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
         if ($value === null) {
             $value = $this->view->row->$name;
         }
+		$config = Indi_Registry::get('config');
+		$standalone = $config['general']->standalone == 'true' ? '/admin' : '';
+		
         require_once('ckeditor/ckeditor.php');
 		require_once('ckfinder/ckfinder.php');
 		$CKEditor = new CKEditor();
-		$CKEditor->basePath = '/library/ckeditor/';
+		$CKEditor->basePath = $standalone . '/library/ckeditor/';
 		
 		$ckfinder = new CKFinder();
-		$ckfinder->BasePath = '/library/ckfinder/';
+		$ckfinder->BasePath = $standalone . '/library/ckfinder/';
 		$ckfinder->SetupCKEditorObject($CKEditor);
 		
 		$CKEditor->returnOutput = true;

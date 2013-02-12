@@ -11,7 +11,7 @@ $dirs = array('../www/', '../core/'); $subs = array('library', 'application/cont
 foreach($dirs as $d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include_path(); set_include_path(implode($p, $inc));
 
 // Set autoloading
-function autoloader($class){if(!@include_once (str_replace('_','/',$class).'.php')) if (strpos($class, 'admin') === false) echo "";}
+function autoloader($class){if (preg_match('/Admin_[a-zA-z]*Controller$/',$class)) $class = lcfirst($class);$classFile = str_replace('_','/',$class).'.php';if(@!include_once ($classFile)) if (strpos($class, 'admin') === false) echo "";}
 spl_autoload_register('autoloader');
 
 // Load misc features
@@ -34,6 +34,9 @@ unset($_POST, $_GET, $_FILES);
 $db = Indi_Db::factory($config['db']);
 Indi_Db_Table::setDefaultAdapter($db);
 $db->query('SET NAMES utf8');
+
+// Check if system is used only as admin area
+if ($config['general']->standalone == 'true') $_SERVER['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT'] . '/admin/';
 
 // Dispatch uri request
 $uri = new Indi_Uri(); $uri->dispatch();

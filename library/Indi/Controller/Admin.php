@@ -1,5 +1,8 @@
 <?php
 class Indi_Controller_Admin extends Indi_Controller{
+	public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
+	public $datePattern = "/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/";
+	
     public $condition = '';
     
     /**
@@ -884,6 +887,14 @@ class Indi_Controller_Admin extends Indi_Controller{
 		if ($GLOBALS['cmsOnlyMode']) {
 			$out = preg_replace('/("|\')\/admin/', '$1', $out);
 		};
+		
+		// perform hrefs adjustments in case if system used only as admin area
+		$config = Indi_Registry::get('config');
+		if($config['general']->standalone == 'true') {
+			$out = preg_replace('/(src|href|background)=("|\')/', '$1=$2/admin', $out);
+			$out = preg_replace('/\/admin\/admin\//', '/admin/', $out);
+			$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
+		}
         die($out);
 	}
     /**

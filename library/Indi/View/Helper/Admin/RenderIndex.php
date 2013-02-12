@@ -11,7 +11,7 @@ class Indi_View_Helper_Admin_RenderIndex extends Indi_View_Helper_Abstract
 				}
 			}
 		}
-		ob_start();
+		//ob_start();
 		if (count($nonDbGridFieldAliases) == 1 && false) {
 			$xhtml = $this->view->renderTile();
 		} else {

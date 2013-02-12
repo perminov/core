@@ -25,8 +25,8 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
         // if current value earlier than minimal date, minimal date is to be set
         // equal to value
         $minimal = $minimal > $value ? $value : $minimal;
-        $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '">';
-        $xhtml .= '<input type="text" name="' . $name . '" value="' . $value . '" style="width: 61px;" id="' . $name . 'Input"> ';
+        $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '; display: inline;">';
+        $xhtml .= '<input type="text" name="' . $name . '" value="' . $value . '" style="width: 61px;" id="' . $name . 'Input" maxlength="10"> ';
         $xhtml .= '<iframe id="' . $name . 'Calendar" name="' . $name . 'Calendar" src="/admin/auxillary/calendar/" frameborder="0" scrolling="no" style="display: none; width: 168px; height: 173px; position: absolute; z-index: 500;"></iframe>';
         $xhtml .= '<a href="javascript:void(0);" onclick="showCalendar(\'' . $name . '\', \'' . $minimal . '\');" id="' . $name . 'CalendarIcon"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="16" height="19" border="0" style="vertical-align: top; margin-top: 1px; "></a>';
         $xhtml .= '</div>';

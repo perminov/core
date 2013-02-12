@@ -13,6 +13,8 @@ class Admin_AuxillaryController extends Indi_Controller
     {
 		header('Access-Control-Allow-Origin: *');
 		$p = '/js/admin/';
+		$config = Indi_Registry::get('config');
+		if ($config['general']->standalone == 'true') $p = '/admin' . $p;
         $out = '        
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>

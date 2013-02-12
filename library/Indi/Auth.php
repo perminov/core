@@ -72,7 +72,16 @@ class Indi_Auth{
                 }                
             }
             $controller->view->assign('project', $controller->config->project);
-            die($controller->view->render('login.php'));
+			$out = $controller->view->render('login.php');
+			// perform hrefs adjustments in case if system used only as admin area
+			$config = Indi_Registry::get('config');
+			if($config['general']->standalone == 'true') {
+				$out = preg_replace('/(src|href|background)=("|\')/', '$1=$2/admin', $out);
+				$out = preg_replace('/\/admin\/admin\//', '/admin/', $out);
+				$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
+			}
+			
+            die($out);
         }
     }
 	public function accessOk($admin = null, $section = '', $action = '', $email = null, $password = null){

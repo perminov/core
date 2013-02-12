@@ -4,6 +4,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
     public function renderGrid()
     {
 		ob_start();
+		echo $this->view->beforeGrid;
 		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
@@ -41,7 +42,8 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							return;
 						}
 						if (' . $actions[$i]['condition'] . ') {
-		                    			window.location = "/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/";
+							' . $actions[$i]['javascript'] . '
+							window.location = "/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/";
 						} else {
 							return false;
 						}
@@ -73,10 +75,11 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 ?>
 <script> 
 var row = 'asd';
+var <?php echo $this->view->trail->getItem()->section->alias?>Store;
 Ext.onReady(function general(){
 	var gridWidth = document.getElementById('trail').clientWidth-12;
 	var gridHeight = document.getElementById('centerTr').clientHeight-130;
-	var <?php echo $this->view->trail->getItem()->section->alias?>Store = new Ext.data.JsonStore({
+	<?php echo $this->view->trail->getItem()->section->alias?>Store = new Ext.data.JsonStore({
         root: 'blocks',
         totalProperty: 'totalCount',
         idProperty: 'id',

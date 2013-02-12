@@ -60,7 +60,7 @@ Examples:
 
 ATTENTION: The trailing slash is required.
 */
-
+if (!file_exists($_SERVER['DOCUMENT_ROOT'] . '/core/library/Misc.php')) $_SERVER['DOCUMENT_ROOT'] .= '/admin';
 include_once($_SERVER['DOCUMENT_ROOT'] . '/core/library/Misc.php');
 foreach (array('www', 'core') as $p) {
 	if (($cnf = $_SERVER['DOCUMENT_ROOT'] . '/' . $p . '/application/config.ini') && is_file($cnf)) {
@@ -68,7 +68,7 @@ foreach (array('www', 'core') as $p) {
 		break;
 	}
 }
-$baseUrl = '/' . $cnf['upload']->uploadPath . '/' . $cnf['ckeditor']->uploadPath .'/';
+$baseUrl = ($cnf['general']->standalone == 'true'? '/admin' : ''). '/' . $cnf['upload']->uploadPath . '/' . $cnf['ckeditor']->uploadPath .'/';
 
 /*
 $baseDir : the path to the local directory (in the server) which points to the

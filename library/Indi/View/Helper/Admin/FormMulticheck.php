@@ -30,7 +30,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
         $checkboxIndex = 0;
         if ($count) {
 			if ($rows > $rowsHeightLimit) $xhtml = '<div style="overflow-y: scroll; height: ' . (19 * $rowsHeightLimit) . 'px;">';
-			$xhtml .= '<table cellpadding="0" cellspacing="0" border="0" id="' . $name . '" width="100%">';
+			$xhtml .= '<table cellpadding="0" cellspacing="0" border="0" id="' . $name . '" width="' . $params['width'] . '">';
             $checkbox = current($data);
             $aName = ' name="' . $name . '[]"';
             $type = ' type="checkbox"';
@@ -45,7 +45,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
                     if ($checkbox) {
                         $checked = $checkbox->checked ? ' checked="checked"' : '';
                         $value   = ' value="' . $checkbox->value . '"';
-                        $xhtml  .= '<td style="vertical-align:middle; padding-right: 10px;" width="' . floor(100/$cols) . '%"><input' . $type . $aName . $value . $checked . ' style="width:13px; height: 13px;" id="' . $name . 'checkbox' . $checkboxIndex . '"><label for="' . $name . 'checkbox' . $checkboxIndex . '" style="line-height:10px;">' . $checkbox->text . '</label></td>';
+                        $xhtml  .= '<td style="vertical-align:middle; padding-right: 4px;" width="' . floor(100/$cols) . '%"><input' . $type . $aName . $value . $checked . ' style="width:13px; height: 13px;" id="' . $name . 'checkbox' . $checkboxIndex . '"><label for="' . $name . 'checkbox' . $checkboxIndex . '" style="line-height:10px;">' . $checkbox->text . '</label></td>';
                         $checkbox = next($data);
                         $checkboxIndex++;
                     }
