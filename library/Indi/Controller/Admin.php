@@ -730,19 +730,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 		if ($GLOBALS['cmsOnlyMode']) {
 			$out = preg_replace('/("|\')\/admin/', '$1', $out);
 		};
-<<<<<<< HEAD
-		
-		// perform hrefs adjustments in case if system used only as admin area
-		$config = Indi_Registry::get('config');
-		if($config['general']->standalone == 'true') {
-			$out = preg_replace('/(src|href|background)=("|\')/', '$1=$2/admin', $out);
-			$out = preg_replace('/\/admin\/admin\//', '/admin/', $out);
-			$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
-		}
-        die($out);
-=======
 		die($out);
->>>>>>> 2c3692f2df1980ec4696df4d8cd43fa5fbe7b7b2
 	}
     /**
 	  * Assigns admin name, date, menu, trail and all

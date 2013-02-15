@@ -51,11 +51,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						}
 						if (' . $actions[$i]['condition'] . ') {
 							' . $actions[$i]['javascript'] . '
-<<<<<<< HEAD
-							window.location = "/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/";
-=======
                    			loadContent("/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/");
->>>>>>> 2c3692f2df1980ec4696df4d8cd43fa5fbe7b7b2
 						} else {
 							return false;
 						}
@@ -85,97 +81,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			$tbarItems = array();
 			if ($actions) $tbarItems[] = $actions;
 			if ($sectionsDropdown) $tbarItems[] = $sectionsDropdown;
-<<<<<<< HEAD
-?>
-<script> 
-var row = 'asd';
-var <?php echo $this->view->trail->getItem()->section->alias?>Store;
-Ext.onReady(function general(){
-	var gridWidth = document.getElementById('trail').clientWidth-12;
-	var gridHeight = document.getElementById('centerTr').clientHeight-130;
-	<?php echo $this->view->trail->getItem()->section->alias?>Store = new Ext.data.JsonStore({
-        root: 'blocks',
-        totalProperty: 'totalCount',
-        idProperty: 'id',
-        remoteSort: true,
-        fields: [
-            {name: 'id', type: 'int'}, '<?php echo $aliases?>'
-        ],
- 
-        proxy: new Ext.data.HttpProxy({
-            url: '/admin/<?php echo $this->view->trail->getItem()->section->alias?>/index/<?php echo $this->view->trail->requestParams['id'] ? 'id/' . $this->view->trail->requestParams['id'] . '/' : ''?>json/1/'
-        })
-    });
-    <?php echo $this->view->trail->getItem()->section->alias?>Grid = new Ext.grid.GridPanel({
-        width: gridWidth,
-        height: gridHeight,
-        title: '<?php echo $this->view->trail->getItem()->section->title?>',
-        store: <?php echo $this->view->trail->getItem()->section->alias?>Store,
-        trackMouseOver:false,
-        disableSelection:false,
-        loadMask: true,
- 
-        // grid columns
-        columns:[
-        {
-            header: "id",
-            dataIndex: 'id',
-            width: 30,
-            sortable: true,
-            align: 'right',
-			hidden: true
-        },
-		<?php echo $columns?>],
- 
-        viewConfig: {
-            forceFit: true
-        },
-		<?php echo count($tbarItems) ? 'tbar : [' . implode(',', $tbarItems) . '], ' : ''?>
-        // paging bar on the bottom
-        bbar: new Ext.PagingToolbar({
-            pageSize: <?php echo $this->view->trail->getItem()->section->rowsOnPage?>,
-            store: <?php echo $this->view->trail->getItem()->section->alias?>Store,
-            displayInfo: true,
-            displayMsg: 'Записи {0} - {1} из {2}',
-            emptyMsg: "No rows to display",
-            items:[
-                '-'             
-            ]
-        })
-    });
-    <?php echo $this->view->trail->getItem()->section->alias?>Grid.render('<?php echo $this->view->trail->getItem()->section->alias?>grid');
-    <?php echo $this->view->trail->getItem()->section->javascript; ?>
-    <?php  if ($this->view->trail->getItem()->section->defaultSortField) {?>
-		<?php echo $this->view->trail->getItem()->section->alias?>Store.setDefaultSort('<?php echo $this->view->trail->getItem()->section->getForeignRowByForeignKey('defaultSortField')->alias?>', '<?php echo $this->view->trail->getItem()->section->defaultSortDirection?>'); 
-    <?php  } ?>
-    <?php echo $this->view->trail->getItem()->section->alias?>Store.load({params:{start:0, limit:<?php echo $this->view->trail->getItem()->section->rowsOnPage?>}});     
-	grid = <?php echo $this->view->trail->getItem()->section->alias?>Grid;
-}); 
-function redirect(section){
-	if (section) {
-		var id = <?php echo $this->view->trail->getItem()->section->alias?>Grid.getSelectionModel().selections.keys;
-		if (id != '') {
-			var url = '/admin/' + section + '/index/id/' + id + '/';
-			window.location = url;
-		} else {
-			alert('Select a row');
-		}
-	}
-}
-function dump(target)
-{
-    var obj = target;
-    var info = '';
-    for (i in obj) {
-    	info += i + '=' + obj[i] + '\n';
-    }
-    alert(info);
-}
-</script> 
-<div id="<?php echo $this->view->trail->getItem()->section->alias?>grid" style="padding-left: 10px; padding-right: 0px; width: 900px;"></div> 
-</html> 
-<?php
-=======
 
 			if ($defaultSortField = $this->view->trail->getItem()->section->getForeignRowByForeignKey('defaultSortField')){
 				$this->view->trail->getItem()->section->defaultSortFieldAlias = $defaultSortField->alias;
@@ -333,7 +238,6 @@ function dump(target)
 			</script>
 
 		<? $xhtml = ob_get_clean();
->>>>>>> 2c3692f2df1980ec4696df4d8cd43fa5fbe7b7b2
 		}
         return $xhtml;
     }    
