@@ -59,9 +59,9 @@ class Indi_Controller_Admin extends Indi_Controller{
 //        $condition = $condition ? ' AND ' . $condition : '';
         
 		// set up info for pagination
-		if (isset($this->post['limit'])) {
-			$this->limit = $this->post['limit'];
-			$this->start = $this->post['start'];
+		if (isset($this->get['limit'])) {
+			$this->limit = $this->get['limit'];
+			$this->start = $this->get['start'];
 		}
 
 		$section = Misc::loadModel('Section');
@@ -112,17 +112,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                 // if this section have parent section, we should fetch only records, related to parent row
                 // for example if we want to see cities, we must define in WHAT country these cities are located
-/*                if ($this->trail->getItem(1)->row) {
-                    if ($this->specialParentCondition) {
-                        $condition = $this->specialParentCondition;
-                    } else {
-                        $condition = '`' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
-                    }
-                } else {
-                    $condition = null;
-                }*/
-                // if this section have parent section, we should fetch only records, related to parent row
-                // for example if we want to see cities, we must define in WHAT country these cities are located
                 if ($this->trail->getItem(1)->row) {
                     if ($this->specialParentCondition) {
                         $condition[] = $this->specialParentCondition;
@@ -131,15 +120,6 @@ class Indi_Controller_Admin extends Indi_Controller{
                     }
                 }
 				
-/*				$this->rowsetCondition = $this->trail->getItem()->section->filter;
-                if ($this->rowsetCondition) {
-                    if ($condition) {
-                        $condition .= ' AND ' . $this->rowsetCondition;
-                    } else {
-                        $condition = $this->rowsetCondition;
-                    }
-                }
-                $condition .= $this->rsc;*/
                 if ($this->rowsetCondition) $condition[] = $this->rowsetCondition;
                 if ($this->trail->getItem()->section->filter) $condition[] = $this->trail->getItem()->section->filter;
 				if ($this->rsc) $condition[] = $this->rsc;
@@ -178,20 +158,15 @@ class Indi_Controller_Admin extends Indi_Controller{
 			$condition[] = '`' . $this->trail->getItem()->treeColumn . '`="' . $this->row->{$this->trail->getItem()->treeColumn} . '"';
 		}
         if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
-//      if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
-//          $condition = $condition . ($this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId') ? ' AND ' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"' : '');
             $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
         }
 		if ($this->trail->getItem()->section->filter) {
 			$condition[] = $this->trail->getItem()->section->filter;
 		}
 		$steps = $this->params['steps'];
-		if (!$steps) $steps = 1;
-//		for ($i = 0; $i < $steps; $i++) {
-			$this->row->move('down', implode(' AND ', $condition));
-			$this->postMove();
-//		}
+		$this->row->move('down', implode(' AND ', $condition));
+		$this->postMove();
         $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
 
     }
@@ -208,20 +183,14 @@ class Indi_Controller_Admin extends Indi_Controller{
 			$condition[] = '`' . $this->trail->getItem()->treeColumn . '`="' . $this->row->{$this->trail->getItem()->treeColumn} . '"';
 		}
         if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
-//      if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
-//          $condition = $condition . ($this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId') ? ' AND ' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"' : '');
             $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
         }
 		if ($this->trail->getItem()->section->filter) {
 			$condition[] = ' AND ' . $this->trail->getItem()->section->filter;
 		}
-		$steps = $this->params['steps'];
-		if (!$steps) $steps = 1;
-//		for ($i = 0; $i < $steps; $i++) {
-			$this->row->move('up', implode(' AND ', $condition));
-			$this->postMove();
-//		}
+		$this->row->move('up', implode(' AND ', $condition));
+		$this->postMove();
         $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
 
@@ -299,6 +268,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 			switch ($field['foreign']['elementId']['alias']) {
 				case 'string':
 				case 'html':
+				case 'check':
 				case 'upload':
 					break;
 				case 'price':
@@ -327,7 +297,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 					}
 					$value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
 					break;
-				case 'check':
 				case 'multicheck':
 				case 'multiselect':
 					if (!is_array($value) || (count($value) <= 1 && ! array_key_exists(-1, $value))) {
@@ -367,8 +336,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 		$set = implode(', ', $set);  $sql[] = $set; if ($this->identifier) $sql[] =  'WHERE `id` = "' . $this->identifier . '"'; $sql = implode(' ', $sql);
 		//$this->db->query($sql);
 //		d($this->trail->getItem()->disabledFields);
-//		d($data);
-//		die();
 		try {
             if ($this->identifier) {
                 $this->trail->getItem()->model->update($data, '`id` = "' . $this->identifier . '"');
@@ -377,7 +344,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             }
             
             Indi_Image::deleteEntityImagesIfChecked();
-            Indi_Image::uploadEntityImagesIfBrowsed();
+            Indi_Image::uploadEntityImagesIfBrowsed(null, null, $this->requirements);
             
         } catch (Exception $e) {
             d($e);
@@ -387,6 +354,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 
 		$this->updateCacheIfNeed();
 
+		//die();
 		$this->postSave();
         if ($redirect) {
             if ($this->trail->getItem(1)->row) {
@@ -395,106 +363,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
         }
 	}
-	
-    /**
-     * Provide default save action
-     * Saving data is got from $this->post
-     *
-     */
-    public function saveAction1($redirect = true, $incorrectMessage = '')
-    {
-		$this->preSave();
-        if ($incorrectMessage) {
-            $session = new Indi_Session_Namespace('incorrect');
-            $exaction = $this->controller;
-            $session->$exaction = new stdClass();
-            $session->$exaction->message = $incorrectMessage;
-            $session->$exaction->request = $this->post;
-            $location = ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . 
-                        '/form/' . ($this->identifier ? 'id/' . $this->identifier . '/' : '');
-            $this->_redirect($location);
-            die();
-        }
-        if ($this->trail->getItem(1)->row) {
-            // foreign key that aim to parent entity row 
-            // is to be added to POST automativally while saving row of current entity
-            // That feature is to prevent lost children
-            $foreignKey = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->foreignKeyName;
-            if (!isset($this->post[$foreignKey])) {
-                $this->post[$foreignKey] = $this->trail->getItem(1)->row->id;
-            }
-        }
-		if ($this->admin['alternate']) foreach ($this->post as $key => $value) if ($key == $this->admin['alternate'] . 'Id') $this->post[$key] = $this->admin['id'];
-//		d($this->post);
-        // search for array-variables in POST
-		$imploders = array('integer' => '.', 'hours' => ':', 'ids'=>',');
-		foreach ($this->post  as $key => $value) {
-            // make string from array variables by imploding
-            // this affects only post variable-array, which keys are incremented from zero to array length-1
-            // so it is not an assotiative array with sense key names
-            // feature is nesessary for multiple checkboxes and multiple selects
-			if (is_array($value) && count($value)) {
-				if (implode('', array_values($value)) == '') {
-					$this->post[$key] = '';
-                } else if (implode('', array_keys($value)) == '-1') {
-					echo 'asd';
-					$this->post[$key] = '0';
-				} else {
-                    // unset empty values
-                    for ($i = -1; $i < count ($value); $i++) if (!$value[$i]) unset($value[$i]);
 
-					$imploderIndex = in_array(key($this->post[$key]), array_keys($imploders)) ? key($this->post[$key]) : 'ids';
-					if (key($this->post[$key]) == 'date') {
-						$this->post[$key] = $this->post[$key]['date'] . ' ' . $this->post[$key]['hours'] . ':' .$this->post[$key]['minutes'] . ':' .$this->post[$key]['seconds'];
-					} else {
-						$this->post[$key] = implode($imploders[$imploderIndex], $value);
-					}
-                }
-            }
-        }
-		// prevent self parentness for row
-		if ($treeColumn = $this->trail->getItem()->treeKeyName){
-		  if ($this->post[$treeColumn] == $this->trail->getItem()->row->id) {
-			  $this->post[$treeColumn] = $this->trail->getItem()->row->$treeColumn;
-		  }
-		}
-//		d($this->post);
-//		die();
-		try {
-            if ($this->identifier) {
-                $this->trail->getItem()->model->update($this->post, '`id` = "' . $this->identifier . '"');                    
-            } else {
-                // auto completing `sorting` field when creating a row if table
-                // structure have `sorting` field that mean that section have move up/move down actions
-                if ($this->trail->getItem()->model->fieldExists('move')) {
-                    $this->post['move'] = $this->trail->getItem()->model->getLastPosition();
-                }
-                $this->identifier = $this->trail->getItem()->model->insert($this->post);
-            }
-            
-            // entity images actions
-//            if ($this->files['image']['name'][0] !== '') {
-//                Indi_Registry::set('post', Array('image' => 1));
-//            }
-            Indi_Image::deleteEntityImagesIfChecked();
-            Indi_Image::uploadEntityImagesIfBrowsed();
-            
-        } catch (Exception $e) {
-            d($e);
-            die();
-            throw new Exception('Cannot save into "' . $this->section->foreignRows->entityId->table . '" table');
-        }
-		$this->postSave();
-//		die('ss');
-        if ($redirect) {
-            if ($this->trail->getItem(1)->row) {
-                $id = $this->trail->getItem(1)->row->id;
-            }
-//            $this->_redirect('/' . $this->module . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : 'form/'));
-            $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
-        }
-    }
-    
     /**
      * Provide default index action
      *
@@ -502,10 +371,7 @@ class Indi_Controller_Admin extends Indi_Controller{
     public function indexAction()
     {
 		if ($this->params['json']) {
-			$this->view->jsonData = $this->prepareJsonDataForIndexAction();
-		} else {
-//			session_destroy();
-//			d($_SESSION);
+			die($this->prepareJsonDataForIndexAction());
 		}
     }
     
@@ -515,7 +381,7 @@ class Indi_Controller_Admin extends Indi_Controller{
      */
     public function formAction()
     {
-	//		$this->post['field'] = 'defaultSort';
+//		$this->post['field'] = 'defaultSort';
 //		$this->post['satellite'] = 93;
 		if ($this->params['json']) {
 			$fields = $this->trail->getItem()->fields;
@@ -687,46 +553,27 @@ class Indi_Controller_Admin extends Indi_Controller{
 				$i++;
 			}
 		}
-
-		// Set up grid fields that are not stored in db, such as fileupload field
-		$nonDbGridFieldAliases = array();
-		foreach ($gridFields as $gridField) {
-			if ($gridField['columnTypeId'] == 0) {
-				if ($gridField['elementId'] == 14) {
-					$nonDbGridFieldAliases[] = $gridField['alias'];
-				}
-			}
-		}
-
-		$uploadPath = Indi_Image::getUploadPath();
-		$entity = $this->trail->getItem()->model->info('name');
-		for ($j = 0; $j < count($nonDbGridFieldAliases); $j++) {
-			for($i = 0; $i < count($data); $i++) {
-				$tileGridMode = true;
-				$data[$i][$nonDbGridFieldAliases[$j]] = Indi_View_Helper_Admin_IndexFile::indexFile($nonDbGridFieldAliases[$j], null, true, $entity, $data[$i]['id']);
-			}
-		}
-//		d($nonDbGridFieldAliases);
-
-		$jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data) . '})';
-		return $jsonData;
+		
+		$jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
+		return json_encode($jsonData);
 	}
 
 	function setGridTitlesByCustomLogic(&$data){}
 
 	public function getOrderForJsonRowset($condition = null){
+		//$this->get['sort'] = ;
+		if ($this->get['sort']) {
+			$sort = current(json_decode($this->get['sort'], 1));
+			$this->post['sort'] = $sort['property'];
+			$this->post['dir'] = $sort['direction'];
+			// Если не указано, по какому столбцу сорировать, не сортируем
+			if (!$this->post['sort']) return;
+		}
 //		$this->post['sort'] = 'identifier';
 //		$this->post['dir'] = 'ASC';
 		// get info about columns that will be presented in grid
 		$gridFields = $this->trail->getItem()->gridFields->toArray();
-/*					$fp = fopen($_SERVER['DOCUMENT_ROOT'] . '/www' . "/tmp.txt","w");
-					ob_start();
-					d($order);
-					d($this->post);
-					$out = ob_get_clean();
-					fwrite($fp, $out);
-					fclose($fp);*/
-		
+
 		// check if field (that is to be sorted by) store relation
 		$entityId = false;		
 		for ($i = 0; $i < count($gridFields); $i++) {
@@ -873,20 +720,17 @@ class Indi_Controller_Admin extends Indi_Controller{
         $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
 	}
 	public function postDispatch(){
-        if ($this->action == 'form') {
-            $session = Indi_Session::namespaceGet('incorrect', $this->controller);
-            Indi_Session::namespaceUnset('incorrect', $this->controller);
-            $this->view->incorrectMessage = $session->message;
-            if ($this->row && is_array($session->request)) {
-                foreach ($session->request as $key => $value) $this->row->$key = $value;
-            }            
-        }
         // assign general template data
         $this->assign();
-        $out = $this->view->render('index.php');           
+		if (!$this->section && $this->action == 'index') {
+			$out = $this->view->render('index.php');
+		} else {
+			ob_start(); $this->view->renderContent(); $out = ob_get_clean();
+		}
 		if ($GLOBALS['cmsOnlyMode']) {
 			$out = preg_replace('/("|\')\/admin/', '$1', $out);
 		};
+<<<<<<< HEAD
 		
 		// perform hrefs adjustments in case if system used only as admin area
 		$config = Indi_Registry::get('config');
@@ -896,6 +740,9 @@ class Indi_Controller_Admin extends Indi_Controller{
 			$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
 		}
         die($out);
+=======
+		die($out);
+>>>>>>> 2c3692f2df1980ec4696df4d8cd43fa5fbe7b7b2
 	}
     /**
 	  * Assigns admin name, date, menu, trail and all
@@ -905,10 +752,12 @@ class Indi_Controller_Admin extends Indi_Controller{
     public function assign()
     {
         $section = new Section();
-        $this->view->assign('admin', $this->admin['title']);
+        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
-        $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
-        $title = $this->config->project;
+		$this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
+		$this->view->assign('get', $this->get);
+		$this->view->assign('request', $this->params);
+		$title = $this->config->project;
         $this->view->assign('config', $this->config);
 		
         $section = new Section();

@@ -57,7 +57,7 @@ class Indi_View_Helper_Admin_FormDselect extends Indi_View_Helper_FormElement
 		<span class="dselect-count" id="' . $name .'-count"></span>
 	</span>
 </div>  
-<select class="dselect-button" id="'.$name.'-button" style="width: 100%;"></select>
+<span class="select"><select class="dselect-button" id="'.$name.'-button" style="width: 100%;"></select></span>
 		';
 		
         $options = array_reverse($options, true);

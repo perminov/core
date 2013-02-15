@@ -150,7 +150,8 @@ var DSELECT = (function (dselect) {
 				if ($("#suggest-"+name).attr('hover') == 'false') $("#suggest-"+name).hide();
 			});
 			$(this).click(function(){
-				$('#'+name+'-button').css('outline', 'rgb(229, 151, 0) auto 5px');
+				//$('#'+name+'-button').css('outline', 'rgb(229, 151, 0) auto 5px');
+				$('#'+name+'-button').css('outline', 'none');
 				if ($(this).parent().find('.suggestions').css('display') == 'none') {
 					var html = suggestions(dselectOptions[name], name);
 					$(this).parent().find('.suggestions').html(html);
@@ -301,13 +302,13 @@ var DSELECT = (function (dselect) {
 						if ((parseInt(input.attr('index')) > 0 && liIndex == (parseInt(input.attr('index'))-1)%size) || (parseInt(input.attr('index')) <= 0 && liIndex+1 == size-Math.abs(parseInt(input.attr('index'))%size))) {
 							$(this).addClass('selected');
 							input.attr('selectedIndex', liIndex);
-							var visibleS = $('#suggest-'+name).scrollTop()/15;
+							var visibleS = $('#suggest-'+name).scrollTop()/14;
 							var visibleE = visibleS + visibleCount - 1;
 							var delta = 0;
 							if (liIndex > visibleE) {
-								delta = (liIndex - visibleE) * 15;
+								delta = (liIndex - visibleE) * 14;
 							} else if (liIndex < visibleS) {
-								delta = (liIndex - visibleS) * 15;
+								delta = (liIndex - visibleS) * 14;
 							}
 							var expr = (delta > 0 ? '+' : '-')+'='+Math.abs(delta)+'px';
 							if (delta) $('#suggest-'+name).scrollTo(expr);

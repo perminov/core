@@ -1,0 +1,85 @@
+*{color: #04408C;}
+.no-icon {
+    display : none;
+    background-image:url('/library/extjs4/resources/images/default/s.gif') !important;
+    width: 0;
+}
+.mygrid .x-grid-row-selected.x-grid-row-focused td.x-grid-cell, .x-grid-row-selected.x-grid-row-focused .x-grid-rowwrap-div {
+    background-color: #dfffdf !important;
+    border-top: 1px solid #dfffdf;
+    border-bottom: 1px solid #e0eeff;
+}
+.mygrid .x-grid-row-over td.x-grid-cell, .x-grid-row-over .x-grid-rowwrap-div {
+    background-color: #ecffeb !important;
+    border-top: 1px solid #ecffeb;
+    border-bottom: 1px solid #e0eeff;
+}
+.x-panel-header-text-default{
+    font-weight: normal !important;
+}
+.x-panel.menu .x-grid-cell.root-item{
+    background-color: #D9E7F8!important;
+    border-bottom: 1px solid #C8D6E7;
+}
+.x-panel.menu .x-grid-cell.cycle-0{
+    border-bottom: 1px solid #e0eeff;
+}
+.x-panel.menu .x-grid-cell.cycle-1{
+    border-bottom: 1px solid #e0eeff;
+}
+.x-panel.menu .x-grid-row-over.x-grid-tree-node-leaf td div{
+    background-color: #ecffeb !important;
+}
+
+.x-panel.menu .x-grid-row-selected.x-grid-tree-node-leaf td div{
+    background-color: #dfffdf !important;
+}
+button span.add {
+    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/add.gif') !important;
+}
+button span.form{
+    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/form.gif') !important;
+}
+button span.delete{
+    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/delete.gif') !important;
+}
+.subsection-select .x-form-text{font-size:11px !important; height: 19px !important; line-height: 14px !important;}
+.subsection-select .x-form-trigger-wrap{margin-top: 1px;}
+.subsection-select .x-form-trigger{height: 19px;}
+.x-boundlist ul li {font-size: 11px;}
+.x-btn-default-toolbar-small-over{
+    -moz-border-radius: 0px !important;
+    -webkit-border-radius: 0px !important;
+    -o-border-radius: 0px !important;
+    -khtml-border-radius: 0px !important;
+    border-radius: 0px !important;
+}
+#trail a{text-decoration: none;}
+#trail a:hover{color: #99BCE8}
+.top-center .x-panel-body{
+    background-color: #DFE8F6 !important;
+}
+.form .x-panel-body-default{
+   /* background-color: #DFE8F6;*/
+}
+
+
+select{
+    border: 0;
+    height: 16px;
+}
+span.select{
+    display: block;
+    border: 1px solid #99BCE8;
+}
+input[type=text]{
+    padding-left: 2px;
+    padding-right: 2px;
+
+}
+controls{
+    width: 100%;
+}
+.indi-engine-logo .x-panel-body-default{
+    background: none;
+}

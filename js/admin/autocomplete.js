@@ -17,7 +17,7 @@ var AUTOCOMPLETE = (function (clective) {
 							$('#suggest-'+name+' ul li').hover(
 								function(){
 									$(this).attr('color', $(this).css('background-color'));
-									$(this).css('background-color', '#eeeeee');
+									$(this).css('background-color', '#ecffeb');
 								},
 								function(){
 									$(this).css('background-color', $(this).attr('color'));
@@ -74,7 +74,8 @@ var AUTOCOMPLETE = (function (clective) {
 			if (code == '13') {
 				var oneSelected=false;
 				$('#suggest-'+name+' ul li').each(function(liIndex){
-					if ($(this).css('background-color') == 'rgb(201, 201, 201)' || $(this).css('background-color') == '#c9c9c9') {
+					//if ($(this).css('background-color') == 'rgb(201, 201, 201)' || $(this).css('background-color') == '#c9c9c9') {
+					if ($(this).css('background-color') == 'rgb(223, 255, 223)' || $(this).css('background-color') == '#dfffdf') {
 						$(this).click();
 					}
 				});
@@ -96,7 +97,7 @@ var AUTOCOMPLETE = (function (clective) {
 					$('#suggest-'+name+' ul li').each(function(liIndex){
 						if (parseInt(input.attr('index')) > 0) {
 							if(liIndex == (parseInt(input.attr('index'))-1)%size) {
-								$(this).css('background-color','#c9c9c9');
+								$(this).css('background-color','#dfffdf');
 								input.attr('selectedIndex', liIndex);
 							} else {
 								$(this).css('background-color','#ffffff');
@@ -104,7 +105,7 @@ var AUTOCOMPLETE = (function (clective) {
 						} else {
 							if(liIndex+1 == size-Math.abs(parseInt(input.attr('index'))%size)) {
 								input.attr('selectedIndex', liIndex);
-								$(this).css('background-color','#c9c9c9');
+								$(this).css('background-color','#dfffdf');
 							} else {
 								$(this).css('background-color','#ffffff');
 							}

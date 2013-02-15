@@ -33,8 +33,9 @@ abstract class Indi_Image
         $absolute = $_SERVER['DOCUMENT_ROOT'] . '/' . $uploadPath . '/' . $entity . '/';
         // get images names that are checked to be deleted
         $post = Indi_Registry::get('post');
-        $imagesToDelete = $post['image'];
-		
+		$imagesToDelete = array();
+        //$imagesToDelete = $post['image'];
+		if (is_array($post['file-action'])) foreach ($post['file-action'] as $file => $action) if ($action == 'd') $imagesToDelete[] = $file;
 		for ($i = 0; $i < count($imagesToDelete); $i++) {
 			// all resized copies are to be deleted too
             $files = array();
@@ -79,23 +80,30 @@ abstract class Indi_Image
 		if (!$requirements) {
 			$requirements = array('type' => 'image', 'maxsize' => 1024 * 1024 * 5);
 		}
-		
+		//d($requirements);
         $files = Indi_Registry::get('files');
         $images = $files['image'];
 		$failInfo = array();
-		if (count($images['tmp_name'])) foreach ($images['tmp_name'] as $name => $tmp) {
-            if ($images['error'][$name] == 0) {
-				if ($requirements['type']) {
-					$userFile = $images['name'][$name];
-					$info = explode('/', Indi_Image::m_content_type($userFile));
-					if ($info[0] != $requirements['type']) {
-						$failInfo['type'][] = $images['name'][$name];
+
+		$post = Indi_Registry::get('post');
+		$imagesToUpload = array();
+		if (is_array($post['file-action'])) foreach ($post['file-action'] as $file => $action) if ($action == 'm') $imagesToUpload[] = $file;
+
+		if (count($imagesToUpload)) foreach ($images['tmp_name'] as $name => $tmp) {
+            if (in_array($name, $imagesToUpload) && $images['error'][$name] == 0) {
+				if ($requirements) {
+					if ($requirements['type']) {
+						$userFile = $images['name'][$name];
+						$info = explode('/', Indi_Image::m_content_type($userFile));
+						if ($info[0] != $requirements['type']) {
+							$failInfo['type'][] = $images['name'][$name];
+							continue;
+						}
+					}
+					if ($images['size'][$name] > $requirements['maxsize']) {
+						$failInfo['maxsize'][] = $images['name'][$name];
 						continue;
 					}
-				}
-				if ($images['size'][$name] > $requirements['maxsize']) {
-					$failInfo['maxsize'][] = $images['name'][$name];
-					continue;
 				}
                 try {
 					// check if entity images directory is exists

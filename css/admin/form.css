@@ -1,0 +1,102 @@
+form.form{
+    padding: 10px;
+}
+form.form table {
+    -webkit-border-horizontal-spacing: 1px;
+    -webkit-border-vertical-spacing: 1px;
+}
+form.form table tr{
+    border-bottom: 1px solid #C7D4FF;
+    height: 21px;
+}
+form.form table tr:first-child{
+    border-top: 1px solid #C7D4FF;
+}
+
+form.form table tr.info td:first-child{
+    padding-left: 2px;
+}
+span.radio{
+    display: block;
+    padding-left: 15px;
+    background: url(/i/admin/radio.png) no-repeat;
+    margin-top: 2px;
+    margin-bottom: 1px;
+}
+span.radio.checked{
+    background: url(/i/admin/radioChecked.png) no-repeat;
+}
+span.radio label{
+    position: relative;
+    top: -1px;
+}
+span.checkbox{
+    display: block;
+    padding-left: 15px;
+    background: url(/i/admin/checkbox.png) no-repeat;
+    margin-top: 2px;
+    margin-bottom: 1px;
+}
+span.checkbox.checked{
+    background: url(/i/admin/checkboxChecked.png) no-repeat;
+}
+span.checkbox label{
+    position: relative;
+    top: -1px;
+}
+input[type=file]{
+    display: none;
+}
+controls.upload{
+    position: absolute;
+    background: url(/i/admin/transparentBg.png);
+    height: 19px;
+    padding: 3px 0px 0 4px;
+}
+controls.upload.no-file-yet{
+    position: relative !important;
+    top: 1px !important;
+    padding: 0 !important;
+}
+controls.upload a.upload{
+    position: relative;
+    top: -1px;
+}
+controls.upload span.selected-fname{
+    border: 1px solid #99BCE8;
+    padding: 0px 2px 0px 2px;
+    display: none;
+}
+controls.upload span.selected{
+    position: relative;
+    top: -1px;
+    display: none;
+}
+controls.upload.no-file-yet span.selected-fname{
+    height: 16px;
+    position: relative;
+    top: -1px;
+}
+controls.upload span.radio{
+    display: inline;
+}
+controls.upload a{
+    position: relative;
+    top: -1px;
+}
+table.buttons{
+    border: 0;
+    margin-top: 6px;
+}
+table.buttons tr{
+    border: 0;
+}
+textarea{
+    padding-left: 2px;
+    padding-right: 2px;
+    border: 1px solid #99BCE8;
+    margin-top: 1px;
+    margin-bottom: -1px;
+    color: #04408C;
+    font-size: 8pt;
+}

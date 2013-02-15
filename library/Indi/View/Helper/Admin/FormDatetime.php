@@ -28,33 +28,63 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '">';
 		$parts = explode(' ', $value);
 		$minimal = explode(' ', $minimal);
-        $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 61px;" id="' . $name . 'Input"> ';
-        $xhtml .= '<iframe id="' . $name . 'Calendar" name="' . $name . 'Calendar" src="/admin/auxillary/calendar/" frameborder="0" scrolling="no" style="display: none; width: 168px; height: 173px; position: absolute; z-index: 500;"></iframe>';
-        $xhtml .= '<a href="javascript:void(0);" onclick="showCalendar(\'' . $name . '\', \'' . $minimal[0] . '\');" id="' . $name . 'CalendarIcon"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="16" height="19" border="0" style="vertical-align: top; margin-top: 1px; "></a>';
-
+        $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 62px; margin-top: 1px;" id="' . $name . 'Input"> ';
+		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
 		$time = explode(':', $parts[1]);
 		for ($i = 0; $i <= 2; $i++)	$time[$i] = strlen($time[$i]) == 1 ? $time[$i] . '0' : (strlen($time[$i]) == 0 ? '00' : $time[$i]);
 		$xhtml .= '&nbsp; &nbsp;<input type="text"'
-			   . ' name="' . $this->view->escape($name) . '[hours]"'
-			   . ' id="' . $this->view->escape($id) . '"'
-			   . ' value="' . $this->view->escape($time[0]) . '"'
-			   . $this->_htmlAttribs($attribs)
-			   . ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=number(this.value)" /> часов ';
+				. ' name="' . $this->view->escape($name) . '[hours]"'
+				. ' id="' . $this->view->escape($id) . '"'
+				. ' value="' . $this->view->escape($time[0]) . '"'
+				. $this->_htmlAttribs($attribs)
+				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=number(this.value)" /> часов ';
 
 		$xhtml .= '<input type="text"'
-			   . ' name="' . $this->view->escape($name) . '[minutes]"'
-			   . ' id="' . $this->view->escape($id) . '"'
-			   . ' value="' . $this->view->escape($time[1]) . '"'
-			   . $this->_htmlAttribs($attribs)
-			   . ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> минут ';
+				. ' name="' . $this->view->escape($name) . '[minutes]"'
+				. ' id="' . $this->view->escape($id) . '"'
+				. ' value="' . $this->view->escape($time[1]) . '"'
+				. $this->_htmlAttribs($attribs)
+				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> минут ';
 
-	    $xhtml .= '<span style="display: none;"><input type="text"'
-			   . ' name="' . $this->view->escape($name) . '[seconds]"'
-			   . ' id="' . $this->view->escape($id) . '"'
-			   . ' value="' . $this->view->escape($time[2]) . '"'
-			   . $this->_htmlAttribs($attribs)
-			   . ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> секунд</span>';
+		$xhtml .= '<span style="display: none;"><input type="text"'
+				. ' name="' . $this->view->escape($name) . '[seconds]"'
+				. ' id="' . $this->view->escape($id) . '"'
+				. ' value="' . $this->view->escape($time[2]) . '"'
+				. $this->_htmlAttribs($attribs)
+				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> секунд</span>';
+		ob_start();?>
+		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px;">
+			<script>
+				Ext.onReady(function() {
+					Ext.Date.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+					Ext.create('Ext.picker.Date', {
+						dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+						monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+						renderTo: '<?=$name?>CalendarRender',
+						width: 185,
+						todayText: 'Сегодня',
+						ariaTitle: 'Выбрать месяц и год',
+						ariaTitleDateFormat: 'Y-m-d',
+						longDayFormat: 'Y-m-d',
+						nextText: 'Следующий месяц',
+						prevText: 'Предыдущий месяц',
+						todayTip: 'Выбрать сегодняшнюю дату',
+						startDay: 1,
+						handler: function(picker, date) {
+							var y = date.getFullYear();
+							var m = date.getMonth() + 1; if (m.toString().length < 2) m = '0' + m;
+							var d = date.getDate(); if (d.toString().length < 2) d = '0' + d;
+							var selectedDate = y + '-' + m + '-' + d;
+							$('#<?=$name?>Input').val(selectedDate);
+							$('#<?=$name?>CalendarRender').toggle();
+						}
+					});
+				});
+			</script>
+		</div>
+		<?$xhtml .= ob_get_clean();
 
+			$xhtml .= '</div>';
 		$xhtml .= '</div>';
  	    return $xhtml;
     }

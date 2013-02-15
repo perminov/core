@@ -6,54 +6,6 @@
 class Admin_AuxillaryController extends Indi_Controller
 {
     /**
-     * Provide ability to use yahoo calendar 
-     *
-     */
-    public function calendarAction()
-    {
-		header('Access-Control-Allow-Origin: *');
-		$p = '/js/admin/';
-		$config = Indi_Registry::get('config');
-		if ($config['general']->standalone == 'true') $p = '/admin' . $p;
-        $out = '        
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-
-    <title>Yahoo! Calendar Control - Mix/Max Implementation</title>
-    
-    <script type="text/javascript" src="' . $p .'calendar/yahoo/yahoo/yahoo.js"></script>
-    <script type="text/javascript" src="' . $p .'calendar/yahoo/event/event.js" ></script>
-    <script type="text/javascript" src="' . $p .'calendar/yahoo/dom/dom.js" ></script>
-
-    <script type="text/javascript" src="' . $p .'calendar/yahoo/calendar/calendar.js"></script>
-    
-    <link type="text/css" rel="stylesheet" href="' . $p .'calendar/yahoo/fonts/fonts.css">
-    <link type="text/css" rel="stylesheet" href="' . $p .'calendar/yahoo/reset/reset.css">    
-    <link type="text/css" rel="stylesheet" href="' . $p .'calendar/yahoo/calendar/assets/calendar.css">    
-
-    
-    <script language="javascript">
-        YAHOO.namespace("example.calendar");
-
-        function init() {
-            var date = new Date();
-            YAHOO.example.calendar.cal1 = new YAHOO.widget.Calendar("YAHOO.example.calendar.cal1","cal1Container");
-            YAHOO.example.calendar.cal1.render();
-        }
-
-    </script>
-
-</head>
-
-<body onload="init()">
-    <div style="width:150px"><div id="cal1Container"></div></div>
-</body>
-</html>';
-        die($out);
-    }
-
-    /**
      * Provide ability to use yahoo color picker
      *
      */
@@ -203,5 +155,37 @@ class Admin_AuxillaryController extends Indi_Controller
 			}
 		}
 		die(json_encode($json));
+	}
+	public function downloadAction(){
+		$this->params['id'] = (int) $this->params['id'];
+		$this->params['field'] = (int) $this->params['field'];
+		if (!$this->params['id'] || !$this->params['field']) {
+			die('Ошибка входных данных');
+		} else {
+			$fieldR = Misc::loadModel('Field')->fetchRow('`id` = "' . $this->params['field'] . '"');
+			if ($fieldR) {
+				$entityR = Misc::loadModel('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"');
+				if ($entityR) {
+					$itemR = Entity::getModelById($entityR->id)->fetchRow('`id` = "' . $this->params['id'] . '"');
+					if ($itemR) {
+						$pattern  = $itemR->id . ($fieldR->alias ? '_' . $fieldR->alias : '') . '.*';
+						$config = Indi_Registry::get('config');
+						$relative = '/' . trim($config['upload']->uploadPath, '/') . '/' . $entityR->table  . '/';
+						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $relative;
+						$file = glob($absolute . $pattern); $file = $file[0];
+						$info = pathinfo($file);
+						if (file_exists($file)) {
+							$title = $entityR->title . ' ' . $itemR->getTitle() . ' - ' . $fieldR->title  . '.' . $info['extension'];
+							$title = str_replace('+', '%20', urlencode($title));
+							header('Content-Type: application/octet-stream');
+							header('Content-Disposition: attachment; filename="' . $title . '";');
+							readfile($file);
+							die();
+						} else die("Ошибка: файл не существует");
+					} else die("Ошибка: запись не существует");
+				} else die("Ошибка: сущность не существует");
+			} else die("Ошибка: поле не существует");
+		}
+		die("Ok");
 	}
 }

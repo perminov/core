@@ -33,25 +33,42 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
 			$xhtml .= '<table cellpadding="0" cellspacing="0" border="0" id="' . $name . '" width="' . $params['width'] . '">';
             $checkbox = current($data);
             $aName = ' name="' . $name . '[]"';
-            $type = ' type="checkbox"';
-			$xhtml .= '<input type="hidden" name="' . $name . '[-1]"' .' value="">';
+            $type = ' type="hidden"';
+			//$xhtml .= '<input type="hidden" name="' . $name . '[-1]"' .' value="">';
 			if ($attribs['optionsOnly']) {
 				$open = $xhtml;
 				$xhtml = '';
 			}
             for ($i = 0; $i < $rows; $i++) {
-                $xhtml .= '<tr class="info">';
+                $xhtml .= '<tr class="info" style="border: none;">';
                 for ($j = 0; $j < $cols; $j++) {
                     if ($checkbox) {
-                        $checked = $checkbox->checked ? ' checked="checked"' : '';
+                        $disabled = $checkbox->checked ? '' : ' disabled="disabled"';
+                        $checked = $checkbox->checked ? ' checked' : '';
                         $value   = ' value="' . $checkbox->value . '"';
-                        $xhtml  .= '<td style="vertical-align:middle; padding-right: 4px;" width="' . floor(100/$cols) . '%"><input' . $type . $aName . $value . $checked . ' style="width:13px; height: 13px;" id="' . $name . 'checkbox' . $checkboxIndex . '"><label for="' . $name . 'checkbox' . $checkboxIndex . '" style="line-height:10px;">' . $checkbox->text . '</label></td>';
+                        $xhtml  .= '<td style="vertical-align:middle; padding-right: 10px;" width="' . floor(100/$cols) . '%">';
+						$xhtml  .=  '<input' . $type . $aName . $value . ' id="input-checkbox-' . $name . ucfirst($checkbox->value) . '"' . $disabled . '/>';
+						$xhtml  .=  '<span class="checkbox' . $checked . '" id="span-checkbox-' . $name . ucfirst($checkbox->value) . '">';
+						//$xhtml  .= 	'<input' . $type . $aName . $value . $checked . ' style="width:13px; height: 13px;" id="' . $name . 'checkbox' . $checkboxIndex . '">';
+						$xhtml  .= 	'<label for="span-checkbox-' . $name . ucfirst($checkbox->value) . '" style="line-height:10px;">' . $checkbox->text . '</label>';
+						$xhtml .= '</span>';
+						$xhtml  .= '</td>';
                         $checkbox = next($data);
                         $checkboxIndex++;
                     }
                 }
                 $xhtml .= '</tr>';
             }
+			$xhtml .= '<script>$("span.checkbox[id^=span-checkbox-'.$name.']").click(function(){
+				if ($(this).parent().find("input[type=hidden]").attr("disabled")) {
+					$(this).parent().find("input[type=hidden]").removeAttr("disabled");
+					$(this).addClass("checked");
+				} else {
+					$(this).parent().find("input[type=hidden]").attr("disabled","disabled");
+					$(this).removeClass("checked");
+				};
+				' . $field->javascript . ';
+			})</script>';
 			if ($attribs['optionsOnly']) {
 				$data = $xhtml;
 				$xhtml = '';

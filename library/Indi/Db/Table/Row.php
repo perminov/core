@@ -243,7 +243,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 							if ($config['page']) $page = $config['page'];
 						} else if ($config['value'] && $count > $limit) {
 							$trail->getItem()->dropdownWhere[$fieldAlias] = explode(' AND ', $trail->getItem()->dropdownWhere[$fieldAlias]);
-							$trail->getItem()->dropdownWhere[$fieldAlias][] = '`title` '.($config['up'] ? '<' : '>=').' "' . $config['value'] . '"';
+							$trail->getItem()->dropdownWhere[$fieldAlias][] = '`title` '.($config['up'] ? '<' : '>=').' "' . str_replace('"','\"', $config['value']) . '"';
 							$trail->getItem()->dropdownWhere[$fieldAlias] = implode(' AND ', $trail->getItem()->dropdownWhere[$fieldAlias]);
 							if ($config['more'] && !$config['up']) $limit++;
 							if ($config['up']) $order = '(`title`) DESC';

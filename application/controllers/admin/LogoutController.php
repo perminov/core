@@ -1,5 +1,5 @@
 <?php
-class Admin_LogoutController extends Indi_Controller_Admin
+class Admin_LogoutController extends Indi_Controller
 {
     /**
      * Action to preform Admin System logout
@@ -11,6 +11,7 @@ class Admin_LogoutController extends Indi_Controller_Admin
         if ($_SESSION['admin']['id']) {
             unset($_SESSION['admin']);
         }
-        $this->_redirect('/' . ($GLOBALS['cmsOnlyMode'] ? '' : $this->module));
+        //$this->_redirect('/' . ($GLOBALS['cmsOnlyMode'] ? '' : $this->module));
+		die('<script>window.location.replace("/' . ($GLOBALS['cmsOnlyMode'] ? '' : $this->module) . '")</script>');
     }
 }
