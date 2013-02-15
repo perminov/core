@@ -1,33 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-    <title><?php echo $this->escape($this->project)?></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link rel="stylesheet" href="/css/admin/login.css">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Indi Engine</title>
+	<link rel="stylesheet" type="text/css" href="/library/extjs4/resources/css/ext-all.css" />
+	<link rel="stylesheet" type="text/css" href="/css/admin/layout.css" />
+	<link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
+	<link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
+	<link rel="stylesheet" type="text/css" href="/css/admin/general.css" />
+	<script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
+	<script type="text/javascript" src="/js/admin/index.js"></script>
+	<script type="text/javascript" src="/js/jquery-1.6.1.min.js"></script>
+	<style>.x-panel-header-text-container{text-align: center !important;}.x-panel-header-text-default{font-weight: normal !important;}</style>
 </head>
-<body bgcolor="#cacde7" bottommargin="0" leftmargin="0" rightmargin="0" topmargin="0">
-<table border="0" cellpadding="0" cellspacing="" width="100%" height="100%">
-    <tr>
-        <td align="center" valign="middle">
-            <form method="post">
-            <table border="0" bordercolor="#f1f1f1" cellpadding="0" cellspacing="0" class="tbl">
-                <?php if ($this->error): ?><tr height="18"><td colspan="2" width="300" align="center" class="info" style="color: red;"><?php echo $this->escape(implode('', $this->error))?></td></tr><?php endif;?>
-                <tr height="18"><td colspan="2" width="330" align="center" bgcolor="#666b94" style="color: #ffffff;"><?php echo $this->escape($this->project)?></td></tr>
-                <tr height="5"><td colspan="2" class=info></td></tr>
-                <tr class="info"><td>&nbsp;&nbsp;E-mail:</td><td><input style="width: 150px;" type="text" name="email" value="<?php echo $this->escape($this->email)?>"></td></tr>
-                <tr class="info"><td>&nbsp;&nbsp;Password:</td><td><input style="width: 150px;" type="password" name="password"></td></tr>
-                <tr height="5" class=info><td colspan="2"></td></tr>
-                <tr class="info">
-            	    <td></td>
-                    <td>
-                        <input type="submit" name="enter" value="Enter">&nbsp;
-                        <input type="reset" value="Reset">
-                    </td>
-                </tr>
-                <tr height="5" class=info><td colspan="2"></td></tr>
-            </table>
-            </form>
-        </td>
-    </tr>
-</table>
+<body style="background-color: #dfe8f6;">
+<script>Ext.require(['*']);</script>
+<script>var cmsOnlyMode = '<?=$GLOBALS['cmsOnlyMode']?>';</script>
+<script>
+	Ext.onReady(function() {
+		Ext.create('Ext.Panel', {
+			title: 'Indi Engine',
+			renderTo: 'login-box',
+			height: 125,
+			width: 300,
+			bodyPadding: 10,
+			items: [
+				{
+					xtype: 'textfield',
+					name: 'email',
+					fieldLabel: 'Пользователь',
+					labelWidth: 90,
+					value: '',
+					width: 275
+				},{
+					xtype: 'textfield',
+					name: 'password',
+					inputType: 'password',
+					fieldLabel: 'Пароль',
+					labelWidth: 90,
+					width: 275
+				},{
+					xtype: 'button',
+					inputType: 'submit',
+					name: 'submit',
+					cls: 'asd',
+					text: 'Вход',
+					margin: '4 0 0 20',
+					width: 113,
+					handler: function(){
+						var data = {email: $('input[name=email]').val(), password: $('input[name=password]').val(), enter: true}
+						$.post(cmsOnlyMode?'/':'/admin/', data, function(response){
+							if (response.error) {
+								Ext.MessageBox.show({
+									title: 'Ошибка',
+									msg: response.error,
+									buttons: Ext.MessageBox.OK,
+									icon: Ext.MessageBox.ERROR
+								});
+							} else if (response.ok) {
+								window.location.replace(cmsOnlyMode?'/':'/admin/');
+							}
+							console.log(response);
+						}, 'json');
+					}
+				},{
+					xtype: 'button',
+					inputType: 'reset',
+					name: 'reset',
+					cls: 'asd',
+					text: 'Сброс',
+					margin: '4 0 0 10',
+					width: 113,
+					handler: function(){
+						$('input[name=password]').val('');
+						$('input[name=email]').val('');
+					}
+				}
+			]
+		});
+	});
+</script>
+<div id="login-box" style="width: 300px;
+height: 125px;
+position: absolute;
+top: 50%;
+margin-top: -100px;
+left: 50%;
+margin-left: -150px;"></div>
 </body>
 </html>

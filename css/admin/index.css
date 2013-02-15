@@ -93,12 +93,14 @@ select { font-size: 9pt;}
 	display: none; 
 	position: absolute;
 	background-color: white;
-	border: 1px solid gray;
+    border: 1px solid #99BCE8;
+    margin-top: 1px;
 }
 .suggestions ul li {
 	list-style-type: none;
 	list-style-position: outside;
 	cursor: default;
+    padding-left: 2px;
 }
 .suggestions ul li.selected {
 	background-color: #236;
@@ -123,7 +125,7 @@ select { font-size: 9pt;}
 	border: none; 
 	height: 15px; 
 	font-size: 9pt; 
-	top: 4px; 
+	top: 1px;
 	left: 5px; 
 	outline: none; 
 	width: 100%;
@@ -131,14 +133,15 @@ select { font-size: 9pt;}
 }
 .dselect-div{
 	position: absolute;
+    width:47%;
 }
 .suggestions.dselect{
 	overflow-y: auto;
-	max-height: 150px;
+	max-height: 143px;
 }
 .dselect-info{
 	position: relative;
-	top: -10px;
+	top: -12px;
 	float: right;
 	font-size: 10px;
 }

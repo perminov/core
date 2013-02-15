@@ -264,6 +264,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 			switch ($field['foreign']['elementId']['alias']) {
 				case 'string':
 				case 'html':
+				case 'check':
 				case 'upload':
 					break;
 				case 'price':
@@ -292,7 +293,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 					}
 					$value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
 					break;
-				case 'check':
 				case 'multicheck':
 				case 'multiselect':
 					if (!is_array($value) || (count($value) <= 1 && ! array_key_exists(-1, $value))) {
@@ -332,8 +332,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 		$set = implode(', ', $set);  $sql[] = $set; if ($this->identifier) $sql[] =  'WHERE `id` = "' . $this->identifier . '"'; $sql = implode(' ', $sql);
 		//$this->db->query($sql);
 //		d($this->trail->getItem()->disabledFields);
-//		d($data);
-//		die();
 		try {
             if ($this->identifier) {
                 $this->trail->getItem()->model->update($data, '`id` = "' . $this->identifier . '"');
@@ -342,7 +340,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             }
             
             Indi_Image::deleteEntityImagesIfChecked();
-            Indi_Image::uploadEntityImagesIfBrowsed();
+            Indi_Image::uploadEntityImagesIfBrowsed(null, null, $this->requirements);
             
         } catch (Exception $e) {
             d($e);
@@ -352,6 +350,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 
 		$this->updateCacheIfNeed();
 
+		//die();
 		$this->postSave();
         if ($redirect) {
             if ($this->trail->getItem(1)->row) {
@@ -360,102 +359,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
         }
 	}
-	
-    /**
-     * Provide default save action
-     * Saving data is got from $this->post
-     *
-     */
-    public function saveAction1($redirect = true, $incorrectMessage = '')
-    {
-		$this->preSave();
-        if ($incorrectMessage) {
-            $session = new Indi_Session_Namespace('incorrect');
-            $exaction = $this->controller;
-            $session->$exaction = new stdClass();
-            $session->$exaction->message = $incorrectMessage;
-            $session->$exaction->request = $this->post;
-            $location = ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . 
-                        '/form/' . ($this->identifier ? 'id/' . $this->identifier . '/' : '');
-            $this->_redirect($location);
-            die();
-        }
-        if ($this->trail->getItem(1)->row) {
-            // foreign key that aim to parent entity row 
-            // is to be added to POST automativally while saving row of current entity
-            // That feature is to prevent lost children
-            $foreignKey = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->foreignKeyName;
-            if (!isset($this->post[$foreignKey])) {
-                $this->post[$foreignKey] = $this->trail->getItem(1)->row->id;
-            }
-        }
-		if ($this->admin['alternate']) foreach ($this->post as $key => $value) if ($key == $this->admin['alternate'] . 'Id') $this->post[$key] = $this->admin['id'];
-//		d($this->post);
-        // search for array-variables in POST
-		$imploders = array('integer' => '.', 'hours' => ':', 'ids'=>',');
-		foreach ($this->post  as $key => $value) {
-            // make string from array variables by imploding
-            // this affects only post variable-array, which keys are incremented from zero to array length-1
-            // so it is not an assotiative array with sense key names
-            // feature is nesessary for multiple checkboxes and multiple selects
-			if (is_array($value) && count($value)) {
-				if (implode('', array_values($value)) == '') {
-					$this->post[$key] = '';
-                } else if (implode('', array_keys($value)) == '-1') {
-					echo 'asd';
-					$this->post[$key] = '0';
-				} else {
-                    // unset empty values
-                    for ($i = -1; $i < count ($value); $i++) if (!$value[$i]) unset($value[$i]);
 
-					$imploderIndex = in_array(key($this->post[$key]), array_keys($imploders)) ? key($this->post[$key]) : 'ids';
-					if (key($this->post[$key]) == 'date') {
-						$this->post[$key] = $this->post[$key]['date'] . ' ' . $this->post[$key]['hours'] . ':' .$this->post[$key]['minutes'] . ':' .$this->post[$key]['seconds'];
-					} else {
-						$this->post[$key] = implode($imploders[$imploderIndex], $value);
-					}
-                }
-            }
-        }
-		// prevent self parentness for row
-		if ($treeColumn = $this->trail->getItem()->treeKeyName){
-		  if ($this->post[$treeColumn] == $this->trail->getItem()->row->id) {
-			  $this->post[$treeColumn] = $this->trail->getItem()->row->$treeColumn;
-		  }
-		}
-//		d($this->post);
-//		die();
-		try {
-            if ($this->identifier) {
-                $this->trail->getItem()->model->update($this->post, '`id` = "' . $this->identifier . '"');                    
-            } else {
-                // auto completing `sorting` field when creating a row if table
-                // structure have `sorting` field that mean that section have move up/move down actions
-                if ($this->trail->getItem()->model->fieldExists('move')) {
-                    $this->post['move'] = $this->trail->getItem()->model->getLastPosition();
-                }
-                $this->identifier = $this->trail->getItem()->model->insert($this->post);
-            }
-            
-            Indi_Image::deleteEntityImagesIfChecked();
-            Indi_Image::uploadEntityImagesIfBrowsed();
-            
-        } catch (Exception $e) {
-            d($e);
-            die();
-            throw new Exception('Cannot save into "' . $this->section->foreignRows->entityId->table . '" table');
-        }
-		$this->postSave();
-//		die('ss');
-        if ($redirect) {
-            if ($this->trail->getItem(1)->row) {
-                $id = $this->trail->getItem(1)->row->id;
-            }
-//            $this->_redirect('/' . $this->module . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : 'form/'));
-            $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
-        }
-    }
-    
     /**
      * Provide default index action
      *
@@ -463,8 +367,7 @@ class Indi_Controller_Admin extends Indi_Controller{
     public function indexAction()
     {
 		if ($this->params['json']) {
-			$this->view->jsonData = $this->prepareJsonDataForIndexAction();
-		} else {
+			die($this->prepareJsonDataForIndexAction());
 		}
     }
     
@@ -659,6 +562,8 @@ class Indi_Controller_Admin extends Indi_Controller{
 			$sort = current(json_decode($this->get['sort'], 1));
 			$this->post['sort'] = $sort['property'];
 			$this->post['dir'] = $sort['direction'];
+			// Если не указано, по какому столбцу сорировать, не сортируем
+			if (!$this->post['sort']) return;
 		}
 //		$this->post['sort'] = 'identifier';
 //		$this->post['dir'] = 'ASC';
@@ -813,7 +718,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 	public function postDispatch(){
         // assign general template data
         $this->assign();
-		if ($this->action == 'index') {
+		if (!$this->section && $this->action == 'index') {
 			$out = $this->view->render('index.php');
 		} else {
 			ob_start(); $this->view->renderContent(); $out = ob_get_clean();
@@ -821,12 +726,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 		if ($GLOBALS['cmsOnlyMode']) {
 			$out = preg_replace('/("|\')\/admin/', '$1', $out);
 		};
-		if ($this->action == 'index') {
-			die($out);
-		} else {
-			preg_match_all('~<js>([^j]+)</js>~', $out, $js);
-			die(json_encode(array('html' => $out, 'title' => 'Часть света', 'js' => $js[1])));
-		}
+		die($out);
 	}
     /**
 	  * Assigns admin name, date, menu, trail and all
@@ -838,8 +738,10 @@ class Indi_Controller_Admin extends Indi_Controller{
         $section = new Section();
         $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
-        $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
-        $title = $this->config->project;
+		$this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
+		$this->view->assign('get', $this->get);
+		$this->view->assign('request', $this->params);
+		$title = $this->config->project;
         $this->view->assign('config', $this->config);
 		
         $section = new Section();

@@ -16,7 +16,7 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
         if ($meta) {
             $meta = $this->view->row->getTable()->getMetadata($name);
         }
-        
+
         // values passed to helper by parameter should be comma separated
         $values = $values ? explode(',', $values) : null;
 
@@ -50,18 +50,17 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
 
 			$id = ' id="' . $name . ucwords($values[$i]) .'"';
             $label = '<label id="' . $name . ucwords($values[$i]) . 'Label">' . $texts[$i] . '</label>&nbsp;';
-//            $xhtml .= '<span class="radio"><input style= "width:13px; " type="radio" name="' . $name . '" value="' . $values[$i] . '" ' . $checked . $id . (is_array($attrib) ? $attrib[$i] : $attrib) .  ' ' . $add . '>' . $label . '</span>';
             $xhtml .= '<span class="radio' . ($checked?' checked':'') . '" val="' . $values[$i] . '" type="radio" ' . $checked . $id . (is_array($attrib) ? $attrib[$i] : $attrib) .  ' ' . $add . '>' . $label . '</span>';
 		}
-		$xhtml .= '<js>
-		$("span.radio").click(function(){
+		$xhtml .= '<script>
+		$("span.radio[id^='.$name.']").click(function(){
 			$(this).parent().find("input").val($(this).attr("val"));
 			$(this).parent().find("span.radio").removeAttr("checked").removeClass("checked");
 			$(this).attr("checked", "checked").addClass("checked");
 
 		});
-		</js>';
-		$xhtml .= '<js>$(function(){ $("#' . $name . ucwords($values[$checkedIndex]) . '").click()})</js>';
+		</script>';
+		$xhtml .= '<script>$(function(){ $("#' . $name . ucwords($values[$checkedIndex]) . '").click()})</script>';
 		$xhtml .= '</field>';
         return $xhtml;
     }

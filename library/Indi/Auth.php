@@ -63,13 +63,14 @@ class Indi_Auth{
             if ($controller->post['enter']) {
 				$controller->post = filter($controller->post);
 				if ($admin = $this->accessOk(null, 'index', null, $controller->post['email'], $controller->post['password'])) {
-                    $_SESSION['admin'] = $admin;
+					$_SESSION['admin'] = $admin;
 		            $controller->admin = $_SESSION['admin'];
-					header('Location: /' . ($GLOBALS['cmsOnlyMode'] ? '': 'admin/'));die();
+					//header('Location: /' . ($GLOBALS['cmsOnlyMode'] ? '': 'admin/'));die();
+					die(json_encode(array('ok' => true)));
 				} else {
 					$controller->view->assign('email', $controller->post['email']);
-                    $controller->view->assign('error', $authResult->getMessages());
-                }                
+					$controller->view->assign('error', $authResult->getMessages());
+                }
             }
             $controller->view->assign('project', $controller->config->project);
             die($controller->view->render('login.php'));
@@ -98,7 +99,7 @@ class Indi_Auth{
             WHERE `a`.`id` = '" . $admin['id'] . "'
 			";
 		if (!$admin) {
-			if (!$email) $this->logout('Введите е-мэйл');
+			if (!$email) $this->logout('Введите пользователя');
 			if (!$password) {
 				$this->controller->view->assign('email', $email);
 				$this->logout('Введите пароль');
@@ -203,9 +204,11 @@ class Indi_Auth{
 		if ($logout) {
 	        if ($_SESSION['admin']['id']) {
 		        unset($_SESSION['admin']);
+				$this->controller->view->assign('error' , array($logout));
+				die($this->controller->view->render('login.php'));
+			} else {
+				die(json_encode(array('error' => $logout)));
 			}
-			$this->controller->view->assign('error' , array($logout));
-            die($this->controller->view->render('login.php'));
 		} else if ($redirect) {
 			die($redirect);
 		}
@@ -214,9 +217,11 @@ class Indi_Auth{
 	public function logout($message){
 		if ($_SESSION['admin']['id']) {
 			unset($_SESSION['admin']);
+			$this->controller->view->assign('error' , array($message));
+			die($this->controller->view->render('login.php'));
+		} else {
+			die(json_encode(array('error' => $message)));
 		}
-		$this->controller->view->assign('error' , array($message));
-		die($this->controller->view->render('login.php'));
 	}
 
     /**

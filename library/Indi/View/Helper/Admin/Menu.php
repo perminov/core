@@ -8,31 +8,28 @@ class Indi_View_Helper_Admin_Menu extends Indi_View_Helper_Abstract
 			ob_start();?>
 <script>
 	Ext.onReady(function() {
-
-		var menuItems = Ext.create('Ext.data.TreeStore', {
-		root: {
-			expanded: true,
-			children: [
-			<?foreach($this->view->menu as $item) if (!$item->sectionId){?>
-				{
-					text: "<?=$item->title?>",
-					<?if(count($children[$item->id])){?>
-					expanded: false,
-					cls: 'root-item',
-					children: [
-						<?$i=0;foreach($children[$item->id] as $child){?>
-							{text: '<?=$child->title?>', iconCls: 'no-icon', leaf: true, cls: 'cycle-<?=$i%2?>', value: '/admin/<?=$child->alias?>/'},
-							<?$i++;}?>
-					]
-					<?}?>
-				},
-			<?}?>
-			]
-		}
-	});
-
 	menu = Ext.create('Ext.tree.Panel', {
-		store: menuItems,
+		store: Ext.create('Ext.data.TreeStore', {
+			root: {
+				expanded: true,
+				children: [
+					<?foreach($this->view->menu as $item) if (!$item->sectionId){?>
+						{
+							text: "<?=$item->title?>",
+							<?if(count($children[$item->id])){?>
+							expanded: false,
+							cls: 'root-item',
+							children: [
+								<?$i=0;foreach($children[$item->id] as $child){?>
+									{text: '<?=$child->title?>', iconCls: 'no-icon', leaf: true, cls: 'cycle-<?=$i%2?>', value: '/admin/<?=$child->alias?>/'},
+									<?$i++;}?>
+							]
+							<?}?>
+						},
+						<?}?>
+				]
+			}
+		}),
 		rootVisible: false,
 		title: 'Меню',
 		useArrows: true,
@@ -47,8 +44,14 @@ class Indi_View_Helper_Admin_Menu extends Indi_View_Helper_Abstract
 				if(rec.get('leaf') == false) {
 					if (rec.data.expanded) rec.collapse(); else rec.expand();
 				} else {
-					createGrid(rec.raw.value);
+					loadContent(rec.raw.value);
 				}
+			},
+			beforecollapse: function(){
+				$('#indi-engine-logo').hide();
+			},
+			expand: function(){
+				$('#indi-engine-logo').show();
 			}
 		}
 

@@ -14,6 +14,9 @@
     border-top: 1px solid #ecffeb;
     border-bottom: 1px solid #e0eeff;
 }
+.x-panel-header-text-default{
+    font-weight: normal !important;
+}
 .x-panel.menu .x-grid-cell.root-item{
     background-color: #D9E7F8!important;
     border-bottom: 1px solid #C8D6E7;
@@ -76,4 +79,7 @@ input[type=text]{
 }
 controls{
     width: 100%;
+}
+.indi-engine-logo .x-panel-body-default{
+    background: none;
 }

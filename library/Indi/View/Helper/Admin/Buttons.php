@@ -15,32 +15,30 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
             $title[] = 'Back';
 
             foreach ($accessableActions as $accessableAction) {
-                if ($accessableAction['alias'] == 'form') $title[] = 'Add';
+                if ($accessableAction['alias'] == 'form') $title[] = 'Добавить';
             }
             
             $href = '/' . $this->view->module . '/' . $parent->section->alias . '/';
             if ($grandParent->row) {
                 $href .= $parent->action->alias . '/id/' . $grandParent->row->id . '/';
             }
-            $action[] = "javascript: window.location = '" . $href . "'";            
+            $action[] = "loadContent('" . $href . "')";
             if (is_array($post)) {
-                //for 'Add'
                 foreach ($post as $key => $value) {
-                   //@todo : Nowadays is used 1 parameters
-                 $href = "/" . $this->view->module . '/' . $this->view->section->alias . '/' . "form/";                   
+                 $href = "/" . $this->view->module . '/' . $this->view->section->alias . '/' . "form/";
                  $action[] = "javascript: sendAdd('".$key."','".$value."','".$href."')";                   
                 }
             } else {
-                $action[] = "javascript: window.location = '/" . $this->view->module . '/' . $this->view->section->alias . '/' . "form/'";
+                $action[] = "loadContent('/" . $this->view->module . '/' . $this->view->section->alias . '/' . "form/')";
             }
             
         // iа on edit screen
         } else if ($this->view->action == 'form' || $this->view->alterForm) {
-            $title[] = 'Back';
-            $action[] = "javascript: window.location = '/" . $this->view->module . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '') . '\'';
+            $title[] = 'Вернуться';
+            $action[] = "window.parent.loadContent('/" . $this->view->module . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '') . '\')';
             foreach ($accessableActions as $accessableAction) {
                 if ($accessableAction['alias'] == 'save') {
-					$title[] = 'Save';
+					$title[] = 'Сохранить';
 					$action[] = "javascript: document.forms['" . $this->view->entity->table . "'].submit();";
 					break;
 				}
@@ -49,9 +47,9 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
 		}
     
         
-        $xhtml = '<table><tr>';
+        $xhtml = '<table class="buttons" style="border: 0;margin-top: 6px; width: 100%;" cellpadding="6"><tr style="border: 0;">';
         for ($i = 0; $i < count($title); $i++) {
-            $xhtml .= '<td id="td-button-' . $title[$i] . '">';
+			$xhtml .= '<td id="td-button-' . $title[$i] . '" width="'.(100/count($title)).'%" align="' . ($i?'left':'right') . '">';
             $xhtml .= $this->view->button($title[$i], $action[$i]);
             $xhtml .= '</td>';
         }
