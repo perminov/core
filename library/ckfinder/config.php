@@ -35,8 +35,11 @@ function CheckAuthentication()
 
 // LicenseKey : Paste your license key here. If left blank, CKFinder will be
 // fully functional, in demo mode.
-$config['LicenseName'] = '';
-$config['LicenseKey'] = '';
+$config['LicenseName'] = 'turoplan.ru';
+$config['LicenseKey'] = 'H70S0000700T1000000000000Y0';
+
+//$config['LicenseName'] = 'IndiEngine';
+//$config['LicenseKey'] = 'YC0W0000500C800000000000060';
 
 /*
  Uncomment lines below to enable PHP error reporting and displaying PHP errors.

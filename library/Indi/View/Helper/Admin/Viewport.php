@@ -25,6 +25,7 @@ Ext.onReady(function() {
 				defaults: {split: true},
 				border: 0,
 				layout: {type: 'border', padding: '0 0 0 0'},
+				cls: 'center-all',
 				items: [{
 					region: 'north',
 					html: '<div style="display: block;">' +
@@ -50,16 +51,24 @@ Ext.onReady(function() {
 	});
 	loadContent = function(url){
 		locationHistory.push(url);
-		if (url.match(/form/)) {
-			if (currentPanelId && viewport.getComponent(3)) {
-				viewport.getComponent(3).remove(currentPanelId);
+		if (url.match(/\/form\//)) {
+			if (currentPanelId) {
+				if (viewport.getComponent(3).cls == 'center-all') {
+					viewport.getComponent(3).remove(currentPanelId);
+				} else if (viewport.getComponent(4).cls == 'center-all') {
+					viewport.getComponent(4).remove(currentPanelId);
+				}
 			}
 			var maxImgWidth = Math.floor(($('#center-content-body').width()-36)/2);
 			$('#center-content-body').html('<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>');
 		} else {
 			$.post(url, function(response){
-				if (currentPanelId && viewport.getComponent(3).remove) {
-					viewport.getComponent(3).remove(currentPanelId);
+				if (currentPanelId) {
+					if (viewport.getComponent(3).cls == 'center-all') {
+						viewport.getComponent(3).remove(currentPanelId);
+					} else if (viewport.getComponent(4).cls == 'center-all') {
+						viewport.getComponent(4).remove(currentPanelId);
+					}
 				}
 				$('#center-content-body').html(response);
 			});

@@ -134,10 +134,13 @@
 
 		// Always use 100% width and height when nested using this middle page.
 		config.width = config.height = '100%';
-
+		config.readOnly = true;
+		config.skin = 'v1';
+		config.uiColor = '#dfe8f6';
 		var ckfinder = new CKFinder( config );
 		ckfinder.replace( 'ckfinder', config );
 })();
 	</script>
 </body>
 </html>
+ 

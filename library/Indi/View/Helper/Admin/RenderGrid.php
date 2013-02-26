@@ -197,7 +197,11 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					})
 				});
 
-				viewport.getComponent(3).add(grid);
+				if (viewport.getComponent(3).cls == 'center-all') {
+					viewport.getComponent(3).add(grid);
+				} else if (viewport.getComponent(4).cls == 'center-all') {
+					viewport.getComponent(4).add(grid);
+				}
 				currentPanelId = grid.id;
 
 				eval(json.section.javascript);
