@@ -1,6 +1,5 @@
 [general]
 domain = nozend
-standalone = false
 
 [db]
 adapter = mysql
