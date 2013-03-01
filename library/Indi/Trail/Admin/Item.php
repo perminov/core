@@ -93,7 +93,10 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
 				$this->fields = $field->getFieldsByEntityId($this->section->entityId);
 
 				// set up ExtJs grid fields definitions in case if current action is 'index'
-				if ($actionAlias == 'index') $this->gridFields = $field->getGridFieldsBySectionId($sectionId);
+				if ($actionAlias == 'index') {
+                    $this->gridFields = $field->getGridFieldsBySectionId($sectionId);
+                    $this->filtersCount = $field->getFiltersCountBySectionId($sectionId);
+                }
 
 				// set up disabled (unreachable for view, edit and save) fields
 				$this->disabledFields = $field->getDisabledFieldsBySectionId($sectionId);
