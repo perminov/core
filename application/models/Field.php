@@ -25,7 +25,7 @@ class Field extends Indi_Db_Table{
 	}
 
 	public function getFiltersCountBySectionId($sectionId) {
-        return $this->_db->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
+        return 0;//$this->_db->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
 	}
 
 	public function getDisabledFieldsBySectionId($sectionId){
