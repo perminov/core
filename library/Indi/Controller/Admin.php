@@ -606,7 +606,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 					$query .= 'VALUES ';
 					$foreignRowset = Entity::getInstance()->getModelById($entityId)->fetchAll($condition);
 					foreach ($foreignRowset as $foreignRow) {
-						$values[] = '("' . $foreignRow->alias . '","' . $foreignRow->getTitle() . '")';
+						$values[] = '("' . $foreignRow->alias . '","' . str_replace('"', '&quote;', $foreignRow->getTitle()) . '")';
 					}
 					$query .= implode(',', $values) . ';';
 				} else {
@@ -672,7 +672,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 				$query = 'INSERT INTO `' . $tmpTable . '` ';
 				$values = array();
 				for ($i = 0; $i < count($tmp); $i ++) {
-					$values[] = '(' . $tmp[$i]['id'] . ', "' . $tmp[$i]['title'] . '")';
+					$values[] = '(' . $tmp[$i]['id'] . ', "' . str_replace('"', '&quote;', $tmp[$i]['title']) . '")';
 				}
 				$query .= 'VALUES ' . implode(', ', $values) . ';';
 				$this->db->query($query);
@@ -690,7 +690,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 				$order = 'POSITION(CONCAT("\'", `id`, "\'") IN "\'' . implode("','", $ids) . '\'") ASC';
 			}
 		} else {
-			$order = $this->post['sort'] . ' ' . $this->post['dir'];
+			$order = '`' . $this->post['sort'] . '` ' . $this->post['dir'];
 		}
         $order = trim($order) ? $order : null;
 		return $order;

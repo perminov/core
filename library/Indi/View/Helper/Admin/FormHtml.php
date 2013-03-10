@@ -21,11 +21,8 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
 		if ($params['style']) $CKEditor->config['style'] = $params['style'];
 		if ($params['bodyClass']) $CKEditor->config['bodyClass'] = $params['bodyClass'];
 		if ($params['contentsCss']) $CKEditor->config['contentsCss'] = preg_match('/^\[/', $params['contentsCss']) ? json_decode($params['contentsCss']) : $params['contentsCss'];
-		if ($params['width']) {
-			$CKEditor->config['width'] = $params['width'] + 52;
-			//$CKEditor->config['style'] .= 'body{max-width: ' . $params['width'] . 'px;min-width: ' . $params['width'] . 'px;width: ' . $params['width'] . 'px;}';
-			$CKEditor->config['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';
-		}
+		if ($params['width']) $CKEditor->config['width'] = $params['width'] + 52;
+		$CKEditor->config['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';
 
 		$ckfinder = new CKFinder();
 		$ckfinder->BasePath = $standalone . '/library/ckfinder/';
