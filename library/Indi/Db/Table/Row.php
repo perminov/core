@@ -161,11 +161,14 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 				} else {
 					$f=true;
 				}
-				if ($f) $filterBySatellite = '`' . ($satelliteField->satellitealias ? $satelliteField->satellitealias : $satelliteField->alias) . '` = "' . $this->{$satelliteField->alias} . '"';
+				//if ($f) $filterBySatellite = '`' . ($satelliteField->satellitealias ? $satelliteField->satellitealias : $satelliteField->alias) . '` = "' . $this->{$satelliteField->alias} . '"';
+				if ($f) $filterBySatellite = 'FIND_IN_SET("' . $this->{$satelliteField->alias} . '", `' . ($satelliteField->satellitealias ? $satelliteField->satellitealias : $satelliteField->alias) . '`)';
+				
 			}
 			if ($alternative) {
 				$row = $this->getForeignRowByForeignKey($satelliteField->alias);
-				$filterBySatellite = '`' . $alternative . '` = "' . $row->$alternative . '"';
+				//$filterBySatellite = '`' . $alternative . '` = "' . $row->$alternative . '"';
+				$filterBySatellite = 'FIND_IN_SET("' . $row->$alternative . '", `' . $alternative . '`)';
 			}
 		}
 		// set up dropdown filters

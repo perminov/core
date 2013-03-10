@@ -394,8 +394,8 @@ class Indi_Controller_Admin extends Indi_Controller{
 									$fields[$j]->alias = $fields[$i]->alternative;
 									$this->post['satellite'] = $satelliteRow->{$fields[$i]->alternative};
 								}
-								$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'CONCAT("\'",REPLACE(`' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`,",","\',\'"),"\'") LIKE "%\'' . $this->post['satellite'] . '\'%"';
-							}
+								//$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'CONCAT("\'",REPLACE(`' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`,",","\',\'"),"\'") LIKE "%\'' . $this->post['satellite'] . '\'%"';
+								$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';							}
 						}
 					} else if ($fields[$i]->dependency == 'u') {
 					}
