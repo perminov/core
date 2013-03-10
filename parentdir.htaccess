@@ -3,6 +3,7 @@
 ###################
 DirectoryIndex index.php
 AddDefaultCharset UTF-8
+php_value short_open_tag On
 Options FollowSymLinks
 <Files config.ini>
   Deny from all 

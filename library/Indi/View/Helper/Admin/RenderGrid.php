@@ -5,6 +5,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
     {
 		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
+        $filtersCount = $this->view->trail->getItem()->filtersCount;
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
 		if (!count($gridFields)) {
 			echo 'Отсутствуют сведения о структуре ExtJs таблицы для этого раздела.';
@@ -70,7 +71,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			// set up dropdown to navigate through related different types of related items
 			$sections = $this->view->trail->getItem()->sections->toArray();
 			if (count($sections)) {
-				$sectionsDropdown = "'->', 'Подраздел:  ', '";
+				$sectionsDropdown = "'Подраздел:  ', '";
 				$sectionsDropdown .= '<span><select style="border: 0;" name="sectionId" id="subsectionSelect">';
 				$sectionsDropdown .= '<option value="">--Выберите--</option>';
 				for ($i = 0; $i < count($sections); $i++)
@@ -80,6 +81,26 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			}
 			$tbarItems = array();
 			if ($actions) $tbarItems[] = $actions;
+            $tbarItems[] = "
+                '->',
+                'Искать: ',
+                {
+                    xtype: 'textfield',
+                    name: 'fast-search-keyword',
+                    height: 19,
+                    cls: 'fast-search-keyword',
+                    placeholder: 'Искать',
+                    listeners: {
+                        change: function(obj, newValue, oldValue, eOpts){
+                            clearTimeout(timeout);
+                            timeout = setTimeout(function(keyword){
+                                grid.store.proxy.url = '/admin/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/' + (keyword ? 'keyword/' + keyword + '/' : '');
+                                gridStore.load();
+                            }, 500, newValue);
+                        }
+                    }
+                }
+            ";
 			if ($sectionsDropdown) $tbarItems[] = $sectionsDropdown;
 
 			if ($defaultSortField = $this->view->trail->getItem()->section->getForeignRowByForeignKey('defaultSortField')){
@@ -89,6 +110,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				'columns' => $columns,
 				'tbar' => $tbarItems,
 				'fields' => $fields,
+                'filtersCount' => $filtersCount,
 				'params' => $this->view->trail->requestParams,
 				'section' => $this->view->trail->getItem()->section->toArray(),
 				'trail' => $this->view->trail(),
@@ -98,6 +120,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			ob_start();?>
 			<script>
 			var json = <?=json_encode($meta)?>;
+            var timeout;
 			Ext.onReady(function() {
 				var myMask;
 				var gridStore = Ext.create('Ext.data.Store', {
@@ -196,12 +219,36 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						]
 					})
 				});
-
-				if (viewport.getComponent(3).cls == 'center-all') {
-					viewport.getComponent(3).add(grid);
-				} else if (viewport.getComponent(4).cls == 'center-all') {
-					viewport.getComponent(4).add(grid);
-				}
+                json.filtersCount = 0;
+                if (json.filtersCount > 0) {
+                    var maxImgWidth = Math.floor(($('#center-content-body').width()-36)/2);
+                    var filter = {
+                        region: 'south',
+                        title: 'Поиск',
+                        collapsible: true,
+                        collapsed: false,
+                        height: 300,
+                        html: '<iframe src="/admin/' + json.section.alias + '/form?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
+                        closable: true,
+                        weight: 10,
+                        id: 'search-panel'
+                    }
+                }
+                var index;
+                if (viewport.getComponent(3).cls == 'center-all') {
+                    index = 3;
+                } else if (viewport.getComponent(4).cls == 'center-all') {
+                    index = 4
+                }
+                if (json.filtersCount > 0 && (viewport.getComponent(index+2) == undefined || viewport.getComponent(index+2).id != 'search-panel-placeholder')) {
+                    viewport.add(filter);
+                    /*$.post('/admin/' + json.section.alias + '/form', function(response){
+                        viewport.getComponent(index+2).html = 'shit';
+                    })*/
+                } else if (json.filtersCount == 0 && viewport.getComponent(index+2) != undefined && viewport.getComponent(index+2).id == 'search-panel') {
+                    viewport.getComponent(index+2).close();
+                }
+                viewport.getComponent(index).add(grid);
 				currentPanelId = grid.id;
 
 				eval(json.section.javascript);

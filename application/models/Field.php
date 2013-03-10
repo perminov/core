@@ -24,6 +24,10 @@ class Field extends Indi_Db_Table{
 	    return $this->fetchAll($where, $order);
 	}
 
+	public function getFiltersCountBySectionId($sectionId) {
+        return 0;//$this->_db->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
+	}
+
 	public function getDisabledFieldsBySectionId($sectionId){
 
 		$disabled = Misc::loadModel('DisabledField');

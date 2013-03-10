@@ -42,11 +42,6 @@ class Indi_Controller_Admin extends Indi_Controller{
         // config is used in different times
         $this->config = Config::getInstance()->asObject();
 
-		//$this->getFrontController()->unregisterPlugin('Indi_Controller_Plugin_ErrorHandler');
-
-        // set up auth session storage for cms
-//        $this->auth = Indi_Auth::getInstance()->setStorage(new Indi_Auth_Storage_Session('admin', 'admin'));
-		
         // perform authentication
         Indi_Auth::getInstance()->auth($this);
 
@@ -55,9 +50,6 @@ class Indi_Controller_Admin extends Indi_Controller{
         $sectionAlias = $this->controller;
 		if ($this->session->specialSectionCondition->$sectionAlias) $condition[] = $this->session->specialSectionCondition->$sectionAlias;
 
-//        $condition = $this->session->specialSectionCondition->$sectionAlias;
-//        $condition = $condition ? ' AND ' . $condition : '';
-        
 		// set up info for pagination
 		if (isset($this->get['limit'])) {
 			$this->limit = $this->get['limit'];
@@ -126,6 +118,9 @@ class Indi_Controller_Admin extends Indi_Controller{
 				
 				// owner control
 				if($this->admin['alternate'] && $this->trail->getItem()->model->fieldExists($this->admin['alternate'] . 'Id')) $condition[] =  '`' . $this->admin['alternate'] . 'Id` = "' . $this->admin['id'] . '"';
+
+                // fast search
+                $condition = $this->appendFastSearchConditionIfNeed($condition);
 
 				$this->limit = $this->trail->getItem()->section->rowsOnPage;
 				// set up sorting depend on ExtJS grid column click
@@ -601,7 +596,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 				$query = 'DROP TABLE IF EXISTS `' . $tmpTable . '`;';
 				$this->db->query($query);
 
-				$query = 'CREATE TEMPORARY TABLE `' . $tmpTable . '` (`id` VARCHAR(255) NOT NULL, `title` VARCHAR(255) NOT NULL);';
+				$query = 'CREATE TEMPORARY TABLE `' . $tmpTable . '` (`id` VARCHAR(255) NOT NULL, `title` VARCHAR(255)  COLLATE utf8_general_ci NOT NULL);';
 				$this->db->query($query);
 
 				$query = ' INSERT INTO `' . $tmpTable . '` ';
@@ -830,4 +825,44 @@ class Indi_Controller_Admin extends Indi_Controller{
 			Indi_Cache::update(get_class($this->trail->getItem()->model));
 		}
 	}
+
+    public function appendFastSearchConditionIfNeed($condition) {
+        if (!$this->params['keyword']) return $condition;
+        $this->params['keyword'] = str_replace('"','&quot;', strip_tags(urldecode($this->params['keyword'])));
+        $keywordCondition = array();
+        foreach ($this->trail->getItem()->gridFields as $gridField) {
+            if ($gridField->columnTypeId) {
+                // Поиск по текстовым полям
+                if (!$gridField->relation) {
+                    $keywordCondition[] = '`' . $gridField->alias . '` LIKE "%' . $this->params['keyword'] . '%"';
+                // Поиск по полям типов ENUM и SET
+                } else if ($gridField->relation == 6) {
+                    $relativeValues = Misc::loadModel('Enumset')->fetchAll('`fieldId` = "' . $gridField->id . '" AND `title` LIKE "%' . $this->params['keyword'] . '%"');
+                    $set = array(); foreach ($relativeValues as $relativeValue) $set[] = $relativeValue->alias;
+                    if (count($set)) {
+                        $keywordCondition[] = 'FIND_IN_SET(`' . $gridField->alias . '`, "' . implode(',', $set) . '")';
+                    }
+                // Поиск по остальным типам
+                } else {
+                    // Если поле вообще без сателлайта или с сателлайтом, но с типом зависимости "Фильтрация"
+                    if (!$gridField->satellite || $gridField->dependency != 'e') {
+                        $entity = Entity::getInstance()->getModelById($gridField->relation);
+                        $relativeValues = $entity->fetchAll('`title` LIKE "%' . $this->params['keyword'] . '%"');
+                        $set = array(); foreach ($relativeValues as $relativeValue) $set[] = $relativeValue->id;
+                        if (count($set)) {
+                            $keywordCondition[] = 'FIND_IN_SET(`' . $gridField->alias . '`, "' . implode(',', $set) . '")';
+                        }
+                    // Если тип зависимости - переменная сущность
+                    } else {
+
+                    }
+                }
+            }
+        }
+        if (count($keywordCondition)) {
+            $keywordCondition = '(' . implode(' OR ', $keywordCondition) . ')';
+        }
+        if ($keywordCondition) $condition[] = $keywordCondition;
+        return $condition;
+    }
 }

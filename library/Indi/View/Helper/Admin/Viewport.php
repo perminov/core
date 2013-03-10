@@ -23,7 +23,7 @@ Ext.onReady(function() {
 			{
 				region: 'center',
 				defaults: {split: true},
-				border: 0,
+				border: 1,
 				layout: {type: 'border', padding: '0 0 0 0'},
 				cls: 'center-all',
 				items: [{
@@ -43,9 +43,10 @@ Ext.onReady(function() {
 					cls: 'top-center',
 					border: 0
 				}, {
-					region: 'center',
-					id: 'center-content'
-				}]
+                    region: 'center',
+                    id: 'center-content',
+                    border: 1
+                }]
 			}
 		]
 	});

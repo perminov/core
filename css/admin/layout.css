@@ -43,7 +43,7 @@ button span.form{
 button span.delete{
     background-image: url('/core/library/extjs4/resources/themes/images/default/shared/delete.gif') !important;
 }
-.subsection-select .x-form-text{font-size:11px !important; height: 19px !important; line-height: 14px !important;}
+.subsection-select .x-form-text{font-size:11px !important; height: 19px !important; line-height: 14px !important; color: #04408C;}
 .subsection-select .x-form-trigger-wrap{margin-top: 1px;}
 .subsection-select .x-form-trigger{height: 19px;}
 .x-boundlist ul li {font-size: 11px;}
@@ -82,4 +82,11 @@ controls{
 }
 .indi-engine-logo .x-panel-body-default{
     background: none;
+}
+.center-all > .x-panel-body-default{
+    border: none;
+}
+.fast-search-keyword .x-form-text{
+    color:  #04408C;
+    font: 11px arial;
 }

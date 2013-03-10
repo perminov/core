@@ -221,7 +221,11 @@ class Indi_Auth{
 		} else if ($redirect) {
 			die($redirect);
 		}
-		return $admin? true : $info;
+		if (isset($this->controller->get['check'])) {
+			die('ok');
+		} else {
+			return $admin? true : $info;
+		}
 	}
 	public function logout($message){
 		if ($_SESSION['admin']['id']) {
