@@ -89,6 +89,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     name: 'fast-search-keyword',
                     height: 19,
                     cls: 'fast-search-keyword',
+					margin: '0 4 0 0',
                     placeholder: 'Искать',
                     listeners: {
                         change: function(obj, newValue, oldValue, eOpts){
