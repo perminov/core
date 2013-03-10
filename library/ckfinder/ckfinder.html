@@ -5,6 +5,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="robots" content="noindex, nofollow" />
 	<script type="text/javascript" src="ckfinder.js"></script>
+	<script type="text/javascript" src="/js/jquery-1.6.1.min.js"></script>
 	<style type="text/css">
 		body, html, iframe, #ckfinder {
 			margin: 0;
@@ -134,11 +135,16 @@
 
 		// Always use 100% width and height when nested using this middle page.
 		config.width = config.height = '100%';
-		config.readOnly = true;
 		config.skin = 'v1';
 		config.uiColor = '#dfe8f6';
-		var ckfinder = new CKFinder( config );
-		ckfinder.replace( 'ckfinder', config );
+		// Check if CKFinder should be used in read-only mode
+		$.post(window.opener.location.pathname.replace('form', 'save') + '?check', function(access){
+			if (access != 'ok') {
+				config.readOnly = true;
+			}
+			var ckfinder = new CKFinder( config );
+			ckfinder.replace( 'ckfinder', config );
+		});
 })();
 	</script>
 </body>
