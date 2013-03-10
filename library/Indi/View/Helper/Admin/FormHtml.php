@@ -10,43 +10,30 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
 		$config = Indi_Registry::get('config');
 		$standalone = $config['general']->standalone == 'true' ? '/admin' : '';
 		
+		$field = $this->view->trail->getItem()->getFieldByAlias($name);
+		$params = $field->getParams();
+
         require_once('ckeditor/ckeditor.php');
 		require_once('ckfinder/ckfinder.php');
 		$CKEditor = new CKEditor();
 		$CKEditor->basePath = $standalone . '/library/ckeditor/';
 		
+		if ($params['style']) $CKEditor->config['style'] = $params['style'];
+		if ($params['bodyClass']) $CKEditor->config['bodyClass'] = $params['bodyClass'];
+		if ($params['contentsCss']) $CKEditor->config['contentsCss'] = preg_match('/^\[/', $params['contentsCss']) ? json_decode($params['contentsCss']) : $params['contentsCss'];
+		if ($params['width']) {
+			$CKEditor->config['width'] = $params['width'] + 52;
+			//$CKEditor->config['style'] .= 'body{max-width: ' . $params['width'] . 'px;min-width: ' . $params['width'] . 'px;width: ' . $params['width'] . 'px;}';
+			$CKEditor->config['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';
+		}
+
 		$ckfinder = new CKFinder();
 		$ckfinder->BasePath = $standalone . '/library/ckfinder/';
 		$ckfinder->SetupCKEditorObject($CKEditor);
-		
+
 		$CKEditor->returnOutput = true;
 		$xhtml = $CKEditor->editor($name, $value);
-		
+		$xhtml .= $widthJs;
         return $xhtml;
     }
 }
-/*
-<?php
-class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
-{
-    public function formHtml($name, $value = null, $height = 300, $toolbar = 'Custom')
-    {
-        $toolbar = $toolbar ? $toolbar : 'Default';
-        if ($value === null) {
-            $value = $this->view->row->$name;
-        }
-        require_once('FCKeditor/fckeditor.php');
-		$config = Indi_Registry::get('config');
-        $_SESSION['UserFilesPath'] = '/' . trim($config['upload']->uploadPath, '/') . '/' . trim($config['fckeditor']->uploadPath, '\\/') . '/';
-        $_SESSION['UserFilesAbsolutePath'] = rtrim($_SERVER['DOCUMENT_ROOT'] . '/www', '\\/') . $_SESSION['UserFilesPath'];
-        ob_start();        
-        $oFCKeditor = new FCKeditor($name);
-        $oFCKeditor->Height = $height;
-        $oFCKeditor->BasePath = '/library/FCKeditor/';
-        $oFCKeditor->Value      = $value;
-        $oFCKeditor->ToolbarSet = $toolbar;
-        $oFCKeditor->Create();        
-        $xhtml = ob_get_clean();
-        return $xhtml;
-    }
-}*/

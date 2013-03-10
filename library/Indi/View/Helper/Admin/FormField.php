@@ -8,8 +8,8 @@ class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
 			$params = $field->getParams();
 			if ($params['wide']) {
 				$xhtml = '<tr class="info" id="tr-' . $field->alias . '">';
-				$xhtml .= '<td width="100%" id="td-wide-' . $field->alias . '" colspan="2">';
-				$xhtml .= $field->title . ':<br>';
+				$xhtml .= '<td width="100%" id="td-wide-' . $field->alias . '" colspan="2" align="center">';
+				$xhtml .= '<span style="line-height: 21px;">' . $field->title . ':</span><br>';
 				$xhtml .= $this->view->{'form' . ucfirst($elementRow->alias)}($field->alias);
 				$xhtml .= '</td>';
 				$xhtml .= '</tr>';

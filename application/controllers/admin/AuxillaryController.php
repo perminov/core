@@ -163,6 +163,7 @@ class Admin_AuxillaryController extends Indi_Controller
 			die('Ошибка входных данных');
 		} else {
 			$fieldR = Misc::loadModel('Field')->fetchRow('`id` = "' . $this->params['field'] . '"');
+			$params = $fieldR->getParams();
 			if ($fieldR) {
 				$entityR = Misc::loadModel('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"');
 				if ($entityR) {
@@ -175,7 +176,7 @@ class Admin_AuxillaryController extends Indi_Controller
 						$file = glob($absolute . $pattern); $file = $file[0];
 						$info = pathinfo($file);
 						if (file_exists($file)) {
-							$title = $entityR->title . ' ' . $itemR->getTitle() . ' - ' . $fieldR->title  . '.' . $info['extension'];
+							$title = ($params['prependEntityTitle'] != 'false' ? $entityR->title . ' ' : '') . $itemR->getTitle() . ($params['appendFieldTitle'] != 'false' ? ' - ' . $fieldR->title : '')  . '.' . $info['extension'];
 							$title = str_replace('+', '%20', urlencode($title));
 							header('Content-Type: application/octet-stream');
 							header('Content-Disposition: attachment; filename="' . $title . '";');
@@ -189,3 +190,11 @@ class Admin_AuxillaryController extends Indi_Controller
 		die("Ok");
 	}
 }
+
+
+
+
+
+
+
+

@@ -13,14 +13,14 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                         if ($items[$i-1]->row->id) {
 							$href2 .= 'index/id/' . $items[$i-1]->row->id . '/';
                         }
-                        $trail[] = '<a href="#" onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . $item->section->title . '</a>';
+                        $trail[] = '<a href="#" onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . str_replace('<br>', ' ', $item->section->title) . '</a>';
                         if ($item->row->id) {
-                            $trail[] = '<i style="cursor: default;">' . mb_substr($item->row->getTitle(),0, 50, 'utf-8') . '</i>';
+                            $trail[] = '<i style="cursor: default;">' . str_replace('<br>', ' ',mb_substr($item->row->getTitle(),0, 50, 'utf-8')) . '</i>';
                             $trail[] = '' . $item->action->title .'';
                         } else if ($item->action->alias == 'form') {
                             $trail[] = 'Создать';
                         } else if ($item->action->rowRequired == 'n') {
-                            $trail[] = '' . $item->action->title .'';
+                            $trail[] = '' . $item->action->title . '';
 						}
                     } else {
 		        $trail[] = '' . $item->section->title . '';
@@ -30,13 +30,13 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                     if ($items[$i-1]->row->id) {
                         $href2 .= 'index/id/' . $items[$i-1]->row->id . '/';
                     }
-                    $trail[] = '<a href="#" onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . $item->section->title . '</a>';
+                    $trail[] = '<a href="#" onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . str_replace('<br>', ' ', $item->section->title) . '</a>';
                     if ($item->row->id) {
-                        $trail[] = '<i style="cursor: default;">' . mb_substr($item->row->getTitle(), 0, 50, 'utf-8') . '</i>';
+                        $trail[] = '<i style="cursor: default;">' . str_replace('<br>', ' ', mb_substr($item->row->getTitle(), 0, 50, 'utf-8')) . '</i>';
 		    }
                 }
             } else {
-                $trail[] = '<span style="cursor: default">' . $item->section->title . '</span>';
+                $trail[] = '<span style="cursor: default">' . str_replace('<br>', ' ', $item->section->title) . '</span>';
             }
        }
     $xhtml .= count($trail) ? implode(' &raquo; ', $trail) : '';

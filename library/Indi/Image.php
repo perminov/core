@@ -88,7 +88,6 @@ abstract class Indi_Image
 		$post = Indi_Registry::get('post');
 		$imagesToUpload = array();
 		if (is_array($post['file-action'])) foreach ($post['file-action'] as $file => $action) if ($action == 'm') $imagesToUpload[] = $file;
-
 		if (count($imagesToUpload)) foreach ($images['tmp_name'] as $name => $tmp) {
             if (in_array($name, $imagesToUpload) && $images['error'][$name] == 0) {
 				if ($requirements) {
@@ -103,6 +102,14 @@ abstract class Indi_Image
 					if ($images['size'][$name] > $requirements['maxsize']) {
 						$failInfo['maxsize'][] = $images['name'][$name];
 						continue;
+					}
+					if ($requirements['ext']) {
+						$userFile = $images['name'][$name];
+						$info = pathinfo($userFile);
+						if (!in_array($info['extension'], explode(',', $requirements['ext']))) {
+							$failInfo['type'][] = $images['name'][$name];
+							continue;
+						}
 					}
 				}
                 try {
