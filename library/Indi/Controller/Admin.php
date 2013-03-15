@@ -293,6 +293,8 @@ class Indi_Controller_Admin extends Indi_Controller{
 					$value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
 					break;
 				case 'multicheck':
+                    $value = implode(',', $value);
+                    break;
 				case 'multiselect':
 					if (!is_array($value) || (count($value) <= 1 && ! array_key_exists(-1, $value))) {
 						$value = '';

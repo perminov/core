@@ -4,7 +4,7 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 	public function seoTDK($what = 'title'){
 		if ($this->view->row) {
 			$title = array();
-			if ($this->view->row->useSystemSeoSolution != 'y') {
+			if ($this->view->row->useSystemSeoSolution == 'n') {
 				return $this->view->row->{'seo' . ucfirst($what)};
 			} else {
 				$parts = Misc::loadModel('Seo'. ucfirst($what))->fetchAll('`fsection2factionId`="' . $this->view->section2actionId . '"', 'move');
@@ -62,7 +62,7 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 			$this->constructSeoForRowsetActions($what, 0);
 			$xhtml = implode(' ', $this->title);
 		}
-		return $xhtml;
+		return str_replace('<br>', ' ', $xhtml);
 	}
 	function constructSeoForRowsetActions($what, $parentId = 0){
 		$parts = Misc::loadModel('Seo'. ucfirst($what))->fetchAll('`seo'. ucfirst($what) . 'Id` = "' . $parentId . '" AND `fsection2factionId`="' . $this->view->section2actionId . '"', 'move');

@@ -100,7 +100,7 @@ class Indi_Uri {
 		$config = Indi_Registry::get('config');
 		$db = Indi_Db_Table::getDefaultAdapter();
 		$subdomains = $db->query('SELECT `fs`.`alias` FROM `subdomain` `sd`, `fsection` `fs` WHERE `sd`.`fsectionId` = `fs`.`id`')->fetchAll();
-		foreach ($subdomains as $sd) $subdomainsArray[] = $sd['alias'];
+		$subdomainsArray = array(); foreach ($subdomains as $sd) $subdomainsArray[] = $sd['alias'];
 		if ($_SERVER['HTTP_HOST'] != $config['general']->domain) {
 			$subdomain = str_replace('.'.$config['general']->domain, '',$_SERVER['HTTP_HOST']);
 			if (in_array($subdomain, $subdomainsArray)) {
