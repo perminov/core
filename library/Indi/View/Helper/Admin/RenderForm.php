@@ -8,7 +8,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
 		} 
 		
 		echo $this->view->formFooter();
-		echo '<js>' . $this->view->trail->getItem()->section->javascriptForm . '</js>';
+		echo '<script>' . $this->view->trail->getItem()->section->javascriptForm . '</script>';
 	}
 
 }

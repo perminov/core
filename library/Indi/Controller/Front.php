@@ -5,7 +5,8 @@ class Indi_Controller_Front extends Indi_Controller{
 	public $urlPattern = "/^\b([\d\w\.\/\+\-\?\:]*)((ht|f)tp(s|)\:\/\/|[\d\d\d|\d\d]\.[\d\d\d|\d\d]\.|www\.|\.tv|\.ac|\.com|\.edu|\.gov|\.int|\.mil|\.net|\.org|\.biz|\.info|\.name|\.pro|\.museum|\.co|\.ru)([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;\b]*)$/";
 	public function preDispatch(){
 		parent::preDispatch();
-		// Для XHR
+
+        // Для XHR
 		header('Access-Control-Allow-Origin: *');
 		
 		// Фильтруем POST
@@ -66,7 +67,24 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->footer1 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer1"');
 		$this->view->footer2 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer2"');
 		$this->view->visitors = $this->visitors();
-		$this->view->get = $this->get;
+
+        // Меню
+        if (Misc::loadModel('Entity')->fetchRow('`table` = "menu"') && !$this->view->menu) {
+            $menu = Misc::loadModel('Menu')->init();
+            $this->view->menu = $menu;
+        }
+
+        // Куски
+        if (Misc::loadModel('Entity')->fetchRow('`table` = "staticblock"')) {
+            $staticBlocksRs = Misc::loadModel('Staticblock')->fetchAll('`toggle` = "y"');
+            foreach ($staticBlocksRs as $staticBlocksR) {
+                $staticBlocks[$staticBlocksR->alias] = $staticBlocksR->{'details' . ucfirst($staticBlocksR->type)};
+                if ($staticBlocksR->type == 'textarea') $staticBlocks[$staticBlocksR->alias] = nl2br($staticBlocks[$staticBlocksR->alias]);
+            }
+            $this->view->blocks = $staticBlocks;
+        }
+
+        $this->view->get = $this->get;
 		if ($this->row) $this->view->row = $this->row;
 		// Если действие обычное
 		if ($this->section2action->type != 'j') {

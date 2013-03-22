@@ -293,7 +293,11 @@ class Indi_Controller_Admin extends Indi_Controller{
 					$value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
 					break;
 				case 'multicheck':
-                    $value = implode(',', $value);
+                    if (is_array($value)) {
+                        $value = implode(',', $value);
+                    } else {
+                        $value = '';
+                    }
                     break;
 				case 'multiselect':
 					if (!is_array($value) || (count($value) <= 1 && ! array_key_exists(-1, $value))) {
@@ -462,12 +466,12 @@ class Indi_Controller_Admin extends Indi_Controller{
 				}
 			}
 		}
-
-		// get info about grid columns, that store relations
+        $gridFieldsAliasesThatStoreBoolean = array();
+		// get info about grid columns, that store relations and boolean values
 		for ($i = 0; $i < count ($gridFields); $i++) {
 			if ($gridFields[$i]['relation']) $gridFieldsThatStoreRelation[$gridFields[$i]['alias']] = $gridFields[$i]['relation'];
-		}
-
+            if ($gridFields[$i]['elementId'] == 9) $gridFieldsAliasesThatStoreBoolean[] = $gridFields[$i]['alias'];
+        }
 		$columntype = Misc::loadModel('ColumnType');
 
 		if (count($gridFieldsThatStoreRelation)) {
@@ -516,10 +520,17 @@ class Indi_Controller_Admin extends Indi_Controller{
 					$title = $titles[$alias][$data[$i][$alias]];
 					if ($title) $data[$i][$alias] = $title;
 				}
-			}
+            }
 		}
 
-		// add trailing zeros to column that have the 'DOUBLE' type
+        // apply up custom titles
+        for ($i = 0; $i < count($data); $i++) {
+            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
+                $data[$i][$alias] = $data[$i][$alias] ? 'Да' : 'Нет';
+            }
+        }
+
+        // add trailing zeros to column that have the 'DOUBLE' type
 		$doubleColumns = $columntype->fetchAll('`type` LIKE "DOUBLE%"');
 		foreach ($doubleColumns as $doubleColumn) {
 			preg_match("/\(\d+,(\d+)\)/i", $doubleColumn->type, $matches);

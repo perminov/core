@@ -601,7 +601,117 @@ class Misc
 			return $config;
 		}
 	}
-} 
+    public static function ago($datetime, $postfix = 'назад')
+    {
+        $curr = time();
+        $past = strtotime($datetime);
+        $duration = $curr - $past;
+        $container = array(
+            'Y' => date('Y', $duration) - 1970,
+            'n' => date('n', $duration) - 1,
+            'j' => date('j', $duration) - 1,
+            'G' => date('G', $duration) - 3,
+            'i' => trim(date('i', $duration), '0'),
+            's' => trim(date('s', $duration), '0')
+        );
+        $formats = array(
+            'Y' => array(
+                '0,11-19' => 'лет',
+                '1'       => 'год',
+                '2-4'     => 'года',
+                '5-9'     => 'лет'
+            ),
+            'n' => array(
+                '0,11-19' => 'месяцев',
+                '1'       => 'месяц',
+                '2-4'     => 'месяца',
+                '5-9'     => 'месяцев'
+            ),
+            'j' => array(
+                '0,11-19' => 'дней',
+                '1'       => 'день',
+                '2-4'     => 'дня',
+                '5-9'     => 'дней'
+            ),
+            'G' => array(
+                '0,11-19' => 'часов',
+                '1'       => 'час',
+                '2-4'     => 'часа',
+                '5-9'     => 'часов'
+            ),
+            'i' => array(
+                '0,11-19' => 'минут',
+                '1'       => 'минута',
+                '2-4'     => 'минуты',
+                '5-9'     => 'минут'
+            ),
+            's' => array(
+                '0,11-19' => 'секунд',
+                '1'       => 'секунда',
+                '2-4'     => 'секунды',
+                '5-9'     => 'секунд'
+            )
+        );
+        foreach ($container as $level => $difference)
+        {
+            if ($difference)
+            {
+                $part = $difference;
+                $format = $formats[$level];
+                foreach ($format as $digits => $lang)
+                {
+                    $cases = explode(',', $digits);
+                    for ($k = 0; $k < count($cases); $k ++)
+                    {
+                        if (strpos($cases[$k], '-') === false)
+                        {
+                            if (preg_match('/'.$cases[$k].'$/', $part)) return $part.' '.$format[$digits].' '.$postfix;
+                        }
+                        else
+                        {
+                            $interval = explode('-', $cases[$k]);
+                            for ($m = $interval[0]; $m <= $interval[1]; $m ++)
+                            {
+                                if (preg_match('/'.$m.'$/', $part)) return $part.' '.$format[$digits].' '.$postfix;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        return 'только что';
+    }
+
+    public static function tbq($q = 2, $versions = '')
+    {
+        $versions = explode(',', $versions);
+        $format = array(
+            '0,11-19,5-9' => $versions[0],
+            '1'       => $versions[1],
+            '2-4'     => $versions[2]
+        );
+        foreach ($format as $digits => $lang)
+        {
+            $cases = explode(',', $digits);
+            for ($k = 0; $k < count($cases); $k ++)
+            {
+                if (strpos($cases[$k], '-') === false)
+                {
+                    if (preg_match('/'.$cases[$k].'$/', $q)) return $q.' '.$format[$digits];
+                }
+                else
+                {
+                    $interval = explode('-', $cases[$k]);
+                    for ($m = $interval[0]; $m <= $interval[1]; $m ++)
+                    {
+                        if (preg_match('/'.$m.'$/', $q)) return $q.' '.$format[$digits];
+                    }
+                }
+            }
+        }
+    }
+}
 class Css{
 	public $s,$f,$t,$r=array();
 	public function __construct($s=''){$this->s=trim(str_replace('{','',$s));preg_match('/([#\.])([a-zA-Z][a-zA-Z0-9\-_]+)[ ,.:]/',$s,$m);$this->f=$m[2];$this->t=$m[1]=='#'?'id':'class';} 

@@ -569,7 +569,13 @@ abstract class Indi_Image
 //		echo $postfix . '-'. $size . ':' . $newim_w . 'x' . $newim_h . '<br>';
 
         $newim = imagecreatetruecolor($newim_w, $newim_h);
-    
+
+        if(in_array($types[$type[1]], array('png', 'gif'))){
+            imagecolortransparent($newim, imagecolorallocatealpha($newim, 0, 0, 0, 127));
+            imagealphablending($newim, false);
+            imagesavealpha($newim, true);
+        }
+
         imagecopyresampled($newim, $oldim, 0, 0, 0, 0, $newim_w, $newim_h, $oldim_w, $oldim_h);
     
 		if ($types[$type[1]] == 'png') {

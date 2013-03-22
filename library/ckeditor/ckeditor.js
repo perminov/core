@@ -6,7 +6,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
     if (window.CKEDITOR && window.CKEDITOR.dom) return;
     if (!window.CKEDITOR) window.CKEDITOR = (function () {
         var a = {
-            timestamp: 'C3HA5RM',
+            timestamp: 'C3HA5R7',
             version: '3.6.3',
             revision: '7474',
             rnd: Math.floor(Math.random() * 900) + 100,
@@ -414,9 +414,22 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                     g = f[i];
                     if (/@import|[{}]/.test(g)) h.push('<style>' + g + '</style>');
                     else h.push('<link type="text/css" rel=stylesheet href="' + g + '">');
-					console.log(h);
                 }
                 return h.join('');
+            },
+            buildScriptHtml: function (f) {
+                if (f != undefined) {
+                    f = [].concat(f);
+                    var g, h = [];
+                    console.log(f);
+                    for (var i = 0; i < f.length; i++) {
+                        g = f[i];
+                        h.push('<script type="text/javascript" language="javascript" src="' + g + '"></script>');
+                        //console.log(h);
+                    }
+                    return h.join('');
+                }
+                return '';
             },
             htmlEncode: function (f) {
                 var g = function (k) {
@@ -6899,7 +6912,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
             var t = {}, u = [],
                 v = {
                     nbsp: '\xa0',
-                    shy: '­',
+                    shy: 'ï¿½',
                     gt: '>',
                     lt: '<',
                     amp: '&',
@@ -9748,7 +9761,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                         if (u.getAttribute('class')) t += 'class="' + u.getAttribute('class') + '" ';
                     }
                     t += '>';
-                    p = o.config.docType + '<html dir="' + o.config.contentsLangDirection + '">' + '<head>' + r + '<title>' + o.lang.preview + '</title><style>body{max-width: 505px;min-width: 505px;width: 505px}</style>' + e.buildStyleHtml(o.config.contentsCss) + '</head>' + t + o.getData() + '</body></html>';
+                    console.log(o.config);
+                    p = o.config.docType + '<html dir="' + o.config.contentsLangDirection + '">' + '<head>' + r + '<title>' + o.lang.preview + '</title>' + e.buildStyleHtml(o.config.contentsCss) + e.buildScriptHtml(o.config.contentsJs) + '</head>' + t + o.getData() + '</body></html>';
                 }
                 var v = 640,
                     w = 420,
@@ -10650,6 +10664,12 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                             m.focusManager.focus();
                         });
                         m.mayBeDirty = true;
+
+
+                        if (m.config.sourceStripper) {
+                            eval(m.config.sourceStripper);
+                        }
+
                         this.loadData(s);
                         var u = m.keystrokeHandler;
                         if (u) u.attach(p);
@@ -12880,11 +12900,13 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                             C._.dataStore = {
                                 id: 1
                             };
+                            //console.log(C.config);
                             var X = C.config,
                                 Y = X.fullPage,
                                 Z = X.docType,
                                 aa = '<style type="text/css" data-cke-temp="1">' + C._.styles.join('\n') + C.config.style + '</style>';
-                            !Y && (aa = e.buildStyleHtml(C.config.contentsCss) + aa);
+                                if(C.config.script) aa += '<script>'+ C.config.script+'</script>';
+                            !Y && (aa = e.buildStyleHtml(C.config.contentsCss) + e.buildScriptHtml(C.config.contentsJs) + aa);
                             var ab = X.baseHref ? '<base href="' + X.baseHref + '" data-cke-temp="1" />' : '';
                             if (Y) W = W.replace(/<!DOCTYPE[^>]*>/i, function (ac) {
                                 C.docType = Z = ac;
@@ -18293,7 +18315,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                         this.isLoaded = true;
                         if (this.onLoad) this.onLoad();
                     }, this)),
-                        u = '<!DOCTYPE html><html dir="' + p + '" class="' + q + '_container" lang="' + r + '">' + '<head>' + '<style>.' + q + '_container{visibility:hidden}</style>' + e.buildStyleHtml(this.css) + '</head>' + '<body class="cke_' + p + ' cke_panel_frame ' + b.cssClass + '" style="margin:0;padding:0"' + ' onload="( window.CKEDITOR || window.parent.CKEDITOR ).tools.callFunction(' + t + ');"></body>' + '</html>';
+                        u = '<!DOCTYPE html><html dir="' + p + '" class="' + q + '_container" lang="' + r + '">' + '<head>' + '<style>.' + q + '_container{visibility:hidden}</style>' + e.buildStyleHtml(this.css) + e.buildScriptHtml(this.js) + '</head>' + '<body class="cke_' + p + ' cke_panel_frame ' + b.cssClass + '" style="margin:0;padding:0"' + ' onload="( window.CKEDITOR || window.parent.CKEDITOR ).tools.callFunction(' + t + ');"></body>' + '</html>';
                     s.write(u);
                     var v = s.getWindow();
                     v.$.CKEDITOR = a;

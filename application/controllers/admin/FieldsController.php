@@ -27,9 +27,11 @@ class Admin_FieldsController extends Indi_Controller_Admin
 			}
 		}
 
-		// get info about grid columns, that store relations
+        $gridFieldsAliasesThatStoreBoolean = array();
+		// get info about grid columns, that store relations and boolean values
 		for ($i = 0; $i < count ($gridFields); $i++) {
 			if ($gridFields[$i]['relation']) $gridFieldsThatStoreRelation[$gridFields[$i]['alias']] = $gridFields[$i]['relation'];
+            if ($gridFields[$i]['elementId'] == 9) $gridFieldsAliasesThatStoreBoolean[] = $gridFields[$i]['alias'];
 		}
 
 
@@ -103,17 +105,24 @@ class Admin_FieldsController extends Indi_Controller_Admin
 				}
 			}
 
-			// set up custom titles
-			for ($i = 0; $i < count($data); $i++) {
-				foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-					$title = $titles[$alias][$data[$i][$alias]];
-					if ($title) $data[$i][$alias] = $title;
-				}
-			}
-			
-		}
+            // apply up custom titles
+            for ($i = 0; $i < count($data); $i++) {
+                foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
+                    $title = $titles[$alias][$data[$i][$alias]];
+                    if ($title) $data[$i][$alias] = $title;
+                }
+            }
 
-		$jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data).'})';
+        }
+
+        // apply up custom titles
+        for ($i = 0; $i < count($data); $i++) {
+            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
+                $data[$i][$alias] = $data[$i][$alias] ? 'Да' : 'Нет';
+            }
+        }
+
+        $jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data).'})';
 		return $jsonData;
 	}
 	public function postSave(){

@@ -39,7 +39,8 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
             foreach ($accessableActions as $accessableAction) {
                 if ($accessableAction['alias'] == 'save') {
 					$title[] = 'Сохранить';
-					$action[] = "javascript: document.forms['" . $this->view->entity->table . "'].submit();";
+					//$action[] = "javascript: document.forms['" . $this->view->entity->table . "'].submit();";
+					$action[] = "javascript: $('form[name=" . $this->view->entity->table . "]').submit()";
 					break;
 				}
             }
