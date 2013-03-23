@@ -1,5 +1,5 @@
 <?php
-// Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
+// Copyright (c) 2003-2013, CKSource - Frederico Knabben. All rights reserved.
 // For licensing, see LICENSE.html or http://ckfinder.com/license
 
 //  Defines the object for the Slovak language.
@@ -16,6 +16,7 @@ $GLOBALS['CKFLang'] = array (
 		'105' => 'Neplatná prípona súboru.',
 		'109' => 'Neplatná požiadavka.',
 		'110' => 'Neidentifikovaná chyba.',
+		'111' => 'It was not possible to complete the request due to resulting file size.',
 		'115' => 'Zadaný súbor alebo adresár už existuje.',
 		'116' => 'Adresár nebol nájdený. Aktualizujte obsah adresára (Znovunačítať) a skúste znovu.',
 		'117' => 'Súbor nebol nájdený. Aktualizujte obsah adresára (Znovunačítať) a skúste znovu.',

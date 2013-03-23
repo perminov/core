@@ -21,6 +21,8 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 	<script type="text/javascript" src="/js/admin/dselect.js"></script>
 	<script type="text/javascript" src="/js/admin/autocomplete.js"></script>
 	<script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
+    <script type="text/javascript" src="/library/ckeditor/ckeditor.js?<?=rand(0, 1000)?>"></script>
+    <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
 </head>
 <body>
 <script>window.cmsOnlyMode='<?=$GLOBALS['cmsOnlyMode']?>';</script>

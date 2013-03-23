@@ -1,8 +1,8 @@
 ﻿/*
  * CKFinder
  * ========
- * http://ckfinder.com
- * Copyright (C) 2007-2012, CKSource - Frederico Knabben. All rights reserved.
+ * http://cksource.com/ckfinder
+ * Copyright (C) 2007-2013, CKSource - Frederico Knabben. All rights reserved.
  *
  * The software, this file, and its contents are subject to the CKFinder
  * License. Please read the license.txt file before using, installing, copying,
@@ -75,16 +75,18 @@ CKFinder.lang['da'] =
 	FolderDelete	: 'Er du sikker på, at du vil slette mappen "%1"?',
 	FolderRenaming	: ' (Omdøber...)',
 	FolderDeleting	: ' (Sletter...)',
+	DestinationFolder	: 'Destination Folder', // MISSING
 
 	// Files
 	FileRename		: 'Skriv navnet på den nye fil: ',
 	FileRenameExt	: 'Er du sikker på, at du vil ændre filtypen? Filen kan muligvis ikke bruges bagefter.',
 	FileRenaming	: '(Omdøber...)',
 	FileDelete		: 'Er du sikker på, at du vil slette filen "%1"?',
+	FilesDelete	: 'Are you sure you want to delete %1 files?', // MISSING
 	FilesLoading	: 'Indlæser...',
 	FilesEmpty		: 'Tom mappe',
-	FilesMoved		: 'Filen %1 flyttet til %2:%3',
-	FilesCopied		: 'Filen %1 kopieret til %2:%3',
+	DestinationFile	: 'Destination File', // MISSING
+	SkippedFiles	: 'List of skipped files:', // MISSING
 
 	// Basket
 	BasketFolder		: 'Kurv',
@@ -93,13 +95,21 @@ CKFinder.lang['da'] =
 	BasketOpenFolder	: 'Åben overordnet mappe',
 	BasketTruncateConfirm : 'Er du sikker på at du vil tømme kurven?',
 	BasketRemoveConfirm	: 'Er du sikker på at du vil slette filen "%1" fra kurven?',
+	BasketRemoveConfirmMultiple	: 'Do you really want to remove %1 files from the basket?', // MISSING
 	BasketEmpty			: 'Ingen filer i kurven, brug musen til at trække filer til kurven.',
 	BasketCopyFilesHere	: 'Kopier Filer fra kurven',
 	BasketMoveFilesHere	: 'Flyt Filer fra kurven',
 
-	BasketPasteErrorOther	: 'Fil fejl: %e',
-	BasketPasteMoveSuccess	: 'Følgende filer blev flyttet: %s',
-	BasketPasteCopySuccess	: 'Følgende filer blev kopieret: %s',
+	// Global messages
+	OperationCompletedSuccess	: 'Operation completed successfully.', // MISSING
+	OperationCompletedErrors		: 'Operation completed with errors.', // MISSING
+	FileError				: '%s: %e', // MISSING
+
+	// Move and Copy files
+	MovedFilesNumber		: 'Number of files moved: %s.', // MISSING
+	CopiedFilesNumber	: 'Number of files copied: %s.', // MISSING
+	MoveFailedList		: 'The following files could not be moved:<br />%s', // MISSING
+	CopyFailedList		: 'The following files could not be copied:<br />%s', // MISSING
 
 	// Toolbar Buttons (some used elsewhere)
 	Upload		: 'Upload',
@@ -118,6 +128,7 @@ CKFinder.lang['da'] =
 	NewSubFolder	: 'Ny undermappe',
 	Rename			: 'Omdøb',
 	Delete			: 'Slet',
+	DeleteFiles		: 'Delete Files', // MISSING
 
 	CopyDragDrop	: 'Kopier hertil',
 	MoveDragDrop	: 'Flyt hertil',
@@ -130,6 +141,7 @@ CKFinder.lang['da'] =
 
 	FileOverwrite	: 'Overskriv',
 	FileAutorename	: 'Auto-omdøb',
+	ManuallyRename	: 'Manually rename', // MISSING
 
 	// Generic
 	OkBtn		: 'OK',
@@ -201,6 +213,7 @@ CKFinder.lang['da'] =
 	105 : 'Ugyldig filtype.',
 	109 : 'Ugyldig anmodning.',
 	110 : 'Ukendt fejl.',
+	111 : 'It was not possible to complete the request due to resulting file size.', // MISSING
 	115 : 'En fil eller mappe med det samme navn eksisterer allerede.',
 	116 : 'Mappen blev ikke fundet. Opdatér listen eller prøv igen.',
 	117 : 'Filen blev ikke fundet. Opdatér listen eller prøv igen.',
@@ -224,6 +237,8 @@ CKFinder.lang['da'] =
 		FileEmpty		: 'Filnavnet må ikke være tomt.',
 		FileExists		: 'Fil %erne eksisterer allerede.',
 		FolderEmpty		: 'Mappenavnet må ikke være tomt.',
+		FolderExists	: 'Folder %s already exists.', // MISSING
+		FolderNameExists	: 'Folder already exists.', // MISSING
 
 		FileInvChar		: 'Filnavnet må ikke indeholde et af følgende tegn: \n\\ / : * ? " < > |',
 		FolderInvChar	: 'Mappenavnet må ikke indeholde et af følgende tegn: \n\\ / : * ? " < > |',
@@ -277,5 +292,16 @@ CKFinder.lang['da'] =
 	Gallery :
 	{
 		current : 'Billede {current} ud af {total}'
+	},
+
+	Zip :
+	{
+		extractHereLabel	: 'Extract here', // MISSING
+		extractToLabel		: 'Extract to...', // MISSING
+		downloadZipLabel	: 'Download as zip', // MISSING
+		compressZipLabel	: 'Compress to zip', // MISSING
+		removeAndExtract	: 'Remove existing and extract', // MISSING
+		extractAndOverwrite	: 'Extract overwriting existing files', // MISSING
+		extractSuccess		: 'File extracted successfully.' // MISSING
 	}
 };

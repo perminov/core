@@ -13,34 +13,77 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
 		$field = $this->view->trail->getItem()->getFieldByAlias($name);
 		$params = $field->getParams();
 
-        require_once('ckeditor/ckeditor.php');
-		require_once('ckfinder/ckfinder.php');
-		$CKEditor = new CKEditor();
-		$CKEditor->basePath = $standalone . '/library/ckeditor/';
-
-        $customParams = array('wide','width','height','bodyClass','style','script','sourceStripper');
+        $customParams = array('width','height','bodyClass','style','script','sourceStripper');
         foreach($customParams as $customParam) {
             if ($this->view->row->{$name . ucfirst($customParam)}) {
                 $params[$customParam] = $this->view->row->{$name . ucfirst($customParam)};
             }
         }
 
-        if ($params['style']) $CKEditor->config['style'] = $params['style'];
-        if ($params['script']) $CKEditor->config['script'] = $params['script'];
-        if ($params['sourceStripper']) $CKEditor->config['sourceStripper'] = $params['sourceStripper'];
-        if ($params['bodyClass']) $CKEditor->config['bodyClass'] = $params['bodyClass'];
-		if ($params['contentsCss']) $CKEditor->config['contentsCss'] = preg_match('/^\[/', $params['contentsCss']) ? json_decode($params['contentsCss']) : $params['contentsCss'];
-		if ($params['contentsJs']) $CKEditor->config['contentsJs'] = preg_match('/^\[/', $params['contentsJs']) ? json_decode($params['contentsJs']) : $params['contentsJs'];
-		if ($params['width']) $CKEditor->config['width'] = $params['width'] + 52;
-		if ($params['height']) $CKEditor->config['height'] = $params['height'];
-		$CKEditor->config['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';
+        // Set up styles configuration for editor contents
+        if ($params['style']) $CKconfig['style'] = $params['style'];
+        $CKconfig['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';
+        if ($params['contentsCss']) $CKconfig['contentsCss'] = preg_match('/^\[/', $params['contentsCss']) ? json_decode($params['contentsCss']) : $params['contentsCss'];
+        if (is_array($CKconfig['contentsCss'])) {
+            $CKconfig['contentsCss'] = array_merge($CKconfig['contentsCss'], array($CKconfig['style'] . ' body{max-width: auto;min-width: auto;width: auto;}'));
+        } else {
+            $CKconfig['contentsCss'] = array($CKconfig['contentsCss'], $CKconfig['style'] . ' body{max-width: auto;min-width: auto;width: auto;}');
+        }
+        if ($params['bodyClass']) $CKconfig['bodyClass'] = $params['bodyClass'];
+        $CKconfig['uiColor'] = '#B8D1F7';
+
+        // Set up editor size
+        if ($params['width']) $CKconfig['width'] = $params['width'] + 52;
+        if ($params['height']) $CKconfig['height'] = $params['height'];
+
+        // Set up editor javascript
+        if ($params['script']) $CKconfig['script'] = $params['script'];
+        if ($params['contentsJs']) $CKconfig['contentsJs'] = preg_match('/^\[/', $params['contentsJs']) ? json_decode($params['contentsJs']) : $params['contentsJs'];
+        if (is_array($CKconfig['contentsJs'])) {
+            $CKconfig['contentsJs'] = array_merge($CKconfig['contentsJs'], array($CKconfig['script']));
+        } else {
+            $CKconfig['contentsJs'] = array($CKconfig['contentsJs'], $CKconfig['script']);
+        }
+
+        // Set up stripping some elements from html-code if Source button is toggled
+        if ($params['sourceStripper']) $CKconfig['sourceStripper'] = $params['sourceStripper'];
+
+        ob_start();?>
+        <textarea id="<?=$name?>" name="<?=$name?>"><?=str_replace(array('<','>'), array('&lt;','&gt;'), $value)?></textarea>
+        <script>
+            CKFinder.setupCKEditor(null, '/library/ckfinder/');
+            var config = <?=json_encode($CKconfig)?>;
+
+            config.toolbar = [
+                {items: ['Source'] },
+                {items: [ 'Paste', 'PasteText', 'PasteFromWord', 'Table'] },
+                {items: [ 'Image', 'Flash','Link', 'Unlink'] },
+                {items: [ 'Bold', 'Italic', 'Underline'] },
+                {items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'] },
+                {items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },
+                {items: ['Format'] },
+                {items: ['Font'] },
+                {items: ['FontSize' ] },
+                {items: [ 'TextColor', 'BGColor', '-', 'Blockquote', 'CreateDiv' ] },
+                {items: [ 'Maximize', 'ShowBlocks', 'Find', '-', 'RemoveFormat'  ] }
+            ];
+            config.enterMode = CKEDITOR.ENTER_BR;
+
+            CKEDITOR.replace('<?=$name?>', config);$('#td-wide-<?=$name?>').css('padding-bottom', '1px');
+        </script>
+        <? return ob_get_clean();
+        /*require_once('ckeditor/ckeditor.php');
+		require_once('ckfinder/ckfinder.php');
+		$CKEditor = new CKEditor();
+		$CKEditor->basePath = $standalone . '/library/ckeditor/';
+
 
 		$ckfinder = new CKFinder();
 		$ckfinder->BasePath = $standalone . '/library/ckfinder/';
 		$ckfinder->SetupCKEditorObject($CKEditor);
 
 		$CKEditor->returnOutput = true;
-		$xhtml = $CKEditor->editor($name, $value);
+		$xhtml = $CKEditor->editor($name, $value);*/
         return $xhtml;
     }
 }

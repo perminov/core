@@ -1,8 +1,8 @@
 ﻿/*
  * CKFinder
  * ========
- * http://ckfinder.com
- * Copyright (C) 2007-2012, CKSource - Frederico Knabben. All rights reserved.
+ * http://cksource.com/ckfinder
+ * Copyright (C) 2007-2013, CKSource - Frederico Knabben. All rights reserved.
  *
  * The software, this file, and its contents are subject to the CKFinder
  * License. Please read the license.txt file before using, installing, copying,
@@ -75,16 +75,18 @@ CKFinder.lang['sk'] =
 	FolderDelete	: 'Skutočne zmazať adresár "%1"?',
 	FolderRenaming	: ' (Prebieha premenovanie adresára...)',
 	FolderDeleting	: ' (Prebieha zmazanie adresára...)',
+	DestinationFolder	: 'Destination Folder', // MISSING
 
 	// Files
 	FileRename		: 'Zadajte prosím meno nového súboru: ',
 	FileRenameExt	: 'Skutočne chcete zmeniť príponu súboru? Upozornenie: zmenou prípony sa súbor môže stať nepoužiteľným, pokiaľ prípona nie je podporovaná.',
 	FileRenaming	: 'Prebieha premenovanie súboru...',
 	FileDelete		: 'Skutočne chcete odstrániť súbor "%1"?',
+	FilesDelete	: 'Are you sure you want to delete %1 files?', // MISSING
 	FilesLoading	: 'Nahrávam...',
 	FilesEmpty		: 'Adresár je prázdny.',
-	FilesMoved		: 'Súbor %1 bol presunutý do %2:%3.',
-	FilesCopied		: 'Súbor %1 bol prekopírovaná do %2:%3.',
+	DestinationFile	: 'Destination File', // MISSING
+	SkippedFiles	: 'List of skipped files:', // MISSING
 
 	// Basket
 	BasketFolder		: 'Košík',
@@ -93,13 +95,21 @@ CKFinder.lang['sk'] =
 	BasketOpenFolder	: 'Otvoriť nadradený adresár',
 	BasketTruncateConfirm : 'Naozaj chcete odstrániť všetky súbory z košíka?',
 	BasketRemoveConfirm	: 'Naozaj chcete odstrániť súbor "%1" z košíka?',
+	BasketRemoveConfirmMultiple	: 'Do you really want to remove %1 files from the basket?', // MISSING
 	BasketEmpty			: 'V košíku nie sú žiadne súbory, potiahnite a vložte nejaký.',
 	BasketCopyFilesHere	: 'Prekopírovať súbory z košíka',
 	BasketMoveFilesHere	: 'Presunúť súbory z košíka',
 
-	BasketPasteErrorOther	: 'Súbor %s error: %e',
-	BasketPasteMoveSuccess	: 'Nasledujúce súbory boli presunuté: %s',
-	BasketPasteCopySuccess	: 'Nasledujúce súbory boli prekopírované: %s',
+	// Global messages
+	OperationCompletedSuccess	: 'Operation completed successfully.', // MISSING
+	OperationCompletedErrors		: 'Operation completed with errors.', // MISSING
+	FileError				: '%s: %e', // MISSING
+
+	// Move and Copy files
+	MovedFilesNumber		: 'Number of files moved: %s.', // MISSING
+	CopiedFilesNumber	: 'Number of files copied: %s.', // MISSING
+	MoveFailedList		: 'The following files could not be moved:<br />%s', // MISSING
+	CopyFailedList		: 'The following files could not be copied:<br />%s', // MISSING
 
 	// Toolbar Buttons (some used elsewhere)
 	Upload		: 'Prekopírovať na server (Upload)',
@@ -118,9 +128,10 @@ CKFinder.lang['sk'] =
 	NewSubFolder	: 'Nový podadresár',
 	Rename			: 'Premenovať',
 	Delete			: 'Zmazať',
+	DeleteFiles		: 'Delete Files', // MISSING
 
-	CopyDragDrop	: 'Prekopírovať sem súbor',
-	MoveDragDrop	: 'Presunúť sem súbor',
+	CopyDragDrop	: 'Prekopírovať sem',
+	MoveDragDrop	: 'Presunúť sem',
 
 	// Dialogs
 	RenameDlgTitle		: 'Premenovať',
@@ -130,6 +141,7 @@ CKFinder.lang['sk'] =
 
 	FileOverwrite	: 'Prepísať',
 	FileAutorename	: 'Auto-premenovanie',
+	ManuallyRename	: 'Manually rename', // MISSING
 
 	// Generic
 	OkBtn		: 'OK',
@@ -201,6 +213,7 @@ CKFinder.lang['sk'] =
 	105 : 'Neplatná prípona súboru.',
 	109 : 'Neplatná požiadavka.',
 	110 : 'Neidentifikovaná chyba.',
+	111 : 'It was not possible to complete the request due to resulting file size.', // MISSING
 	115 : 'Zadaný súbor alebo adresár už existuje.',
 	116 : 'Adresár nebol nájdený. Aktualizujte obsah adresára (Znovunačítať) a skúste znovu.',
 	117 : 'Súbor nebol nájdený. Aktualizujte obsah adresára (Znovunačítať) a skúste znovu.',
@@ -224,6 +237,8 @@ CKFinder.lang['sk'] =
 		FileEmpty		: 'Názov súboru nesmie byť prázdne.',
 		FileExists		: 'Súbor %s už existuje.',
 		FolderEmpty		: 'Názov adresára nesmie byť prázdny.',
+		FolderExists	: 'Folder %s already exists.', // MISSING
+		FolderNameExists	: 'Folder already exists.', // MISSING
 
 		FileInvChar		: 'Súbor nesmie obsahovať žiadny z nasledujúcich znakov: \n\\ / : * ? " < > |',
 		FolderInvChar	: 'Adresár nesmie obsahovať žiadny z nasledujúcich znakov: \n\\ / : * ? " < > |',
@@ -277,5 +292,16 @@ CKFinder.lang['sk'] =
 	Gallery :
 	{
 		current : 'Obrázok {current} z {total}'
+	},
+
+	Zip :
+	{
+		extractHereLabel	: 'Extract here', // MISSING
+		extractToLabel		: 'Extract to...', // MISSING
+		downloadZipLabel	: 'Download as zip', // MISSING
+		compressZipLabel	: 'Compress to zip', // MISSING
+		removeAndExtract	: 'Remove existing and extract', // MISSING
+		extractAndOverwrite	: 'Extract overwriting existing files', // MISSING
+		extractSuccess		: 'File extracted successfully.' // MISSING
 	}
 };
