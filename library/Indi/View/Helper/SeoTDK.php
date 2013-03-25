@@ -1,10 +1,23 @@
 <?php
 class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 	public $title = array();
+    public static $exclusion = null;
 	public function seoTDK($what = 'title'){
 		if ($this->view->row) {
-			$title = array();
-			if ($this->view->row->useSystemSeoSolution == 'n') {
+            if ($this->view->trail->getItem()->section->entityId) {
+                if (is_object($this->exclusion)) {
+                    return $this->exclusion->{'seo' . ucfirst($what)};
+                } else if ($this->exclusion === null){
+                    $exclusionM = Misc::loadModel('metaExclusion');
+                    if ($this->exclusion = $exclusionM->fetchRow('`entityId`="' . $this->view->trail->getItem()->section->entityId . '" AND `identifier` = "' . $this->view->row->id . '" AND `toggle` = "y"')){
+                        return $this->exclusion->{'seo' . ucfirst($what)};
+                    } else {
+                        $this->exclusion = false;
+                    }
+                }
+            }
+            $title = array();
+            if ($this->view->row->useSystemSeoSolution == 'n') {
 				return $this->view->row->{'seo' . ucfirst($what)};
 			} else {
 				$parts = Misc::loadModel('Seo'. ucfirst($what))->fetchAll('`fsection2factionId`="' . $this->view->section2actionId . '"', 'move');
@@ -21,7 +34,9 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 								if ($this->view->trail->getItem()->section->entityId == $part->entityId) {
 									$title[] = $part->prefix . $this->view->row->{$part->foreign['fieldId']['alias']} . $part->postfix;
 									$siblingRow[$this->view->trail->getItem()->model->info('name') . 'Id'] = $this->view->row;
-								} else {
+								} else if ($part->entityId == '101') {
+                                    $this->title[] = $part->prefix . $this->view->trail->getItem()->section->{$part->foreign['fieldId']['alias']} . $part->postfix;
+                                } else {
 									$model = Entity::getModelById($part->entityId);
 									$pkn = $model->info('name') . 'Id';
 									$pkv = $this->view->row->$pkn;
@@ -82,14 +97,16 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 					} else if ($part->type == 'd') {
 						// ���� ������������� ����� ������ � ���������
 						if ($part->where == 'c') {
-							// ���� �� ��� ������
+                            // ���� �� ��� ������
 							if ($this->cr[$part->entityId]) {
 								$model = Entity::getModelById($part->entityId);
 								$pkn = $model->info('name') . 'Id';
 								$row = $this->cr[$part->entityId];
 								$siblingRow[$pkn] = $row;
 								if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
-							}
+							} else if ($part->entityId == '101') {
+                                $this->title[] = $part->prefix . $this->view->trail->getItem()->section->{$part->foreign['fieldId']['alias']} . $part->postfix;
+                            }
 						// ���� ������������� ����� ������ � sibling ����������
 						} else if ($part->where == 's') {
 							$model = Entity::getModelById($part->entityId);
@@ -117,7 +134,9 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 								$row = $this->cr[$part->entityId];
 								$siblingRow[$pkn] = $row;
 								if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
-							}							
+							} else if ($part->entityId == '101') {
+                                $this->title[] = $part->prefix . $this->view->trail->getItem()->section->{$part->foreign['fieldId']['alias']} . $part->postfix;
+                            }
 						// ���� ������������� ����� ������ � sibling ����������
 						} else if ($part->where == 's') {
 							$model = Entity::getModelById($part->entityId);

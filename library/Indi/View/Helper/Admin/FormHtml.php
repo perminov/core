@@ -69,21 +69,9 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
             ];
             config.enterMode = CKEDITOR.ENTER_BR;
 
-            CKEDITOR.replace('<?=$name?>', config);$('#td-wide-<?=$name?>').css('padding-bottom', '1px');
+            CKEDITOR.replace('<?=$name?>', config);$('#td-wide-<?=$name?>').css('padding-bottom', '1px');$('#tr-<?=$name?>').css('padding-bottom', '1px');
         </script>
         <? return ob_get_clean();
-        /*require_once('ckeditor/ckeditor.php');
-		require_once('ckfinder/ckfinder.php');
-		$CKEditor = new CKEditor();
-		$CKEditor->basePath = $standalone . '/library/ckeditor/';
-
-
-		$ckfinder = new CKFinder();
-		$ckfinder->BasePath = $standalone . '/library/ckfinder/';
-		$ckfinder->SetupCKEditorObject($CKEditor);
-
-		$CKEditor->returnOutput = true;
-		$xhtml = $CKEditor->editor($name, $value);*/
         return $xhtml;
     }
 }

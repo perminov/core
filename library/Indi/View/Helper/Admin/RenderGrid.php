@@ -74,8 +74,13 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				$sectionsDropdown = "'Подраздел:  ', '";
 				$sectionsDropdown .= '<span><select style="border: 0;" name="sectionId" id="subsectionSelect">';
 				$sectionsDropdown .= '<option value="">--Выберите--</option>';
-				for ($i = 0; $i < count($sections); $i++)
+                $maxLength = 12;
+				for ($i = 0; $i < count($sections); $i++){
 					$sectionsDropdown .= '<option value="' . $sections[$i]['alias'] . '">' . $sections[$i]['title'] . '</option>';
+                    $str = preg_replace('/&[a-z]+;/', '&', $sections[$i]['title']);
+                    $len = mb_strlen($str, 'utf-8');
+                    if ($len > $maxLength) $maxLength = $len;
+                }
 				$sectionsDropdown .= '</select></span>';
 				$sectionsDropdown .= "'";
 			}
@@ -258,7 +263,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					hiddenName: 'sectionId',
 					typeAhead: false,
 					transform: 'subsectionSelect',
-					width: 135,
+					width: <?=$maxLength*6+10?>,
 					style: 'font-size: 10px',
 					cls: 'subsection-select',
 					editable: false,

@@ -182,7 +182,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
         }
 		if ($this->trail->getItem()->section->filter) {
-			$condition[] = ' AND ' . $this->trail->getItem()->section->filter;
+			$condition[] = $this->trail->getItem()->section->filter;
 		}
 		$this->row->move('up', implode(' AND ', $condition));
 		$this->postMove();
@@ -325,7 +325,20 @@ class Indi_Controller_Admin extends Indi_Controller{
 				if (!in_array($field['alias'], $this->trail->getItem()->disabledFields)) {
 					$set[] = $field['alias'] . ' = "' . $value . '"';
 					$data[$field['alias']] = $value;
-				}
+				} else if (!$this->trail->getItem()->row->{$field['alias']}){
+                    $fieldId = $this->trail->getItem()->getFieldByAlias($field['alias'])->id;
+                    $sectionId = $this->trail->getItem()->section->id;
+                    $disabledField = Misc::loadModel('DisabledField')->fetchRow('`sectionId` = "' . $sectionId . '" AND `fieldId` = "' . $fieldId . '"');
+                    if (strlen($disabledField->defaultValue)) {
+                        $value = $disabledField->defaultValue;
+                        $set[] = $field['alias'] . ' = "' . $value . '"';
+                        $data[$field['alias']] = $value;
+                    }
+                } else {
+                    $value = $this->trail->getItem()->row->{$field['alias']};
+                    $set[] = $field['alias'] . ' = "' . $value . '"';
+                    $data[$field['alias']] = $value;
+                }
 				// ��������� ���������
 				if ($this->admin['alternate'] && $field['alias'] == $this->admin['alternate'] . 'Id') {
 					$value = $this->admin['id'];

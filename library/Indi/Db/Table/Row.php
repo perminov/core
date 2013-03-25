@@ -149,6 +149,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 				$staticFilter = $fields[$i]['filter'];
 				$satellite = $fields[$i]['satellite'];
 				$alternative = $fields[$i]['alternative'];
+				$dependency = $fields[$i]['dependency'];
 				break;
 			}
 		}
@@ -162,10 +163,10 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 					$f=true;
 				}
 				//if ($f) $filterBySatellite = '`' . ($satelliteField->satellitealias ? $satelliteField->satellitealias : $satelliteField->alias) . '` = "' . $this->{$satelliteField->alias} . '"';
-				if ($f) $filterBySatellite = 'FIND_IN_SET("' . $this->{$satelliteField->alias} . '", `' . ($satelliteField->satellitealias ? $satelliteField->satellitealias : $satelliteField->alias) . '`)';
+				if ($f && $dependency != 'e') $filterBySatellite = 'FIND_IN_SET("' . $this->{$satelliteField->alias} . '", `' . ($satelliteField->satellitealias ? $satelliteField->satellitealias : $satelliteField->alias) . '`)';
 				
 			}
-			if ($alternative) {
+			if ($alternative && $dependency != 'e') {
 				$row = $this->getForeignRowByForeignKey($satelliteField->alias);
 				//$filterBySatellite = '`' . $alternative . '` = "' . $row->$alternative . '"';
 				$filterBySatellite = 'FIND_IN_SET("' . $row->$alternative . '", `' . $alternative . '`)';
@@ -177,7 +178,14 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		} else if (!is_array($trail->getItem()->dropdownWhere[$fieldAlias])){
 			$trail->getItem()->dropdownWhere[$fieldAlias] = array($trail->getItem()->dropdownWhere[$fieldAlias]);
 		}
-		if ($staticFilter) $trail->getItem()->dropdownWhere[$fieldAlias][] = $staticFilter;
+//$s = 'FIND_IN_SET(`id`,"'.current(Indi_Db_Table::getDefaultAdapter()->query('SELECT GROUP_CONCAT(`entityId`) FROM `fsection` WHERE `toggle`="y"')->fetch()).'")';
+		if ($staticFilter) {
+            if (preg_match('/(\$|::)/', $staticFilter)) {
+                eval('$staticFilter = \'' . $staticFilter . '\';');
+            }
+
+            $trail->getItem()->dropdownWhere[$fieldAlias][] = $staticFilter;
+        }
 		if ($filterBySatellite) $trail->getItem()->dropdownWhere[$fieldAlias][] = $filterBySatellite;
 		if ($config['find']) $trail->getItem()->dropdownWhere[$fieldAlias][] = '`title` LIKE "%' . $config['find'] . '%"';
 		

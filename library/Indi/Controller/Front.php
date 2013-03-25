@@ -5,8 +5,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	public $urlPattern = "/^\b([\d\w\.\/\+\-\?\:]*)((ht|f)tp(s|)\:\/\/|[\d\d\d|\d\d]\.[\d\d\d|\d\d]\.|www\.|\.tv|\.ac|\.com|\.edu|\.gov|\.int|\.mil|\.net|\.org|\.biz|\.info|\.name|\.pro|\.museum|\.co|\.ru)([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;\b]*)$/";
 	public function preDispatch(){
 		parent::preDispatch();
-
-        // Для XHR
+		// Для XHR
 		header('Access-Control-Allow-Origin: *');
 		
 		// Фильтруем POST
@@ -358,7 +357,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				// get rowset params and get rowset according to them
 				$rp = $this->getRowsetParams();
 				if ($tree = $this->model->getTreeColumnName()) {
-					$this->rowset = $this->model->fetchTree($tree, 0, false, true, 0, 'move');
+					$this->rowset = $this->model->fetchTree($tree, 0, false, true, 0, 'move', $rp['where']);
 				} else {
 					if ($this->exclusiveRowsetParams) {
 						$this->rowset = $this->model->fetchAll($this->exclusiveRowsetParams['where'], $this->exclusiveRowsetParams['order'], $this->exclusiveRowsetParams['limit'], $this->exclusiveRowsetParams['page']);

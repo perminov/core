@@ -92,7 +92,10 @@ class Indi_Uri {
 			$this->setDbCacheUsageIfNeed();
 			$this->adjustUriIfSubdomain();
 			$GLOBALS['enableSeoUrls'] = current(Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "enableSeoUrls"')->fetch());
-			if ($GLOBALS['enableSeoUrls'] == 'true') $_SERVER['REQUEST_URI'] = $this->seo2sys($_SERVER['REQUEST_URI']);
+			if ($GLOBALS['enableSeoUrls'] == 'true') {
+                $GLOBALS['INITIAL_URI'] = $_SERVER['REQUEST_URI'];
+                $_SERVER['REQUEST_URI'] = $this->seo2sys($_SERVER['REQUEST_URI']);
+            }
 		}
 	}
 
@@ -227,8 +230,8 @@ class Indi_Uri {
 		return $sys;
 	}
 
-	public static function sys2seo($sys, $cr = false){
-		preg_match_all('/(href|url)="([0-9a-z\/#]+)"/', $sys, $matches);
+	public static function sys2seo($sys, $cr = false, $reg = ''){
+		preg_match_all($reg ? $reg: '/(href|url)="([0-9a-z\/#]+)"/', $sys, $matches);
 		$uri = $matches[2];
 		$db = Indi_Db_Table::getDefaultAdapter();
 		$furi = array();

@@ -213,7 +213,7 @@ $config['ResourceType'][] = Array(
 		'url' => $baseUrl . 'Image',
 		'directory' => $baseDir . 'Image',
 		'maxSize' => 0,
-		'allowedExtensions' => 'bmp,gif,jpeg,jpg,png',
+		'allowedExtensions' => 'bmp,gif,jpeg,jpg,png,ico',
 		'deniedExtensions' => '');
 
 $config['ResourceType'][] = Array(
