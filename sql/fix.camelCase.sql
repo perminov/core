@@ -12,3 +12,4 @@ RENAME TABLE `seotitle` TO `seoTitle`;
 RENAME TABLE `seokeyword` TO `seoKeyword`;
 RENAME TABLE `seodescription` TO `seoDescription`;
 RENAME TABLE `disabledfield` TO `disabledField`;
+RENAME TABLE `metaexclustion` TO `metaExclustion`;

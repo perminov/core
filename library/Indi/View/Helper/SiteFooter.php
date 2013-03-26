@@ -10,6 +10,8 @@ class Indi_View_Helper_SiteFooter extends Indi_View_Helper_Abstract{
 	<td colspan="4">footer will be here</td>
   </tr>
   </table>
+</body>
+</html>
 		<?return ob_get_clean();
 	}
 }
