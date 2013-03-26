@@ -10,7 +10,8 @@
 	<link rel="stylesheet" type="text/css" href="/css/admin/general.css" />
 	<script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
 	<script type="text/javascript" src="/js/admin/index.js"></script>
-	<script type="text/javascript" src="/js/jquery-1.6.1.min.js"></script>
+	<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
 	<style>.x-panel-header-text-container{text-align: center !important;}.x-panel-header-text-default{font-weight: normal !important;}</style>
 </head>
 <body style="background-color: #dfe8f6;">
