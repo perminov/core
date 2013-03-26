@@ -4,6 +4,7 @@
 DirectoryIndex index.php
 AddDefaultCharset UTF-8
 php_value short_open_tag On
+php_value magic_quotes_gpc Off
 Options FollowSymLinks
 <Files config.ini>
   Deny from all 
