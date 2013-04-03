@@ -51,8 +51,9 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							return false;
 						}
 						if (' . $actions[$i]['condition'] . ') {
+						    var url = "/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/";
 							' . $actions[$i]['javascript'] . '
-                   			loadContent("/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/");
+                   			loadContent(url);
 						} else {
 							return false;
 						}

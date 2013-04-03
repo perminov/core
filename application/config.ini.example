@@ -1,12 +1,12 @@
 [general]
-domain = nozend
+domain = empty
 
 [db]
 adapter = mysql
 host = localhost
-username = nozend
-password = nozend
-dbname   = nozend
+username = empty
+password = empty
+dbname   = empty
 
 [view]
 encoding = utf-8

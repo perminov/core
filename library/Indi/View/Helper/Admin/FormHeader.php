@@ -8,20 +8,21 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Indi Engine</title>
-	<link rel="stylesheet" type="text/css" href="/library/extjs4/resources/css/ext-all.css" />
-	<link rel="stylesheet" type="text/css" href="/css/admin/layout.css" />
-	<link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
-	<link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
-	<link rel="stylesheet" type="text/css" href="/css/admin/general.css" />
-	<script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
-	<script type="text/javascript" src="/js/admin/index.js"></script>
-	<script type="text/javascript" src="/js/jquery-1.6.1.min.js"></script>
-	<script type="text/javascript" src="/js/admin/dselect.js"></script>
-	<script type="text/javascript" src="/js/admin/autocomplete.js"></script>
-	<script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
-    <script type="text/javascript" src="/library/ckeditor/ckeditor.js?<?=rand(0, 1000)?>"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Indi Engine</title>
+    <link rel="stylesheet" type="text/css" href="/library/extjs4/resources/css/ext-all.css" />
+    <link rel="stylesheet" type="text/css" href="/css/admin/layout.css" />
+    <link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
+    <link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
+    <link rel="stylesheet" type="text/css" href="/css/admin/general.css" />
+    <script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
+    <script type="text/javascript" src="/js/admin/index.js"></script>
+    <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
+    <script type="text/javascript" src="/js/admin/dselect.js"></script>
+    <script type="text/javascript" src="/js/admin/autocomplete.js"></script>
+    <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
+    <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
 </head>
 <body>

@@ -1,0 +1,1 @@
+﻿UPDATE `field` SET `filter` = CONCAT(`filter`, ' OR `id`="101"') WHERE (`id`="1250" AND `entityId`="164") OR (`id`="1262" AND `entityId`="165") OR (`id`="1274" AND `entityId`="166");
