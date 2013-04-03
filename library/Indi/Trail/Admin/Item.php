@@ -64,7 +64,22 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
                     
                     // if current section have parent section 
                     $parentSection = $this->section->getForeignRowByForeignKey('sectionId');
-					do{
+
+                    // determining parent key value
+                    $session = Indi_Session::namespaceGet('trail');
+
+                    if ($this->section->parentSectionConnector) {
+                        $parentSectionConnectorAlias =$this->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                        $info = $session['parentId'];
+                        $parentId = $info->{$parentSection->id};
+                        if (!$parentId) {
+                            $info = (array) $session['parentId'];
+                            $parentId = $info[$parentSection->id];
+                        }
+                        $this->row->$parentSectionConnectorAlias = $parentId;
+                    }
+
+                    do{
                         // and parent section is not a group
                         if ($parentSection->sectionId != '0') {
                             // determining parent key name
@@ -73,8 +88,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
                             $parentEntityForeignKeyName = $parentEntity->table . 'Id';
                             
                             // determining parent key value
-                            $session = Indi_Session::namespaceGet('trail');
-
 							$info = $session['parentId'];
                             $parentId = $info->$parentSectionId;
 							
@@ -86,7 +99,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
                             $this->row->$parentEntityForeignKeyName = $parentId;
                         }
                     } while($parentSection = $parentSection->getForeignRowByForeignKey('sectionId'));
-
                 }
 				// set up row fields
 				$field = new Field();

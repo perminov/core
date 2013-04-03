@@ -261,9 +261,14 @@ class Indi_Controller_Front extends Indi_Controller{
 //				if (array_key_exists($index, $this->post['indexWhere'])) $this->post['indexWhere'][$index] = $value;
 			}
 		}
-		if ($this->trail->getItem(1)){
-			$this->post['indexWhere'][1] = '`' . $this->trail->getItem(1)->model->info('name') . 'Id` = "' . $this->trail->getItem(1)->row->id .'"';
-		}
+        if ($this->trail->getItem(1)){
+            if ($this->trail->getItem()->section->parentSectionConnector) {
+                $parentSectionConnectorAlias = $this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->id .'"';
+            } else {
+                $this->post['indexWhere'][1] = '`' . $this->trail->getItem(1)->model->info('name') . 'Id` = "' . $this->trail->getItem(1)->row->id .'"';
+            }
+        }
 		if ($this->section->filter) {
 			if (preg_match('/\$/', $this->section->filter)) {
 				eval('$this->section->filter = \'' . $this->section->filter . '\';');

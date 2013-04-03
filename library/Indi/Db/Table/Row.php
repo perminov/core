@@ -63,7 +63,11 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		$field = Misc::loadModel('Field')->fetchRow('`alias` = "' . $foreignKey . '" AND `entityId` = "' . $ownerEntityId . '"');
 		$searchingEntityId = $field->relation;
 		if ($field->relation) {
-			return Entity::getInstance()->getModelById($field->relation)->fetchRow('`id` = "' . $this->$foreignKey . '"');
+            if ($field->storeRelationAbility == 'one') {
+                return Entity::getInstance()->getModelById($field->relation)->fetchRow('`id` = "' . $this->$foreignKey . '"');
+            } else if ($field->storeRelationAbility == 'many') {
+                return Entity::getInstance()->getModelById($field->relation)->fetchAll('FIND_IN_SET(`id`, "' . $this->$foreignKey . '")');
+            }
 		}
 
 		if (!$entityId = $this->getEntityIdForVariableForeignKey($foreignKey)){
@@ -354,10 +358,15 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         return $src;
     }
 
-    public function image($imageName = null, $copyName = null, $attrib = null, $noCache = false)
+    public function image($imageName = null, $copyName = null, $attrib = null, $noCache = false, $sizeinfo = false)
     {
-        if ($src = $this->getImageSrc($imageName, $copyName)) {        
-            return '<img src="' . $src .($noCache?'?'.rand():'') . '" border="0" ' . $attrib .'>';
+        if ($src = $this->getImageSrc($imageName, $copyName)) {
+            if ($sizeinfo) {
+                $info = getimagesize($_SERVER['DOCUMENT_ROOT'] . $src);
+                $info = $info[3];
+                $info = ' ' . preg_replace('/(width|height)/', 'real-$1', $info);
+            }
+            return '<img src="' . $src .($noCache?'?'.rand():'') . '" border="0" ' . $attrib .$info.'>';
         } else {
             return false;
         }

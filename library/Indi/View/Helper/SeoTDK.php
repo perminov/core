@@ -29,6 +29,8 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 					foreach ($parts as $part) {
 						if ($part->type == 's') {
 							$title[] = $part->prefix . $part->static . $part->postfix;
+						} else if ($part->type == 'level') {
+							$title[] = $part->prefix . $this->view->trail->getItem($part->level)->section->getTitle() . $part->postfix;
 						} else {
 							if ($part->where == 'c') {
 								if ($this->view->trail->getItem()->section->entityId == $part->entityId) {
@@ -46,7 +48,11 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 									} else {
 										$row = $siblingRow[$pkn];
 									}
-									$title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+                                    if ($part->foreign['fieldId']['relation']) {
+                                        $title[] = $part->prefix . $row->getForeignRowByForeignKey($part->foreign['fieldId']['alias'])->getTitle() . $part->postfix;
+                                    } else {
+                                        $title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+                                    }
 								}
 							} else if ($part->where == 's'){
 								$model = Entity::getModelById($part->entityId);
@@ -94,7 +100,9 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 					if ($part->type == 's') {
 						$this->title[] = $part->prefix . $part->static . $part->postfix;
 					// ���� ��������� - ������������
-					} else if ($part->type == 'd') {
+					} else if ($part->type == 'level') {
+                        $this->title[] = $part->prefix . $this->view->trail->getItem($part->level)->section->getTitle() . $part->postfix;
+                    } else if ($part->type == 'd') {
 						// ���� ������������� ����� ������ � ���������
 						if ($part->where == 'c') {
                             // ���� �� ��� ������
@@ -103,7 +111,13 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 								$pkn = $model->info('name') . 'Id';
 								$row = $this->cr[$part->entityId];
 								$siblingRow[$pkn] = $row;
-								if ($row) $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+								if ($row) {
+                                    if ($part->foreign['fieldId']['relation']) {
+                                        $this->title[] = $part->prefix . $row->getForeignRowByForeignKey($part->foreign['fieldId']['alias'])->getTitle() . $part->postfix;
+                                    } else {
+                                        $this->title[] = $part->prefix . $row->{$part->foreign['fieldId']['alias']} . $part->postfix;
+                                    }
+                                }
 							} else if ($part->entityId == '101') {
                                 $this->title[] = $part->prefix . $this->view->trail->getItem()->section->{$part->foreign['fieldId']['alias']} . $part->postfix;
                             }

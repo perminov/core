@@ -12,7 +12,7 @@ class Indi_View_Helper_SiteMapXml extends Indi_View_Helper_Abstract{
 <?}?>
 </urlset><?
         $xml = ob_get_clean();
-        $xml = Indi_Uri::sys2seo($xml, false, '/<loc>(http\:\/\/' . $_SERVER['HTTP_HOST'] . ')([0-9a-z\/#]+)<\/loc>/');
+        if ($GLOBALS['enableSeoUrls'] == 'true') $xml = Indi_Uri::sys2seo($xml, false, '/<loc>(http\:\/\/' . $_SERVER['HTTP_HOST'] . ')([0-9a-z\/#]+)<\/loc>/');
         return $xml;
     }
 }

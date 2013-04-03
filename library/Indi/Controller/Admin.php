@@ -108,7 +108,12 @@ class Indi_Controller_Admin extends Indi_Controller{
                     if ($this->specialParentCondition) {
                         $condition[] = $this->specialParentCondition;
                     } else {
-                        $condition[] = '`' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
+                        if ($this->trail->getItem()->section->parentSectionConnector) {
+                            $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                            $condition[] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->id . '"';
+                        } else {
+                            $condition[] = '`' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
+                        }
                     }
                 }
 				
@@ -154,7 +159,12 @@ class Indi_Controller_Admin extends Indi_Controller{
 		}
         if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
             $id = $this->trail->getItem(1)->row->id;
-            $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
+            if ($this->trail->getItem()->section->parentSectionConnector) {
+                $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                $condition[] = '`' . $parentSectionConnectorAlias . '` = "' . $id . '"';
+            } else {
+                $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
+            }
         }
 		if ($this->trail->getItem()->section->filter) {
 			$condition[] = $this->trail->getItem()->section->filter;
@@ -179,7 +189,12 @@ class Indi_Controller_Admin extends Indi_Controller{
 		}
         if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
             $id = $this->trail->getItem(1)->row->id;
-            $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
+            if ($this->trail->getItem()->section->parentSectionConnector) {
+                $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                $condition[] = '`' . $parentSectionConnectorAlias . '` = "' . $id . '"';
+            } else {
+                $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
+            }
         }
 		if ($this->trail->getItem()->section->filter) {
 			$condition[] = $this->trail->getItem()->section->filter;

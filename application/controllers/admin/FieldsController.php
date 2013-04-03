@@ -296,5 +296,9 @@ class Admin_FieldsController extends Indi_Controller_Admin
 			$this->trail->getItem()->row->alias != $this->post['alias']) {
 			$this->db->query($query);
 		}
+
+        if ($this->trail->getItem()->row->alias != $this->post['alias'] && $this->post['alias'] == 'move') {
+            $this->db->query('UPDATE `' . $this->trail->getItem(1)->row->table . '` SET `move` = `id`');
+        }
 	}
 }

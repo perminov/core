@@ -43,7 +43,7 @@ class Indi_Uri {
 			if ($sectionR) $sectionA = $sectionR->toArray();
 		}
 
-		$controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
+        $controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
 		if (!class_exists($controllerClassName)) {
 			if ($params['module'] == 'admin') {
 				if ($sectionA) {
@@ -53,7 +53,8 @@ class Indi_Uri {
 				}
 				if (!class_exists($extendClass)) $extendClass = 'Indi_Controller_Admin';
 			} else {
-				$extendClass = 'Project_Controller_Front';
+                $extendClass = 'Project_Controller_Front';
+                if ($fsectionA[0]['extends']) $extendClass = implode('_', array($extendClass, $fsectionA[0]['extends']));
 				if (!class_exists($extendClass)) $extendClass = preg_replace('/^Project/', 'Indi', $extendClass);
 			}
 			eval('class ' . ucfirst($controllerClassName) . ' extends ' . $extendClass . '{}');

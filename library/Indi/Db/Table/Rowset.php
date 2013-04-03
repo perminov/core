@@ -186,8 +186,12 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 			}
 		}
 		foreach ($info as $entity) {
-			$related = Misc::loadModel('Field')->fetchRow('`entityId` = "' . $entity->entityId . '" AND `relation` = "' . $selfEntityId . '"');
-			if ($related->storeRelationAbility == 'many') {
+            if($entity->connector) {
+                $related = Misc::loadModel('Field')->fetchRow('`id` = "' . $entity->connector . '"');
+            } else {
+                $related = Misc::loadModel('Field')->fetchRow('`entityId` = "' . $entity->entityId . '" AND `relation` = "' . $selfEntityId . '"');
+            }
+            if ($related->storeRelationAbility == 'many') {
 				foreach ($keys as $key) $find[] = 'FIND_IN_SET("' . $key. '", `' . $related->alias .'`)';
 				$where = '1 AND (' . implode(' OR ', $find) . ')';
 				$rowset = Entity::getInstance()->getModelById($entity->entityId)->fetchAll($where);
