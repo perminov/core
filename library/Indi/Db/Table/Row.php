@@ -263,7 +263,11 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 							if ($config['more'] && !$config['up']) $limit++;
 							if ($config['up']) $order = '(`title`) DESC';
 						}
-					}
+					} else {
+                        $fields = $entity->getFields();
+                        if (in_array('move', $fields)) $order = 'move';
+                        else if (in_array('title', $fields)) $order = 'title';
+                    }
 					$rowset = $entity->fetchAll($trail->getItem()->dropdownWhere[$fieldAlias], $order, $limit, $page);
 					foreach ($rowset as $row) {
 						$options[$row->id] = $row->getTitle();
@@ -423,6 +427,9 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		// delete dependent rowsets
 		$this->deleteDependentRowsets($branchId);
 		
+        // delete other rows of entities, that have fields, related to entity of current row
+        $this->deleteForeignKeysUsages();
+
 		// standart Indi_Db_Table_Row deletion
 		parent::delete();
 	}
@@ -470,17 +477,61 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 	}
 
 	public function deleteDependentRowsets($branchId){
-		if ($branchId) {
+        $entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->_table->_name . '"')->id;
+        $sectionRs = Misc::loadModel('Section')->fetchAll('`entityId` = "' . $entityId . '"');
+        foreach ($sectionRs as $sectionR) {
+            $branchId = $sectionR->id;
 			$dependentSections = Misc::loadModel('Section')->fetchAll('`sectionId` = "' . $branchId . '"');
-			$keyName = strtolower($this->getTable()->info('name')) . 'Id';
 			foreach ($dependentSections as $dependentSection) {
 				if ($dependentSection->entityId && $entity = Misc::loadModel(ucfirst(Entity::getInstance()->fetchRow('`id` = "' . $dependentSection->entityId . '"')->table))) {
+                    if ($dependentSection->parentSectionConnector) {
+                        $keyName = $dependentSection->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                    } else {
+                        $keyName = strtolower($this->getTable()->info('name')) . 'Id';
+                    }
 					$dependentRowset = $entity->fetchAll('`' . $keyName . '` = "' . $this->id . '"');
 					foreach ($dependentRowset as $dependentRow) $dependentRow->delete($dependentSection->id);
 				}
 			}
 		}
 	}
+
+    public function deleteForeignKeysUsages(){
+        $entities = array();
+        $entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->_table->_name . '"')->id;
+        $fieldRs = Misc::loadModel('Field')->fetchAll('`relation` = "' . $entityId . '"');
+        foreach ($fieldRs as $fieldR) $entities[$fieldR->entityId]['fields'][] = $fieldR;
+        $sectionRs = Misc::loadModel('Section')->fetchAll('FIND_IN_SET(`entityId`, "' . implode(',', array_keys($entities)) . '")');
+        foreach ($sectionRs as $sectionR) $entities[$sectionR->entityId]['sections'][] = $sectionR->id;
+        foreach ($entities as $eid => $data) {
+            foreach ($data['fields'] as $field) {
+                if ($field->storeRelationAbility == 'one') {
+                    $entities[$eid]['usages']['one'] = Entity::getModelById($eid)->fetchAll('`' . $field->alias . '` = "' . $this->id . '"');
+                } else if ($field->storeRelationAbility == 'many') {
+                    $entities[$eid]['usages']['many'][$field->alias] = Entity::getModelById($eid)->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
+                }
+            }
+            foreach ($data['sections'] as $sectionId) {
+                if ($entities[$eid]['usages']['one']) {
+                    foreach ($entities[$eid]['usages']['one'] as $row) {
+                        $row->delete($sectionId);
+                    }
+                }
+            }
+            if ($entities[$eid]['usages']['many']) {
+                foreach ($entities[$eid]['usages']['many'] as $fieldAlias => $rs) {
+                    foreach ($rs as $r) {
+                        $set = explode(',', $r->$fieldAlias);
+                        $found = array_search($this->id, $set);
+                        if ($found !== false) unset($set[$found]);
+                        $r->$fieldAlias = implode(',', $set);
+                        $r->save();
+                    }
+                }
+            }
+        }
+    }
+
 	public function setDependentCounts($info){
 		foreach ($info as $countToGet){
 			$subsectionIds[] = $countToGet->sectionId;

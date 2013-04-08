@@ -235,3 +235,12 @@ function deepObjCopy (dupeObj) {
 	}
 	return retObj;
 }
+alert = function(){
+    var message = arguments[0];
+    Ext.MessageBox.show({
+        title: "Сообщение",
+        msg: message,
+        buttons: Ext.MessageBox.OK,
+        icon: Ext.MessageBox.WARNING
+    });
+}
