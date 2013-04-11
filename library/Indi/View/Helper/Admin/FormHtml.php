@@ -7,9 +7,7 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
         if ($value === null) {
             $value = $this->view->row->$name;
         }
-		$config = Indi_Registry::get('config');
-		$standalone = $config['general']->standalone == 'true' ? '/admin' : '';
-		
+
 		$field = $this->view->trail->getItem()->getFieldByAlias($name);
 		$params = $field->getParams();
 
@@ -51,7 +49,7 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
         ob_start();?>
         <textarea id="<?=$name?>" name="<?=$name?>"><?=str_replace(array('<','>'), array('&lt;','&gt;'), $value)?></textarea>
         <script>
-            CKFinder.setupCKEditor(null, '/library/ckfinder/');
+            CKFinder.setupCKEditor(null, '<?=$_SERVER['STD']?>/library/ckfinder/');
             var config = <?=json_encode($CKconfig)?>;
 
             config.toolbar = [
@@ -71,7 +69,8 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
 
             CKEDITOR.replace('<?=$name?>', config);$('#td-wide-<?=$name?>').css('padding-bottom', '1px');$('#tr-<?=$name?>').css('padding-bottom', '1px');
         </script>
-        <? return ob_get_clean();
+        <? $xhtml = ob_get_clean();
+
         return $xhtml;
     }
 }

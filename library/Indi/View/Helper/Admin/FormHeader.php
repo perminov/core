@@ -24,6 +24,24 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
+    <style>
+        span.radio{
+            background: url(<?=$_SERVER['STD']?>/i/admin/radio.png) no-repeat;
+        }
+        span.radio.checked{
+            background: url(<?=$_SERVER['STD']?>/i/admin/radioChecked.png) no-repeat;
+        }
+        span.checkbox{
+            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox.png) no-repeat;
+        }
+        span.checkbox.checked{
+            background: url(<?=$_SERVER['STD']?>/i/admin/checkboxChecked.png) no-repeat;
+        }
+        controls.upload{
+            background: url(<?=$_SERVER['STD']?>/i/admin/transparentBg.png);
+        }
+
+    </style>
 </head>
 <body>
 <script>window.cmsOnlyMode='<?=$GLOBALS['cmsOnlyMode']?>';</script>

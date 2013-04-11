@@ -19,12 +19,8 @@ form.form table tr.info td:first-child{
 span.radio{
     display: block;
     padding-left: 15px;
-    background: url(/i/admin/radio.png) no-repeat;
     margin-top: 2px;
     margin-bottom: 1px;
-}
-span.radio.checked{
-    background: url(/i/admin/radioChecked.png) no-repeat;
 }
 span.radio label{
     position: relative;
@@ -33,12 +29,8 @@ span.radio label{
 span.checkbox{
     display: block;
     padding-left: 15px;
-    background: url(/i/admin/checkbox.png) no-repeat;
     margin-top: 2px;
     margin-bottom: 1px;
-}
-span.checkbox.checked{
-    background: url(/i/admin/checkboxChecked.png) no-repeat;
 }
 span.checkbox label{
     position: relative;
@@ -49,7 +41,6 @@ input[type=file]{
 }
 controls.upload{
     position: absolute;
-    background: url(/i/admin/transparentBg.png);
     height: 19px;
     padding: 3px 0px 0 4px;
 }

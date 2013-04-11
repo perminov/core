@@ -78,7 +78,9 @@ function filter($value){
 	return $value;
 }
 function i($value, $type = 'w', $file = 'debug.txt'){
-	$fp = fopen(rtrim($_SERVER['DOCUMENT_ROOT'] . '/www', '\//') . '/' . $file, $type);
+
+    $s=pathinfo(__FILE__);$s=explode('/', preg_replace('!' . preg_quote($_SERVER['DOCUMENT_ROOT']) . '!', '', str_replace('\\','/', $s['dirname'])));$s=implode('/', array_slice($s, 0, count($s) - 2));
+    $fp = fopen(rtrim($_SERVER['DOCUMENT_ROOT'] . $s . '/www', '\//') . '/' . $file, $type);
 	ob_start();
 	print_r($value);
 	echo "\n";
@@ -347,8 +349,8 @@ class Misc
     
 	public function loadModel($modelClassName){
 		// if file in which model is declared doesn't exists, so there will be performed emulation of it initialization
-		$systemModelsDir1 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/www/application/models/';
-		$systemModelsDir2 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/core/application/models/';
+		$systemModelsDir1 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/www/application/models/';
+		$systemModelsDir2 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/core/application/models/';
 		$modelFileName = $modelClassName . '.php';
 		$modelFilePath1 = $systemModelsDir1 . $modelFileName;
 		$modelFilePath2 = $systemModelsDir2 . $modelFileName;

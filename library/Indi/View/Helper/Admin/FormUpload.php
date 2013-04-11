@@ -22,7 +22,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
 		$config = Indi_Registry::get('config');
 		$relative = '/' . trim($config['upload']->uploadPath, '/') . '/' . $entity  . '/';
-		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $relative;
+		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
 			// get info about mime type
@@ -39,11 +39,12 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					$uploaded = $this->view->image($entity, $id, $name, $copy, $silence) . '<br>';
 					preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));
 					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
-					$info = getimagesize($abs);
-					if ($info[0] > $this->view->get['width'] + 8) {
+                    $info = getimagesize($abs);
+                    if ($_SERVER['STD']) $uploaded = preg_replace('~src="' . preg_quote($_SERVER['STD']) . '~', 'src="', $uploaded);
+                    if ($info[0] > $this->view->get['width'] + 8) {
 						$uploaded = preg_replace('/src="/', 'width="' . ($this->view->get['width'] + 8).'" src="', $uploaded);
 					}
-					break;
+                    break;
 				case 'flash':
 					$uploaded = $this->view->flash($entity, $id, $name, $silence) . '<br>';
 					break;

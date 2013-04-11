@@ -139,7 +139,7 @@ class Indi_Controller{
 		$this->view = new Indi_View();
 		$config = Indi_Registry::get('config');
 
-		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/core/' . trim($config['view']->scriptPath, '/');
+		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . $_SERVER['STD'] . '/core/' . trim($config['view']->scriptPath, '/');
 		$wwwS  = preg_replace('/core(\/application)/', 'www$1', $coreS);
 
 		if(is_dir($wwwS)) {
@@ -149,7 +149,7 @@ class Indi_Controller{
 			$this->view->setScriptPath($coreS . ($this->module != 'front' ? '/' . $this->module : ''));
 		}
 
-		$coreH = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/core/library';
+		$coreH = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . $_SERVER['STD'] . '/core/library';
 		$wwwH  = preg_replace('/core(\/library)/', 'www$1', $coreH);
 
 		if (is_dir($wwwH)) $this->view->addHelperPath($wwwH . '/Project/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Project_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));

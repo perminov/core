@@ -30,7 +30,7 @@ abstract class Indi_Image
         $uploadPath = self::getUploadPath();
         
         // absolute upload path  in filesystem
-        $absolute = $_SERVER['DOCUMENT_ROOT'] . '/' . $uploadPath . '/' . $entity . '/';
+        $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] .  '/' . $uploadPath . '/' . $entity . '/';
         // get images names that are checked to be deleted
         $post = Indi_Registry::get('post');
 		$imagesToDelete = array();
@@ -75,7 +75,7 @@ abstract class Indi_Image
         $uploadPath = self::getUploadPath();
         
         // absolute upload path  in filesystem
-        $absolute = $_SERVER['DOCUMENT_ROOT'] . '/' . $uploadPath . '/' . $entity . '/';
+        $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
 
 		if (!$requirements) {
 			$requirements = array('type' => 'image', 'maxsize' => 1024 * 1024 * 5);
@@ -184,7 +184,7 @@ abstract class Indi_Image
         $uploadPath = self::getUploadPath();
         
         // absolute upload path  in filesystem
-        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
+        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
         
         // all resized copies are to be deleted too
         $files = array();
@@ -453,8 +453,7 @@ abstract class Indi_Image
             $uploadPath = $config['upload']->uploadPath;
             
             $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
-            $absolute = $_SERVER['DOCUMENT_ROOT'] . $relative;
-            
+            $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . $relative;
 //            dump($id);
 
             $name = $id . ($key !== null && !empty($key) ? '_' . $key : '') . ($copy != null ? ',' . $copy : '');
@@ -477,7 +476,7 @@ abstract class Indi_Image
 						} else {
 							$size = '';
 						}
-                        $xhtml = '<img src="' . $relative . $name . '.' .$pathinfo['extension'] . '?'.$mtime.'" ' . $size . ' alt="" />';
+                        $xhtml = '<img src="' . $_SERVER['STD'] . $relative . $name . '.' .$pathinfo['extension'] . '?'.$mtime.'" ' . $size . ' alt="" />';
                     } else if (!$silence) {
                         $xhtml = 'Cannot find any file on pattern ' . $path;
                     }
@@ -622,7 +621,7 @@ abstract class Indi_Image
             $uploadPath = $config['upload']->uploadPath;
             
             $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
-            $absolute = $_SERVER['DOCUMENT_ROOT'] . $relative;
+            $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . $relative;
             
             $name = $id . ($key !== null && !empty($key) ? '_' . $key : '');
             // as we do not store filename in database, so we should use glob() function to

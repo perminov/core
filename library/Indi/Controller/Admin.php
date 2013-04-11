@@ -172,7 +172,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 		$steps = $this->params['steps'];
 		$this->row->move('down', implode(' AND ', $condition));
 		$this->postMove();
-        $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
 
     }
     
@@ -201,7 +201,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 		}
 		$this->row->move('up', implode(' AND ', $condition));
 		$this->postMove();
-        $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
 
     /**
@@ -232,7 +232,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $id = $this->trail->getItem(1)->row->id;
         }
 		$this->postDelete();
-        $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
 
 	/**
@@ -389,7 +389,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             if ($this->trail->getItem(1)->row) {
                 $id = $this->trail->getItem(1)->row->id;
             }
-            $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+            $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
         }
 	}
 
@@ -753,7 +753,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
         }
-        $this->_redirect(($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
 	}
 	public function postDispatch(){
         // assign general template data
@@ -766,6 +766,12 @@ class Indi_Controller_Admin extends Indi_Controller{
 		if ($GLOBALS['cmsOnlyMode']) {
 			$out = preg_replace('/("|\')\/admin/', '$1', $out);
 		};
+        if ($_SERVER['STD']) {
+            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+            $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+        }
 		die($out);
 	}
     /**

@@ -346,7 +346,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 
 		$entity = $this->getTable()->info('name');
         $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
-        $abs = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
+        $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '/');
 
     
 //        $pat = $abs . '/' .$web . $this->id . (in_array($imageName, array('0', '1', 0, 1)) ? '' : '_' . $imageName) . ($copyName ? ',' . $copyName : '') . '.' ;
@@ -440,7 +440,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         $uploadPath = Indi_Image::getUploadPath();
         
         // absolute upload path  in filesystem
-        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
+        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
 		// array for filenames that should be deleted
 		$files = array();
 
@@ -497,6 +497,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 	}
 
     public function deleteForeignKeysUsages(){
+	return;
         $entities = array();
         $entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->_table->_name . '"')->id;
         $fieldRs = Misc::loadModel('Field')->fetchAll('`relation` = "' . $entityId . '"');

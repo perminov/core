@@ -34,15 +34,6 @@
 .x-panel.menu .x-grid-row-selected.x-grid-tree-node-leaf td div{
     background-color: #dfffdf !important;
 }
-button span.add {
-    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/add.gif') !important;
-}
-button span.form{
-    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/form.gif') !important;
-}
-button span.delete{
-    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/delete.gif') !important;
-}
 .subsection-select .x-form-text{font-size:11px !important; height: 19px !important; line-height: 14px !important; color: #04408C;}
 .subsection-select .x-form-trigger-wrap{margin-top: 1px;}
 .subsection-select .x-form-trigger{height: 19px;}
