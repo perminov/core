@@ -2,24 +2,16 @@
 class Field_Row extends Indi_Db_Table_Row
 {
 	public function delete($branchId = null){
-		// delete copies of images, that have name equal to $this->alias
-		$this->deleteDbTableColumnIfFieldIsAssotiatedWithOne();
-
-		// delete information about existance in grids
-		$this->deleteGridMentions();
-		
-		// delete uploaded images or files as they were uploaded as values 
+		// delete uploaded images or files as they were uploaded as values
 		// of this field if they were uploaded
 		$this->deleteUploadedFilesIfTheyWere();
 
 		// standart Db_Table_Row deletion
 		parent::delete($branchId);
-	}
 
-	public function deleteGridMentions(){
-		$query = 'DELETE FROM `grid` WHERE `fieldId` = "' . $this->id . '"';
-		$this->getTable()->getAdapter()->query($query);
-	}
+        // delete db table assotiated column
+        $this->deleteDbTableColumnIfFieldIsAssotiatedWithOne();
+    }
 
 	public function deleteDbTableColumnIfFieldIsAssotiatedWithOne(){
 		if ($this->columnTypeId) {
@@ -39,7 +31,7 @@ class Field_Row extends Indi_Db_Table_Row
 			$uploadPath = Indi_Image::getUploadPath();
 			
 			// absolute upload path  in filesystem
-			$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
+			$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
 			
 			// array for filenames that should be deleted
 			$files = array();

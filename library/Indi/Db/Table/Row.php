@@ -497,7 +497,6 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 	}
 
     public function deleteForeignKeysUsages(){
-	return;
         $entities = array();
         $entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->_table->_name . '"')->id;
         $fieldRs = Misc::loadModel('Field')->fetchAll('`relation` = "' . $entityId . '"');
