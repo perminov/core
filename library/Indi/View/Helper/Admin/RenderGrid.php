@@ -289,11 +289,24 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					}
 				});
 				$('#trail').html(json.trail);
-				myMask = new Ext.LoadMask(grid.getEl(), {msg:"Загрузка..."});
+                $('.trail-item-section').hover(function(){
+                    $('.trail-siblings').hide();
+                    var itemIndex = $(this).attr('item-index');
+                    var width = (parseInt($(this).width()) + 27);
+                    if ($('#trail-item-' + itemIndex + '-sections ul li').length) {
+                        $('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
+                        $('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
+                    }
+                }, function(){
+                    if (parseInt(event.pageY) < parseInt($(this).offset().top) || parseInt(event.pageX) < parseInt($(this).offset().left)) $('.trail-siblings').hide();
+                });
+                $('.trail-siblings').mouseleave(function(){
+                    $(this).hide();
+                });
+                myMask = new Ext.LoadMask(grid.getEl(), {msg:"Загрузка..."});
 				myMask.show();
 				gridStore.load([{params:{start:0, limit: json.section.rowsOnPage, sort: {property: 'title', direction: 'ASC'}}}]);
 			});
-
 			</script>
 
 		<? $xhtml = ob_get_clean();

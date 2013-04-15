@@ -45,7 +45,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         // perform authentication
         Indi_Auth::getInstance()->auth($this);
 
-        
+
         // set up all trail info
         $sectionAlias = $this->controller;
 		if ($this->session->specialSectionCondition->$sectionAlias) $condition[] = $this->session->specialSectionCondition->$sectionAlias;

@@ -4,7 +4,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>Indi Engine</title>
 	<link rel="stylesheet" type="text/css" href="/library/extjs4/resources/css/ext-all.css" />
-	<link rel="stylesheet" type="text/css" href="/css/admin/layout.css" />
+	<link rel="stylesheet" type="text/css" href="/css/admin/layout.css?1" />
 	<link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
 	<link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
 	<link rel="stylesheet" type="text/css" href="/css/admin/general.css" />

@@ -244,3 +244,19 @@ alert = function(){
         icon: Ext.MessageBox.WARNING
     });
 }
+bindTrail = function(){
+    $('.trail-item-section').hover(function(){
+        $('.trail-siblings').hide();
+        var itemIndex = $(this).attr('item-index');
+        var width = (parseInt($(this).width()) + 27);
+        if ($('#trail-item-' + itemIndex + '-sections ul li').length) {
+            $('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
+            $('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
+        }
+    }, function(){
+        if (parseInt(event.pageY) < parseInt($(this).offset().top) || parseInt(event.pageX) < parseInt($(this).offset().left)) $('.trail-siblings').hide();
+    });
+    $('.trail-siblings').mouseleave(function(){
+        $(this).hide();
+    });
+}

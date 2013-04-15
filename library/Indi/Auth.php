@@ -82,7 +82,12 @@ class Indi_Auth{
 				$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
 			}*/
             $out = $this->controller->view->render('login.php');
-            if ($_SERVER['STD']) $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+            if ($_SERVER['STD']) {
+                $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+            }
             die($out);
 
 
@@ -220,7 +225,12 @@ class Indi_Auth{
 		        unset($_SESSION['admin']);
 				$this->controller->view->assign('error' , array($logout));
                 $out = $this->controller->view->render('login.php');
-                if ($_SERVER['STD']) $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+                if ($_SERVER['STD']) {
+                    $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                    $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                    $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                    $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+                }
                 die($out);
 			} else {
 				die(json_encode(array('error' => $logout)));
@@ -239,7 +249,12 @@ class Indi_Auth{
 			unset($_SESSION['admin']);
 			$this->controller->view->assign('error' , array($message));
             $out = $this->controller->view->render('login.php');
-            if ($_SERVER['STD']) $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+            if ($_SERVER['STD']) {
+                $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+            }
             die($out);
         } else {
 			die(json_encode(array('error' => $message)));
