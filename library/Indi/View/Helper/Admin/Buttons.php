@@ -11,31 +11,9 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
         
         // if buttons are to be displayeв on list screen
         if (($title != null) && ($action != null) && (is_array($title))&&(is_array($action))) {                
-        } elseif ($this->view->action == 'index') {
-            $title[] = 'Back';
-
-            foreach ($accessableActions as $accessableAction) {
-                if ($accessableAction['alias'] == 'form') $title[] = 'Добавить';
-            }
-            
-            $href = '/' . $this->view->module . '/' . $parent->section->alias . '/';
-            if ($grandParent->row) {
-                $href .= $parent->action->alias . '/id/' . $grandParent->row->id . '/';
-            }
-            $action[] = "loadContent('" . $href . "')";
-            if (is_array($post)) {
-                foreach ($post as $key => $value) {
-                 $href = "/" . $this->view->module . '/' . $this->view->section->alias . '/' . "form/";
-                 $action[] = "javascript: sendAdd('".$key."','".$value."','".$href."')";                   
-                }
-            } else {
-                $action[] = "loadContent('/" . $this->view->module . '/' . $this->view->section->alias . '/' . "form/')";
-            }
-            
-        // iа on edit screen
         } else if ($this->view->action == 'form' || $this->view->alterForm) {
             $title[] = 'Вернуться';
-            $action[] = "window.parent.loadContent('/" . $this->view->module . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '') . '\')';
+            $action[] = "window.parent.loadContent('". $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : "/" . $this->view->module) . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '') . '\')';
             foreach ($accessableActions as $accessableAction) {
                 if ($accessableAction['alias'] == 'save') {
 					$title[] = 'Сохранить';

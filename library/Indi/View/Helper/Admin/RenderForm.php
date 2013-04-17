@@ -9,6 +9,60 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
 		
 		echo $this->view->formFooter();
 		echo '<script>' . $this->view->trail->getItem()->section->javascriptForm . '</script>';
+        $sections = $this->view->trail->getItem()->sections->toArray();
+        if (count($sections)) {
+            $sectionsDropdown = array();
+            $maxLength = 12;
+           // $sectionsDropdown[] = array('alias' => '', 'title' => '--Выберите--');
+            for ($i = 0; $i < count($sections); $i++){
+                $sectionsDropdown[] = array('alias' => $sections[$i]['alias'], 'title' => $sections[$i]['title']);
+                $str = preg_replace('/&[a-z]+;/', '&', $sections[$i]['title']);
+                $len = mb_strlen($str, 'utf-8');
+                if ($len > $maxLength) $maxLength = $len;
+            }
+        }
+        if (count($sections)){
+        ob_start();?>
+        <script>
+            var toolbar = {
+                xtype: 'toolbar',
+                dock: 'top',
+                id: 'topbar',
+                items: ['->',
+                    'Подраздел:  ',
+                    window.parent.Ext.create('Ext.form.ComboBox', {
+                        store: window.parent.Ext.create('Ext.data.Store',{
+                            fields: ['alias', 'title'],
+                            data: <?=json_encode($sectionsDropdown)?>
+                        }),
+                        valueField: 'alias',
+                        hiddenName: 'alias',
+                        displayField: 'title',
+                        typeAhead: false,
+                        width: <?=$maxLength*6+10?>,
+                        style: 'font-size: 10px',
+                        cls: 'subsection-select',
+                        id: 'subsection-select',
+                        editable: false,
+                        margin: '0 6 2 0',
+                        value: '--Выберите--',
+                        listeners: {
+                            change: function(cmb, newv, oldv){
+                                if (this.getValue()) {
+                                    window.parent.loadContent('<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + cmb.getValue() + '/index/id/' + <?=$this->view->row->id?> + '/');
+                                }
+                            }
+                        }
+                    })
+                ]
+            }
+            var topbar = window.parent.form.getDockedComponent('topbar');
+            if (topbar) window.parent.form.removeDocked(topbar);
+            window.parent.form.addDocked(toolbar);
+
+        </script>
+        <? echo ob_get_clean();
+        }
 	}
 
 }

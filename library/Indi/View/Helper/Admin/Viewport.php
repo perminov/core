@@ -61,7 +61,14 @@ Ext.onReady(function() {
 				}
 			}
 			var maxImgWidth = Math.floor(($('#center-content-body').width()-36)/2);
-			$('#center-content-body').html('<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>');
+            form = Ext.create('Ext.Panel', {
+                region: 'center',
+                border: 0,
+                align: 'stretch',
+                html: '<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
+                renderTo: 'center-content-body'
+            });
+			//$('#center-content-body').html('');
 		} else {
 			$.post(url, function(response){
 				if (currentPanelId) {
