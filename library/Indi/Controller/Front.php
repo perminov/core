@@ -264,7 +264,7 @@ class Indi_Controller_Front extends Indi_Controller{
         if ($this->trail->getItem(1)){
             if ($this->trail->getItem()->section->parentSectionConnector) {
                 $parentSectionConnectorAlias = $this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
-                $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->id .'"';
+                $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->$parentSectionConnectorAlias .'"';
             } else {
                 $this->post['indexWhere'][1] = '`' . $this->trail->getItem(1)->model->info('name') . 'Id` = "' . $this->trail->getItem(1)->row->id .'"';
             }
