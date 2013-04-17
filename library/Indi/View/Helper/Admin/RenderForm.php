@@ -39,7 +39,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                         hiddenName: 'alias',
                         displayField: 'title',
                         typeAhead: false,
-                        width: <?=$maxLength*6+10?>,
+                        width: <?=$maxLength*7+10?>,
                         style: 'font-size: 10px',
                         cls: 'subsection-select',
                         id: 'subsection-select',

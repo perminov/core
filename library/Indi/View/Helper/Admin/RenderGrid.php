@@ -265,7 +265,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					hiddenName: 'sectionId',
 					typeAhead: false,
 					transform: 'subsectionSelect',
-					width: <?=$maxLength*6+10?>,
+					width: <?=$maxLength*7+10?>,
 					style: 'font-size: 10px',
 					cls: 'subsection-select',
 					editable: false,
