@@ -73,15 +73,24 @@ class Indi_Auth{
                 }
             }
             $controller->view->assign('project', $controller->config->project);
-			$out = $controller->view->render('login.php');
+			/*$out = $controller->view->render('login.php');
 			// perform hrefs adjustments in case if system used only as admin area
 			$config = Indi_Registry::get('config');
 			if($config['general']->standalone == 'true') {
 				$out = preg_replace('/(src|href|background)=("|\')/', '$1=$2/admin', $out);
 				$out = preg_replace('/\/admin\/admin\//', '/admin/', $out);
 				$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
-			}
-			
+			}*/
+            $out = $this->controller->view->render('login.php');
+            if ($_SERVER['STD']) {
+                $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+            }
+            die($out);
+
+
             die($out);
         }
     }
@@ -161,6 +170,7 @@ class Indi_Auth{
 			";
 		}
 		$info = $this->controller->db->query($admin ? $query : $query1)->fetchAll(); $info = $info[0];
+        //d($query);
 		if (!$info) {
 			$logout = 'Ваш аккаунт не существует';
 		} else if (!$admin && !$info['passwordOk']) {
@@ -214,7 +224,14 @@ class Indi_Auth{
 	        if ($_SESSION['admin']['id']) {
 		        unset($_SESSION['admin']);
 				$this->controller->view->assign('error' , array($logout));
-				die($this->controller->view->render('login.php'));
+                $out = $this->controller->view->render('login.php');
+                if ($_SERVER['STD']) {
+                    $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                    $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                    $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                    $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+                }
+                die($out);
 			} else {
 				die(json_encode(array('error' => $logout)));
 			}
@@ -231,8 +248,15 @@ class Indi_Auth{
 		if ($_SESSION['admin']['id']) {
 			unset($_SESSION['admin']);
 			$this->controller->view->assign('error' , array($message));
-			die($this->controller->view->render('login.php'));
-		} else {
+            $out = $this->controller->view->render('login.php');
+            if ($_SERVER['STD']) {
+                $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+                $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+            }
+            die($out);
+        } else {
 			die(json_encode(array('error' => $message)));
 		}
 	}

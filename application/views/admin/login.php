@@ -50,7 +50,7 @@
 					width: 113,
 					handler: function(){
 						var data = {email: $('input[name=email]').val(), password: $('input[name=password]').val(), enter: true}
-						$.post(cmsOnlyMode?'/':'/admin/', data, function(response){
+						$.post('<?=$_SERVER['STD']?>'+(cmsOnlyMode?'/':'/admin/'), data, function(response){
 							if (response.error) {
 								Ext.MessageBox.show({
 									title: 'Ошибка',
@@ -59,7 +59,7 @@
 									icon: Ext.MessageBox.ERROR
 								});
 							} else if (response.ok) {
-								window.location.replace(cmsOnlyMode?'/':'/admin/');
+								window.location.replace('<?=$_SERVER['STD']?>' + (cmsOnlyMode?'/':'/admin/'));
 							}
 							console.log(response);
 						}, 'json');

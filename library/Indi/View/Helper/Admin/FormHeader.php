@@ -24,11 +24,47 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
+    <style>
+        span.radio{
+            background: url(<?=$_SERVER['STD']?>/i/admin/radio.png) no-repeat;
+        }
+        span.radio.checked{
+            background: url(<?=$_SERVER['STD']?>/i/admin/radioChecked.png) no-repeat;
+        }
+        span.checkbox{
+            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox.png) no-repeat;
+        }
+        span.checkbox.checked{
+            background: url(<?=$_SERVER['STD']?>/i/admin/checkboxChecked.png) no-repeat;
+        }
+        controls.upload{
+            background: url(<?=$_SERVER['STD']?>/i/admin/transparentBg.png);
+        }
+
+    </style>
 </head>
 <body>
 <script>window.cmsOnlyMode='<?=$GLOBALS['cmsOnlyMode']?>';</script>
 <script>Ext.require(['*']);</script>
 <script>window.parent.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>
+<script>
+    Ext.onReady(function(){
+        window.parent.$('.trail-item-section').hover(function(){
+            window.parent.$('.trail-siblings').hide();
+            var itemIndex = $(this).attr('item-index');
+            var width = (parseInt($(this).width()) + 27);
+            if (window.parent.$('#trail-item-' + itemIndex + '-sections ul li').length) {
+                window.parent.$('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
+                window.parent.$('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
+            }
+        }, function(){
+            if (parseInt(window.parent.event.pageY) < parseInt($(this).offset().top) || parseInt(window.parent.event.pageX) < parseInt($(this).offset().left)) window.parent.$('.trail-siblings').hide();
+        });
+        window.parent.$('.trail-siblings').mouseleave(function(){
+            $(this).hide();
+        });
+    })
+</script>
 <form class="form" action="../<?=$this->view->row->id ? '../../' : ''?>save/<?=$this->view->row->id ? 'id/' . $this->view->row->id . '/' : ''?>"	name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data">
 	<table celpadding="2" cellspacing="1" border="0" width="100%">
 		<tr class="table_topics"><td colspan="2" align="center" class="table_topics"><?=$title?></td></tr>

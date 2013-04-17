@@ -30,18 +30,47 @@
 .x-panel.menu .x-grid-row-over.x-grid-tree-node-leaf td div{
     background-color: #ecffeb !important;
 }
+.top-center .x-panel-body {
+    overflow: visible;
+    z-index: 100;
+    height: auto !important;
+}
+.top-center{
+    height: auto !important;
+    overflow: visible;
+}
+.trail-siblings{
+    display: inline-block;
+    height: auto;
+    background: white;
+    border: 1px solid #99BCE8;
+    border-top: none;
+    position: absolute;
+    margin-left: -16px;
+    margin-top: 16px;
+    z-index: 101;
+    /*padding: 0 2px 1px 4px;*/
+}
+.trail-siblings ul {
+    margin-top: -1px;
+}
+.x-mask{z-index: 99 !important;}
+.trail-siblings ul li:hover{
+    background-color: #ecffeb;
+}
+.trail-siblings ul li a:hover{
+    color: inherit !important;
+}
+.trail-siblings ul li{
+    padding: 0 2px 1px 4px;
+    border-top: 1px solid #dfffdf;
+}
+.trail-siblings ul li a{
+    width: 100%;
+}
 
 .x-panel.menu .x-grid-row-selected.x-grid-tree-node-leaf td div{
     background-color: #dfffdf !important;
-}
-button span.add {
-    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/add.gif') !important;
-}
-button span.form{
-    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/form.gif') !important;
-}
-button span.delete{
-    background-image: url('/core/library/extjs4/resources/themes/images/default/shared/delete.gif') !important;
 }
 .subsection-select .x-form-text{font-size:11px !important; height: 19px !important; line-height: 14px !important; color: #04408C;}
 .subsection-select .x-form-trigger-wrap{margin-top: 1px;}

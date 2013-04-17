@@ -3,7 +3,10 @@ class Indi_Uri {
 	public function dispatch(){
 		$this->preDispatch();
 
-		$uri = parse_url('http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+        if ($GLOBALS['cmsOnlyMode']) $_SERVER['REQUEST_URI'] = '/admin' . $_SERVER['REQUEST_URI'];
+
+        $uri = parse_url('http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+        $uri = str_replace($_SERVER['STD'], '', $uri);
 		$uri = explode('/', trim($uri['path'], '/'));
 
 		$params['module'] = 'front';

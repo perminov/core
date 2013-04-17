@@ -12,6 +12,6 @@ class Admin_LogoutController extends Indi_Controller
             unset($_SESSION['admin']);
         }
         //$this->_redirect('/' . ($GLOBALS['cmsOnlyMode'] ? '' : $this->module));
-		die('<script>window.location.replace("/' . ($GLOBALS['cmsOnlyMode'] ? '' : $this->module) . '")</script>');
+		die('<script>window.location.replace("' . $_SERVER['STD'] . '/' . ($GLOBALS['cmsOnlyMode'] ? '' : $this->module) . '")</script>');
     }
 }

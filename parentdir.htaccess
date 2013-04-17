@@ -15,23 +15,36 @@ Options FollowSymLinks
 ###################
 RewriteEngine On
 
-RewriteCond %{DOCUMENT_ROOT}/www%{REQUEST_URI} -s [OR]
-RewriteCond %{DOCUMENT_ROOT}/www%{REQUEST_URI} -l [OR]
-RewriteCond %{DOCUMENT_ROOT}/www%{REQUEST_URI} -d
-RewriteRule ^(.*)$ www/$1 [NC,L]
+# Set up potential levels and uris, relative to these levels
+SetEnvIf REQUEST_URI "((/[^\/]+){1})(/.*)" L1=$1 URI1=$3
+SetEnvIf REQUEST_URI "((/[^\/]+){2})(/.*)" L2=$1 URI2=$3
+SetEnvIf REQUEST_URI "((/[^\/]+){3})(/.*)" L3=$1 URI3=$3
 
-RewriteCond %{DOCUMENT_ROOT}/core%{REQUEST_URI} -s [OR]
-RewriteCond %{DOCUMENT_ROOT}/core%{REQUEST_URI} -l [OR]
-RewriteCond %{DOCUMENT_ROOT}/core%{REQUEST_URI} -d
-RewriteRule ^(.*)$ core/$1 [NC,L]
+# Check each level to detect
+RewriteCond %{DOCUMENT_ROOT}/core -d 
+RewriteRule .* - [E=URI:%{REQUEST_URI}]
 
-RewriteCond %{REQUEST_FILENAME} !-s
-RewriteCond %{REQUEST_FILENAME} !-l
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{DOCUMENT_ROOT}/www/index.php -s
-RewriteRule ^.*$ www/index.php [NC,L]
+RewriteCond %{ENV:URI} ^$
+RewriteCond %{DOCUMENT_ROOT}%{ENV:L1}/core -d 
+RewriteRule .* - [E=STD:%{ENV:L1},E=URI:%{ENV:URI1}]
 
-RewriteCond %{REQUEST_FILENAME} !-s
-RewriteCond %{REQUEST_FILENAME} !-l
-RewriteCond %{DOCUMENT_ROOT}/www/index.php !-s
-RewriteRule ^.*$ core/index.php [NC,L]                                              
+RewriteCond %{ENV:URI} ^$
+RewriteCond %{DOCUMENT_ROOT}%{ENV:L2}/core -d 
+RewriteRule .* - [E=STD:%{ENV:L2},E=URI:%{ENV:URI2}]
+
+RewriteCond %{ENV:URI} ^$
+RewriteCond %{DOCUMENT_ROOT}%{ENV:L3}/core -d 
+RewriteRule .* - [E=STD:%{ENV:L3},E=URI:%{ENV:URI3}]
+
+RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/www%{ENV:URI} -f
+RewriteRule .* www%{ENV:URI} [L]
+
+RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/core%{ENV:URI} -f
+RewriteRule .* core%{ENV:URI} [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/www/index.php -f
+RewriteRule .* www/index.php [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .* core/index.php [L]

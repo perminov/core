@@ -22,7 +22,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 
 			$columns = array_merge(array(array('header' => 'id', 'dataIndex' => 'id', 'width' => 30, 'sortable' => true, 'align' =>'right', 'hidden' => true)), $columns);
 			$a = array();
-			$buttonIconsPath = $_SERVER['DOCUMENT_ROOT'] . '/core' . '/library/extjs4/resources/themes/images/default/shared/';
+			$buttonIconsPath = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/library/extjs4/resources/themes/images/default/shared/';
 			for($i = 0; $i < count($actions); $i++) if ($actions[$i]['display'] == 'y'){
 
 				$a[] =  ($actions[$i]['alias'] == 'form' && $canadd && ! $this->view->trail->getItem()->section->disableAdd ? '{
@@ -101,7 +101,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         change: function(obj, newValue, oldValue, eOpts){
                             clearTimeout(timeout);
                             timeout = setTimeout(function(keyword){
-                                grid.store.proxy.url = '/admin/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/' + (keyword ? 'keyword/' + keyword + '/' : '');
+                                grid.store.proxy.url = '" . $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode']?'':'/admin') . "/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/' + (keyword ? 'keyword/' + keyword + '/' : '');
                                 gridStore.load();
                             }, 500, newValue);
                         }
@@ -123,6 +123,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				'trail' => $this->view->trail(),
 				'entity' => $this->view->trail->getItem()->section->getForeignRowByForeignKey('entityId')->title
 			);
+            if ($_SERVER['STD']) $meta = json_decode(str_replace('\/admin\/', str_replace('/', '\/', $_SERVER['STD']) . '\/admin\/', json_encode($meta)));
 			if ($GLOBALS['cmsOnlyMode']) $meta = json_decode(str_replace('\/admin\/', '\/', json_encode($meta)));
 			ob_start();?>
 			<script>
@@ -139,7 +140,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						direction: json.section.defaultSortDirection
 					}] : []),
 					proxy:  new Ext.data.HttpProxy({
-						url: '/admin/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/',  // works
+						url: '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/',  // works
 						method: 'POST',
 						reader: {
 							type: 'json',
@@ -273,7 +274,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							var selection = grid.getSelectionModel().getSelection();
 							if (selection.length) {
 								if (this.getValue()) {
-									loadContent('/admin/' + cmb.getValue() + '/index/id/' + selection[0].data.id + '/');
+									loadContent('<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + cmb.getValue() + '/index/id/' + selection[0].data.id + '/');
 								}
 							} else {
 								cmb.reset();
@@ -288,11 +289,24 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					}
 				});
 				$('#trail').html(json.trail);
-				myMask = new Ext.LoadMask(grid.getEl(), {msg:"Загрузка..."});
+                $('.trail-item-section').hover(function(){
+                    $('.trail-siblings').hide();
+                    var itemIndex = $(this).attr('item-index');
+                    var width = (parseInt($(this).width()) + 27);
+                    if ($('#trail-item-' + itemIndex + '-sections ul li').length) {
+                        $('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
+                        $('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
+                    }
+                }, function(){
+                    if (parseInt(event.pageY) < parseInt($(this).offset().top) || parseInt(event.pageX) < parseInt($(this).offset().left)) $('.trail-siblings').hide();
+                });
+                $('.trail-siblings').mouseleave(function(){
+                    $(this).hide();
+                });
+                myMask = new Ext.LoadMask(grid.getEl(), {msg:"Загрузка..."});
 				myMask.show();
 				gridStore.load([{params:{start:0, limit: json.section.rowsOnPage, sort: {property: 'title', direction: 'ASC'}}}]);
 			});
-
 			</script>
 
 		<? $xhtml = ob_get_clean();
