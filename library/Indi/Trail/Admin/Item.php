@@ -30,7 +30,12 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
         // set up section row
         $section = new Section();
         $this->section = $section->fetchRow('`id` = "' . $sectionId . '"');
-        
+
+        if (preg_match('/(\$|::)/', $this->section->filter)) {
+            eval('$this->section->filter = ' . $this->section->filter . ';');
+        }
+
+
         if ($this->section) {
             // set up actions of section
             $this->actions = $trail->authComponent->getActions($sectionId, $session['admin']['profileId']);

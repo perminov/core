@@ -180,14 +180,27 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 								}
 								//console.log(columnWidths);
 							} else {
-								var percent = totalGridWidth/totalColumnsWidth;
-								var first = true;
+                                var smallColumnsWidth = 0;
+                                var first = true;
+                                for(i in columnWidths) {
+                                    if (first) {
+                                        first = false;
+                                    } else if (columnWidths[i] <= 100) {
+                                        smallColumnsWidth += columnWidths[i];
+                                    }
+                                }
+                                var firstColumnWidth = Math.ceil(totalGridWidth*0.4);
+                                var percent = (totalGridWidth-firstColumnWidth-smallColumnsWidth)/(totalColumnsWidth-columnWidths[1]-smallColumnsWidth);
+                                var first = true;
 								for(i in columnWidths) {
 									if (first) {
-										first = false;
-									} else if (grid.columns[i].width > 100) {
+                                        grid.columns[i].width = firstColumnWidth;
+                                        first = false;
+                                    } else if (columnWidths[i] > 100) {
 										grid.columns[i].width = columnWidths[i] * percent;
-									}
+									} else {
+                                        grid.columns[i].width = columnWidths[i];
+                                    }
 								}
 							}
 							myMask.hide()

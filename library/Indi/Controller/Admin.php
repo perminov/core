@@ -346,6 +346,9 @@ class Indi_Controller_Admin extends Indi_Controller{
                     $disabledField = Misc::loadModel('DisabledField')->fetchRow('`sectionId` = "' . $sectionId . '" AND `fieldId` = "' . $fieldId . '"');
                     if (strlen($disabledField->defaultValue)) {
                         $value = $disabledField->defaultValue;
+                        if (preg_match('/(\$|::)/', $value)) {
+                            eval('$value = ' . $value . ';');
+                        }
                         $set[] = $field['alias'] . ' = "' . $value . '"';
                         $data[$field['alias']] = $value;
                     }
