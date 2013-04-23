@@ -319,6 +319,9 @@ class Indi_Controller_Front extends Indi_Controller{
 				$_SESSION['indexParams'][$this->section->alias]['order'] = key($this->section->getOrder());
 			}
 		}
+        if ($this->section->orderBy == 'e' || $this->section->orderColumn) {
+            $this->masterOrder = true;
+        }
 		$where = null;
 		if (is_array($_SESSION['indexParams'][$this->section->alias]['where'])) {
 			foreach ($_SESSION['indexParams'][$this->section->alias]['where'] as $filterParam => $requiredValue) {
