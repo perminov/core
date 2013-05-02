@@ -39,11 +39,27 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
                 $className = ucfirst($entityTitle);
 
 				$this->model = Misc::loadModel($className);
-                
+
                 // set up row
                 if ($rowIdentifier) {
                     $this->row = $this->model->fetchRow('`id` = "' . $rowIdentifier . '"');
-					if ($_sectionId) $this->row->_sectionId = $_sectionId;
+                    if ($this->section->fsectionId) {
+                        $parentSection = $this->section->getForeignRowByForeignKey('fsectionId');
+                        $parentEntity = $parentSection->getForeignRowByForeignKey('entityId');
+                        $parentEntityForeignKeyName = $parentEntity->table . 'Id';
+                        if (!in_array($parentEntityForeignKeyName, array_keys($this->row->toArray()))) {
+                            $session = Indi_Session::namespaceGet('trailfront');
+                            $info = $session['parentId'];
+                            $parentId = $info->{$parentSection->id};
+                            if (!$parentId) {
+                                $info = (array) $session['parentId'];
+                                $parentId = $info[$parentSection->id];
+                            }
+                            $this->row->$parentEntityForeignKeyName = $parentId;
+                        }
+                    }
+
+                    if ($_sectionId) $this->row->_sectionId = $_sectionId;
                 } else if ($this->action->alias == 'form') {
                     // set up empty row if no row identifier
                     $this->row = $this->model->createRow();

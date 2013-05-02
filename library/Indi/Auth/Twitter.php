@@ -2,23 +2,23 @@
 class Indi_Auth_Twitter
 {
 	const URL_REQUEST_TOKEN	= 'https://api.twitter.com/oauth/request_token';
-	const URL_AUTHORIZE		= 'https://api.twitter.com/oauth/authorize';
+	const URL_AUTHORIZE		= 'https://api.twitter.com/oauth/authenticate';
 	const URL_ACCESS_TOKEN	= 'https://api.twitter.com/oauth/access_token';
 	const URL_ACCOUNT_DATA	= 'https://api.twitter.com/1/users/show';
 	
-	// Секретные ключи и строка возврата
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	private $_consumer_key = '';
 	private $_consumer_secret = '';
 	private $_url_callback = '';
 	
-	// Масив некоторых данных oauth
+	// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ oauth
 	private $_oauth = array();
 	
-	// Идентификатор Твиттер-пользователя
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	private $_user_id = 0;
 	private $_screen_name = '';
 	
-	// Текстовое сопровождение
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	private $_text_support = false;
 	
 	public function __construct($consumerkey, $consumersecret, $urlcallback)
@@ -30,7 +30,7 @@ class Indi_Auth_Twitter
 	
 	
 	/**
-	 * Небольшое текстовое сопровождение авторизации
+	 * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	 *
 	 */
 	public function text_support($value)
@@ -40,15 +40,15 @@ class Indi_Auth_Twitter
 	
 	
 	/**
-	 * Первый этап
+	 * пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	 *
 	 */
 	public function request_token()
 	{
 		$this->_init_oauth();
 		
-		// ПОРЯДОК ПАРАМЕТРОВ ДОЛЖЕН БЫТЬ ИМЕННО ТАКОЙ!
-		// Т.е. сперва oauth_callback -> oauth_consumer_key -> ... -> oauth_version.
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ!
+		// пїЅ.пїЅ. пїЅпїЅпїЅпїЅпїЅпїЅ oauth_callback -> oauth_consumer_key -> ... -> oauth_version.
 		$oauth_base_text = "GET&";
 		$oauth_base_text .= urlencode(self::URL_REQUEST_TOKEN)."&";
 		$oauth_base_text .= urlencode("oauth_callback=".urlencode($this->_url_callback)."&");
@@ -58,14 +58,14 @@ class Indi_Auth_Twitter
 		$oauth_base_text .= urlencode("oauth_timestamp=".$this->_oauth['timestamp']."&");
 		$oauth_base_text .= urlencode("oauth_version=1.0");
 		
-		// Формируем ключ
-		// На конце строки-ключа должен быть амперсанд & !!!
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+		// пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ & !!!
 		$key = $this->_consumer_secret."&";
 		
-		// Формируем oauth_signature
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ oauth_signature
 		$this->_oauth['signature'] = base64_encode(hash_hmac("sha1", $oauth_base_text, $key, true));
 		
-		// Формируем GET-запрос
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ GET-пїЅпїЅпїЅпїЅпїЅпїЅ
 		$url = self::URL_REQUEST_TOKEN;
 		$url .= '?oauth_callback='.urlencode($this->_url_callback);
 		$url .= '&oauth_consumer_key='.$this->_consumer_key;
@@ -75,17 +75,17 @@ class Indi_Auth_Twitter
 		$url .= '&oauth_timestamp='.$this->_oauth['timestamp'];
 		$url .= '&oauth_version=1.0';
 		
-		// Выполняем запрос
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		$response = file_get_contents($url);
 		
-		// Парсим строку ответа
+		// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		parse_str($response, $result);
 		
-		// Запоминаем в сессию
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		$_SESSION['user']['oauth_token'] = $this->_oauth['token'] = $result['oauth_token'];
 		$_SESSION['user']['oauth_token_secret'] = $this->_oauth['token_secret'] = $result['oauth_token_secret'];
 		
-		// Текстовое сопровождение
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if ($this->_text_support)
 		{
 			echo '<p><strong>base_text:</strong> '.$oauth_base_text.'</p>';
@@ -101,12 +101,12 @@ class Indi_Auth_Twitter
 	
 	
 	/**
-	 * Второй этап
+	 * пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	 *
 	 */
 	public function authorize()
 	{
-		// Формируем GET-запрос
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ GET-пїЅпїЅпїЅпїЅпїЅпїЅ
 		$url = self::URL_AUTHORIZE;
 		$url .= '?oauth_token='.$this->_oauth['token'];
 		
@@ -122,24 +122,24 @@ class Indi_Auth_Twitter
 	
 	
 	/**
-	 * Третий этап
+	 * пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 	 *
 	 */
 	public function access_token($token, $verifier)
 	{
 		$this->_init_oauth();
 		
-		// Токен из ГЕТ-запроса
+		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		$this->_oauth['token'] = $token;
 		
-		// Вспоминаем oauth_token_secret из сессии (см. функцию request_token)
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ oauth_token_secret пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ request_token)
 		$this->_oauth['token_secret'] = $_SESSION['user']['oauth_token_secret'];
 		
-		// Токен из ГЕТ-запроса
+		// пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		$this->_oauth['verifier'] = $verifier;
 		
-		// ПОРЯДОК ПАРАМЕТРОВ ДОЛЖЕН БЫТЬ ИМЕННО ТАКОЙ!
-		// Т.е. сперва oauth_callback -> oauth_consumer_key -> ... -> oauth_version.
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ!
+		// пїЅ.пїЅ. пїЅпїЅпїЅпїЅпїЅпїЅ oauth_callback -> oauth_consumer_key -> ... -> oauth_version.
 		$oauth_base_text = "GET&";
 		$oauth_base_text .= urlencode(self::URL_ACCESS_TOKEN)."&";
 		$oauth_base_text .= urlencode("oauth_consumer_key=".$this->_consumer_key."&");
@@ -150,13 +150,13 @@ class Indi_Auth_Twitter
 		$oauth_base_text .= urlencode("oauth_verifier=".$this->_oauth['verifier']."&");
 		$oauth_base_text .= urlencode("oauth_version=1.0");
 		
-		// Формируем ключ (Consumer secret + '&' + oauth_token_secret)
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (Consumer secret + '&' + oauth_token_secret)
 		$key = $this->_consumer_secret."&".$this->_oauth['token_secret'];
 		
-		// Формируем auth_signature
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ auth_signature
 		$this->_oauth['signature'] = base64_encode(hash_hmac("sha1", $oauth_base_text, $key, true));
 		
-		// Формируем GET-запрос
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ GET-пїЅпїЅпїЅпїЅпїЅпїЅ
 		$url = self::URL_ACCESS_TOKEN;
 		$url .= '?oauth_nonce='.$this->_oauth['nonce'];
 		$url .= '&oauth_signature_method=HMAC-SHA1';
@@ -167,17 +167,17 @@ class Indi_Auth_Twitter
 		$url .= '&oauth_signature='.urlencode($this->_oauth['signature']);
 		$url .= '&oauth_version=1.0';
 		
-		// Выполняем запрос
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		$response = file_get_contents($url);
 		
-		// Парсим результат запроса
+		// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		parse_str($response, $result);
 		
-		// Получаем идентификатор Твиттер-пользователя из результата запроса
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		$this->_user_id = $result['user_id'];
 		$this->_screen_name = $result['screen_name'];
 		
-		// Текстовое сопровождение
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if ($this->_text_support)
 		{
 			echo '<p><strong>base_text:</strong> '.$oauth_base_text.'</p>';
@@ -193,7 +193,7 @@ class Indi_Auth_Twitter
 	
 	
 	/**
-	 * Четвертый этап. Получение данных пользователя
+	 * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	 *
 	 */
 	public function user_data($format='json')
@@ -210,33 +210,33 @@ class Indi_Auth_Twitter
 				break;
 		}
 		
-		// Формируем адрес-запроса
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		$url .= '?screen_name='.$this->_screen_name;
 		
-		// Выполняем запрос
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		$response = file_get_contents($url);
 		
-		// Текстовое сопровождение
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		if ($this->_text_support)
 		{
 			echo '<p><strong>User data url:</strong> '.$url.'</p>';
 		}
 		
-		// Возвращаем результат
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		return $response;
 	}
 	
 	
 	/**
-	 * Функция формирует oauth_nonce и oauth_timestamp
+	 * пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ oauth_nonce пїЅ oauth_timestamp
 	 *
 	 */
 	private function _init_oauth()
 	{
-		// Формируем oauth_nonce
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ oauth_nonce
 		$this->_oauth['nonce'] = md5(uniqid(rand(), true));
 		
-		// Получаем текущее время в секундах
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		$this->_oauth['timestamp'] = time();
 		
 		if ($this->_text_support)

@@ -6,6 +6,10 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
         $filtersCount = $this->view->trail->getItem()->filtersCount;
+        $filterFieldAliases = array();
+        if ($filtersCount) foreach($this->view->trail->getItem()->filters as $filter) {
+            $filterFieldAliases[] = $filter->getForeignRowByForeignKey('fieldId')->alias;
+        }
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
 		if (!count($gridFields)) {
 			echo 'Отсутствуют сведения о структуре ExtJs таблицы для этого раздела.';
@@ -87,6 +91,59 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			}
 			$tbarItems = array();
 			if ($actions) $tbarItems[] = $actions;
+            if ($filtersCount) {
+                $courseStatusesA = Misc::loadModel('CourseStatus')->fetchAll(null, '`title`')->toArray();
+                $o = array(array('id' => '%', 'title' => 'Все'));
+                foreach ($courseStatusesA as $courseStatusesI) {
+                    $o[] = $courseStatusesI;
+                }
+            }
+            if ($filtersCount) $tbarItems[] = "
+                '->', '-','Тип курса: ',{
+                    xtype: 'combobox',
+                    width: 100,
+                    valueField: 'id',
+                    displayField: 'title',
+                    displayValue: 'Все',
+                    value: '%',
+                    cls: 'subsection-select',
+                    typeAhead: false,
+                    editable: false,
+                    id: 'where-courseStatusId',
+                    store: {
+                        fields: ['id', 'title'],
+                        data:".json_encode($o)."
+                    },
+					listeners: {
+						change: whereChange
+					}
+                }, 'Статус: ',{
+                    xtype: 'combobox',
+                    width: 100,
+                    valueField: 'id',
+                    displayField: 'title',
+                    displayValue: 'Все',
+                    value: '%',
+                    cls: 'subsection-select',
+                    typeAhead: false,
+                    editable: false,
+                    id: 'where-toggle',
+                    store: {
+                        fields: ['id', 'title'],
+                        data:[{
+                            id:'%', title:'Все'
+                        },{
+                            id:'y', title:'Включен'
+                        },{
+                            id:'n', title:'Выключен'
+                        }]
+                    },
+					listeners: {
+						change: whereChange
+					}
+
+                }, '-'
+            ";
             $tbarItems[] = "
                 '->',
                 'Искать: ',
@@ -130,7 +187,22 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			var json = <?=json_encode($meta)?>;
             var timeout;
 			Ext.onReady(function() {
-				var myMask;
+                var whereAliases = <?=json_encode($filterFieldAliases)?>;
+                var whereChange = function(cmb, newv, oldv){
+                    var params = [];
+                    for (var i in whereAliases) {
+                        if (Ext.getCmp('where-'+whereAliases[i]).getValue() != '%') {
+                            var param = {};
+                            param[whereAliases[i]] = Ext.getCmp('where-'+whereAliases[i]).getValue();
+                            params.push(param);
+                        }
+                    }
+                    //if (Ext.getCmp('where-toggle').getValue()) params.push({toggle: Ext.getCmp('where-toggle').getValue()});
+                    //if (Ext.getCmp('where-courseStatusId').getValue()) params.push({courseStatusId: Ext.getCmp('where-courseStatusId').getValue()});
+                    gridStore.getProxy().extraParams= {search: JSON.stringify(params)};
+                    gridStore.reload();
+                }
+                var myMask;
 				var gridStore = Ext.create('Ext.data.Store', {
 					fields: json.fields,
 					method: 'POST',
@@ -249,7 +321,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         collapsible: true,
                         collapsed: false,
                         height: 300,
-                        html: '<iframe src="/admin/' + json.section.alias + '/form?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
+                        html: '<iframe src="<?=$_SERVER['STD'].($_SERVER['cmsOnlyMode']?'':'/admin')?>/' + json.section.alias + '/form?width='+maxImgWidth+'&filter=1" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
                         closable: true,
                         weight: 10,
                         id: 'search-panel'

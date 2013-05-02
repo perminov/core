@@ -96,8 +96,8 @@ class Indi_Uri {
 			$this->setDbCacheUsageIfNeed();
 			$this->adjustUriIfSubdomain();
 			$GLOBALS['enableSeoUrls'] = current(Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "enableSeoUrls"')->fetch());
-			if ($GLOBALS['enableSeoUrls'] == 'true') {
-                $GLOBALS['INITIAL_URI'] = $_SERVER['REQUEST_URI'];
+            $GLOBALS['INITIAL_URI'] = $_SERVER['REQUEST_URI'];
+            if ($GLOBALS['enableSeoUrls'] == 'true') {
                 $_SERVER['REQUEST_URI'] = $this->seo2sys($_SERVER['REQUEST_URI']);
             }
 		}

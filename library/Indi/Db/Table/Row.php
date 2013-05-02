@@ -339,12 +339,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
     
     public function getImageSrc($imageName, $copyName = null)
     {
-        // get table name
-//        $dbTableClassInfo = $this->getTable()->info();
-//       $firstChar = substr($dbTableClassInfo['name'], 0, 1);
-//        $dbTableName = strtolower($firstChar) . substr($dbTableClassInfo['name'], 1);
-
-		$entity = $this->getTable()->info('name');
+        $entity = $this->getTable()->info('name');
         $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
         $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '/');
 
@@ -360,6 +355,18 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         
         $src = str_replace($abs, '', $files[0]);
         return $src;
+    }
+
+    public function getImageAbs($imageName, $copyName = '') {
+        $entity = $this->getTable()->info('name');
+        $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
+        $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '/');
+        $pat = $abs . '/' .$web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
+        $files = glob($pat . '*');
+        if(count($files) == 0) {
+            return false;
+        }
+        return $files[0];
     }
 
     public function image($imageName = null, $copyName = null, $attrib = null, $noCache = false, $sizeinfo = false)

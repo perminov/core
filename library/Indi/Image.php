@@ -127,6 +127,7 @@ abstract class Indi_Image
 					
 			        if(!move_uploaded_file($tmp, $dst)) copy($tmp, $dst);
 					$entityId = $this->trail ? $this->trail->getItem()->fields[0]->entityId : $this->section->entityId;
+					$entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
 					$copies = Misc::loadModel('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
 					for ($i = 0; $i < count($copies); $i++) {
 						switch($copies[$i]['proportions']){
@@ -156,7 +157,7 @@ abstract class Indi_Image
                 }
             }
         }
-		Indi_Registry::set('uploadFails', $failInfo);
+		if ($failInfo) Indi_Registry::set('uploadFails', $failInfo);
     }
 
     /**

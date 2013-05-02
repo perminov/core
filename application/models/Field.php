@@ -25,7 +25,11 @@ class Field extends Indi_Db_Table{
 	}
 
 	public function getFiltersCountBySectionId($sectionId) {
-        return 0;//$this->_db->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
+        return $this->_db->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
+	}
+
+	public function getFiltersBySectionId($sectionId){
+        return  Misc::loadModel('Search')->fetchAll('`sectionId` = "' . $sectionId . '" AND `toggle`="y"', '`move`');
 	}
 
 	public function getDisabledFieldsBySectionId($sectionId){

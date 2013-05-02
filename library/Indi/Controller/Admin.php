@@ -124,6 +124,14 @@ class Indi_Controller_Admin extends Indi_Controller{
 				// owner control
 				if($this->admin['alternate'] && $this->trail->getItem()->model->fieldExists($this->admin['alternate'] . 'Id')) $condition[] =  '`' . $this->admin['alternate'] . 'Id` = "' . $this->admin['id'] . '"';
 
+                // grid filters search
+                if ($this->get['search']) {
+                    $search = json_decode($this->get['search'], true);
+                    foreach ($search as $searchOnField) {
+                        $condition[] = '`' . key($searchOnField) . '` = "' . current($searchOnField) . '"';
+                    }
+                }
+
                 // fast search
                 $condition = $this->appendFastSearchConditionIfNeed($condition);
 
@@ -431,8 +439,10 @@ class Indi_Controller_Admin extends Indi_Controller{
 									$fields[$j]->alias = $fields[$i]->alternative;
 									$this->post['satellite'] = $satelliteRow->{$fields[$i]->alternative};
 								}
-								//$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'CONCAT("\'",REPLACE(`' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`,",","\',\'"),"\'") LIKE "%\'' . $this->post['satellite'] . '\'%"';
-								$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';							}
+//								if (!$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias]) $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = array();
+//                                $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias][] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';
+                                $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';
+                            }
 						}
 					} else if ($fields[$i]->dependency == 'u') {
 					}
