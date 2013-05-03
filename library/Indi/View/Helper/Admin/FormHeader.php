@@ -46,21 +46,21 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 <body>
 <script>window.cmsOnlyMode='<?=$GLOBALS['cmsOnlyMode']?>';</script>
 <script>Ext.require(['*']);</script>
-<script>window.parent.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>
+<script>top.window.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>
 <script>
     Ext.onReady(function(){
-        window.parent.$('.trail-item-section').hover(function(){
-            window.parent.$('.trail-siblings').hide();
+        top.window.$('.trail-item-section').hover(function(){
+            top.window.$('.trail-siblings').hide();
             var itemIndex = $(this).attr('item-index');
             var width = (parseInt($(this).width()) + 27);
-            if (window.parent.$('#trail-item-' + itemIndex + '-sections ul li').length) {
-                window.parent.$('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
-                window.parent.$('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
+            if (top.window.$('#trail-item-' + itemIndex + '-sections ul li').length) {
+                top.window.$('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
+                top.window.$('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
             }
         }, function(){
-            if (parseInt(window.parent.event.pageY) < parseInt($(this).offset().top) || parseInt(window.parent.event.pageX) < parseInt($(this).offset().left)) window.parent.$('.trail-siblings').hide();
+            if (parseInt(top.window.event.pageY) < parseInt($(this).offset().top) || parseInt(top.window.event.pageX) < parseInt($(this).offset().left)) top.window.$('.trail-siblings').hide();
         });
-        window.parent.$('.trail-siblings').mouseleave(function(){
+        top.window.$('.trail-siblings').mouseleave(function(){
             $(this).hide();
         });
     })

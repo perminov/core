@@ -21,6 +21,15 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                 if ($len > $maxLength) $maxLength = $len;
             }
         }
+        ob_start();?>
+        <script>
+            var parent = top.window.$('iframe[name="form-frame"]').parent();
+            while (parent.attr('id') != 'center-content-body') {
+                parent.css('height', '100%');
+                parent = parent.parent();
+            }
+        </script>
+        <? $xhtml = ob_get_clean();
         if (count($sections)){
         ob_start();?>
         <script>
@@ -30,8 +39,8 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                 id: 'topbar',
                 items: ['->',
                     'Подраздел:  ',
-                    window.parent.Ext.create('Ext.form.ComboBox', {
-                        store: window.parent.Ext.create('Ext.data.Store',{
+                    top.window.Ext.create('Ext.form.ComboBox', {
+                        store: top.window.Ext.create('Ext.data.Store',{
                             fields: ['alias', 'title'],
                             data: <?=json_encode($sectionsDropdown)?>
                         }),
@@ -49,22 +58,23 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                         listeners: {
                             change: function(cmb, newv, oldv){
                                 if (this.getValue()) {
-                                    window.parent.loadContent('<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + cmb.getValue() + '/index/id/' + <?=$this->view->row->id?> + '/');
+                                    top.window.loadContent('<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + cmb.getValue() + '/index/id/' + <?=$this->view->row->id?> + '/');
                                 }
                             }
                         }
                     })
                 ]
             }
-            var topbar = window.parent.form.getDockedComponent('topbar');
-            if (topbar) window.parent.form.removeDocked(topbar);
-            window.parent.form.addDocked(toolbar);
-            var topbar = window.parent.form.getDockedComponent('topbar');
-			var height = (window.parent.$('#center-content-body').height() - topbar.getHeight() - 1);
-			if (window.parent.$('iframe[name="form-frame"]').height() > height) window.parent.$('iframe[name="form-frame"]').css('height', height + 'px');
+            var topbar = top.window.form.getDockedComponent('topbar');
+            if (topbar) top.window.form.removeDocked(topbar);
+            top.window.form.addDocked(toolbar);
+            var topbar = top.window.form.getDockedComponent('topbar');
+			var height = (top.window.$('#center-content-body').height() - topbar.getHeight() - 1);
+			if (top.window.$('iframe[name="form-frame"]').height() > height) top.window.$('iframe[name="form-frame"]').css('height', height + 'px');
         </script>
-        <? echo ob_get_clean();
+        <? $xhtml .= ob_get_clean();
         }
+        echo $xhtml;
 	}
 
 }
