@@ -308,12 +308,16 @@ class Indi_Controller_Admin extends Indi_Controller{
 					$value = implode(':', array_values($this->post[$field['alias']]));
 					break;
 				case 'datetime':
-					$value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($this->post[$field['alias']]['date'])) ? trim($this->post[$field['alias']]['date']) : '0000-00-00';
-					unset($this->post[$field['alias']]['date']);
-					foreach ($this->post[$field['alias']] as $p => $v) {
-						$this->post[$field['alias']][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
-					}
-					$value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
+                    if (is_array($this->post[$field['alias']])) {
+                        $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($this->post[$field['alias']]['date'])) ? trim($this->post[$field['alias']]['date']) : '0000-00-00';
+                        unset($this->post[$field['alias']]['date']);
+                        foreach ($this->post[$field['alias']] as $p => $v) {
+                            $this->post[$field['alias']][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
+                        }
+                        $value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
+                    } else {
+                        $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/', trim($this->post[$field['alias']])) ? trim($this->post[$field['alias']]) : '0000-00-00 00:00:00';
+                    }
 					break;
 				case 'multicheck':
                     if (is_array($value)) {

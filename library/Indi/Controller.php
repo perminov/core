@@ -224,7 +224,7 @@ class Indi_Controller{
 	}
 	public function dispatch() {
 
-		header('Content-Type: text/html; charset=utf8');
+		header('Content-Type: text/html; charset=utf-8');
 		$this->preDispatch();
 		eval('$this->' . $this->params['action'] . 'Action();');
 		$this->postDispatch();

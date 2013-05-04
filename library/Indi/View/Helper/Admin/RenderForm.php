@@ -23,11 +23,13 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
         }
         ob_start();?>
         <script>
-            var parent = top.window.$('iframe[name="form-frame"]').parent();
-            while (parent.attr('id') != 'center-content-body') {
-                parent.css('height', '100%');
-                parent = parent.parent();
-            }
+            $(document).ready(function(){
+                var parent = top.window.$('iframe[name="form-frame"]').parent();
+                while (parent.attr('id') != 'center-content-body') {
+                    parent.css('height', '100%');
+                    parent = parent.parent();
+                }
+            })
         </script>
         <? $xhtml = ob_get_clean();
         if (count($sections)){
