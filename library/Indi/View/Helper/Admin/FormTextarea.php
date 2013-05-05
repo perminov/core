@@ -20,6 +20,7 @@ class Indi_View_Helper_Admin_FormTextarea extends Indi_View_Helper_FormElement
     {
         if ($value === null) {
             $value = $this->view->row->$name;
+			if ($name == 'title' && $value == 'No title') $value = '';
         }        
         $info = $this->_getInfo($name, $value, $attribs);
         extract($info); // name, value, attribs, options, listsep, disable

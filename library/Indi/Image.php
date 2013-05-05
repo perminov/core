@@ -464,6 +464,11 @@ abstract class Indi_Image
                 if (is_writable($absolute)) {
                     $path = $absolute . $name . '.*';
 					$file = glob($path);
+					$fileBack = $file;
+					for ($i = 0; $i < count($fileBack); $i++) {
+						$info = pathinfo($fileBack[$i]);
+						if (!$info['extension']) unset($file[$i]);
+					}
                     if (count($file)) {
                         $pathinfo = pathinfo($file[0]);
 						$mtime = substr(filemtime($file[0]), -3);
@@ -653,7 +658,7 @@ abstract class Indi_Image
         $uploadPath = self::getUploadPath();
         
         // absolute upload path in filesystem
-        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
+        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
 
 		if ($requirements['type']) {
 			$info = explode('/', Indi_Image::m_content_type($url));
@@ -662,6 +667,15 @@ abstract class Indi_Image
 			}
 		}
 		$info = pathinfo($url);
+		if (!$info['extension']) {
+			$fp = fopen($url , 'r'); while(!feof($fp)) $data .= fgets($fp, 1000); fclose($fp);
+			$url = tempnam(sys_get_temp_dir(), "image");
+			$fp = fopen($url, 'wb');
+			fwrite($fp, $data);
+			fclose($fp);
+			$tmpUsage = true;
+			$info['extension'] = 'jpg';
+		}
 		if (!$images['error'][$name]) {
 			// check if entity images directory is exists
 			if (!is_dir($absolute)) {
@@ -675,6 +689,7 @@ abstract class Indi_Image
 			$dst = $absolute . $id . (!in_array($name, array('0','1')) ? '_' . $name : '') . '.' . strtolower($info['extension']);
 			
 			copy($url, $dst);
+			if ($tmpUsage) unlink($url);
 			$entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
 			$copies = Misc::loadModel('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
 			for ($i = 0; $i < count($copies); $i++) {
