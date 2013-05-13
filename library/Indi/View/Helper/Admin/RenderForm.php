@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
             })
         </script>
         <? $xhtml = ob_get_clean();
-        if (count($sections)){
+        if ($this->view->trail->getItem()->row->id && count($sections)){
         ob_start();?>
         <script>
             var toolbar = {

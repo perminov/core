@@ -172,7 +172,7 @@ class Admin_AuxillaryController extends Indi_Controller
 						$pattern  = $itemR->id . ($fieldR->alias ? '_' . $fieldR->alias : '') . '.*';
 						$config = Indi_Registry::get('config');
 						$relative = '/' . trim($config['upload']->uploadPath, '/') . '/' . $entityR->table  . '/';
-						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $relative;
+						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . $relative;
 						$file = glob($absolute . $pattern); $file = $file[0];
 						$info = pathinfo($file);
 						if (file_exists($file)) {
@@ -189,12 +189,131 @@ class Admin_AuxillaryController extends Indi_Controller
 		}
 		die("Ok");
 	}
+
+    public function indexesAction(){
+        if($_SESSION['admin']['profileId'] == '1') {
+            $fieldRs = Misc::loadModel('Field')->fetchAll('`storeRelationAbility` IN ("one","many")', '`entityId`, `move`');
+            foreach ($fieldRs as $fieldR) $fieldEA[$fieldR->entityId][] = $fieldR;
+            foreach ($fieldEA as $entityId => $fieldA) {
+                $entity = $fieldA[0]->getForeignRowByForeignKey('entityId');
+                $aliases = array(); foreach ($fieldA as $fieldR) $aliases[] = $fieldR->alias;
+                d('Таблица: ' . $entity->table);
+                $indexesA = $this->db->query('SHOW INDEX FROM `' . $entity->table . '` WHERE FIND_IN_SET(`Column_name`, "' . implode(',', $aliases) . '")')->fetchAll();
+                $existing = array(); foreach ($indexesA as $indexesI) $existing[] = $indexesI['Column_name']; $existing = array_unique($existing);
+                d('Поля');
+                d($aliases);
+                d('Индексы');
+                d($existing);
+                d('Отсутствуют');
+                $noindexes = array_diff($aliases, $existing);
+                d($noindexes);
+                foreach ($noindexes as $noindex) {
+                    $sql[] = 'ALTER TABLE `' . $entity->table . '` ADD INDEX(`' . $noindex . '`)';
+                    $this->db->query($sql[count($sql)-1]);
+                }
+            }
+            d($sql);
+        }
+    }
+
+    public function defaultsAction(){
+        if($_SESSION['admin']['profileId'] == '1') {
+            $columnType = Misc::loadModel('ColumnType');
+            $fieldRs = Misc::loadModel('Field')->fetchAll(null, '`entityId`, `move`');
+            $fieldRs->setForeignRowsByForeignKeys('columnTypeId');
+            $update = array();
+            $alter = array();
+            foreach ($fieldRs as $fieldR) $fieldEA[$fieldR->entityId][] = $fieldR;
+            foreach ($fieldEA as $entityId => $fieldA) {
+                $entity = $fieldA[0]->getForeignRowByForeignKey('entityId');
+                $aliases = array(); foreach ($fieldA as $fieldR) $aliases[] = $fieldR->alias;
+                $columns = $this->db->query('SHOW COLUMNS FROM `' . $entity->table . '` WHERE `Field` IN ("' . implode('","', $aliases) . '") AND `Type` NOT LIKE "%TEXT%" AND ISNULL(`Default`)')->fetchAll();
+                $should = array();
+                foreach ($columns as $column) {
+                    foreach ($fieldA as $fieldR) {
+                        if ($column['Field'] == $fieldR->alias) {
+                            $should[$fieldR->alias] = $fieldR;
+                        }
+                    }
+                }
+                $sql = explode("\n", $this->db->query('SHOW CREATE TABLE `' . $entity->table . '`')->fetchColumn(1));
+                for ($i = 0; $i < count($sql); $i++) {
+                    $sql[$i] = trim(trim($sql[$i]), ',');
+                    if (preg_match('/^`([a-zA-Z0-9]+)`/', $sql[$i], $matches)) {
+                        if (in_array($matches[1], array_keys($should))) {
+                            $this->post['defaultValue'] = $should[$matches[1]]->defaultValue;
+                            $columnTypeRow = $columnType->createRow($should[$matches[1]]->foreign['columnTypeId']);
+                            if (!in_array($columnTypeRow->type, array('BLOB','TEXT'))) {
+                                $this->post['defaultValue'] = str_replace('"','&quot;',trim($this->post['defaultValue']));
+                                $valid = true;
+                                if (preg_match('/INT/', $columnTypeRow->type)) {
+                                    $valid = is_numeric($this->post['defaultValue']);
+                                    if (!$valid) $this->post['defaultValue'] = '0';
+
+                                } else if ($columnTypeRow->type == 'BOOLEAN') {
+                                    $valid = preg_match('/^1|0$/', $this->post['defaultValue']);
+                                    if (!$valid) $this->post['defaultValue'] = '0';
+
+                                } else if ($columnTypeRow->type == 'DATE') {
+                                    $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/', $this->post['defaultValue'], $parts);
+                                    if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[1]), preg_replace('/^0/', '', $parts[2]), $parts[0]);
+                                    if (!$valid) $this->post['defaultValue'] = '0000-00-00';
+
+                                } else if ($columnTypeRow->type == 'TIME') {
+                                    $valid = preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->post['defaultValue'], $parts);
+                                    if ($valid) {
+                                        $h = (int) preg_replace('/^0/', '', $parts[1]);
+                                        $m = (int) preg_replace('/^0/', '', $parts[2]);
+                                        $s = (int) preg_replace('/^0/', '', $parts[3]);
+                                        if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
+                                    }
+                                    if (!$valid) $this->post['defaultValue'] = '00:00:00';
+
+                                } else if ($columnTypeRow->type == 'YEAR') {
+                                    $valid = preg_match('/^[0-9]{4}$/', $this->post['defaultValue']);
+                                    if (!$valid) $this->post['defaultValue'] = '0000';
+
+                                } else if ($columnTypeRow->type == 'DATETIME') {
+                                    // check datetime format
+                                    $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->post['defaultValue'], $parts);
+                                    // check date existence
+                                    if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[1]), preg_replace('/^0/', '', $parts[2]), $parts[0]);
+                                    // check time existence
+                                    if ($valid) {
+                                        $h = (int) preg_replace('/^0/', '', $parts[4]);
+                                        $m = (int) preg_replace('/^0/', '', $parts[5]);
+                                        $s = (int) preg_replace('/^0/', '', $parts[6]);
+                                        if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
+                                    }
+                                    if (!$valid) $this->post['defaultValue'] = '0000-00-00 00:00:00';
+
+                                } else if (preg_match('/ENUM|SET|VARCHAR/', $columnTypeRow->type)) {
+
+                                } else if (preg_match('/^DOUBLE\(([0-9]+),([0-9]+)\)$/', $columnTypeRow->type, $digits)) {
+                                    $valid = preg_match('/^[0-9]{1,' . ($digits[1] - $digits[2]) . '}\.[0-9]{1,' . $digits[2] . '}$/', $this->post['defaultValue']);
+                                    if (!$valid) $this->post['defaultValue'] = '0.' . str_repeat('0', $digits[2]);
+                                }
+                                if (!$valid) $update[] = 'UPDATE `field` SET `defaultValue` = "' . $this->post['defaultValue'] . '" WHERE `id` = "' . $should[$matches[1]]->id . '"';
+                            }
+                            $alter[] = 'ALTER TABLE `' . $entity->table . '` CHANGE `' . $matches[1] .'` ' . $sql[$i] . " DEFAULT '" . $this->post['defaultValue'] . "'";
+                        }
+                    }
+                }
+            }
+            d($update);
+            d($alter);
+            $sqlA = array_merge($update, $alter);
+            foreach ($sqlA as $sqlI) $this->db->query($sqlI);
+        }
+     }
+    public function sAction(){
+//        $user = Misc::loadModel('User')->fetchRow('`id`="81"');
+//        $user->email = '3334';
+//        $user = Misc::loadModel('User')->createRow();
+//        $user->id = '123';
+//        d($user);
+//        d($user->save());
+//        $c = Misc::loadModel('Fsection')->fetchRow('`alias` = "courses"');
+//        d($c);
+    }
 }
-
-
-
-
-
-
-
-

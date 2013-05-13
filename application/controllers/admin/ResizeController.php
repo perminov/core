@@ -10,14 +10,13 @@ class Admin_ResizeController extends Indi_Controller_Admin{
 	public function postSave(){
 		if ($this->was == false) return;
 		$this->became = $this->trail->getItem()->model->fetchRow('`id` = "' . $this->identifier . '"')->toArray();
-		unset($this->was['_sectionId']);
 		if ($this->was != $this->became) {
 
 			// Get files of copies to be resized
 			$entity = Entity::getInstance()->getModelById($this->trail->getItem(1)->row->entityId)->info('name');
 			$uploadPath = Indi_Image::getUploadPath();
 			$relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
-			$absolute = $_SERVER['DOCUMENT_ROOT'] . $relative;
+			$absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . $relative;
 			$key = $this->trail->getItem(1)->row->alias;
 			$copy = $this->was['alias'];
 

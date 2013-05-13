@@ -1,147 +1,184 @@
 <?php
 abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggregate{
-	protected $_data;
-	protected $_table;
-	/**
-	 * Constructor.
-	 *
-	 * Supported params for $config are:-
-	 * - table       = class name or object of type Indi_Db_Table_Abstract
-	 * - data        = values of columns in this row.
-	 *
-	 * @param  array $config OPTIONAL Array of user-specified config options.
-	 * @return void
-	 * @throws Indi_Db_Table_Row_Exception
-	 */
-	public function __construct(array $config = array())
-	{
-		$this->_table = $config['table'];
-		$this->_data = $config['data'];
-		$this->init();
-	}
+    /**
+     * Original data
+     *
+     * @var array
+     */
+    protected $_original = array();
 
-	/**
-	 * Transform a column name from the user-specified form
-	 * to the physical form used in the database.
-	 * You can override this method in a custom Row class
-	 * to implement column name mappings, for example inflection.
-	 *
-	 * @param string $columnName Column name given.
-	 * @return string The column name after transformation applied (none by default).
-	 */
-	protected function _transformColumn($columnName)
-	{
-		// Perform no transformation by default
-		return $columnName;
-	}
+    /**
+     * Modified data, used to construct correct sql-query for INSERT and UPDATE statements
+     *
+     * @var array
+     */
+    protected $_modified = array();
 
-	/**
-	 * Initialize object
-	 *
-	 * Called from {@link __construct()} as final step of object instantiation.
-	 *
-	 * @return void
-	 */
-	public function init()
-	{
-	}
+    /**
+     * Object of type Indi_Db_Table_Abstract or some of extended class
+     *
+     * @var
+     */
+    protected $_table;
 
-	/**
-	 * Returns the table object, or null if this is disconnected row
-	 *
-	 * @return Indi_Db_Table_Abstract|null
-	 */
-	public function getTable()
-	{
-		return $this->_table;
-	}
+    /**
+     * Constructor.
+     *
+     * Supported params for $config are:-
+     * - table       = class name or object of type Indi_Db_Table_Abstract
+     * - data        = values of columns in this row.
+     *
+     * @param  array $config OPTIONAL Array of user-specified config options.
+     * @return void
+     */
+    public function __construct(array $config = array())
+    {
+        $this->_table = $config['table'];
+        $this->_original = $config['original'];
+        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+    }
 
-	public function getIterator()
-	{
-		return new ArrayIterator((array) $this->_data);
-	}
-	/**
-	 * Proxy to __isset
-	 * Required by the ArrayAccess implementation
-	 *
-	 * @param string $offset
-	 * @return boolean
-	 */
-	public function offsetExists($offset)
-	{
-		return $this->__isset($offset);
-	}
+    /**
+     * Test existence of row field
+     *
+     * @param  string  $columnName   The column key.
+     * @return boolean
+     */
+    public function __isset($columnName)
+    {
+        return array_key_exists($columnName, $this->_original);
+    }
 
-	/**
-	 * Proxy to __get
-	 * Required by the ArrayAccess implementation
-	 *
-	 * @param string $offset
-	 * @return string
-	 */
-	public function offsetGet($offset)
-	{
-		return $this->__get($offset);
-	}
+    /**
+     * Retrieve row field value
+     *
+     * @param  string $columnName The user-specified column name.
+     * @return string             The corresponding column value.
+     */
+    public function __get($columnName)
+    {
+        if ($columnName == 'title' && !$this->__isset($columnName)) {
+            return $this->getTitle();
+        }
+        return array_key_exists($columnName, $this->_modified) ? $this->_modified[$columnName] : $this->_original[$columnName];
+    }
 
-	/**
-	 * Proxy to __set
-	 * Required by the ArrayAccess implementation
-	 *
-	 * @param string $offset
-	 * @param mixed $value
-	 */
-	public function offsetSet($offset, $value)
-	{
-		$this->__set($offset, $value);
-	}
+    /**
+     * Set row field value, by creating an item of $this->_modified array, in case if
+     * value is different from value of $this->_original at same key ($columnName)
+     *
+     * @param  string $columnName The column key.
+     * @param  mixed  $value      The value for the property.
+     * @return void
+     */
+    public function __set($columnName, $value)
+    {
+        if ($this->_original[$columnName] !== $value) $this->_modified[$columnName] = $value;
+    }
 
-	/**
-	 * Proxy to __unset
-	 * Required by the ArrayAccess implementation
-	 *
-	 * @param string $offset
-	 */
-	public function offsetUnset($offset)
-	{
-		return $this->__unset($offset);
-	}
+    /**
+     * Returns the column/value data as an array.
+     * If $type param is set to current (by default), the returned array will contain original data
+     * with overrided values for keys of $this->_modified array
+     *
+     * @param string $type current|original|modified
+     * @return array
+     */
+    public function toArray($type = 'current')
+    {
+        if ($type == 'current') {
+            return (array) array_merge($this->_original, $this->_modified);
+        } else if ($type == 'original') {
+            return (array) $this->_original;
+        } else if ($type == 'modified') {
+            return (array) $this->_modified;
+        }
+    }
 
-	/**
-	 * Returns the column/value data as an array.
-	 *
-	 * @return array
-	 */
-	public function toArray()
-	{
-		return (array)$this->_data;
-	}
+    /**
+     * Saves row data
+     *
+     * @return int Number of affected rows
+     */
+    public function save(){
+        if ($this->_original['id']) {
+            return $this->_table->update($this->_modified, '`id` = "' . $this->_original['id'] . '"');
+        } else {
+            return $this->_table->insert($this->_modified);
+        }
+    }
 
-	/**
-	 * Test existence of row field
-	 *
-	 * @param  string  $columnName   The column key.
-	 * @return boolean
-	 */
-	public function __isset($columnName)
-	{
-		$columnName = $this->_transformColumn($columnName);
-		return isset($this->_data[$columnName]);
-	}
+    /**
+     * Delete row from table
+     *
+     * @return int Number of affected rows
+     */
+    public function delete() {
+        return $this->_table->delete('`id` = "' . $this->_original['id'] . '"');
+    }
 
-	public function delete() {
-		$sql = 'DELETE FROM `' . $this->_table->_name . '` WHERE `id` = "' . $this->id . '"';
-		return Indi_Db_Table::getDefaultAdapter()->query($sql);
-	}
+    /**
+     * Returns the table object, or null if this is disconnected row
+     *
+     * @return Indi_Db_Table_Abstract|null
+     */
+    public function getTable()
+    {
+        return $this->_table;
+    }
 
-	public function save(){
-		if ($this->_data['id']) {
-			$data = $this->_data;
-			unset($data['id']);
-			return $this->_table->update($data, '`id` = "' . $this->_data['id'] . '"');
-		} else {
-			return $this->_table->insert($this->_data);
-		}
-	}
+    /**
+     * @return ArrayIterator|Traversable
+     */
+    public function getIterator()
+    {
+        return new ArrayIterator((array) $this->_original);
+    }
 
+    /**
+     * Proxy to __isset
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     * @return boolean
+     */
+    public function offsetExists($offset)
+    {
+        return $this->__isset($offset);
+    }
+
+    /**
+     * Proxy to __get
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     * @return string
+     */
+    public function offsetGet($offset)
+    {
+        return $this->__get($offset);
+    }
+
+    /**
+     * Proxy to __set
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     * @param mixed $value
+     */
+    public function offsetSet($offset, $value)
+    {
+        $this->__set($offset, $value);
+    }
+
+    /**
+     * Proxy to __unset
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     */
+    public function offsetUnset($offset)
+    {
+        return $this->__unset($offset);
+    }
 }

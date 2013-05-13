@@ -40,7 +40,6 @@ class Indi_Trail_Frontend extends Indi_Trail
 						eval('$rowId = ' . $parentSection->where . ';');
 					}
                 }
-				unset($_sectionId);
             } else {
                 $section = new Fsection();
                 // section id
@@ -48,7 +47,6 @@ class Indi_Trail_Frontend extends Indi_Trail
                 $sectionId = $sectionRow->id;
                 if ($actionAlias != 'index') {
                     $rowId = $rowIdentifier;
-					$_sectionId = $sectionId;
                 } else {
                     if (!$session->parentId) $session->parentId = new stdClass();
                     if ($key = $sectionRow->fsectionId) {
@@ -57,7 +55,7 @@ class Indi_Trail_Frontend extends Indi_Trail
                     $parentRowId = $rowIdentifier;
                 }
             }
-			$lastItem = $this->addItem($sectionId, $rowId, $actionAlias, $this, $_sectionId);
+			$lastItem = $this->addItem($sectionId, $rowId, $actionAlias, $this);
         } while ($lastItem->section->fsectionId);
         
         // Reverse array to work with it from the start by the end, not from the end to the start.
@@ -105,9 +103,9 @@ class Indi_Trail_Frontend extends Indi_Trail
      * @param string $actionAlias = 'index'
      * @return Indi_Trail_Item object
      */
-    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null, $_sectionId = null)
+    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null)
     {
-        $this->items[] = new Indi_Trail_Frontend_Item($sectionId, $rowIdentifier, $actionAlias, $trail, $_sectionId);
+        $this->items[] = new Indi_Trail_Frontend_Item($sectionId, $rowIdentifier, $actionAlias, $trail);
         return end($this->items);
     }
 }

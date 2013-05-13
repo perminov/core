@@ -46,6 +46,22 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
         // Set up stripping some elements from html-code if Source button is toggled
         if ($params['sourceStripper']) $CKconfig['sourceStripper'] = $params['sourceStripper'];
 
+        // take in attention of $_SERVER['STD']
+        if (is_array($CKconfig['contentsCss'])) {
+            for ($i = 0; $i < count($CKconfig['contentsCss']); $i++) {
+                if (preg_match('/^\/.*\.css$/', $CKconfig['contentsCss'][$i])) {
+                    $CKconfig['contentsCss'][$i] = $_SERVER['STD'] . $CKconfig['contentsCss'][$i];
+                }
+            }
+        }
+        if (is_array($CKconfig['contentsJs'])) {
+            for ($i = 0; $i < count($CKconfig['contentsJs']); $i++) {
+                if (preg_match('/^\/.*\.js$/', $CKconfig['contentsJs'][$i])) {
+                    $CKconfig['contentsJs'][$i] = $_SERVER['STD'] . $CKconfig['contentsJs'][$i];
+                }
+            }
+        }
+
         ob_start();?>
         <textarea id="<?=$name?>" name="<?=$name?>"><?=str_replace(array('<','>'), array('&lt;','&gt;'), $value)?></textarea>
         <script>

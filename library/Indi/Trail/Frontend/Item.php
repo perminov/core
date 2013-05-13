@@ -8,7 +8,7 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
      * @param int $rowIdentifier
      * @param string $actionAlias
      */
-    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail, $_sectionId)
+    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail)
     {
         $session = Indi_Session::namespaceGet('admin');
         
@@ -59,7 +59,6 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
                         }
                     }
 
-                    if ($_sectionId) $this->row->_sectionId = $_sectionId;
                 } else if ($this->action->alias == 'form') {
                     // set up empty row if no row identifier
                     $this->row = $this->model->createRow();

@@ -1,35 +1,6 @@
 <?php
 class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 {
-	/**
-     * Set row field value
-     *
-     * @param  string $columnName The column key.
-     * @param  mixed  $value      The value for the property.
-     * @return void
-     */
-    public function __set($columnName, $value)
-    {
-		$columnName = $this->_transformColumn($columnName);
-		$this->_data[$columnName] = $value;
-        $this->_modifiedFields[$columnName] = true;
-    }    
-
-    /**
-     * Retrieve row field value
-     *
-     * @param  string $columnName The user-specified column name.
-     * @return string             The corresponding column value.
-     */
-    public function __get($columnName)
-    {
-		$columnName = $this->_transformColumn($columnName);
-		if ($columnName == 'title' && !$this->__isset($columnName)) {
-            return $this->getTitle();
-        }
-        return $this->_data[$columnName];
-    }  
-
     /**
      * Searches all foreign keys in table structure
      * and set up corresponding row objects within
@@ -38,8 +9,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
      * @uses Indi_Db_Table::getForeignKeys(), self::getForeignRowByForeignKey()
      * @return void
      */
-    public function setForeignRowsByForeignKeysOld()
-    {
+    public function setForeignRowsByForeignKeysOld() {
         $foreignKeys = $this->getTable()->getForeignKeys();
         if ($foreignKeys) {
             $this->foreignRows = new stdClass();
@@ -57,8 +27,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
      * @uses Entity::getModelByTable(), Indi_Db_Table::getTableByKeyName()
      * @return Indi_Db_Table_Row
      */
-    public function getForeignRowByForeignKey($foreignKey)
-    {
+    public function getForeignRowByForeignKey($foreignKey) {
 		$ownerEntityId = Entity::getInstance()->fetchRow('`table` = "' . $this->getTable()->info('name') . '"')->id;
 		$field = Misc::loadModel('Field')->fetchRow('`alias` = "' . $foreignKey . '" AND `entityId` = "' . $ownerEntityId . '"');
 		$searchingEntityId = $field->relation;
@@ -212,7 +181,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 			}
 
 			if($treeColumnInEntityStructure){
-				$rowset = Entity::getInstance()->getModelById($entityId)->fetchTree($treeColumnInEntityStructure, 0, false, true, 0, null, $trail->getItem()->dropdownWhere[$fieldAlias]);
+				$rowset = Entity::getInstance()->getModelById($entityId)->fetchTree($trail->getItem()->dropdownWhere[$fieldAlias]);
 				foreach ($rowset as $row) $options[$row->id] = $row->indent . $row->getTitle();
 			} else {
 				$params = Entity::getInstance()->getModelByTable('param')->fetchAll('`fieldId` = "' . $fieldId . '"');
@@ -286,8 +255,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
      * @param string $direction (up|down)
      * @param string $condition
      */
-    public function move($direction = 'up', $condition = null)
-    {
+    public function move($direction = 'up', $condition = null) {
         if (in_array($direction, array('up', 'down'))) {
             $currentRowOrder = $this->move;
             $condition = $condition ? ' AND ' . $condition : null;
@@ -313,8 +281,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
      * Provide Toggle On/Off action
      *
      */
-    public function toggle()
-    {
+    public function toggle() {
         if ($this->getTable()->fieldExists('toggle')) {
             $this->toggle = $this->toggle == 'y' ? 'n' : 'y';
             $this->save();
@@ -328,8 +295,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
      *
      * @return string
      */
-    public function getTitle()
-    {
+    public function getTitle() {
         if ( !$this->title ) {
             return  'No title';
         } else {
@@ -337,8 +303,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         }
     }
     
-    public function getImageSrc($imageName, $copyName = null)
-    {
+    public function getImageSrc($imageName, $copyName = null) {
         $entity = $this->getTable()->info('name');
         $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
         $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '/');
@@ -369,8 +334,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         return $files[0];
     }
 
-    public function image($imageName = null, $copyName = null, $attrib = null, $noCache = false, $sizeinfo = false)
-    {
+    public function image($imageName = null, $copyName = null, $attrib = null, $noCache = false, $sizeinfo = false) {
         if ($src = $this->getImageSrc($imageName, $copyName)) {
             if ($sizeinfo) {
                 $info = getimagesize($_SERVER['DOCUMENT_ROOT'] . $src);
@@ -383,8 +347,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         }
     }
 
-    public function flash($imageName = null, $attrib = null)
-    {
+    public function flash($imageName = null, $attrib = null) {
         if ($src = $this->getImageSrc($imageName)) {        
             return '<embed src="' . $src .'" border="0" ' . $attrib .'>';
         } else {
@@ -423,16 +386,15 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         }
         return $dtsrs;
     }
-	public function delete($branchId = null){
-		if (!$branchId) $branchId = $this->_sectionId;
+	public function delete(){
 		// delete all files and images that have been attached to row
 		$this->deleteUploadedFiles();
 
 		// if entity has a tree structure, we delete all children
-		$this->deleteRowChildrenIfEntityHasATreeStructure($branchId);
+		$this->deleteRowChildrenIfEntityHasATreeStructure();
 
 		// delete dependent rowsets
-		$this->deleteDependentRowsets($branchId);
+		$this->deleteDependentRowsets();
 		
         // delete other rows of entities, that have fields, related to entity of current row
         $this->deleteForeignKeysUsages();
@@ -471,19 +433,19 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
             }
         }
 	}
-	public function deleteRowChildrenIfEntityHasATreeStructure($branchId){
+	public function deleteRowChildrenIfEntityHasATreeStructure(){
 		// at first, we should detect, has the current entity a tree structure or not
 		$cols = $this->getTable()->info('cols');
 		$treeKeyName = strtolower($this->getTable()->info('name')) . 'Id';
 
 		if (in_array($treeKeyName, $cols)) {
 			// delete children
-			$children = $this->getTable()->fetchTree($treeKeyName, $this->id);
-			foreach ($children as $child) $child->delete($branchId);
+			$children = $this->getTable()->fetchTree(null, null, $this->id);
+			foreach ($children as $child) $child->delete();
 		}
 	}
 
-	public function deleteDependentRowsets($branchId){
+	public function deleteDependentRowsets(){
         $entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->_table->_name . '"')->id;
         $sectionRs = Misc::loadModel('Section')->fetchAll('`entityId` = "' . $entityId . '"');
         foreach ($sectionRs as $sectionR) {
@@ -564,8 +526,8 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 					GROUP BY `m`.`id`
 				';
 				$result = $this->getTable()->getAdapter()->query($sql)->fetch();
-				$this->_data['counts'][$info[$j]['alias']]['count'] = $result['count'];
-				$this->_data['counts'][$info[$j]['alias']]['title'] = $info[$j]['title'];
+				$this->_original['counts'][$info[$j]['alias']]['count'] = $result['count'];
+				$this->_original['counts'][$info[$j]['alias']]['title'] = $info[$j]['title'];
 			}
 		}
 	}
@@ -595,14 +557,14 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 					if (!$foreignR) {
 						$foreignR = $model->createRow();
 					}
-					$this->_data['foreign'][$field['alias']] = $returnAs[$i] == 'a'? $foreignR->toArray(): $foreignR;
+					$this->_original['foreign'][$field['alias']] = $returnAs[$i] == 'a'? $foreignR->toArray(): $foreignR;
 				} else if ($field['storeRelationAbility'] == 'many') {
 					if ($field['relation'] == 6) {
 						$foreignR = $model->fetchAll('FIND_IN_SET(`alias`,"' . $this->{$field['alias']} . '") AND `fieldId` = "' . $field['id'] . '"');
 					} else {
 						$foreignR = $model->fetchAll('FIND_IN_SET(`id`,"' . $this->{$field['alias']} . '")');
 					}
-					if ($foreignR) $this->_data['foreign'][$field['alias']] = $returnAs[$i] == 'a'? $foreignR->toArray(): $foreignR;
+					if ($foreignR) $this->_original['foreign'][$field['alias']] = $returnAs[$i] == 'a'? $foreignR->toArray(): $foreignR;
 				}
 			}
 		}
@@ -640,7 +602,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 				$info = Misc::loadModel('DependentCountForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
 				if ($info->count()) $rowset->setDependentCounts($info);
 
-				$this->_data['dependent'][$entity->alias] = $entity->returnAs == 'a' ? $rowset->toArray() : $rowset;
+				$this->_original['dependent'][$entity->alias] = $entity->returnAs == 'a' ? $rowset->toArray() : $rowset;
 			}
 		}
 	}

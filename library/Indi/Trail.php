@@ -24,10 +24,10 @@ class Indi_Trail
      * @param string $actionAlias = 'index'
      * @return Indi_Trail_Item object
      */
-    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null, $_sectionId = null)
+    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null)
     {
 
-        $this->items[] = new Indi_Trail_Item($sectionId, $rowIdentifier, $actionAlias, $trail, $_sectionId);
+        $this->items[] = new Indi_Trail_Item($sectionId, $rowIdentifier, $actionAlias, $trail);
         return end($this->items);
     }
     

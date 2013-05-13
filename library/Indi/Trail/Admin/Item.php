@@ -23,7 +23,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
      * @param int $rowIdentifier
      * @param string $actionAlias
      */
-    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail, $_sectionId)
+    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail)
     {
         $session = $_SESSION;
         
@@ -62,7 +62,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
 					if ($this->section->filter) $where[] = $this->section->filter;
                     $this->row = $this->model->fetchRow($where);
 					if (!$this->row) die('Нет доступа к этой записи');
-					if ($_sectionId) $this->row->_sectionId = $_sectionId;
                 } else if ($this->action->alias == 'form') {
                     // set up empty row if no row identifier
                     $this->row = $this->model->createRow();

@@ -129,19 +129,19 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
     }
 
     /**
-     * insert function is redeclared to prevent trying to save 
+     * Insert function is redeclared to prevent trying to save
      * values in $data array that have keys not existing in 
      * model table structure, so that keys and their value will
      * be unset
      * 
-     * @param array $data array  of keys=>values
+     * @param array $data array of keys=>values
      * @uses self::getFields()
      * @return bool
      */
     public function insert($data)
     {
         $structure = $this->getFields();
-        foreach($data as $key => $value) {        
+        foreach($data as $key => $value) {
             if (in_array($key, $structure)) {
                 $filteredData[$key] = $value;
             }
@@ -271,7 +271,7 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
      * @param int $level - needed for tree indentation
      * @return Indi_Db_Table_Rowset object
      */
-	public function fetchTree($treeKeyName, $parentId = 0, $onlyToggledOn = false, $recursive = true, $level = 0, $order = null, $condition = null)
+	public function fetchTreeOld($treeKeyName, $parentId = 0, $onlyToggledOn = false, $recursive = true, $level = 0, $order = null, $condition = null)
 	{
 		static $data;
 		$rowset = $this->fetchAll(($parentId ? '`' . $treeKeyName . '` = "' . $parentId . '"' : '`' . $treeKeyName . '` = 0') . ($onlyToggledOn ? ' AND `toggle`="y"' : '') . ($condition ? ' AND ' . $condition : ''), $order);
@@ -288,6 +288,36 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 		}
 		return $rowset;
 	}
+
+	/**
+     * Get rowset as tree
+     *
+     * @param int $parentId
+     * @param bool $onlyToggledOn
+     * @param bool $recursive - all levels of tree if true
+     * @param int $level - needed for tree indentation
+     * @return Indi_Db_Table_Rowset object
+     */
+    public function fetchTree($where = null, $order = null, $parentId = 0, $recursive = true)
+    {
+        $tc = $this->info('name') . 'Id';
+        $nested = array();
+        $data = $this->fetchAll($where, $order)->toArray();
+        foreach ($data as $item) $nested[$item[$tc]][] = $item;
+        $data = $this->_append($parentId, array(), $nested, 0, $recursive);
+        $data = array ('table' => $this, 'data' => $data, 'rowClass' => $this->_rowClass, 'foundRows' => count($data));
+        return new $this->_rowsetClass($data);
+    }
+
+    protected function _append($parentId, $data, $nested, $level = 0, $recursive = true) {
+        if (is_array($nested[$parentId])) foreach ($nested[$parentId] as $item) {
+            $item['indent'] = Misc::indent($level);
+            $data[] = $item;
+            if ($recursive) $data = $this->_append($item['id'], $data, $nested, $level + 1);
+        }
+        return $data;
+    }
+
 	public function getTreeColumnName(){
         $treeColumnName = $this->info('name') . 'Id';
         return $this->fieldExists($treeColumnName) ? $treeColumnName : null;

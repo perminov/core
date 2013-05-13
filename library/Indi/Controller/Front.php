@@ -365,7 +365,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				// get rowset params and get rowset according to them
 				$rp = $this->getRowsetParams();
 				if ($tree = $this->model->getTreeColumnName()) {
-					$this->rowset = $this->model->fetchTree($tree, 0, false, true, 0, 'move', $rp['where']);
+					$this->rowset = $this->model->fetchTree($rp['where'], 'move');
 				} else {
 					if ($this->exclusiveRowsetParams) {
 						$this->rowset = $this->model->fetchAll($this->exclusiveRowsetParams['where'], $this->exclusiveRowsetParams['order'], $this->exclusiveRowsetParams['limit'], $this->exclusiveRowsetParams['page']);
