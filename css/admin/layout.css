@@ -65,7 +65,7 @@
     display: none !important;
 }
 .x-boundlist-selected{
-    background: none !important;
+    background: #dfffdf !important;
 }
 .x-boundlist-item-over{
     background-color: #ecffeb !important;
@@ -133,4 +133,75 @@ controls{
 .fast-search-keyword .x-form-text{
     color:  #04408C;
     font: 11px arial;
+    height: 19px !important;
+}
+.x-fieldset-header-text{
+    color:  #04408C;
+    font: 10px arial;
+    line-height: 8px;
+}
+.x-fieldset{
+    border: 1px solid #99bce8;
+}
+.x-column-form-item label, .x-column-form-item td {
+/*    width: auto !important;*/
+}
+.filter-field-label .x-panel-body label{
+    color: #4c4c4c;
+}
+.filter-field-label .x-panel-body{
+    border: 0;
+    background: none;
+    font-size: 11px;
+    line-height: 15px;
+    margin-top: 2px;
+}
+.filter-field .x-panel-body{
+    border: 0;
+    background: none;
+    font-size: 11px;
+    line-height: 15px;
+}
+.x-form-trigger-wrap .x-form-spinner-up, .x-form-trigger-wrap .x-form-spinner-down{
+    height: 9px !important;
+}
+.x-form-trigger-wrap .x-form-spinner-down{
+    position: relative;
+    top: 1px;
+    background-position: 0 -13px;
+}
+.x-form-trigger-wrap-focus .x-form-spinner-down {
+    position: relative;
+    top: 1px;
+    background-position: -51px -13px;
+}
+.x-form-trigger-wrap-focus .x-form-spinner-down-over {
+    position: relative;
+    top: 1px;
+    background-position: -68px -13px !important;
+}
+.x-form-trigger-wrap .x-form-spinner-down-over {
+    position: relative;
+    top: 1px;
+    background-position: -17px -13px;
+}
+.x-form-trigger-wrap-focus .x-form-trigger-click{
+    /*background-position: -34px 0px;*/
+}
+.x-form-trigger-wrap .x-form-spinner-down-click {
+    position: relative;
+    background-position: -34px -13px !important;
+    top: 1px;
+}
+.filter-field .x-panel-body{
+    /*width: auto !important;*/
+}
+.filter-field-label{
+    float: left;
+}
+.filter-field .fast-search-keyword{
+    float: left;
+}
+.filter-field .subsection-select .x-form-trigger-wrap {
+    margin-top: 0px;
 }

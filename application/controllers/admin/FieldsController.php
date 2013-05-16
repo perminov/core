@@ -314,16 +314,28 @@ class Admin_FieldsController extends Indi_Controller_Admin
         // Managing MySQL indexes //
         ////////////////////////////
 
-        // check if where was a relation, but now there is not
+        // check if where was a relation, but now there is not, so we should remove an INDEX index
         $remove = $this->trail->getItem()->row && $this->trail->getItem()->row->storeRelationAbility != 'none' && $this->post['storeRelationAbility'] == 'none';
         if ($remove) {
             $indexes = $this->db->query('SHOW INDEXES FROM `' . $this->trail->getItem(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
             foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
         }
-        // check if where was no relation, but now it exist
+        // check if where was no relation, but now it exist, so we should add an INDEX index
         $appear = (!$this->trail->getItem()->row || $this->trail->getItem()->row->storeRelationAbility == 'none') && $this->post['storeRelationAbility'] != 'none';
         if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeRow->type) && $appear) {
             $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` ADD INDEX (`' . $this->post['alias'] . '`)');
+        }
+
+        // check if where was a TEXT column, but now there is not, so we should remove a FULLTEXT index
+        $remove = $this->trail->getItem()->row && $this->trail->getItem()->row->columnTypeId == 4 && $this->post['columnTypeId'] != 4;
+        if ($remove) {
+            $indexes = $this->db->query('SHOW INDEXES FROM `' . $this->trail->getItem(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
+            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
+        }
+        // check if where was no TEXT column, but now it exist, so we should add a FULLTEXT index
+        $appear = (!$this->trail->getItem()->row || $this->trail->getItem()->row->columnTypeId != 4) && $this->post['columnTypeId'] == 4;
+        if (preg_match('/TEXT/', $columnTypeRow->type) && $appear) {
+            $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` ADD FULLTEXT (`' . $this->post['alias'] . '`)');
         }
     }
 }

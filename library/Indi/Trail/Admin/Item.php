@@ -42,6 +42,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
 
             // set up subsections of section
             $this->sections = $trail->authComponent->getSections($sectionId, $session['admin']['profileId']);
+
+            // set up grid filters
+            if ($actionAlias == 'index') $this->filters = $this->section->getFilters();
         }
         
         if ($this->section->sectionId) {
@@ -112,8 +115,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
 				if ($actionAlias == 'index') {
                     $this->gridFields = $field->getGridFieldsBySectionId($sectionId);
                 }
-                $this->filtersCount = $field->getFiltersCountBySectionId($sectionId);
-                $this->filters = $field->getFiltersBySectionId($sectionId);
 
                 // set up disabled (unreachable for view, edit and save) fields
 				$this->disabledFields = $field->getDisabledFieldsBySectionId($sectionId);

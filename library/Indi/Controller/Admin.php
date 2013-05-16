@@ -127,8 +127,26 @@ class Indi_Controller_Admin extends Indi_Controller{
                 // grid filters search
                 if ($this->get['search']) {
                     $search = json_decode($this->get['search'], true);
+                    i(json_decode($this->get['search'],true), 'a');
                     foreach ($search as $searchOnField) {
-                        $condition[] = '`' . key($searchOnField) . '` = "' . current($searchOnField) . '"';
+                        $filterSearchFieldAlias = key($searchOnField);
+                        $filterSearchFieldValue = current($searchOnField);
+                        $found = null;
+                        foreach ($this->trail->getItem()->fields as $field) if ($field->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias)) $found = $field;
+                        if ($found->relation || $found->elementId == 9) {
+                            if (is_array($filterSearchFieldValue)) {
+                                $condition[] = '`' . $filterSearchFieldAlias . '` IN ("' . implode('","', $filterSearchFieldValue) . '")';
+                            } else {
+                                $condition[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                            }
+                        } else if ($found->elementId == 1) {
+                            $condition[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
+                        } else if ($found->elementId == 18) {
+                            preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches);
+                            $condition[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
+                        } else if ($found->columnTypeId == 4) {
+                            $condition[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue . '*" IN BOOLEAN MODE)';
+                        }
                     }
                 }
 
@@ -898,8 +916,13 @@ class Indi_Controller_Admin extends Indi_Controller{
         $this->params['keyword'] = str_replace('"','&quot;', strip_tags(urldecode($this->params['keyword'])));
         $keywordCondition = array();
         $this->trail->getItem()->gridFields->setForeignRowsByForeignKeys('columnTypeId');
+        $exclude = array();
+        if ($this->get['search']) {
+            $search = json_decode($this->get['search'], true);
+            foreach ($search as $searchOnField) $exclude[] = key($searchOnField);
+        }
         foreach ($this->trail->getItem()->gridFields as $gridField) {
-            if ($gridField->columnTypeId) {
+            if ($gridField->columnTypeId && !in_array($gridField->alias, $exclude)) {
                 // Поиск по текстовым полям
                 if (!$gridField->relation) {
                     $reg = array(
@@ -943,6 +966,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $keywordCondition = '(' . implode(' OR ', $keywordCondition) . ')';
         }
         if ($keywordCondition) $condition[] = $keywordCondition;
+        i($keywordCondition);
         return $condition;
     }
 }

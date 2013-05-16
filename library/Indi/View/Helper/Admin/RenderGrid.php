@@ -5,13 +5,19 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
     {
 		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
-        $filtersCount = $this->view->trail->getItem()->filtersCount;
-        $filterFieldAliases = array();
-        if ($filtersCount) foreach($this->view->trail->getItem()->filters as $filter) {
-            $filterFieldAliases[] = $filter->getForeignRowByForeignKey('fieldId')->alias;
-        }
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
-		if (!count($gridFields)) {
+
+        $filterFieldAliases = array();
+        foreach ($this->view->trail->getItem()->filters as $filter) {
+            if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'number') {
+                $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-gte';
+                $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-lte';
+            } else {
+                $filterFieldAliases[] = $filter->foreign['fieldId']->alias;
+            }
+        }
+
+        if (!count($gridFields)) {
 			echo 'Отсутствуют сведения о структуре ExtJs таблицы для этого раздела.';
 		} else {
 			// set up grid columns
@@ -91,59 +97,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			}
 			$tbarItems = array();
 			if ($actions) $tbarItems[] = $actions;
-            if ($filtersCount) {
-                $courseStatusesA = Misc::loadModel('CourseStatus')->fetchAll(null, '`title`')->toArray();
-                $o = array(array('id' => '%', 'title' => 'Все'));
-                foreach ($courseStatusesA as $courseStatusesI) {
-                    $o[] = $courseStatusesI;
-                }
-            }
-            if ($filtersCount) $tbarItems[] = "
-                '->', '-','Тип курса: ',{
-                    xtype: 'combobox',
-                    width: 100,
-                    valueField: 'id',
-                    displayField: 'title',
-                    displayValue: 'Все',
-                    value: '%',
-                    cls: 'subsection-select',
-                    typeAhead: false,
-                    editable: false,
-                    id: 'where-courseStatusId',
-                    store: {
-                        fields: ['id', 'title'],
-                        data:".json_encode($o)."
-                    },
-					listeners: {
-						change: whereChange
-					}
-                }, 'Статус: ',{
-                    xtype: 'combobox',
-                    width: 100,
-                    valueField: 'id',
-                    displayField: 'title',
-                    displayValue: 'Все',
-                    value: '%',
-                    cls: 'subsection-select',
-                    typeAhead: false,
-                    editable: false,
-                    id: 'where-toggle',
-                    store: {
-                        fields: ['id', 'title'],
-                        data:[{
-                            id:'%', title:'Все'
-                        },{
-                            id:'y', title:'Включен'
-                        },{
-                            id:'n', title:'Выключен'
-                        }]
-                    },
-					listeners: {
-						change: whereChange
-					}
-
-                }, '-'
-            ";
             $tbarItems[] = "
                 '->',
                 'Искать: ',
@@ -154,6 +107,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     cls: 'fast-search-keyword',
 					margin: '0 4 0 0',
                     placeholder: 'Искать',
+                    id: 'fast-search-keyword',
                     listeners: {
                         change: function(obj, newValue, oldValue, eOpts){
                             clearTimeout(timeout);
@@ -174,7 +128,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				'columns' => $columns,
 				'tbar' => $tbarItems,
 				'fields' => $fields,
-                'filtersCount' => $filtersCount,
 				'params' => $this->view->trail->requestParams,
 				'section' => $this->view->trail->getItem()->section->toArray(),
 				'trail' => $this->view->trail(),
@@ -187,20 +140,39 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			var json = <?=json_encode($meta)?>;
             var timeout;
 			Ext.onReady(function() {
-                var whereAliases = <?=json_encode($filterFieldAliases)?>;
-                var whereChange = function(cmb, newv, oldv){
+                var filterAliases = <?=json_encode($filterFieldAliases)?>;
+                var gridColumnsAliases = [];
+                for (var i =0; i < json.columns.length; i++) {
+                    if (json.columns[i].dataIndex != 'id' && json.columns[i].dataIndex != 'move') {
+                        gridColumnsAliases.push(json.columns[i].dataIndex);
+                    }
+                }
+                var filterChange = function(obj, newv, oldv){
                     var params = [];
-                    for (var i in whereAliases) {
-                        if (Ext.getCmp('where-'+whereAliases[i]).getValue() != '%') {
+                    var usedFilterAliasesThatHasGridColumnRepresentedBy = [];
+                    for (var i in filterAliases) {
+                        var filterValue = Ext.getCmp('filter-'+filterAliases[i]).getValue();
+                        if (filterValue != '%' && filterValue != '' && filterValue !== null) {
                             var param = {};
-                            param[whereAliases[i]] = Ext.getCmp('where-'+whereAliases[i]).getValue();
+                            param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getValue();
                             params.push(param);
+                            for (var j =0; j < gridColumnsAliases.length; j++) {
+                                if (gridColumnsAliases[j] == filterAliases[i]) {
+                                    usedFilterAliasesThatHasGridColumnRepresentedBy.push(filterAliases[i]);
+                                }
+                            }
                         }
                     }
-                    //if (Ext.getCmp('where-toggle').getValue()) params.push({toggle: Ext.getCmp('where-toggle').getValue()});
-                    //if (Ext.getCmp('where-courseStatusId').getValue()) params.push({courseStatusId: Ext.getCmp('where-courseStatusId').getValue()});
                     gridStore.getProxy().extraParams= {search: JSON.stringify(params)};
-                    gridStore.reload();
+                    Ext.getCmp('fast-search-keyword').setDisabled(usedFilterAliasesThatHasGridColumnRepresentedBy.length == gridColumnsAliases.length);
+                    if (obj.xtype == 'combobox') {
+                        gridStore.reload();
+                    } else {
+                        clearTimeout(timeout);
+                        timeout = setTimeout(function(){
+                            gridStore.reload();
+                        }, 500);
+                    }
                 }
                 var myMask;
 				var gridStore = Ext.create('Ext.data.Store', {
@@ -290,9 +262,23 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					store: gridStore,
 					align: "stretch",
 					cls: 'mygrid',
-					tbar: eval('['+json.tbar+']'),
-					border: 1,
-					height: 400,
+                    tools: [<?if(count($filterFieldAliases)){?>{
+                        type: 'search',
+                        handler: function(event, target, owner, tool){
+                            if (grid.getDockedComponent('search-toolbar').hidden) {
+                                grid.getDockedComponent('search-toolbar').show();
+                            } else {
+                                grid.getDockedComponent('search-toolbar').hide();
+                            }
+                        }
+                    }<?}?>],
+					//tbar: eval('['+json.tbar+']'),
+                    dockedItems: [<?=$this->view->gridFilters()?>{
+                        xtype: 'toolbar',
+                        dock: 'top',
+                        items: eval('['+json.tbar+']')
+                    }],
+                    border: 1,
 					id: json.section.alias + 'Grid',
 					bbar: new Ext.PagingToolbar({
 						beforePageText: 'Страница',
@@ -312,6 +298,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						]
 					})
 				});
+
                 json.filtersCount = 0;
                 if (json.filtersCount > 0) {
                     var maxImgWidth = Math.floor(($('#center-content-body').width()-36)/2);
@@ -321,7 +308,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         collapsible: true,
                         collapsed: false,
                         height: 300,
-                        html: '<iframe src="<?=$_SERVER['STD'].($_SERVER['cmsOnlyMode']?'':'/admin')?>/' + json.section.alias + '/form?width='+maxImgWidth+'&filter=1" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
+                        html: '<iframe src="<?=$_SERVER['STD'].($_SERVER['cmsOnlyMode']?'':'/admin')?>/' + json.section.alias + '/form?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
                         closable: true,
                         weight: 10,
                         id: 'search-panel'

@@ -76,6 +76,16 @@ abstract class Indi_Db_Table_Abstract {
         return new $rowClass($constructData);
     }
 
+    public function createRowset($input = array()) {
+        $data = array(
+            'table'   => $this,
+            'data'     => $input['data'],
+            'rowClass' => $this->_rowClass,
+            'foundRows'=> isset($input['foundRows']) ? $input['foundRows'] : count($input['data'])
+        );
+        return new $this->_rowsetClass($data);
+    }
+
     /**
      * Inserts new row into db table
      *

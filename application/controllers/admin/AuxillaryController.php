@@ -213,6 +213,30 @@ class Admin_AuxillaryController extends Indi_Controller
                 }
             }
             d($sql);
+            d('FULLTEXT индексы');
+            $fieldEA = array();
+            $sql = array();
+            $fieldRs = Misc::loadModel('Field')->fetchAll('`columnTypeId` IN ("4")', '`entityId`, `move`');
+            foreach ($fieldRs as $fieldR) $fieldEA[$fieldR->entityId][] = $fieldR;
+            foreach ($fieldEA as $entityId => $fieldA) {
+                $entity = $fieldA[0]->getForeignRowByForeignKey('entityId');
+                $aliases = array(); foreach ($fieldA as $fieldR) $aliases[] = $fieldR->alias;
+                d('Таблица: ' . $entity->table);
+                $indexesA = $this->db->query('SHOW INDEX FROM `' . $entity->table . '` WHERE FIND_IN_SET(`Column_name`, "' . implode(',', $aliases) . '") AND `Index_type` = "FULLTEXT"')->fetchAll();
+                $existing = array(); foreach ($indexesA as $indexesI) $existing[] = $indexesI['Column_name']; $existing = array_unique($existing);
+                d('Поля TEXT');
+                d($aliases);
+                d('Индексы');
+                d($existing);
+                d('Отсутствуют');
+                $noindexes = array_diff($aliases, $existing);
+                d($noindexes);
+                foreach ($noindexes as $noindex) {
+                    $sql[] = 'ALTER TABLE `' . $entity->table . '` ADD FULLTEXT(`' . $noindex . '`)';
+                    $this->db->query($sql[count($sql)-1]);
+                }
+            }
+            d($sql);
         }
     }
 
