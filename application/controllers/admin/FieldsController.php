@@ -3,7 +3,10 @@ class Admin_FieldsController extends Indi_Controller_Admin
 {
 	public function formAction(){
 		$this->trail->getItem()->dropdownWhere['satellite'] = '`entityId` = "' . $this->row->entityId . '"';
-		parent::formAction();
+        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->row->defaultValue, $matches)) {
+            $this->row->defaultValue = '#' . $matches[1];
+        }
+        parent::formAction();
     }
 	public function prepareJsonDataForIndexAction(){
 		// set up raw grid data
@@ -87,7 +90,14 @@ class Admin_FieldsController extends Indi_Controller_Admin
 							$condition  = '`alias` = "' . $data[$i]['defaultValue'] . '"';
 							$condition .= ' AND `fieldId` = "' . $data[$i]['id'] . '"';
 							$foreignRow = $model->fetchRow($condition);
-							if ($foreignRow) $data[$i]['defaultValue'] = '"' . $foreignRow->getTitle() . '"';
+							if ($foreignRow) {
+                                $title = $foreignRow->getTitle();
+                                if ($title != strip_tags($title)) {
+                                    $data[$i]['defaultValue'] = $foreignRow->getTitle();
+                                } else {
+                                    $data[$i]['defaultValue'] = '"' . $foreignRow->getTitle() . '"';
+                                }
+                            }
 						}
 					}
 				} else  if ($data[$i]['defaultValue'] == ''){
@@ -122,12 +132,27 @@ class Admin_FieldsController extends Indi_Controller_Admin
             }
         }
 
+        // check if data at any column has color format and convert hue part to color box
+        for ($i = 0; $i < count($gridFields); $i++) {
+            for ($j = 0; $j < count ($data); $j++) {
+                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $data[$j][$gridFields[$i]['alias']], $matches)) {
+                    $data[$j][$gridFields[$i]['alias']] = '<span class="color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
+                }
+            }
+        }
+
         $jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data).'})';
 		return $jsonData;
 	}
 
 	public function postSave(){
-        // Load columnType model
+        if (preg_match('/^#([0-9a-fA-F]{6})$/', $this->post['defaultValue'])) {
+            $this->post['defaultValue'] = Misc::rgbPrependHue($this->post['defaultValue']);
+            $this->row = $this->trail->getItem()->model->fetchRow('`id` = "' . $this->identifier . '"');
+            $this->row->defaultValue = $this->post['defaultValue'];
+            $this->row->save();
+        }
+            // Load columnType model
         $columnType = Misc::loadModel('ColumnType');
 
         // first part of ALTER query
@@ -199,10 +224,10 @@ class Admin_FieldsController extends Indi_Controller_Admin
 
             // adding new values if their aliases are not already exists
             for ($i = 0; $i < count($toInsert); $i++) {
-
+                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $toInsert[$i], $matches)) $toInsertTitle[$i] = '#' . $matches[1];
                 $enumsetInsertQuery = 'INSERT INTO `enumset` SET
                     `fieldId` = "' . $this->identifier .'",
-                    `title` = "Укажите наименование для ' . ((is_array($defaultValues) ? !in_array($toInsert[$i], $defaultValues) : $toInsert[$i] != $this->post['defaultValue']) ? 'псевдонима' : (($this->post['defaultValue'] || preg_match('/ENUM/', $columnTypeRow->type)) ? 'значения по умолчанию' : 'минимум одного возможного значения')) .' \'' . str_replace('"', '\"', $toInsert[$i]) . '\'",
+                    `title` = "Укажите наименование для ' . ((is_array($defaultValues) ? !in_array($toInsert[$i], $defaultValues) : $toInsert[$i] != $this->post['defaultValue']) ? 'псевдонима' : (($this->post['defaultValue'] || preg_match('/ENUM/', $columnTypeRow->type)) ? 'значения по умолчанию' : 'минимум одного возможного значения')) .' \'' . str_replace('"', '\"', $toInsertTitle[$i]) . '\'",
                     `alias` = "' . str_replace('"', '\"', $toInsert[$i]) . '",
                     `javascript` = "";
                 ';

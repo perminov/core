@@ -127,29 +127,51 @@ class Indi_Controller_Admin extends Indi_Controller{
                 // grid filters search
                 if ($this->get['search']) {
                     $search = json_decode($this->get['search'], true);
-                    i(json_decode($this->get['search'],true), 'a');
                     foreach ($search as $searchOnField) {
                         $filterSearchFieldAlias = key($searchOnField);
                         $filterSearchFieldValue = current($searchOnField);
                         $found = null;
                         foreach ($this->trail->getItem()->fields as $field) if ($field->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias)) $found = $field;
-                        if ($found->relation || $found->elementId == 9) {
+                        if ($found->relation || $found->elementId == 9 || $found->elementId == 11) {
                             if (is_array($filterSearchFieldValue)) {
-                                $condition[] = '`' . $filterSearchFieldAlias . '` IN ("' . implode('","', $filterSearchFieldValue) . '")';
+                                if ($found->storeRelationAbility == 'one') {
+                                    $condition[] = '`' . $filterSearchFieldAlias . '` IN ("' . implode('","', $filterSearchFieldValue) . '")';
+                                } else if ($found->storeRelationAbility == 'many') {
+                                    $findInSet = array();
+                                    foreach ($filterSearchFieldValue as $filterSearchFieldValueItem) {
+                                        $findInSet[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
+                                    }
+                                    $condition[] = '(' . implode(' AND ', $findInSet) . ')';
+                                } else if ($found->storeRelationAbility == 'none') {
+                                    if ($found->elementId == 11) {
+                                        list($hueFrom, $hueTo) = $filterSearchFieldValue;
+                                        if ($hueTo > $hueFrom) {
+                                            $condition[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) BETWEEN "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" AND "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '"';
+                                        } else if ($hueTo < $hueFrom) {
+                                            $condition[] = '(SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) >= "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" OR SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) <= "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '")';
+                                        } else {
+                                            $condition[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
+                                        }
+                                    }
+                                }
                             } else {
-                                $condition[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                                if ($found->storeRelationAbility == 'one') {
+                                    $condition[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                                } else if ($found->storeRelationAbility == 'many') {
+                                    $condition[] = 'FIND_IN_SET("' . $filterSearchFieldValue . '", `' . $filterSearchFieldAlias . '`)';
+                                }
                             }
                         } else if ($found->elementId == 1) {
                             $condition[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
-                        } else if ($found->elementId == 18) {
+                        } else if (in_array($found->elementId, array(18,12))) {
                             preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches);
+                            if ($found->elementId == 12) $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
                             $condition[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
                         } else if ($found->columnTypeId == 4) {
                             $condition[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue . '*" IN BOOLEAN MODE)';
                         }
                     }
                 }
-
                 // fast search
                 $condition = $this->appendFastSearchConditionIfNeed($condition);
 
@@ -312,6 +334,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     break;
                 case 'color':
                     $value = preg_match('/^#[a-fA-F0-9]{6}$/', trim($value)) ? trim($value) : '#ffffff';
+                    $value = Misc::rgbPrependHue($value);
                     break;
                 case 'calendar':
                     $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($value)) ? trim($value) : '0000-00-00';
@@ -570,7 +593,14 @@ class Indi_Controller_Admin extends Indi_Controller{
                     // get title for other columns that store relations
                     } else {
                         $foreignRowset = Entity::getInstance()->getModelById($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
-                        foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->id] = $foreignRow->getTitle();
+                        foreach ($foreignRowset as $foreignRow) {
+                            $title = $foreignRow->getTitle();
+                            if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$title)) {
+                                $color = substr($title, 4);
+                                $title = '<span class="color-box" style="background: #' . $color . ';"></span>#'. $color;
+                            }
+                            $titles[$fieldAlias][$foreignRow->id] = $title;
+                        }
                     }
                 }
             }
@@ -611,6 +641,29 @@ class Indi_Controller_Admin extends Indi_Controller{
                 }
             }
         }
+
+        // convert hue part from columns of type Color to color box
+        $colorColumns = $columntype->fetchAll('`type` = "VARCHAR(10)"');
+        foreach ($colorColumns as $colorColumn) {
+            for ($i = 0; $i < count($gridFields); $i++) {
+                if ($colorColumn->id == $gridFields[$i]['columnTypeId']) {
+                    for ($j = 0; $j < count ($data); $j++) {
+                        $color = substr($data[$j][$gridFields[$i]['alias']], 4);
+                        $data[$j][$gridFields[$i]['alias']] = '<span class="color-box" style="background: #' . $color . ';"></span>#'. $color;
+                    }
+                }
+            }
+        }
+//#3667f0
+        // check if data at any column has color format and convert hue part to color box
+        for ($i = 0; $i < count($gridFields); $i++) {
+            for ($j = 0; $j < count ($data); $j++) {
+                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $data[$j][$gridFields[$i]['alias']], $matches)) {
+                    $data[$j][$gridFields[$i]['alias']] = '<span class="color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
+                }
+            }
+        }
+
 
         // get custom titles for values in grid that are foreign keys, but each can relate to different entity
         // at first we should  find such a columns and their satellites
@@ -966,7 +1019,6 @@ class Indi_Controller_Admin extends Indi_Controller{
             $keywordCondition = '(' . implode(' OR ', $keywordCondition) . ')';
         }
         if ($keywordCondition) $condition[] = $keywordCondition;
-        i($keywordCondition);
         return $condition;
     }
 }

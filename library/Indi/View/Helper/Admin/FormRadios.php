@@ -49,7 +49,13 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
 			}
 
 			$id = ' id="' . $name . ucwords($values[$i]) .'"';
-            $label = '<label id="' . $name . ucwords($values[$i]) . 'Label">' . $texts[$i] . '</label>&nbsp;';
+            if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $values[$i], $matches)) {
+                $color = '<span class="color-box" style="background: #' . $matches[1] . ';"></span> ';
+            } else {
+                $color = '';
+            }
+
+            $label = '<label id="' . $name . ucwords($values[$i]) . 'Label">' . $color . $texts[$i] . '</label>&nbsp;';
             $xhtml .= '<span class="radio' . ($checked?' checked':'') . '" val="' . $values[$i] . '" type="radio" ' . $checked . $id . (is_array($attrib) ? $attrib[$i] : $attrib) .  ' ' . $add . '>' . $label . '</span>';
 		}
 		$xhtml .= '<script>

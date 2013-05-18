@@ -205,3 +205,25 @@ controls{
 .filter-field .subsection-select .x-form-trigger-wrap {
     margin-top: 0px;
 }
+.filter-field .calendar .x-form-trigger{
+    height: 19px;
+}
+.filter-field .color .x-slider-horz,.filter-field .color .x-slider-horz .x-slider-end {
+    background: none;
+}
+.filter-field .color .x-slider-horz .x-slider-inner {
+    background: url('/i/admin/filter-slider-hue-bg.png') no-repeat 0px 3px;
+}
+.filter-field .color .x-slider-horz .x-slider-inner .x-slider-thumb:first-child {
+    background-image: url(/i/admin/filter-slider-thumb-first.png);
+}
+.filter-field .color .x-slider-horz .x-slider-inner .x-slider-thumb:last-child {
+    background-image: url(/i/admin/filter-slider-thumb-last.png);
+}
+.color-box{
+    width: 14px;
+    display: inline-block;
+    height: 11px;
+    position: relative;
+    top: 1px;
+}

@@ -1,6 +1,8 @@
 <?php
 class Enumset extends Indi_Db_Table
 {
+    protected $_rowClass = 'Enumset_Row';
+
 	public function getOptions($table, $fieldId, $existing = false)
 	{
 		if ($field = Misc::loadModel('Field')->fetchRow('`id` = "' . $fieldId . '"')) {

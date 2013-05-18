@@ -107,12 +107,4 @@ class Indi_View extends Indi_View_Abstract
             include func_get_arg(0);
         }
     }
-
-	public function prepareForJs($helper){
-		$html = $this->$helper();
-		$html = explode("\r\n", trim($html));
-		for($i = 0; $i < count($html); $i++) $html[$i] = str_replace("'", "\'",$html[$i]);
-//		return implode(" + ", $html);
-		return implode("", $html);
-	}
 }

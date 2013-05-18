@@ -713,6 +713,96 @@ class Misc
             }
         }
     }
+    /**
+     * Color space conversion
+     *
+     * (H,S,L) -> (R,G,B)
+     *
+     * H ~ <0,360>
+     * S,L ~ <0,1>
+     * R,G,B ~ <0,255>
+     *
+     * @param array|int $hsl|$h
+     * @param float $s
+     * @param float $l
+     * @return array ($r,$g,$b)
+     */
+    function hsl2rgb($hsl, $s=null, $l=null) {
+
+        if (is_array($hsl) && sizeof($hsl) == 3) list($h, $s, $l) = $hsl;
+        else $h=$hsl;
+
+
+        if ($s == 0) {
+            $r = $g = $b = round($l * 255);
+        }
+        else {
+            if ($l <= 0.5) {
+                $m2 = $l * ($s + 1);
+            }
+            else
+            {
+                $m2 = $l + $s - $l * $s;
+            }
+            $m1 = $l * 2 - $m2;
+            $hue = $h / 360;
+
+            $r = Misc::hsl2rgb_hue2rgb($m1, $m2, $hue + 1/3);
+            $g = Misc::hsl2rgb_hue2rgb($m1, $m2, $hue);
+            $b = Misc::hsl2rgb_hue2rgb($m1, $m2, $hue - 1/3);
+        }
+        return array($r, $g, $b);
+    }
+
+    function hsl2rgb_hue2rgb($m1, $m2, $hue) {
+        if ($hue < 0) $hue += 1;
+        else if ($hue > 1) $hue -= 1;
+
+        if (6 * $hue < 1)
+            $v = $m1 + ($m2 - $m1) * $hue * 6;
+        else if (2 * $hue < 1)
+            $v = $m2;
+        else if (3 * $hue < 2)
+            $v = $m1 + ($m2 - $m1) * (2/3 - $hue) * 6;
+        else
+            $v = $m1;
+
+        return round(255 * $v);
+    }
+    function rgb2hex($r, $g, $b, $uppercase=false, $shorten=false)
+    {
+        // The output
+        $out = "";
+
+        // If shorten should be attempted, determine if it is even possible
+        if ($shorten && ($r + $g + $b) % 17 !== 0) $shorten = false;
+
+        // Red, green and blue as color
+        foreach (array($r, $g, $b) as $c)
+        {
+            // The HEX equivalent
+            $hex = base_convert($c, 10, 16);
+
+            // If it should be shortened, and if it is possible, then
+            // only grab the first HEX character
+            if ($shorten) $out .= $hex[0];
+
+            // Otherwise add the full HEX value (if the decimal color
+            // is below 16 then we have to prepend a 0 to it)
+            else $out .= ($c < 16) ? ("0".$hex) : $hex;
+        }
+        // Package and away we go!
+        return $uppercase ? strtoupper($out) : $out;
+    }
+    function rgbPrependHue($rgb = ''){
+        $rgb = preg_replace('/^#/', '', $rgb);
+        $r = hexdec(substr($rgb, 0, 2));
+        $g = hexdec(substr($rgb, 2, 2));
+        $b = hexdec(substr($rgb, 4, 2));
+        list($hue) = Indi_Image::rgb2hsl(array($r, $g, $b));
+        return str_pad(round($hue*360), 3, '0', STR_PAD_LEFT) . '#' . $rgb;
+    }
+
 }
 class Css{
 	public $s,$f,$t,$r=array();

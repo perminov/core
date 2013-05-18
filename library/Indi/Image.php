@@ -717,5 +717,4 @@ abstract class Indi_Image
 			}
 		}
     }
-	
 }

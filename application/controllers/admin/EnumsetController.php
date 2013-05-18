@@ -1,5 +1,11 @@
 <?php
 class Admin_EnumsetController extends Indi_Controller_Admin{
+    public function formAction() {
+        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->row->alias, $matches)) {
+            $this->row->alias = '#' . $matches[1];
+        }
+        parent::formAction();
+    }
 	public function postSave(){
 		$columnTypeRow = $this->trail->getItem(1)->row->getForeignRowByForeignKey('columnTypeId');
 		if (strpos($columnTypeRow->type, 'ENUM') !== false) {
@@ -8,17 +14,41 @@ class Admin_EnumsetController extends Indi_Controller_Admin{
 			$type = 'SET';
 		}
 		if ($type) {
-			$values = $this->trail->getItem()->model->fetchAll('`fieldId` = "' . $this->trail->getItem(1)->row->id . '"')->toArray();
-			for ($i = 0; $i < count($values); $i++) $v[] = $values[$i]['alias'];
-			$defaultValue = $this->trail->getItem(1)->row->defaultValue;
-			if (!in_array($defaultValue, $v) && ($type == 'ENUM' || ($type == 'SET' && $defaultValue != ''))) {
+            if (preg_match('/^#([0-9a-fA-F]{6})$/', $this->post['alias'])) {
+                $this->post['alias'] = Misc::rgbPrependHue($this->post['alias']);
+                $this->row = $this->trail->getItem()->model->fetchRow('`id` = "' . $this->identifier . '"');
+                $this->row->alias = $this->post['alias'];
+                $this->row->save();
+            }
+
+            $values = $this->trail->getItem()->model->fetchAll('`fieldId` = "' . $this->trail->getItem(1)->row->id . '"')->toArray();
+			for ($i = 0; $i < count($values); $i++) {
+                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $values[$i]['alias'], $matches)) {
+                    $v1[] = '#' . $matches[1];
+                } else {
+                    $v1[] = $values[$i]['alias'];
+                }
+                $v[] = $values[$i]['alias'];
+            }
+            if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->trail->getItem(1)->row->defaultValue, $matches)) {
+                $defaultValue1 = '#' . $matches[1];
+            } else {
+                $defaultValue1 = $this->trail->getItem(1)->row->defaultValue;
+            }
+            $defaultValue = $this->trail->getItem(1)->row->defaultValue;
+            if (!in_array($defaultValue1, $v1) && ($type == 'ENUM' || ($type == 'SET' && $defaultValue != ''))) {
 				$v[] = $defaultValue;
-				$query = 'INSERT INTO `enumset` SET 
+                $new = $this->trail->getItem()->model->createRow();
+                $new->fieldId = $this->trail->getItem(1)->row->id;
+                $new->alias = $defaultValue;
+                $new->title = 'Укажите наименование для значения по умолчанию - "' . $defaultValue1 . '"';
+                $new->save();
+				/*$query = 'INSERT INTO `enumset` SET
 					`fieldId` = "' . $this->trail->getItem(1)->row->id . '", 
 					`alias` = "' . $defaultValue . '",
 					`title` = "Укажите наименование для значения по умолчанию - \'' . $defaultValue . '\'"';
 				$this->db->query($query);
-				//d($query);
+				//d($query);*/
 			}
 			$query  = 'ALTER TABLE `' . $this->trail->getItem(2)->row->table . '` ';
 			$query .= 'CHANGE `' . $this->trail->getItem(1)->row->alias . '` `' . $this->trail->getItem(1)->row->alias . '` ';
@@ -33,6 +63,11 @@ class Admin_EnumsetController extends Indi_Controller_Admin{
 				$this->db->query($query);
 				//d($query);
 			}
+            if (preg_match('/^#[0-9a-fA-F]+$/', $this->post['alias'])) {
+                $this->row = Misc::loadModel('Enumset')->fetchRow('`id` = "' . $this->identifier . '"');
+                $this->row->alias = Misc::rgbPrependHue($this->row->alias);
+                $this->row->save();
+            }
 		}
 	}
 	public function preDelete(){

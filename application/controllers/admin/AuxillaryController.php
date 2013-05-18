@@ -24,13 +24,22 @@ class Admin_AuxillaryController extends Indi_Controller
 <!-- Color Picker source files for CSS and JavaScript -->
 <link rel="stylesheet" type="text/css" href="' . $p .'colorpicker/yahoo/colorpicker/assets/skins/sam/colorpicker.css"> 
 <script type="text/javascript" src="' . $p .'colorpicker/yahoo/colorpicker/colorpicker-beta-min.js" ></script>
+<style>
+.yui-picker-thumb img{
+position: relative;
+top: -4px;
+}
+</style>
 </head>
 <body class="yui-skin-sam" style="background-color: white;">
 <div id="container"></div>
 <script>
 <!--
+function strip_tags( str ){
+    return str.replace(/<\/?[^>]+>/gi, "");
+}
     // set up "input" variable to point at text field, assotiated with color picker
-    var input = top.window.document.getElementById("' . $name . '" + "Input");
+    var input = top.frames["form-frame"].document.getElementById("' . $name . '" + "Input");
     var input = input ? input : new Object();
     // init yahoo color picker
     var picker = new YAHOO.widget.ColorPicker("container", {
@@ -42,7 +51,7 @@ class Admin_AuxillaryController extends Indi_Controller
 
     //get current or default value from hex 2 dec
     var hexSummary = "";
-    hexSummary = input.value ? input.value : "#FFFFFF";
+    hexSummary = input.value ? input.value : "#FFFFF2";
     hexSummary = hexSummary.replace("#","");
     var dec = new Array();
     dec[0] = new Number("0x" + hexSummary.substr(0, 2)).toString(10);
@@ -50,11 +59,18 @@ class Admin_AuxillaryController extends Indi_Controller
     dec[2] = new Number("0x" + hexSummary.substr(4, 2)).toString(10);
 
     //set current value:
-    picker.setValue(dec, false); 
-    
+    picker.setValue(dec, false);
+
+    function dec2hex(n){
+        n = parseInt(n); var c = "ABCDEF";
+        var b = n / 16; var r = n % 16; b = b-(r/16);
+        b = ((b>=0) && (b<=9)) ? b : c.charAt(b-10);
+        return ((r>=0) && (r<=9)) ? b+""+r : b+""+c.charAt(r-10);
+    }
+
     // define function that change value in text field, assotiated with color picker
     var onRgbChange = function(o) {
-        input.value = "#" + $("yui-picker-hex-summary").innerText;
+        input.value = "#" + dec2hex(o.newValue[0]) + dec2hex(o.newValue[1]) + dec2hex(o.newValue[1]);
     }
 
     //subscribe to the rgbChange event;
@@ -339,5 +355,63 @@ class Admin_AuxillaryController extends Indi_Controller
 //        d($user->save());
 //        $c = Misc::loadModel('Fsection')->fetchRow('`alias` = "courses"');
 //        d($c);
+    }
+
+    public function updateAction() {
+        if($price = Misc::loadModel('Element')->fetchRow('`alias` = "price"')) $price->delete();
+
+        $u = Misc::loadModel('Element')->fetchRow('`alias` = "string"');
+        $u->title = 'Строка';
+        $u->save();
+
+        $u = Misc::loadModel('Element')->fetchRow('`alias` = "textarea"');
+        $u->title = 'Текст';
+        $u->save();
+
+        $u = Misc::loadModel('Element')->fetchRow('`alias` = "radio"');
+        $u->title = 'Радио-кнопки';
+        $u->save();
+
+        $u = Misc::loadModel('Element')->fetchRow('`alias` = "multicheck"');
+        $u->title = 'Чекбоксы';
+        $u->save();
+
+        $u = Misc::loadModel('Element')->fetchRow('`alias` = "color"');
+        $u->title = 'Цвет';
+        $u->save();
+
+        $u = Misc::loadModel('Element')->fetchRow('`alias` = "upload"');
+        $u->title = 'Файл';
+        $u->save();
+
+        $fieldIds = explode(',', $this->db->query('SELECT GROUP_CONCAT(`id`) FROM `field` WHERE `elementId`="15"')->fetchColumn(0));
+        $measureId = $this->db->query('SELECT `id` FROM `possibleElementParam` WHERE `alias`="measure"')->fetchColumn(0);
+        foreach ($fieldIds as $fieldId) if ($fieldId) {
+            $this->db->query('INSERT INTO `param` SET `fieldId` = "' . $fieldId .'", `possibleParamId` = "' . $measureId . '", `value` = "px"');
+            $this->db->query('UPDATE `field` SET `elementId` = "18" WHERE `id` = "' . $fieldId . '"');
+        }
+        $this->db->query('DELETE FROM `element` WHERE `id` = "15"');
+
+        $this->db->query('UPDATE `field` SET `filter` = "`elementId` NOT IN (4,14,16,20,22)" WHERE `id` = "1443" AND `entityId` = "195"');
+
+        $this->db->query('UPDATE `entity` SET `title`="Фильтр" WHERE `title` = "Поле, доступное для поиска"');
+        $this->db->query('UPDATE `entity` SET `title`="Фильтр раздела фронтенда" WHERE `table` = "filter"');
+        $this->db->query('UPDATE `section` SET `title`="Фильтры" WHERE `title` = "Поля, доступные для поиска"');
+        $this->db->query('UPDATE `columnType` SET `type`="VARCHAR(10)" WHERE `id` = "13"');
+    }
+    public function colorAction(){
+        $this->db->query('TRUNCATE TABLE `test`');
+        for ($i = 0; $i < 1000; $i++) {
+            $r = rand(0, 255); $g = rand(0, 255); $b = rand(0, 255);
+            $color = str_pad(dechex($r), 2, '0', STR_PAD_LEFT) . str_pad(dechex($g), 2, '0', STR_PAD_LEFT) . str_pad(dechex($b), 2, '0', STR_PAD_LEFT);
+            $rgb = array(ltrim($r, '0'), ltrim($g, '0'), ltrim($b,'0'));
+            $myhsl = Indi_Image::rgb2hsl($rgb);
+            $rgb3 = Misc::hsl2rgb(array(round($myhsl[0]*360), $myhsl[1], $myhsl[2]));
+            /*echo '<div style="background-color: #' . $color . ';width: 200px;">'.
+                '<span style="background: #'.Misc::rgb2hex($rgb3[0], $rgb3[1], $rgb3[2]).'">' . rgbPrependHue(Misc::rgb2hex($rgb3[0], $rgb3[1], $rgb3[2])) . '&nbsp;' . zValue($rgb3[0], $rgb3[1], $rgb3[2]) . '</span>' .
+            '</div>';*/
+            $this->db->query('INSERT INTO `test` SET `title` = "Запись ' . str_pad($i+1, 4, '0', STR_PAD_LEFT) . '", `color` = "' . Misc::rgbPrependHue(Misc::rgb2hex($rgb3[0], $rgb3[1], $rgb3[2])) . '"');
+        }
+        die('ddd');
     }
 }
