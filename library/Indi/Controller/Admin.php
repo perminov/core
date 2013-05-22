@@ -54,6 +54,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         if (isset($this->get['limit'])) {
             $this->limit = $this->get['limit'];
             $this->start = $this->get['start'];
+			$_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
         }
 
         $section = Misc::loadModel('Section');

@@ -809,3 +809,6 @@ class Css{
 	public function __construct($s=''){$this->s=trim(str_replace('{','',$s));preg_match('/([#\.])([a-zA-Z][a-zA-Z0-9\-_]+)[ ,.:]/',$s,$m);$this->f=$m[2];$this->t=$m[1]=='#'?'id':'class';} 
 	public function toString($nl=true){$s=array($this->s.' {');$s=array_merge($s,$this->r);$s[]='}'.($nl?"\n":'');return implode($nl?"\n":'',$s);} 
 }
+function ie8() {
+	return preg_match('/MSIE 8/', $_SERVER['HTTP_USER_AGENT']);
+}

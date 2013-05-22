@@ -6,7 +6,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
-
+		$currentPage = $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] ? $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] : 1;
         $filterFieldAliases = array();
         foreach ($this->view->trail->getItem()->filters as $filter) {
             if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('number','calendar'))) {
@@ -155,7 +155,11 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         var filterValue = Ext.getCmp('filter-'+filterAliases[i]).getValue();
                         if (filterValue != '%' && filterValue != '' && filterValue !== null) {
                             var param = {};
-                            param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getValue();
+							if (Ext.getCmp('filter-'+filterAliases[i]).xtype == 'datefield') {
+								param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getRawValue();
+							} else {
+								param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getValue();
+							}
                             params.push(param);
                             for (var j =0; j < gridColumnsAliases.length; j++) {
                                 if (gridColumnsAliases[j] == filterAliases[i]) {
@@ -210,6 +214,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							idProperty: 'id'
 						}
 					}),
+					currentPage: <?=$currentPage?>,
 					loadMask: true,
 					listeners: {
 						beforeload: function(){
