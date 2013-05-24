@@ -16,6 +16,7 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
 			$value = $value != '0000-00-00' ? $value : $this->view->row->$name;
 		} else {
 			$value = $this->view->trail->getItem()->getFieldByAlias($name)->defaultValue;
+			if ($value == '0000-00-00') $value = date('Y-m-d');
 		}
         $value = $value ? $value : date('Y-m-d');
 

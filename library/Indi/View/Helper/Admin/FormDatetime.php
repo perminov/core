@@ -16,12 +16,12 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 			$value = $value != '0000-00-00 00:00:00' ? $value : $this->view->row->$name;
 		} else {
 			$value = $this->view->trail->getItem()->getFieldByAlias($name)->defaultValue;
+			if ($value == '0000-00-00 00:00:00') $value = date('Y-m-d H:i:s');
 		}
         $value = $value ? $value : date('Y-m-d H:i:s');
 
         //minimal date available to select in calendar, 2006-01-01 by default
         $minimal = $minimal ? $minimal : '1930-01-01 12:00:00';
-        
         // if current value earlier than minimal date, minimal date is to be set
         // equal to value
         $minimal = $minimal > $value ? $value : $minimal;
