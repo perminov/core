@@ -63,7 +63,7 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
                     // set up empty row if no row identifier
                     $this->row = $this->model->createRow();
 
-                    $parentSection = $this->section->getForeignRowByForeignKey('fsectionId');
+                    if ($parentSection = $this->section->getForeignRowByForeignKey('fsectionId'))
 					do{
 						// determining parent key name
 						$parentSectionId = $parentSection->id;
