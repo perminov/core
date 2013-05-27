@@ -152,14 +152,16 @@ class Indi_Controller{
 		$coreH = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . $_SERVER['STD'] . '/core/library';
 		$wwwH  = preg_replace('/core(\/library)/', 'www$1', $coreH);
 
-		if (is_dir($wwwH)) $this->view->addHelperPath($wwwH . '/Project/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Project_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));
-		$this->view->addHelperPath($coreH . '/Indi/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Indi_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));
+        $this->view->addHelperPath($coreH . '/Indi/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Indi_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));
+        if (is_dir($wwwH)) $this->view->addHelperPath($wwwH . '/Project/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Project_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));
 
 		Indi_Registry::set('view', $this->view);
 
 		$this->params = $params;
 		$this->action = $params['action'];
 		$this->init();
+        //d($this->view);
+        //die();
 	}
 
 	/**

@@ -1,79 +1,8 @@
 <?php
-/**
- * Indi Framework
- *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://framework.zend.com/license/new-bsd
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@zend.com so we can send you a copy immediately.
- *
- * @category   Indi
- * @package    Indi_View
- * @subpackage Helper
- * @copyright  Copyright (c) 2005-2010 Indi Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: FormElement.php 22285 2010-05-25 14:22:11Z matthew $
- */
-
-/**
- * @see Indi_View_Helper_HtmlElement
- */
 require_once 'Indi/View/Helper/HtmlElement.php';
 
-/**
- * Base helper for form elements.  Extend this, don't use it on its own.
- *
- * @category   Indi
- * @package    Indi_View
- * @subpackage Helper
- * @copyright  Copyright (c) 2005-2010 Indi Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
- */
 abstract class Indi_View_Helper_FormElement extends Indi_View_Helper_HtmlElement
 {
-    /**
-     * @var Indi_Translate
-     */
-    protected $_translator;
-
-    /**
-     * Get translator
-     *
-     * @return Indi_Translate
-     */
-    public function getTranslator()
-    {
-         return $this->_translator;
-    }
-
-    /**
-     * Set translator
-     *
-     * @param  $translator|null Indi_Translate
-     * @return Indi_View_Helper_FormElement
-     */
-    public function setTranslator($translator = null)
-    {
-        if (null === $translator) {
-            $this->_translator = null;
-        } elseif ($translator instanceof Indi_Translate_Adapter) {
-            $this->_translator = $translator;
-        } elseif ($translator instanceof Indi_Translate) {
-            $this->_translator = $translator->getAdapter();
-        } else {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception('Invalid translator specified');
-            $e->setView($this->view);
-            throw $e;
-        }
-         return $this;
-    }
-
     /**
      * Converts parameter arguments to an element info array.
      *
