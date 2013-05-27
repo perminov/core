@@ -669,6 +669,10 @@ abstract class Indi_Image
 		$info = pathinfo($url);
 		if (!$info['extension']) {
 			$fp = fopen($url , 'r'); while(!feof($fp)) $data .= fgets($fp, 1000); fclose($fp);
+			if (preg_match('/Location: (.*)\\n/', $data, $matches)) {
+				self::getEntityImageByUrl($matches[1], $entity, $id, $name, $requirements);
+				return;
+			}
 			$url = tempnam(sys_get_temp_dir(), "image");
 			$fp = fopen($url, 'wb');
 			fwrite($fp, $data);
