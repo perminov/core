@@ -76,6 +76,19 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
         </script>
         <? $xhtml .= ob_get_clean();
         }
+        ob_start();?>
+        <script>
+        $(document).ready(function(){
+            var topbar = top.window.form.getDockedComponent('topbar');
+            if (topbar != undefined) {
+                var height = top.window.$('#center-content-body').height() - topbar.getHeight() - 1;
+            } else {
+                var height = top.window.$('#center-content-body').height() - 1;
+            }
+            top.window.$('iframe[name="form-frame"]').css('height', height + 'px');
+        });
+        </script>
+        <? $xhtml .= ob_get_clean();
         echo $xhtml;
 	}
 
