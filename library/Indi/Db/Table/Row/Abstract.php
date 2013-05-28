@@ -98,13 +98,20 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     /**
      * Saves row data
      *
-     * @return int Number of affected rows
+     * @return int Number of affected rows after UPDATE or LAST_INSERT_ID() after INSERT
      */
     public function save(){
         if ($this->_original['id']) {
-            return $this->_table->update($this->_modified, '`id` = "' . $this->_original['id'] . '"');
+			if ($affected = $this->_table->update($this->_modified, '`id` = "' . $this->_original['id'] . '"')) {
+				$this->_original = (array) array_merge($this->_original, $this->_modified);
+				$this->_modified = array();
+			}
+            return $affected;
         } else {
-            return $this->_table->insert($this->_modified);
+			$this->_original['id'] = $this->_table->insert($this->_modified);
+			$this->_original = (array) array_merge($this->_original, $this->_modified);
+			$this->_modified = array();
+            return $this->_original['id'];
         }
     }
 
