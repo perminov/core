@@ -111,6 +111,10 @@ abstract class Indi_Image
 							continue;
 						}
 					}
+					if ($requirements['type'] == 'image' && $memoryProblem = Indi_Image::insufficientMemory($tmp)) {
+						$failInfo['memory'][] = array('image' => $images['name'][$name], 'maxdims' => $memoryProblem);
+						continue;
+					}
 				}
                 try {
 					// check if entity images directory is exists
@@ -601,6 +605,8 @@ abstract class Indi_Image
             . ($postfix ? ',' . $postfix : '') . '.' . $info['extension'];
             eval('$save=image' . $types[$type[1]] . '($newim,"' . $newfile . '","' . $quality . '");');
         }
+		imagedestroy($oldim);
+		imagedestroy($newim);
         return $save ? true : false; 
     }
     
@@ -721,4 +727,21 @@ abstract class Indi_Image
 			}
 		}
     }
+	/**
+	 * @desc    Calculates the amount of memory required
+	 *             to manipulate an image with GD.
+	 *
+	 * @param    String    $sImagePath
+	 * @return     Integer Bytes required
+	 */
+	function insufficientMemory($sImagePath)
+	{
+		$aImageInfo = getimagesize($sImagePath);
+		$mbRequired = ceil(round((($aImageInfo[0] * $aImageInfo[1] * $aImageInfo['bits'] * $aImageInfo['channels'] / 8 + Pow(2, 16)) * 1.65))/1024/1024);
+		$mbLimit = (int) rtrim(ini_get('memory_limit'), 'M') - 2;
+		if ($mbRequired > $mbLimit) {
+			$percent = $mbLimit/$mbRequired;
+			return array('width' => round($aImageInfo[0]*$percent), 'height' => round($aImageInfo[1]*$percent));
+		} else return false;
+	}
 }
