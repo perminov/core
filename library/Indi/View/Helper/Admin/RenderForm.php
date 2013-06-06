@@ -40,7 +40,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                 dock: 'top',
                 id: 'topbar',
                 items: ['->',
-                    'Подраздел:  ',
+                    '<?=GRID_SUBSECTIONS_LABEL?>:  ',
                     top.window.Ext.create('Ext.form.ComboBox', {
                         store: top.window.Ext.create('Ext.data.Store',{
                             fields: ['alias', 'title'],
@@ -56,7 +56,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                         id: 'subsection-select',
                         editable: false,
                         margin: '0 6 2 0',
-                        value: '--Выберите--',
+                        value: '<?=GRID_SUBSECTIONS_EMPTY_OPTION?>',
                         listeners: {
                             change: function(cmb, newv, oldv){
                                 if (this.getValue()) {

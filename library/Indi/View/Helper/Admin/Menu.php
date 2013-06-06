@@ -31,7 +31,7 @@ class Indi_View_Helper_Admin_Menu extends Indi_View_Helper_Abstract
 			}
 		}),
 		rootVisible: false,
-		title: 'Меню',
+		title: '<?=MENU?>',
 		useArrows: true,
 		border: 1,
 		region: 'west',

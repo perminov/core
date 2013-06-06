@@ -36,7 +36,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			for($i = 0; $i < count($actions); $i++) if ($actions[$i]['display'] == 'y'){
 
 				$a[] =  ($actions[$i]['alias'] == 'form' && $canadd && ! $this->view->trail->getItem()->section->disableAdd ? '{
-					text: "Создать",
+					text: "' . ACTION_CREATE . '",
 					iconCls: "add",
 					handler: function(){
 	                    loadContent("/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/");
@@ -53,8 +53,8 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						$actions[$i]['rowRequired'] == 'y' ?
 						'if (!selection.length) {
 							Ext.MessageBox.show({
-								title: "Сообщение",
-								msg: "Выберите строку",
+								title: "' . GRID_WARNING_SELECTROW_TITLE . '",
+								msg: "' . GRID_WARNING_SELECTROW_MSG . '",
 								buttons: Ext.MessageBox.OK,
 								icon: Ext.MessageBox.WARNING
 							});
@@ -82,9 +82,9 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			// set up dropdown to navigate through related different types of related items
 			$sections = $this->view->trail->getItem()->sections->toArray();
 			if (count($sections)) {
-				$sectionsDropdown = "'Подраздел:  ', '";
+				$sectionsDropdown = "'" . GRID_SUBSECTIONS_LABEL . ":  ', '";
 				$sectionsDropdown .= '<span><select style="border: 0;" name="sectionId" id="subsectionSelect">';
-				$sectionsDropdown .= '<option value="">--Выберите--</option>';
+				$sectionsDropdown .= '<option value="">' . GRID_SUBSECTIONS_EMPTY_OPTION . '</option>';
                 $maxLength = 12;
 				for ($i = 0; $i < count($sections); $i++){
 					$sectionsDropdown .= '<option value="' . $sections[$i]['alias'] . '">' . $sections[$i]['title'] . '</option>';
@@ -99,7 +99,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			if ($actions) $tbarItems[] = $actions;
             $tbarItems[] = "
                 '->',
-                'Искать: ',
+                '" . GRID_SUBSECTIONS_SEARCH_LABEL . ": ',
                 {
                     xtype: 'textfield',
                     name: 'fast-search-keyword',
@@ -303,18 +303,9 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     border: 1,
 					id: json.section.alias + 'Grid',
 					bbar: new Ext.PagingToolbar({
-						beforePageText: 'Страница',
-						afterPageText: 'из {0}',
 						pageSize: json.section.rowsOnPage,
 						store: gridStore,
 						displayInfo: true,
-						displayMsg: 'Записи {0} - {1} из {2}',
-						emptyMsg: "Нет записей",
-						firstText      : "Первая",
-						prevText       : "Предыдущая",
-						nextText       : "Следующая",
-						lastText       : "Последняя",
-						refreshText    : "Обновить",
 						items:[
 							'-'
 						]
@@ -373,8 +364,8 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							} else {
 								cmb.reset();
 								Ext.MessageBox.show({
-									title: 'Сообщение',
-									msg: 'Выберите строку',
+									title: '<?=GRID_WARNING_SELECTROW_TITLE?>',
+									msg: '<?=GRID_WARNING_SELECTROW_MSG?>',
 									buttons: Ext.MessageBox.OK,
 									icon: Ext.MessageBox.WARNING
 								});
@@ -397,7 +388,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                 $('.trail-siblings').mouseleave(function(){
                     $(this).hide();
                 });
-                myMask = new Ext.LoadMask(grid.getEl(), {msg:"Загрузка..."});
+                myMask = new Ext.LoadMask(grid.getEl(), {});
 				myMask.show();
 				gridStore.load([{params:{start:0, limit: json.section.rowsOnPage, sort: {property: 'title', direction: 'ASC'}}}]);
 			});

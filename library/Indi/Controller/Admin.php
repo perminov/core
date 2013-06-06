@@ -50,6 +50,10 @@ class Indi_Controller_Admin extends Indi_Controller{
         $sectionAlias = $this->controller;
         if ($this->session->specialSectionCondition->$sectionAlias) $condition[] = $this->session->specialSectionCondition->$sectionAlias;
 
+        $config = Indi_Registry::get('config');
+        @include_once('../core/application/lang/admin/' . $config['view']->lang . '.php');
+        @include_once('../www/application/lang/admin/' . $config['view']->lang . '.php');
+
         // set up info for pagination
         if (isset($this->get['limit'])) {
             $this->limit = $this->get['limit'];
@@ -668,7 +672,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 
         // get custom titles for values in grid that are foreign keys, but each can relate to different entity
         // at first we should  find such a columns and their satellites
-        $satellitedFields = $this->trail->getItem()->model->getSatellitedFields();
+        $satellitedFields = $this->trail->getItem()->model->getSatellitedFields($gridFieldsAliases);
         foreach ($satellitedFields as $field) {
             $fieldAlias = $field->alias;
             $satelliteAlias = $field->getForeignRowByForeignKey('satellite')->alias;

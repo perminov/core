@@ -1,0 +1,18 @@
+<?php
+define('MENU', 'Меню');
+define('ACTION_CREATE', 'Создать');
+define('GRID_WARNING_SELECTROW_MSG', 'Выберите строку');
+define('GRID_WARNING_SELECTROW_TITLE', 'Сообщение');
+define('GRID_SUBSECTIONS_LABEL', 'Подразделы');
+define('GRID_SUBSECTIONS_EMPTY_OPTION', '--Выберите--');
+define('GRID_SUBSECTIONS_SEARCH_LABEL', 'Искать');
+define('BUTTON_BACK', 'Вернуться');
+define('BUTTON_SAVE', 'Сохранить');
+
+define('FORM_UPLOAD_REMAIN', 'Оставить');
+define('FORM_UPLOAD_DELETE', 'Удалить');
+define('FORM_UPLOAD_REPLACE', 'Заменить');
+define('FORM_UPLOAD_REPLACE_WITH', 'на');
+define('FORM_UPLOAD_NO', 'Отсутствует');
+define('FORM_UPLOAD_BROWSE', 'Выбрать');
+

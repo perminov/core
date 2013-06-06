@@ -56,20 +56,20 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px;">
 			<script>
 				Ext.onReady(function() {
-					Ext.Date.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+					//Ext.Date.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 					Ext.create('Ext.picker.Date', {
-						dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
-						monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+						//dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+						//monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
 						renderTo: '<?=$name?>CalendarRender',
 						width: 185,
-						todayText: 'Сегодня',
-						ariaTitle: 'Выбрать месяц и год',
+						//todayText: 'Сегодня',
+						//ariaTitle: 'Выбрать месяц и год',
 						ariaTitleDateFormat: 'Y-m-d',
 						longDayFormat: 'Y-m-d',
-						nextText: 'Следующий месяц',
-						prevText: 'Предыдущий месяц',
-						todayTip: 'Выбрать сегодняшнюю дату',
-						startDay: 1,
+						//nextText: 'Следующий месяц',
+						//prevText: 'Предыдущий месяц',
+						//todayTip: 'Выбрать сегодняшнюю дату',
+						//startDay: 1,
 						handler: function(picker, date) {
 							var y = date.getFullYear();
 							var m = date.getMonth() + 1; if (m.toString().length < 2) m = '0' + m;

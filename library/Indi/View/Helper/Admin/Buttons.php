@@ -12,11 +12,11 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
         // if buttons are to be displayeв on list screen
         if (($title != null) && ($action != null) && (is_array($title))&&(is_array($action))) {
         } else if ($this->view->action == 'form' || $this->view->alterForm) {
-            $title[] = 'Вернуться';
+            $title[] = BUTTON_BACK;
             $action[] = "top.window.loadContent('". $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : "/" . $this->view->module) . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '') . '\')';
             foreach ($accessableActions as $accessableAction) {
                 if ($accessableAction['alias'] == 'save') {
-                    $title[] = 'Сохранить';
+                    $title[] = BUTTON_SAVE;
                     $action[] = "javascript: $('form[name=" . $this->view->entity->table . "]').submit()";
                     break;
                 }

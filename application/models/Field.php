@@ -20,8 +20,15 @@ class Field extends Indi_Db_Table{
 		for($i = 0; $i < count($gridArray); $i++) $fieldIds[] = $gridArray[$i]['fieldId'];
 		$where = count($fieldIds) ? '`id` IN (' . implode(',', $fieldIds) . ')' : '`id` IN ("")';
 		$order = count($fieldIds) ? 'POSITION(CONCAT("\'", `id`, "\'") IN "\'' . implode("','", $fieldIds) . '\'")' : null;
-
-	    return $this->fetchAll($where, $order);
+        $fieldsA = $this->fetchAll($where, $order)->toArray();
+        for ($i = 0; $i < count($fieldsA); $i++) {
+            for ($j = 0; $j < count($gridArray); $j++) {
+                if ($gridArray[$j]['fieldId'] == $fieldsA[$i]['id'] && $gridArray[$j]['alterTitle']) {
+                    $fieldsA[$i]['title'] = $gridArray[$j]['alterTitle'];
+                }
+            }
+        }
+	    return $this->createRowset(array('data' => $fieldsA));
 	}
 
 	public function getFiltersCountBySectionId($sectionId) {

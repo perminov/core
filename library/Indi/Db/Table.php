@@ -322,10 +322,10 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
         $treeColumnName = $this->info('name') . 'Id';
         return $this->fieldExists($treeColumnName) ? $treeColumnName : null;
     }
-	public function getSatellitedFields(){
+	public function getSatellitedFields($gridFieldsAliases = array()){
 		$name = $this->info('name');
 		$entityRow = Misc::loadModel('Entity')->fetchRow('`table`= "' . $name . '"');
-		return Misc::loadModel('Field')->fetchAll('`entityId` = "' . $entityRow->id . '" AND `satellite` != "0"');
+		return Misc::loadModel('Field')->fetchAll('`entityId` = "' . $entityRow->id . '" AND `satellite` != "0"' . (count($gridFieldsAliases)? ' AND FIND_IN_SET(`alias`, "' . implode(',', $gridFieldsAliases) . '")' : ''));
 	}
 	public function useDefaultFetchMethod($use = true) {
 		$this->useDefaultFetchMethod = $use;

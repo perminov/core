@@ -11,7 +11,7 @@ class Admin_SectionsController extends Indi_Controller_Admin
             if (!$this->trail->getItem()->row || ($this->trail->getItem()->row && !$this->trail->getItem()->row->entityId)) {
                 $field = new Field();
                 $grid = new Grid();
-                $fields = $field->fetchAll('`entityId`="' . $this->post['entityId'] . '"')->toArray();
+                $fields = $field->fetchAll('`entityId`="' . $this->post['entityId'] . '"', 'move')->toArray();
                 if (count($fields)) {
                     $exclusions = array();
                     if ($model = Misc::loadModel('Entity')->getModelById($this->post['entityId'])) {
@@ -35,7 +35,7 @@ class Admin_SectionsController extends Indi_Controller_Admin
                             }
                         } while ($parentEntity);
                     }
-                    $query = 'INSERT INTO `grid` VALUES ';
+                    $query = 'INSERT INTO `grid` (`id`, `sectionId`, `fieldId`, `move`) VALUES ';
                     for ($i = 0; $i < count($fields); $i++) {
                         if (!in_array($fields[$i]['alias'], $exclusions)) {
                             $values[] = '(NULL, ' . $this->identifier. ',' . $fields[$i]['id'] . ',' . ($grid->getLastPosition() + $i - 1) . ')';

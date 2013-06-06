@@ -15,6 +15,8 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
     <link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
     <script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
+    <?$config = Indi_Registry::get('config');?>
+    <script type="text/javascript" src="/library/extjs4/ext-lang-<?=$config['view']->lang?>.js"></script>
     <script type="text/javascript" src="/js/admin/index.js"></script>
     <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>

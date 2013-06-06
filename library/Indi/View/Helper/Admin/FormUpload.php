@@ -59,10 +59,10 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$xhtml .= '<controls class="upload' . (!in_array($type, array('image','video'))?' no-file-yet':'') . '"  field="' . $name . '">';
 			$xhtml .= $type == 'file' ? $uploaded : '';
 			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
-			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">Оставить</label>&nbsp;</span>';
-			$xhtml .= '<span class="radio" val="d" id="file-action-' . $name . '-d"><label id="file-action-' . $name . '-d-label">Удалить</label>&nbsp;</span>';
-			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">Заменить</a></label>&nbsp;';
-			$xhtml .= '<span class="selected" id="replace-by-'.$name.'">на</span> <span id="selected' . $name . '" class="selected-fname"></span>';
+			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_REMAIN . '</label>&nbsp;</span>';
+			$xhtml .= '<span class="radio" val="d" id="file-action-' . $name . '-d"><label id="file-action-' . $name . '-d-label">' . FORM_UPLOAD_DELETE . '</label>&nbsp;</span>';
+			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_REPLACE . '</a></label>&nbsp;';
+			$xhtml .= '<span class="selected" id="replace-by-'.$name.'">' . FORM_UPLOAD_REPLACE_WITH . '</span> <span id="selected' . $name . '" class="selected-fname"></span>';
 			$xhtml .= '<script>
 				$("controls.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
@@ -83,8 +83,8 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 		} else {
 			$xhtml .= '<controls class="upload no-file-yet" field="' . $name . '">';
 			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
-			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">Отсутствует</label>&nbsp;</span>';
-			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">Выбрать</a></label>&nbsp;';
+			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_NO . '</label>&nbsp;</span>';
+			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_BROWSE . '</a></label>&nbsp;';
 			$xhtml .= '<span id="selected' . $name . '" class="selected-fname"></span>';
 			$xhtml .= '<script>
 				$("controls.upload[field='.$name.'] span.radio").click(function(){

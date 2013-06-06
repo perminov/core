@@ -5,6 +5,8 @@ class Indi_View_Helper_Admin_Viewport extends Indi_View_Helper_Abstract
 	{
 		$english = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
 		$russian = array('Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота');
+        $config = Indi_Registry::get('config');
+        $lang = $config['view']->lang;
 	ob_start();?>
 <script>
 Ext.onReady(function() {
@@ -30,7 +32,7 @@ Ext.onReady(function() {
 					region: 'north',
 					html: '<div style="display: block;">' +
 							'<div style="float: right; text-align: right;">' +
-							'<?=str_replace($english, $russian, $this->view->date) ?>' +
+							'<?=$lang=='en'?$this->view->date:str_replace($english, $russian, $this->view->date)?>' +
 							'</div>' +
 							'<div style="text-align: left; margin-bottom: 5px;">' +
 							'<?=$this->view->admin?>' +
