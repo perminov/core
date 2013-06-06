@@ -257,7 +257,4 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 		$this->_count = count($this->_rows);
 		return $this;
 	}
-	public function toArray(){
-		return $this->_data;
-	}
 }

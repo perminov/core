@@ -16,3 +16,5 @@ define('FORM_UPLOAD_REPLACE_WITH', 'with');
 define('FORM_UPLOAD_NO', 'No');
 define('FORM_UPLOAD_BROWSE', 'Browse');
 
+define('ENUMSET_DELETE_DENIED_LASTVALUE', 'Deleting of last existing item from the set is not allowed');
+define('ENUMSET_DELETE_DENIED_DEFAULTVALUE', 'Deleting of default value is not allowed');

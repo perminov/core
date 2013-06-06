@@ -285,14 +285,15 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      *
      * @return array
      */
-    public function toArray()
-    {
-        // @todo This works only if we have iterated through
-        // the result set once to instantiate the rows.
-        foreach ($this->_rows as $i => $row) {
-            $this->_data[$i] = $row->toArray();
-        }
+    public function toArray(){
         return $this->_data;
     }
 
+    public function delete($parentDelete = false) {
+        $deleted = 0;
+        foreach ($this as $row) {
+            $deleted += $row->delete($parentDelete);
+        }
+        return $deleted;
+    }
 }

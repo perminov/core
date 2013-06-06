@@ -480,7 +480,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
                     $entities[$eid]['usages']['many'][$field->alias] = Entity::getModelById($eid)->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
                 }
             }
-            foreach ($data['sections'] as $sectionId) {
+            if (is_array($data['sections'])) foreach ($data['sections'] as $sectionId) {
                 if ($entities[$eid]['usages']['one']) {
                     foreach ($entities[$eid]['usages']['one'] as $row) {
                         $row->delete($sectionId);

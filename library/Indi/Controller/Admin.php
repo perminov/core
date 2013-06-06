@@ -50,9 +50,10 @@ class Indi_Controller_Admin extends Indi_Controller{
         $sectionAlias = $this->controller;
         if ($this->session->specialSectionCondition->$sectionAlias) $condition[] = $this->session->specialSectionCondition->$sectionAlias;
 
+        // languages
         $config = Indi_Registry::get('config');
-        @include_once('../core/application/lang/admin/' . $config['view']->lang . '.php');
-        @include_once('../www/application/lang/admin/' . $config['view']->lang . '.php');
+        @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/application/lang/admin/' . $config['view']->lang . '.php');
+        @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/www/application/lang/admin/' . $config['view']->lang . '.php');
 
         // set up info for pagination
         if (isset($this->get['limit'])) {
@@ -428,9 +429,13 @@ class Indi_Controller_Admin extends Indi_Controller{
 //		d($this->trail->getItem()->disabledFields);
         try {
             if ($this->identifier) {
-                $this->trail->getItem()->model->update($data, '`id` = "' . $this->identifier . '"');
+                $row = $this->trail->getItem()->model->fetchRow('`id` = "' . $this->identifier . '"');
+                foreach ($data as $f => $v) $row->$f = $v;
+                $row->save();
+                //$this->trail->getItem()->model->update($data, '`id` = "' . $this->identifier . '"');
             } else {
-                $this->identifier = $this->trail->getItem()->model->insert($data);
+                $this->identifier = $row = $this->trail->getItem()->model->createRow($data)->save();
+                //$this->identifier = $this->trail->getItem()->model->insert($data);
             }
 
             Indi_Image::deleteEntityImagesIfChecked();

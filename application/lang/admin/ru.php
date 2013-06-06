@@ -16,3 +16,5 @@ define('FORM_UPLOAD_REPLACE_WITH', 'на');
 define('FORM_UPLOAD_NO', 'Отсутствует');
 define('FORM_UPLOAD_BROWSE', 'Выбрать');
 
+define('ENUMSET_DELETE_DENIED_LASTVALUE', 'Нельзя удалять последнее значение из набора возможных');
+define('ENUMSET_DELETE_DENIED_DEFAULTVALUE', 'Нельзя удалять значение по умолчанию');

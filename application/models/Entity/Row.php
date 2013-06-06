@@ -1,11 +1,11 @@
 <?php
 class Entity_Row extends Indi_Db_Table_Row
 {
-	public function delete($branchId = null){
+	public function delete(){
 		Indi_Registry::set('entityToDelete', $this->table);
 
 		// standart Db_Table_Row deletion
-		parent::delete($branchId);
+		parent::delete();
 
 		// delete all uploaded files of entity rows and folder they were stored in
 		$this->deleteAllUploadedFilesAndUploadFolder();
@@ -67,4 +67,14 @@ class Entity_Row extends Indi_Db_Table_Row
 			rmdir($modelsDir . ucfirst($entity) . '/');
 		}
 	}
+
+    public function save() {
+        if (!$this->id) {
+            $query = 'CREATE TABLE IF NOT EXISTS `' . $this->table . '` (`id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=MyISAM';
+        } else if ($this->_original['table'] && $this->_modified['table'] && $this->_original['table'] != $this->_modified['table']) {
+            $query = 'RENAME TABLE  `' . $this->_original['table'] . '` TO  `' . $this->_modified['table'] . '` ;';
+        }
+        if ($query) $this->_table->_db->query($query);
+        return parent::save();
+    }
 }

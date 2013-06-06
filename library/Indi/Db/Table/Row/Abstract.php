@@ -73,6 +73,11 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      */
     public function __set($columnName, $value)
     {
+        // Check if value is a color in #RRGGBB format and prepend it with hue number
+        if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
+            $value = Misc::rgbPrependHue($value);
+        }
+
         if ($this->_original[$columnName] !== $value) $this->_modified[$columnName] = $value;
     }
 
@@ -187,5 +192,9 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     public function offsetUnset($offset)
     {
         return $this->__unset($offset);
+    }
+
+    public function modified($key, $value) {
+        return $this->_modified[$key] = $value;
     }
 }

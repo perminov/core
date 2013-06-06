@@ -43,4 +43,64 @@ class Resize_Row extends Indi_Db_Table_Row
         }
 	}
 
+    public function save() {
+        if ($this->id) {
+            $was = $this->_original;
+            $became = $this->toArray();
+            if ($was != $became) {
+                // Get files of copies to be resized
+                $field = $this->getForeignRowByForeignKey('fieldId');
+                $entity = Entity::getInstance()->getModelById($field->entityId)->info('name');
+                $uploadPath = Indi_Image::getUploadPath();
+                $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
+                $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . $relative;
+                $key = $field->alias;
+                $copy = $was['alias'];
+
+                if ($was['alias'] == $became['alias']) {
+
+                    $name = ($key !== null && !empty($key) ? '_' . $key : '') . '.';
+                    $pat = $absolute . '*' . $name . '*';
+
+                    foreach (glob($pat) as $existing) {
+                        // Get resize expression
+                        switch($became['proportions']){
+                            case 'o': // original
+                                $size = getimagesize($existing);
+                                $size = $size[0] . 'x' . $size[1];
+                                break;
+                            case 'c':
+                                $size = $became['masterDimensionValue'] . 'x' . $became['slaveDimensionValue'];
+                                break;
+                            case 'p':
+                                $size = array($became['masterDimensionValue'], $became['slaveDimensionValue']);
+                                if ($became['masterDimensionAlias'] == 'height'){
+                                    $size = array_reverse($size);
+                                }
+                                if($became['slaveDimensionLimitation']) $size[1] .= 'M';
+                                $size = implode('x', $size);
+                                break;
+                            default:
+                                $size = '';
+                                break;
+                        }
+
+                        Indi_Image::resize($existing, $copy, $size);
+                    }
+
+                } else {
+                    $key = ($key !== null && !empty($key) ? '_' . $key : '');
+                    $copy = ($copy != null ? ',' . $copy : '');
+                    $name = $key . $copy;
+                    $pat = $absolute . '*' . $name . '*';
+                    if ($became['alias']) $became['alias'] = ',' . $became['alias'];
+                    foreach (glob($pat) as $existing) {
+                        $renameTo = preg_replace('~(' . $absolute . '[0-9]+' . $key . ')' . $copy . '(\.[a-z]{2,4})~', '$1' . $became['alias'] . '$2', $existing);
+                        rename($existing, $renameTo);
+                    }
+                }
+            }
+        }
+        return parent::save();
+    }
 }
