@@ -29,7 +29,7 @@
 				{
 					xtype: 'textfield',
 					name: 'email',
-					fieldLabel: 'Пользователь',
+					fieldLabel: '<?=LOGIN_SCREEN_USERNAME?>',
 					labelWidth: 90,
 					value: '',
 					width: 275
@@ -37,7 +37,7 @@
 					xtype: 'textfield',
 					name: 'password',
 					inputType: 'password',
-					fieldLabel: 'Пароль',
+					fieldLabel: '<?=LOGIN_SCREEN_PASSWORD?>',
 					labelWidth: 90,
 					width: 275
 				},{
@@ -45,7 +45,7 @@
 					inputType: 'submit',
 					name: 'submit',
 					cls: 'asd',
-					text: 'Вход',
+					text: '<?=LOGIN_SCREEN_ENTER?>',
 					margin: '4 0 0 20',
 					width: 113,
 					handler: function(){
@@ -69,7 +69,7 @@
 					inputType: 'reset',
 					name: 'reset',
 					cls: 'asd',
-					text: 'Сброс',
+					text: '<?=LOGIN_SCREEN_RESET?>',
 					margin: '4 0 0 10',
 					width: 113,
 					handler: function(){

@@ -29,17 +29,17 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         // config is used in different times
         $this->config = Config::getInstance()->asObject();
 
-        // perform authentication
-        Indi_Auth::getInstance()->auth($this);
-
-        // set up all trail info
-        $sectionAlias = $this->controller;
-
         // languages
         $config = Indi_Registry::get('config');
         @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/application/lang/admin/' . $config['view']->lang . '.php');
         @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/www/application/lang/admin/' . $config['view']->lang . '.php');
         $GLOBALS['lang'] = $config['view']->lang;
+
+        // perform authentication
+        Indi_Auth::getInstance()->auth($this);
+
+        // set up all trail info
+        $sectionAlias = $this->controller;
 
         // set up info for pagination
         if (isset($this->get['limit'])) {
