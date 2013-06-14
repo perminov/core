@@ -162,6 +162,9 @@ controls{
     font-size: 11px;
     line-height: 15px;
 }
+.x-form-spinner-up{
+    margin-top: -1px;
+}
 .x-form-trigger-wrap .x-form-spinner-up, .x-form-trigger-wrap .x-form-spinner-down{
     height: 9px !important;
 }
@@ -184,9 +187,6 @@ controls{
     position: relative;
     top: 1px;
     background-position: -17px -13px;
-}
-.x-form-trigger-wrap-focus .x-form-trigger-click{
-    /*background-position: -34px 0px;*/
 }
 .x-form-trigger-wrap .x-form-spinner-down-click {
     position: relative;
@@ -226,4 +226,10 @@ controls{
     height: 11px;
     position: relative;
     top: 1px;
+}
+.x-panel.top-center{
+    z-index: 100;
+}
+.x-ie .x-fieldset .x-fieldset-body {
+    padding-top: 0px !important;
 }

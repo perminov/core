@@ -30,7 +30,7 @@ class Indi_View_Helper_Admin_FormSelect extends Indi_View_Helper_FormElement
         $options = array_reverse($options, true);
         if ($attribs['noempty'] !== true) {
             if (!$attribs['defaultvalue']) $attribs['defaultvalue'] = 0;
-            $options[$attribs['defaultvalue']] = $attribs['default'] ? $attribs['default'] : 'Выберите' ;
+            $options[$attribs['defaultvalue']] = $attribs['default'] ? $attribs['default'] : FORM_SELECT_EMPTY_OPTION ;
         }
         $options = array_reverse($options, true);
 

@@ -91,3 +91,6 @@ textarea{
     color: #04408C;
     font-size: 8pt;
 }
+form.form input[readonly]{
+    border: 1px solid #d7d2d6;
+}

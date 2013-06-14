@@ -1,5 +1,5 @@
 <?php
-class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
+class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
 {
     /**
      * Searches all foreign keys in table structure
@@ -151,12 +151,10 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		} else if (!is_array($trail->getItem()->dropdownWhere[$fieldAlias])){
 			$trail->getItem()->dropdownWhere[$fieldAlias] = array($trail->getItem()->dropdownWhere[$fieldAlias]);
 		}
-//$s = 'FIND_IN_SET(`id`,"'.current(Indi_Db_Table::getDefaultAdapter()->query('SELECT GROUP_CONCAT(`entityId`) FROM `fsection` WHERE `toggle`="y"')->fetch()).'")';
 		if ($staticFilter) {
             if (preg_match('/(\$|::)/', $staticFilter)) {
                 eval('$staticFilter = \'' . $staticFilter . '\';');
             }
-
             $trail->getItem()->dropdownWhere[$fieldAlias][] = $staticFilter;
         }
 		if ($filterBySatellite) $trail->getItem()->dropdownWhere[$fieldAlias][] = $filterBySatellite;
@@ -166,7 +164,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		if (!$trail->getItem()->dropdownWhere[$fieldAlias]) $trail->getItem()->dropdownWhere[$fieldAlias] = null;
 		if ($entityId == 6) {
 			$array = Entity::getInstance()->getModelById($entityId)->fetchAll('`fieldId` = "' . $fieldId . '"','move')->toArray();
-			foreach ($array as $item) $options[$item['alias']] = $item['title'];
+			foreach ($array as $item) $options[$item['alias']] = Misc::usubstr($item['title'], 90);
 		} else if ($entityId != 0){
 			$fieldModel = new Field();
 			$entityFields = $fieldModel->getFieldsByEntityId($entityId);
@@ -182,7 +180,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 
 			if($treeColumnInEntityStructure){
 				$rowset = Entity::getInstance()->getModelById($entityId)->fetchTree($trail->getItem()->dropdownWhere[$fieldAlias]);
-				foreach ($rowset as $row) $options[$row->id] = $row->indent . $row->getTitle();
+				foreach ($rowset as $row) $options[$row->id] = $row->indent . Misc::usubstr($row->getTitle(), 90);
 			} else {
 				$params = Entity::getInstance()->getModelByTable('param')->fetchAll('`fieldId` = "' . $fieldId . '"');
 				foreach ($params as $param) $pairs[$param->getForeignRowByForeignKey('possibleParamId')->alias] = $param->value;
@@ -196,7 +194,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 							break;
 						}
 					}					
-					$rowset = Entity::getInstance()->getModelById($entityId)->fetchAll($trail->getItem()->dropdownWhere[$fieldAlias], $groupByColumnAlias);
+					$rowset = Entity::getInstance()->getModelById($entityId)->fetchAll($trail->getItem()->dropdownWhere[$fieldAlias], '`' . $groupByColumnAlias . '`');
 					foreach ($rowset as $row) {
 						$currentGroupByColumnValue = $row->$groupByColumnAlias;
 						if ($currentGroupByColumnValue != $prevValue) {
@@ -210,7 +208,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 							}
 						}
 						if ($pairs['groupByRequirement']) eval($pairs['groupByRequirement']);
-						if ($title && ($pairs['groupByRequirement'] ? $groupByCondition : true)) $options[$title][$row->id] = $row->getTitle();
+						if ($title && ($pairs['groupByRequirement'] ? $groupByCondition : true)) $options[$title][$row->id] = Misc::usubstr($row->getTitle(), 90);
 						$prevValue = $currentGroupByColumnValue;
 					}
 					
@@ -239,7 +237,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
                     }
 					$rowset = $entity->fetchAll($trail->getItem()->dropdownWhere[$fieldAlias], $order, $limit, $page);
 					foreach ($rowset as $row) {
-						$options[$row->id] = $row->getTitle();
+						$options[$row->id] = Misc::usubstr($row->getTitle(), 90);
 					}
 					if ($config['element'] == 'dselect') $options['data'] = array('count' => $count);
 				}
@@ -248,34 +246,6 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		
 		return $options; 
 	}
-
-    /**
-     * Provide Move up/Move down actions
-     *
-     * @param string $direction (up|down)
-     * @param string $condition
-     */
-    public function move($direction = 'up', $condition = null) {
-        if (in_array($direction, array('up', 'down'))) {
-            $currentRowOrder = $this->move;
-            $condition = $condition ? ' AND ' . $condition : null;
-            $where = '`move` ' . ($direction == 'up' ? '<' : '>') . '"' . $currentRowOrder . '"' . $condition;
-            $order = 'move ' . ($direction == 'up' ? 'DE' : 'A') . 'SC';
-            if ($changeRow = $this->getTable()->fetchRow($where, $order)) {
-                // we exchange values of `sorting` fields
-				$info = $this->getTable()->info();
-				$query = 'UPDATE `' . $info['name'] . '` SET `move` = "' . $changeRow->move . '" WHERE `id`="' . $this->id . '" LIMIT 1';
-				$this->getTable()->getAdapter()->query($query);
-
-				$query = 'UPDATE `' . $info['name'] . '` SET `move` = "' . $currentRowOrder . '" WHERE `id`="' . $changeRow->id . '" LIMIT 1';
-				$this->getTable()->getAdapter()->query($query);
-//                $this->move = $changeRow->move;
-//                $this->save();
-//                $changeRow->move = $currentRowOrder;
-//                $changeRow->save();
-            }
-        }
-    }
 
     /**
      * Provide Toggle On/Off action
@@ -355,21 +325,6 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         }
     }
     
-    public function version($string, $versionId) {
-		if (in_array($string, array_keys($this->toArray()))) $string = $this->$string;
-        $split = @split('[ ()-]', $string);
-        for ($i = 0; $i < count($split); $i++) {
-            $str[] = Replace::getInstance()->version($split[$i], $versionId);
-        }
-        $result = $string;
-        for ($i = 0; $i < count($str); $i++) {
-            if (strlen(trim($split[$i]))) {
-                $result = @eregi_replace($split[$i], $str[$i], $result);
-            }
-        }
-        return $result;
-    }
-    
     public function isListOfIds($value) {
         $value = explode(',', $value);
         for ($i = 0; $i < count($value); $i++) {
@@ -378,29 +333,21 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
         return $ids;
     }
 
-    public function getDependentRowsets(){
-        $dts = $this->getTable()->getDependentTables();
-        $dtsrs = array();
-        foreach ($dts as $dt) {
-            $dtsrs[$dt] = $this->findDependentRowset($dt)->toArray();
-        }
-        return $dtsrs;
-    }
 	public function delete(){
 		// delete all files and images that have been attached to row
 		$this->deleteUploadedFiles();
 
-		// if entity has a tree structure, we delete all children
+        // if entity has a tree structure, we delete all children
 		$this->deleteRowChildrenIfEntityHasATreeStructure();
 
-		// delete dependent rowsets
-		$this->deleteDependentRowsets();
-		
+        // delete dependent rowsets
+		//$this->deleteDependentRowsets();
+
         // delete other rows of entities, that have fields, related to entity of current row
         $this->deleteForeignKeysUsages();
 
-		// standart Indi_Db_Table_Row deletion
-		parent::delete();
+        // standart Indi_Db_Table_Row deletion
+		return parent::delete();
 	}
 	public function deleteUploadedFiles($name = '', $entity = ''){
         if (!$entity) $entity = strtolower($this->getTable()->info('name'));
@@ -458,43 +405,42 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
                     } else {
                         $keyName = strtolower($this->getTable()->info('name')) . 'Id';
                     }
-					$dependentRowset = $entity->fetchAll('`' . $keyName . '` = "' . $this->id . '"');
-					foreach ($dependentRowset as $dependentRow) $dependentRow->delete($dependentSection->id);
+					$entity->fetchAll($entity->fieldExists($keyName) ? '`' . $keyName . '` = "' . $this->id . '"' : null)->delete();
 				}
 			}
 		}
 	}
 
     public function deleteForeignKeysUsages(){
+        // Declare entities array
         $entities = array();
+
+        // Determine entity, this row is owned by
         $entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->_table->_name . '"')->id;
+
+        // Get all fields in whole database, which are containing keys related to this entity
         $fieldRs = Misc::loadModel('Field')->fetchAll('`relation` = "' . $entityId . '"');
         foreach ($fieldRs as $fieldR) $entities[$fieldR->entityId]['fields'][] = $fieldR;
-        $sectionRs = Misc::loadModel('Section')->fetchAll('FIND_IN_SET(`entityId`, "' . implode(',', array_keys($entities)) . '")');
-        foreach ($sectionRs as $sectionR) $entities[$sectionR->entityId]['sections'][] = $sectionR->id;
+
+        // Get auxillary deletion info within each entity
         foreach ($entities as $eid => $data) {
+            $model = Entity::getModelById($eid);
             foreach ($data['fields'] as $field) {
+
+                // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
                 if ($field->storeRelationAbility == 'one') {
-                    $entities[$eid]['usages']['one'] = Entity::getModelById($eid)->fetchAll('`' . $field->alias . '` = "' . $this->id . '"');
+                    $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
+
+                // If storeRelationAbility = 'many', we do not delete rows, but we delete
+                // mentions of $this->id from comma-separated sets of keys
                 } else if ($field->storeRelationAbility == 'many') {
-                    $entities[$eid]['usages']['many'][$field->alias] = Entity::getModelById($eid)->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
-                }
-            }
-            if (is_array($data['sections'])) foreach ($data['sections'] as $sectionId) {
-                if ($entities[$eid]['usages']['one']) {
-                    foreach ($entities[$eid]['usages']['one'] as $row) {
-                        $row->delete($sectionId);
-                    }
-                }
-            }
-            if ($entities[$eid]['usages']['many']) {
-                foreach ($entities[$eid]['usages']['many'] as $fieldAlias => $rs) {
+                    $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
                     foreach ($rs as $r) {
-                        $set = explode(',', $r->$fieldAlias);
+                        $set = explode(',', $r->{$field->alias});
                         $found = array_search($this->id, $set);
                         if ($found !== false) unset($set[$found]);
-                        $r->$fieldAlias = implode(',', $set);
-                        $r->save();
+                        $r->{$field->alias} = implode(',', $set);
+                        $r->save(true);
                     }
                 }
             }
@@ -610,6 +556,4 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Abstract
 		$params = Indi_Registry::get('request');
 		return $params[$name];
 	}
-
-
 }

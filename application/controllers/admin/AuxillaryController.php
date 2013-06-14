@@ -358,7 +358,7 @@ function strip_tags( str ){
     }
 
     public function updateAction() {
-        if($price = Misc::loadModel('Element')->fetchRow('`alias` = "price"')) $price->delete();
+        /*if($price = Misc::loadModel('Element')->fetchRow('`alias` = "price"')) $price->delete();
 
         $u = Misc::loadModel('Element')->fetchRow('`alias` = "string"');
         $u->title = 'Строка';
@@ -398,20 +398,43 @@ function strip_tags( str ){
         $this->db->query('UPDATE `entity` SET `title`="Фильтр раздела фронтенда" WHERE `table` = "filter"');
         $this->db->query('UPDATE `section` SET `title`="Фильтры" WHERE `title` = "Поля, доступные для поиска"');
         $this->db->query('UPDATE `columnType` SET `type`="VARCHAR(10)" WHERE `id` = "13"');
-    }
-    public function colorAction(){
-        $this->db->query('TRUNCATE TABLE `test`');
-        for ($i = 0; $i < 1000; $i++) {
-            $r = rand(0, 255); $g = rand(0, 255); $b = rand(0, 255);
-            $color = str_pad(dechex($r), 2, '0', STR_PAD_LEFT) . str_pad(dechex($g), 2, '0', STR_PAD_LEFT) . str_pad(dechex($b), 2, '0', STR_PAD_LEFT);
-            $rgb = array(ltrim($r, '0'), ltrim($g, '0'), ltrim($b,'0'));
-            $myhsl = Indi_Image::rgb2hsl($rgb);
-            $rgb3 = Misc::hsl2rgb(array(round($myhsl[0]*360), $myhsl[1], $myhsl[2]));
-            /*echo '<div style="background-color: #' . $color . ';width: 200px;">'.
-                '<span style="background: #'.Misc::rgb2hex($rgb3[0], $rgb3[1], $rgb3[2]).'">' . rgbPrependHue(Misc::rgb2hex($rgb3[0], $rgb3[1], $rgb3[2])) . '&nbsp;' . zValue($rgb3[0], $rgb3[1], $rgb3[2]) . '</span>' .
-            '</div>';*/
-            $this->db->query('INSERT INTO `test` SET `title` = "Запись ' . str_pad($i+1, 4, '0', STR_PAD_LEFT) . '", `color` = "' . Misc::rgbPrependHue(Misc::rgb2hex($rgb3[0], $rgb3[1], $rgb3[2])) . '"');
-        }
-        die('ddd');
+        */
+
+        // 'Action' entity improvements
+        /*$this->db->query('UPDATE `action`
+                          SET `javascript` = "loadContent(grid.indi.href + this.actionAlias + \"/id/\" + row.id + \"/\");"
+                          WHERE `javascript`="" AND `alias` != "index";');
+        $this->db->query('ALTER TABLE `action` DROP `condition`');
+        $this->db->query('ALTER TABLE `action` DROP `display`');
+
+        $fieldR = Misc::loadModel('Field')->createRow();
+        $fieldR->entityId = Misc::loadModel('Entity')->fetchRow('`table` = "action"')->id;
+        $fieldR->title = 'Отображать в панели действий грида';
+        $fieldR->alias = 'display';
+        $fieldR->elementId = 9;
+        $fieldR->columnTypeId = 12;
+        $fieldR->defaultValue = 1;
+        $fieldR->save();
+
+        $this->db->query('UPDATE `action` SET `display` = "0" WHERE FIND_IN_SET(`alias`, "index,save")');
+        $fieldR = Misc::loadModel('Field')->fetchRow('`alias` = "javascript" AND `entityId` = "' . Misc::loadModel('Entity')->fetchRow('`table` = "action"')->id . '"');
+        $fieldR->defaultValue = 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");';
+        $fieldR->save();
+
+        $actionR = Misc::loadModel('Action')->fetchRow('`alias` = "delete"');
+        $actionR->javascript = 'var actionAlias = this.actionAlias;
+Ext.MessageBox.show({
+  title:grid.indi.msgbox.confirm.title,
+  msg: grid.indi.msgbox.confirm.message,
+  buttons: Ext.MessageBox.YESNO,
+  icon: Ext.MessageBox.QUESTION,
+  fn: function(answer, arg2){
+     if (answer == "yes") {
+        loadContent(grid.indi.href + actionAlias+"/id/"+row.id + "/");
+     }
+  }
+});';
+        $actionR->save();*/
+        die('ok');
     }
 }

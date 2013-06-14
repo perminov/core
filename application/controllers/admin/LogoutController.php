@@ -1,5 +1,5 @@
 <?php
-class Admin_LogoutController extends Indi_Controller
+class Admin_LogoutController extends Indi_Controller_Admin
 {
     /**
      * Action to preform Admin System logout

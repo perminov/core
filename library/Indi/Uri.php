@@ -31,7 +31,7 @@ class Indi_Uri {
 			}
 		}
 
-		if ($params['module'] != 'admin') {
+        if ($params['module'] != 'admin') {
 			$fsectionM = Misc::loadModel('Fsection');
 			$fsectionA = $fsectionM->fetchAll('`alias` IN ("' . $params['section'] . '", "static")', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',static")')->toArray();
 			if ($fsectionA[0]['alias'] == 'static') {
@@ -64,8 +64,8 @@ class Indi_Uri {
 		}
 
 		$controller = new $controllerClassName($params);
-		$controller->dispatch();
-	}
+        $controller->dispatch();
+    }
 
 	public function preDispatch() {
 		$this->no3w();

@@ -15,13 +15,27 @@ abstract class Indi_Db_Table_Abstract {
     protected static $_defaultDb;
 
     /**
-     * Construct object. Set up table name and DB adapter
+     * Store column name, which is used to detect parent-child relationship between
+     * rows within rowset
+     *
+     * @var string
+     */
+    public $treeColumn = '';
+
+    /**
+     * Construct object. Set up table name, DB adapter and tree column name if exists
      *
      * @return void
      */
     public function __construct() {
+
+        // Set db table name and db adapter
         $this->_name = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
         $this->_db = self::$_defaultDb;
+
+        // Detect tree column name
+        $treeColumnName = $this->info('name') . 'Id';
+        $this->treeColumn = $this->fieldExists($treeColumnName) ? $treeColumnName : '';
     }
 
     /**

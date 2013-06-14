@@ -28,7 +28,7 @@ class Indi_View_Helper_Admin_FormNumber extends Indi_View_Helper_FormElement
                    . ' id="' . $this->view->escape($id) . '"'
                    . ' value="' . $this->view->escape($value) . '"'
                    . $this->_htmlAttribs($attribs)
-                   . ' style="width: ' . ($params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $params['maxlength'] . '" ' . ($params['readonly'] == 'true' ? ' readonly' : '') . ' oninput="this.value=number(this.value);' . $field->javascript . '"  onkeydown="if(event.keyCode==38||event.keyCode==40){if(event.keyCode==38)this.value=parseInt(this.value)+1;else if(event.keyCode==40)this.value=parseInt(this.value)-1;' . $field->javascript . '}" autocomplete="off"/> ' . $params['measure'];
+                   . ' style="width: ' . ($params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $params['maxlength'] . '" ' . ($params['readonly'] == 'true' ? ' readonly' : ' oninput="this.value=number(this.value);' . $field->javascript . '"  onkeydown="if(event.keyCode==38||event.keyCode==40){if(event.keyCode==38)this.value=parseInt(this.value)+1;else if(event.keyCode==40)this.value=parseInt(this.value)-1;' . $field->javascript . '}"') . ' autocomplete="off"/> ' . $params['measure'];
         }
         
         return $xhtml;

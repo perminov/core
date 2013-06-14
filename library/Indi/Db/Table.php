@@ -8,35 +8,12 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
      */
     protected $_rowClass = 'Indi_Db_Table_Row';
 
-	public $useDefaultFetchMethod = false;
-
     /**
      * Classname for rowset
      *
      * @var string
      */
     protected $_rowsetClass = 'Indi_Db_Table_Rowset';
-
-	/**
-	 * Initialize table and schema names.
-	 *
-	 * If the table name is not set in the class definition,
-	 * use the class name itself as the table name.
-	 *
-	 * A schema name provided with the table name (e.g., "schema.table") overrides
-	 * any existing value for $this->_schema.
-	 *
-	 * @return void
-	 */
-	protected function _setupTableName()
-	{
-		if (! $this->_name) {
-			$this->_name = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
-		} else if (strpos($this->_name, '.')) {
-			list($this->_schema, $this->_name) = explode('.', $this->_name);
-			$this->_name = strtolower($this->_name);
-		}
-	}
 
 	/**
      * Get table columns

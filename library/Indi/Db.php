@@ -62,6 +62,7 @@ class Indi_Db {
             if ($affected === false) {
                 echo array_pop(self::$_pdo->errorInfo()) . '<br>';
                 echo "SQL query: " . $sql . '<br>';
+                d(debug_print_backtrace());
                 die();
             }
             return $affected;
@@ -72,6 +73,7 @@ class Indi_Db {
             if (!$stmt) {
                 echo array_pop(self::$_pdo->errorInfo()) . '<br>';
                 echo "SQL query: " . $sql . '<br>';
+                d(debug_print_backtrace());
                 die();
             }
             $stmt->setFetchMode(PDO::FETCH_ASSOC);

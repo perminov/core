@@ -1,5 +1,5 @@
 <?php
-class Indi_Controller_Admin extends Indi_Controller{
+class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
     public $datePattern = "/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/";
 
@@ -20,19 +20,6 @@ class Indi_Controller_Admin extends Indi_Controller{
     public $admin;
 
     /**
-     * Set up session's specialSectionCondition variable as object
-     * of stdClass as Indi_Session_Namespace does not work with arrays
-     *
-     */
-    public function init()
-    {
-        parent::init();
-        if (!is_object($this->session->specialSectionCondition)) {
-            $this->session->specialSectionCondition = new stdClass();
-        }
-    }
-
-    /**
      * Init all general cms features
      *
      */
@@ -45,15 +32,14 @@ class Indi_Controller_Admin extends Indi_Controller{
         // perform authentication
         Indi_Auth::getInstance()->auth($this);
 
-
         // set up all trail info
         $sectionAlias = $this->controller;
-        if ($this->session->specialSectionCondition->$sectionAlias) $condition[] = $this->session->specialSectionCondition->$sectionAlias;
 
         // languages
         $config = Indi_Registry::get('config');
         @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/application/lang/admin/' . $config['view']->lang . '.php');
         @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/www/application/lang/admin/' . $config['view']->lang . '.php');
+        $GLOBALS['lang'] = $config['view']->lang;
 
         // set up info for pagination
         if (isset($this->get['limit'])) {
@@ -61,19 +47,13 @@ class Indi_Controller_Admin extends Indi_Controller{
             $this->start = $this->get['start'];
 			$_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
         }
-
         $section = Misc::loadModel('Section');
-        // set up configuration as key->value from 'config' table
-        // config is used in different times
-        $this->config = Config::getInstance()->asObject();
 
         // set up all trail info
-        $sectionAlias = $this->controller;
-
         $this->trail = new Indi_Trail_Admin($this->controller, $this->identifier, $this->action, null, $this->params, $this->authComponent);
 
         // set up current section and foreign rows, assotiated with
-        $this->section = $section->fetchRow('`alias` = "' . $this->controller . '"');// . $condition);
+        $this->section = $section->fetchRow('`alias` = "' . $this->controller . '"');
 
         if ($this->section) {
 
@@ -86,9 +66,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             if ($this->trail->getItem()->model) {
                 $fields = $this->trail->getItem()->fields->toArray();
                 foreach ($fields as $field) {
-                    if (!$entityTableName) {
-                        $entityRow = Entity::getInstance()->fetchRow('`id`="' . $field['entityId'] . '"');
-                    }
+                    $entityRow = Entity::getInstance()->fetchRow('`id`="' . $field['entityId'] . '"');
                     if ($field['alias'] == $entityRow->table . 'Id' && $field['relation'] == $entityRow->id) {
                         $this->trail->getItem()->treeColumn = $field['alias'];
                         break;
@@ -110,7 +88,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                 // if this section have parent section, we should fetch only records, related to parent row
                 // for example if we want to see cities, we must define in WHAT country these cities are located
-                if ($this->trail->getItem(1)->row) {
+                if ($this->trail->getItem(1)->row && !$this->noFilterByParent) {
                     if ($this->specialParentCondition) {
                         $condition[] = $this->specialParentCondition;
                     } else {
@@ -161,7 +139,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                                     }
                                 }
                             } else {
-                                if ($found->storeRelationAbility == 'one') {
+                                if (in_array($found->storeRelationAbility, array('none', 'one'))) {
                                     $condition[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
                                 } else if ($found->storeRelationAbility == 'many') {
                                     $condition[] = 'FIND_IN_SET("' . $filterSearchFieldValue . '", `' . $filterSearchFieldAlias . '`)';
@@ -169,9 +147,10 @@ class Indi_Controller_Admin extends Indi_Controller{
                             }
                         } else if ($found->elementId == 1) {
                             $condition[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
-                        } else if (in_array($found->elementId, array(18,12))) {
+                        } else if (in_array($found->elementId, array(18,12,19))) {
                             preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches);
-                            if ($found->elementId == 12) $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
+                            if ($found->elementId == 12 || $found->elementId ==19) $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
+                            if ($found->elementId == 19) $filterSearchFieldValue .= ' 00:00:00';
                             $condition[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
                         } else if ($found->columnTypeId == 4) {
                             $condition[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue . '*" IN BOOLEAN MODE)';
@@ -188,7 +167,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                 $order = $this->getOrderForJsonRowset($condition, true);
                 if($this->params['json']) {
                     $this->preIndexJson();
-                    if ($this->trail->getItem()->treeColumn) {
+                    if ($this->trail->getItem()->model->treeColumn) {
                         $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order);
                     } else {
                         $order = $this->getOrderForJsonRowset($condition);
@@ -197,65 +176,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                 }
             }
         }
-        parent::preDispatch();
-    }
-
-    /**
-     * Provide default downAction (Move down) for Admin Sections controllers
-     *
-     * @param string $condition
-     */
-    public function downAction($condition = null)
-    {
-        $condition = $condition ? array($condition) : array();
-        if ($this->trail->getItem()->treeColumn) {
-            $condition[] = '`' . $this->trail->getItem()->treeColumn . '`="' . $this->row->{$this->trail->getItem()->treeColumn} . '"';
-        }
-        if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
-            $id = $this->trail->getItem(1)->row->id;
-            if ($this->trail->getItem()->section->parentSectionConnector) {
-                $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
-                $condition[] = '`' . $parentSectionConnectorAlias . '` = "' . $id . '"';
-            } else {
-                $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
-            }
-        }
-        if ($this->trail->getItem()->section->filter) {
-            $condition[] = $this->trail->getItem()->section->filter;
-        }
-        $steps = $this->params['steps'];
-        $this->row->move('down', implode(' AND ', $condition));
-        $this->postMove();
-        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
-
-    }
-
-    /**
-     * Provide default upAction (Move up) for Admin Sections controllers
-     *
-     * @param string $condition
-     */
-    public function upAction($condition = null)
-    {
-        $condition = $condition ? array($condition) : array();
-        if ($this->trail->getItem()->treeColumn) {
-            $condition[] = '`' . $this->trail->getItem()->treeColumn . '`="' . $this->row->{$this->trail->getItem()->treeColumn} . '"';
-        }
-        if ($this->trail->getItem(1)->row && $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')) {
-            $id = $this->trail->getItem(1)->row->id;
-            if ($this->trail->getItem()->section->parentSectionConnector) {
-                $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
-                $condition[] = '`' . $parentSectionConnectorAlias . '` = "' . $id . '"';
-            } else {
-                $condition[] = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id="' . $id . '"';
-            }
-        }
-        if ($this->trail->getItem()->section->filter) {
-            $condition[] = $this->trail->getItem()->section->filter;
-        }
-        $this->row->move('up', implode(' AND ', $condition));
-        $this->postMove();
-        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        //parent::preDispatch();
     }
 
     /**
@@ -273,20 +194,6 @@ class Indi_Controller_Admin extends Indi_Controller{
     public function preToggle(){
     }
     public function postToggle(){
-    }
-    /**
-     * Provide delete action
-     *
-     */
-    public function deleteAction()
-    {
-        $this->preDelete();
-        $this->trail->getItem()->row->delete();
-        if ($this->trail->getItem(1)->row) {
-            $id = $this->trail->getItem(1)->row->id;
-        }
-        $this->postDelete();
-        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
 
     /**
@@ -434,7 +341,8 @@ class Indi_Controller_Admin extends Indi_Controller{
                 $row->save();
                 //$this->trail->getItem()->model->update($data, '`id` = "' . $this->identifier . '"');
             } else {
-                $this->identifier = $row = $this->trail->getItem()->model->createRow($data)->save();
+                $row = $this->trail->getItem()->model->createRow($data);
+                $this->identifier = $row->save();
                 //$this->identifier = $this->trail->getItem()->model->insert($data);
             }
 
@@ -449,7 +357,6 @@ class Indi_Controller_Admin extends Indi_Controller{
 
         $this->updateCacheIfNeed();
 
-        //die();
         $this->postSave();
         if ($redirect) {
             if ($this->trail->getItem(1)->row) {
@@ -629,7 +536,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         // apply up custom titles
         for ($i = 0; $i < count($data); $i++) {
             foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
-                $data[$i][$alias] = $data[$i][$alias] ? 'Да' : 'Нет';
+                $data[$i][$alias] = $data[$i][$alias] ? GRID_FILTER_CHECKBOX_YES : GRID_FILTER_CHECKBOX_NO;
             }
         }
 
@@ -683,7 +590,9 @@ class Indi_Controller_Admin extends Indi_Controller{
             $satelliteAlias = $field->getForeignRowByForeignKey('satellite')->alias;
             $i = 0;
             foreach ($this->rowset as $row) {
-                if ($fr = $row->getForeignRowByForeignKey($fieldAlias))	$data[$i][$fieldAlias] = $fr->getTitle();
+                if ($fr = $row->getForeignRowByForeignKey($fieldAlias))	{
+                    $data[$i][$fieldAlias] = $fr->getTitle();
+                }
                 $i++;
             }
         }
@@ -830,7 +739,11 @@ class Indi_Controller_Admin extends Indi_Controller{
                 $order = 'POSITION(CONCAT("\'", `id`, "\'") IN "\'' . implode("','", $ids) . '\'") ASC';
             }
         } else if (Misc::loadModel('ColumnType')->fetchRow('`id` = "' . $columnTypeId . '"')->type == 'BOOLEAN') {
-            $order = 'IF(`' . $this->post['sort'] . '`, "Да", "Нет") ' . $this->post['dir'];
+            if ($GLOBALS['lang'] == 'en') {
+                $order = 'IF(`' . $this->post['sort'] . '`, "' . GRID_FILTER_CHECKBOX_YES .'", "' . GRID_FILTER_CHECKBOX_NO . '") ' . $this->post['dir'];
+            } else {
+                $order = 'IF(`' . $this->post['sort'] . '`, "' . GRID_FILTER_CHECKBOX_NO .'", "' . GRID_FILTER_CHECKBOX_YES . '") ' . $this->post['dir'];
+            }
         } else {
             $order = '`' . $this->post['sort'] . '` ' . $this->post['dir'];
         }
@@ -893,19 +806,11 @@ class Indi_Controller_Admin extends Indi_Controller{
 
         $section = new Section();
         $this->view->assign('trail', $this->trail);
-        if ($windowTitle = $this->view->trail(true)) {
-            $title .= ' &raquo; ' . strip_tags(implode(' &raquo; ', $windowTitle));
-        }
-        $this->view->assign('titleAdmin', $title);
         $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
         $this->view->assign('entity', $this->section->foreignRows->entityId);
         $title = $this->config->project;
-        if ($windowTitle = $this->trail->getWindowTitleSite()) {
-            $title .= ' &raquo; ' . $windowTitle;
-        }
-        $this->view->assign('title', $title);
         if ($this->trail->getItem()->model) {
             $this->view->assign('structure', $this->trail->getItem()->model->getFields());
         }

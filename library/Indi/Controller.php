@@ -132,7 +132,7 @@ class Indi_Controller{
 		// set up session
 		$this->session = new Indi_Session_Namespace($this->module);
 
-		// if action == index, set up page number
+        // if action == index, set up page number
 		if ($this->action == 'index') {
 			$this->page     = $params['page'] ? $params['page'] : 1;
 		}
@@ -157,21 +157,8 @@ class Indi_Controller{
 
 		Indi_Registry::set('view', $this->view);
 
-		$this->params = $params;
+        $this->params = $params;
 		$this->action = $params['action'];
-		$this->init();
-        //d($this->view);
-        //die();
-	}
-
-	/**
-     * Initialize object
-     * Called from {@link __construct()} as final step of object instantiation.
-     *
-     * @return void
-     */
-    public function init()
-    {
 	}
 
     public function modifyRowsetCondition($condition)
@@ -225,13 +212,13 @@ class Indi_Controller{
 		}
 	}
 	public function dispatch() {
-
-		header('Content-Type: text/html; charset=utf-8');
-		$this->preDispatch();
-		eval('$this->' . $this->params['action'] . 'Action();');
+        header('Content-Type: text/html; charset=utf-8');
+        $this->preDispatch();
+        eval('$this->' . $this->params['action'] . 'Action();');
 		$this->postDispatch();
 	}
-	public function preDispatch(){}
-	public function postDispatch(){}
-
+    /*
+    public function preDispatch(){}
+    public function postDispatch(){}
+    */
 }

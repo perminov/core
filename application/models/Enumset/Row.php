@@ -100,7 +100,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
     public function delete($parentDelete = false) {
         // Force deletion, used in case if there is a need to just remove rows from `enumset` table without
         // executing any ALTER queries
-        if ($parentDelete) return parent::delete();
+        if ($parentDelete || $GLOBALS['enumsetForceDelete']) return parent::delete();
 
         // Get Field row
         $fieldR = $this->getForeignRowByForeignKey('fieldId');

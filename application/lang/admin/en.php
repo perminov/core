@@ -16,5 +16,24 @@ define('FORM_UPLOAD_REPLACE_WITH', 'with');
 define('FORM_UPLOAD_NO', 'No');
 define('FORM_UPLOAD_BROWSE', 'Browse');
 
+define('FORM_DATETIME_HOURS', 'hours');
+define('FORM_DATETIME_MINUTES', 'minutes');
+define('FORM_DATETIME_SECONDS', 'seconds');
+
+define('FORM_SELECT_EMPTY_OPTION', 'Select');
+
 define('ENUMSET_DELETE_DENIED_LASTVALUE', 'Deleting of last existing item from the set is not allowed');
 define('ENUMSET_DELETE_DENIED_DEFAULTVALUE', 'Deleting of default value is not allowed');
+
+define('GRID_FILTER', 'Options');
+define('GRID_FILTER_CHECKBOX_YES', 'Yes');
+define('GRID_FILTER_CHECKBOX_NO', 'No');
+define('GRID_FILTER_OPTION_DEFAULT', 'Any');
+define('GRID_FILTER_DATE_FROM', 'from');
+define('GRID_FILTER_DATE_UNTIL', 'until');
+define('GRID_FILTER_NUMBER_FROM', 'between');
+define('GRID_FILTER_NUMBER_TO', 'and');
+
+
+define('MSGBOX_CONFIRM_TITLE', 'Confirm');
+define('MSGBOX_CONFIRM_MESSAGE', 'Are you sure?');

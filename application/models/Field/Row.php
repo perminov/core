@@ -1,14 +1,14 @@
 <?php
 class Field_Row extends Indi_Db_Table_Row
 {
-	public function delete($branchId = null){
+	public function delete(){
 		// delete uploaded images or files as they were uploaded as values
 		// of this field if they were uploaded
 		$this->deleteUploadedFilesIfTheyWere();
 
-		// standart Db_Table_Row deletion
+        // standart Db_Table_Row deletion
         $GLOBALS['enumsetForceDelete'] = true;
-		parent::delete($branchId);
+        parent::delete();
         unset($GLOBALS['enumsetForceDelete']);
 
         // delete db table assotiated column
@@ -336,7 +336,7 @@ class Field_Row extends Indi_Db_Table_Row
             }
         }
 
-        if (!$this->columnTypeId) return false;
+        if (!$this->columnTypeId) return $return;
 
         $columnTypeRow = $columnType->fetchRow('`id` = "' . $this->columnTypeId . '"');
 

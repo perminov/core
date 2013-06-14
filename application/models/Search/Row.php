@@ -3,11 +3,11 @@ class Search_Row extends Indi_Db_Table_Row{
     public function combo() {
         $store = array();
         $max = 0;
-        if ($this->foreign['fieldId']->storeRelationAbility != 'many') $store[] = array('id' => '%', 'title' => 'Неважно');
+        if ($this->foreign['fieldId']->storeRelationAbility != 'many') $store[] = array('id' => '%', 'title' => GRID_FILTER_OPTION_DEFAULT);
         if ($this->foreign['fieldId']->foreign['elementId']['alias'] == 'check') {
             $store = array_merge($store, array(
-                array('id' => '1', 'title' => 'Да'),
-                array('id' => '0', 'title' => 'Нет')
+                array('id' => '1', 'title' => GRID_FILTER_CHECKBOX_YES),
+                array('id' => '0', 'title' => GRID_FILTER_CHECKBOX_NO)
             ));
         } else if ($this->foreign['fieldId']->relation == 6) {
             $a = Misc::loadModel('Enumset')->fetchAll('`fieldId` = "' . $this->fieldId . '"', 'move');
@@ -28,7 +28,7 @@ class Search_Row extends Indi_Db_Table_Row{
                     }
                 }
             } else {
-                foreach ($a as $i) $store[] = array('id' => $i->alias, 'title' => strip_tags($i->title));
+                foreach ($a as $i) $store[] = array('id' => $i->alias, 'title' => trim($i->title));
             }
         } else if ($this->foreign['fieldId']->satellite) {
 
@@ -61,8 +61,9 @@ class Search_Row extends Indi_Db_Table_Row{
         if ($color && $this->foreign['fieldId']->relation != 6) {
             $max = 10;
         } else {
-            foreach ($store as $item) if (mb_strlen($item['title']) > $max) $max = mb_strlen(strip_tags($item['title']), 'utf-8');
+            foreach ($store as $item) if (mb_strlen($item['title']) > $max) $max = mb_strlen(str_replace('&nbsp;','' , strip_tags($item['title'])), 'utf-8');
         }
-        return array('width' => $max*7 + 23 + 5,'store' => json_encode($store), 'color' => $color ? 1 : 0);
+        $width = $max * 6 < 68 ? 68 : $max * 6;
+        return array('width' => $width,'store' => json_encode($store), 'color' => $color ? 1 : 0);
     }
 }

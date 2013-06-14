@@ -377,10 +377,8 @@ class Misc
 		return $model;
 	}
 	public function usubstr($string, $length, $addTripleDot = true){
-		$string = iconv('UTF-8', 'WINDOWS-1251', $string);
-		if (strlen($string) > $length && $addTripleDot) $dots = '...';
-		$string = substr($string, 0, $length) . $dots;
-		$string = iconv('WINDOWS-1251', 'UTF-8', $string);
+		if (mb_strlen($string, 'utf-8') > $length && $addTripleDot) $dots = '...';
+		$string = mb_substr($string, 0, $length, 'utf-8') . $dots;
 		return $string;
 	}
 	public function generateRandomSequence($length = 15, $useSpecialChars = false) {

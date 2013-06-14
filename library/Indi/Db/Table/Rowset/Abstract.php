@@ -41,6 +41,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      * @var array
      */
     protected $_rows = array();
+
     /**
      * Constructor.
      *
@@ -64,30 +65,8 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
         }
         // set the count of rows
         $this->_count = count($this->_data);
-
-        $this->init();
     }
 
-    /**
-     * Store data, class names, and state in serialized object
-     *
-     * @return array
-     */
-    public function __sleep()
-    {
-        return array('_data', '_tableClass', '_rowClass', '_pointer', '_count', '_rows', '_readOnly');
-    }
-
-    /**
-     * Initialize object
-     *
-     * Called from {@link __construct()} as final step of object instantiation.
-     *
-     * @return void
-     */
-    public function init()
-    {
-    }
     /**
      * Returns the table object, or null if this is disconnected rowset
      *
@@ -97,6 +76,35 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     {
         return $this->_table;
     }
+
+    /**
+     * Delete rowset using row by row scheme. If $parentDelete param is set to true,
+     * then there only standard Indi_Db_Table_Row deletion will take effect, with no
+     * additional deletion commands, specified in delete() methods of all classes that
+     * are extended from Indi_Db_Table_Row class, if they exist and have this method overrided
+     *
+     * @param bool $parentDelete
+     * @return int
+     */
+    public function delete($parentDelete = false) {
+        $deleted = 0;
+        foreach ($this as $row) {
+            $deleted += $row->delete($parentDelete);
+        }
+        return $deleted;
+    }
+
+    /**
+     * Returns all data as an array.
+     *
+     * Updates the $_data property with current row object values.
+     *
+     * @return array
+     */
+    public function toArray(){
+        return $this->_data;
+    }
+
     /**
      * Rewind the Iterator to the first element.
      * Similar to the reset() function for arrays in PHP.
@@ -254,6 +262,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     public function offsetUnset($offset)
     {
     }
+
     /**
      * Returns a Indi_Db_Table_Row from a known position into the Iterator
      *
@@ -269,31 +278,12 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
             $this->seek($position);
             $row = $this->current();
         } catch (Indi_Db_Table_Rowset_Exception $e) {
-            require_once 'Indi/Db/Table/Rowset/Exception.php';
+            require_once 'Indi/Exception.php';
             throw new Indi_Exception('No row could be found at position ' . (int) $position, 0, $e);
         }
         if ($seek == false) {
             $this->seek($key);
         }
         return $row;
-    }
-
-    /**
-     * Returns all data as an array.
-     *
-     * Updates the $_data property with current row object values.
-     *
-     * @return array
-     */
-    public function toArray(){
-        return $this->_data;
-    }
-
-    public function delete($parentDelete = false) {
-        $deleted = 0;
-        foreach ($this as $row) {
-            $deleted += $row->delete($parentDelete);
-        }
-        return $deleted;
     }
 }

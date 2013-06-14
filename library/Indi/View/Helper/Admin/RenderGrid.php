@@ -3,13 +3,13 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 {
     public function renderGrid()
     {
-		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
+        $gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
 		$currentPage = $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] ? $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] : 1;
         $filterFieldAliases = array();
         foreach ($this->view->trail->getItem()->filters as $filter) {
-            if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('number','calendar'))) {
+            if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('number','calendar','datetime'))) {
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-gte';
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-lte';
             } else {
@@ -33,17 +33,19 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			$columns = array_merge(array(array('header' => 'id', 'dataIndex' => 'id', 'width' => 30, 'sortable' => true, 'align' =>'right', 'hidden' => true)), $columns);
 			$a = array();
 			$buttonIconsPath = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/library/extjs4/resources/themes/images/default/shared/';
-			for($i = 0; $i < count($actions); $i++) if ($actions[$i]['display'] == 'y'){
+			for($i = 0; $i < count($actions); $i++) if ($actions[$i]['display'] == 1){
 
 				$a[] =  ($actions[$i]['alias'] == 'form' && $canadd && ! $this->view->trail->getItem()->section->disableAdd ? '{
 					text: "' . ACTION_CREATE . '",
 					iconCls: "add",
+					actionAlias: "' . $actions[$i]['alias'] . '",
 					handler: function(){
-	                    loadContent("/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/");
+	                    loadContent(grid.indi.href + this.actionAlias + "/");
 					}
 
 					},' : '') . '{
 					text: "' . $actions[$i]['title'] . '",
+					actionAlias: "' . $actions[$i]['alias'] . '",
 					'.(file_exists($buttonIconsPath . $actions[$i]['alias'] . '.gif') ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
 					handler: function(){
 						var selection = grid.getSelectionModel().getSelection();
@@ -59,20 +61,10 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 								icon: Ext.MessageBox.WARNING
 							});
 							return false;
-						}
-						if (' . $actions[$i]['condition'] . ') {
-						    var url = "/admin/' . $this->view->trail->getItem()->section->alias . '/' . $actions[$i]['alias'] . '/id/" + row.id + "/";
-							' . $actions[$i]['javascript'] . '
-                   			loadContent(url);
 						} else {
-							return false;
+						    ' . $actions[$i]['javascript'] . '
 						}
-						' : '
-						if (' . $actions[$i]['condition'] . ') {
-							' . $actions[$i]['javascript'] . '
-						} else {
-							return false;
-						}') . '
+						' : $actions[$i]['javascript']) . '
 					}
 				}';
 			}
@@ -120,7 +112,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                 }
             ";
 			if ($sectionsDropdown) $tbarItems[] = $sectionsDropdown;
-
 			if ($defaultSortField = $this->view->trail->getItem()->section->getForeignRowByForeignKey('defaultSortField')){
 				$this->view->trail->getItem()->section->defaultSortFieldAlias = $defaultSortField->alias;
 			}
@@ -280,7 +271,16 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					title: json.section.title,
 					loadMask: true,
 					region: "center",
-					closable: true,
+                    indi: {
+                        href : '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + json.params.section + '/',
+                        msgbox: {
+                            confirm: {
+                                title: '<?=MSGBOX_CONFIRM_TITLE?>',
+                                message: '<?=MSGBOX_CONFIRM_MESSAGE?>'
+                            }
+                        }
+                    },
+                    closable: true,
 					store: gridStore,
 					align: "stretch",
 					cls: 'mygrid',

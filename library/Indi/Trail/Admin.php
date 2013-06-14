@@ -109,33 +109,4 @@ class Indi_Trail_Admin extends Indi_Trail
         $this->items[] = new Indi_Trail_Admin_Item($sectionId, $rowIdentifier, $actionAlias, $trail);
         return end($this->items);
     }
-    /**
-     * Return particular contents of <title> tag in cms page header
-     *
-     * @return string
-     */
-    public function getWindowTitleAdmin()
-    {
-        $title = array();
-        foreach ($this->items as $i => $item) {
-            $title[] = $item->section->title;
-        }
-        end($this->items);
-        return implode(' &raquo; ', $title);
-    }
-    
-    public function getWindowTitleSite()
-    {
-        $title = array();
-        foreach ($this->items as $i => $item) {
-            if ($item->row->id) {
-                $title[] = stripcslashes($item->row->getTitle());
-            }
-            if ($i == $this->count() -1 && $item->action->alias == 'form') {
-                $title[] = $item->row->id ? $item->action->title : 'Add';
-            }
-        }
-        end($this->items);
-        return implode(' &raquo; ', $title);
-    }        
 }
