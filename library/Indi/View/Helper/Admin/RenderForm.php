@@ -31,16 +31,37 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                 }
             })
         </script>
-        <? $xhtml = ob_get_clean();
-        if ($this->view->trail->getItem()->row->id && count($sections)){
+        <?
+        $xhtml = ob_get_clean();
+        $parent = $this->view->trail->getItem(1);
+        $actionA = $this->view->trail->getItem()->actions->toArray();
+        foreach ($actionA as $actionI) if ($actionI['alias'] == 'save') {$save = true; break;}
         ob_start();?>
         <script>
             var toolbar = {
                 xtype: 'toolbar',
                 dock: 'top',
                 id: 'topbar',
-                items: ['->',
-                    '<?=GRID_SUBSECTIONS_LABEL?>:  ',
+                items: [
+                    {
+                        text: '<?=BUTTON_BACK?>',
+                        handler: function(){
+                            top.window.loadContent('<?=$_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->view->module) . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '')?>')
+                        },
+                        iconCls: 'back'
+                    }
+                    <?if ($save) {?>
+                    ,{
+                         text: '<?=BUTTON_SAVE?>',
+                         handler: function(){
+                             $('form[name="<?=$this->view->entity->table?>"]').submit()
+                         },
+                         iconCls: 'save'
+                    },
+                    <?}?>
+                    <? if ($this->view->trail->getItem()->row->id && count($sections)){?>
+                    '->',
+                    '<?=GRID_SUBSECTIONS_LABEL?>: ',
                     top.window.Ext.create('Ext.form.ComboBox', {
                         store: top.window.Ext.create('Ext.data.Store',{
                             fields: ['alias', 'title'],
@@ -65,6 +86,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                             }
                         }
                     })
+                    <?}?>
                 ]
             }
             var topbar = top.window.form.getDockedComponent('topbar');
@@ -75,7 +97,6 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
 			if (top.window.$('iframe[name="form-frame"]').height() > height) top.window.$('iframe[name="form-frame"]').css('height', height + 'px');
         </script>
         <? $xhtml .= ob_get_clean();
-        }
         ob_start();?>
         <script>
         $(document).ready(function(){

@@ -41,7 +41,6 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
         controls.upload{
             background: url(<?=$_SERVER['STD']?>/i/admin/transparentBg.png);
         }
-
     </style>
 </head>
 <body>

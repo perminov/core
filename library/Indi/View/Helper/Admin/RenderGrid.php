@@ -8,6 +8,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
 		$currentPage = $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] ? $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] : 1;
         $filterFieldAliases = array();
+        $icons = array('form', 'delete', 'save', 'toggle', 'up', 'down');
         foreach ($this->view->trail->getItem()->filters as $filter) {
             if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('number','calendar','datetime'))) {
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-gte';
@@ -32,7 +33,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 
 			$columns = array_merge(array(array('header' => 'id', 'dataIndex' => 'id', 'width' => 30, 'sortable' => true, 'align' =>'right', 'hidden' => true)), $columns);
 			$a = array();
-			$buttonIconsPath = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/library/extjs4/resources/themes/images/default/shared/';
 			for($i = 0; $i < count($actions); $i++) if ($actions[$i]['display'] == 1){
 
 				$a[] =  ($actions[$i]['alias'] == 'form' && $canadd && ! $this->view->trail->getItem()->section->disableAdd ? '{
@@ -46,7 +46,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					},' : '') . '{
 					text: "' . $actions[$i]['title'] . '",
 					actionAlias: "' . $actions[$i]['alias'] . '",
-					'.(file_exists($buttonIconsPath . $actions[$i]['alias'] . '.gif') ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
+					'.(in_array($actions[$i]['alias'], $icons) ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
 					handler: function(){
 						var selection = grid.getSelectionModel().getSelection();
 						if (selection.length) var row = selection[0].data;

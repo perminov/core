@@ -23,6 +23,21 @@
         button span.delete{
             background-image: url('<?=$_SERVER['STD']?>/library/extjs4/resources/themes/images/default/shared/delete.gif') !important;
         }
+        button span.back{
+            background-image: url('<?=$_SERVER['STD']?>/i/admin/icon-action-back.gif') !important;
+        }
+        button span.save{
+            background-image: url('<?=$_SERVER['STD']?>/i/admin/icon-action-save.png') !important;
+        }
+        button span.toggle{
+            background-image: url('<?=$_SERVER['STD']?>/i/admin/icon-action-toggle.png') !important;
+        }
+        button span.up{
+            background-image: url('<?=$_SERVER['STD']?>/i/admin/icon-action-upper.png') !important;
+        }
+        button span.down{
+            background-image: url('<?=$_SERVER['STD']?>/i/admin/icon-action-lower.png') !important;
+        }
     </style>
 </head>
 <body>
