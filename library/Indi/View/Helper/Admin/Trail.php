@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                             $trail[] = '<i style="cursor: default;">' . $title . '</i>';
                             $trail[] = '' . $item->action->title .'';
                         } else if ($item->action->alias == 'form') {
-                            $trail[] = 'Создать';
+                            $trail[] = ACTION_CREATE;
                         } else if ($item->action->rowRequired == 'n') {
                             $trail[] = '' . $item->action->title . '';
                         }

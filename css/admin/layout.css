@@ -54,7 +54,7 @@
 .trail-siblings ul {
     margin-top: -1px;
 }
-.x-mask{z-index: 99 !important;}
+/*.x-mask{z-index: 99 !important;}*/
 .trail-siblings ul li:hover, .x-boundlist-list-ct ul li:hover{
     background-color: #ecffeb;
     border-right: 0;

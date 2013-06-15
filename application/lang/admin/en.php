@@ -1,4 +1,9 @@
 <?php
+define('LOGIN_SCREEN_USERNAME', 'Username');
+define('LOGIN_SCREEN_PASSWORD', 'Password');
+define('LOGIN_SCREEN_ENTER', 'Enter');
+define('LOGIN_SCREEN_RESET', 'Reset');
+
 define('MENU', 'Menu');
 define('ACTION_CREATE', 'Create');
 define('GRID_WARNING_SELECTROW_MSG', 'Select a row');

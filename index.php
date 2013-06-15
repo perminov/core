@@ -2,6 +2,12 @@
 // Displays phpinfo if needed
 if(isset($_GET['info'])){phpinfo();die();}
 
+// Set up STD server variable in case if multiple IndiEngine projects 
+// are running within same document root, and there is one project that
+// is located in DOCUMENT_ROOT and others are in subfolders, so STD server
+// variable is passed WITH 'REDIRECT_' prefix, which is not covered by engine 
+if (!$_SERVER['STD'] && $_SERVER['REDIRECT_STD']) $_SERVER['STD'] = $_SERVER['REDIRECT_STD'];
+
 // Set up error reporting
 error_reporting(E_ALL^E_NOTICE);
 ini_set('display_errors', 'On');
