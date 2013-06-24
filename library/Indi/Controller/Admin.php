@@ -168,7 +168,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 if($this->params['json']) {
                     $this->preIndexJson();
                     if ($this->trail->getItem()->model->treeColumn) {
-                        $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order);
+                        $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order, $this->limit, ($this->start/$this->limit)+1);
                     } else {
                         $order = $this->getOrderForJsonRowset($condition);
                         $this->rowset = $this->trail->getItem()->model->fetchAll($condition, $order, $this->limit, ($this->start/$this->limit)+1);
@@ -451,7 +451,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
         // set up indent in case of tree structure of entity
         for($i = 0; $i < count($data); $i++) {
-            $data[$i]['title'] = $data[$i]['indent'] . $data[$i]['title'];
+            $data[$i]['title'] = $data[$i]['_system']['indent'] . $data[$i]['title'];
         }
 
         // get info about columns that wiil be presented in grid
@@ -464,7 +464,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         // unset columns in $data that will not be used in grid
         for ($i = 0; $i < count($data); $i++) {
             foreach ($columns as $column) {
-                if (!in_array($column, $gridFieldsAliases)) {
+                if (!in_array($column, $gridFieldsAliases) && $column != '_system') {
                     unset($data[$i][$column]);
                 }
             }

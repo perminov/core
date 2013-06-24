@@ -24,7 +24,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     /**
      * Iterator pointer.
      *
-     * @var integer
+     * @var int
      */
     protected $_pointer = 0;
 
@@ -34,13 +34,6 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      * @var integer
      */
     protected $_count;
-
-    /**
-     * Collection of instantiated Indi_Db_Table_Row objects.
-     *
-     * @var array
-     */
-    protected $_rows = array();
 
     /**
      * Constructor.
@@ -61,7 +54,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
             Indi_Loader::loadClass($this->_rowClass);
         }
         if (isset($config['data'])) {
-            $this->_data       = $config['data'];
+            $this->_data = $config['data'];
         }
         // set the count of rows
         $this->_count = count($this->_data);
@@ -110,7 +103,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      * Similar to the reset() function for arrays in PHP.
      * Required by interface Iterator.
      *
-     * @return Indi_Db_Table_Rowset_Abstract Fluent interface.
+     * @return Indi_Db_Table_Rowset_Abstract|void Fluent interface.
      */
     public function rewind()
     {
@@ -123,7 +116,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      * Similar to the current() function for arrays in PHP
      * Required by interface Iterator.
      *
-     * @return Indi_Db_Table_Row_Abstract current element from the collection
+     * @return Indi_Db_Table_Row_Abstract|mixed current element from the collection
      */
     public function current()
     {
@@ -131,18 +124,18 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
             return null;
         }
 
-        // do we already have a row object for this position?
-        if (empty($this->_rows[$this->_pointer])) {
-            $this->_rows[$this->_pointer] = new $this->_rowClass(
-                array(
-                     'table'    => $this->_table,
-                     'original'     => $this->_data[$this->_pointer]
-                )
-            );
-        }
+        // Strip _system properties from original
+        $original = $this->_data[$this->_pointer];
+        unset($original['_system']);
 
         // return the row object
-        return $this->_rows[$this->_pointer];
+        return new $this->_rowClass(
+            array(
+                'table'    => $this->_table,
+                'original' => $original,
+                'system'   => $this->_data[$this->_pointer]['_system']
+            )
+        );
     }
 
     /**
@@ -198,15 +191,15 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      * Required by interface SeekableIterator.
      *
      * @param int $position the position to seek to
-     * @return Indi_Db_Table_Rowset_Abstract
-     * @throws Indi_Db_Table_Rowset_Exception
+     * @throws Exception
+     * @return Indi_Db_Table_Rowset_Abstract|void
      */
     public function seek($position)
     {
         $position = (int) $position;
         if ($position < 0 || $position >= $this->_count) {
-            require_once 'Indi/Db/Table/Rowset/Exception.php';
-            throw new Indi_Exception("Illegal index $position");
+            require_once 'Indi/Exception.php';
+            throw new Exception("Illegal index $position");
         }
         $this->_pointer = $position;
         return $this;
@@ -229,7 +222,8 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      * Required by the ArrayAccess implementation
      *
      * @param string $offset
-     * @return Indi_Db_Table_Row_Abstract
+     * @throws Exception
+     * @return \Indi_Db_Table_Row_Abstract|mixed
      */
     public function offsetGet($offset)
     {
@@ -261,29 +255,5 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      */
     public function offsetUnset($offset)
     {
-    }
-
-    /**
-     * Returns a Indi_Db_Table_Row from a known position into the Iterator
-     *
-     * @param int $position the position of the row expected
-     * @param bool $seek wether or not seek the iterator to that position after
-     * @return Indi_Db_Table_Row
-     * @throws Indi_Db_Table_Rowset_Exception
-     */
-    public function getRow($position, $seek = false)
-    {
-        $key = $this->key();
-        try {
-            $this->seek($position);
-            $row = $this->current();
-        } catch (Indi_Db_Table_Rowset_Exception $e) {
-            require_once 'Indi/Exception.php';
-            throw new Indi_Exception('No row could be found at position ' . (int) $position, 0, $e);
-        }
-        if ($seek == false) {
-            $this->seek($key);
-        }
-        return $row;
     }
 }
