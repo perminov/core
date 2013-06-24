@@ -217,8 +217,8 @@ class Indi_Controller{
         eval('$this->' . $this->params['action'] . 'Action();');
 		$this->postDispatch();
 	}
-    /*
+    
     public function preDispatch(){}
     public function postDispatch(){}
-    */
+    
 }
