@@ -128,14 +128,18 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
         $original = $this->_data[$this->_pointer];
         unset($original['_system']);
 
-        // return the row object
-        return new $this->_rowClass(
-            array(
-                'table'    => $this->_table,
-                'original' => $original,
-                'system'   => $this->_data[$this->_pointer]['_system']
-            )
-        );
+        // do we already have a row object for this position?
+        if (empty($this->_rows[$this->_pointer])) {
+            $this->_rows[$this->_pointer] = new $this->_rowClass(
+                array(
+                    'table'    => $this->_table,
+                    'original'     => $original,
+                    'system'   => $this->_data[$this->_pointer]['_system']
+                )
+            );
+        }
+
+        return $this->_rows[$this->_pointer];
     }
 
     /**
