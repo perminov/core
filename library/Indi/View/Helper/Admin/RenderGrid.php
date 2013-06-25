@@ -190,13 +190,14 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				var gridStore = Ext.create('Ext.data.Store', {
 					fields: json.fields,
 					method: 'POST',
-					remoteSort: true,
+                    pageSize: json.section.rowsOnPage,
+                    remoteSort: true,
 					sorters:  (json.section.defaultSortField ? [{
 						property : json.section.defaultSortFieldAlias,
 						direction: json.section.defaultSortDirection
 					}] : []),
 					proxy:  new Ext.data.HttpProxy({
-						url: '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/',  // works
+						url: '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/',
 						method: 'POST',
 						reader: {
 							type: 'json',
@@ -260,6 +261,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                                     }
 								}
 							}
+                            // Mark rows as disabled if such rows exist
 							myMask.hide()
 						}
 					}
@@ -281,7 +283,27 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         }
                     },
                     closable: true,
-					store: gridStore,
+                    viewConfig: {
+                        getRowClass: function (record, index) {
+                            if (record.raw._system && record.raw._system.disabled) return 'disabled-row';
+                        }
+                    },
+                    listeners: {
+                        beforeselect: function (sm, record) {
+                            if (record.raw._system && record.raw._system.disabled) return false;
+                        },
+                        selectionchange: function (sm, selected) {
+                            if (selected.length > 0) {
+                                Ext.Array.each(selected, function (record) {
+                                    if (record.raw._system && record.raw._system.disabled) {
+                                        // deselect
+                                        sm.deselect(record, true);
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    store: gridStore,
 					align: "stretch",
 					cls: 'mygrid',
                     tools: [<?if(count($filterFieldAliases)){?>{
@@ -303,7 +325,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     border: 1,
 					id: json.section.alias + 'Grid',
 					bbar: new Ext.PagingToolbar({
-						pageSize: json.section.rowsOnPage,
 						store: gridStore,
 						displayInfo: true,
 						items:[

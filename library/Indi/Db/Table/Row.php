@@ -387,7 +387,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
 
 		if (in_array($treeKeyName, $cols)) {
 			// delete children
-			$children = $this->getTable()->fetchTree(null, null, $this->id);
+			$children = $this->getTable()->fetchTree(null, null, null, null, $this->id);
 			foreach ($children as $child) $child->delete();
 		}
 	}

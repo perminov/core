@@ -14,6 +14,7 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <link rel="stylesheet" type="text/css" href="/css/admin/layout.css" />
     <link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
     <link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
+    <link rel="stylesheet" type="text/css" href="/css/admin/combo.css" />
     <script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
     <?$config = Indi_Registry::get('config');?>
     <script type="text/javascript" src="/library/extjs4/ext-lang-<?=$config['view']->lang?>.js"></script>
@@ -21,6 +22,7 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
     <script type="text/javascript" src="/js/admin/dselect.js"></script>
+    <script type="text/javascript" src="/js/admin/combo.js?<?=rand(0, 10000)?>"></script>
     <script type="text/javascript" src="/js/admin/autocomplete.js"></script>
     <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>

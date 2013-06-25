@@ -66,4 +66,24 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             }
         }
     }
+    public function getComboData($field, $page = 1){
+        $entityM = Misc::loadModel('Entity');
+        $fieldM = Misc::loadModel('Field');
+        $entityR = $entityM->fetchRow('`table` = "' . $this->_table->_name . '"');
+        $fieldR = $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
+        $relatedM = Entity::getInstance()->getModelById($fieldR->relation);
+
+        // Set ORDER clause for combo data
+        if ($relatedM->fieldExists('move')) {
+            $order = 'move';
+        } else if ($relatedM->fieldExists('title')) {
+            $order = 'title';
+        } else {
+            $order = null;
+        }
+
+        if ($relatedM->treeColumn) {
+            return $relatedM->fetchTree(null, $order, 20, $page);
+        }
+    }
 }

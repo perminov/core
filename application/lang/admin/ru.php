@@ -25,6 +25,8 @@ define('FORM_DATETIME_HOURS', 'часов');
 define('FORM_DATETIME_MINUTES', 'минут');
 define('FORM_DATETIME_SECONDS', 'секунд');
 
+define('COMBO_OF', 'из');
+
 define('FORM_SELECT_EMPTY_OPTION', 'Выберите');
 
 define('ENUMSET_DELETE_DENIED_LASTVALUE', 'Нельзя удалять последнее значение из набора возможных');

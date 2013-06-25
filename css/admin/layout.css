@@ -233,3 +233,11 @@ controls{
 .x-ie .x-fieldset .x-fieldset-body {
     padding-top: 0px !important;
 }
+.mygrid .disabled-row .x-grid-cell .x-grid-cell-inner, .disabled-row .x-grid-cell .x-grid-cell-inner font{
+    color: lightgray !important;
+}
+.mygrid  .disabled-row.x-grid-row-over td.x-grid-cell, .x-grid-row-over .x-grid-rowwrap-div {
+    background-color: white !important;
+    border-color: #ededed;
+    border-top-color: #fafafa;
+}

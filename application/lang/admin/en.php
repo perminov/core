@@ -25,6 +25,8 @@ define('FORM_DATETIME_HOURS', 'hours');
 define('FORM_DATETIME_MINUTES', 'minutes');
 define('FORM_DATETIME_SECONDS', 'seconds');
 
+define('COMBO_OF', 'of');
+
 define('FORM_SELECT_EMPTY_OPTION', 'Select');
 
 define('ENUMSET_DELETE_DENIED_LASTVALUE', 'Deleting of last existing item from the set is not allowed');
