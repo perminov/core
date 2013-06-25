@@ -1,5 +1,5 @@
 <?php
-class Indi_Db_Table extends Indi_Db_Table_Abstract
+class Indi_Db_Table extends Indi_Db_Table_Beautiful
 {
 	/**
      * Classname for row
@@ -191,108 +191,12 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
         return $array;
     }
 
-    /**
-     * Fetches all rows.
-     *
-     * Honors the Indi_Db_Adapter fetch mode.
-     *
-     * @param string|array $where            OPTIONAL An SQL WHERE clause.
-     * @param string|array $order            OPTIONAL An SQL ORDER clause.
-     * @param int          $count            OPTIONAL An SQL LIMIT count.
-     * @param int          $page             OPTIONAL number of page
-     * @return Indi_Db_Table_Rowset_Abstract The row results per the Indi_Db_Adapter fetch mode.
-     */
-    public function fetchAll($where = null, $order = null, $count = null, $page = null, $calc = null, $special = false)
-    {
-		if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-
-		if (is_array($order) && count($order)) $order = implode(', ', $order);
-
-		if ($count !== null || $page !== null) {
-			$limit = (is_null($page) ? ($count ? '0' : $page) : $count * ($page - 1)) . ($count ? ',' : '') . $count;
-
-			// the SQL_CALC_FOUND_ROWS flag
-			if (!is_null($page)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
-		}
-
-		$sql = 'SELECT ' . ($limit ? $calcFoundRows : '') . '* FROM `' . $this->_name . '`'
-				. ($where ? ' WHERE ' . $where : '')
-				. ($order ? ' ORDER BY ' . $order : '')
-				. ($limit ? ' LIMIT ' . $limit : '');
-
-		$data = self::$_defaultDb->query($sql)->fetchAll();
-		$data = array(
-			'table'   => $this,
-			'data'     => $data,
-			'rowClass' => $this->_rowClass,
-			'foundRows'=> $limit ? current(self::$_defaultDb->query('SELECT FOUND_ROWS()')->fetch()) : count($data)
-		);
-		if ($special) d($sql . "\n", 'a');
-		return new $this->_rowsetClass($data);
-    }
-
     public function getImplodedIds($where = null, $asArray = false, $order = null)
     {
         $np = $this->fetchAll($where, $order);
         $ids = array();
         foreach ($np as $npr) $ids[] = $npr->id;
         return $asArray ? $ids : '\'' . implode('\',\'', $ids) . '\'';
-    }
-
-	/**
-     * Get rowset as tree
-     *
-     * @param int $parentId
-     * @param bool $onlyToggledOn 
-     * @param bool $recursive - all levels of tree if true
-     * @param int $level - needed for tree indentation
-     * @return Indi_Db_Table_Rowset object
-     */
-	public function fetchTreeOld($treeKeyName, $parentId = 0, $onlyToggledOn = false, $recursive = true, $level = 0, $order = null, $condition = null)
-	{
-		static $data;
-		$rowset = $this->fetchAll(($parentId ? '`' . $treeKeyName . '` = "' . $parentId . '"' : '`' . $treeKeyName . '` = 0') . ($onlyToggledOn ? ' AND `toggle`="y"' : '') . ($condition ? ' AND ' . $condition : ''), $order);
-		if ($recursive) {
-			foreach ($rowset as $row) {
-				$row->indent = Misc::indent($level);
-				$data[] = $row->toArray();
-				$this->fetchTree($treeKeyName, $row->id, $onlyToggledOn, $recursive, $level+1, $order, $condition);
-			}
-			if ($parentId == 0) {
-				$data = array ('table' => $this, 'data' => $data, 'rowClass' => $this->_rowClass, 'stored' => true, 'foundRows' => count($data));
-				return new $this->_rowsetClass($data);
-			}
-		}
-		return $rowset;
-	}
-
-	/**
-     * Get rowset as tree
-     *
-     * @param int $parentId
-     * @param bool $onlyToggledOn
-     * @param bool $recursive - all levels of tree if true
-     * @param int $level - needed for tree indentation
-     * @return Indi_Db_Table_Rowset object
-     */
-    public function fetchTree($where = null, $order = null, $parentId = 0, $recursive = true)
-    {
-        $tc = $this->info('name') . 'Id';
-        $nested = array();
-        $data = $this->fetchAll($where, $order)->toArray();
-        foreach ($data as $item) $nested[$item[$tc]][] = $item;
-        $data = $this->_append($parentId, array(), $nested, 0, $recursive);
-        $data = array ('table' => $this, 'data' => $data, 'rowClass' => $this->_rowClass, 'foundRows' => count($data));
-        return new $this->_rowsetClass($data);
-    }
-
-    protected function _append($parentId, $data, $nested, $level = 0, $recursive = true) {
-        if (is_array($nested[$parentId])) foreach ($nested[$parentId] as $item) {
-            $item['indent'] = Misc::indent($level);
-            $data[] = $item;
-            if ($recursive) $data = $this->_append($item['id'], $data, $nested, $level + 1);
-        }
-        return $data;
     }
 
 	public function getTreeColumnName(){

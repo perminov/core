@@ -15,6 +15,13 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     protected $_modified = array();
 
     /**
+     * System data, used for internal needs
+     *
+     * @var array
+     */
+    protected $_system = array();
+
+    /**
      * Object of type Indi_Db_Table_Abstract or some of extended class
      *
      * @var
@@ -36,6 +43,7 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         $this->_table = $config['table'];
         $this->_original = $config['original'];
         $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+        $this->_system = is_array($config['system']) ? $config['system'] : array();
     }
 
     /**
@@ -194,7 +202,33 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         return $this->__unset($offset);
     }
 
+    /**
+     * Forces value setting for a given key at $this->_modified array,
+     * without 'same-value' check. Actually this function was created
+     * to deal with cases, when we need to skip prepending a hue number
+     * to #RRGGBB color, because we need to display color value without hue number in forms.
+     *
+     * @param $key
+     * @param $value
+     * @return mixed
+     */
     public function modified($key, $value) {
         return $this->_modified[$key] = $value;
+    }
+
+    /**
+     * This function sets of gets a value of $this->_system array by a given key
+     *
+     * @return mixed
+     */
+    public function system() {
+        if (func_num_args() == 1) {
+            return $this->_system[func_get_arg(0)];
+        } else if (func_num_args() == 2) {
+            $this->_system[$key] = func_get_arg(1);
+            return $this;
+        } else {
+            return $this->_system;
+        }
     }
 }

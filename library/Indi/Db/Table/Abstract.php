@@ -215,7 +215,7 @@ abstract class Indi_Db_Table_Abstract {
      * @param  $key The specific info part to return OPTIONAL
      * @return mixed
      */
-    public function info($key = null)
+    public function info($key = '')
     {
         $info = array(
             self::NAME             => $this->_name,
@@ -223,7 +223,7 @@ abstract class Indi_Db_Table_Abstract {
             self::ROWSET_CLASS     => $this->getRowsetClass(),
         );
 
-        if ($key === null) {
+        if ($key == '') {
             return $info;
         }
 

@@ -318,7 +318,7 @@ class Misc
      * @param int $count
      * @return string $indent
      */
-    function indent($level, $count = 5, $char = '&nbsp;')
+    static function indent($level, $count = 5, $char = '&nbsp;')
     {
         for ($i = 0; $i < $count; $i++) $single .= $char;
         for ($i = 0; $i < $level; $i++) $indent .= $single;
