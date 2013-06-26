@@ -769,7 +769,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         }
         $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
-    public function postDispatch(){
+    public function postDispatch($return = false){
         // assign general template data
         $this->assign();
         if (!$this->section && $this->action == 'index') {
@@ -786,7 +786,11 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
             $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
         }
-        die($out);
+        if ($return) {
+            return $out;
+        } else {
+            die($out);
+        }
     }
     /**
       * Assigns admin name, date, menu, trail and all

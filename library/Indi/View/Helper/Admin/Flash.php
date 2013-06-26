@@ -1,7 +1,7 @@
 <?php
 class Indi_View_Helper_Admin_Flash extends Indi_View_Helper_Abstract
 {
-    public function flash($entity = null, $id = null, $name = null, $silence = true)
+    public function flash($entity = null, $id = null, $name = null, $silence = true, $width = null, $height = null)
     {
         static $index = null;
 
@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_Flash extends Indi_View_Helper_Abstract
             }
         }
 
-        $xhtml = Indi_Image::flash($entity, $id, $name, $copy, $silence);
+        $xhtml = Indi_Image::flash($entity, $id, $name, $silence, $width, $height);
         
         return $xhtml;
     }

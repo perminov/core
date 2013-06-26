@@ -66,6 +66,25 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             }
         }
     }
+
+    /**
+     * Fully deletion - including attached files and foreign key usages, if will be found
+     *
+     * @return int Number of deleted rows (1|0)
+     */
+    public function delete(){
+        // Delete all files and images that have been attached to row
+        $this->deleteUploadedFiles();
+
+        // Delete other rows of entities, that have fields, related to entity of current row
+        // This function also covers other situations, such as if entity of current row has a tree structure,
+        // or row has dependent rowsets
+        $this->deleteForeignKeysUsages();
+
+        // Standard Indi_Db_Table_Row deletion
+        return parent::delete();
+    }
+
     public function getComboData($field, $page = 1){
         $entityM = Misc::loadModel('Entity');
         $fieldM = Misc::loadModel('Field');

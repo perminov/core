@@ -333,22 +333,6 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
         return $ids;
     }
 
-	public function delete(){
-		// delete all files and images that have been attached to row
-		$this->deleteUploadedFiles();
-
-        // if entity has a tree structure, we delete all children
-		$this->deleteRowChildrenIfEntityHasATreeStructure();
-
-        // delete dependent rowsets
-		//$this->deleteDependentRowsets();
-
-        // delete other rows of entities, that have fields, related to entity of current row
-        $this->deleteForeignKeysUsages();
-
-        // standart Indi_Db_Table_Row deletion
-		return parent::delete();
-	}
 	public function deleteUploadedFiles($name = '', $entity = ''){
         if (!$entity) $entity = strtolower($this->getTable()->info('name'));
 

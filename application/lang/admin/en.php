@@ -14,7 +14,7 @@ define('GRID_SUBSECTIONS_SEARCH_LABEL', 'Search');
 define('BUTTON_BACK', 'Back');
 define('BUTTON_SAVE', 'Save');
 
-define('FORM_UPLOAD_REMAIN', 'Remain');
+define('FORM_UPLOAD_REMAIN', 'No change');
 define('FORM_UPLOAD_DELETE', 'Delete');
 define('FORM_UPLOAD_REPLACE', 'Replace');
 define('FORM_UPLOAD_REPLACE_WITH', 'with');

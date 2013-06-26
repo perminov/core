@@ -810,3 +810,69 @@ class Css{
 function ie8() {
 	return preg_match('/MSIE 8/', $_SERVER['HTTP_USER_AGENT']);
 }
+function getflashsize($path){
+    class blob_data_as_file_stream {
+
+        private static $blob_data_position = 0;
+        public static $blob_data_stream = '';
+
+        public static function stream_open($path,$mode,$options,&$opened_path){
+            self::$blob_data_position = 0;
+            return true;
+        }
+
+        public static function stream_seek($seek_offset,$seek_whence){
+            $blob_data_length = strlen(self::$blob_data_stream);
+            switch ($seek_whence) {
+                case SEEK_SET:
+                    $new_blob_data_position = $seek_offset;
+                    break;
+                case SEEK_CUR:
+                    $new_blob_data_position = self::$blob_data_position+$seek_offset;
+                    break;
+                case SEEK_END:
+                    $new_blob_data_position = $blob_data_length+$seek_offset;
+                    break;
+                default:
+                    return false;
+            }
+            if (($new_blob_data_position >= 0) AND ($new_blob_data_position <= $blob_data_length)){
+                self::$blob_data_position = $new_blob_data_position;
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+        public static function stream_tell(){
+            return self::$blob_data_position;
+        }
+
+        public static function stream_read($read_buffer_size){
+            $read_data = substr(self::$blob_data_stream,self::$blob_data_position,$read_buffer_size);
+            self::$blob_data_position += strlen($read_data);
+            return $read_data;
+        }
+
+        public static function stream_write($write_data){
+            $write_data_length=strlen($write_data);
+            self::$blob_data_stream = substr(self::$blob_data_stream,0,self::$blob_data_position).
+                $write_data.substr(self::$blob_data_stream,self::$blob_data_position+=$write_data_length);
+            return $write_data_length;
+        }
+
+        public static function stream_eof(){
+            return self::$blob_data_position >= strlen(self::$blob_data_stream);
+        }
+
+    }
+
+    // Register stream wrapper
+    stream_wrapper_register("FlashStream", "blob_data_as_file_stream");
+
+    // Store file contents to the data stream
+    blob_data_as_file_stream::$blob_data_stream = file_get_contents($path);
+
+    //Run getimagesize() on the data stream
+    return @getimagesize('FlashStream://');
+}

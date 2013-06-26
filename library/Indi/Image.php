@@ -78,7 +78,7 @@ abstract class Indi_Image
         $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
 
 		if (!$requirements) {
-			$requirements = array('type' => 'image', 'maxsize' => 1024 * 1024 * 5);
+			$requirements = array('maxsize' => 1024 * 1024 * 5);
 		}
 		//d($requirements);
         $files = Indi_Registry::get('files');
@@ -626,7 +626,7 @@ abstract class Indi_Image
         $types=array('jpeg'=>'jpeg','pjpeg'=>'jpeg','jpg'=>'jpeg','gif'=>'gif','png'=>'png','x-png'=>'png');
         return in_array($info['extension'],array_keys($types))?'image/'.$info['extension']:'';
     }
-    public function flash($entity, $id, $key = null, $silence = true)
+    public function flash($entity, $id, $key = null, $silence = true, $width = null, $height = null)
     {
         if ($id) {
 			$config = Indi_Registry::get('config');
@@ -644,7 +644,17 @@ abstract class Indi_Image
 					$file = glob($path);
                     if (count($file)) {
                         $pathinfo = pathinfo($file[0]);
-                        $xhtml = '<embed src="' . $relative . $name . '.' .$pathinfo['extension'] . '" width="200"/>';
+                        if ($width || $height) {
+                            if ($width) {
+                                $size = ' width="' . $width . '"';
+                            }
+                            if ($height) {
+                                $size .= ' height="' . $height . '"';
+                            }
+                        } else {
+                            $size = '';
+                        }
+                        $xhtml = '<embed src="' . $_SERVER['STD'] . $relative . $name . '.' .$pathinfo['extension'] . '"' . $size . ' type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" play="true" loop="true" menu="true"/>';
                     } else if (!$silence) {
                         $xhtml = 'Cannot find any file on pattern ' . $path;
                     }

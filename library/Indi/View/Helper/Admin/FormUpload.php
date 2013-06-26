@@ -25,12 +25,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
-			// get info about mime type
-//			$finfo = finfo_open(FILEINFO_MIME);
-//			$info = explode(';', finfo_file($finfo, $file));
-//			$mime = $info[0];
-//			list($type, $exaction) = explode('/', $mime);
-			$types = array('image' => 'gif,png,jpg', 'flash' => 'swf', 'video' => 'avi,mpg,mp4,3gp', 'file' => '');
+			$types = array('image' => 'gif,png,jpg,jpeg', 'flash' => 'swf', 'video' => 'avi,mpg,mp4,3gp', 'file' => '');
 			$info = pathinfo($file);
 			foreach ($types as $type => $extensions) if (in_array($info['extension'], explode(',', $extensions))) break;
 			$xhtml = '<field>';
@@ -47,6 +42,17 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
                     break;
 				case 'flash':
 					$uploaded = $this->view->flash($entity, $id, $name, $silence) . '<br>';
+                    preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));$src = $matches[1];
+                    $abs = $_SERVER['DOCUMENT_ROOT'] . $src;
+                    $info = getflashsize($abs);
+                    if ($_SERVER['STD']) $uploaded = preg_replace('~src="' . preg_quote($_SERVER['STD']) . '~', 'src="', $uploaded);
+                    if ($info[0] > $this->view->get['width'] + 8) {
+                        $width = $this->view->get['width'] + 8;
+                        $height = ceil($width/$info[0] * $info[1]);
+                        $uploaded = preg_replace('/src="/', 'width="' . $width .'" height="' . $height . '" wmode="opaque" src="', $uploaded);
+                    } else {
+                        $uploaded = preg_replace('/src="/', $info[3] . ' wmode="opaque" src="', $uploaded);
+                    }
 					break;
 				case 'video':
 					$uploaded = '<a href="' . $relative . $info['basename'] . '" target="_blank" title="Скачать">Видео</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
@@ -56,7 +62,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					break;
 			}
 
-			$xhtml .= '<controls class="upload' . (!in_array($type, array('image','video'))?' no-file-yet':'') . '"  field="' . $name . '">';
+			$xhtml .= '<controls class="upload' . (!in_array($type, array('image', 'video', 'flash'))?' no-file-yet':'') . '"  field="' . $name . '">';
 			$xhtml .= $type == 'file' ? $uploaded : '';
 			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
 			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_REMAIN . '</label>&nbsp;</span>';
