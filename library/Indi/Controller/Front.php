@@ -63,8 +63,6 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->request = $this->getRequest();
 		$this->view->controller = $this->controller;
 		$this->view->staticPages = Misc::loadModel('Staticpage')->fetchAll('`toggle` = "y"', 'title')->toArray();
-		$this->view->footer1 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer1"');
-		$this->view->footer2 = Misc::loadModel('Staticpage')->fetchRow('`alias` = "footer2"');
 		$this->view->visitors = $this->visitors();
 
         // Меню
@@ -101,6 +99,13 @@ class Indi_Controller_Front extends Indi_Controller{
 		if ($GLOBALS['enableSeoUrls'] == 'true') $out = Indi_Uri::sys2seo($out);
 		$out = $this->subdomainMaintenance($out);
 		$out = $this->httpsMaintenance($out);
+
+        if ($_SERVER['STD']) {
+            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+        }
+		
 		if (isset($this->get['p']))echo mt();
         die($out);
 	}

@@ -113,9 +113,9 @@ class Indi_Uri {
 			if (in_array($subdomain, $subdomainsArray)) {
 				$_SERVER['REQUEST_URI'] = '/' . $subdomain . $_SERVER['REQUEST_URI'];
 			}
+			Indi_Registry::set('subdomain', $subdomain);
 		}
 		Indi_Registry::set('subdomains', $subdomainsArray);
-		Indi_Registry::set('subdomain', $subdomain);
 	}
 
 	public function setDbCacheUsageIfNeed(){
