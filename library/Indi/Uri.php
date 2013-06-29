@@ -1,6 +1,6 @@
 <?php
 class Indi_Uri {
-	public function dispatch(){
+	public function dispatch($params = array()){
 		$this->preDispatch();
 
         if ($GLOBALS['cmsOnlyMode']) $_SERVER['REQUEST_URI'] = '/admin' . $_SERVER['REQUEST_URI'];
