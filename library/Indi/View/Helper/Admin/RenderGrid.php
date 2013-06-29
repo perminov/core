@@ -159,7 +159,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                             }
                         }
                     }
-                    gridStore.getProxy().extraParams= {search: JSON.stringify(params)};
+                    gridStore.getProxy().extraParams = {search: JSON.stringify(params)};
                     Ext.getCmp('fast-search-keyword').setDisabled(usedFilterAliasesThatHasGridColumnRepresentedBy.length == gridColumnsAliases.length);
                     if (obj.xtype == 'combobox') {
                         if (obj.multiSelect) {
@@ -263,7 +263,14 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							}
                             // Mark rows as disabled if such rows exist
 							myMask.hide()
-						}
+
+                            // Set up full request string (but without paging params)
+                            var url = grid.store.getProxy().url;
+                            var get = [];
+                            if (grid.store.getProxy().extraParams.search) get.push('search=' + encodeURIComponent(grid.store.getProxy().extraParams.search));
+                            if (grid.store.getSorters().length) get.push('sort=' + encodeURIComponent(JSON.stringify(grid.store.getSorters())));
+                            grid.indi.request = url + (get.length ? '?' + get.join('&') : '');
+                        }
 					}
 				});
 

@@ -180,12 +180,14 @@ class Indi_Controller{
 			} else {
 				$hidden = 0;
 			}
-			$this->db->query('INSERT INTO `visitor` SET 
-				`title` = "' . $_COOKIE['PHPSESSID'] . '", 
-				`lastActivity` = "' . date('Y-m-d H:i:s') . '", 
-				`userId` = "' . ($_SESSION['userId'] ? $_SESSION['userId'] : 0) . '",
-				`hidden` = "' . $hidden . '"
-			');
+
+            $visitorR = Misc::loadModel('Visitor')->createRow();
+            $visitorR->title = $_COOKIE['PHPSESSID'];
+            $visitorR->lastActivity = date('Y-m-d H:i:s');
+            $visitorR->userId = ($_SESSION['userId'] ? $_SESSION['userId'] : 0);
+            $visitorR->hidden = $hidden;
+            $visitorR->save();
+
 			$visitors = $this->db->query('SELECT * FROM `visitor`')->fetchAll();
 			$info['logged'] = array();
 			$info['loggedIds'] = array();
@@ -220,5 +222,5 @@ class Indi_Controller{
     
     public function preDispatch(){}
     public function postDispatch(){}
-    
+
 }

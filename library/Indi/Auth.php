@@ -209,7 +209,7 @@ class Indi_Auth{
 					}
 				} while (true);
 
-				if (!$redirect && $admin['alternate'] && $this->identifier) {
+				if (!$redirect && $admin['alternate'] && $this->identifier && $info['entityId']) {
 					$entity = Entity::getModelById($info['entityId']);
 					$field = $admin['alternate']. 'Id';
 					if ($entity->fieldExists($field))

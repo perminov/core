@@ -45,8 +45,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         if (isset($this->get['limit'])) {
             $this->limit = $this->get['limit'];
             $this->start = $this->get['start'];
-			$_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
+			$this->page = $_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
         }
+
         $section = Misc::loadModel('Section');
 
         // set up all trail info
@@ -168,10 +169,10 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 if($this->params['json']) {
                     $this->preIndexJson();
                     if ($this->trail->getItem()->model->treeColumn) {
-                        $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order, $this->limit, ($this->start/$this->limit)+1);
+                        $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order, $this->limit, $this->page);
                     } else {
                         $order = $this->getOrderForJsonRowset($condition);
-                        $this->rowset = $this->trail->getItem()->model->fetchAll($condition, $order, $this->limit, ($this->start/$this->limit)+1);
+                        $this->rowset = $this->trail->getItem()->model->fetchAll($condition, $order, $this->limit, $this->page);
                     }
                 }
             }
@@ -444,7 +445,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     {
 
     }
-    public function prepareJsonDataForIndexAction(){
+    public function prepareJsonDataForIndexAction($json = true){
         // set up raw grid data
         $data = $this->rowset->toArray();
         $this->doSomethingCustom();
@@ -596,9 +597,12 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 $i++;
             }
         }
-
-        $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
-        return json_encode($jsonData);
+        if ($json) {
+            $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
+            return json_encode($jsonData);
+        } else {
+            return $data;
+        }
     }
 
     function setGridTitlesByCustomLogic(&$data){}

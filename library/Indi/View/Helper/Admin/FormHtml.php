@@ -71,9 +71,9 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
             var config = <?=json_encode($CKconfig)?>;
 
             config.toolbar = [
-                {items: ['Source'] },
+                {items: ['Source', 'Preview'] },
                 {items: [ 'Paste', 'PasteText', 'PasteFromWord', 'Table'] },
-                {items: [ 'Image', 'Flash','Link', 'Unlink'] },
+                {items: [ 'Image', 'Flash', 'oembed','Link', 'Unlink'] },
                 {items: [ 'Bold', 'Italic', 'Underline'] },
                 {items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'] },
                 {items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'] },

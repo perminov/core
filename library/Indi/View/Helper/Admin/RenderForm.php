@@ -48,7 +48,8 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                         handler: function(){
                             top.window.loadContent('<?=$_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->view->module) . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '')?>')
                         },
-                        iconCls: 'back'
+                        iconCls: 'back',
+                        id: 'button-back'
                     }
                     <?if ($save) {?>
                     ,{
@@ -56,7 +57,8 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                          handler: function(){
                              $('form[name="<?=$this->view->entity->table?>"]').submit()
                          },
-                         iconCls: 'save'
+                         iconCls: 'save',
+                         id: 'button-save'
                     },
                     <?}?>
                     <? if ($this->view->trail->getItem()->row->id && count($sections)){?>
