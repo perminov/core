@@ -9,6 +9,9 @@ class Indi_View_Helper_Admin_Viewport extends Indi_View_Helper_Abstract
         $lang = $config['view']->lang;
 	ob_start();?>
 <script>
+var STD = '<?=$_SERVER['STD']?>';
+var COM = '<?=$GLOBALS['cmsOnlyMode'] ? '' : '/admin'?>';
+var PRE = STD+COM;
 Ext.onReady(function() {
 	viewport = Ext.create('Ext.Viewport', {
 		layout: {type: 'border', padding: 5},

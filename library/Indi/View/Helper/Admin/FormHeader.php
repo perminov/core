@@ -50,6 +50,9 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 <script>Ext.require(['*']);</script>
 <script>top.window.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>
 <script>
+var STD = '<?=$_SERVER['STD']?>';
+var COM = '<?=$GLOBALS['cmsOnlyMode'] ? '' : '/admin'?>';
+var PRE = STD+COM;
     Ext.onReady(function(){
         top.window.$('.trail-item-section').hover(function(){
             top.window.$('.trail-siblings').hide();

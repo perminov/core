@@ -568,9 +568,9 @@ class Indi_View implements Indi_View_Interface
      * @param  string $name
      * @return object
      */
-    public function getHelper($name)
+    public function getHelper($name, $throwExceptions = true)
     {
-        return $this->_getPlugin('helper', $name);
+        return $this->_getPlugin('helper', $name, $throwExceptions);
     }
 
     /**
@@ -1119,7 +1119,7 @@ class Indi_View implements Indi_View_Interface
      * @param  string $name
      * @return object
      */
-    private function _getPlugin($type, $name)
+    private function _getPlugin($type, $name, $throwExceptions = true)
     {
         $name = ucfirst($name);
         switch ($type) {
@@ -1132,9 +1132,9 @@ class Indi_View implements Indi_View_Interface
                 $store    = $this->_helper;
                 break;
         }
-
         if (!isset($store[$name])) {
-            $class = $this->getPluginLoader($type)->load($name);
+            $class = $this->getPluginLoader($type)->load($name, $throwExceptions);
+			if (!$class) return $class;
             $store[$name] = new $class();
             if (method_exists($store[$name], 'setView')) {
                 $store[$name]->setView($this);
