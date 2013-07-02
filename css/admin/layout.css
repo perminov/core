@@ -4,7 +4,7 @@
     background-image:url('/library/extjs4/resources/images/default/s.gif') !important;
     width: 0;
 }
-.mygrid .x-grid-row-selected.x-grid-row-focused td.x-grid-cell, .x-grid-row-selected.x-grid-row-focused .x-grid-rowwrap-div {
+.mygrid .x-grid-row-selected td.x-grid-cell, .x-grid-row-selected .x-grid-rowwrap-div {
     background-color: #dfffdf !important;
     border-top: 1px solid #dfffdf;
     border-bottom: 1px solid #e0eeff;

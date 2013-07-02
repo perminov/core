@@ -275,7 +275,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				});
 
 				grid = Ext.create('Ext.grid.Panel', {
-					multiSelect: false,
+					multiSelect: <?=$this->view->multiSelect ? 'true' : 'false'?>,
 					columns: json.columns,
 					title: json.section.title,
 					loadMask: true,
