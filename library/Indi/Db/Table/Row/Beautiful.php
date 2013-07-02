@@ -8,6 +8,13 @@
 class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
     /**
+     * Store regular expression for checks of email addresses validity
+     *
+     * @var string
+     */
+    public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
+	
+    /**
      * Saves row into database table. But.
      * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
      * (but is going to be inserted), and if so - autoset value for `move` column after row save
