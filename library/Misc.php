@@ -810,6 +810,9 @@ class Css{
 function ie8() {
 	return preg_match('/MSIE 8/', $_SERVER['HTTP_USER_AGENT']);
 }
+function ipad() {
+	return preg_match('/iPad/', $_SERVER['HTTP_USER_AGENT']);
+}
 function getflashsize($path){
     class blob_data_as_file_stream {
 
