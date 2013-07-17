@@ -111,7 +111,7 @@ class Indi_Auth{
 				`s`.`sectionId` as `sectionId`
             FROM `admin` `a` 
                LEFT JOIN `profile` `p` ON (`p`.`id` = `a`.`profileId`)
-               LEFT JOIN `section` `s` ON (`s`.`id` = (SELECT `id` FROM `section` WHERE `alias` = '" . $section . "'))
+               LEFT JOIN `section` `s` ON (`s`.`id` = (SELECT `id` FROM `section` WHERE `alias` = '" . $section . "' ORDER BY `id` DESC LIMIT 1))
                LEFT JOIN `action` `ac` ON (`ac`.`id` = (SELECT `id` FROM `action` WHERE `alias`='" . $action . "'))
                LEFT JOIN `section2action` `sa` ON (`sa`.`actionId` = `ac`.`id` AND `sa`.`sectionId` = `s`.`id`)
             WHERE `a`.`id` = '" . $admin['id'] . "'
@@ -163,7 +163,7 @@ class Indi_Auth{
 				`s`.`sectionId` as `sectionId`
             FROM `" . $admin['alternate'] . "` `a` 
                LEFT JOIN `profile` `p` ON (`p`.`id` = '" . $admin['profileId'] . "')
-               LEFT JOIN `section` `s` ON (`s`.`id` = (SELECT `id` FROM `section` WHERE `alias` = '" . $section . "'))
+               LEFT JOIN `section` `s` ON (`s`.`id` = (SELECT `id` FROM `section` WHERE `alias` = '" . $section . "' ORDER BY `id` DESC LIMIT 1))
                LEFT JOIN `action` `ac` ON (`ac`.`id` = (SELECT `id` FROM `action` WHERE `alias`='" . $action . "'))
                LEFT JOIN `section2action` `sa` ON (`sa`.`actionId` = `ac`.`id` AND `sa`.`sectionId` = `s`.`id`)
             WHERE `a`.`id` = '" . $admin['id'] . "'
