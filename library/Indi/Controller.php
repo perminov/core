@@ -220,7 +220,11 @@ class Indi_Controller{
 		$this->postDispatch();
 	}
     
-    public function preDispatch(){}
-    public function postDispatch(){}
+    public function preDispatch(){
+        die();
+    }
+    public function postDispatch(){
+        die();
+    }
 
 }

@@ -436,8 +436,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     break;
             }
             die($element);
-        } else {
-            //d($this->row->toArray());
+        } else if ($this->params['combo']){
+            parent::formAction();
         }
     }
 

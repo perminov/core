@@ -1,7 +1,37 @@
 div.combo-div{
     width: 100%;
 }
-div.combo-data{
+div.combo-div img.combo-trigger{
+    position: absolute;
+    margin-top: 1px;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+div.combo-div input.combo-keyword{
+    width: 100%;
+}
+div.combo-div input.combo-keyword.no-results{
+    color: red;
+}
+div.combo-div span.combo-info{
+    position: absolute;
+    margin-top: -15px;
+    font-size: 10px;
+    visibility: hidden;
+    display: none;
+}
+div.combo-div span.combo-info span.combo-count{
+    width: 20px;
+    display: inline-block;
+    text-align: right;
+}
+div.combo-div span.combo-info img.combo-loader{
+    position: relative;
+    top: -1px;
+    right: 2px;
+}
+
+div.combo-div div.combo-data{
     display: none;
     position: absolute;
     background-color: white;
@@ -9,11 +39,11 @@ div.combo-data{
     margin-top: -1px;
     z-index: 1;
 }
-div.combo-data ul {
+div.combo-div div.combo-data ul {
     padding: 0px;
     margin: 0px;
 }
-div.combo-data ul li {
+div.combo-div div.combo-data ul li {
     list-style-type: none;
     list-style-position: outside;
     cursor: default;
@@ -23,24 +53,12 @@ div.combo-data ul li {
     border-bottom: 0;
     border-top: 1px solid #dfffdf;
 }
-div.combo-data ul li.selected {
+div.combo-div div.combo-data ul li:first-child{
+    border-top: 0px;
+}
+div.combo-div div.combo-data ul li.selected {
     background-color: #ecffeb;
 }
-.combo-info{
-    position: absolute;
-    margin-top: -15px;
-    margin-left: 500px;
-    font-size: 10px;
-    visibility: hidden;
-    display: none;
-}
-.combo-count{
-    width: 20px;
-    display: inline-block;
-    text-align: right;
-}
-.combo-loader{
-    position: relative;
-    top: -1px;
-    right: 2px;
+div.combo-div div.combo-data ul li.disabled {
+    color: #cccccc;
 }

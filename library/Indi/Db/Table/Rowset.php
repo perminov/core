@@ -10,6 +10,13 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
     public $foundRows = null;
 
     /**
+     * Store current page number
+     *
+     * @var mixed (null,int)
+     */
+    public $page = null;
+
+    /**
      * Constructor.
      * 
      * Found rows set up added
@@ -18,6 +25,10 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
     {
         if (isset($config['foundRows'])) {
             $this->foundRows     = $config['foundRows'];
+        }
+
+        if (isset($config['page'])) {
+            $this->page     = $config['page'];
         }
         parent::__construct($config);
     }

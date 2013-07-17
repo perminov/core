@@ -18,7 +18,7 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
             $limit = (is_null($page) ? ($count ? '0' : $page) : $count * ($page - 1)) . ($count ? ',' : '') . $count;
 
             // the SQL_CALC_FOUND_ROWS flag
-            if (!is_null($page)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
+            if (!is_null($page) || !is_null($count)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
         } else {
             $limit = false;
         }
@@ -33,8 +33,10 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
             'table'   => $this,
             'data'     => $data,
             'rowClass' => $this->_rowClass,
-            'foundRows'=> $limit ? current(self::$_defaultDb->query('SELECT FOUND_ROWS()')->fetch()) : count($data)
+            'foundRows'=> $limit ? current(self::$_defaultDb->query('SELECT FOUND_ROWS()')->fetch()) : count($data),
+            'page' => $page
         );
+
         return new $this->_rowsetClass($data);
     }
 
@@ -48,17 +50,34 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
      * @param int $parentId
      * @return Indi_Db_Table_Rowset object
      */
-    public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0)
+    public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0)
     {
         // Get raw tree
         $tree = $this->fetchRawTree($order, $parentId);
 
+        /*$this->getAdapter()->query(
+            'UPDATE `' . $this->_name . '` SET `level` = `move`'
+        );
+
+        i($tree);
+        $i = 1;
+        foreach ($tree as $id => $branch) {
+            $this->getAdapter()->query(
+                'UPDATE `' . $this->_name . '` SET `move` = "' . $i . '" WHERE `id` = "' . $id . '"'
+            );
+            $i++;
+        }*/
         // If where was a WHERE clause we have different behaviour
         if ($where) {
             // Fetch rows that match $where clause, ant set foundRows
             $foundRs = $this->fetchAll($where, $order, $count, $page);
             $foundRows = $foundRs->foundRows;
             $foundA = $foundRs->toArray();
+
+            // We replace indexes with actual ids in $foundA array
+            $tmp = array(); foreach ($foundA as $foundI) $tmp[$foundI['id']] = $foundI; $foundA = $tmp;
+
+            // Release memory
             unset($foundRs);
 
             // Remaining branch counter
@@ -67,9 +86,7 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
             // Array of ids. Rows with that ids should be presented in final results.
             // There rows are - needed rows, found by primary search, and all parents rows for each
             // of needed, up to level 0
-            foreach ($foundA as $foundI) {
-                $currentId = $foundI['id'];
-                $primary = true;
+            foreach ($foundA as $currentId => $foundI) {
                 do {
                     // Counter increment. We do it for having total number of branches
                     // that will be displayed. We will use this number to check if
@@ -91,12 +108,9 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
                     // Also, we should use integer indexation instead of string (eg $tree[$currentId][2],
                     // not $tree[$currentId]['mark']) because size of trees can be very large, and we should
                     // do all this things using a way, that use mininum memory
-                    if ($primary) {
-                        $tree[$currentId][2] = 1;
-                        $primary = false;
-                    } else {
-                        $tree[$currentId][2] = 2;
-                    }
+                    $tree[$currentId][2] = $foundA[$currentId] ? 1 : 2;
+
+                    // Remember indents
                     $indents[$currentId] = Misc::indent($tree[$currentId][1]);
                 } while ($currentId = $tree[$currentId][0]);
             }
@@ -122,17 +136,36 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
 
         // Standard behaviour
         } else {
+            // If $selected argument is specified, we should return page of results, containing that selected branch,
+            // so we should calculate needed page number, and replace $page argument with calculated value
+            if ($selected){
+                // Get index of selected branch in raw tree
+                $i = 0;
+                foreach ($tree as $id => $info) {
+                    if ($id == $selected)  {
+                        $start = $i + ($page ? $page * $count: 0);
+                        break;
+                    }
+                    $i++;
+                }
+            }
+
             // Set total results
             $foundRows = count($tree);
 
             // Get list of ids, related to current page of results, and remember indents
-            if ($count !== null || $page !== null) {
-                $start = (is_null($page) ? 0 : $count * ($page - 1));
+            if (isset($start)) {
                 $end = $start + $count;
             } else {
-                $start = 0;
-                $end = count($tree);
+                if ($count !== null || $page !== null) {
+                    $start = (is_null($page) ? 0 : $count * ($page - 1));
+                    $end = $start + $count;
+                } else {
+                    $start = 0;
+                    $end = count($tree);
+                }
             }
+
             $ids = array();
             $i = 0;
             foreach ($tree as $id => $info) {
@@ -163,12 +196,19 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
         // Set 'disabled' system property for auxillary results
         if (is_array($disabledA)) foreach ($disabledA as $disabledI) $data[$disabledI]['_system']['disabled'] = true;
 
+        // Set 'parentId' system property. Despite of existence of parent branch identifier in list of properties,
+        // we additionally set up this property as system property using static 'parentId' key, (e.g $row->system('parentId'))
+        // instead of using $row->{$row->getTable()->treeColumn} expression. Also, this will be useful in javascript, where
+        // we have no ability to use such an expressions.
+        foreach ($data as $id => $props) $data[$id]['_system']['parentId'] = $props[$this->treeColumn];
+
         // Setup rowset info
         $data = array (
             'table' => $this,
             'data' => array_values($data),
             'rowClass' => $this->_rowClass,
-            'foundRows' => $foundRows
+            'foundRows' => $foundRows,
+            'page' => $page
         );
 
         // Return rowset
