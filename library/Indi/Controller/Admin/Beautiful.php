@@ -2,6 +2,16 @@
 class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
     /**
+     * Method for using custom part of WHERE clause, especially related to rowset filtering by parent
+     * Return null by default, so in usual conditions it won't be used. Should be redeclared if needed.
+     *
+     * @return null
+     */
+    public function specialParentCondition() {
+        return null;
+    }
+
+    /**
      * Provide default downAction (Move down) for Admin Sections controllers
      *
      * @param string $condition

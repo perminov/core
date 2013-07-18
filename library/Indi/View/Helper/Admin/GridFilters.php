@@ -58,7 +58,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                             <?if($combo['color'] || true){?>
                             fieldSubTpl: [
                                 '<div class="{hiddenDataCls}" role="presentation"></div>',
-                                '<div id="{id}-div" style="position: absolute; width: <?=$combo['width']?$combo['width']-17:81?>px; padding-top: <?=$padding?>px; cursor: default; overflow: hidden;"  class="{fieldCls} {typeCls}"><?=GRID_FILTER_OPTION_DEFAULT?></div>',
+                                '<div id="{id}-div" style="position: absolute; width: <?=$combo['width']?$combo['width']-17:81?>px; padding-top: <?=$padding?>px; cursor: default; overflow: hidden; white-space: nowrap;" class="{fieldCls} {typeCls}"><?=GRID_FILTER_OPTION_DEFAULT?></div>',
                                 '<input id="{id}" type="{type}" class="{fieldCls} {typeCls}" autocomplete="off"',
                                 '<tpl if="size">size="{size}" </tpl>',
                                 '<tpl if="tabIdx">tabIndex="{tabIdx}" </tpl>',

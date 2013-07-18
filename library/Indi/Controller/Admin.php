@@ -90,8 +90,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 // if this section have parent section, we should fetch only records, related to parent row
                 // for example if we want to see cities, we must define in WHAT country these cities are located
                 if ($this->trail->getItem(1)->row && !$this->noFilterByParent) {
-                    if ($this->specialParentCondition) {
-                        $condition[] = $this->specialParentCondition;
+                    if (!is_null($this->specialParentCondition())) {
+                        $condition[] = $this->specialParentCondition();
                     } else {
                         if ($this->trail->getItem()->section->parentSectionConnector) {
                             $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;

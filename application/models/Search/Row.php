@@ -61,7 +61,7 @@ class Search_Row extends Indi_Db_Table_Row{
         if ($color && $this->foreign['fieldId']->relation != 6) {
             $max = 10;
         } else {
-            foreach ($store as $item) if (mb_strlen($item['title']) > $max) $max = mb_strlen(str_replace('&nbsp;','' , strip_tags($item['title'])), 'utf-8');
+            foreach ($store as $item) if (mb_strlen($item['title']) > $max) $max = mb_strlen(str_replace('&nbsp;',' ' , strip_tags($item['title'])), 'utf-8');
         }
         $width = $max * 6 < 68 ? 68 : $max * 6;
         return array('width' => $width,'store' => json_encode($store), 'color' => $color ? 1 : 0);
