@@ -3,7 +3,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
     /**
      * Method for using custom part of WHERE clause, especially related to rowset filtering by parent
-     * Return null by default, so in usual conditions it won't be used. Should be redeclared if needed.
+     * Return null by default, so in usual conditions it won't be used. But if redeclared - wil be used.
      *
      * @return null
      */
@@ -66,17 +66,24 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
     public function formAction()
     {
         if ($this->params['combo']) {
+
             // Get options
             if ($this->post['keyword']) {
-                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->post['keyword'], true);
+                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->post['keyword'], true, $this->post['satellite']);
             } else {
-                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->row->{$this->post['field']});
+                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->row->{$this->post['field']}, false, $this->post['satellite']);
             }
 
-            // Prepare options
             $options = array();
+
+            // If 'optgroup' param is used
+            if ($comboDataRs->optgroup) {
+                $by = $comboDataRs->optgroup['by'];
+            }
             foreach ($comboDataRs as $comboDataR) {
-                $options[$comboDataR->id] = array('title' => $comboDataR->title, 'system' => $comboDataR->system());
+                $system = $comboDataR->system();
+                if ($by) $system = array_merge($system, array('group' => $comboDataR->$by));
+                $options[$comboDataR->id] = array('title' => Misc::usubstr($comboDataR->title, 50), 'system' => $system);
             }
             $options = array('ids' => array_keys($options), 'data' => array_values($options));
 
@@ -85,6 +92,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
             // Setup tree flag
             if ($comboDataRs->getTable()->treeColumn) $options['tree'] = true;
+
+            // Setup groups for options
+            if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
 
             // Output
             die(json_encode($options));

@@ -12,7 +12,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      *
      * @var int
      */
-    public $comboOptionsVisibleCount = 20;
+    public static $comboOptionsVisibleCount = 20;
 
     /**
      * Store regular expression for checks of email addresses validity
@@ -29,12 +29,23 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      * @return int affected rows|last_insert_id
      */
     public function save() {
+
+        // Setup $orderAutoSet flag
         if (!$this->_original['id'] && array_key_exists('move', $this->_original) && !$this->move) $orderAutoSet = true;
+
+        // Setup `_title` property if need
+        if (array_key_exists('_title', $this->_original)) $this->_title = $this->getTitle();
+
+        // Save
         $return = parent::save();
+
+        // Auto set `move` if need
         if ($orderAutoSet) {
             $this->move = $this->id;
             parent::save();
         }
+
+        // Return
         return $return;
     }
 
@@ -99,13 +110,17 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         return parent::delete();
     }
 
-    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false){
+    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false, $satellite = null){
+        // Basic info
         $entityM = Misc::loadModel('Entity');
         $fieldM = Misc::loadModel('Field');
         $entityR = $entityM->fetchRow('`table` = "' . $this->_table->_name . '"');
         $fieldR = $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
+        $fieldColumnTypeR = $fieldR->getForeignRowByForeignKey('columnTypeId');
         $relatedM = Entity::getInstance()->getModelById($fieldR->relation);
+        $params = $fieldR->getParams();
 
+        // Array for WHERE clause
         $where = array();
 
         // Setup filter, as one of possible parts of WHERE clause
@@ -115,14 +130,102 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             }
             $where[] = $fieldR->filter;
         }
-i($where);
+
+        // If current field column type is ENUM or SET
+        if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
+            $where[] = '`fieldId` = "' . $fieldR->id . '"';
+            $dataRs = $relatedM->fetchAll($where, 'move');
+
+            // We should mark rowset as related to field, that has a ENUM or SET column type
+            // because values of property `alias` should be used as options keys, instead of values of property `id`
+            $dataRs->enumset = true;
+            return $dataRs;
+        }
+
+        // Setup filter by satellite
+        if ($fieldR->satellite) {
+
+            // Get satellite field row
+            $satelliteR = $fieldR->getForeignRowByForeignKey('satellite');
+
+            // If we have no satellite value passed as a param, we get it from related row property by default
+            if (is_null($satellite)) $satellite = $this->{$satelliteR->alias};
+
+            // If dependency type is not 'Variable entity'
+            if ($fieldR->dependency != 'e') {
+
+                // Example of situation, that is covered by use of `alternative` logic
+                // 1. Indi Engine have tables `entity`, `field`, `element`, `possibleElementParam`
+                // 2. If somewhere in entity structure i have a field that is using, for example html-editor,
+                //    i want to be able to set some params to this html-editor, such as height, width and etc.
+                // 3. html-editor is a row in `element` table, it has, for example id = 13
+                // 4. All of possible html-editor params - are stored in `possibleElementParam` table, and are linked
+                //    to html-editor by column `elementId` with value = 13
+                // 5. I want to set width=500 for one html-editor, and width=600 to another html-editor
+                // 6. Both 'one' and 'another' html-editor are rows in `field` table, and can be both linked to same
+                //    entity, or to different entities, does not matter
+                // 7. For being able to do action from point 5, i want to go 'Entities > Some test entity >
+                //    Fields > Some html-editor field > Params > Create'
+                // 8. On 'Create' screen there is a form with fieds:
+                //    1. Entity (dropdown list)
+                //    2. Field  (dropdown list)
+                //    3. Param  (dropdown list)
+                //    4. Value  (textarea)
+                // 9. 'Entity' field is a satellite for 'Field' field, and if 'Entity' field value is changed,
+                //    options in 'Field' dropdown list should be refreshed
+                // 10. 'Field' field is a satellite for 'Param' field, and if 'Field' field value is changed,
+                //    options in 'Param' dropdown list should be refreshed
+                // 11. SQL Query for refreshing 'Field' options list, mentioned in point 9 will look like
+                //     SELECT * FROM `field` WHERE `entityId` = "x"
+                // 12. SQL Query for refreshing 'Field' options list, mentioned in point 10 will look like
+                //     SELECT * FROM `possibleElementParam` WHERE `fieldId` = "y"
+                // 13. The problem is that table `possibleElementParam` has no `fieldId` column, and that is why
+                //      here is `alternative` logic is used. Result of `alternative` logic is that:
+                //      1. SQL query will look like
+                //         SELECT * FROM `possibleElementParam` WHERE `elementId` = "z"
+                //      2. "z" - will be a value of `elementId` column of a selected row in 'Field' dropdown
+                if ($fieldR->alternative) {
+
+                    // If we have satellite value passed as a param, we set it as value for $this->{$satelliteR->alias},
+                    // because getForeignRowByForeignKey() menthod use internal row property value, that store a foreign key,
+                    // and do not use any external values
+                    if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
+                    $rowLinkedToSatellite = $this->getForeignRowByForeignKey($satelliteR->alias);
+                    $where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $fieldR->alternative . '`)';
+
+                // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
+                // we use it's alias instead. Example:
+                // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
+                //    `similarCityId`
+                // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
+                //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
+                //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
+                //    `similarCountryId` column, it has only `countryId` column.
+                // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
+                //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
+                //    `countryId` so the result will be exactly as we need
+                } else if ($satelliteR->satellitealias) {
+                    $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
+
+                // Standard logic
+                } else {
+                    $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
+                }
+
+            // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
+            } else if ($fieldR->dependency == 'e' && $satellite) {
+                $relatedM = $entityM->getModelById($satellite);
+            }
+        }
+
+        // Get title column
+        $titleColumn = $relatedM->titleColumn();
+
         // Set ORDER clause for combo data
         if ($relatedM->fieldExists('move')) {
             $order = 'move';
-        } else if ($relatedM->fieldExists('title')) {
-            $order = 'title';
         } else {
-            $order = null;
+            $order = $titleColumn;
         }
 
         // If fetch-mode is 'keyword'
@@ -146,7 +249,7 @@ i($where);
             // is 1, it will be 2, because actually results of page 1 were already fetched
             // and displayed at the stage of combo first initialization
             if ($page != null) {
-                if(!$selected || $selectedTypeIsKeyword) $page++;
+                if(!$selected || $selectedTypeIsKeyword || func_get_arg(4)) $page++;
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
@@ -157,17 +260,15 @@ i($where);
 
             // Fetch results
             if ($selectedTypeIsKeyword) {
-                $where[] = '`title` LIKE "' . $keyword . '%"';
-                $dataRs = $relatedM->fetchTree($where, $order, $this->comboOptionsVisibleCount, $page, 0);
+                $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
+            } else if (func_num_args() < 5 || is_null(func_get_arg(4))) {
+                $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
             } else {
-                $dataRs = $relatedM->fetchTree($where, $order, $this->comboOptionsVisibleCount, $page, 0, $selected);
+                $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
             }
 
             // Unset found rows to prevent disabling of paging up
             if ($unsetFoundRows) unset($dataRs->foundRows);
-
-            // Return result
-            return $dataRs;
 
         // Otherwise
         } else {
@@ -180,24 +281,51 @@ i($where);
                 $whereBackup = $where;
 
                 // Get WHERE clause for options fetch
-                $where = $where ? explode(' AND ', $where) : array();
                 if ($selectedTypeIsKeyword) {
-                    $order = 'POSITION("' . $config['find']. '" IN `title`) = 1 DESC, TRIM(SUBSTR(`title`, 1)) ASC';
-                    $where[] = '`title` LIKE "' . $keyword . '%"';
-                } else {
-                    $where[] = '`title` '. (is_null($page) || $page > 0 ? '>=' : '<').' "' . $keyword . '"';
+                    $order = 'TRIM(SUBSTR(`' . $titleColumn . '`, 1)) ASC';
+                    $where[] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+
+                // We should get results started from selected value only if we have no $satellite argument passed
+                } else if (func_num_args() < 5 || is_null(func_get_arg(4))) {
+
+                    // If we are sorting results by `move` column, results start point should be = value of `move`
+                    // property of $selectedR
+                    if ($order == 'move') {
+                        $where[] = '`move` '. (is_null($page) || $page > 0 ? '>=' : '<').' "' . $selectedR->move . '"';
+
+                    // Else start point for resutlts will be set as value of `title` or `_title` property of $selectedR
+                    } else {
+                        $where[] = '`' . $titleColumn . '` '. (is_null($page) || $page > 0 ? '>=' : '<').' "' . $keyword . '"';
+                    }
+
+                    // We set this flag to true, because the fact that we are in the body of current 'else if' operator
+                    // mean that:
+                    // 1. we have selected value,
+                    // 2. selected value is not a keyword,
+                    // 3. $satellite logic is not used,
+                    // 4. first option of final results, fetched by current function (getComboData) - wil be option
+                    //    related to selected value
+                    // So, we remember this fact, because if $foundRows will be not greater than self::$comboOptionsVisibleCount
+                    // there will be no need for results set to be started from selected value, and what is why this
+                    $resultsShouldBeStartedFromSelectedValue = true;
                 }
-                $where = implode(' AND ', $where);
-                $where = preg_replace('/^ AND /', '', $where);
 
                 // Get foundRows WHERE clause
                 $foundRowsWhere = $selectedTypeIsKeyword ? $where : $whereBackup;
-                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . $foundRowsWhere : '';
+                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . implode(' AND ', $foundRowsWhere) : '';
 
                 // Get number of total found rows
                 $foundRows = $this->getTable()->getAdapter()->query(
                     'SELECT COUNT(`id`) FROM `' . $relatedM->info('name') . '`' . $foundRowsWhere
                 )->fetchColumn(0);
+
+                // If results should be started from selected value but total found rows number if not too great
+                // we will not use selected value as start point for results, because there will be a sutiation
+                // that PgUp or PgDn should be pressed to view all available options in combo, instead of being
+                // available all initially
+                if ($resultsShouldBeStartedFromSelectedValue && $foundRows <= self::$comboOptionsVisibleCount) {
+                    array_pop($where);
+                }
 
                 // Get results
                 if (!is_null($page)) {
@@ -217,9 +345,9 @@ i($where);
                         // we will revert them
                         $upper = true;
                     }
-
                 }
-                $dataRs = $relatedM->fetchAll($where, $order, $this->comboOptionsVisibleCount, $page);
+
+                $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page);
 
                 // We set number of total found rows only if passed page number is null, so that means that
                 // we are doing a search of first page of results by a keyword, that just has been recently changed
@@ -233,15 +361,12 @@ i($where);
                 // Reverse results if we were getting upper page results
                 if ($upper) $dataRs->reverse();
 
-                // Return needed page of results
-                return $dataRs;
-
             // If we don't have neither initially selected options, nor keyword
             } else {
 
                 // If user try to get results of upper page, empty result set should be returned
                 if ($page < 0) {
-                    return $this->getTable()->createRowset(array());
+                    $dataRs = $this->getTable()->createRowset(array());
 
                 // Increment page, as at stage of combo initialization passed page number was 0,
                 // and after first try to get lower page results passed page number is 1, that actually
@@ -249,9 +374,47 @@ i($where);
                 // will be same as initial results got at combo initialization and that is a not correct
                 // way.
                 } else {
-                    return $relatedM->fetchAll(null, $order, $this->comboOptionsVisibleCount, $page + 1);
+                    $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page + 1);
                 }
             }
         }
+
+        // If results should be grouped (similar way as <optgroup></optgroup> do)
+        if ($params['groupBy']) {
+
+            // Get distinct values
+            $distinctGroupByFieldValues = array();
+            foreach ($dataRs as $dataR)
+                if (!$distinctGroupByFieldValues[$dataR->{$params['groupBy']}])
+                    $distinctGroupByFieldValues[$dataR->{$params['groupBy']}] = true;
+
+            // Get group field
+            $groupByFieldR = $fieldM->fetchRow('
+                        `entityId` = "' . $entityM->fetchRow('`id` = "' . $fieldR->relation . '"')->id . '" AND
+                        `alias` = "' . $params['groupBy'] . '"
+                    ');
+
+            // Get group field related entity model
+            $groupByFieldEntityM = $entityM->getModelById($groupByFieldR->relation);
+
+            // Get titles for optgroups
+            $groupByOptions = array();
+            if ($groupByFieldEntityM->info('name') == 'enumset') {
+                $groupByRs = $groupByFieldEntityM->fetchAll('
+                            `fieldId` = "' . $groupByFieldR->id . '" AND
+                            FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")
+                        ');
+                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->alias] = Misc::usubstr($groupByR->title, 50);
+            } else {
+                $groupByRs = $groupByFieldEntityM->fetchAll(
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '"'
+                );
+                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->id] = Misc::usubstr($groupByR->title, 50);
+            }
+
+            $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);
+        }
+
+        return $dataRs;
     }
 }

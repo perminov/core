@@ -19,7 +19,7 @@ class Indi_Db {
      *
      * @var Indi_Db
      */
-    protected static $queryCount = 0;
+    public static $queryCount = 0;
 
     public static $useCache = false;
 
