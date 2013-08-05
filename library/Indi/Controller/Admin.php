@@ -25,10 +25,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
      */
     public function preDispatch()
     {
-        // set up configuration as key->value from 'config' table
-        // config is used in different times
-        $this->config = Config::getInstance()->asObject();
-
         // languages
         $config = Indi_Registry::get('config');
         @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/application/lang/admin/' . $config['view']->lang . '.php');
@@ -803,22 +799,17 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
       */
     public function assign()
     {
-        $section = new Section();
         $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
         $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $this->view->assign('get', $this->get);
         $this->view->assign('request', $this->params);
-        $title = $this->config->project;
-        $this->view->assign('config', $this->config);
 
-        $section = new Section();
         $this->view->assign('trail', $this->trail);
         $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
         $this->view->assign('entity', $this->section->foreignRows->entityId);
-        $title = $this->config->project;
         if ($this->trail->getItem()->model) {
             $this->view->assign('structure', $this->trail->getItem()->model->getFields());
         }

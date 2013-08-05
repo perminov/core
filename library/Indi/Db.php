@@ -55,11 +55,11 @@ class Indi_Db {
         return false;
     }
 
-    public function query($sql) {
+    public function query($sql, $silence = false) {
         $sql = trim($sql);
         if (preg_match('/^UPDATE|DELETE|INSERT/', $sql)) {
             $affected = self::$_pdo->exec($sql);
-            if ($affected === false) {
+            if ($affected === false && $silence == false) {
                 echo array_pop(self::$_pdo->errorInfo()) . '<br>';
                 echo "SQL query: " . $sql . '<br>';
                 d(debug_print_backtrace());
@@ -70,13 +70,14 @@ class Indi_Db {
             return Indi_Cache::fetcher($params);
         } else {
             $stmt = self::$_pdo->query($sql);
-            if (!$stmt) {
+            if (!$stmt && $silence == false) {
                 echo array_pop(self::$_pdo->errorInfo()) . '<br>';
                 echo "SQL query: " . $sql . '<br>';
                 d(debug_print_backtrace());
                 die();
+            } else if ($stmt) {
+                $stmt->setFetchMode(PDO::FETCH_ASSOC);
             }
-            $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
             return $stmt;
         }

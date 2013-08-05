@@ -409,22 +409,28 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
         // Get auxillary deletion info within each entity
         foreach ($entities as $eid => $data) {
             $model = Entity::getModelById($eid);
+
             foreach ($data['fields'] as $field) {
+                // We should check that column - which will be used in WHERE clause for retrieving a dependent rowset -
+                // still exists. We need to perform this check because this column may have already been deleted, if
+                // it was dependent of other column that was deleted.
+                if ($model->fieldExists($field->alias)) {
 
-                // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
-                if ($field->storeRelationAbility == 'one') {
-                    $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
+                    // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
+                    if ($field->storeRelationAbility == 'one') {
+                        $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
 
-                // If storeRelationAbility = 'many', we do not delete rows, but we delete
-                // mentions of $this->id from comma-separated sets of keys
-                } else if ($field->storeRelationAbility == 'many') {
-                    $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
-                    foreach ($rs as $r) {
-                        $set = explode(',', $r->{$field->alias});
-                        $found = array_search($this->id, $set);
-                        if ($found !== false) unset($set[$found]);
-                        $r->{$field->alias} = implode(',', $set);
-                        $r->save(true);
+                        // If storeRelationAbility = 'many', we do not delete rows, but we delete
+                        // mentions of $this->id from comma-separated sets of keys
+                    } else if ($field->storeRelationAbility == 'many') {
+                        $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
+                        foreach ($rs as $r) {
+                            $set = explode(',', $r->{$field->alias});
+                            $found = array_search($this->id, $set);
+                            if ($found !== false) unset($set[$found]);
+                            $r->{$field->alias} = implode(',', $set);
+                            $r->save(true);
+                        }
                     }
                 }
             }
