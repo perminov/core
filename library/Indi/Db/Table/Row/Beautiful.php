@@ -218,6 +218,10 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             }
         }
 
+        // If we havу no related model - this happen if we have 'varibale entity' satellite dependency type
+        // and current satelite value is not defined - we return empty rowset
+        if (!$relatedM) return new Indi_Db_Table_Rowset(array());
+
         // Get title column
         $titleColumn = $relatedM->titleColumn();
 
@@ -413,6 +417,11 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             }
 
             $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);
+        }
+
+        // If additional params should be passed as each option attributes, setup list of such params
+        if ($params['optionAttrs']) {
+            $dataRs->optionAttrs = explode(',', $params['optionAttrs']);
         }
 
         return $dataRs;

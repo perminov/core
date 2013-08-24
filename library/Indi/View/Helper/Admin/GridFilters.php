@@ -25,7 +25,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                 <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'check' || $filter->foreign['fieldId']->relation) {?>
                     <?$combo = $filter->combo();?>
                     <?$label = $filter->alt ? $filter->alt : $filter->foreign['fieldId']->title;?>
-                    <?$labelWidth = mb_strlen($label, 'utf-8') * 6 + 10?>
+                    <?$labelWidth = mb_strlen($label, 'utf-8') * 7 + 10?>
                     <?$totalWidth = $labelWidth + $combo['width'];?>
                     <?$padding = preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT']) ? 1 : 2?>
                     {

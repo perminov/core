@@ -1,9 +1,9 @@
-var COMBO = (function (dselect) {
+var COMBO = (function (combo) {
     "use strict";
     var process = function () {
         var keyUpHandler, keyDownHandler, suggestions, input, select, hideSuggestions, timeout, bindTrigger, fetch, merge,
             adjustComboInfoLeftMargin, adjustComboTriggerLeftMargin, adjustComboOptionsDivHeight, visibleCount = 20,
-            mergeOptgroupInfo, appendNotSameGroupParents, setDisabled;
+            mergeOptgroupInfo, appendNotSameGroupParents, setDisabled, toggle, setDisabledOptions, fetchRelativePath;
 
         /**
          * Ajdust left margin for '.combo-info' elements
@@ -37,9 +37,9 @@ var COMBO = (function (dselect) {
          */
         adjustComboOptionsDivHeight = function(name) {
             if ($('#'+name+'-suggestions ul li').length >= visibleCount) {
-                $('#'+name+'-suggestions').css('height', '281px');
+                $('#'+name+'-suggestions').css('height', (visibleCount * comboOptions[name].optionHeight + 1) + 'px');
             } else {
-                $('#'+name+'-suggestions').css('height', $('#'+name+'-suggestions ul li').length * 14 + 1);
+                $('#'+name+'-suggestions').css('height', ($('#'+name+'-suggestions ul li').length * comboOptions[name].optionHeight + 1) + 'px');
             }
         }
 
@@ -82,10 +82,11 @@ var COMBO = (function (dselect) {
             var name = data.field;
 
             // Show loading pic
-            $('#'+name+'-count').html('<img src="/i/loading/loading35.gif" class="dselect-loader" width="15">');
+            $('#'+name+'-count').html('<img src="/i/loading/loading35.gif" class="combo-loader" width="15">');
 
             // Fetch request
-            $.post("./combo/1/", data,
+            var fetchRelativePath = window.comboFetchRelativePath || '.';
+            $.post(fetchRelativePath + '/combo/1/', data,
                 function(json) {
 
                     // If current options list should be prepended with fetched options
@@ -144,7 +145,11 @@ var COMBO = (function (dselect) {
 
                     // Otherwise we just replace current options with fetched options
                     } else {
+                        var jsBackup = comboOptions[name].js;
+                        var optionHeightBackup = comboOptions[name].optionHeight;
                         comboOptions[name] = json;
+                        comboOptions[name].js = jsBackup;
+                        comboOptions[name].optionHeight = optionHeightBackup;
                     }
 
                     // Remove more attribute
@@ -199,6 +204,7 @@ var COMBO = (function (dselect) {
                             // keyword and set keyword to empty string
                             if (data.mode == 'refresh-children') {
                                 $('#'+name+'-keyword').removeClass('no-results-within').val('');
+                                $('#'+name).val(0).change();
 
                             // Show results
                             } else {
@@ -234,7 +240,8 @@ var COMBO = (function (dselect) {
                         }
 
                         // Restore trigger pic because previously it could have disabled-style of appearance
-                        $('#'+name+'-trigger').attr('src', '/i/admin/trigger-system.png');
+                        if ($('#'+name+'-keyword').parents('.combo-div').hasClass('simple-disabled') == false)
+                            $('#'+name+'-trigger').attr('src', '/i/admin/trigger-system.png');
 
                     // Else if results set is empty (no non-disabled options), we hide options, and set red
                     // color for keyword, as there was no related results found
@@ -261,7 +268,7 @@ var COMBO = (function (dselect) {
          * Set some option as selected, autosets value for hidden field
          */
         select = function (){
-            var name, li;
+            var name, li, index, title;
 
             if (typeof arguments[0] == 'string') {
                 name = arguments[0];
@@ -272,9 +279,29 @@ var COMBO = (function (dselect) {
             }
 
             $('#'+name).val(li.attr(name));
-            $('#'+name+'-keyword').val(li.text().trim());
-            $('#'+name+'-keyword').attr('prev', li.text().trim());
+
+            // Get the index of selected option id in comboOptions[name].ids
+            index = comboOptions[name].ids.indexOf(parseInt(li.attr(name)));
+
+            // Find related title property in comboOptions[name].data
+            title = comboOptions[name].data[index].title;
+
+            // Set keyword text
+            $('#'+name+'-keyword').val(title.trim());
+            $('#'+name+'-keyword').attr('prev', title.trim());
+
+            // Apply selected option additional attributes to a hidden input,
+            // so attributes and their values to be accessible within hidden input context
+            if (comboOptions[name].attrs && comboOptions[name].attrs.length) {
+                for(var n = 0; n < comboOptions[name].attrs.length; n++) {
+                    $('#'+name).attr(comboOptions[name].attrs[n], li.attr(comboOptions[name].attrs[n]));
+                }
+            }
+
+            // Fire 'change' event
             $('#'+name).change();
+
+            // Hide options
             hideSuggestions(name);
 
             // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
@@ -313,6 +340,13 @@ var COMBO = (function (dselect) {
                         var item = '<li';
                         item += ' ' + name + '="' + json['ids'][i] + '"';
 
+                        // Additional attributes for option
+                        if (json.attrs && json.attrs.length) {
+                            for (var n in json['data'][i].attrs) {
+                                item += ' ' + n + '="' + json['data'][i].attrs[n] + '"';
+                            }
+                        }
+
                         // Mark as disabled
                         if (json['data'][i].system && json['data'][i].system['disabled']) {
                             cls.push('disabled');
@@ -336,7 +370,7 @@ var COMBO = (function (dselect) {
                         // Append css classes list as 'class' attribute for an option
                         if (cls.length) item += ' class="' + cls.join(' ') + '"';
 
-                        // Close <li>
+                        // Enclose opening <li> tag
                         item += '>';
 
                         // Prepend option title with optgroup indent, if optgroups are used
@@ -347,7 +381,11 @@ var COMBO = (function (dselect) {
                             && typeof json['data'][i].system['indent'] == 'string')
                             item += json['data'][i].system['indent'];
 
-                        item += json['data'][i].title;
+                        // If 'option' property exists (mean that 'template' combo param is used),
+                        // we use 'option' property contents as <li> inner contents, instead of 'title' contents
+                        item += json['data'][i].option ? json['data'][i].option : json['data'][i].title;
+
+                        // Close <li> tag
                         item += '</li>';
                         items.push(item);
                     }
@@ -627,7 +665,6 @@ var COMBO = (function (dselect) {
                         }
                     // PgDn key
                     } else if (code == '34') {
-                        var ib = input.attr('selectedIndex');
                         if (parseInt(input.attr('selectedIndex')) < size - visibleCount) {
                             input.attr('selectedIndex', parseInt(input.attr('selectedIndex'))+visibleCount);
                             $('#'+name+'-suggestions').attr('more', '');
@@ -663,13 +700,13 @@ var COMBO = (function (dselect) {
                             $(this).addClass('selected');
                             input.attr('selectedIndex', liIndex + 1 - disabledCount);
                             disabledCount = 0;
-                            var visibleS = $('#'+name+'-suggestions').scrollTop()/14;
+                            var visibleS = $('#'+name+'-suggestions').scrollTop()/comboOptions[name].optionHeight;
                             var visibleE = visibleS + visibleCount - 1;
                             var delta = 0;
                             if (liIndex > visibleE) {
-                                delta = (liIndex - visibleE) * 14;
+                                delta = (liIndex - visibleE) * comboOptions[name].optionHeight;
                             } else if (liIndex < visibleS) {
-                                delta = (liIndex - visibleS) * 14;
+                                delta = (liIndex - visibleS) * comboOptions[name].optionHeight;
                             }
                             var expr = (delta > 0 ? '+' : '-')+'='+Math.abs(delta)+'px';
                             if (delta) $('#'+name+'-suggestions').scrollTo(expr);
@@ -679,10 +716,18 @@ var COMBO = (function (dselect) {
                     });
 
                     // Set value while walking trough options list
-                    $('#'+name).val($('#'+name+'-suggestions'+' ul li.selected').attr(name));
-                    var text = $('#'+name+'-suggestions'+' ul li.selected').text();
-                    $('#'+name+'-keyword').val(text.trim());
-                    $('#'+name+'-keyword').attr('prev', text.trim());
+                    var id = $('#'+name+'-suggestions'+' ul li.selected').attr(name);
+                    $('#'+name).val(id);
+
+                    // Get the index of selected option id in comboOptions[name].ids
+                    var index = comboOptions[name].ids.indexOf(parseInt(id));
+
+                    // Find related title property in comboOptions[name].data
+                    var title = comboOptions[name].data[index].title;
+
+                    // Set keyword text
+                    $('#'+name+'-keyword').val(title.trim());
+                    $('#'+name+'-keyword').attr('prev', title.trim());
                 }
                 return false;
             } else if (event.keyCode == '27') {
@@ -743,6 +788,35 @@ var COMBO = (function (dselect) {
         }
 
         /**
+         * Disable or enable combo depending on a given param
+         *
+         * @param name
+         * @param disable true|false
+         */
+        toggle = function(name, disable){
+            if (disable) {
+                $('#'+name+'-keyword').attr('disabled', 'disabled');
+                $('#'+name+'-keyword').parents('.combo-div').addClass('simple-disabled');
+                $('#'+name+'-keyword').parents('.combo-div').addClass('disabled');
+                $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', '/i/admin/trigger-system-disabled.png');
+                $('#'+name+'-keyword').val('');
+                // We set hidden field value as 0, and fire 'change event' because there can be
+                // satellited combos for current combo, so if we have, for example 5 cascading combos,
+                // that are satellited to each other, this code provide that if top combo is disabled,
+                // all dependent (satellited) combos will also be disabled recursively
+                //$('#'+name).val(0);
+                //$('#'+name).change();
+
+            // Enable combo
+            } else {
+                $('#'+name+'-keyword').removeAttr('disabled');
+                $('#'+name+'-keyword').parents('.combo-div').removeClass('disabled');
+                $('#'+name+'-keyword').parents('.combo-div').removeClass('simple-disabled');
+                $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', '/i/admin/trigger-system.png');
+            }
+        }
+
+        /**
          * Bind keyDownHandler on keyup event for keyword html-input
          */
         $('.combo-keyword').keydown(keyDownHandler);
@@ -795,6 +869,13 @@ var COMBO = (function (dselect) {
                     // Set height of options list div
                     adjustComboOptionsDivHeight(name);
 
+                    // Set height of option height for all options
+                    $('#'+name+'-suggestions li').css({height: comboOptions[name].optionHeight + 'px', overflow: 'hidden', 'vertical-align': 'top'});
+                    $('#'+name+'-suggestions li:last-child').css({height: (comboOptions[name].optionHeight-1) + 'px', overflow: 'hidden', 'vertical-align': 'top'});
+
+                    // Set special css class for options if optionHeight > 14
+                    if (comboOptions[name].optionHeight > 14) $('#'+name+'-suggestions ul').addClass('tall');
+
                     // Set scrolling if number of options more than visibleCount
                     $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > visibleCount ? 'scroll' : '');
 
@@ -814,7 +895,11 @@ var COMBO = (function (dselect) {
 
                 // Toggle options and info
                 $(this).parent().find('.combo-data').toggle();
-                $(this).parent().find('.combo-info').toggle();
+                if ($(this).parent().find('.combo-info').css('display') == 'none') {
+                    $(this).parent().find('.combo-info').css('display', 'block');
+                } else {
+                    $(this).parent().find('.combo-info').css('display', 'none');
+                }
                 adjustComboInfoLeftMargin(name);
             });
             adjustComboTriggerLeftMargin(name);
@@ -849,8 +934,6 @@ var COMBO = (function (dselect) {
             $('#'+name+'-trigger').click(function(){
                 $(this).parent().find('.combo-keyword').click();
             });
-
-            var page = comboOptions[name] && comboOptions[name].page ? comboOptions[name].page : 1;
 
             $(this).parent().append('<div id="'+name+'-suggestions" class="combo-data" style="z-index: 1000' + index + '; width: ' + $(this).width() + 'px; margin-top: -1px; overflow-y: hidden;" hover="false"/>');
 
@@ -1072,6 +1155,7 @@ var COMBO = (function (dselect) {
             return neededItems;
         }
 
+
         /**
          * Set trigger button icon (pressed or unpressed)
          */
@@ -1093,6 +1177,18 @@ var COMBO = (function (dselect) {
             });
         }
         bindTrigger();
+
+        setDisabledOptions = function(name, disabledIds) {
+            for (var i in comboOptions[name].data) {
+                comboOptions[name].data[i].system.disabled = disabledIds.indexOf(comboOptions[name].ids[i]) != -1;
+            }
+            comboOptions[name].found = comboOptions[name].data.length - disabledIds.length;
+        }
+
+        combo.toggle = toggle;
+        combo.setDisabledOptions = setDisabledOptions;
+
+        if (typeof combo.ready == 'function') combo.ready();
     };
 
     /**
@@ -1109,6 +1205,6 @@ var COMBO = (function (dselect) {
         }, 25);
     }());
 
-    return dselect;
+    return combo;
 
 }(COMBO || {}));

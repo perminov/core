@@ -80,10 +80,21 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             if ($comboDataRs->optgroup) {
                 $by = $comboDataRs->optgroup['by'];
             }
-            foreach ($comboDataRs as $comboDataR) {
-                $system = $comboDataR->system();
-                if ($by) $system = array_merge($system, array('group' => $comboDataR->$by));
-                $options[$comboDataR->id] = array('title' => Misc::usubstr($comboDataR->title, 50), 'system' => $system);
+
+            // Detect key property for options
+            $keyProperty = $comboDataRs->enumset ? 'alias' : 'id';
+
+            foreach ($comboDataRs as $o) {
+                $system = $o->system();
+                if ($by) $system = array_merge($system, array('group' => $o->$by));
+                $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->title, 50), 'system' => $system);
+
+                // Deal with optionAttrs, if specified.
+                if ($comboDataRs->optionAttrs) {
+                    for ($i = 0; $i < count($comboDataRs->optionAttrs); $i++) {
+                        $options[$o->$keyProperty]['attrs'][$comboDataRs->optionAttrs[$i]] = $o->{$comboDataRs->optionAttrs[$i]};
+                    }
+                }
             }
             $options = array('ids' => array_keys($options), 'data' => array_values($options));
 
@@ -96,58 +107,12 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             // Setup groups for options
             if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
 
+            // Setup additional attributes names list
+            if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
+
             // Output
             die(json_encode($options));
         }
-        /*if ($this->params['json'] && false) {
-            $fields = $this->trail->getItem()->fields;
-            for($i = 0; $i < $fields->count(); $i++) {
-                if ($fields[$i]->alias == $this->post['field']) {
-                    $elementAlias = Entity::getModelByTable('element')->fetchRow('`id` = "' . $fields[$i]->elementId . '"')->alias;
-                    if ($fields[$i]->dependency == 'e') {
-                        $entityId = $this->row->getEntityIdForVariableForeignKey($this->post['field'], $this->post['satellite']);
-                        $this->trail->items[count($this->trail->items)-1]->fields[$i]->relation = $entityId;
-                    } else if ($fields[$i]->dependency != 'u') {
-                        for($j = 0; $j < $fields->count(); $j++) {
-                            if ($fields[$i]->satellite == $fields[$j]->id) {
-                                if ($fields[$i]->alternative) {
-                                    $satelliteRow = Entity::getInstance()->getModelById($fields[$j]->relation)->fetchRow('`id` = "' .$this->post['satellite'] . '"');
-                                    $fields[$j]->alias = $fields[$i]->alternative;
-                                    $this->post['satellite'] = $satelliteRow->{$fields[$i]->alternative};
-                                }
-                                $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';
-                            }
-                        }
-                    } else if ($fields[$i]->dependency == 'u') {
-                    }
-                }
-            }
-            $this->view->trail = $this->trail;
-            $this->view->row = $this->row;
-            switch ($elementAlias) {
-                case 'select':
-                    $element = $this->view->formSelect($this->post['field'], null, array('optionsOnly' => true));
-                    break;
-                case 'dselect':
-                    $attribs = array(
-                        'optionsOnly' => true,
-                        'find' => str_replace('"','\"', $this->post['find']),
-                        'value' => $this->post['value'],
-                        'more' => $this->post['more'] == 'true' ? true : false,
-                        'element' => 'dselect'
-                    );
-                    if (isset($this->post['noempty'])) $attribs['noempty'] = $this->post['noempty'];
-                    if (isset($this->post['page'])) $attribs['page'] = $this->post['page'];
-                    if (isset($this->post['up'])) $attribs['up'] = $this->post['up'];
-
-                    $element = $this->view->formDselect($this->post['field'], null, $attribs);
-                    break;
-                case 'multicheck':
-                    $element = $this->view->formMulticheck($this->post['field'], 1, array('optionsOnly' => true));
-                    break;
-            }
-            die($element);
-        }*/
     }
 
 

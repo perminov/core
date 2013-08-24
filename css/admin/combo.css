@@ -14,7 +14,7 @@ div.combo-div input.combo-keyword.readonly[readonly]{
     border: 1px solid #99BCE8;
 }
 div.combo-div input.combo-keyword[disabled="disabled"]{
-    border-color: #cccccc;
+    border-color: #cccccc !important;
 }
 div.combo-div input.combo-keyword.no-results{
     color: red;
@@ -59,11 +59,14 @@ div.combo-div div.combo-data ul li {
     padding-left: 2px;
     border-right: 0;
     border-left: 0;
-    border-bottom: 0;
-    border-top: 1px solid #dfffdf;
+    border-top: 0;
+    border-bottom: 1px solid #dfffdf;
 }
-div.combo-div div.combo-data ul li:first-child{
-    border-top: 0px;
+div.combo-div div.combo-data ul.tall li {
+    border-bottom: 1px solid #99BCE8;
+}
+div.combo-div div.combo-data ul li:last-child{
+    border-bottom: none;
 }
 div.combo-div div.combo-data ul li.selected {
     background-color: #ecffeb;

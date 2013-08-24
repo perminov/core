@@ -39,7 +39,7 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
             // else value is set to first in valies list
             $value = $value ? $value : $default;
         }
-        $xhtml = '<field><input type="hidden" name="' . $name . '" id="' . $name . '">';
+        $xhtml = '<field><input type="hidden" name="' . $name . '" id="' . $name . '" value="' . $value .'">';
         for ($i = 0; $i < count($values); $i++) {
 			if ($values[$i] == $value) {
 				$checked = ' checked="checked"';
@@ -60,10 +60,11 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
 		}
 		$xhtml .= '<script>
 		$("span.radio[id^='.$name.']").click(function(){
-			$(this).parent().find("input").val($(this).attr("val"));
-			$(this).parent().find("span.radio").removeAttr("checked").removeClass("checked");
-			$(this).attr("checked", "checked").addClass("checked");
-
+		    if ($(this).hasClass("disabled") == false) {
+                $(this).parent().find("input").val($(this).attr("val"));
+                $(this).parent().find("span.radio").removeAttr("checked").removeClass("checked");
+                $(this).attr("checked", "checked").addClass("checked");
+		    }
 		});
 		</script>';
 		$xhtml .= '<script>$(function(){ $("#' . $name . ucwords(str_replace('.','',$values[$checkedIndex])) . '").click()})</script>';

@@ -159,10 +159,10 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
                 $this->limit = $this->trail->getItem()->section->rowsOnPage;
                 // set up sorting depend on ExtJS grid column click
-                $condition = count($condition) ? implode(' AND ', $condition) : null;
-                $condition = $this->modifyRowsetCondition($condition);
-                $order = $this->getOrderForJsonRowset($condition, true);
                 if($this->params['json']) {
+                    $condition = count($condition) ? implode(' AND ', $condition) : null;
+                    $condition = $this->modifyRowsetCondition($condition);
+                    $order = $this->getOrderForJsonRowset($condition, true);
                     $this->preIndexJson();
                     if ($this->trail->getItem()->model->treeColumn) {
                         $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order, $this->limit, $this->page);
@@ -518,8 +518,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     }
                 }
             }
-            // set grid titles by custom logic
-            $this->setGridTitlesByCustomLogic($data);
 
             // apply up custom titles
             for ($i = 0; $i < count($data); $i++) {
@@ -529,6 +527,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 }
             }
         }
+
+        // set grid titles by custom logic
+        $this->setGridTitlesByCustomLogic($data);
 
         // apply up custom titles
         for ($i = 0; $i < count($data); $i++) {

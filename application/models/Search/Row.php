@@ -30,7 +30,7 @@ class Search_Row extends Indi_Db_Table_Row{
             } else {
                 foreach ($a as $i) $store[] = array('id' => $i->alias, 'title' => trim($i->title));
             }
-        } else if ($this->foreign['fieldId']->satellite) {
+//        } else if ($this->foreign['fieldId']->satellite) {
 
         } else {
             $where = $this->foreign['fieldId']->filter;
@@ -61,9 +61,16 @@ class Search_Row extends Indi_Db_Table_Row{
         if ($color && $this->foreign['fieldId']->relation != 6) {
             $max = 10;
         } else {
-            foreach ($store as $item) if (mb_strlen($item['title']) > $max) $max = mb_strlen(str_replace('&nbsp;',' ' , strip_tags($item['title'])), 'utf-8');
+            foreach ($store as $item)
+                if (mb_strlen(str_replace('&nbsp;',' ' , strip_tags($item['title'])), 'utf-8') > $max)
+                    $max = mb_strlen(str_replace('&nbsp;',' ' , strip_tags($item['title'])), 'utf-8');
         }
-        $width = $max * 6 < 68 ? 68 : $max * 6;
+        $letterWidth = 6.5;
+        $width = $max * $letterWidth < 68 ? 68 : $max * $letterWidth;
+        // Left padding width
+        $width += 3;
+        // Trigger width
+        $width += 17;
         return array('width' => $width,'store' => json_encode($store), 'color' => $color ? 1 : 0);
     }
 }
