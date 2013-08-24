@@ -82,10 +82,15 @@ var COMBO = (function (combo) {
             var name = data.field;
 
             // Show loading pic
-            $('#'+name+'-count').html('<img src="/i/loading/loading35.gif" class="combo-loader" width="15">');
+            $('#'+name+'-count').html('<img src="' + STD + '/i/loading/loading35.gif" class="combo-loader" width="15">');
 
             // Fetch request
-            var fetchRelativePath = window.comboFetchRelativePath || '.';
+            var fetchRelativePath;
+            if (window.comboFetchRelativePath) {
+                fetchRelativePath = STD + window.comboFetchRelativePath;
+            } else {
+                fetchRelativePath = '.'
+            }
             $.post(fetchRelativePath + '/combo/1/', data,
                 function(json) {
 
@@ -241,7 +246,7 @@ var COMBO = (function (combo) {
 
                         // Restore trigger pic because previously it could have disabled-style of appearance
                         if ($('#'+name+'-keyword').parents('.combo-div').hasClass('simple-disabled') == false)
-                            $('#'+name+'-trigger').attr('src', '/i/admin/trigger-system.png');
+                            $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system.png');
 
                     // Else if results set is empty (no non-disabled options), we hide options, and set red
                     // color for keyword, as there was no related results found
@@ -257,7 +262,7 @@ var COMBO = (function (combo) {
                         // Else if reason of no results was not in satellite, we add special css class for that case
                         } else {
                             $('#'+name+'-keyword').addClass('no-results');
-                            $('#'+name+'-trigger').attr('src', '/i/admin/trigger-system-disabled.png');
+                            $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
                         }
                     }
                 }, 'json'
@@ -750,7 +755,7 @@ var COMBO = (function (combo) {
                 if (sv == 0 || force == true) {
                     $('#'+name+'-keyword').attr('disabled', 'disabled');
                     $('#'+name+'-keyword').parents('.combo-div').addClass('disabled');
-                    $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', '/i/admin/trigger-system-disabled.png');
+                    $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
                     $('#'+name+'-keyword').val('');
 
                     // We set hidden field value as 0, and fire 'change event' because there can be
@@ -775,7 +780,7 @@ var COMBO = (function (combo) {
                 } else {
                     $('#'+name+'-keyword').removeAttr('disabled');
                     $('#'+name+'-keyword').parents('.combo-div').removeClass('disabled');
-                    $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', '/i/admin/trigger-system.png');
+                    $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', STD+'/i/admin/trigger-system.png');
                 }
             }
             // Restore default values for auxillary attributes
@@ -798,7 +803,7 @@ var COMBO = (function (combo) {
                 $('#'+name+'-keyword').attr('disabled', 'disabled');
                 $('#'+name+'-keyword').parents('.combo-div').addClass('simple-disabled');
                 $('#'+name+'-keyword').parents('.combo-div').addClass('disabled');
-                $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', '/i/admin/trigger-system-disabled.png');
+                $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
                 $('#'+name+'-keyword').val('');
                 // We set hidden field value as 0, and fire 'change event' because there can be
                 // satellited combos for current combo, so if we have, for example 5 cascading combos,
@@ -812,7 +817,7 @@ var COMBO = (function (combo) {
                 $('#'+name+'-keyword').removeAttr('disabled');
                 $('#'+name+'-keyword').parents('.combo-div').removeClass('disabled');
                 $('#'+name+'-keyword').parents('.combo-div').removeClass('simple-disabled');
-                $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', '/i/admin/trigger-system.png');
+                $('#'+name+'-keyword').parents('.combo-div').find('.combo-trigger').attr('src', STD+'/i/admin/trigger-system.png');
             }
         }
 
@@ -1163,17 +1168,17 @@ var COMBO = (function (combo) {
             $('.combo-trigger').mousedown(function(){
                 if ($(this).parents('.combo-div').hasClass('disabled') ==  false &&
                     $(this).parents('.combo-div').find('.combo-keyword').hasClass('no-results') ==  false)
-                    $(this).attr('src', '/i/admin/trigger-system-pressed.png');
+                    $(this).attr('src', STD+'/i/admin/trigger-system-pressed.png');
             });
             $('.combo-trigger').mouseleave(function(){
                 if ($(this).parents('.combo-div').hasClass('disabled') ==  false &&
                     $(this).parents('.combo-div').find('.combo-keyword').hasClass('no-results') ==  false)
-                    $(this).attr('src', '/i/admin/trigger-system.png');
+                    $(this).attr('src', STD+'/i/admin/trigger-system.png');
             });
             $('.combo-trigger').mouseup(function(){
                 if ($(this).parents('.combo-div').hasClass('disabled') ==  false &&
                     $(this).parents('.combo-div').find('.combo-keyword').hasClass('no-results') ==  false)
-                    $(this).attr('src', '/i/admin/trigger-system.png');
+                    $(this).attr('src', STD+'/i/admin/trigger-system.png');
             });
         }
         bindTrigger();

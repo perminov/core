@@ -275,13 +275,10 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
     
     public function getImageSrc($imageName, $copyName = null) {
         $entity = $this->getTable()->info('name');
-        $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
-        $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '/');
+        $web =  $_SERVER['STD'] . '/' . Indi_Image::getUploadPath(). '/' . $entity . '/';
+        $abs = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
 
-    
-//        $pat = $abs . '/' .$web . $this->id . (in_array($imageName, array('0', '1', 0, 1)) ? '' : '_' . $imageName) . ($copyName ? ',' . $copyName : '') . '.' ;
-        $pat = $abs . '/' .$web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
-		
+        $pat = $abs . $web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
 
         $files = glob($pat . '*');
         if(count($files) == 0) {
