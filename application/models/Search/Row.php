@@ -67,10 +67,14 @@ class Search_Row extends Indi_Db_Table_Row{
         }
         $letterWidth = 6.5;
         $width = $max * $letterWidth < 68 ? 68 : $max * $letterWidth;
+
+        // Color small-box
+        if ($color) $width += 14;
         // Left padding width
         $width += 3;
         // Trigger width
         $width += 17;
+
         return array('width' => $width,'store' => json_encode($store), 'color' => $color ? 1 : 0);
     }
 }
