@@ -31,14 +31,27 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
         span.radio{
             background: url(<?=$_SERVER['STD']?>/i/admin/radio.png) no-repeat;
         }
+        span.radio.disabled{
+            background: url(<?=$_SERVER['STD']?>/i/admin/radio-disabled.png) no-repeat;
+        }
         span.radio.checked{
             background: url(<?=$_SERVER['STD']?>/i/admin/radioChecked.png) no-repeat;
         }
+        span.radio.checked.disabled{
+            background: url(<?=$_SERVER['STD']?>/i/admin/radio-checked-disabled.png) no-repeat;
+        }
+
         span.checkbox{
             background: url(<?=$_SERVER['STD']?>/i/admin/checkbox.png) no-repeat;
         }
+        span.checkbox.disabled, table.multicheckbox.disabled span.checkbox{
+            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox-disabled.png) no-repeat;
+        }
         span.checkbox.checked{
             background: url(<?=$_SERVER['STD']?>/i/admin/checkboxChecked.png) no-repeat;
+        }
+        span.checkbox.checked.disabled, table.multicheckbox.disabled span.checkbox.checked{
+            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox-checked-disabled.png) no-repeat;
         }
         controls.upload{
             background: url(<?=$_SERVER['STD']?>/i/admin/transparentBg.png);
@@ -70,7 +83,7 @@ var PRE = STD+COM;
         });
     })
 </script>
-<form class="form" action="../<?=$this->view->row->id ? '../../' : ''?>save/<?=$this->view->row->id ? 'id/' . $this->view->row->id . '/' : ''?>"	name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data">
+<form class="form row-form" action="../<?=$this->view->row->id ? '../../' : ''?>save/<?=$this->view->row->id ? 'id/' . $this->view->row->id . '/' : ''?>"	name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
 	<table celpadding="2" cellspacing="1" border="0" width="100%">
 		<tr class="table_topics"><td colspan="2" align="center" class="table_topics"><?=$title?></td></tr>
 		<col width="50%"/><col width="50%"/>

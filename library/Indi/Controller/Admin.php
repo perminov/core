@@ -25,10 +25,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
      */
     public function preDispatch()
     {
-        // set up configuration as key->value from 'config' table
-        // config is used in different times
-        $this->config = Config::getInstance()->asObject();
-
         // languages
         $config = Indi_Registry::get('config');
         @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/application/lang/admin/' . $config['view']->lang . '.php');
@@ -90,8 +86,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 // if this section have parent section, we should fetch only records, related to parent row
                 // for example if we want to see cities, we must define in WHAT country these cities are located
                 if ($this->trail->getItem(1)->row && !$this->noFilterByParent) {
-                    if ($this->specialParentCondition) {
-                        $condition[] = $this->specialParentCondition;
+                    if (!is_null($this->specialParentCondition())) {
+                        $condition[] = $this->specialParentCondition();
                     } else {
                         if ($this->trail->getItem()->section->parentSectionConnector) {
                             $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
@@ -163,10 +159,10 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
                 $this->limit = $this->trail->getItem()->section->rowsOnPage;
                 // set up sorting depend on ExtJS grid column click
-                $condition = count($condition) ? implode(' AND ', $condition) : null;
-                $condition = $this->modifyRowsetCondition($condition);
-                $order = $this->getOrderForJsonRowset($condition, true);
                 if($this->params['json']) {
+                    $condition = count($condition) ? implode(' AND ', $condition) : null;
+                    $condition = $this->modifyRowsetCondition($condition);
+                    $order = $this->getOrderForJsonRowset($condition, true);
                     $this->preIndexJson();
                     if ($this->trail->getItem()->model->treeColumn) {
                         $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order, $this->limit, $this->page);
@@ -436,8 +432,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     break;
             }
             die($element);
-        } else {
-            //d($this->row->toArray());
+        } else if ($this->params['combo']){
+            parent::formAction();
         }
     }
 
@@ -522,8 +518,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     }
                 }
             }
-            // set grid titles by custom logic
-            $this->setGridTitlesByCustomLogic($data);
 
             // apply up custom titles
             for ($i = 0; $i < count($data); $i++) {
@@ -533,6 +527,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 }
             }
         }
+
+        // set grid titles by custom logic
+        $this->setGridTitlesByCustomLogic($data);
 
         // apply up custom titles
         for ($i = 0; $i < count($data); $i++) {
@@ -803,22 +800,17 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
       */
     public function assign()
     {
-        $section = new Section();
         $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
         $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $this->view->assign('get', $this->get);
         $this->view->assign('request', $this->params);
-        $title = $this->config->project;
-        $this->view->assign('config', $this->config);
 
-        $section = new Section();
         $this->view->assign('trail', $this->trail);
         $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
         $this->view->assign('entity', $this->section->foreignRows->entityId);
-        $title = $this->config->project;
         if ($this->trail->getItem()->model) {
             $this->view->assign('structure', $this->trail->getItem()->model->getFields());
         }

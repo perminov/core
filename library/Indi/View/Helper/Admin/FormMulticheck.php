@@ -30,7 +30,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
         $checkboxIndex = 0;
         if ($count) {
 			if ($rows > $rowsHeightLimit) $xhtml = '<div style="overflow-y: scroll; height: ' . (19 * $rowsHeightLimit) . 'px;">';
-			$xhtml .= '<table cellpadding="0" cellspacing="0" border="0" id="' . $name . '" width="' . $params['width'] . '">';
+			$xhtml .= '<table cellpadding="0" cellspacing="0" border="0" id="' . $name . '-table" width="' . $params['width'] . '" class="multicheckbox">';
             $checkbox = current($data);
             $aName = ' name="' . $name . '[]"';
             $type = ' type="hidden"';
@@ -60,14 +60,17 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
                 $xhtml .= '</tr>';
             }
 			$xhtml .= '<script>$("span.checkbox[id^=span-checkbox-'.$name.']").click(function(){
-				if ($(this).parent().find("input[type=hidden]").attr("disabled")) {
-					$(this).parent().find("input[type=hidden]").removeAttr("disabled");
-					$(this).addClass("checked");
-				} else {
-					$(this).parent().find("input[type=hidden]").attr("disabled","disabled");
-					$(this).removeClass("checked");
-				};
-				' . $field->javascript . ';
+                if (!$(this).hasClass("disabled") && !$(this).parents("table.multicheckbox").hasClass("disabled")) {
+                    if ($(this).parent().find("input[type=hidden]").attr("disabled")) {
+                        $(this).parent().find("input[type=hidden]").removeAttr("disabled");
+                        $(this).addClass("checked");
+                    } else {
+                        $(this).parent().find("input[type=hidden]").attr("disabled","disabled");
+                        $(this).removeClass("checked");
+                    };
+                    ' . $field->javascript . ';
+
+                }
 			})</script>';
 			if ($attribs['optionsOnly']) {
 				$data = $xhtml;

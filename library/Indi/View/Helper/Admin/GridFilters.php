@@ -25,7 +25,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                 <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'check' || $filter->foreign['fieldId']->relation) {?>
                     <?$combo = $filter->combo();?>
                     <?$label = $filter->alt ? $filter->alt : $filter->foreign['fieldId']->title;?>
-                    <?$labelWidth = mb_strlen($label, 'utf-8') * 6 + 10?>
+                    <?$labelWidth = mb_strlen($label, 'utf-8') * 7 + 10?>
                     <?$totalWidth = $labelWidth + $combo['width'];?>
                     <?$padding = preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT']) ? 1 : 2?>
                     {
@@ -58,7 +58,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                             <?if($combo['color'] || true){?>
                             fieldSubTpl: [
                                 '<div class="{hiddenDataCls}" role="presentation"></div>',
-                                '<div id="{id}-div" style="position: absolute; width: <?=$combo['width']?$combo['width']-17:81?>px; padding-top: <?=$padding?>px; cursor: default; overflow: hidden;"  class="{fieldCls} {typeCls}"><?=GRID_FILTER_OPTION_DEFAULT?></div>',
+                                '<div id="{id}-div" style="position: absolute; width: <?=$combo['width']?$combo['width']-17:81?>px; padding-top: <?=$padding?>px; cursor: default; overflow: hidden; white-space: nowrap;" class="{fieldCls} {typeCls}"><?=GRID_FILTER_OPTION_DEFAULT?></div>',
                                 '<input id="{id}" type="{type}" class="{fieldCls} {typeCls}" autocomplete="off"',
                                 '<tpl if="size">size="{size}" </tpl>',
                                 '<tpl if="tabIdx">tabIndex="{tabIdx}" </tpl>',

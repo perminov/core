@@ -31,6 +31,7 @@ Ext.onReady(function() {
 				border: 1,
 				layout: {type: 'border', padding: '0 0 0 0'},
 				cls: 'center-all',
+                id: 'center-all',
 				items: [{
 					region: 'north',
 					html: '<div style="display: block;">' +
@@ -55,9 +56,9 @@ Ext.onReady(function() {
 			}
 		]
 	});
-	loadContent = function(url){
+	loadContent = function(url, forceIframe){
 		locationHistory.push(url);
-		if (url.match(/\/form\//)) {
+		if (url.match(/\/form\//) || forceIframe) {
 			if (currentPanelId) {
 				if (viewport.getComponent(3).cls == 'center-all') {
 					viewport.getComponent(3).remove(currentPanelId);
@@ -71,7 +72,7 @@ Ext.onReady(function() {
                 region: 'center',
                 border: 0,
                 align: 'stretch',
-                html: '<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
+                html: '<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="1000" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
                 renderTo: 'center-content-body'
             });
 		} else {
