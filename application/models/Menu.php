@@ -24,7 +24,7 @@ class Menu extends Indi_Db_Table{
 			} else if ($row['foreign']['staticpageId']['alias'] == 'index'){
 				$row['href'] = '/';
 			} else {
-				$row['href'] = '/' . $row['foreign']['staticpageId']['alias'];
+				$row['href'] = '/' . $row['foreign']['staticpageId']['alias'] . '/';
 			}
 			if (trim($row['href'], '/') == trim($uri, '/') || $row['children']->activeBranch) {
 				$row['active'] = true;

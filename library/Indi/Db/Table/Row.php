@@ -308,7 +308,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
                 $info = $info[3];
                 $info = ' ' . preg_replace('/(width|height)/', 'real-$1', $info);
             }
-            return '<img src="' . $src .($noCache?'?'.rand():'') . '" border="0" ' . $attrib .$info.'>';
+            return '<img src="' . $src .($noCache?'?'.rand():'') . '" ' . $attrib .$info. (preg_match('/alt="/', $attrib) ? '' : ' alt=""') . '>';
         } else {
             return false;
         }
