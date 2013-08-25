@@ -37,7 +37,8 @@ span.checkbox label{
     top: -1px;
 }
 input[type=file]{
-    display: none;
+    position: absolute;
+	visibility: hidden;
 }
 controls.upload{
     position: absolute;

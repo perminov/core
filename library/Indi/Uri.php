@@ -39,6 +39,9 @@ class Indi_Uri {
 				$params['section'] = 'static';
 				$params['action'] = 'details';
 				$params['id'] = $staticA[0]['id'];
+				if ($staticA[0]['alias'] == '404') {
+					header('HTTP/1.1 404 Not Found');
+				}
 			}
 		} else {
 			$sectionM = Misc::loadModel('Section');
