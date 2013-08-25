@@ -99,6 +99,13 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     }
 
     /**
+     * Reverse order of items in $this->_data array
+     */
+    public function reverse(){
+       $this->_data = array_reverse($this->_data);
+    }
+
+    /**
      * Rewind the Iterator to the first element.
      * Similar to the reset() function for arrays in PHP.
      * Required by interface Iterator.

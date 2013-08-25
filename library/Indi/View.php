@@ -945,6 +945,14 @@ class Indi_View implements Indi_View_Interface
         throw $e;
     }
 
+    public function exists($name) {
+        foreach ($this->_path['script'] as $dir) {
+            if (is_readable($dir . $name)) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * Applies the filter callback to a buffer.
      *

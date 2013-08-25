@@ -2,8 +2,6 @@
 class Entity_Row extends Indi_Db_Table_Row
 {
 	public function delete(){
-		Indi_Registry::set('entityToDelete', $this->table);
-
 		// standart Db_Table_Row deletion
 		parent::delete();
 
@@ -11,21 +9,18 @@ class Entity_Row extends Indi_Db_Table_Row
 		$this->deleteAllUploadedFilesAndUploadFolder();
 
 		// delete db table
-		$this->getTable()->getAdapter()->query('DROP TABLE `' . Indi_Registry::get('entityToDelete') . '`');
+		$this->getTable()->getAdapter()->query('DROP TABLE `' . $this->table . '`');
 
 		// delete model file and row, rowset classes
-		$this->deleteClasses();
+		//$this->deleteClasses();
 	}
 
 	public function deleteAllUploadedFilesAndUploadFolder(){
-		// get folder name where files of entity are stored
-		$entity = Indi_Registry::get('entityToDelete');
-
 		// get upload path from config
 		$uploadPath = Indi_Image::getUploadPath();
 		
 		// absolute upload path  in filesystem
-		$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
+		$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $this->table . '/';
 		
 		// array for filenames that should be deleted
 		$files = array();
@@ -46,25 +41,21 @@ class Entity_Row extends Indi_Db_Table_Row
 	}
 
 	public function deleteClasses(){
-		// get folder name where files of entity are stored
-		$entity = Indi_Registry::get('entityToDelete');
-
-		
 		$modelsDir = rtrim($_SERVER['DOCUMENT_ROOT'] . '/www', '\\/') . '/application/models/';
 
-		$modelFile = $modelsDir . ucfirst($entity) . '.php';
+		$modelFile = $modelsDir . ucfirst($this->table) . '.php';
 		if (file_exists($modelFile)) {
 			unlink($modelFile);
 		}
-		$files = glob($modelsDir . ucfirst($entity) . '/*.*');
+		$files = glob($modelsDir . ucfirst($this->table) . '/*.*');
 		for ($j = 0; $j < count($files); $j++) {
 			try {
 				unlink($files[$j]);
 			} catch (Exception $e) {
 			}
 		}
-		if (is_dir($modelsDir . ucfirst($entity) . '/')) {
-			rmdir($modelsDir . ucfirst($entity) . '/');
+		if (is_dir($modelsDir . ucfirst($this->table) . '/')) {
+			rmdir($modelsDir . ucfirst($this->table) . '/');
 		}
 	}
 

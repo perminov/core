@@ -139,4 +139,8 @@ class Enumset_Row extends Indi_Db_Table_Row{
         }
         return parent::delete();
     }
+
+    public function deleteForeignKeysUsages(){
+        // Empty method
+    }
 }

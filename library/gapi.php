@@ -41,6 +41,7 @@ class gapi
   private $report_root_parameters = array();
   private $results = array();
   
+  public $errorMessage = '';
   /**
    * Constructor function for all new gapi instances
    * 
@@ -415,10 +416,11 @@ class gapi
     
     if(substr($response['code'],0,1) != '2' || !is_array($auth_token) || empty($auth_token['Auth']))
     {
-      throw new Exception('GAPI: Failed to authenticate user. Error: "' . strip_tags($response['body']) . '"');
-    }
+      $this->errorMessage = 'Failed to authenticate. ' . strip_tags($response['body']);
+    } else {
+		$this->auth_token = $auth_token['Auth'];
+	}
     
-    $this->auth_token = $auth_token['Auth'];
   }
   
   /**

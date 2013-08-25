@@ -4,7 +4,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	public $datePattern = "/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/";
 	public $urlPattern = "/^\b([\d\w\.\/\+\-\?\:]*)((ht|f)tp(s|)\:\/\/|[\d\d\d|\d\d]\.[\d\d\d|\d\d]\.|www\.|\.tv|\.ac|\.com|\.edu|\.gov|\.int|\.mil|\.net|\.org|\.biz|\.info|\.name|\.pro|\.museum|\.co|\.ru)([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;\b]*)$/";
 	public function preDispatch(){
-		parent::preDispatch();
+	//	parent::preDispatch();
 		// Для XHR
 		header('Access-Control-Allow-Origin: *');
 		

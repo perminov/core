@@ -10,6 +10,20 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
     public $foundRows = null;
 
     /**
+     * Store current page number
+     *
+     * @var mixed (null,int)
+     */
+    public $page = null;
+
+    /**
+     * Store tree column name if entity has a tree structure
+     *
+     * @var mixed (null,int)
+     */
+    public $treeColumn = null;
+
+    /**
      * Constructor.
      * 
      * Found rows set up added
@@ -18,6 +32,14 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
     {
         if (isset($config['foundRows'])) {
             $this->foundRows     = $config['foundRows'];
+        }
+
+        if (isset($config['page'])) {
+            $this->page     = $config['page'];
+        }
+
+        if (isset($config['treeColumn'])) {
+            $this->treeColumn     = $config['treeColumn'];
         }
         parent::__construct($config);
     }

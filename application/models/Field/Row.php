@@ -19,7 +19,7 @@ class Field_Row extends Indi_Db_Table_Row
 		if ($this->columnTypeId) {
 			$tableName = Entity::getInstance()->fetchRow('`id` = "' . $this->entityId . '"')->table;
 			$query = 'ALTER TABLE `' . $tableName . '` DROP `' . $this->alias . '`';
-			$this->getTable()->getAdapter()->query($query);
+			$this->getTable()->getAdapter()->query($query, true);
 		}
 	}
 

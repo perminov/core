@@ -219,7 +219,7 @@ function number_format (number, decimals, dec_point, thousands_sep) {
 function deepObjCopy (dupeObj) {
 	var retObj = new Object();
 	if (typeof(dupeObj) == 'object') {
-		if (typeof(dupeObj.length) != 'undefined')
+		if (dupeObj && typeof(dupeObj.length) != 'undefined')
 			var retObj = new Array();
 		for (var objInd in dupeObj) {	
 			if (typeof(dupeObj[objInd]) == 'object') {

@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Хост: localhost
--- Время создания: Мар 26 2013 г., 21:52
+-- Время создания: Авг 06 2013 г., 03:35
 -- Версия сервера: 5.6.9-rc-log
 -- Версия PHP: 5.2.14
 
@@ -17,7 +17,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8 */;
 
 --
--- База данных: `empty`
+-- База данных: `karusel`
 --
 
 -- --------------------------------------------------------
@@ -31,30 +31,32 @@ CREATE TABLE IF NOT EXISTS `action` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL DEFAULT '',
   `alias` varchar(255) NOT NULL DEFAULT '',
-  `condition` text NOT NULL,
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
-  `display` enum('y','n') NOT NULL DEFAULT 'y',
   `rowRequired` enum('y','n') NOT NULL DEFAULT 'y',
   `javascript` text NOT NULL,
   `type` enum('p','s','o') NOT NULL DEFAULT 'p',
+  `display` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  KEY `rowRequired` (`rowRequired`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=20 ;
+  KEY `rowRequired` (`rowRequired`),
+  KEY `type` (`type`),
+  FULLTEXT KEY `javascript` (`javascript`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=32 ;
 
 --
 -- Дамп данных таблицы `action`
 --
 
-INSERT INTO `action` (`id`, `title`, `alias`, `condition`, `toggle`, `display`, `rowRequired`, `javascript`, `type`) VALUES
-(1, 'Список', 'index', 'true', 'y', 'n', 'y', '', 's'),
-(2, 'Детали', 'form', 'true', 'y', 'y', 'y', '', 's'),
-(3, 'Сохранить', 'save', 'true', 'y', 'n', 'y', '', 's'),
-(4, 'Удалить', 'delete', 'true', 'y', 'y', 'y', 'Ext.MessageBox.confirm(''Confirm'', ''Вы уверены?'', function(btn){\r\n  if (btn == ''yes'') loadContent(url);\r\n});\r\nreturn false;', 's'),
-(5, 'Выше', 'up', 'true', 'y', 'y', 'y', '', 's'),
-(6, 'Ниже', 'down', 'true', 'y', 'y', 'y', '', 's'),
-(7, 'Статус', 'toggle', 'true', 'y', 'y', 'y', '', 's'),
-(18, 'Обновить кэш', 'cache', 'true', 'y', 'y', 'y', '', 's'),
-(19, 'Обновить sitemap.xml', 'sitemap', 'true', 'y', 'y', 'n', '$.post(''/sitemap/index/update'',function(response){\r\n  Ext.MessageBox.show({\r\n    title: ''Сообщение'',\r\n    msg: response,\r\n    buttons: Ext.MessageBox.OK,\r\n    icon: Ext.MessageBox.INFO\r\n  });\r\n});\r\nreturn false;', 's');
+INSERT INTO `action` (`id`, `title`, `alias`, `toggle`, `rowRequired`, `javascript`, `type`, `display`) VALUES
+(1, 'Список', 'index', 'y', 'y', '', 's', 0),
+(2, 'Детали', 'form', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 's', 1),
+(3, 'Сохранить', 'save', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 's', 0),
+(4, 'Удалить', 'delete', 'y', 'y', 'var actionAlias = this.actionAlias;\r\nExt.MessageBox.show({\r\n  title:grid.indi.msgbox.confirm.title,\r\n  msg: grid.indi.msgbox.confirm.message,\r\n  buttons: Ext.MessageBox.YESNO,\r\n  icon: Ext.MessageBox.QUESTION,\r\n  fn: function(answer, arg2){\r\n     if (answer == "yes") {\r\n        loadContent(grid.indi.href + actionAlias+"/id/"+row.id + "/");\r\n     }\r\n  }\r\n});', 's', 1),
+(5, 'Выше', 'up', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 's', 1),
+(6, 'Ниже', 'down', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 's', 1),
+(7, 'Статус', 'toggle', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 's', 1),
+(18, 'Обновить кэш', 'cache', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 's', 1),
+(19, 'Обновить sitemap.xml', 'sitemap', 'y', 'n', '$.post(''/sitemap/index/update'',function(response){\r\n  Ext.MessageBox.show({\r\n    title: ''Сообщение'',\r\n    msg: response,\r\n    buttons: Ext.MessageBox.OK,\r\n    icon: Ext.MessageBox.INFO\r\n  });\r\n});\r\nreturn false;', 's', 1),
+(20, 'Авторизация', 'login', 'y', 'y', 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 'o', 1);
 
 -- --------------------------------------------------------
 
@@ -73,7 +75,7 @@ CREATE TABLE IF NOT EXISTS `admin` (
   PRIMARY KEY (`id`),
   KEY `profileId` (`profileId`),
   KEY `toggle` (`toggle`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=14 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=15 ;
 
 --
 -- Дамп данных таблицы `admin`
@@ -81,9 +83,7 @@ CREATE TABLE IF NOT EXISTS `admin` (
 
 INSERT INTO `admin` (`id`, `profileId`, `title`, `email`, `password`, `toggle`) VALUES
 (1, 1, 'Павел Перминов', 'pavel.perminov.23@gmail.com', 'vt6yhg5', 'y'),
-(10, 10, 'Иванов Иван', 'demo', 'demo', 'y'),
-(3, 2, 'Наталья', 'info@it-pub.ru', 'sole6dhf', 'y'),
-(9, 9, 'Василий Теркин', 'vasily.terkin@gmail.com', 'medal', 'y');
+(14, 12, 'Василий Теркин', 'vasily.terkin@gmail.com', 'vasily', 'n');
 
 -- --------------------------------------------------------
 
@@ -109,9 +109,9 @@ CREATE TABLE IF NOT EXISTS `columntype` (
 
 INSERT INTO `columntype` (`id`, `title`, `type`, `canStoreRelation`, `elementId`) VALUES
 (1, 'Строка', 'VARCHAR(255)', 'y', '1,7,8,22'),
-(3, 'Число', 'INT(11)', 'y', '1,3,4,5,18,21'),
+(3, 'Число', 'INT(11)', 'y', '3,21,4,5,23,1,18'),
 (4, 'Текст', 'TEXT', 'y', '6,7,8,13'),
-(5, 'Цена', 'DOUBLE(7,2)', 'n', '10'),
+(5, 'Цена', 'DOUBLE(7,2)', 'n', ''),
 (6, 'Дата', 'DATE', 'n', '12'),
 (7, 'Год', 'YEAR', 'n', ''),
 (8, 'Время', 'TIME', 'n', '17'),
@@ -119,29 +119,7 @@ INSERT INTO `columntype` (`id`, `title`, `type`, `canStoreRelation`, `elementId`
 (10, 'Одно значение из набора', 'ENUM', 'n', '3,5'),
 (11, 'Набор значений', 'SET', 'n', '1,6,7,8'),
 (12, 'Правда/Ложь', 'BOOLEAN', 'n', '9'),
-(13, 'Цвет', 'VARCHAR(7)', 'n', '11');
-
--- --------------------------------------------------------
-
---
--- Структура таблицы `config`
---
-
-DROP TABLE IF EXISTS `config`;
-CREATE TABLE IF NOT EXISTS `config` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL DEFAULT '',
-  `alias` varchar(255) NOT NULL DEFAULT '',
-  `value` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
-
---
--- Дамп данных таблицы `config`
---
-
-INSERT INTO `config` (`id`, `title`, `alias`, `value`) VALUES
-(1, 'Проект', 'project', 'Indi Engine');
+(13, 'Цвет', 'VARCHAR(10)', 'n', '11');
 
 -- --------------------------------------------------------
 
@@ -157,19 +135,12 @@ CREATE TABLE IF NOT EXISTS `dependentcount` (
   `title` varchar(255) NOT NULL DEFAULT '',
   `alias` varchar(255) NOT NULL DEFAULT '',
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
-  `where` varchar(255) NOT NULL,
+  `where` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `fsectionId` (`fsectionId`),
-  KEY `sectionId` (`sectionId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=16 ;
-
---
--- Дамп данных таблицы `dependentcount`
---
-
-INSERT INTO `dependentcount` (`id`, `fsectionId`, `sectionId`, `title`, `alias`, `fsection2factionId`, `where`) VALUES
-(10, 8, 149, 'Сообщения', 'messages', 3, ''),
-(11, 26, 155, 'Новые сообщения', 'messages', 30, '`read`=''n''');
+  KEY `sectionId` (`sectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=17 ;
 
 -- --------------------------------------------------------
 
@@ -184,10 +155,14 @@ CREATE TABLE IF NOT EXISTS `dependentcountfordependentrowset` (
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
   `dependentRowsetId` int(11) NOT NULL DEFAULT '0',
   `sectionId` int(11) NOT NULL DEFAULT '0',
-  `title` varchar(255) NOT NULL,
-  `alias` varchar(255) NOT NULL,
-  `where` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `alias` varchar(255) NOT NULL DEFAULT '',
+  `where` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `dependentRowsetId` (`dependentRowsetId`),
+  KEY `sectionId` (`sectionId`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=13 ;
 
 -- --------------------------------------------------------
@@ -209,22 +184,18 @@ CREATE TABLE IF NOT EXISTS `dependentrowset` (
   `orderBy` enum('c','e') NOT NULL DEFAULT 'c',
   `orderColumn` int(11) NOT NULL DEFAULT '0',
   `orderDirection` enum('ASC','DESC') NOT NULL DEFAULT 'ASC',
-  `orderExpression` varchar(255) NOT NULL,
-  `where` varchar(255) NOT NULL,
+  `orderExpression` varchar(255) NOT NULL DEFAULT '',
+  `where` varchar(255) NOT NULL DEFAULT '',
+  `connector` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `fsectionId` (`fsectionId`),
-  KEY `entityId` (`entityId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=76 ;
-
---
--- Дамп данных таблицы `dependentrowset`
---
-
-INSERT INTO `dependentrowset` (`id`, `fsectionId`, `entityId`, `title`, `alias`, `fsection2factionId`, `returnAs`, `limit`, `orderBy`, `orderColumn`, `orderDirection`, `orderExpression`, `where`) VALUES
-(3, 8, 121, 'Классный отдых', 'holiday', 3, 'o', 0, 'c', 0, 'ASC', '', ''),
-(4, 8, 136, 'Любимые места', 'favoritePlaces', 3, 'o', 0, 'c', 0, 'ASC', '', ''),
-(73, 37, 203, 'Блоки', 'blocks', 84, 'o', 0, 'c', 1484, 'ASC', '', '`toggle`="y"'),
-(75, 41, 147, 'Действия', 'actions', 89, 'o', 0, 'c', 0, 'ASC', '', '`type`="r"');
+  KEY `entityId` (`entityId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `connector` (`connector`),
+  KEY `orderBy` (`orderBy`),
+  KEY `orderColumn` (`orderColumn`),
+  KEY `orderDirection` (`orderDirection`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=85 ;
 
 -- --------------------------------------------------------
 
@@ -237,16 +208,30 @@ CREATE TABLE IF NOT EXISTS `disabledfield` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `sectionId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
-  `defaultValue` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=33 ;
+  `defaultValue` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `sectionId` (`sectionId`),
+  KEY `fieldId` (`fieldId`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=208 ;
 
 --
 -- Дамп данных таблицы `disabledfield`
 --
 
 INSERT INTO `disabledfield` (`id`, `sectionId`, `fieldId`, `defaultValue`) VALUES
-(32, 233, 38, '9');
+(87, 146, 1028, ''),
+(84, 146, 961, ''),
+(35, 146, 685, ''),
+(85, 146, 962, ''),
+(86, 146, 699, ''),
+(43, 146, 1108, ''),
+(94, 146, 1577, ''),
+(93, 146, 1576, ''),
+(92, 146, 1575, ''),
+(91, 146, 1162, ''),
+(90, 146, 1163, ''),
+(89, 146, 1161, ''),
+(88, 146, 698, '');
 
 -- --------------------------------------------------------
 
@@ -263,34 +248,33 @@ CREATE TABLE IF NOT EXISTS `element` (
   `hidden` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `storeRelationAbility` (`storeRelationAbility`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=23 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=24 ;
 
 --
 -- Дамп данных таблицы `element`
 --
 
 INSERT INTO `element` (`id`, `title`, `alias`, `storeRelationAbility`, `hidden`) VALUES
-(1, 'Однострочное текстовое поле', 'string', 'none,many', 0),
+(1, 'Строка', 'string', 'none,many', 0),
 (3, 'Выпадающий список', 'select', 'one', 0),
 (4, 'Приоритет отображения', 'move', 'none', 1),
-(5, 'Набор радио-кнопок', 'radio', 'one', 0),
-(6, 'Многострочное текстовое поле', 'textarea', 'none,many', 0),
-(7, 'Набор чекбоксов', 'multicheck', 'many', 0),
+(5, 'Радио-кнопки', 'radio', 'one', 0),
+(6, 'Текст', 'textarea', 'none,many', 0),
+(7, 'Чекбоксы', 'multicheck', 'many', 0),
 (8, 'Многострочный выпадающий список', 'multiselect', 'many', 0),
 (9, 'Чекбокс', 'check', 'none', 0),
-(10, 'Цена', 'price', 'none', 0),
-(11, 'Выбор цвета', 'color', 'none', 0),
+(11, 'Цвет', 'color', 'none', 0),
 (12, 'Календарь', 'calendar', 'none', 0),
 (13, 'HTML-редактор', 'html', 'none', 0),
-(14, 'Загрузка файла', 'upload', 'none', 0),
-(15, 'Размер в пикселях', 'dimension', 'none', 0),
+(14, 'Файл', 'upload', 'none', 0),
 (16, 'Группа полей', 'span', 'none', 0),
 (17, 'Время', 'time', 'none', 0),
 (18, 'Число', 'number', 'none,one', 0),
 (19, 'Момент', 'datetime', 'none', 0),
 (20, 'Автокомплит', 'autocomplete', 'one', 0),
 (21, 'Динамический выпадающий список', 'dselect', 'one', 0),
-(22, 'Скрытое поле', 'hidden', 'none', 0);
+(22, 'Скрытое поле', 'hidden', 'none', 0),
+(23, 'Список', 'combo', 'one,many', 0);
 
 -- --------------------------------------------------------
 
@@ -308,7 +292,7 @@ CREATE TABLE IF NOT EXISTS `entity` (
   `useCache` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `system` (`system`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=209 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=301 ;
 
 --
 -- Дамп данных таблицы `entity`
@@ -330,15 +314,14 @@ INSERT INTO `entity` (`id`, `title`, `table`, `extends`, `system`, `useCache`) V
 (25, 'Статическая страница', 'staticpage', 'Indi_Db_Table', 'o', 0),
 (90, 'Параметр настройки элемента управления', 'possibleElementParam', 'Indi_Db_Table', 'y', 0),
 (91, 'Параметр настройки элемента управления, в контексте поля сущности', 'param', 'Indi_Db_Table', 'y', 0),
-(94, 'Параметр настройки', 'config', 'Indi_Db_Table', 'y', 0),
 (101, 'Раздел фронтенда', 'fsection', 'Indi_Db_Table', 'y', 1),
 (102, 'Количества строк на странице', 'rpp', 'Indi_Db_Table', 'y', 0),
-(103, 'Фильтр', 'filter', 'Indi_Db_Table', 'y', 0),
+(103, 'Фильтр раздела фронтенда', 'filter', 'Indi_Db_Table', 'y', 0),
 (104, 'Сортировать по', 'orderBy', 'Indi_Db_Table', 'y', 1),
 (108, 'Зависимое количество', 'dependentCount', 'Indi_Db_Table', 'y', 1),
 (110, 'Джойн по внешнему ключу', 'joinFk', 'Indi_Db_Table', 'y', 1),
 (111, 'Зависимое множество', 'dependentRowset', 'Indi_Db_Table', 'y', 1),
-(195, 'Поле, доступное для поиска', 'search', 'Indi_Db_Table', 'y', 0),
+(195, 'Фильтр', 'search', 'Indi_Db_Table', 'y', 0),
 (128, 'Фидбэк', 'feedback', 'Indi_Db_Table', 'o', 0),
 (129, 'Подписчик', 'subscriber', 'Indi_Db_Table', 'o', 0),
 (130, 'Пользователь', 'user', 'Indi_Db_Table', 'o', 0),
@@ -356,7 +339,7 @@ INSERT INTO `entity` (`id`, `title`, `table`, `extends`, `system`, `useCache`) V
 (166, 'Компонент &lt;meta description&gt;', 'seoDescription', 'Indi_Db_Table', 'y', 1),
 (168, 'Субдомен', 'subdomain', 'Indi_Db_Table', 'y', 0),
 (171, 'Отключенное поле', 'disabledField', 'Indi_Db_Table', 'y', 0),
-(204, 'Кусок', 'staticblock', 'Indi_Db_Table', 'o', 0),
+(204, 'Статический элемент', 'staticblock', 'Indi_Db_Table', 'o', 0),
 (205, 'Пункт меню', 'menu', 'Indi_Db_Table', 'o', 0),
 (207, 'Исключение из правил формирования meta-тегов', 'metaExclusion', 'Indi_Db_Table', 'y', 1);
 
@@ -375,8 +358,9 @@ CREATE TABLE IF NOT EXISTS `enumset` (
   `javascript` text NOT NULL,
   `move` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  KEY `fieldId` (`fieldId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=609 ;
+  KEY `fieldId` (`fieldId`),
+  FULLTEXT KEY `javascript` (`javascript`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=960 ;
 
 --
 -- Дамп данных таблицы `enumset`
@@ -427,10 +411,10 @@ INSERT INTO `enumset` (`id`, `fieldId`, `title`, `alias`, `javascript`, `move`) 
 (570, 1365, 'Проектное', 'p', '', 0),
 (580, 1445, 'Включено', 'y', '', 0),
 (581, 1445, '<span style=''color: red''>Выключено</span>', 'n', '', 464),
-(538, 1260, 'Статический', 's', 'show(''tr-static'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling'');', 0),
+(538, 1260, 'Статический', 's', 'show(''tr-static,tr-level'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling'');', 0),
 (537, 1252, 'Из sibling-компонента', 's', 'show(''tr-sibling'');', 442),
-(533, 1247, 'Динамический', 'd', 'hide(''tr-static'');show(''tr-entityId,tr-fieldId,tr-where'');if($(''#whereS'').attr(''checked'')) show(''tr-sibling''); else hide(''tr-sibling'');', 441),
-(532, 1247, 'Статический', 's', 'show(''tr-static'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling'');', 0),
+(533, 1247, 'Динамический', 'd', 'hide(''tr-static,tr-level'');show(''tr-entityId,tr-fieldId,tr-where'');if($(''#whereS'').attr(''checked'')) show(''tr-sibling''); else hide(''tr-sibling'');', 441),
+(532, 1247, 'Статический', 's', 'show(''tr-static'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling,tr-level'');', 0),
 (536, 1252, 'Из контекста', 'c', 'hide(''tr-sibling'');', 0),
 (531, 1243, 'Кастомному sql-выражению', 'e', 'hide(''tr-fieldId'');show(''tr-expression'');', 440),
 (530, 1243, 'Полю прикрепленной к разделу сущности', 'f', 'show(''tr-fieldId'');hide(''tr-expression'');', 0),
@@ -470,7 +454,7 @@ INSERT INTO `enumset` (`id`, `fieldId`, `title`, `alias`, `javascript`, `move`) 
 (487, 1075, '=', 'e', '', 0),
 (488, 1075, 'LIKE %?%', 'l', '', 413),
 (489, 1075, 'BETWEEN', 'b', '', 414),
-(509, 689, 'Не указан', 'n', '', 192),
+(509, 689, 'Не&nbsp;указан', 'n', '', 192),
 (567, 1364, 'Проектное', 'p', '', 0),
 (568, 1364, '<font color=red>Системное</font>', 's', '', 458),
 (569, 1364, '<font color=lime>Типовое</font>', 'o', '', 459),
@@ -479,12 +463,12 @@ INSERT INTO `enumset` (`id`, `fieldId`, `title`, `alias`, `javascript`, `move`) 
 (516, 1163, 'Никакая', 'n', 'hide(''tr-identifier'');', 0),
 (517, 1163, 'Facebook', 'fb', 'show(''tr-identifier'');', 432),
 (518, 1163, 'Вконтакте', 'vk', 'show(''tr-identifier'');', 433),
-(519, 1163, 'Мой Мир@Mail.ru', 'mm', 'show(''tr-identifier'');', 434),
-(539, 1260, 'Динамический', 'd', 'hide(''tr-static'');show(''tr-entityId,tr-fieldId,tr-where'');if($(''#whereS'').attr(''checked'')) show(''tr-sibling''); else hide(''tr-sibling'');', 443),
+(519, 1163, 'Twitter', 'tw', 'show(''tr-identifier'');', 434),
+(539, 1260, 'Динамический', 'd', 'hide(''tr-static,tr-level'');show(''tr-entityId,tr-fieldId,tr-where'');if($(''#whereS'').attr(''checked'')) show(''tr-sibling''); else hide(''tr-sibling'');', 443),
 (540, 1264, 'Из контекста', 'c', 'hide(''tr-sibling'');', 0),
 (541, 1264, 'Из sibling-компонента', 's', 'show(''tr-sibling'');', 444),
-(542, 1272, 'Статический', 's', 'show(''tr-static'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling'');', 0),
-(543, 1272, 'Динамический', 'd', 'hide(''tr-static'');show(''tr-entityId,tr-fieldId,tr-where'');if($(''#whereS'').attr(''checked'')) show(''tr-sibling''); else hide(''tr-sibling'');', 445),
+(542, 1272, 'Статический', 's', 'show(''tr-static,tr-level'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling'');', 0),
+(543, 1272, 'Динамический', 'd', 'hide(''tr-static,tr-level'');show(''tr-entityId,tr-fieldId,tr-where'');if($(''#whereS'').attr(''checked'')) show(''tr-sibling''); else hide(''tr-sibling'');', 445),
 (544, 1276, 'Из контекста', 'c', 'hide(''tr-sibling'');', 0),
 (545, 1276, 'Из sibling-компонента', 's', 'show(''tr-sibling'');', 446),
 (560, 1317, 'И', 'a', '', 0),
@@ -500,13 +484,18 @@ INSERT INTO `enumset` (`id`, `fieldId`, `title`, `alias`, `javascript`, `move`) 
 (585, 1491, 'Да', 'y', 'show(''tr-staticpageId'');hide(''tr-url'');$(''#url'').val('''');', 466),
 (586, 1494, 'Включен', 'y', '', 0),
 (587, 1494, '<span style=''color: red''>Выключен</span>', 'n', '', 467),
-(594, 1515, 'HTML-код', 'html', 'show(''tr-detailsHtml,tr-detailsHtmlWide,tr-detailsHtmlWidth,tr-detailsHtmlHeight,tr-detailsHtmlBodyClass,tr-detailsHtmlStyle'');hide(''tr-detailsString,tr-detailsTextarea'');', 0),
+(594, 1515, 'HTML', 'html', 'show(''tr-detailsHtml,tr-detailsHtmlWide,tr-detailsHtmlWidth,tr-detailsHtmlHeight,tr-detailsHtmlBodyClass,tr-detailsHtmlStyle'');hide(''tr-detailsString,tr-detailsTextarea'');', 0),
 (595, 1515, 'Строка', 'string', 'hide(''tr-detailsHtml,tr-detailsHtmlWide,tr-detailsHtmlWidth,tr-detailsHtmlHeight,tr-detailsHtmlBodyClass,tr-detailsHtmlStyle,tr-detailsTextarea'');show(''tr-detailsString'');', 471),
 (596, 1515, 'Текст', 'textarea', 'hide(''tr-detailsHtml,tr-detailsHtmlWide,tr-detailsHtmlWidth,tr-detailsHtmlHeight,tr-detailsHtmlBodyClass,tr-detailsHtmlStyle,tr-detailsString'');show(''tr-detailsTextarea'');', 472),
+(597, 1495, 'Да', 'y', '', 0),
+(598, 1495, 'Нет', 'n', '', 473),
 (608, 1533, '<span style=''color:red;''>Выключен</span>', 'n', '', 478),
 (607, 1533, 'Включен', 'y', '', 0),
 (605, 1528, 'Включено', 'y', '', 0),
-(606, 1528, '<span style=''color:red;''>Выключено</span>', 'n', '', 477);
+(606, 1528, '<span style=''color:red;''>Выключено</span>', 'n', '', 477),
+(619, 1247, 'Уровень', 'level', 'show(''tr-level'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling,tr-static'');', 486),
+(620, 1260, 'Уровень', 'level', 'show(''tr-level'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling,tr-static'');', 487),
+(621, 1272, 'Уровень', 'level', 'show(''tr-level'');hide(''tr-entityId,tr-fieldId,tr-where,tr-sibling,tr-static'');', 488);
 
 -- --------------------------------------------------------
 
@@ -517,12 +506,14 @@ INSERT INTO `enumset` (`id`, `fieldId`, `title`, `alias`, `javascript`, `move`) 
 DROP TABLE IF EXISTS `faction`;
 CREATE TABLE IF NOT EXISTS `faction` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `alias` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `alias` varchar(255) NOT NULL DEFAULT '',
   `maintenance` enum('r','rs','n') NOT NULL DEFAULT 'r',
   `type` enum('o','s','p') NOT NULL DEFAULT 'p',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=37 ;
+  PRIMARY KEY (`id`),
+  KEY `maintenance` (`maintenance`),
+  KEY `type` (`type`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=43 ;
 
 --
 -- Дамп данных таблицы `faction`
@@ -532,9 +523,10 @@ INSERT INTO `faction` (`id`, `title`, `alias`, `maintenance`, `type`) VALUES
 (1, 'По умолчанию', 'index', 'rs', 's'),
 (2, 'Просмотр', 'details', 'r', 's'),
 (3, 'Изменить', 'form', 'r', 's'),
-(5, 'Добавить', 'add', 'n', 's'),
-(6, 'Активация', 'activation', 'n', 'o'),
-(36, 'Регистрация', 'registration', 'n', 'o');
+(5, 'Добавить', 'create', 'n', 's'),
+(6, 'Активация аккаунта', 'activation', 'n', 'o'),
+(36, 'Регистрация', 'registration', 'n', 'o'),
+(37, 'Восстановление доступа', 'changepasswd', 'n', 'o');
 
 -- --------------------------------------------------------
 
@@ -545,12 +537,14 @@ INSERT INTO `faction` (`id`, `title`, `alias`, `maintenance`, `type`) VALUES
 DROP TABLE IF EXISTS `fconfig`;
 CREATE TABLE IF NOT EXISTS `fconfig` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `alias` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `alias` varchar(255) NOT NULL DEFAULT '',
   `type` enum('v','b') NOT NULL DEFAULT 'v',
-  `value` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL DEFAULT '',
   `fconfigId` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fconfigId` (`fconfigId`),
+  KEY `type` (`type`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=12 ;
 
 --
@@ -570,11 +564,12 @@ INSERT INTO `fconfig` (`id`, `title`, `alias`, `type`, `value`, `fconfigId`) VAL
 DROP TABLE IF EXISTS `feedback`;
 CREATE TABLE IF NOT EXISTS `feedback` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `email` varchar(255) NOT NULL DEFAULT '',
   `message` text NOT NULL,
-  `date` date NOT NULL,
-  PRIMARY KEY (`id`)
+  `date` date NOT NULL DEFAULT '0000-00-00',
+  PRIMARY KEY (`id`),
+  FULLTEXT KEY `message` (`message`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=41 ;
 
 -- --------------------------------------------------------
@@ -599,8 +594,8 @@ CREATE TABLE IF NOT EXISTS `field` (
   `dependency` enum('e','с','u') NOT NULL DEFAULT 'e',
   `storeRelationAbility` enum('none','many','one') NOT NULL DEFAULT 'none',
   `alternative` varchar(255) NOT NULL DEFAULT '',
-  `filter` varchar(255) NOT NULL,
-  `satellitealias` varchar(255) NOT NULL,
+  `filter` varchar(255) NOT NULL DEFAULT '',
+  `satellitealias` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `entityId` (`entityId`),
   KEY `columnTypeId` (`columnTypeId`),
@@ -608,8 +603,9 @@ CREATE TABLE IF NOT EXISTS `field` (
   KEY `relation` (`relation`),
   KEY `satellite` (`satellite`),
   KEY `dependency` (`dependency`),
-  KEY `storeRelationAbility` (`storeRelationAbility`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1536 ;
+  KEY `storeRelationAbility` (`storeRelationAbility`),
+  FULLTEXT KEY `javascript` (`javascript`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2159 ;
 
 --
 -- Дамп данных таблицы `field`
@@ -632,17 +628,17 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (15, 6, 'Поле', 'fieldId', 3, 3, '0', 15, 5, '', 0, 'e', 'one', '0', '', ''),
 (16, 6, 'Наименование', 'title', 1, 1, '', 16, 0, '', 0, 'e', 'none', '0', '', ''),
 (17, 6, 'Псевдоним', 'alias', 1, 1, '', 17, 0, '', 0, 'e', 'none', '0', '', ''),
-(18, 3, 'Подчинен разделу', 'sectionId', 3, 3, '0', 19, 3, '', 0, 'e', 'one', '0', '', ''),
+(18, 3, 'Подчинен разделу', 'sectionId', 3, 23, '0', 19, 3, '', 0, 'e', 'one', '0', '', ''),
 (19, 3, 'Cущность, с которой будет работать раздел', 'entityId', 3, 3, '0', 25, 2, '', 0, 'e', 'one', '0', '', ''),
-(1344, 3, 'Настройки формы', 'formSettings', 0, 16, '', 1279, 0, '', 0, 'e', 'none', '', '', ''),
+(1344, 3, 'Настройки формы', 'formSettings', 0, 16, '', 1294, 0, '', 0, 'e', 'none', '', '', ''),
 (20, 3, 'Наименование', 'title', 1, 1, '', 18, 0, '', 0, 'e', 'none', '0', '', ''),
 (21, 3, 'Контроллер', 'alias', 1, 1, '', 21, 0, '', 0, 'e', 'none', '0', '', ''),
 (22, 3, 'Статус', 'toggle', 10, 5, 'y', 20, 6, '', 0, 'e', 'one', '0', '', ''),
-(23, 3, 'Положение в списке', 'move', 3, 4, '', 310, 0, '', 0, 'e', 'none', '0', '', ''),
-(25, 3, 'Количество строк на странице', 'rowsOnPage', 3, 1, '30', 514, 0, '', 0, 'e', 'none', '0', '', ''),
+(23, 3, 'Положение в списке', 'move', 3, 4, '', 443, 0, '', 0, 'e', 'none', '0', '', ''),
+(25, 3, 'Количество строк на странице', 'rowsOnPage', 3, 1, '30', 1277, 0, '', 0, 'e', 'none', '0', '', ''),
 (26, 8, 'Раздел, за которым закреплено действие', 'sectionId', 3, 3, '', 1, 3, '', 0, 'e', 'one', '0', '', ''),
 (27, 8, 'Действие', 'actionId', 3, 3, '', 1, 7, '', 0, 'e', 'one', '0', '', ''),
-(28, 8, 'Профили пользователей, имеющих доступ к этому действию в этом разделе', 'profileIds', 1, 7, '1,2,3', 1, 10, '', 0, 'e', 'many', '0', '', ''),
+(28, 8, 'Профили пользователей, имеющих доступ к этому действию в этом разделе', 'profileIds', 1, 7, '14', 1, 10, '', 0, 'e', 'many', '0', '', ''),
 (29, 8, 'Статус', 'toggle', 10, 5, 'y', 1, 6, '', 0, 'e', 'one', '0', '', ''),
 (30, 8, 'Положение в списке', 'move', 3, 4, '', 1, 0, '', 0, 'e', 'none', '0', '', ''),
 (31, 7, 'Наименование', 'title', 1, 1, '', 26, 0, '', 0, 'e', 'none', '0', '', ''),
@@ -665,20 +661,19 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (106, 20, 'Поле', 'fieldId', 3, 3, '0', 86, 5, '', 0, 'e', 'one', '0', '', ''),
 (107, 20, 'Наименование', 'title', 1, 1, '', 87, 0, '', 0, 'e', 'none', '0', '', ''),
 (108, 20, 'Псевдоним', 'alias', 1, 1, '', 88, 0, '', 0, 'e', 'none', '0', '', ''),
-(109, 20, 'Ширина', 'masterDimensionValue', 3, 15, '0', 91, 0, '', 0, 'e', 'none', '0', '', ''),
-(110, 20, 'Высота', 'slaveDimensionValue', 3, 15, '0', 93, 0, '', 0, 'e', 'none', '0', '', ''),
+(109, 20, 'Ширина', 'masterDimensionValue', 3, 18, '0', 91, 0, '', 0, 'e', 'none', '0', '', ''),
+(110, 20, 'Высота', 'slaveDimensionValue', 3, 18, '0', 93, 0, '', 0, 'e', 'none', '0', '', ''),
 (111, 20, 'Размер', 'proportions', 10, 5, 'o', 89, 6, '', 0, 'e', 'one', '0', '', ''),
 (112, 20, 'Ограничить пропорциональную <span id="slaveDimensionTitle">высоту</span>', 'slaveDimensionLimitation', 12, 9, '1', 92, 0, 'if($(''#proportionsP'').hasClass(''checked'')){if(!$(this).hasClass(''checked'')) hide(''tr-slaveDimensionValue''); else show(''tr-slaveDimensionValue'');}', 0, 'e', 'none', '0', '', ''),
 (114, 20, 'При расчете пропорций отталкиваться от', 'masterDimensionAlias', 10, 5, 'width', 90, 6, '$(''#td-left-masterDimensionValue'').text(this.value==''height'' ? ''Высота:'':''Ширина:'');$(''#td-left-slaveDimensionValue'').text(this.value!=''height'' ? ''Высота:'':''Ширина:'');$(''#slaveDimensionTitle'').text(this.value!=''height'' ? ''высоту'':''ширину'');', 0, 'e', 'one', '0', '', ''),
 (115, 6, 'Javascript-сценарий при выборе этого значения', 'javascript', 4, 6, '', 94, 0, '', 0, 'e', 'none', '0', '', ''),
 (116, 5, 'Javascript-сценарий при изменении значения поля', 'javascript', 4, 6, '', 95, 0, '', 0, 'e', 'none', '0', '', ''),
-(131, 25, 'Наименование', 'title', 1, 1, '', 96, 0, '', 0, 'e', 'none', '0', '', ''),
-(133, 25, 'Псевдоним', 'alias', 1, 1, '', 97, 0, '', 0, 'e', 'none', '0', '', ''),
-(1476, 25, 'Контент', 'details', 4, 13, '', 101, 0, '', 0, 'e', 'none', '', '', ''),
-(137, 25, 'Статус', 'toggle', 10, 5, 'y', 102, 6, '', 0, 'e', 'one', '0', '', ''),
+(131, 25, 'Наименование', 'title', 1, 1, '', 101, 0, '', 0, 'e', 'none', '0', '', ''),
+(133, 25, 'Псевдоним', 'alias', 1, 1, '', 102, 0, '', 0, 'e', 'none', '0', '', ''),
+(137, 25, 'Статус', 'toggle', 10, 5, 'y', 1667, 6, '', 0, 'e', 'one', '', '', ''),
 (345, 7, 'Для выполнения действия необходимо выбрать стоку', 'rowRequired', 10, 5, 'y', 308, 6, '', 0, 'e', 'one', '0', '', ''),
-(346, 7, 'Javascript', 'javascript', 4, 6, '', 309, 0, '', 0, 'e', 'none', '0', '', ''),
-(347, 3, 'Javascript для выполнения после загрузки грида', 'javascript', 4, 6, '', 1278, 0, '', 0, 'e', 'none', '0', '', ''),
+(346, 7, 'Javascript', 'javascript', 4, 6, 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");', 1292, 0, '', 0, 'e', 'none', '0', '', ''),
+(347, 3, 'Javascript для выполнения после загрузки грида', 'javascript', 4, 6, '', 1279, 0, '', 0, 'e', 'none', '0', '', ''),
 (377, 6, 'Порядок отображения', 'move', 3, 4, '0', 338, 0, '', 0, 'e', 'none', '0', '', ''),
 (383, 5, 'Столбец-satellite', 'satellite', 3, 3, '0', 523, 5, '', 0, 'e', 'one', '0', '', ''),
 (454, 5, 'Динамическое обновление', 'span', 0, 16, '', 428, 0, '', 0, 'e', 'none', '0', '', ''),
@@ -692,19 +687,16 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (476, 91, 'В контексте какого поля', 'fieldId', 3, 3, '0', 434, 5, '', 0, 'e', 'one', '0', '', ''),
 (477, 91, 'Параметр настройки', 'possibleParamId', 3, 3, '0', 435, 90, '', 476, 'с', 'one', 'elementId', '', ''),
 (478, 91, 'Значение параметра', 'value', 4, 6, '', 436, 0, '', 0, 'e', 'none', '0', '', ''),
-(485, 3, 'Javascript для выполнения после загрузки формы', 'javascriptForm', 4, 6, '', 1294, 0, '', 0, 'e', 'none', '0', '', ''),
+(485, 3, 'Javascript для выполнения после загрузки формы', 'javascriptForm', 4, 6, '', 1423, 0, '', 0, 'e', 'none', '0', '', ''),
 (502, 3, 'От какого класса наследовать класс контроллера', 'extends', 1, 1, 'Indi_Controller_Admin', 23, 0, '', 0, 'e', 'none', '0', '', ''),
-(503, 3, 'По умолчанию сортировать грид по столбцу', 'defaultSortField', 3, 3, '0', 461, 5, '', 19, 'с', 'one', '0', '', ''),
-(504, 3, 'Настройки грида', 'grid', 0, 16, '', 443, 0, '', 0, 'e', 'none', '0', '', ''),
-(507, 94, 'Наименование', 'title', 1, 1, '', 465, 0, '', 0, 'e', 'none', '0', '', ''),
-(508, 94, 'Псевдоним', 'alias', 1, 1, '', 466, 0, '', 0, 'e', 'none', '0', '', ''),
-(509, 94, 'Значение', 'value', 1, 1, '', 467, 0, '', 0, 'e', 'none', '0', '', ''),
+(503, 3, 'По умолчанию сортировать грид по столбцу', 'defaultSortField', 3, 3, '0', 462, 5, '', 19, 'с', 'one', '0', '', ''),
+(504, 3, 'Настройки грида', 'grid', 0, 16, '', 460, 0, '', 0, 'e', 'none', '0', '', ''),
 (555, 2, 'От какого класса наследовать', 'extends', 1, 1, 'Indi_Db_Table', 512, 0, '', 0, 'e', 'none', '0', '', ''),
-(557, 3, 'Направление сортировки', 'defaultSortDirection', 10, 5, 'ASC', 462, 6, '', 0, 'e', 'none', '0', '', ''),
+(557, 3, 'Направление сортировки', 'defaultSortDirection', 10, 5, 'ASC', 514, 6, '', 0, 'e', 'none', '0', '', ''),
 (559, 101, 'Наименование', 'title', 1, 1, '', 517, 0, '', 0, 'e', 'none', '0', '', ''),
 (560, 101, 'Псевдоним', 'alias', 1, 1, '', 519, 0, '', 0, 'e', 'none', '0', '', ''),
 (561, 102, 'Количества', 'title', 1, 1, '', 518, 0, '', 0, 'e', 'none', '0', '', ''),
-(562, 101, 'Набор возможных количеств строк для выбора постраничного отображения', 'rppId', 3, 3, '1', 815, 102, '', 0, 'e', 'one', '0', '', ''),
+(562, 101, 'Набор возможных количеств строк для выбора постраничного отображения', 'rppId', 3, 3, '1', 901, 102, '', 0, 'e', 'one', '0', '', ''),
 (563, 101, 'Прикрепленная сущность', 'entityId', 3, 3, '0', 520, 2, '', 0, 'e', 'one', '0', '', ''),
 (564, 103, 'К какому разделу фронтенда относится', 'fsectionId', 3, 3, '0', 521, 101, '', 0, 'e', 'one', '0', '', ''),
 (565, 103, 'Фильтр по какому полю сущности, прикрепленной к разделу', 'fieldId', 3, 3, '0', 522, 5, '', 564, 'с', 'one', 'entityId', '', ''),
@@ -722,7 +714,7 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (582, 108, 'Соответствующий зависимый раздел бэкенда', 'sectionId', 3, 3, '0', 536, 3, '', 0, 'с', 'one', 'sectionId', '', ''),
 (583, 108, 'Наименование', 'title', 1, 1, '', 537, 0, '', 0, 'e', 'none', '', '', ''),
 (584, 108, 'Псевдоним', 'alias', 1, 1, '', 807, 0, '', 0, 'e', 'none', '', '', ''),
-(585, 101, 'Порядок отображения соответствующего пункта в меню', 'move', 3, 4, '0', 901, 0, '', 0, 'e', 'none', '', '', ''),
+(585, 101, 'Порядок отображения соответствующего пункта в меню', 'move', 3, 4, '0', 950, 0, '', 0, 'e', 'none', '', '', ''),
 (594, 20, 'Изменить оттенок', 'changeColor', 10, 5, 'n', 545, 6, '', 0, 'e', 'one', '', '', ''),
 (595, 20, 'Оттенок', 'color', 13, 11, '', 546, 0, '', 0, 'e', 'none', '', '', ''),
 (596, 110, 'К какому разделу фронтенда относится', 'fsectionId', 3, 3, '0', 547, 101, '', 0, 'e', 'one', '', '', ''),
@@ -736,27 +728,25 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (678, 128, 'Имя', 'title', 1, 1, '', 625, 0, '', 0, 'e', 'none', '', '', ''),
 (679, 128, 'Email', 'email', 1, 1, '', 626, 0, '', 0, 'e', 'none', '', '', ''),
 (680, 128, 'Сообщение', 'message', 4, 6, '', 627, 0, '', 0, 'e', 'none', '', '', ''),
-(681, 128, 'Дата', 'date', 6, 12, '', 628, 0, '', 0, 'e', 'none', '', '', ''),
+(681, 128, 'Дата', 'date', 6, 12, '0000-00-00', 628, 0, '', 0, 'e', 'none', '', '', ''),
 (682, 129, 'Email', 'title', 1, 1, '', 629, 0, '', 0, 'e', 'none', '', '', ''),
-(683, 129, 'Дата', 'date', 6, 12, '', 630, 0, '', 0, 'e', 'none', '', '', ''),
-(684, 130, 'Ник', 'title', 1, 1, '', 631, 0, '', 0, 'e', 'none', '', '', ''),
-(685, 130, 'Email', 'email', 1, 1, '', 632, 0, '', 0, 'e', 'none', '', '', ''),
-(686, 130, 'Пароль', 'password', 1, 1, '', 633, 0, '', 0, 'e', 'none', '', '', ''),
-(687, 130, 'Настоящее имя', 'name', 1, 1, '', 640, 0, '', 0, 'e', 'none', '', '', ''),
-(688, 130, 'Фамилия', 'surname', 1, 1, '', 641, 0, '', 0, 'e', 'none', '', '', ''),
-(689, 130, 'Пол', 'gender', 10, 5, 'n', 642, 6, '', 0, 'e', 'one', '', '', ''),
-(690, 130, 'Дата рождения', 'birth', 6, 12, '', 644, 0, '', 0, 'e', 'none', '', '', ''),
-(691, 130, 'Дата регистрации', 'registration', 6, 12, '', 634, 0, '', 0, 'e', 'none', '', '', ''),
-(1364, 7, 'Тип', 'type', 10, 5, 'p', 1292, 6, '', 0, 'e', 'one', '', '', ''),
+(683, 129, 'Дата', 'date', 6, 12, '0000-00-00', 630, 0, '', 0, 'e', 'none', '', '', ''),
+(684, 130, 'Email', 'email', 1, 1, '', 633, 0, '', 0, 'e', 'none', '', '', ''),
+(685, 130, 'ФИО', 'title', 1, 1, '', 632, 0, '', 0, 'e', 'none', '', '', ''),
+(686, 130, 'Пароль', 'password', 1, 1, '', 634, 0, '', 0, 'e', 'none', '', '', ''),
+(689, 130, 'Пол', 'gender', 10, 5, 'n', 969, 6, '', 0, 'e', 'one', '', '', ''),
+(690, 130, 'Дата рождения', 'birth', 6, 12, '0000-00-00', 1099, 0, '', 0, 'e', 'none', '', '', ''),
+(691, 130, 'Дата регистрации', 'registration', 6, 12, '0000-00-00', 636, 0, '', 0, 'e', 'none', '', '', ''),
+(1364, 7, 'Тип', 'type', 10, 5, 'p', 2099, 6, '', 0, 'e', 'one', '', '', ''),
 (1365, 146, 'Тип', 'type', 10, 5, 'p', 1293, 6, '', 0, 'e', 'one', '', '', ''),
-(698, 130, 'Подписался на рассылку', 'subscribed', 12, 9, '0', 969, 0, '', 0, 'e', 'none', '', '', ''),
-(699, 130, 'Последний визит', 'lastVisit', 9, 19, '', 637, 0, '', 0, 'e', 'none', '', '', ''),
+(698, 130, 'Подписался на рассылку', 'subscribed', 12, 9, '0', 1443, 0, '', 0, 'e', 'none', '', '', ''),
+(699, 130, 'Последний визит', 'lastVisit', 9, 19, '', 640, 0, '', 0, 'e', 'none', '', '', ''),
 (1444, 195, 'Порядок отображения', 'move', 3, 4, '0', 1315, 0, '', 0, 'e', 'none', '', '', ''),
 (1442, 195, 'Раздел', 'sectionId', 3, 3, '0', 1313, 3, '', 0, 'e', 'one', '', '', ''),
-(1443, 195, 'Поле прикрепленной к разделу сущности', 'fieldId', 3, 3, '0', 1314, 5, '', 1442, 'с', 'one', 'entityId', '', ''),
+(1443, 195, 'Поле прикрепленной к разделу сущности', 'fieldId', 3, 3, '0', 1314, 5, '', 1442, 'с', 'one', 'entityId', '`elementId` NOT IN (4,14,16,20,22)', ''),
 (1441, 2, 'Включить в кэш', 'useCache', 12, 9, '0', 1312, 0, '', 0, 'e', 'none', '', '', ''),
 (754, 5, 'Статическая фильтрация', 'filter', 1, 1, '', 413, 0, '', 0, 'e', 'none', '', '', ''),
-(767, 3, 'Статическая фильтрация', 'filter', 1, 1, '', 460, 0, '', 0, 'e', 'none', '', '', ''),
+(767, 3, 'Статическая фильтрация', 'filter', 1, 1, '', 461, 0, '', 0, 'e', 'none', '', '', ''),
 (828, 5, 'Псевдоним поля для использования в satellite-функциональности', 'satellitealias', 1, 1, '', 414, 0, '', 0, 'e', 'none', '', '', ''),
 (857, 146, 'Наименование', 'title', 1, 1, '', 803, 0, '', 0, 'e', 'none', '', '', ''),
 (858, 146, 'Псевдоним', 'alias', 1, 1, '', 804, 0, '', 0, 'e', 'none', '', '', ''),
@@ -767,10 +757,10 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (863, 110, 'Действие, при выполнении которого требуется выдернуть foreign row', 'fsection2factionId', 3, 3, '0', 548, 147, '', 596, 'с', 'one', '', '', ''),
 (868, 101, 'Вышестоящий раздел', 'fsectionId', 3, 3, '0', 516, 101, '', 0, 'e', 'one', '', '', ''),
 (869, 101, 'Статическая фильтрация', 'filter', 1, 1, '', 814, 0, '', 0, 'e', 'none', '', '', ''),
-(940, 111, 'Выдергивать в виде', 'returnAs', 10, 5, 'o', 885, 6, '', 0, 'e', 'none', '', '', ''),
-(960, 101, 'Количество строк для отображения по умолчанию', 'defaultLimit', 3, 18, '20', 950, 0, '', 0, 'e', 'none', '', '', ''),
-(961, 130, 'Аккаунт активирован', 'activated', 12, 9, '0', 635, 0, '', 0, 'e', 'none', '', '', ''),
-(962, 130, 'Код активации', 'activationCode', 1, 1, '', 636, 0, '', 0, 'e', 'none', '', '', ''),
+(940, 111, 'Выдергивать в виде', 'returnAs', 10, 5, 'o', 941, 6, '', 0, 'e', 'none', '', '', ''),
+(960, 101, 'Количество строк для отображения по умолчанию', 'defaultLimit', 3, 18, '20', 951, 0, '', 0, 'e', 'none', '', '', ''),
+(961, 130, 'Аккаунт активирован', 'activated', 12, 9, '0', 637, 0, '', 0, 'e', 'none', '', '', ''),
+(962, 130, 'Код активации', 'activationCode', 1, 1, '', 639, 0, '', 0, 'e', 'none', '', '', ''),
 (980, 147, 'Использовать версию верстки №', 'imposition', 3, 18, '0', 921, 0, '', 0, 'e', 'none', '', '', ''),
 (981, 155, 'Раздел фронтенда', 'fsectionId', 3, 3, '0', 922, 101, '', 0, 'e', 'one', '', '', ''),
 (982, 155, 'Действие в разделе фронтенда, при котором вытаскивать rowset', 'fsection2factionId', 3, 3, '0', 923, 147, '', 981, 'с', 'one', '', '', ''),
@@ -790,27 +780,27 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (996, 156, 'Для какого поля делать джойн', 'fieldId', 3, 3, '0', 937, 5, '', 995, 'с', 'one', 'entityId', '', ''),
 (997, 156, 'Выдергивать в виде', 'returnAs', 10, 5, 'o', 938, 6, '', 0, 'e', 'one', '', '', ''),
 (998, 110, 'Выдергивать в виде', 'returnAs', 10, 5, 'o', 939, 6, '', 0, 'e', 'one', '', '', ''),
-(1000, 111, 'Ограничение (LIMIT)', 'limit', 3, 18, '0', 1012, 0, '', 0, 'e', 'none', '', '', ''),
-(1009, 101, 'По умолчанию сортировка по', 'orderBy', 10, 5, 'c', 951, 6, '', 0, 'e', 'one', '', '', ''),
-(1010, 101, 'Столбец сортировки', 'orderColumn', 3, 3, '0', 952, 5, '', 563, 'с', 'one', '', '', ''),
-(1011, 101, 'Направление сортировки', 'orderDirection', 10, 5, 'ASC', 953, 6, '', 0, 'e', 'one', '', '', ''),
-(1012, 101, 'SQL-выражение', 'orderExpression', 1, 1, '', 981, 0, '', 0, 'e', 'none', '', '', ''),
-(1013, 111, 'По умолчанию сортировка по', 'orderBy', 10, 5, 'c', 954, 6, '', 0, 'e', 'one', '', '', ''),
-(1014, 111, 'Столбец сортировки', 'orderColumn', 3, 3, '0', 955, 5, '', 603, 'с', 'one', '', '', ''),
-(1015, 111, 'Направление сортировки', 'orderDirection', 10, 5, 'ASC', 956, 6, '', 0, 'e', 'one', '', '', ''),
-(1016, 111, 'SQL-выражение', 'orderExpression', 1, 1, '', 957, 0, '', 0, 'e', 'none', '', '', ''),
+(1000, 111, 'Ограничение (LIMIT)', 'limit', 3, 18, '0', 1430, 0, '', 0, 'e', 'none', '', '', ''),
+(1009, 101, 'По умолчанию сортировка по', 'orderBy', 10, 5, 'c', 952, 6, '', 0, 'e', 'one', '', '', ''),
+(1010, 101, 'Столбец сортировки', 'orderColumn', 3, 3, '0', 953, 5, '', 563, 'с', 'one', '', '', ''),
+(1011, 101, 'Направление сортировки', 'orderDirection', 10, 5, 'ASC', 981, 6, '', 0, 'e', 'one', '', '', ''),
+(1012, 101, 'SQL-выражение', 'orderExpression', 1, 1, '', 982, 0, '', 0, 'e', 'none', '', '', ''),
+(1013, 111, 'По умолчанию сортировка по', 'orderBy', 10, 5, 'c', 955, 6, '', 0, 'e', 'one', '', '', ''),
+(1014, 111, 'Столбец сортировки', 'orderColumn', 3, 3, '0', 956, 5, '', 603, 'с', 'one', '', '', ''),
+(1015, 111, 'Направление сортировки', 'orderDirection', 10, 5, 'ASC', 957, 6, '', 0, 'e', 'one', '', '', ''),
+(1016, 111, 'SQL-выражение', 'orderExpression', 1, 1, '', 1012, 0, '', 0, 'e', 'none', '', '', ''),
 (1018, 158, 'Раздел фронтенда', 'fsectionId', 3, 3, '0', 959, 101, '', 0, 'e', 'one', '', '', ''),
 (1019, 158, 'Действие в разделе фронтенда', 'fsection2factionId', 3, 3, '0', 960, 147, '', 1018, 'с', 'one', '', '', ''),
 (1020, 158, 'Зависимое множество', 'dependentRowsetId', 3, 3, '0', 961, 111, '', 1019, 'с', 'one', '', '', ''),
 (1021, 158, 'Для какого поля делать джойн', 'fieldId', 3, 3, '0', 962, 5, '', 1020, 'с', 'one', 'entityId', '', ''),
 (1022, 158, 'Выдергивать в виде', 'returnAs', 10, 5, 'o', 963, 6, '', 0, 'e', 'one', '', '', ''),
 (1027, 147, 'Тип', 'type', 10, 5, 'r', 968, 6, '', 0, 'e', 'one', '', '', ''),
-(1028, 130, 'Аватар', 'avatar', 0, 14, '', 902, 0, '', 0, 'e', 'none', '', '', ''),
+(1028, 130, 'Аватар', 'avatar', 0, 14, '', 1100, 0, '', 0, 'e', 'none', '', '', ''),
 (1040, 101, 'Тип', 'type', 10, 5, 'r', 538, 6, '', 0, 'e', 'one', '', '', ''),
-(1041, 101, 'Где брать идентификатор', 'where', 1, 1, '', 982, 0, '', 0, 'e', 'none', '', '', ''),
-(1042, 101, 'Действие по умолчанию', 'index', 1, 1, '', 983, 0, '', 0, 'e', 'none', '', '', ''),
+(1041, 101, 'Где брать идентификатор', 'where', 1, 1, '', 983, 0, '', 0, 'e', 'none', '', '', ''),
+(1042, 101, 'Действие по умолчанию', 'index', 1, 1, '', 1403, 0, '', 0, 'e', 'none', '', '', ''),
 (1044, 108, 'Условие', 'where', 1, 1, '', 985, 0, '', 0, 'e', 'none', '', '', ''),
-(1071, 111, 'Дополнительное условие выборки', 'where', 1, 1, '', 941, 0, '', 0, 'e', 'none', '', '', ''),
+(1071, 111, 'Дополнительное условие выборки', 'where', 1, 1, '', 954, 0, '', 0, 'e', 'none', '', '', ''),
 (1074, 146, 'Выполнять maintenance()', 'maintenance', 10, 5, 'r', 1015, 6, '', 0, 'e', 'one', '', '', ''),
 (1075, 103, 'Тип', 'type', 10, 5, 'e', 1016, 6, '', 0, 'e', 'one', '', '', ''),
 (1082, 159, 'К какому разделу фронтенда относится', 'fsectionId', 3, 3, '0', 1023, 101, '', 0, 'e', 'one', '', '', ''),
@@ -821,19 +811,17 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (1087, 159, 'Псевдоним', 'alias', 1, 1, '', 1028, 0, '', 0, 'e', 'none', '', '', ''),
 (1088, 159, 'Условие', 'where', 1, 1, '', 1029, 0, '', 0, 'e', 'none', '', '', ''),
 (1100, 160, 'Id сессии', 'title', 1, 1, '', 1040, 0, '', 0, 'e', 'none', '', '', ''),
-(1101, 160, 'Дата последней активности', 'lastActivity', 9, 19, '', 1041, 0, '', 0, 'e', 'none', '', '', ''),
+(1101, 160, 'Дата последней активности', 'lastActivity', 9, 19, '0000-00-00 00:00:00', 1041, 0, '', 0, 'e', 'none', '', '', ''),
 (1102, 160, 'Пользователь', 'userId', 3, 3, '0', 1042, 130, '', 0, 'e', 'one', '', '', ''),
-(1103, 160, 'Скрытый', 'hidden', 12, 9, '0', 1043, 0, '', 0, 'e', 'none', '', '', ''),
-(1107, 130, 'Информация', 'private', 0, 16, '', 639, 0, '', 0, 'e', 'none', '', '', ''),
-(1108, 130, 'Настройки', 'settings', 0, 16, '', 903, 0, '', 0, 'e', 'none', '', '', ''),
+(1108, 130, 'Настройки', 'settings', 0, 16, '', 1101, 0, '', 0, 'e', 'none', '', '', ''),
 (1153, 161, 'Наименование', 'title', 1, 1, '', 1091, 0, '', 0, 'e', 'none', '', '', ''),
 (1154, 161, 'Псевдоним', 'alias', 1, 1, '', 1092, 0, '', 0, 'e', 'none', '', '', ''),
 (1155, 161, 'Тип', 'type', 10, 5, 'v', 1094, 6, '', 0, 'e', 'one', '', '', ''),
 (1156, 161, 'Значение', 'value', 1, 1, '', 1096, 0, '', 0, 'e', 'none', '', '', ''),
 (1158, 161, 'Вышестоящая ветка', 'fconfigId', 3, 3, '0', 1093, 161, '', 0, 'e', 'one', '', '', ''),
-(1161, 130, 'Социальные сети', 'socialNetworks', 0, 16, '', 1099, 0, '', 0, 'e', 'none', '', '', ''),
-(1162, 130, 'ID пользователя в этой соц.сети', 'identifier', 1, 1, '', 1101, 0, '', 0, 'e', 'none', '', '', ''),
-(1163, 130, 'Какая', 'sn', 10, 5, 'n', 1100, 6, '', 0, 'e', 'one', '', '', ''),
+(1161, 130, 'Социальные сети', 'socialNetworks', 0, 16, '', 1444, 0, '', 0, 'e', 'none', '', '', ''),
+(1162, 130, 'ID пользователя в этой соц.сети', 'identifier', 1, 1, '', 1707, 0, '', 0, 'e', 'none', '', '', ''),
+(1163, 130, 'Какая', 'sn', 10, 5, 'n', 1445, 6, '', 0, 'e', 'one', '', '', ''),
 (1191, 147, 'Не указывать действие при создании seo-урлов из системных', 'blink', 12, 9, '0', 1259, 0, 'if($(this).attr(''checked'')) hide(''tr-rename,tr-alias'');else {show(''tr-rename'');if($(''#rename1'').attr(''checked'')) show(''tr-alias'')}', 0, 'e', 'none', '', '', ''),
 (1192, 162, 'Раздел фронтенда', 'fsectionId', 3, 3, '0', 1127, 101, '', 0, 'e', 'one', '', '', ''),
 (1193, 162, 'Действие в разделе фронтенда', 'fsection2factionId', 3, 3, '0', 1128, 147, '', 1192, 'с', 'one', '', '', ''),
@@ -846,37 +834,37 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (1247, 164, 'Тип', 'type', 10, 5, 's', 1183, 6, '', 0, 'e', 'one', '', '', ''),
 (1248, 164, 'Наименование', 'title', 1, 1, '', 1181, 0, '', 0, 'e', 'none', '', '', ''),
 (1249, 164, 'Содержимое', 'static', 1, 1, '', 1185, 0, '', 0, 'e', 'none', '', '', ''),
-(1250, 164, 'Сущность, чье поле будет использовано', 'entityId', 3, 3, '0', 1186, 2, '', 0, 'e', 'one', '', '`system` IN ("n","o") OR `id`="101"', ''),
-(1251, 164, 'Содержимое какого поля должно быть компонентом', 'fieldId', 3, 3, '0', 1187, 5, '', 1250, 'с', 'one', '', '', ''),
-(1252, 164, 'Где брать идентификатор', 'where', 10, 5, 'c', 1188, 6, '', 0, 'e', 'one', '', '', ''),
-(1253, 164, 'Sibling-компонент', 'sibling', 3, 3, '0', 1189, 164, '', 1246, 'с', 'one', '', '', 'fsection2factionId'),
-(1254, 164, 'Порядок отображения', 'move', 3, 4, '0', 1190, 0, '', 0, 'e', 'none', '', '', ''),
-(1255, 164, 'Префикс', 'prefix', 1, 1, '', 1250, 0, '', 0, 'e', 'none', '', '', ''),
-(1256, 164, 'Постфикс', 'postfix', 1, 1, '', 1251, 0, '', 0, 'e', 'none', '', '', ''),
+(1250, 164, 'Сущность, чье поле будет использовано', 'entityId', 3, 3, '0', 1188, 2, '', 0, 'e', 'one', '', '`system` IN ("n","o") OR `id`="101"', ''),
+(1251, 164, 'Содержимое какого поля должно быть компонентом', 'fieldId', 3, 3, '0', 1189, 5, '', 1250, 'с', 'one', '', '', ''),
+(1252, 164, 'Где брать идентификатор', 'where', 10, 5, 'c', 1190, 6, '', 0, 'e', 'one', '', '', ''),
+(1253, 164, 'Sibling-компонент', 'sibling', 3, 3, '0', 1250, 164, '', 1246, 'с', 'one', '', '', 'fsection2factionId'),
+(1254, 164, 'Порядок отображения', 'move', 3, 4, '0', 1251, 0, '', 0, 'e', 'none', '', '', ''),
+(1255, 164, 'Префикс', 'prefix', 1, 1, '', 1432, 0, '', 0, 'e', 'none', '', '', ''),
+(1256, 164, 'Постфикс', 'postfix', 1, 1, '', 1495, 0, '', 0, 'e', 'none', '', '', ''),
 (1257, 165, 'Раздел фронтенда', 'fsectionId', 3, 3, '0', 1191, 101, '', 0, 'e', 'one', '', '`toggle`="y"', ''),
 (1258, 165, 'Действие в разделе фронтенда', 'fsection2factionId', 3, 3, '0', 1192, 147, '', 1257, 'с', 'one', '', '', ''),
 (1259, 165, 'Наименование', 'title', 1, 1, '', 1193, 0, '', 0, 'e', 'none', '', '', ''),
 (1260, 165, 'Тип', 'type', 10, 5, 's', 1195, 6, '', 0, 'e', 'one', '', '', ''),
 (1261, 165, 'Содержимое', 'static', 1, 1, '', 1197, 0, '', 0, 'e', 'none', '', '', ''),
-(1262, 165, 'Сущность, чье поле будет использовано', 'entityId', 3, 3, '0', 1198, 2, '', 0, 'e', 'one', '', '`system`IN ("n","o") OR `id`="101"', ''),
-(1263, 165, 'Содержимое какого поля должно быть компонентом', 'fieldId', 3, 3, '0', 1199, 5, '', 1262, 'с', 'one', '', '', ''),
-(1264, 165, 'Где брать идентификатор', 'where', 10, 5, 'c', 1200, 6, '', 0, 'e', 'one', '', '', ''),
-(1265, 165, 'Sibling-компонент', 'sibling', 3, 3, '0', 1201, 165, '', 1258, 'с', 'one', '', '', 'fsection2factionId'),
-(1266, 165, 'Порядок отображения', 'move', 3, 4, '0', 1202, 0, '', 0, 'e', 'none', '', '', ''),
-(1267, 165, 'Префикс', 'prefix', 1, 1, '', 1255, 0, '', 0, 'e', 'none', '', '', ''),
-(1268, 165, 'Постфикс', 'postfix', 1, 1, '', 1256, 0, '', 0, 'e', 'none', '', '', ''),
+(1262, 165, 'Сущность, чье поле будет использовано', 'entityId', 3, 3, '0', 1199, 2, '', 0, 'e', 'one', '', '`system`IN ("n","o") OR `id`="101"', ''),
+(1263, 165, 'Содержимое какого поля должно быть компонентом', 'fieldId', 3, 3, '0', 1200, 5, '', 1262, 'с', 'one', '', '', ''),
+(1264, 165, 'Где брать идентификатор', 'where', 10, 5, 'c', 1201, 6, '', 0, 'e', 'one', '', '', ''),
+(1265, 165, 'Sibling-компонент', 'sibling', 3, 3, '0', 1202, 165, '', 1258, 'с', 'one', '', '', 'fsection2factionId'),
+(1266, 165, 'Порядок отображения', 'move', 3, 4, '0', 1255, 0, '', 0, 'e', 'none', '', '', ''),
+(1267, 165, 'Префикс', 'prefix', 1, 1, '', 1256, 0, '', 0, 'e', 'none', '', '', ''),
+(1268, 165, 'Постфикс', 'postfix', 1, 1, '', 1433, 0, '', 0, 'e', 'none', '', '', ''),
 (1269, 166, 'Раздел фронтенда', 'fsectionId', 3, 3, '0', 1203, 101, '', 0, 'e', 'one', '', '`toggle`="y"', ''),
 (1270, 166, 'Действие в разделе фронтенда', 'fsection2factionId', 3, 3, '0', 1204, 147, '', 1269, 'с', 'one', '', '', ''),
 (1271, 166, 'Наименование', 'title', 1, 1, '', 1205, 0, '', 0, 'e', 'none', '', '', ''),
 (1272, 166, 'Тип', 'type', 10, 5, 's', 1207, 6, '', 0, 'e', 'one', '', '', ''),
 (1273, 166, 'Содержимое', 'static', 1, 1, '', 1209, 0, '', 0, 'e', 'none', '', '', ''),
-(1274, 166, 'Сущность, чье поле будет использовано', 'entityId', 3, 3, '0', 1210, 2, '', 0, 'e', 'one', '', '`system` IN ("n","o") OR `id`="101"', ''),
-(1275, 166, 'Содержимое какого поля должно быть компонентом', 'fieldId', 3, 3, '0', 1211, 5, '', 1274, 'с', 'one', '', '', ''),
-(1276, 166, 'Где брать идентификатор', 'where', 10, 5, 'c', 1212, 6, '', 0, 'e', 'one', '', '', ''),
-(1277, 166, 'Sibling-компонент', 'sibling', 3, 3, '0', 1213, 166, '', 1270, 'с', 'one', '', '', 'fsection2factionId'),
-(1278, 166, 'Порядок отображения', 'move', 3, 4, '0', 1214, 0, '', 0, 'e', 'none', '', '', ''),
-(1279, 166, 'Префикс', 'prefix', 1, 1, '', 1257, 0, '', 0, 'e', 'none', '', '', ''),
-(1280, 166, 'Постфикс', 'postfix', 1, 1, '', 1258, 0, '', 0, 'e', 'none', '', '', ''),
+(1274, 166, 'Сущность, чье поле будет использовано', 'entityId', 3, 3, '0', 1211, 2, '', 0, 'e', 'one', '', '`system` IN ("n","o") OR `id`="101"', ''),
+(1275, 166, 'Содержимое какого поля должно быть компонентом', 'fieldId', 3, 3, '0', 1212, 5, '', 1274, 'с', 'one', '', '', ''),
+(1276, 166, 'Где брать идентификатор', 'where', 10, 5, 'c', 1213, 6, '', 0, 'e', 'one', '', '', ''),
+(1277, 166, 'Sibling-компонент', 'sibling', 3, 3, '0', 1214, 166, '', 1270, 'с', 'one', '', '', 'fsection2factionId'),
+(1278, 166, 'Порядок отображения', 'move', 3, 4, '0', 1257, 0, '', 0, 'e', 'none', '', '', ''),
+(1279, 166, 'Префикс', 'prefix', 1, 1, '', 1258, 0, '', 0, 'e', 'none', '', '', ''),
+(1280, 166, 'Постфикс', 'postfix', 1, 1, '', 1434, 0, '', 0, 'e', 'none', '', '', ''),
 (1316, 164, 'Задействовать только если найден идентификатор для компонента', 'seoTitleId', 3, 3, '0', 1182, 164, '', 1246, 'с', 'one', '', '', ''),
 (1317, 164, 'Востребованность', 'need', 10, 5, 'a', 1184, 6, '', 0, 'e', 'one', '', '', ''),
 (1321, 165, 'Задействовать только если найден идентификатор для компонента', 'seoKeywordId', 3, 3, '0', 1194, 165, '', 1258, 'с', 'one', '', '', ''),
@@ -890,36 +878,53 @@ INSERT INTO `field` (`id`, `entityId`, `title`, `alias`, `columnTypeId`, `elemen
 (1337, 10, 'Cущность, экземпляры которой тоже будут иметь доступ к CMS с данным профилем', 'entityId', 3, 3, '0', 1271, 2, '', 0, 'e', 'one', '', '`system`!=''y''', ''),
 (1341, 171, 'Раздел', 'sectionId', 3, 3, '0', 1275, 3, '', 0, 'e', 'one', '', '', ''),
 (1342, 171, 'Поле, которое должно быть отключено', 'fieldId', 3, 3, '0', 1276, 5, '', 1341, 'с', 'one', 'entityId', '', ''),
-(1345, 3, 'Отключить кнопку Add', 'disableAdd', 12, 9, '0', 1277, 0, '', 0, 'e', 'none', '', '', ''),
+(1345, 3, 'Отключить кнопку Add', 'disableAdd', 12, 9, '0', 1278, 0, '', 0, 'e', 'none', '', '', ''),
 (1357, 155, 'Вычисляемые столбцы', 'calculatedColumns', 1, 1, '', 927, 0, '', 0, 'e', 'none', '', '', ''),
-(1509, 204, 'Ширина', 'detailsHtmlWidth', 3, 18, '0', 1382, 0, 'CKEDITOR.instances[''detailsHtml''].resize(parseInt(this.value)+52);', 0, 'e', 'none', '', '', ''),
+(1509, 204, 'Ширина', 'detailsHtmlWidth', 3, 18, '0', 1383, 0, 'CKEDITOR.instances[''detailsHtml''].resize(parseInt(this.value)+52);', 0, 'e', 'none', '', '', ''),
 (1532, 171, 'Значение по умолчанию', 'defaultValue', 1, 1, '', 1402, 0, '', 0, 'e', 'none', '', '', ''),
-(1485, 204, 'Наименование', 'title', 1, 1, '', 1355, 0, '', 0, 'e', 'none', '', '', ''),
-(1486, 204, 'Псевдоним', 'alias', 1, 1, '', 1356, 0, '', 0, 'e', 'none', '', '', ''),
-(1487, 204, 'Контент', 'detailsHtml', 4, 13, '', 1380, 0, '', 0, 'e', 'none', '', '', ''),
-(1488, 204, 'Статус', 'toggle', 10, 5, 'y', 1357, 6, '', 0, 'e', 'one', '', '', ''),
+(1485, 204, 'Наименование', 'title', 1, 1, '', 1356, 0, '', 0, 'e', 'none', '', '', ''),
+(1486, 204, 'Псевдоним', 'alias', 1, 1, '', 1357, 0, '', 0, 'e', 'none', '', '', ''),
+(1487, 204, 'Значение', 'detailsHtml', 4, 13, '', 1382, 0, '', 0, 'e', 'none', '', '', ''),
+(1488, 204, 'Статус', 'toggle', 10, 5, 'y', 1358, 6, '', 0, 'e', 'one', '', '', ''),
 (1489, 205, 'Вышестояший пункт', 'menuId', 3, 3, '0', 1359, 205, '', 0, 'e', 'one', '', '', ''),
 (1490, 205, 'Наименование', 'title', 1, 1, '', 1360, 0, '', 0, 'e', 'none', '', '', ''),
 (1491, 205, 'Связан со статической страницей', 'linked', 10, 5, 'n', 1361, 6, '', 0, 'e', 'one', '', '', ''),
 (1492, 205, 'Статическая страница', 'staticpageId', 3, 3, '0', 1362, 25, '', 0, 'e', 'one', '', '', ''),
 (1493, 205, 'Ссылка', 'url', 1, 1, '', 1363, 0, '', 0, 'e', 'none', '', '', ''),
 (1494, 205, 'Статус', 'toggle', 10, 3, 'y', 1364, 6, '', 0, 'e', 'one', '', '', ''),
-(1535, 7, 'Условия выполнение действия', 'condition', 4, 6, '', 1404, 0, '', 0, 'e', 'none', '', '', ''),
+(1495, 205, 'Отображать в нижнем меню', 'bottom', 10, 5, 'y', 1365, 6, '', 0, 'e', 'one', '', '', ''),
 (1496, 205, 'Порядок отображения', 'move', 3, 4, '0', 1366, 0, '', 0, 'e', 'none', '', '', ''),
-(1510, 204, 'Содержимое', 'detailsSpan', 0, 16, '', 1358, 0, '', 0, 'e', 'none', '', '', ''),
-(1511, 204, 'Высота', 'detailsHtmlHeight', 3, 18, '200', 1383, 0, 'CKEDITOR.instances[''detailsHtml''].resize(parseInt($(''detailsHtmlWidth'').val()),parseInt(this.value)+106);', 0, 'e', 'none', '', '', ''),
-(1513, 204, 'Css класс', 'detailsHtmlBodyClass', 1, 1, '', 1384, 0, '', 0, 'e', 'none', '', '', ''),
-(1514, 204, 'Стили', 'detailsHtmlStyle', 4, 6, '', 1385, 0, '', 0, 'e', 'none', '', '', ''),
-(1515, 204, 'Тип', 'type', 10, 5, 'html', 1379, 6, '', 0, 'e', 'one', '', '', ''),
-(1516, 204, 'Значение', 'detailsString', 1, 1, '', 1386, 0, '', 0, 'e', 'none', '', '', ''),
-(1517, 204, 'Значение', 'detailsTextarea', 4, 6, '', 1387, 0, '', 0, 'e', 'none', '', '', ''),
+(1814, 25, 'Контент', 'details', 4, 13, '', 1666, 0, '', 0, 'e', 'none', '', '', ''),
+(1510, 204, 'Контент', 'detailsSpan', 0, 16, '', 1379, 0, '', 0, 'e', 'none', '', '', ''),
+(1511, 204, 'Высота', 'detailsHtmlHeight', 3, 18, '200', 1384, 0, 'CKEDITOR.instances[''detailsHtml''].resize(parseInt($(''detailsHtmlWidth'').val()),parseInt(this.value)+106);', 0, 'e', 'none', '', '', ''),
+(1513, 204, 'Css класс для body', 'detailsHtmlBodyClass', 1, 1, '', 1385, 0, '', 0, 'e', 'none', '', '', ''),
+(1514, 204, 'Css стили', 'detailsHtmlStyle', 4, 6, '', 1386, 0, '', 0, 'e', 'none', '', '', ''),
+(1515, 204, 'Тип', 'type', 10, 5, 'html', 1380, 6, '', 0, 'e', 'one', '', '', ''),
+(1516, 204, 'Значение', 'detailsString', 1, 1, '', 1387, 0, '', 0, 'e', 'none', '', '', ''),
+(1517, 204, 'Значение', 'detailsTextarea', 4, 6, '', 1557, 0, '', 0, 'e', 'none', '', '', ''),
 (1523, 207, 'Сущность, для экземпляра которой будет исключение', 'entityId', 3, 3, '0', 1393, 2, '', 0, 'e', 'one', '', 'FIND_IN_SET(`id`,"''.current(Indi_Db_Table::getDefaultAdapter()->query(''SELECT GROUP_CONCAT(`entityId`) FROM `fsection` WHERE `toggle`="y"'')->fetch()).''")', ''),
 (1524, 207, 'Экземпляр', 'identifier', 3, 21, '0', 1394, 0, '', 1523, 'e', 'one', '', '', ''),
 (1525, 207, '&laquo;title&raquo;', 'seoTitle', 1, 1, '', 1395, 0, '', 0, 'e', 'none', '', '', ''),
 (1526, 207, '&laquo;meta keywords&raquo;', 'seoKeyword', 4, 6, '', 1396, 0, '', 0, 'e', 'none', '', '', ''),
 (1527, 207, '&laquo;meta description&raquo;', 'seoDescription', 4, 6, '', 1397, 0, '', 0, 'e', 'none', '', '', ''),
 (1528, 207, 'Статус', 'toggle', 10, 5, 'y', 1398, 6, '', 0, 'e', 'one', '', '', ''),
-(1533, 101, 'Статус', 'toggle', 10, 5, 'y', 1403, 6, '', 0, 'e', 'one', '', '', '');
+(1533, 101, 'Статус', 'toggle', 10, 5, 'y', 1429, 6, '', 0, 'e', 'one', '', '', ''),
+(1554, 3, 'Связь с вышестоящим разделом по полю', 'parentSectionConnector', 3, 3, '0', 310, 5, '', 19, 'с', 'one', '', '`relation`!="0"', ''),
+(1560, 101, 'Связь с вышестоящим разделом по полю', 'parentSectionConnector', 3, 3, '0', 815, 5, '', 868, 'с', 'one', 'entityId', '', ''),
+(1561, 111, 'Связь по полю', 'connector', 3, 3, '0', 885, 5, '', 603, 'с', 'one', '', '', ''),
+(1562, 101, 'От какого класса наследовать класс контроллера', 'extends', 1, 1, '', 1431, 0, '', 0, 'e', 'none', '', '', ''),
+(1563, 164, 'Шагов вверх', 'level', 3, 18, '0', 1186, 0, '', 0, 'e', 'none', '', '', ''),
+(1564, 165, 'Шагов вверх', 'level', 3, 18, '0', 1198, 0, '', 0, 'e', 'none', '', '', ''),
+(1565, 166, 'Шагов вверх', 'level', 3, 18, '0', 1210, 0, '', 0, 'e', 'none', '', '', ''),
+(1575, 130, 'Смена пароля', 'changepasswd', 0, 16, '', 1708, 0, '', 0, 'e', 'none', '', '', ''),
+(1576, 130, 'Дата последнего запроса', 'changepasswdDate', 9, 19, '0000-00-00 00:00:00', 1709, 0, '', 0, 'e', 'none', '', '', ''),
+(1577, 130, 'Код', 'changepasswdCode', 1, 1, '', 1710, 0, '', 0, 'e', 'none', '', '', ''),
+(1633, 164, 'Уровень', 'stepsUp', 3, 18, '0', 1187, 0, '', 0, 'e', 'none', '', '', ''),
+(1658, 195, 'Альтернативное наименование', 'alt', 1, 1, '', 1520, 0, '', 0, 'e', 'none', '', '', ''),
+(2132, 10, 'Порядок отображения', 'move', 3, 4, '0', 2132, 0, '', 0, 'e', 'none', '', '', ''),
+(1886, 9, 'Изменить назвние столбца на', 'alterTitle', 1, 1, '', 1738, 0, '', 0, 'e', 'none', '', '', ''),
+(2100, 7, 'Отображать в панели действий грида', 'display', 12, 9, '1', 2100, 0, '', 0, 'e', 'none', '', '', ''),
+(2131, 10, 'Домашняя страница', 'home', 4, 13, '', 2131, 0, '', 0, 'e', 'none', '', '', '');
 
 -- --------------------------------------------------------
 
@@ -939,7 +944,8 @@ CREATE TABLE IF NOT EXISTS `filter` (
   PRIMARY KEY (`id`),
   KEY `fsectionId` (`fsectionId`),
   KEY `fieldId` (`fieldId`),
-  KEY `displayOptions` (`displayOptions`)
+  KEY `displayOptions` (`displayOptions`),
+  KEY `type` (`type`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=13 ;
 
 -- --------------------------------------------------------
@@ -958,33 +964,42 @@ CREATE TABLE IF NOT EXISTS `fsection` (
   `sectionId` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
   `fsectionId` int(11) NOT NULL DEFAULT '0',
-  `filter` varchar(255) NOT NULL,
+  `filter` varchar(255) NOT NULL DEFAULT '',
   `defaultLimit` int(11) NOT NULL DEFAULT '20',
   `orderBy` enum('e','c') NOT NULL DEFAULT 'c',
   `orderColumn` int(11) NOT NULL DEFAULT '0',
   `orderDirection` enum('ASC','DESC') NOT NULL DEFAULT 'ASC',
-  `orderExpression` varchar(255) NOT NULL,
+  `orderExpression` varchar(255) NOT NULL DEFAULT '',
   `type` enum('s','r') NOT NULL DEFAULT 'r',
-  `where` varchar(255) NOT NULL,
-  `index` varchar(255) NOT NULL,
+  `where` varchar(255) NOT NULL DEFAULT '',
+  `index` varchar(255) NOT NULL DEFAULT '',
   `toggle` enum('n','y') NOT NULL DEFAULT 'y',
+  `parentSectionConnector` int(11) NOT NULL DEFAULT '0',
+  `extends` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `rppId` (`rppId`),
   KEY `entityId` (`entityId`),
-  KEY `sectionId` (`sectionId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=42 ;
+  KEY `sectionId` (`sectionId`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `type` (`type`),
+  KEY `parentSectionConnector` (`parentSectionConnector`),
+  KEY `orderBy` (`orderBy`),
+  KEY `orderColumn` (`orderColumn`),
+  KEY `orderDirection` (`orderDirection`),
+  KEY `toggle` (`toggle`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=59 ;
 
 --
 -- Дамп данных таблицы `fsection`
 --
 
-INSERT INTO `fsection` (`id`, `title`, `alias`, `rppId`, `entityId`, `sectionId`, `move`, `fsectionId`, `filter`, `defaultLimit`, `orderBy`, `orderColumn`, `orderDirection`, `orderExpression`, `type`, `where`, `index`, `toggle`) VALUES
-(8, 'Пользователи', 'users', 1, 130, 146, 8, 0, '', 20, 'c', 0, 'ASC', '', 'r', '', '', 'n'),
-(37, 'Статические страницы', 'static', 1, 25, 30, 28, 0, '', 20, 'c', 0, 'ASC', '', 'r', '', '', 'y'),
-(22, 'Фидбэк', 'feedback', 1, 128, 144, 22, 0, '', 20, 'c', 0, 'ASC', '', 's', '""', 'add', 'n'),
-(26, 'Личный кабинет', 'myprofile', 1, 130, 0, 25, 0, '', 20, 'c', 0, 'ASC', '', 's', '$_SESSION[''userId'']', 'form', 'n'),
-(39, 'Главная', 'index', 1, 0, 0, 26, 0, '', 20, 'c', 0, 'ASC', '', 'r', '', '', 'y'),
-(41, 'Карта сайта', 'sitemap', 1, 101, 113, 29, 0, '`toggle`="y"', 20, 'c', 585, 'ASC', '', 'r', '', '', 'y');
+INSERT INTO `fsection` (`id`, `title`, `alias`, `rppId`, `entityId`, `sectionId`, `move`, `fsectionId`, `filter`, `defaultLimit`, `orderBy`, `orderColumn`, `orderDirection`, `orderExpression`, `type`, `where`, `index`, `toggle`, `parentSectionConnector`, `extends`) VALUES
+(8, 'Пользователи', 'users', 1, 130, 146, 28, 0, '', 20, 'c', 0, 'ASC', '', 'r', '', '', 'y', 0, ''),
+(37, 'Статические страницы', 'static', 1, 25, 30, 39, 0, '', 20, 'c', 0, 'ASC', '', 'r', '', '', 'y', 0, ''),
+(22, 'Фидбэк', 'feedback', 1, 128, 144, 44, 0, '', 20, 'c', 0, 'ASC', '', 's', '""', 'add', 'n', 0, ''),
+(26, 'Мой профиль', 'myprofile', 1, 130, 0, 22, 0, '', 20, 'c', 0, 'ASC', '', 's', '$_SESSION[''user''][''id'']', 'form', 'y', 0, 'My'),
+(39, 'Главная', 'index', 1, 0, 0, 8, 0, '', 20, 'c', 0, 'ASC', '', 'r', '', '', 'y', 0, ''),
+(41, 'Карта сайта', 'sitemap', 1, 101, 113, 41, 0, '`toggle`="y"', 20, 'c', 585, 'ASC', '', 'r', '', '', 'y', 0, '');
 
 -- --------------------------------------------------------
 
@@ -1001,23 +1016,25 @@ CREATE TABLE IF NOT EXISTS `fsection2faction` (
   `type` enum('j','r') NOT NULL DEFAULT 'r',
   `blink` tinyint(1) NOT NULL DEFAULT '0',
   `rename` tinyint(1) NOT NULL DEFAULT '0',
-  `alias` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=90 ;
+  `alias` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `factionId` (`factionId`),
+  KEY `type` (`type`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=130 ;
 
 --
 -- Дамп данных таблицы `fsection2faction`
 --
 
 INSERT INTO `fsection2faction` (`id`, `fsectionId`, `factionId`, `imposition`, `type`, `blink`, `rename`, `alias`) VALUES
-(3, 8, 2, 0, 'r', 0, 0, ''),
-(12, 8, 6, 0, 'r', 0, 0, ''),
-(21, 22, 1, 0, 'r', 0, 0, ''),
-(30, 26, 3, 0, 'r', 0, 0, ''),
-(84, 37, 2, 0, 'r', 0, 0, ''),
-(83, 8, 36, 0, 'r', 0, 0, ''),
-(86, 39, 1, 0, 'r', 0, 0, ''),
-(89, 41, 1, 0, 'r', 0, 0, '');
+(126, 8, 37, 0, 'r', 0, 0, ''),
+(129, 22, 1, 0, 'r', 0, 0, ''),
+(124, 26, 3, 0, 'r', 0, 0, ''),
+(127, 37, 2, 0, 'r', 0, 0, ''),
+(123, 39, 1, 0, 'r', 0, 0, ''),
+(128, 41, 1, 0, 'r', 0, 0, ''),
+(125, 8, 6, 0, 'r', 0, 0, '');
 
 -- --------------------------------------------------------
 
@@ -1031,207 +1048,193 @@ CREATE TABLE IF NOT EXISTS `grid` (
   `sectionId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
+  `alterTitle` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `sectionId` (`sectionId`),
   KEY `fieldId` (`fieldId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1450 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2280 ;
 
 --
 -- Дамп данных таблицы `grid`
 --
 
-INSERT INTO `grid` (`id`, `sectionId`, `fieldId`, `move`) VALUES
-(1, 2, 1, 1),
-(2, 2, 2, 2),
-(3, 2, 3, 3),
-(4, 5, 4, 4),
-(5, 5, 5, 5),
-(6, 6, 7, 6),
-(7, 6, 8, 7),
-(8, 6, 9, 8),
-(9, 6, 10, 9),
-(10, 6, 11, 10),
-(11, 6, 12, 11),
-(13, 6, 14, 13),
-(14, 7, 19, 16),
-(15, 7, 20, 14),
-(16, 7, 21, 15),
-(17, 7, 22, 17),
-(18, 7, 23, 18),
-(20, 7, 25, 926),
-(23, 8, 27, 23),
-(24, 8, 29, 24),
-(25, 8, 30, 25),
-(26, 10, 31, 26),
-(27, 10, 32, 27),
-(29, 11, 34, 29),
-(30, 11, 35, 30),
-(32, 13, 36, 32),
-(33, 13, 37, 33),
-(34, 12, 16, 34),
-(35, 12, 17, 35),
-(36, 14, 39, 36),
-(37, 14, 40, 37),
-(38, 14, 41, 38),
-(39, 14, 42, 39),
-(42, 16, 65, 43),
-(43, 16, 66, 44),
-(46, 16, 64, 42),
-(89, 22, 107, 56),
-(90, 22, 108, 57),
-(91, 22, 109, 59),
-(92, 22, 110, 60),
-(93, 22, 111, 58),
-(94, 22, 112, 61),
-(130, 30, 131, 61),
-(132, 30, 133, 63),
-(1442, 235, 1523, 983),
-(136, 30, 137, 67),
-(341, 12, 377, 253),
-(375, 100, 472, 289),
-(376, 100, 473, 290),
-(377, 100, 474, 291),
-(378, 101, 477, 292),
-(379, 101, 478, 293),
-(383, 8, 28, 297),
-(1335, 7, 1366, 31),
-(1334, 113, 1040, 925),
-(1333, 172, 1365, 924),
-(1332, 10, 1364, 923),
-(398, 105, 507, 309),
-(399, 105, 508, 310),
-(400, 105, 509, 311),
-(420, 113, 559, 328),
-(421, 113, 560, 329),
-(422, 114, 561, 329),
-(1097, 194, 1259, 808),
-(424, 113, 563, 330),
-(425, 115, 565, 334),
-(426, 115, 567, 760),
-(427, 115, 568, 332),
-(428, 115, 569, 333),
-(429, 116, 571, 338),
-(430, 116, 572, 795),
-(431, 116, 573, 336),
-(433, 119, 582, 339),
-(434, 119, 583, 340),
-(435, 119, 584, 341),
-(440, 122, 597, 345),
-(441, 122, 598, 344),
-(442, 123, 603, 750),
-(443, 5, 612, 347),
-(489, 144, 678, 388),
-(490, 144, 679, 389),
-(491, 144, 681, 391),
-(492, 145, 682, 391),
-(493, 145, 683, 392),
-(494, 146, 684, 392),
-(495, 146, 685, 393),
-(497, 146, 687, 395),
-(498, 146, 688, 396),
-(500, 146, 690, 398),
-(501, 146, 691, 399),
-(1382, 224, 1444, 929),
-(509, 146, 699, 407),
-(1384, 224, 1445, 928),
-(1325, 182, 1357, 707),
-(1086, 193, 1247, 798),
-(832, 172, 857, 624),
-(833, 172, 858, 625),
-(834, 173, 860, 626),
-(913, 182, 983, 706),
-(914, 182, 984, 708),
-(915, 182, 985, 709),
-(916, 182, 986, 730),
-(917, 182, 987, 922),
-(920, 183, 996, 712),
-(931, 122, 998, 722),
-(930, 183, 997, 721),
-(928, 185, 1021, 719),
-(929, 185, 1022, 720),
-(1383, 224, 1443, 926),
-(1054, 189, 1103, 773),
-(1053, 189, 1102, 772),
-(1052, 189, 1101, 771),
-(1051, 189, 1100, 770),
-(1046, 188, 1088, 766),
-(1045, 188, 1087, 764),
-(1044, 188, 1086, 763),
-(1043, 188, 1085, 765),
-(1040, 115, 1075, 335),
-(1039, 172, 1074, 759),
-(1037, 123, 1000, 757),
-(1036, 123, 1071, 751),
-(1035, 123, 1016, 756),
-(1034, 123, 1015, 755),
-(1061, 190, 1153, 778),
-(979, 173, 1027, 728),
-(978, 182, 991, 705),
-(1033, 123, 1014, 754),
-(1032, 123, 1013, 753),
-(1031, 123, 940, 752),
-(1030, 123, 607, 749),
-(1029, 123, 606, 346),
-(1024, 119, 1044, 744),
-(1062, 190, 1154, 779),
-(1064, 190, 1156, 780),
-(1066, 191, 1194, 782),
-(1067, 191, 1195, 783),
-(1068, 191, 1196, 784),
-(1084, 116, 1244, 794),
-(1083, 116, 1243, 337),
-(1087, 193, 1248, 797),
-(1088, 193, 1249, 800),
-(1089, 193, 1250, 801),
-(1090, 193, 1251, 802),
-(1091, 193, 1252, 803),
-(1092, 193, 1253, 804),
-(1093, 193, 1254, 805),
-(1094, 193, 1255, 806),
-(1095, 193, 1256, 836),
-(1098, 194, 1260, 809),
-(1099, 194, 1261, 811),
-(1100, 194, 1262, 812),
-(1101, 194, 1263, 813),
-(1102, 194, 1264, 814),
-(1103, 194, 1265, 815),
-(1104, 194, 1266, 816),
-(1105, 194, 1267, 817),
-(1106, 194, 1268, 837),
-(1108, 195, 1271, 819),
-(1109, 195, 1272, 820),
-(1110, 195, 1273, 822),
-(1111, 195, 1274, 823),
-(1112, 195, 1275, 824),
-(1113, 195, 1276, 825),
-(1114, 195, 1277, 826),
-(1115, 195, 1278, 827),
-(1116, 195, 1279, 828),
-(1117, 195, 1280, 838),
-(1125, 193, 1317, 799),
-(1126, 194, 1322, 810),
-(1127, 195, 1324, 821),
-(1178, 198, 1331, 845),
-(1231, 201, 1342, 851),
-(1444, 235, 1525, 984),
-(1439, 232, 1515, 965),
-(1445, 235, 1528, 985),
-(1443, 235, 1524, 982),
-(1407, 229, 1490, 950),
-(1408, 229, 1491, 951),
-(1409, 229, 1492, 952),
-(1410, 229, 1493, 953),
-(1411, 229, 1494, 954),
-(1413, 229, 1496, 956),
-(1421, 232, 1485, 962),
-(1422, 232, 1486, 963),
-(1423, 232, 1488, 980),
-(1449, 113, 1533, 989),
-(1425, 233, 39, 966),
-(1426, 233, 40, 967),
-(1427, 233, 41, 968),
-(1428, 233, 42, 969),
-(1448, 201, 1532, 988);
+INSERT INTO `grid` (`id`, `sectionId`, `fieldId`, `move`, `alterTitle`) VALUES
+(1, 2, 1, 1, ''),
+(2, 2, 2, 2, ''),
+(3, 2, 3, 3, ''),
+(4, 5, 4, 4, ''),
+(5, 5, 5, 5, ''),
+(6, 6, 7, 6, ''),
+(7, 6, 8, 7, ''),
+(8, 6, 9, 8, ''),
+(9, 6, 10, 9, ''),
+(10, 6, 11, 10, ''),
+(11, 6, 12, 11, ''),
+(13, 6, 14, 13, ''),
+(14, 7, 19, 16, 'Сущность'),
+(15, 7, 20, 14, ''),
+(16, 7, 21, 15, ''),
+(17, 7, 22, 17, ''),
+(18, 7, 23, 18, ''),
+(20, 7, 25, 926, ''),
+(23, 8, 27, 23, ''),
+(24, 8, 29, 24, ''),
+(25, 8, 30, 25, ''),
+(26, 10, 31, 26, ''),
+(27, 10, 32, 27, ''),
+(29, 11, 34, 29, ''),
+(30, 11, 35, 1156, ''),
+(32, 13, 36, 32, ''),
+(33, 13, 37, 33, ''),
+(34, 12, 16, 34, ''),
+(35, 12, 17, 35, ''),
+(36, 14, 39, 36, ''),
+(37, 14, 40, 37, ''),
+(38, 14, 41, 38, ''),
+(39, 14, 42, 39, ''),
+(42, 16, 65, 43, ''),
+(43, 16, 66, 44, ''),
+(46, 16, 64, 42, ''),
+(89, 22, 107, 56, ''),
+(90, 22, 108, 57, ''),
+(91, 22, 109, 59, ''),
+(92, 22, 110, 60, ''),
+(93, 22, 111, 58, ''),
+(94, 22, 112, 61, ''),
+(130, 30, 131, 61, ''),
+(132, 30, 133, 63, ''),
+(1442, 235, 1523, 983, ''),
+(136, 30, 137, 67, ''),
+(341, 12, 377, 253, ''),
+(375, 100, 472, 289, ''),
+(376, 100, 473, 290, ''),
+(377, 100, 474, 291, ''),
+(378, 101, 477, 292, ''),
+(379, 101, 478, 293, ''),
+(383, 8, 28, 297, ''),
+(1335, 7, 1366, 31, ''),
+(1334, 113, 1040, 925, ''),
+(1333, 172, 1365, 924, ''),
+(1332, 10, 1364, 923, ''),
+(420, 113, 559, 328, ''),
+(421, 113, 560, 329, ''),
+(422, 114, 561, 329, ''),
+(1097, 194, 1259, 808, ''),
+(424, 113, 563, 330, ''),
+(425, 115, 565, 334, ''),
+(426, 115, 567, 760, ''),
+(427, 115, 568, 332, ''),
+(428, 115, 569, 333, ''),
+(429, 116, 571, 338, ''),
+(430, 116, 572, 795, ''),
+(431, 116, 573, 336, ''),
+(433, 119, 582, 339, ''),
+(434, 119, 583, 340, ''),
+(435, 119, 584, 341, ''),
+(440, 122, 597, 345, ''),
+(441, 122, 598, 344, ''),
+(442, 123, 603, 750, ''),
+(443, 5, 612, 347, ''),
+(489, 144, 678, 388, ''),
+(490, 144, 679, 389, ''),
+(491, 144, 681, 391, ''),
+(492, 145, 682, 391, ''),
+(493, 145, 683, 392, ''),
+(494, 146, 684, 990, ''),
+(1470, 146, 685, 392, ''),
+(1382, 224, 1444, 929, ''),
+(1384, 224, 1445, 928, ''),
+(1325, 182, 1357, 707, ''),
+(1086, 193, 1247, 798, ''),
+(832, 172, 857, 624, ''),
+(833, 172, 858, 625, ''),
+(834, 173, 860, 626, ''),
+(913, 182, 983, 706, ''),
+(914, 182, 984, 708, ''),
+(915, 182, 985, 709, ''),
+(916, 182, 986, 730, ''),
+(917, 182, 987, 922, ''),
+(920, 183, 996, 712, ''),
+(931, 122, 998, 722, ''),
+(930, 183, 997, 721, ''),
+(928, 185, 1021, 719, ''),
+(929, 185, 1022, 720, ''),
+(1383, 224, 1443, 926, ''),
+(1053, 189, 1102, 772, ''),
+(1052, 189, 1101, 771, ''),
+(1051, 189, 1100, 770, ''),
+(1046, 188, 1088, 766, ''),
+(1045, 188, 1087, 764, ''),
+(1044, 188, 1086, 763, ''),
+(1043, 188, 1085, 765, ''),
+(1040, 115, 1075, 335, ''),
+(1039, 172, 1074, 759, ''),
+(1037, 123, 1000, 757, ''),
+(1036, 123, 1071, 751, ''),
+(1035, 123, 1016, 756, ''),
+(1034, 123, 1015, 755, ''),
+(1061, 190, 1153, 778, ''),
+(979, 173, 1027, 728, ''),
+(978, 182, 991, 705, ''),
+(1033, 123, 1014, 754, ''),
+(1032, 123, 1013, 753, ''),
+(1031, 123, 940, 752, ''),
+(1030, 123, 607, 749, ''),
+(1029, 123, 606, 346, ''),
+(1024, 119, 1044, 744, ''),
+(1062, 190, 1154, 779, ''),
+(1064, 190, 1156, 780, ''),
+(1066, 191, 1194, 782, ''),
+(1067, 191, 1195, 783, ''),
+(1068, 191, 1196, 784, ''),
+(1084, 116, 1244, 794, ''),
+(1083, 116, 1243, 337, ''),
+(1087, 193, 1248, 797, ''),
+(1088, 193, 1249, 800, ''),
+(1089, 193, 1250, 801, ''),
+(1090, 193, 1251, 802, ''),
+(1091, 193, 1252, 803, ''),
+(1092, 193, 1253, 804, ''),
+(1093, 193, 1254, 805, ''),
+(1094, 193, 1255, 806, ''),
+(1095, 193, 1256, 836, ''),
+(1098, 194, 1260, 809, ''),
+(1099, 194, 1261, 811, ''),
+(1100, 194, 1262, 812, ''),
+(1101, 194, 1263, 813, ''),
+(1102, 194, 1264, 814, ''),
+(1103, 194, 1265, 815, ''),
+(1104, 194, 1266, 816, ''),
+(1105, 194, 1267, 817, ''),
+(1106, 194, 1268, 837, ''),
+(1108, 195, 1271, 819, ''),
+(1109, 195, 1272, 820, ''),
+(1110, 195, 1273, 822, ''),
+(1111, 195, 1274, 823, ''),
+(1112, 195, 1275, 824, ''),
+(1113, 195, 1276, 825, ''),
+(1114, 195, 1277, 826, ''),
+(1115, 195, 1278, 827, ''),
+(1116, 195, 1279, 828, ''),
+(1117, 195, 1280, 838, ''),
+(1125, 193, 1317, 799, ''),
+(1126, 194, 1322, 810, ''),
+(1127, 195, 1324, 821, ''),
+(1178, 198, 1331, 845, ''),
+(1231, 201, 1342, 851, ''),
+(1444, 235, 1525, 984, ''),
+(1439, 232, 1515, 965, ''),
+(1445, 235, 1528, 985, ''),
+(1443, 235, 1524, 982, ''),
+(1421, 232, 1485, 962, ''),
+(1422, 232, 1486, 963, ''),
+(1423, 232, 1488, 1132, ''),
+(1449, 113, 1533, 989, ''),
+(1448, 201, 1532, 988, ''),
+(1515, 113, 585, 1036, ''),
+(1656, 11, 1886, 30, ''),
+(1767, 146, 691, 1222, ''),
+(1954, 224, 1658, 1945, '');
 
 -- --------------------------------------------------------
 
@@ -1245,17 +1248,24 @@ CREATE TABLE IF NOT EXISTS `independentrowset` (
   `fsectionId` int(11) NOT NULL DEFAULT '0',
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
   `entityId` int(11) NOT NULL DEFAULT '0',
-  `filter` varchar(255) NOT NULL,
+  `filter` varchar(255) NOT NULL DEFAULT '',
   `orderBy` enum('c','s') NOT NULL DEFAULT 'c',
   `fieldId` int(11) NOT NULL DEFAULT '0',
-  `expression` varchar(255) NOT NULL,
+  `expression` varchar(255) NOT NULL DEFAULT '',
   `orderDirection` enum('asc','desc') NOT NULL DEFAULT 'asc',
-  `limit` varchar(255) NOT NULL,
-  `alias` varchar(255) NOT NULL,
+  `limit` varchar(255) NOT NULL DEFAULT '',
+  `alias` varchar(255) NOT NULL DEFAULT '',
   `returnAs` enum('o','a') NOT NULL DEFAULT 'o',
-  `calculatedColumns` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=70 ;
+  `calculatedColumns` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `entityId` (`entityId`),
+  KEY `orderBy` (`orderBy`),
+  KEY `fieldId` (`fieldId`),
+  KEY `orderDirection` (`orderDirection`),
+  KEY `returnAs` (`returnAs`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=73 ;
 
 -- --------------------------------------------------------
 
@@ -1273,19 +1283,10 @@ CREATE TABLE IF NOT EXISTS `joinfk` (
   `returnAs` enum('a','o') NOT NULL DEFAULT 'o',
   PRIMARY KEY (`id`),
   KEY `fsectionId` (`fsectionId`),
-  KEY `fieldId` (`fieldId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=106 ;
-
---
--- Дамп данных таблицы `joinfk`
---
-
-INSERT INTO `joinfk` (`id`, `fsectionId`, `fieldId`, `title`, `fsection2factionId`, `returnAs`) VALUES
-(9, 8, 695, 'Стиль', 3, 'o'),
-(10, 8, 693, 'Город', 3, 'o'),
-(62, 26, 693, 'Город', 30, 'a'),
-(63, 26, 692, 'Страна', 30, 'a'),
-(99, 39, 1456, 'Статус курса', 86, 'a');
+  KEY `fieldId` (`fieldId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `returnAs` (`returnAs`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=143 ;
 
 -- --------------------------------------------------------
 
@@ -1301,15 +1302,13 @@ CREATE TABLE IF NOT EXISTS `joinfkfordependentrowset` (
   `dependentRowsetId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `returnAs` enum('o','a') NOT NULL DEFAULT 'o',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=41 ;
-
---
--- Дамп данных таблицы `joinfkfordependentrowset`
---
-
-INSERT INTO `joinfkfordependentrowset` (`id`, `fsectionId`, `fsection2factionId`, `dependentRowsetId`, `fieldId`, `returnAs`) VALUES
-(40, 41, 89, 75, 860, 'o');
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `dependentRowsetId` (`dependentRowsetId`),
+  KEY `fieldId` (`fieldId`),
+  KEY `returnAs` (`returnAs`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=43 ;
 
 -- --------------------------------------------------------
 
@@ -1325,7 +1324,12 @@ CREATE TABLE IF NOT EXISTS `joinfkforindependentrowset` (
   `independentRowsetId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `returnAs` enum('o','a') NOT NULL DEFAULT 'o',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `independentRowsetId` (`independentRowsetId`),
+  KEY `fieldId` (`fieldId`),
+  KEY `returnAs` (`returnAs`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=34 ;
 
 -- --------------------------------------------------------
@@ -1338,22 +1342,28 @@ DROP TABLE IF EXISTS `menu`;
 CREATE TABLE IF NOT EXISTS `menu` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `menuId` int(11) NOT NULL DEFAULT '0',
-  `title` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
   `linked` enum('n','y') NOT NULL DEFAULT 'n',
   `staticpageId` int(11) NOT NULL DEFAULT '0',
-  `url` varchar(255) NOT NULL,
+  `url` varchar(255) NOT NULL DEFAULT '',
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
+  `bottom` enum('y','n') NOT NULL DEFAULT 'y',
   `move` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `menuId` (`menuId`),
+  KEY `linked` (`linked`),
+  KEY `staticpageId` (`staticpageId`),
+  KEY `toggle` (`toggle`),
+  KEY `bottom` (`bottom`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=7 ;
 
 --
 -- Дамп данных таблицы `menu`
 --
 
-INSERT INTO `menu` (`id`, `menuId`, `title`, `linked`, `staticpageId`, `url`, `toggle`, `move`) VALUES
-(2, 0, 'Контакты', 'y', 1, '', 'y', 2),
-(6, 0, 'О компании', 'y', 10, '', 'y', 6);
+INSERT INTO `menu` (`id`, `menuId`, `title`, `linked`, `staticpageId`, `url`, `toggle`, `bottom`, `move`) VALUES
+(1, 0, 'Курсы', 'n', 0, '/courses', 'y', 'y', 1),
+(5, 0, 'Сотрудничество', 'y', 9, '', 'y', 'y', 5);
 
 -- --------------------------------------------------------
 
@@ -1366,19 +1376,17 @@ CREATE TABLE IF NOT EXISTS `metaexclusion` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `entityId` int(11) NOT NULL DEFAULT '0',
   `identifier` int(11) NOT NULL DEFAULT '0',
-  `seoTitle` varchar(255) NOT NULL,
+  `seoTitle` varchar(255) NOT NULL DEFAULT '',
   `seoKeyword` text NOT NULL,
   `seoDescription` text NOT NULL,
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `entityId` (`entityId`),
+  KEY `identifier` (`identifier`),
+  KEY `toggle` (`toggle`),
+  FULLTEXT KEY `seoKeyword` (`seoKeyword`),
+  FULLTEXT KEY `seoDescription` (`seoDescription`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3 ;
-
---
--- Дамп данных таблицы `metaexclusion`
---
-
-INSERT INTO `metaexclusion` (`id`, `entityId`, `identifier`, `seoTitle`, `seoKeyword`, `seoDescription`, `toggle`) VALUES
-(1, 25, 10, 'кастомный заголовок страницы О компании', '', '', 'n');
 
 -- --------------------------------------------------------
 
@@ -1394,10 +1402,11 @@ CREATE TABLE IF NOT EXISTS `orderby` (
   `move` int(11) NOT NULL DEFAULT '0',
   `title` varchar(255) NOT NULL DEFAULT '',
   `orderBy` enum('e','f') NOT NULL DEFAULT 'f',
-  `expression` varchar(255) NOT NULL,
+  `expression` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `fsectionId` (`fsectionId`),
-  KEY `fieldId` (`fieldId`)
+  KEY `fieldId` (`fieldId`),
+  KEY `orderBy` (`orderBy`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=45 ;
 
 -- --------------------------------------------------------
@@ -1414,8 +1423,9 @@ CREATE TABLE IF NOT EXISTS `param` (
   `value` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fieldId` (`fieldId`),
-  KEY `possibleParamId` (`possibleParamId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=109 ;
+  KEY `possibleParamId` (`possibleParamId`),
+  FULLTEXT KEY `value` (`value`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=156 ;
 
 --
 -- Дамп данных таблицы `param`
@@ -1431,10 +1441,14 @@ INSERT INTO `param` (`id`, `fieldId`, `possibleParamId`, `value`) VALUES
 (43, 603, 1, 'system'),
 (46, 983, 1, 'system'),
 (64, 1194, 1, 'system'),
-(108, 1476, 17, '["/js/jquery-1.9.1.min.js"]'),
+(146, 2131, 12, 'x-panel-body-default x-body'),
+(145, 2131, 5, 'true'),
+(134, 1814, 5, 'true'),
 (102, 1487, 5, 'true'),
-(107, 1476, 13, '["/css/style.css","/css/adjust.css"]'),
-(106, 1476, 5, 'true');
+(148, 2131, 13, '["/library/extjs4/resources/css/ext-all.css", "/css/admin/layout.css"]'),
+(149, 2131, 14, '.x-panel-body-default{border: 0 !important; padding: 10px;}'),
+(127, 109, 4, 'px'),
+(128, 110, 4, 'px');
 
 -- --------------------------------------------------------
 
@@ -1451,7 +1465,7 @@ CREATE TABLE IF NOT EXISTS `possibleelementparam` (
   `defaultValue` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `elementId` (`elementId`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=20 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=21 ;
 
 --
 -- Дамп данных таблицы `possibleelementparam`
@@ -1476,7 +1490,8 @@ INSERT INTO `possibleelementparam` (`id`, `elementId`, `title`, `alias`, `defaul
 (16, 14, 'Включать наименование сущности в имя файла при download-е', 'prependEntityTitle', 'true'),
 (17, 13, 'Путь к js-нику для подцепки редактором', 'contentsJs', ''),
 (18, 13, 'Скрипт', 'script', ''),
-(19, 13, 'Скрипт обработки исходного кода', 'sourceStripper', '');
+(19, 13, 'Скрипт обработки исходного кода', 'sourceStripper', ''),
+(20, 18, 'Только для чтения', 'readonly', '');
 
 -- --------------------------------------------------------
 
@@ -1490,19 +1505,21 @@ CREATE TABLE IF NOT EXISTS `profile` (
   `title` varchar(255) NOT NULL DEFAULT '',
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
   `entityId` int(11) NOT NULL DEFAULT '0',
+  `home` text NOT NULL,
+  `move` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  KEY `toggle` (`toggle`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=11 ;
+  KEY `toggle` (`toggle`),
+  KEY `entityId` (`entityId`),
+  FULLTEXT KEY `homepage` (`home`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=15 ;
 
 --
 -- Дамп данных таблицы `profile`
 --
 
-INSERT INTO `profile` (`id`, `title`, `toggle`, `entityId`) VALUES
-(1, 'Конфигуратор', 'y', 0),
-(2, 'Администратор', 'y', 0),
-(9, 'Модератор', 'y', 0),
-(10, 'Демо', 'y', 0);
+INSERT INTO `profile` (`id`, `title`, `toggle`, `entityId`, `home`, `move`) VALUES
+(1, 'Конфигуратор', 'y', 0, '', 1),
+(12, 'Администратор', 'y', 0, '', 12);
 
 -- --------------------------------------------------------
 
@@ -1522,21 +1539,13 @@ CREATE TABLE IF NOT EXISTS `resize` (
   `slaveDimensionLimitation` tinyint(1) NOT NULL DEFAULT '1',
   `masterDimensionAlias` enum('width','height') NOT NULL DEFAULT 'width',
   `changeColor` enum('y','n') NOT NULL DEFAULT 'n',
-  `color` varchar(7) NOT NULL DEFAULT '',
+  `color` varchar(10) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `fieldId` (`fieldId`),
   KEY `proportions` (`proportions`),
   KEY `masterDimensionAlias` (`masterDimensionAlias`),
   KEY `changeColor` (`changeColor`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=142 ;
-
---
--- Дамп данных таблицы `resize`
---
-
-INSERT INTO `resize` (`id`, `fieldId`, `title`, `alias`, `masterDimensionValue`, `slaveDimensionValue`, `proportions`, `slaveDimensionLimitation`, `masterDimensionAlias`, `changeColor`, `color`) VALUES
-(20, 0, 'Для списка', 'thumb', 90, 67, 'c', 1, 'width', 'n', ''),
-(54, 1028, 'Для списка отзывов', 'review', 100, 100, 'p', 1, 'height', 'n', '');
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=158 ;
 
 -- --------------------------------------------------------
 
@@ -1572,17 +1581,21 @@ CREATE TABLE IF NOT EXISTS `search` (
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
+  `alt` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `sectionId` (`sectionId`),
+  KEY `fieldId` (`fieldId`),
+  KEY `toggle` (`toggle`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=114 ;
 
 --
 -- Дамп данных таблицы `search`
 --
 
-INSERT INTO `search` (`id`, `sectionId`, `fieldId`, `move`, `toggle`) VALUES
-(1, 5, 4, 1, 'y'),
-(2, 5, 612, 2, 'y'),
-(3, 5, 1441, 3, 'y');
+INSERT INTO `search` (`id`, `sectionId`, `fieldId`, `move`, `toggle`, `alt`) VALUES
+(13, 5, 612, 13, 'y', ''),
+(54, 146, 691, 55, 'y', ''),
+(55, 146, 689, 56, 'y', '');
 
 -- --------------------------------------------------------
 
@@ -1605,73 +1618,77 @@ CREATE TABLE IF NOT EXISTS `section` (
   `extends` varchar(255) NOT NULL DEFAULT 'Indi_Controller_Admin',
   `defaultSortField` int(11) NOT NULL DEFAULT '0',
   `defaultSortDirection` enum('ASC','DESC') NOT NULL DEFAULT 'ASC',
-  `filter` varchar(255) NOT NULL,
+  `filter` varchar(255) NOT NULL DEFAULT '',
   `disableAdd` tinyint(1) NOT NULL DEFAULT '0',
   `type` enum('s','p','o') NOT NULL DEFAULT 'p',
+  `parentSectionConnector` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `sectionId` (`sectionId`),
   KEY `entityId` (`entityId`),
   KEY `toggle` (`toggle`),
   KEY `defaultSortField` (`defaultSortField`),
-  KEY `defaultSortDirection` (`defaultSortDirection`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=237 ;
+  KEY `defaultSortDirection` (`defaultSortDirection`),
+  KEY `type` (`type`),
+  KEY `parentSectionConnector` (`parentSectionConnector`),
+  FULLTEXT KEY `javascript` (`javascript`),
+  FULLTEXT KEY `javascriptForm` (`javascriptForm`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=379 ;
 
 --
 -- Дамп данных таблицы `section`
 --
 
-INSERT INTO `section` (`id`, `sectionId`, `entityId`, `title`, `alias`, `toggle`, `move`, `rowsOnPage`, `javascript`, `javascriptForm`, `extends`, `defaultSortField`, `defaultSortDirection`, `filter`, `disableAdd`, `type`) VALUES
-(1, 0, 0, 'Конфигурация', '', 'y', 131, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(2, 1, 1, 'Столбцы', 'columnTypes', 'y', 4, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(3, 4, 0, 'Выход', 'logout', 'y', 201, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(4, 0, 0, 'Бэкенд', '', 'y', 191, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(5, 1, 2, 'Сущности', 'entities', 'y', 2, 100, '', '', 'Indi_Controller_Admin', 4, 'ASC', '', 0, 's'),
-(6, 5, 5, 'Поля в структуре', 'fields', 'y', 7, 30, '', '', 'Indi_Controller_Admin', 14, 'ASC', '', 0, 's'),
-(7, 4, 3, 'Разделы', 'sections', 'y', 5, 30, '', '', 'Indi_Controller_Admin', 23, 'ASC', '', 0, 's'),
-(8, 7, 8, 'Действия', 'sectionActions', 'y', 8, 30, '', '', 'Indi_Controller_Admin', 30, 'ASC', '', 0, 's'),
-(10, 4, 7, 'Действия', 'actions', 'y', 9, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(11, 7, 9, 'Столбцы грида', 'grid', 'y', 10, 30, '', '', 'Indi_Controller_Admin', 35, 'ASC', '', 0, 's'),
-(12, 6, 6, 'Возможные значения', 'enumset', 'y', 11, 30, '', '', 'Indi_Controller_Admin', 377, 'ASC', '', 0, 's'),
-(13, 4, 10, 'Профили', 'profiles', 'y', 6, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(14, 13, 11, 'Пользователи', 'admins', 'y', 13, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(16, 1, 4, 'Элементы управления', 'controlElements', 'y', 14, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(22, 6, 20, 'Копии изображения', 'resize', 'y', 19, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(29, 0, 0, 'Контент', '', 'y', 113, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 'o'),
-(30, 29, 25, 'Статические страницы', 'staticpages', 'y', 200, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 'o'),
-(100, 16, 90, 'Возможные параметры настройки', 'possibleParams', 'y', 90, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(101, 6, 91, 'Параметры', 'params', 'y', 91, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(105, 4, 94, 'Настройки', 'config', 'y', 95, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(112, 0, 0, 'Фронтенд', '', 'y', 144, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(113, 112, 101, 'Разделы', 'fsections', 'y', 104, 30, '', '', 'Indi_Controller_Admin', 585, 'ASC', '`toggle`="y"', 0, 's'),
-(114, 112, 102, 'Строк постранично', 'rpp', 'y', 177, 30, '', '', 'Indi_Controller_Admin', 561, 'ASC', '', 0, 's'),
-(115, 113, 103, 'Фильтры', 'filters', 'y', 105, 30, '', '', 'Indi_Controller_Admin', 565, 'ASC', '', 0, 's'),
-(116, 113, 104, 'Сортировать по', 'orderBy', 'y', 106, 30, '', '', 'Indi_Controller_Admin', 572, 'ASC', '', 0, 's'),
-(119, 173, 108, 'Зависимые количества', 'counts', 'y', 169, 30, '', '', 'Indi_Controller_Admin', 583, 'ASC', '', 0, 's'),
-(122, 173, 110, 'Джойны по внешним ключам', 'joins', 'y', 111, 30, '', '', 'Indi_Controller_Admin', 597, 'ASC', '', 0, 's'),
-(123, 173, 111, 'Зависимые множества', 'rowsets', 'y', 108, 30, '', '', 'Indi_Controller_Admin', 603, 'ASC', '', 0, 's'),
-(143, 0, 0, 'Обратная связь', '', 'n', 125, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 'o'),
-(144, 143, 128, 'Фидбэк', 'feedback', 'n', 135, 30, '', '', 'Indi_Controller_Admin', 681, 'DESC', '', 0, 'o'),
-(145, 143, 129, 'Подписчики', 'subscribers', 'n', 165, 30, '', '', 'Indi_Controller_Admin', 682, 'ASC', '', 0, 'o'),
-(146, 143, 130, 'Пользователи', 'users', 'n', 134, 30, '', '', 'Indi_Controller_Admin', 691, 'DESC', '', 0, 'o'),
-(172, 112, 146, 'Действия', 'factions', 'y', 185, 30, '', '', 'Indi_Controller_Admin', 857, 'ASC', '', 0, 's'),
-(173, 113, 147, 'Действия', 'fsection2factions', 'y', 161, 30, '', '', 'Indi_Controller_Admin', 860, 'ASC', '', 0, 's'),
-(182, 173, 155, 'Независимые множества', 'independentRowsets', 'y', 110, 30, '', '', 'Indi_Controller_Admin', 983, 'ASC', '', 0, 's'),
-(183, 182, 156, 'Джойны по внешним ключам', 'joinFkForIndependentRowsets', 'y', 170, 30, '', '', 'Indi_Controller_Admin', 996, 'ASC', '', 0, 's'),
-(185, 123, 158, 'Джойны по внешним ключам', 'joinFkForDependentRowsets', 'y', 172, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's'),
-(188, 123, 159, 'Зависимые количества', 'countsForDependentRowsets', 'y', 175, 30, '', '', 'Indi_Controller_Admin', 1086, 'ASC', '', 0, 's'),
-(189, 143, 160, 'Посетители', 'visitors', 'n', 176, 30, '', '', 'Indi_Controller_Admin', 1101, 'DESC', '', 0, 'o'),
-(190, 112, 161, 'Настройки', 'fconfig', 'y', 203, 30, '', '', 'Indi_Controller_Admin', 1153, 'ASC', '', 0, 's'),
-(191, 173, 162, 'Компоненты SEO-урла', 'seoUrl', 'y', 178, 30, '', '', 'Indi_Controller_Admin', 1195, 'ASC', '', 0, 's'),
-(193, 173, 164, 'Компоненты &laquo;title&raquo;', 'seoTitle', 'y', 180, 30, '', '', 'Indi_Controller_Admin', 1254, 'ASC', '', 0, 's'),
-(194, 173, 165, 'Компоненты &laquo;meta keywords&raquo;', 'seoKeywords', 'y', 181, 30, '', '', 'Indi_Controller_Admin', 1266, 'ASC', '', 0, 's'),
-(195, 173, 166, 'Компоненты &laquo;meta description&raquo;', 'seoDescription', 'y', 182, 30, '', '', 'Indi_Controller_Admin', 1278, 'ASC', '', 0, 's'),
-(198, 112, 168, 'Субдомены', 'subdomains', 'y', 103, 30, '', '', 'Indi_Controller_Admin', 1331, 'ASC', '', 0, 's'),
-(201, 7, 171, 'Отключенные поля', 'disabledFields', 'y', 188, 30, '', '', 'Indi_Controller_Admin', 1342, 'ASC', '', 0, 's'),
-(224, 7, 195, 'Поля, доступные для поиска', 'search', 'y', 192, 30, '', '', 'Indi_Controller_Admin', 1444, 'ASC', '', 0, 's'),
-(229, 29, 205, 'Меню', 'menu', 'y', 197, 30, '', '', 'Indi_Controller_Admin', 1496, 'ASC', '', 0, 'p'),
-(232, 29, 204, 'Куски', 'staticblocks', 'y', 202, 30, '', '', 'Indi_Controller_Admin', 1485, 'ASC', '', 1, 'o'),
-(233, 4, 11, 'Модераторы', 'moderators', 'y', 186, 30, '', '', 'Indi_Controller_Admin', 39, 'ASC', '`profileId`="9"', 0, 'p'),
-(235, 112, 207, 'Meta - исключения', 'metaExclusions', 'y', 160, 30, '', '', 'Indi_Controller_Admin', 1523, 'ASC', '', 0, 's');
+INSERT INTO `section` (`id`, `sectionId`, `entityId`, `title`, `alias`, `toggle`, `move`, `rowsOnPage`, `javascript`, `javascriptForm`, `extends`, `defaultSortField`, `defaultSortDirection`, `filter`, `disableAdd`, `type`, `parentSectionConnector`) VALUES
+(1, 0, 0, 'Конфигурация', '', 'y', 367, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(2, 1, 1, 'Столбцы', 'columnTypes', 'y', 4, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(3, 4, 0, 'Выход', 'logout', 'y', 319, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(4, 0, 0, 'Бэкенд', '', 'y', 372, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(5, 1, 2, 'Сущности', 'entities', 'y', 2, 25, '', '', 'Indi_Controller_Admin', 4, 'ASC', '', 0, 's', 0),
+(6, 5, 5, 'Поля в структуре', 'fields', 'y', 7, 25, '', '', 'Indi_Controller_Admin', 14, 'ASC', '', 0, 's', 0),
+(7, 4, 3, 'Разделы', 'sections', 'y', 5, 25, '', '', 'Indi_Controller_Admin', 23, 'ASC', '', 0, 's', 0),
+(8, 7, 8, 'Действия', 'sectionActions', 'y', 8, 25, '', '', 'Indi_Controller_Admin', 30, 'ASC', '', 0, 's', 0),
+(10, 4, 7, 'Действия', 'actions', 'y', 9, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(11, 7, 9, 'Столбцы грида', 'grid', 'y', 10, 25, '', '', 'Indi_Controller_Admin', 35, 'ASC', '', 0, 's', 0),
+(12, 6, 6, 'Возможные значения', 'enumset', 'y', 11, 25, '', '', 'Indi_Controller_Admin', 377, 'ASC', '', 0, 's', 0),
+(13, 4, 10, 'Профили', 'profiles', 'y', 6, 25, '', '', 'Indi_Controller_Admin', 2132, 'ASC', '', 0, 's', 0),
+(14, 13, 11, 'Пользователи', 'admins', 'y', 13, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(16, 1, 4, 'Элементы управления', 'controlElements', 'y', 14, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(22, 6, 20, 'Копии изображения', 'resize', 'y', 19, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(29, 0, 0, 'Контент', '', 'y', 113, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 'o', 0),
+(30, 378, 25, 'Страницы', 'staticpages', 'y', 232, 25, '', '', 'Indi_Controller_Admin', 131, 'ASC', '', 0, 'o', 0),
+(100, 16, 90, 'Возможные параметры настройки', 'possibleParams', 'y', 90, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(101, 6, 91, 'Параметры', 'params', 'y', 91, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(112, 0, 0, 'Фронтенд', '', 'y', 371, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(113, 112, 101, 'Разделы', 'fsections', 'y', 104, 25, '', '', 'Indi_Controller_Admin', 585, 'ASC', '($_SESSION[''admin''][''profileId'']==1?''1'':''`toggle`="y"'')', 0, 's', 0),
+(114, 112, 102, 'Строк постранично', 'rpp', 'y', 177, 25, '', '', 'Indi_Controller_Admin', 561, 'ASC', '', 0, 's', 0),
+(115, 113, 103, 'Фильтры', 'filters', 'y', 105, 25, '', '', 'Indi_Controller_Admin', 565, 'ASC', '', 0, 's', 0),
+(116, 113, 104, 'Сортировать по', 'orderBy', 'y', 106, 25, '', '', 'Indi_Controller_Admin', 572, 'ASC', '', 0, 's', 0),
+(119, 173, 108, 'Зависимые количества', 'counts', 'y', 169, 25, '', '', 'Indi_Controller_Admin', 583, 'ASC', '', 0, 's', 0),
+(122, 173, 110, 'Джойны по внешним ключам', 'joins', 'y', 111, 25, '', '', 'Indi_Controller_Admin', 597, 'ASC', '', 0, 's', 0),
+(123, 173, 111, 'Зависимые множества', 'rowsets', 'y', 108, 25, '', '', 'Indi_Controller_Admin', 603, 'ASC', '', 0, 's', 0),
+(143, 0, 0, 'Обратная связь', '', 'y', 358, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 'o', 0),
+(144, 143, 128, 'Фидбэк', 'feedback', 'n', 135, 25, '', '', 'Indi_Controller_Admin', 681, 'DESC', '', 0, 'o', 0),
+(145, 143, 129, 'Подписчики', 'subscribers', 'n', 165, 25, '', '', 'Indi_Controller_Admin', 682, 'ASC', '', 0, 'o', 0),
+(146, 143, 130, 'Пользователи', 'users', 'y', 225, 25, '', '', 'Indi_Controller_Admin', 685, 'DESC', '', 0, 'o', 0),
+(172, 112, 146, 'Действия', 'factions', 'y', 185, 25, '', '', 'Indi_Controller_Admin', 857, 'ASC', '', 0, 's', 0),
+(173, 113, 147, 'Действия', 'fsection2factions', 'y', 161, 25, '', '', 'Indi_Controller_Admin', 860, 'ASC', '', 0, 's', 0),
+(182, 173, 155, 'Независимые множества', 'independentRowsets', 'y', 110, 25, '', '', 'Indi_Controller_Admin', 983, 'ASC', '', 0, 's', 0),
+(183, 182, 156, 'Джойны по внешним ключам', 'joinFkForIndependentRowsets', 'y', 170, 25, '', '', 'Indi_Controller_Admin', 996, 'ASC', '', 0, 's', 0),
+(185, 123, 158, 'Джойны по внешним ключам', 'joinFkForDependentRowsets', 'y', 172, 25, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 's', 0),
+(188, 123, 159, 'Зависимые количества', 'countsForDependentRowsets', 'y', 175, 25, '', '', 'Indi_Controller_Admin', 1086, 'ASC', '', 0, 's', 0),
+(189, 143, 160, 'Посетители', 'visitors', 'n', 176, 25, '', '', 'Indi_Controller_Admin', 1101, 'DESC', '', 0, 'o', 0),
+(190, 112, 161, 'Настройки', 'fconfig', 'y', 203, 25, '', '', 'Indi_Controller_Admin', 1153, 'ASC', '', 0, 's', 0),
+(191, 173, 162, 'Компоненты SEO-урла', 'seoUrl', 'y', 178, 25, '', '', 'Indi_Controller_Admin', 1195, 'ASC', '', 0, 's', 0),
+(193, 173, 164, 'Компоненты &laquo;title&raquo;', 'seoTitle', 'y', 180, 25, '', '', 'Indi_Controller_Admin', 1254, 'ASC', '', 0, 's', 0),
+(194, 173, 165, 'Компоненты &laquo;meta keywords&raquo;', 'seoKeywords', 'y', 181, 25, '', '', 'Indi_Controller_Admin', 1266, 'ASC', '', 0, 's', 0),
+(195, 173, 166, 'Компоненты &laquo;meta description&raquo;', 'seoDescription', 'y', 182, 25, '', '', 'Indi_Controller_Admin', 1278, 'ASC', '', 0, 's', 0),
+(198, 112, 168, 'Субдомены', 'subdomains', 'y', 103, 25, '', '', 'Indi_Controller_Admin', 1331, 'ASC', '', 0, 's', 0),
+(201, 7, 171, 'Отключенные поля', 'disabledFields', 'y', 188, 25, '', '', 'Indi_Controller_Admin', 1342, 'ASC', '', 0, 's', 0),
+(224, 7, 195, 'Фильтры', 'search', 'y', 192, 25, '', '', 'Indi_Controller_Admin', 1444, 'ASC', '', 0, 's', 0),
+(229, 29, 205, 'Меню', 'menu', 'n', 134, 25, '', '', 'Indi_Controller_Admin', 1496, 'ASC', '', 0, 'p', 0),
+(232, 378, 204, 'Элементы', 'staticblocks', 'y', 316, 25, '', '', 'Indi_Controller_Admin', 1485, 'ASC', '', 0, 'o', 0),
+(235, 112, 207, 'Meta - исключения', 'metaExclusions', 'y', 160, 25, '', '', 'Indi_Controller_Admin', 1523, 'ASC', '', 0, 's', 0),
+(378, 0, 0, 'Статика', '', 'y', 144, 30, '', '', 'Indi_Controller_Admin', 0, 'ASC', '', 0, 'p', 0);
 
 -- --------------------------------------------------------
 
@@ -1686,14 +1703,14 @@ CREATE TABLE IF NOT EXISTS `section2action` (
   `actionId` int(11) NOT NULL DEFAULT '0',
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
   `move` int(11) NOT NULL DEFAULT '0',
-  `profileIds` varchar(255) NOT NULL DEFAULT '1,2,3',
+  `profileIds` varchar(255) NOT NULL DEFAULT '14',
   PRIMARY KEY (`id`),
   KEY `sectionId` (`sectionId`),
   KEY `sectionId_2` (`sectionId`),
   KEY `actionId` (`actionId`),
   KEY `profileIds` (`profileIds`),
   KEY `toggle` (`toggle`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=950 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1523 ;
 
 --
 -- Дамп данных таблицы `section2action`
@@ -1703,7 +1720,7 @@ INSERT INTO `section2action` (`id`, `sectionId`, `actionId`, `toggle`, `move`, `
 (1, 2, 1, 'y', 1, '1'),
 (2, 2, 2, 'y', 2, '1'),
 (3, 2, 3, 'y', 3, '1'),
-(4, 3, 1, 'y', 4, '1,2,9,10'),
+(4, 3, 1, 'y', 4, '1'),
 (5, 2, 4, 'n', 5, '1'),
 (6, 5, 1, 'y', 6, '1'),
 (7, 5, 2, 'y', 7, '1'),
@@ -1757,11 +1774,11 @@ INSERT INTO `section2action` (`id`, `sectionId`, `actionId`, `toggle`, `move`, `
 (75, 22, 2, 'y', 66, '1'),
 (76, 22, 3, 'y', 67, '1'),
 (77, 22, 4, 'y', 68, '1'),
-(99, 30, 1, 'y', 69, '1,2,10'),
-(100, 30, 2, 'y', 70, '1,2,10'),
-(101, 30, 3, 'y', 71, '1,2'),
-(102, 30, 4, 'y', 72, '1,2'),
-(103, 30, 7, 'y', 73, '1,2,4'),
+(99, 30, 1, 'y', 69, '12,1'),
+(100, 30, 2, 'y', 70, '12,1'),
+(101, 30, 3, 'y', 71, '12,1'),
+(102, 30, 4, 'y', 72, '12,1'),
+(103, 30, 7, 'y', 73, '12,1'),
 (329, 12, 5, 'y', 299, '1'),
 (330, 12, 6, 'y', 300, '1'),
 (373, 100, 1, 'y', 343, '1'),
@@ -1773,11 +1790,7 @@ INSERT INTO `section2action` (`id`, `sectionId`, `actionId`, `toggle`, `move`, `
 (379, 101, 3, 'y', 349, '1'),
 (380, 101, 4, 'y', 350, '1'),
 (808, 13, 4, 'y', 589, '1'),
-(807, 105, 4, 'n', 588, '1'),
 (806, 10, 4, 'n', 587, '1'),
-(397, 105, 1, 'y', 367, '1'),
-(398, 105, 2, 'y', 368, '1'),
-(399, 105, 3, 'y', 369, '1'),
 (429, 113, 1, 'y', 399, '1,2'),
 (430, 113, 2, 'y', 400, '1'),
 (431, 113, 3, 'y', 401, '1'),
@@ -1817,10 +1830,10 @@ INSERT INTO `section2action` (`id`, `sectionId`, `actionId`, `toggle`, `move`, `
 (537, 145, 2, 'y', 135, '1,2,4'),
 (538, 145, 3, 'y', 136, '1,2'),
 (539, 145, 4, 'y', 137, '1,2'),
-(540, 146, 1, 'y', 135, '1,2,4'),
-(541, 146, 2, 'y', 136, '1,2,4'),
-(542, 146, 3, 'y', 137, '1,2'),
-(543, 146, 4, 'y', 138, '1,2'),
+(540, 146, 1, 'y', 135, '12,1'),
+(541, 146, 2, 'y', 136, '12,1'),
+(542, 146, 3, 'y', 137, '12,1'),
+(543, 146, 4, 'y', 138, '12,1'),
 (833, 16, 4, 'n', 598, '1'),
 (875, 224, 1, 'y', 608, '1'),
 (876, 224, 2, 'y', 609, '1'),
@@ -1897,15 +1910,10 @@ INSERT INTO `section2action` (`id`, `sectionId`, `actionId`, `toggle`, `move`, `
 (899, 229, 2, 'y', 632, '1,2,9'),
 (900, 229, 3, 'y', 633, '1,2,9'),
 (901, 229, 4, 'y', 634, '1,2,9'),
-(910, 232, 1, 'y', 643, '1,2,9'),
-(911, 232, 2, 'y', 644, '1,2,9'),
-(912, 232, 3, 'y', 645, '1,2,9'),
+(910, 232, 1, 'y', 643, '12,1'),
+(911, 232, 2, 'y', 644, '12,1'),
+(912, 232, 3, 'y', 645, '12,1'),
 (913, 232, 4, 'y', 646, '1'),
-(914, 233, 1, 'y', 647, '1,2'),
-(915, 233, 2, 'y', 648, '1,2'),
-(916, 233, 3, 'y', 649, '1,2'),
-(917, 233, 4, 'y', 650, '1,2'),
-(918, 233, 7, 'y', 651, '1,2'),
 (921, 229, 5, 'y', 654, '1,2,9'),
 (922, 229, 6, 'y', 655, '1,2,9'),
 (933, 229, 7, 'y', 666, '1,2,9'),
@@ -1914,11 +1922,15 @@ INSERT INTO `section2action` (`id`, `sectionId`, `actionId`, `toggle`, `move`, `
 (936, 235, 3, 'y', 669, '1,2'),
 (937, 235, 4, 'y', 670, '1,2'),
 (938, 235, 7, 'y', 671, '1,2'),
-(939, 232, 7, 'y', 672, '1,2,9'),
+(939, 232, 7, 'y', 672, '12,1'),
 (946, 113, 7, 'y', 679, '1'),
 (947, 113, 5, 'y', 680, '1,2'),
 (948, 113, 6, 'y', 681, '1,2'),
-(949, 113, 19, 'y', 682, '1,2');
+(949, 113, 19, 'y', 682, '1,2'),
+(1268, 8, 7, 'y', 1268, '1'),
+(1295, 13, 5, 'y', 1291, '1'),
+(1296, 13, 6, 'y', 1292, '1'),
+(1522, 14, 7, 'y', 1293, '1');
 
 -- --------------------------------------------------------
 
@@ -1931,19 +1943,29 @@ CREATE TABLE IF NOT EXISTS `seodescription` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `fsectionId` int(11) NOT NULL DEFAULT '0',
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
-  `title` varchar(255) NOT NULL,
-  `type` enum('s','d') NOT NULL DEFAULT 's',
-  `static` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `type` enum('s','d','level') NOT NULL DEFAULT 's',
+  `static` varchar(255) NOT NULL DEFAULT '',
   `entityId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `where` enum('c','s') NOT NULL DEFAULT 'c',
   `sibling` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
-  `prefix` varchar(255) NOT NULL,
-  `postfix` varchar(255) NOT NULL,
+  `prefix` varchar(255) NOT NULL DEFAULT '',
+  `postfix` varchar(255) NOT NULL DEFAULT '',
   `seoDescriptionId` int(11) NOT NULL DEFAULT '0',
   `need` enum('a','o') NOT NULL DEFAULT 'a',
-  PRIMARY KEY (`id`)
+  `level` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `seoDescriptionId` (`seoDescriptionId`),
+  KEY `type` (`type`),
+  KEY `need` (`need`),
+  KEY `entityId` (`entityId`),
+  KEY `fieldId` (`fieldId`),
+  KEY `where` (`where`),
+  KEY `sibling` (`sibling`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=35 ;
 
 -- --------------------------------------------------------
@@ -1957,19 +1979,29 @@ CREATE TABLE IF NOT EXISTS `seokeyword` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `fsectionId` int(11) NOT NULL DEFAULT '0',
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
-  `title` varchar(255) NOT NULL,
-  `type` enum('s','d') NOT NULL DEFAULT 's',
-  `static` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `type` enum('s','d','level') NOT NULL DEFAULT 's',
+  `static` varchar(255) NOT NULL DEFAULT '',
   `entityId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `where` enum('c','s') NOT NULL DEFAULT 'c',
   `sibling` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
-  `prefix` varchar(255) NOT NULL,
-  `postfix` varchar(255) NOT NULL,
+  `prefix` varchar(255) NOT NULL DEFAULT '',
+  `postfix` varchar(255) NOT NULL DEFAULT '',
   `seoKeywordId` int(11) NOT NULL DEFAULT '0',
   `need` enum('a','o') NOT NULL DEFAULT 'a',
-  PRIMARY KEY (`id`)
+  `level` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `seoKeywordId` (`seoKeywordId`),
+  KEY `type` (`type`),
+  KEY `need` (`need`),
+  KEY `entityId` (`entityId`),
+  KEY `fieldId` (`fieldId`),
+  KEY `where` (`where`),
+  KEY `sibling` (`sibling`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=39 ;
 
 -- --------------------------------------------------------
@@ -1983,29 +2015,31 @@ CREATE TABLE IF NOT EXISTS `seotitle` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `fsectionId` int(11) NOT NULL DEFAULT '0',
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
-  `type` enum('d','s') NOT NULL DEFAULT 's',
-  `title` varchar(255) NOT NULL,
-  `static` varchar(255) NOT NULL,
+  `type` enum('d','s','level') NOT NULL DEFAULT 's',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `static` varchar(255) NOT NULL DEFAULT '',
   `entityId` int(11) NOT NULL DEFAULT '0',
   `fieldId` int(11) NOT NULL DEFAULT '0',
   `where` enum('s','c') NOT NULL DEFAULT 'c',
   `sibling` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
-  `prefix` varchar(255) NOT NULL,
-  `postfix` varchar(255) NOT NULL,
+  `prefix` varchar(255) NOT NULL DEFAULT '',
+  `postfix` varchar(255) NOT NULL DEFAULT '',
   `seoTitleId` int(11) NOT NULL DEFAULT '0',
   `need` enum('a','o') NOT NULL DEFAULT 'a',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=75 ;
-
---
--- Дамп данных таблицы `seotitle`
---
-
-INSERT INTO `seotitle` (`id`, `fsectionId`, `fsection2factionId`, `type`, `title`, `static`, `entityId`, `fieldId`, `where`, `sibling`, `move`, `prefix`, `postfix`, `seoTitleId`, `need`) VALUES
-(59, 22, 21, 's', '', 'Обратная связь', 0, 0, 'c', 0, 57, '', '', 0, 'a'),
-(70, 37, 84, 'd', 'Название страницы', '', 25, 131, 'c', 0, 63, '', '', 0, 'a'),
-(73, 41, 89, 'd', 'Название раздела', '', 101, 559, 'c', 0, 66, '', '', 0, 'a');
+  `level` int(11) NOT NULL DEFAULT '0',
+  `stepsUp` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `seoTitleId` (`seoTitleId`),
+  KEY `type` (`type`),
+  KEY `need` (`need`),
+  KEY `entityId` (`entityId`),
+  KEY `fieldId` (`fieldId`),
+  KEY `where` (`where`),
+  KEY `sibling` (`sibling`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=171 ;
 
 -- --------------------------------------------------------
 
@@ -2016,32 +2050,24 @@ INSERT INTO `seotitle` (`id`, `fsectionId`, `fsection2factionId`, `type`, `title
 DROP TABLE IF EXISTS `staticblock`;
 CREATE TABLE IF NOT EXISTS `staticblock` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `alias` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `alias` varchar(255) NOT NULL DEFAULT '',
   `detailsHtml` text NOT NULL,
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
   `detailsHtmlWidth` int(11) NOT NULL DEFAULT '0',
   `detailsHtmlHeight` int(11) NOT NULL DEFAULT '200',
-  `detailsHtmlBodyClass` varchar(255) NOT NULL,
+  `detailsHtmlBodyClass` varchar(255) NOT NULL DEFAULT '',
   `detailsHtmlStyle` text NOT NULL,
   `type` enum('html','string','textarea') NOT NULL DEFAULT 'html',
-  `detailsString` varchar(255) NOT NULL,
+  `detailsString` varchar(255) NOT NULL DEFAULT '',
   `detailsTextarea` text NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=8 ;
-
---
--- Дамп данных таблицы `staticblock`
---
-
-INSERT INTO `staticblock` (`id`, `title`, `alias`, `detailsHtml`, `toggle`, `detailsHtmlWidth`, `detailsHtmlHeight`, `detailsHtmlBodyClass`, `detailsHtmlStyle`, `type`, `detailsString`, `detailsTextarea`) VALUES
-(1, 'Seo-текст внизу главной страницы', 'index-page-seo-text', '<p>Идейные соображения высшего порядка, а также сложившаяся структура организации в значительной степени обуславливает создание системы обучения кадров, соответствует насущным потребностям. Значимость этих проблем настолько очевидна, что дальнейшее развитие различных форм деятельности требуют от нас анализа модели развития. С другой стороны новая модель организационной деятельности в значительной степени обуславливает создание направлений прогрессивного развития. Идейные соображения высшего порядка, а также новая модель организационной деятельности позволяет оценить значение дальнейших направлений развития. Идейные соображения высшего порядка, а также постоянный количественный рост и сфера нашей активности способствует подготовки и реализации систем массового участия. Товарищи! постоянное информационно-пропагандистское обеспечение нашей деятельности позволяет выполнять важные задания по разработке позиций, занимаемых участниками в отношении поставленных задач.</p>\r\n', 'y', 890, 200, 'text', 'body{background-image: none;}', 'html', '', ''),
-(2, 'Блок "Попробуйте бесплатно"', 'index-page-try-free', '<div class="free">\r\n	<div class="title_free">\r\n		Попробуйте бесплатно!</div>\r\n	<p>\r\n		Отправьте нам любую вашу фотографию и получите бесплатную оценку от нашего преподавателя.</p>\r\n	<a href="#"><span>Отправить фото</span><em>Бесплатно. Правда.</em></a></div>\r\n<p>\r\n	&nbsp;</p>\r\n', 'y', 400, 250, '', '.free{margin:0}', 'html', '', ''),
-(3, 'Блок отзывов над слайдером', 'index-page-reviews', '<div class="comment">\r\n<div class="first_comment"><a class="first_comment_img" href="#"><img alt="" src="/www/data/upload/fck/Image/img.jpg" style="width: 123px; height: 84px;" /></a> <span class="comment_text">Индивидуальная работа с преподавателем! Всё было супер! Спасибо!</span> <em>Екатерина,<br />\r\nвыпускница</em></div>\r\n<!--end first_comment -->\r\n\r\n<div class="second_comment"><a class="first_comment_img" href="#"><img alt="" src="/www/data/upload/fck/Image/img2.jpg" style="width: 95px; height: 62px;" /></a> <span class="comment_text">Люблю фотографировать пейзажи. И вас научу!</span> <em>Стас, преподаватель</em></div>\r\n<!--end first_comment --></div>\r\n\r\n<p>&nbsp;</p>\r\n', 'y', 800, 230, '', '.comment{float: none; margin-left:5px;}', 'html', '', ''),
-(4, 'Cлоган', 'slogan', '', 'y', 0, 0, '', '', 'textarea', '', 'Фотошкола\r\nонлайн'),
-(5, 'Текст копирайта', 'copyright', '<p class="cop">\r\n	Все права защищены.<br />\r\n	<br />\r\n	Любое копирование без уведомления администрации запрещено и преследуется по<br />\r\n	законам Российской Федерации.</p>\r\n', 'y', 685, 100, '', '.cop{float: none;} body{background: url(/images/footer.png) repeat-x 0 -80px;}', 'html', '', ''),
-(6, 'Блок отзывов и работ выпускников на странице описания курса', 'course-details-sidebar', '<div class="sidebar_title sidebar_title_second">Отзывы о курсе</div>\r\n\r\n<div class="com"><img alt="" src="/www/data/upload/fck/Image/img.jpg" style="width: 44px; height: 44px;" /> <span>&ldquo;</span>\r\n\r\n<p>Идейные соображения высшего порядка, а также сложившаяся структура организации</p>\r\n</div>\r\n<!--end com --><span class="com_h">&nbsp;</span>\r\n\r\n<div class="com_name">Иванова Марина, 22 года</div>\r\n\r\n<div class="line_sb">&nbsp;</div>\r\n\r\n<div class="sidebar_title"><a href="#">Работы выпускников курса</a></div>\r\n\r\n<div class="jobs"><a href="#"><img alt="" src="/www/data/upload/fck/Image/img.jpg" style="width: 251px; height: 168px;" /></a></div>\r\n<!--end sidebar -->\r\n\r\n<div class="line_sb">&nbsp;</div>\r\n', 'y', 270, 0, '', 'body{background: none;margin-left:10px;}', 'html', '', ''),
-(7, 'Путь к favicon', 'favicon-path', '', 'y', 0, 200, '', '', 'string', '/www/data/upload/fck/Image/favicon2.ico', '');
+  PRIMARY KEY (`id`),
+  KEY `toggle` (`toggle`),
+  KEY `type` (`type`),
+  FULLTEXT KEY `detailsHtml` (`detailsHtml`),
+  FULLTEXT KEY `detailsHtmlStyle` (`detailsHtmlStyle`),
+  FULLTEXT KEY `detailsTextarea` (`detailsTextarea`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=21 ;
 
 -- --------------------------------------------------------
 
@@ -2057,7 +2083,8 @@ CREATE TABLE IF NOT EXISTS `staticpage` (
   `toggle` enum('y','n') NOT NULL DEFAULT 'y',
   `details` text NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `toggle` (`toggle`)
+  KEY `toggle` (`toggle`),
+  FULLTEXT KEY `details` (`details`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=13 ;
 
 --
@@ -2065,9 +2092,7 @@ CREATE TABLE IF NOT EXISTS `staticpage` (
 --
 
 INSERT INTO `staticpage` (`id`, `title`, `alias`, `toggle`, `details`) VALUES
-(1, 'Контакты', 'contacts', 'y', 'Здесь будут контакты'),
-(6, 'Страница не найдена', '404', 'y', 'Запрашиваемая вами страница не найдена'),
-(10, 'О компании', 'about', 'y', 'Здесь будет о компании');
+(9, 'Страница не найдена', '404', 'y', '<h1>404</h1>\r\n');
 
 -- --------------------------------------------------------
 
@@ -2079,7 +2104,8 @@ DROP TABLE IF EXISTS `subdomain`;
 CREATE TABLE IF NOT EXISTS `subdomain` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `fsectionId` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=5 ;
 
 -- --------------------------------------------------------
@@ -2091,8 +2117,8 @@ CREATE TABLE IF NOT EXISTS `subdomain` (
 DROP TABLE IF EXISTS `subscriber`;
 CREATE TABLE IF NOT EXISTS `subscriber` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `date` date NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `date` date NOT NULL DEFAULT '0000-00-00',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=28 ;
 
@@ -2109,8 +2135,11 @@ CREATE TABLE IF NOT EXISTS `url` (
   `fsection2factionId` int(11) NOT NULL DEFAULT '0',
   `entityId` int(11) NOT NULL DEFAULT '0',
   `move` int(11) NOT NULL DEFAULT '0',
-  `prefix` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  `prefix` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `fsectionId` (`fsectionId`),
+  KEY `fsection2factionId` (`fsection2factionId`),
+  KEY `entityId` (`entityId`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=43 ;
 
 -- --------------------------------------------------------
@@ -2122,23 +2151,24 @@ CREATE TABLE IF NOT EXISTS `url` (
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `surname` varchar(255) NOT NULL,
-  `gender` enum('m','f','n') NOT NULL DEFAULT 'n',
-  `birth` date NOT NULL,
-  `registration` date NOT NULL,
+  `email` varchar(255) NOT NULL DEFAULT '',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `password` varchar(255) NOT NULL DEFAULT '',
+  `gender` enum('n','f','m') NOT NULL DEFAULT 'n',
+  `birth` date NOT NULL DEFAULT '0000-00-00',
+  `registration` date NOT NULL DEFAULT '0000-00-00',
   `subscribed` tinyint(1) NOT NULL DEFAULT '0',
-  `lastVisit` datetime NOT NULL,
+  `lastVisit` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `activated` tinyint(1) NOT NULL DEFAULT '0',
-  `activationCode` varchar(255) NOT NULL,
-  `identifier` varchar(255) NOT NULL,
-  `sn` enum('n','fb','vk','mm') NOT NULL DEFAULT 'n',
+  `activationCode` varchar(255) NOT NULL DEFAULT '',
+  `identifier` varchar(255) NOT NULL DEFAULT '0',
+  `sn` enum('n','fb','vk','tw') NOT NULL DEFAULT 'n',
+  `changepasswdDate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `changepasswdCode` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  KEY `gender` (`gender`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+  KEY `gender` (`gender`),
+  KEY `sn` (`sn`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=102 ;
 
 -- --------------------------------------------------------
 
@@ -2149,20 +2179,19 @@ CREATE TABLE IF NOT EXISTS `user` (
 DROP TABLE IF EXISTS `visitor`;
 CREATE TABLE IF NOT EXISTS `visitor` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `lastActivity` datetime NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `lastActivity` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `userId` int(11) NOT NULL DEFAULT '0',
-  `hidden` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=528982 ;
+  PRIMARY KEY (`id`),
+  KEY `userId` (`userId`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=555186 ;
 
 --
 -- Дамп данных таблицы `visitor`
 --
 
-INSERT INTO `visitor` (`id`, `title`, `lastActivity`, `userId`, `hidden`) VALUES
-(528979, 'kkgirqg2lmrd4hgcuerlbju0q4', '2013-03-26 21:36:31', 0, 0),
-(528981, '', '2013-03-26 21:36:36', 0, 0);
+INSERT INTO `visitor` (`id`, `title`, `lastActivity`, `userId`) VALUES
+(555185, 'qgkhjo3mffardanafcoutmdja6', '2013-07-18 21:42:48', 0);
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

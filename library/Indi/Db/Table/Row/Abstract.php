@@ -66,7 +66,7 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     public function __get($columnName)
     {
         if ($columnName == 'title' && !$this->__isset($columnName)) {
-            return $this->getTitle();
+            return $this->__isset('_title') ? $this->_title : 'No title';
         }
         return array_key_exists($columnName, $this->_modified) ? $this->_modified[$columnName] : $this->_original[$columnName];
     }
