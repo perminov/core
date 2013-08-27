@@ -33,8 +33,21 @@ class Search_Row extends Indi_Db_Table_Row{
 //        } else if ($this->foreign['fieldId']->satellite) {
 
         } else {
-            $where = $this->foreign['fieldId']->filter;
-            if (preg_match('/(\$|::)/', $where)) eval('$where = \'' . $where . '\';');
+            $where = array();
+            if ($this->foreign['fieldId']->filter) {
+                if (preg_match('/(\$|::)/', $this->foreign['fieldId']->filter)) {
+                    eval('$where[] = \'' . $this->foreign['fieldId']->filter . '\';');
+                } else {
+                    $where[] = $this->foreign['fieldId']->filter;
+                }
+            }
+            if ($this->filter) {
+                if (preg_match('/(\$|::)/', $this->filter)) {
+                    eval('$where[] = \'' . $this->filter . '\';');
+                } else {
+                    $where[] = $this->filter;
+                }
+            }
             $model = Entity::getModelById($this->foreign['fieldId']->relation);
             $fields = $model->getDbFields();
             if (array_key_exists('move', $fields)) {

@@ -51,9 +51,13 @@ class Indi_View_Helper_Admin_Menu extends Indi_View_Helper_Abstract
 			beforecollapse: function(){
 				$('#indi-engine-logo').hide();
 			},
+            collapse: function(){
+                viewport.doComponentLayout();
+            },
 			expand: function(){
 				$('#indi-engine-logo').show();
-			}
+                viewport.doComponentLayout();
+            }
 		}
 
 	})
