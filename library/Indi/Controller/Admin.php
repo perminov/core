@@ -489,9 +489,23 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $gridFieldsAliasesThatStoreRelation = array_keys($gridFieldsThatStoreRelation);
             for ($i = 0; $i < count($data); $i++) {
                 foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-                    if ($data[$i][$alias] && @!in_array($data[$i][$alias], $keys[$alias])) $keys[$alias][] = $data[$i][$alias];
+                    if ($data[$i][$alias]) {
+                        if (preg_match('/,/', $data[$i][$alias])) {
+                            $multipleA = explode(',', $data[$i][$alias]);
+                            foreach ($multipleA as $multipleI) {
+                                if (@!in_array($multipleI, $keys[$alias])) {
+                                    $keys[$alias][] = $multipleI;
+                                }
+                            }
+                        } else {
+                            if (@!in_array($data[$i][$alias], $keys[$alias])) {
+                                $keys[$alias][] = $data[$i][$alias];
+                            }
+                        }
+                    }
                 }
             }
+
             $irregularGridFieldsAliasesThatStoreRelation = array_keys($irregularGridFieldsThatStoreRelation);
             // get custom titles for values of grid columns, that store relations
             foreach ($keys as $fieldAlias => $foreignKeyValues) {
@@ -522,8 +536,17 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             // apply up custom titles
             for ($i = 0; $i < count($data); $i++) {
                 foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-                    $title = $titles[$alias][$data[$i][$alias]];
-                    if ($title) $data[$i][$alias] = $title;
+                    if (preg_match('/,/', $data[$i][$alias])) {
+                        $multipleA = explode(',', $data[$i][$alias]);
+                        $title = array();
+                        foreach ($multipleA as $multipleI) {
+                            $title[] = $titles[$alias][$multipleI];
+                        }
+                        if ($title) $data[$i][$alias] = implode(', ', $title);
+                    } else {
+                        $title = $titles[$alias][$data[$i][$alias]];
+                        if ($title) $data[$i][$alias] = $title;
+                    }
                 }
             }
         }

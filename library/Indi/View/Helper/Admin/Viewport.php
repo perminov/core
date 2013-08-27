@@ -54,7 +54,14 @@ Ext.onReady(function() {
                     border: 1
                 }]
 			}
-		]
+		],
+        listeners: {
+            afterlayout: function(){
+                if (mainPanel) {
+                    mainPanel.doComponentLayout();
+                }
+            }
+        }
 	});
 	loadContent = function(url, forceIframe){
 		locationHistory.push(url);
@@ -67,7 +74,8 @@ Ext.onReady(function() {
 				}
 			}
 			var maxImgWidth = Math.floor(($('#center-content-body').width()-36)/2);
-			$('#center-content-body').html('');
+            viewport.doComponentLayout();
+            $('#center-content-body').html('');
             form = Ext.create('Ext.Panel', {
                 region: 'center',
                 border: 0,
@@ -75,6 +83,7 @@ Ext.onReady(function() {
                 html: '<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="1000" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
                 renderTo: 'center-content-body'
             });
+            mainPanel = form;
 		} else {
 			$.post(url, function(response){
 				if (currentPanelId) {
@@ -84,10 +93,11 @@ Ext.onReady(function() {
 						viewport.getComponent(4).remove(currentPanelId);
 					}
 				}
-				$('#center-content-body').html(response);
-			});
+                viewport.doComponentLayout();
+                $('#center-content-body').html(response);
+            });
 		}
-	}
+    }
 	locationHistoryBack = function(){
 		if (locationHistory.length > 1) {
 			locationHistory.pop();

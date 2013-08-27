@@ -41,7 +41,7 @@
     </style>
 </head>
 <body>
-<script>Ext.require(['*']); var viewport, menu, grid, form, loadContent, currentPanelId, locationHistory = [];</script>
+<script>Ext.require(['*']); var viewport, menu, mainPanel, grid, form, loadContent, currentPanelId, locationHistory = [];</script>
 <?=$this->menu()?>
 <?=$this->viewport()?>
 </body>

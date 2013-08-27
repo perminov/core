@@ -339,6 +339,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						]
 					})
 				});
+                mainPanel = grid;
 
                 json.filtersCount = 0;
                 if (json.filtersCount > 0) {
