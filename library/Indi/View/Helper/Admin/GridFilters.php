@@ -21,6 +21,23 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                 padding: '0 5 4 0',
                 margin: '-1 0 0 0'
             },
+            listeners: {
+                afterrender: function(obj, width, height, eOpts){
+                    <?foreach($this->view->trail->getItem()->filters as $filter){?>
+                        <?if ($filter->defaultValue) {?>
+                            <?if (preg_match('/(\$|::)/', $filter->defaultValue)) eval('$filter->defaultValue = \'' . $filter->defaultValue . '\';');?>
+                        Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').noReload = true;
+                        <?if ($filter->foreign['fieldId']->storeRelationAbility == 'many') {
+                            $value = explode(',', $filter->defaultValue);
+                        } else {
+                            $value = $filter->defaultValue;
+                        }?>
+                        Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').setValue(<?=json_encode($value)?>);
+                        Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').noReload = false;
+                        <?}?>
+                    <?}?>
+                }
+            },
             items: [<?foreach($this->view->trail->getItem()->filters as $filter){?>
                 <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'check' || $filter->foreign['fieldId']->relation) {?>
                     <?$combo = $filter->combo();?>

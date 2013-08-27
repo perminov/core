@@ -161,29 +161,31 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     }
                     gridStore.getProxy().extraParams = {search: JSON.stringify(params)};
                     Ext.getCmp('fast-search-keyword').setDisabled(usedFilterAliasesThatHasGridColumnRepresentedBy.length == gridColumnsAliases.length);
-                    if (obj.xtype == 'combobox') {
-                        if (obj.multiSelect) {
+                    if (!obj.noReload) {
+                        if (obj.xtype == 'combobox') {
+                            if (obj.multiSelect) {
+                                clearTimeout(timeout);
+                                timeout = setTimeout(function(){
+                                    gridStore.reload();
+                                }, 1000);
+                                clearTimeout(timeout2);
+                                timeout2 = setTimeout(function(){
+                                    obj.collapse();
+                                }, 2000);
+                            } else {
+                                gridStore.reload();
+                            }
+                        } else if (obj.xtype == 'datefield' && (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(obj.getRawValue()) || !obj.getRawValue().length)) {
                             clearTimeout(timeout);
                             timeout = setTimeout(function(){
                                 gridStore.reload();
-                            }, 1000);
-                            clearTimeout(timeout2);
-                            timeout2 = setTimeout(function(){
-                                obj.collapse();
-                            }, 2000);
-                        } else {
-                            gridStore.reload();
+                            }, 500);
+                        } else if (obj.xtype != 'datefield') {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(function(){
+                                gridStore.reload();
+                            }, 500);
                         }
-                    } else if (obj.xtype == 'datefield' && (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(obj.getRawValue()) || !obj.getRawValue().length)) {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(function(){
-                            gridStore.reload();
-                        }, 500);
-                    } else if (obj.xtype != 'datefield') {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(function(){
-                            gridStore.reload();
-                        }, 500);
                     }
                 }
                 var myMask;
