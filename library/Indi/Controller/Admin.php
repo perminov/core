@@ -231,7 +231,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             } else {
                 $value = '';
             }
-            if (!in_array($field['alias'], $this->trail->getItem()->disabledFields))
+            if (!in_array($field['alias'], $this->trail->getItem()->disabledFields['save']))
             switch ($field['foreign']['elementId']['alias']) {
                 case 'string':
                 case 'html':
@@ -299,7 +299,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     $value = $this->trail->getItem()->row->$treeColumn;
                 }
                 // ���������, �� ��������� �� ���� � ������ �����������
-                if (!in_array($field['alias'], $this->trail->getItem()->disabledFields)) {
+                if (!in_array($field['alias'], $this->trail->getItem()->disabledFields['save'])) {
                     $set[] = $field['alias'] . ' = "' . $value . '"';
                     $data[$field['alias']] = $value;
                 } else if (!$this->trail->getItem()->row->{$field['alias']}){
