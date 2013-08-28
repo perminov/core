@@ -44,14 +44,19 @@ class Field_Base extends Indi_Db_Table{
         $disabledArray = $disabled->fetchAll('`sectionId` = "' . $sectionId . '"')->toArray();
 
         $fieldIds = array();
-        for($i = 0; $i < count($disabledArray); $i++) $fieldIds[] = $disabledArray[$i]['fieldId'];
+        for($i = 0; $i < count($disabledArray); $i++) {
+            $fieldIds[] = $disabledArray[$i]['fieldId'];
+            $tmp[$disabledArray[$i]['fieldId']] = $disabledArray[$i];
+        }
         $where = count($fieldIds) ? '`id` IN (' . implode(',', $fieldIds) . ')' : '`id` IN ("")';
-
-        $aliases = array();
-
         $rs = $this->fetchAll($where)->toArray();
-        foreach ($rs as $r) $aliases[] = $r['alias'];
 
-        return $aliases;
+        $disabled = array('form' => array(), 'save' => array());
+        foreach ($rs as $r) {
+            $disabled['save'][] = $r['alias'];
+            if ($tmp[$r['id']]['displayInForm'] != 1) $disabled['form'][] = $r['alias'];
+        }
+
+        return $disabled;
     }
 }
