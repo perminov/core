@@ -157,7 +157,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 // fast search
                 $condition = $this->appendFastSearchConditionIfNeed($condition);
                 
-				$this->limit = $this->trail->getItem()->section->rowsOnPage;
                 // set up sorting depend on ExtJS grid column click
                 if ($this->params['json']) {
                     $condition = count($condition) ? implode(' AND ', $condition) : null;
