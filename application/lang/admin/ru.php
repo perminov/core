@@ -4,6 +4,8 @@ define('LOGIN_SCREEN_PASSWORD', 'Пароль');
 define('LOGIN_SCREEN_ENTER', 'Вход');
 define('LOGIN_SCREEN_RESET', 'Сброс');
 
+define('LOGOUT', 'Выход');
+
 define('MENU', 'Меню');
 define('ACTION_CREATE', 'Создать');
 define('GRID_WARNING_SELECTROW_MSG', 'Выберите строку');

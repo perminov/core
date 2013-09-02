@@ -822,7 +822,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
       */
     public function assign()
     {
-        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
+        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . '] <a href="' . $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/admin') . '/logout/">' . LOGOUT . '</a>');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
         $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $this->view->assign('get', $this->get);
