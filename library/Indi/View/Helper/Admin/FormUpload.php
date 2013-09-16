@@ -69,7 +69,8 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$xhtml .= '<span class="radio" val="d" id="file-action-' . $name . '-d"><label id="file-action-' . $name . '-d-label">' . FORM_UPLOAD_DELETE . '</label>&nbsp;</span>';
 			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_REPLACE . '</a></label>&nbsp;';
 			$xhtml .= '<span class="selected" id="replace-by-'.$name.'">' . FORM_UPLOAD_REPLACE_WITH . '</span> <span id="selected' . $name . '" class="selected-fname"></span>';
-			$xhtml .= '<script>
+            $xhtml .= '<a href="' . $src . '" target="_blank" class="original">' . FORM_UPLOAD_ORIGINAL . '</a>';
+            $xhtml .= '<script>
 				$("controls.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
 					$(this).parent().find("input[name^=file-action]").val($(this).attr("val"));
@@ -112,11 +113,12 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 		}
 		$xhtml .= '<input type="file" name="image[' . $name .']" id="upload' . $name . '" onchange="
 			if ($(this).parent().hasClass(\'no-file-yet\')) {
-				$(this).parent().find(\'span[class^=selected]\').css(\'display\', \'inline-block\');
+				$(this).parent().find(\'span[class^=selected]\').show();
 			} else {
 				$(this).parent().find(\'span[class^=selected]\').show();
 			}
-			$(this).parent().find(\'span.selected-fname\').text(this.value);
+			var text = this.value.length > 40 ? \'...\' + this.value.substr(this.value.length - 40) : this.value;
+			$(this).parent().find(\'span.selected-fname\').text(text);
 			if (this.value == \'\') {
 				$(this).parent().find(\'span.selected-fname,span.selected\').hide();
 				$(this).parent().find(\'span.radio[val=r]\').click();

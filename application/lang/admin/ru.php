@@ -22,6 +22,7 @@ define('FORM_UPLOAD_REPLACE', 'Заменить');
 define('FORM_UPLOAD_REPLACE_WITH', 'на');
 define('FORM_UPLOAD_NO', 'Отсутствует');
 define('FORM_UPLOAD_BROWSE', 'Выбрать');
+define('FORM_UPLOAD_ORIGINAL', 'Оригинал');
 
 define('FORM_DATETIME_HOURS', 'часов');
 define('FORM_DATETIME_MINUTES', 'минут');
