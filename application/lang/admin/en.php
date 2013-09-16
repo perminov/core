@@ -22,6 +22,7 @@ define('FORM_UPLOAD_REPLACE', 'Replace');
 define('FORM_UPLOAD_REPLACE_WITH', 'with');
 define('FORM_UPLOAD_NO', 'No');
 define('FORM_UPLOAD_BROWSE', 'Browse');
+define('FORM_UPLOAD_ORIGINAL', 'Original');
 
 define('FORM_DATETIME_HOURS', 'hours');
 define('FORM_DATETIME_MINUTES', 'minutes');

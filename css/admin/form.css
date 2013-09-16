@@ -42,6 +42,8 @@ span.checkbox label{
 input[type=file]{
     position: absolute;
 	visibility: hidden;
+    width: 1px;
+    overflow: hidden;
 }
 controls.upload{
     position: absolute;
@@ -61,6 +63,12 @@ controls.upload span.selected-fname{
     border: 1px solid #99BCE8;
     padding: 0px 2px 0px 2px;
     display: none;
+    max-width: 250px;
+    overflow: hidden;
+    height: 15px;
+    word-break: break-all;
+    position: relative;
+    margin-right: 4px;
 }
 controls.upload span.selected{
     position: relative;
