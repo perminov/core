@@ -683,7 +683,7 @@ class Misc
         return 'только что';
     }
 
-    public static function tbq($q = 2, $versions = '')
+    public static function tbq($q = 2, $versions = '', $showNumber = true)
     {
         $versions = explode(',', $versions);
         $format = array(
@@ -698,14 +698,14 @@ class Misc
             {
                 if (strpos($cases[$k], '-') === false)
                 {
-                    if (preg_match('/'.$cases[$k].'$/', $q)) return $q.' '.$format[$digits];
+                    if (preg_match('/'.$cases[$k].'$/', $q)) return ($showNumber ? $q . ' ' : '') . $format[$digits];
                 }
                 else
                 {
                     $interval = explode('-', $cases[$k]);
                     for ($m = $interval[0]; $m <= $interval[1]; $m ++)
                     {
-                        if (preg_match('/'.$m.'$/', $q)) return $q.' '.$format[$digits];
+                        if (preg_match('/'.$m.'$/', $q)) return ($showNumber ? $q . ' ' : '') . $format[$digits];
                     }
                 }
             }
