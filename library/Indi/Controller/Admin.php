@@ -41,7 +41,11 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         if (isset($this->get['limit'])) {
             $this->limit = $this->get['limit'];
             $this->start = $this->get['start'];
-			$this->page = $_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
+            if (is_numeric($this->limit) && is_numeric($this->start)) {
+                $this->page = $_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
+            } else {
+                $this->page = 1;
+            }
         }
 
         $section = Misc::loadModel('Section');
