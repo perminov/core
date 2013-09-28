@@ -342,7 +342,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 //$this->trail->getItem()->model->update($data, '`id` = "' . $this->identifier . '"');
             } else {
                 $row = $this->trail->getItem()->model->createRow($data);
-                $this->identifier = $row->save();
+                $row->save();
+                $this->identifier = $row->id;
                 //$this->identifier = $this->trail->getItem()->model->insert($data);
             }
 
