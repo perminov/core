@@ -71,7 +71,7 @@ div.combo-div div.combo-data ul li:last-child{
 div.combo-div div.combo-data ul li.selected {
     background-color: #ecffeb;
 }
-div.combo-div div.combo-data ul li.disabled {
+div.combo-div div.combo-data ul li.disabled, div.combo-div div.combo-data ul li.disabled *{
     color: #cccccc;
 }
 div.combo-div div.combo-data ul li.disabled[group] {
