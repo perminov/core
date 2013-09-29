@@ -24,16 +24,45 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
             listeners: {
                 afterrender: function(obj, width, height, eOpts){
                     <?foreach($this->view->trail->getItem()->filters as $filter){?>
-                        <?if ($filter->defaultValue) {?>
-                            <?if (preg_match('/(\$|::)/', $filter->defaultValue)) eval('$filter->defaultValue = \'' . $filter->defaultValue . '\';');?>
-                        Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').noReload = true;
-                        <?if ($filter->foreign['fieldId']->storeRelationAbility == 'many') {
-                            $value = explode(',', $filter->defaultValue);
-                        } else {
-                            $value = $filter->defaultValue;
-                        }?>
-                        Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').setValue(<?=json_encode($value)?>);
-                        Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').noReload = false;
+                        <?if ($filter->defaultValue) {
+                            if (preg_match('/<\?|\?>/', $filter->defaultValue)) {
+                                $php = preg_split('/(<\?|\?>)/', $filter->defaultValue, -1, PREG_SPLIT_DELIM_CAPTURE);
+                                $out = '';
+                                for ($i = 0; $i < count($php); $i++) {
+                                    if ($php[$i] == '<?') {
+                                        $php[$i+1] = preg_replace('/^=/', ' echo ', $php[$i+1]) . ';';
+                                        ob_start(); eval($php[$i+1]); $out .= ob_get_clean();
+                                        $i += 2;
+                                    } else {
+                                        $out .= $php[$i];
+                                    }
+                                }
+                                $filter->defaultValue = $out;
+                            } else if (preg_match('/(\$|::)/', $filter->defaultValue)) {
+                                eval('$filter->defaultValue = \'' . $filter->defaultValue . '\';');
+                            }?>
+                            <?if (in_array($filter->foreign['fieldId']->getForeignRowByForeignKey('elementId')->alias, array('number', 'calendar', 'datetime'))) {?>
+                                <?$filter->defaultValue = json_decode(str_replace('\'','"',$filter->defaultValue), true)?>
+                                <?if($filter->defaultValue['gte']){?>
+                                    Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-gte').noReload = true;
+                                    Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-gte').setValue(<?=json_encode($filter->defaultValue['gte'])?>);
+                                    Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-gte').noReload = false;
+                                <?}?>
+                                <?if($filter->defaultValue['lte']){?>
+                                    Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-lte').noReload = true;
+                                    Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-lte').setValue(<?=json_encode($filter->defaultValue['lte'])?>);
+                                    Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-lte').noReload = false;
+                                <?}?>
+                            <?} else {?>
+                                Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').noReload = true;
+                                <?if ($filter->foreign['fieldId']->storeRelationAbility == 'many') {
+                                    $value = explode(',', $filter->defaultValue);
+                                } else {
+                                    $value = $filter->defaultValue;
+                                }?>
+                                Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').setValue(<?=json_encode($value)?>);
+                                Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>').noReload = false;
+                            <?}?>
                         <?}?>
                     <?}?>
                 }
