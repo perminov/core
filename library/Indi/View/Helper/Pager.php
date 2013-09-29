@@ -14,7 +14,7 @@ class Indi_View_Helper_Pager extends Indi_View_Helper_Abstract
      * @param int $pageNumber (current page number)
      * @return string
      */
-    public function pager($foundRows = null, $limit = null, $pageNumber = null, $display = 5, $js = '$(\'#indexParams\').submit()', $style = 'padding-bottom:5px;')
+    public function pager($foundRows = null, $limit = null, $pageNumber = null, $display = 5, $js = '$(\'#indexParams\').submit();return false;', $style = '')
     {
         $foundRows  = $foundRows ? $foundRows : $this->view->rowset->foundRows;
         $limit      = $limit ? $limit : $this->view->indexParams['limit'];
@@ -131,7 +131,7 @@ class Indi_View_Helper_Pager extends Indi_View_Helper_Abstract
         // append QUERY_STRING to the end, if not empty
 //        return '/' . implode('/', $url) . '/' . ($_SERVER['QUERY_STRING'] ? '?' . $_SERVER['QUERY_STRING'] : '');
 		
-		return '$(\'#indexPage\').attr(\'value\',\'' . $pageNumber . '\'); ' . $js . ';';
+		return '$(\'#indexPage\').val('. $pageNumber . '); ' . $js . ';';
     }
     
     /**

@@ -55,12 +55,12 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      * Provide delete action
      *
      */
-    public function deleteAction()
+    public function deleteAction($redirect = true)
     {
         $this->preDelete();
         $this->row->delete();
         $this->postDelete();
-        $this->redirectToIndex();
+        if ($redirect) $this->redirectToIndex();
     }
 
     public function formAction()

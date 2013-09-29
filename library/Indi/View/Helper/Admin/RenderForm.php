@@ -59,10 +59,10 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
                          },
                          iconCls: 'save',
                          id: 'button-save'
-                    },
+                    }
                     <?}?>
                     <? if ($this->view->trail->getItem()->row->id && count($sections)){?>
-                    '->',
+                    ,'->',
                     '<?=GRID_SUBSECTIONS_LABEL?>: ',
                     top.window.Ext.create('Ext.form.ComboBox', {
                         store: top.window.Ext.create('Ext.data.Store',{

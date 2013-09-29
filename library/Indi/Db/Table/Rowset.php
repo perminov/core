@@ -194,7 +194,25 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 						}
 					}
 				}
-			}
+			} else if ($field['dependency'] == 'e' && $field['satellite']) {
+                $satelliteAlias = Misc::loadModel('Field')->fetchRow('`id` = "' . $field['satellite'] . '"')->alias;
+                $rowIdsByEntityId = array();
+                for ($j = 0; $j < count($this->_data); $j++) {
+                    if ($this->_data[$j][$field['alias']])
+                        $rowIdsByEntityId[$this->_data[$j][$satelliteAlias]][] = $this->_data[$j][$field['alias']];
+                }
+                $foreignRs = array();
+                $arrayOfFr = array();
+                foreach ($rowIdsByEntityId as $entityId => $rowIds) {
+                    $foreignRs[$entityId] = Entity::getModelById($entityId)->fetchAll('`id` IN (' . implode(',', $rowIds) . ')');
+                    foreach($foreignRs[$entityId] as $foreignR) {
+                        $arrayOfFr[$entityId][$foreignR->id] = $foreignR;
+                    }
+                }
+                for ($j = 0; $j < count($this->_data); $j++) {
+                    $this->_data[$j]['foreign'][$field['alias']] = $arrayOfFr[$this->_data[$j][$satelliteAlias]][$this->_data[$j][$field['alias']]];
+                }
+            }
 		}
 		return $this;
 	}
