@@ -7,7 +7,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	//	parent::preDispatch();
 		// Для XHR
 		header('Access-Control-Allow-Origin: *');
-		
+
 		// Фильтруем POST
 		$this->post = filter($this->post);
 		
@@ -370,7 +370,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				// get rowset params and get rowset according to them
 				$rp = $this->getRowsetParams();
 				if ($tree = $this->model->getTreeColumnName()) {
-					$this->rowset = $this->model->fetchTree($rp['where'], 'move');
+					$this->rowset = $this->model->fetchTree($rp['where'], trim($this->getOrder($rp['order'], $rp['dir'])));
 				} else {
 					if ($this->exclusiveRowsetParams) {
 						$this->rowset = $this->model->fetchAll($this->exclusiveRowsetParams['where'], $this->exclusiveRowsetParams['order'], $this->exclusiveRowsetParams['limit'], $this->exclusiveRowsetParams['page']);

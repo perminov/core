@@ -96,7 +96,7 @@ class Indi_View_Helper_Pager2 extends Indi_View_Helper_Abstract
     
     public function getPageUrl($pageNumber)
     {
-		return 'page(\'' . $this->rowsetAlias . '\',' . $pageNumber . ');';
+		return 'page(\'' . $this->rowsetAlias . '\',' . $pageNumber . '); return false;';
     }
     
     /**
