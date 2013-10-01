@@ -13,7 +13,7 @@ class Field_Base extends Indi_Db_Table{
 
     public function getGridFieldsBySectionId($sectionId){
         $grid = new Grid();
-        $gridArray = $grid->fetchAll('`sectionId` = "' . $sectionId . '"', 'move')->toArray();
+        $gridArray = $grid->fetchAll('`sectionId` = "' . $sectionId . '" AND `toggle` = "y"', 'move')->toArray();
 
         $fieldIds = array();
         for($i = 0; $i < count($gridArray); $i++) $fieldIds[] = $gridArray[$i]['fieldId'];
