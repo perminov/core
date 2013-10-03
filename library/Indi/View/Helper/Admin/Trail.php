@@ -29,6 +29,12 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                         $trail[] = $s. '<a href="#" class="trail-item-section"' . ($itemIndex?' item-index="' . $itemIndex . '"':'') . ' onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . str_replace('<br>', ' ', $item->section->title) . '</a>';
                         if ($item->row->id) {
                             $title = str_replace('<br>', ' ',mb_substr(preg_replace('/[\n\r]/', '',$item->row->getTitle()),0, 50, 'utf-8'));
+                            foreach ($item->fields as $fieldR) if ($fieldR->alias == 'title' && preg_match('/12|17/', $fieldR->elementId)) {
+                                $params = $fieldR->getParams();
+                                if ($params['displayFormat']) {
+                                    $title = date($params['displayFormat'], strtotime($title));
+                                }
+                            }
                             $trail[] = '<i style="cursor: default;">' . $title . '</i>';
                             $trail[] = '' . $item->action->title .'';
                         } else if ($item->action->alias == 'form') {

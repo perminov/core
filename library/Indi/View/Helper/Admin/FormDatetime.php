@@ -12,10 +12,11 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         $zIndex++;
         
         //by default, value is got from row object's value of $name field
+        $field = $this->view->trail->getItem()->getFieldByAlias($name);
 		if($this->view->row->id) {
 			$value = $value != '0000-00-00 00:00:00' ? $value : $this->view->row->$name;
 		} else {
-			$value = $this->view->trail->getItem()->getFieldByAlias($name)->defaultValue;
+			$value = $field->defaultValue;
 			if ($value == '0000-00-00 00:00:00') $value = date('Y-m-d H:i:s');
 		}
         $value = $value ? $value : date('Y-m-d H:i:s');
@@ -28,6 +29,10 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '">';
 		$parts = explode(' ', $value);
 		$minimal = explode(' ', $minimal);
+
+        $params = $field->getParams();
+        if ($params['displayDateFormat']) $parts[0] = date($params['displayDateFormat'], strtotime($parts[0]));
+
         $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 62px; margin-top: 1px;" id="' . $name . 'Input"> ';
 		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
 		$time = explode(':', $parts[1]);
@@ -64,18 +69,17 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 						width: 185,
 						//todayText: 'Сегодня',
 						//ariaTitle: 'Выбрать месяц и год',
-						ariaTitleDateFormat: 'Y-m-d',
-						longDayFormat: 'Y-m-d',
-						//nextText: 'Следующий месяц',
+						ariaTitleDateFormat: '<?=$params['displayDateFormat']?>',
+						longDayFormat: '<?=$params['displayDateFormat']?>',
+                        format: '<?=$params['displayDateFormat']?>',
+                        value: Ext.Date.parse('<?=$parts[0]?>', '<?=$params['displayDateFormat']?>'),
+                        //nextText: 'Следующий месяц',
 						//prevText: 'Предыдущий месяц',
 						//todayTip: 'Выбрать сегодняшнюю дату',
 						//startDay: 1,
 						handler: function(picker, date) {
-							var y = date.getFullYear();
-							var m = date.getMonth() + 1; if (m.toString().length < 2) m = '0' + m;
-							var d = date.getDate(); if (d.toString().length < 2) d = '0' + d;
-							var selectedDate = y + '-' + m + '-' + d;
-							$('#<?=$name?>Input').val(selectedDate);
+                            var selectedDate = Ext.Date.format(date, '<?=$params['displayDateFormat']?>');
+                            $('#<?=$name?>Input').val(selectedDate);
 							$('#<?=$name?>CalendarRender').toggle();
 						}
 					});
