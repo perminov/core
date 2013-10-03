@@ -28,7 +28,10 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
         // equal to value
         $minimal = $minimal > $value ? $value : $minimal;
         $params = $field->getParams();
-        if ($params['displayFormat']) $value = date($params['displayFormat'], strtotime($value));
+        if ($params['displayFormat']) {
+            $value = date($params['displayFormat'], strtotime($value));
+            if ($value == '30.11.-0001') $value = '00.00.0000';
+        }
         $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '" id="calendar' . $name . 'Div" class="calendar-div">';
         $xhtml .= '<input type="text" name="' . $name . '" value="' . $value . '" style="width: 62px; margin-top: 1px;" id="' . $name . '" class="calendar-input"> ';
 		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
