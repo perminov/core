@@ -215,7 +215,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
          * 5. ������������� ����������� ������� � ������ �����
          */
 
-        $fields = $this->trail->getItem()->fields->setForeignRowsByForeignKeys('elementId')->toArray();
+        $fields = $this->trail->getItem()->fields->setForeignRowsByForeignKeys('elementId');
         $model = $this->trail->getItem()->model;
         $table = $model->info('name');
         $sql = array();
@@ -224,8 +224,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         $sql[] = ($this->identifier ? 'UPDATE' : 'INSERT INTO') . ' `' . $table . '` SET';
         $treeColumn = $this->trail->getItem()->treeKeyName;
         foreach ($fields as $field) {
-            if (isset($this->post[$field['alias']])) {
-                $value = $this->post[$field['alias']];
+            if (isset($this->post[$field->alias])) {
+                $value = $this->post[$field->alias];
 //				if ( ! is_array($this->post[$field['alias']])) {
 //					$value = str_replace('"','\"', $this->post[$field['alias']]);
 //					$value = preg_replace('/\\{2,}"/', '\\"', $value);
@@ -235,42 +235,48 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             } else {
                 $value = '';
             }
-            if (!in_array($field['alias'], $this->trail->getItem()->disabledFields['save']))
-            switch ($field['foreign']['elementId']['alias']) {
+            if (!in_array($field->alias, $this->trail->getItem()->disabledFields['save']))
+            switch ($field->foreign['elementId']['alias']) {
                 case 'string':
                 case 'html':
                 case 'check':
                 case 'upload':
                     break;
                 case 'price':
-                    $value = $this->post[$field['alias']]['integer'] . '.' . $this->post[$field['alias']]['decimal'];
+                    $value = $this->post[$field->alias]['integer'] . '.' . $this->post[$field->alias]['decimal'];
                     break;
                 case 'color':
                     $value = preg_match('/^#[a-fA-F0-9]{6}$/', trim($value)) ? trim($value) : '#ffffff';
                     $value = Misc::rgbPrependHue($value);
                     break;
                 case 'calendar':
+                    $params = $field->getParams();
+                    if ($params['displayFormat']) $value = date('Y-m-d', strtotime($value));
                     $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($value)) ? trim($value) : '0000-00-00';
                     break;
                 case 'dimension':
                     $value = preg_match('/^[0-9]+$/', trim($value)) ? trim($value) : '0';
                     break;
                 case 'time':
-                    foreach ($this->post[$field['alias']] as $p => $v) {
-                        $this->post[$field['alias']][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
+                    foreach ($this->post[$field->alias] as $p => $v) {
+                        $this->post[$field->alias][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
                     }
-                    $value = implode(':', array_values($this->post[$field['alias']]));
+                    $value = implode(':', array_values($this->post[$field->alias]));
                     break;
                 case 'datetime':
-                    if (is_array($this->post[$field['alias']])) {
-                        $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($this->post[$field['alias']]['date'])) ? trim($this->post[$field['alias']]['date']) : '0000-00-00';
-                        unset($this->post[$field['alias']]['date']);
-                        foreach ($this->post[$field['alias']] as $p => $v) {
-                            $this->post[$field['alias']][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
+                    if (is_array($this->post[$field->alias])) {
+                        $params = $field->getParams();
+                        if ($params['displayDateFormat']) {
+                            $this->post[$field->alias]['date'] = date('Y-m-d', strtotime($this->post[$field->alias]['date']));
                         }
-                        $value .= ' ' . implode(':', array_values($this->post[$field['alias']]));
+                        $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($this->post[$field->alias]['date'])) ? trim($this->post[$field->alias]['date']) : '0000-00-00';
+                        unset($this->post[$field->alias]['date']);
+                        foreach ($this->post[$field->alias] as $p => $v) {
+                            $this->post[$field->alias][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
+                        }
+                        $value .= ' ' . implode(':', array_values($this->post[$field->alias]));
                     } else {
-                        $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/', trim($this->post[$field['alias']])) ? trim($this->post[$field['alias']]) : '0000-00-00 00:00:00';
+                        $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/', trim($this->post[$field->alias])) ? trim($this->post[$field->alias]) : '0000-00-00 00:00:00';
                     }
                     break;
                 case 'multicheck':
@@ -299,15 +305,15 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             }
             if ($field['columnTypeId'] != 0) {
                 // prevent self parentness for row
-                if ($this->identifier && $field['alias'] == $treeColumn && $value == $this->identifier){
+                if ($this->identifier && $field->alias == $treeColumn && $value == $this->identifier){
                     $value = $this->trail->getItem()->row->$treeColumn;
                 }
                 // ���������, �� ��������� �� ���� � ������ �����������
-                if (!in_array($field['alias'], $this->trail->getItem()->disabledFields['save'])) {
-                    $set[] = $field['alias'] . ' = "' . $value . '"';
-                    $data[$field['alias']] = $value;
-                } else if (!$this->trail->getItem()->row->{$field['alias']}){
-                    $fieldId = $this->trail->getItem()->getFieldByAlias($field['alias'])->id;
+                if (!in_array($field->alias, $this->trail->getItem()->disabledFields['save'])) {
+                    $set[] = $field->alias . ' = "' . $value . '"';
+                    $data[$field->alias] = $value;
+                } else if (!$this->trail->getItem()->row->{$field->alias}){
+                    $fieldId = $this->trail->getItem()->getFieldByAlias($field->alias)->id;
                     $sectionId = $this->trail->getItem()->section->id;
                     $disabledField = Misc::loadModel('DisabledField')->fetchRow('`sectionId` = "' . $sectionId . '" AND `fieldId` = "' . $fieldId . '"');
                     if (strlen($disabledField->defaultValue)) {
@@ -315,19 +321,19 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         if (preg_match('/(\$|::)/', $value)) {
                             eval('$value = ' . $value . ';');
                         }
-                        $set[] = $field['alias'] . ' = "' . $value . '"';
-                        $data[$field['alias']] = $value;
+                        $set[] = $field->alias . ' = "' . $value . '"';
+                        $data[$field->alias] = $value;
                     }
                 } else {
-                    $value = $this->trail->getItem()->row->{$field['alias']};
-                    $set[] = $field['alias'] . ' = "' . $value . '"';
-                    $data[$field['alias']] = $value;
+                    $value = $this->trail->getItem()->row->{$field->alias};
+                    $set[] = $field->alias . ' = "' . $value . '"';
+                    $data[$field->alias] = $value;
                 }
                 // ��������� ���������
-                if ($this->admin['alternate'] && $field['alias'] == $this->admin['alternate'] . 'Id') {
+                if ($this->admin['alternate'] && $field->alias == $this->admin['alternate'] . 'Id') {
                     $value = $this->admin['id'];
-                    $set[] = $field['alias'] . ' = "' . $value . '"';
-                    $data[$field['alias']] = $value;
+                    $set[] = $field->alias . ' = "' . $value . '"';
+                    $data[$field->alias] = $value;
                 }
             }
         }
@@ -621,6 +627,28 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 $i++;
             }
         }
+
+        // find date and datetime fields and apply display format, if specified
+        foreach ($this->trail->getItem()->gridFields as $fieldR) {
+            if ($fieldR->elementId == 12) {
+                $params = $fieldR->getParams();
+                if ($params['displayFormat']) {
+                    for ($j = 0; $j < count ($data); $j++) {
+                        $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
+                    }
+                }
+            } else if ($fieldR->elementId == 19) {
+                $params = $fieldR->getParams();
+                if ($params['displayDateFormat'] || $params['displayTimeFormat']) {
+                    if (!$params['displayDateFormat']) $params['displayDateFormat'] = 'Y-m-d';
+                    if (!$params['displayTimeFormat']) $params['displayTimeFormat'] = 'H:i:s';
+                    for ($j = 0; $j < count ($data); $j++) {
+                        $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
+                    }
+                }
+            }
+        }
+
         if ($json) {
             $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
             return json_encode($jsonData);
