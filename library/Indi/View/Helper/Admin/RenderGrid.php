@@ -147,7 +147,11 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         if (filterValue != '%' && filterValue != '' && filterValue !== null) {
                             var param = {};
 							if (Ext.getCmp('filter-'+filterAliases[i]).xtype == 'datefield') {
-								param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getRawValue();
+                                if(Ext.getCmp('filter-'+filterAliases[i]).format != 'Y-m-d') {
+                                    param[filterAliases[i]] = Ext.Date.format(Ext.Date.parse(Ext.getCmp('filter-'+filterAliases[i]).getRawValue(), Ext.getCmp('filter-'+filterAliases[i]).format), 'Y-m-d');
+                                } else {
+                                    param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getRawValue();
+                                }
 							} else {
 								param[filterAliases[i]] = Ext.getCmp('filter-'+filterAliases[i]).getValue();
 							}
@@ -175,7 +179,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                             } else {
                                 gridStore.reload();
                             }
-                        } else if (obj.xtype == 'datefield' && (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(obj.getRawValue()) || !obj.getRawValue().length)) {
+                        } else if (obj.xtype == 'datefield' && (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/.test(obj.getRawValue()) || !obj.getRawValue().length)) {
                             clearTimeout(timeout);
                             timeout = setTimeout(function(){
                                 gridStore.reload();
