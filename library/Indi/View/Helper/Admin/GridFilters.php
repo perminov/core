@@ -213,6 +213,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                         }
                     }]},
                 <?} else if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('calendar','datetime'))) {?>
+                    <?$params = $filter->foreign['fieldId']->getParams()?>
                     {
                     cls: 'filter-field',
                     margin: 0,
@@ -227,6 +228,19 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                         width: 80,
                         startDay: 1,
                         margin: '0 0 0 0',
+                        <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'calendar') {?>
+                            <?if ($params['displayFormat']){?>
+                                format: '<?=$params['displayFormat']?>',
+                                ariaTitleDateFormat: '<?=$params['displayFormat']?>',
+                                longDayFormat: '<?=$params['displayFormat']?>',
+                            <?}?>
+                        <?} else if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'datetime') {?>
+                            <?if ($params['displayDateFormat']){?>
+                                format: '<?=$params['displayDateFormat']?>',
+                                ariaTitleDateFormat: '<?=$params['displayDateFormat']?>',
+                                longDayFormat: '<?=$params['displayDateFormat']?>',
+                            <?}?>
+                        <?}?>
                         cls: 'fast-search-keyword calendar',
                         validateOnChange: false,
                         listeners: {
@@ -244,7 +258,20 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                         startDay: 1,
                         validateOnChange: false,
                         margin: '0 0 0 0',
-                        cls: 'fast-search-keyword calendar',
+                        <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'calendar') {?>
+                            <?if ($params['displayFormat']){?>
+                                format: '<?=$params['displayFormat']?>',
+                                ariaTitleDateFormat: '<?=$params['displayFormat']?>',
+                                longDayFormat: '<?=$params['displayFormat']?>',
+                            <?}?>
+                        <?} else if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'datetime') {?>
+                            <?if ($params['displayDateFormat']){?>
+                                format: '<?=$params['displayDateFormat']?>',
+                                ariaTitleDateFormat: '<?=$params['displayDateFormat']?>',
+                                longDayFormat: '<?=$params['displayDateFormat']?>',
+                            <?}?>
+                        <?}?>
+                cls: 'fast-search-keyword calendar',
                         listeners: {
                             change: filterChange
                         }
