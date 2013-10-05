@@ -93,12 +93,11 @@ var COMBO = (function (combo) {
             }
             $.post(fetchRelativePath + '/combo/1/', data,
                 function(json) {
+                    // Save current options to backup
+                    var backupOptions = []; backupOptions = deepObjCopy(comboOptions[name]);
 
                     // If current options list should be prepended with fetched options
                     if (data.more == 'upper') {
-
-                        // Save current options to backup
-                        var backupOptions = []; backupOptions = deepObjCopy(comboOptions[name]);
 
                         // Empty current options
                         comboOptions[name]['ids'] = [];
@@ -156,6 +155,7 @@ var COMBO = (function (combo) {
                         comboOptions[name].js = jsBackup;
                         comboOptions[name].optionHeight = optionHeightBackup;
                     }
+                    comboOptions[name].backup = backupOptions.backup;
 
                     // Remove more attribute
                     $('#'+name+'-suggestions').removeAttr('more');
@@ -286,7 +286,11 @@ var COMBO = (function (combo) {
             $('#'+name).val(li.attr(name));
 
             // Get the index of selected option id in comboOptions[name].ids
-            index = comboOptions[name].ids.indexOf(parseInt(li.attr(name)));
+            if (comboOptions[name].enumset) {
+                index = comboOptions[name].ids.indexOf(li.attr(name));
+            } else {
+                index = comboOptions[name].ids.indexOf(parseInt(li.attr(name)));
+            }
 
             // Find related title property in comboOptions[name].data
             title = comboOptions[name].data[index].title;
@@ -412,16 +416,17 @@ var COMBO = (function (combo) {
             // 2. Keyword input field is not already marked as 'disabled'
             // 3. Current displayed count of results is not greater than visibleCount variable
             if ($('#'+name+'-info').attr('fetch-mode') == 'no-keyword' &&
-                       $('#'+name+'-keyword').attr('disabed') != 'disabled' &&
+                       $('#'+name+'-keyword').attr('disabled') != 'disabled' &&
                        parseInt($('#'+name+'-found').text().replace(',','')) <= visibleCount
                 ) {
-                $('#'+name+'-keyword').addClass('readonly').attr('readonly', 'readonly');
+                //$('#'+name+'-keyword').addClass('readonly').attr('readonly', 'readonly');
 
             // Otherwise info should be
             } else {
                 $('#'+name+'-info').css('visibility', 'visible');
                 $('#'+name+'-keyword').removeClass('readonly').removeAttr('readonly');
             }
+
             var html = items.length ? '<ul>'+items.join("\n")+'</ul>' : '';
 
             // We setup selectedIndex attribute
@@ -495,6 +500,19 @@ var COMBO = (function (combo) {
             // We need to take it to attention, because PgUp fetching is impossible in case
             // if we have no keyword
             if (keywordChanged) {
+
+                // Here we have a situation when we are going to run 'keyword' fetch mode at first time.
+                // At this moment we backup current comboOptions[name] object - we will need it if keyword
+                // will be changed to '' (empty string), and in this case it will be user-friendly to display last
+                // available results got by 'no-keyword' fetch mode, and we will be able to restore them from backup
+                if ($('#'+name+'-info').attr('fetch-mode') == 'no-keyword') {
+                    var backup = {
+                        options: deepObjCopy(comboOptions[name]),
+                        info: $('#'+name+'-info')[0].outerHTML
+                    };
+                    comboOptions[name].backup = backup;
+                }
+
                 $('#'+name+'-info').attr('fetch-mode', 'keyword');
                 $('#'+name+'-info').attr('keyword', input.val());
 
@@ -617,6 +635,13 @@ var COMBO = (function (combo) {
                 hideSuggestions(name);
                 input.attr('prev', input.val());
                 $('#'+name).change();
+                // We restore combo state, that is had before first run of 'keyword' fetch mode
+                if (comboOptions[name].backup) {
+                    $('#'+name+'-info')[0].outerHTML = comboOptions[name].backup.info;
+                    $('#'+name+'-info').hide();
+                    comboOptions[name] = deepObjCopy(comboOptions[name].backup.options);
+                    delete comboOptions[name].backup;
+                }
             }
         }
 
@@ -722,17 +747,23 @@ var COMBO = (function (combo) {
 
                     // Set value while walking trough options list
                     var id = $('#'+name+'-suggestions'+' ul li.selected').attr(name);
-                    $('#'+name).val(id);
 
-                    // Get the index of selected option id in comboOptions[name].ids
-                    var index = comboOptions[name].ids.indexOf(parseInt(id));
+                    // If we were running fetch in 'keyword' mode, but then switched to 'no-keyword' mode,
+                    // There can be a situation that there will be no li.selected in options list, so we wrap
+                    // following code with a condition of li.selected existence
+                    if (id != undefined) {
+                        $('#'+name).val(id);
 
-                    // Find related title property in comboOptions[name].data
-                    var title = comboOptions[name].data[index].title;
+                        // Get the index of selected option id in comboOptions[name].ids
+                        var index = comboOptions[name].ids.indexOf(parseInt(id));
 
-                    // Set keyword text
-                    $('#'+name+'-keyword').val(title.trim());
-                    $('#'+name+'-keyword').attr('prev', title.trim());
+                        // Find related title property in comboOptions[name].data
+                        var title = comboOptions[name].data[index].title;
+
+                        // Set keyword text
+                        $('#'+name+'-keyword').val(title.trim());
+                        $('#'+name+'-keyword').attr('prev', title.trim());
+                    }
                 }
                 return false;
             } else if (event.keyCode == '27') {
@@ -842,7 +873,7 @@ var COMBO = (function (combo) {
 
             // Initially, setup all combos as not able to lookup
             // However, if 'found' > 'count', lookup ability will be enabled after first click on keyword field
-            if ($(this).attr('disabled') != 'disabled') {
+            if ($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset) {
                 $(this).attr('readonly', 'readonly');
                 $(this).addClass('readonly');
             }
