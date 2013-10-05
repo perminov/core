@@ -121,7 +121,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         ob_start();?>
 <div class="combo-div">
     <img class="combo-trigger" id="<?=$name?>-trigger" src="/i/admin/trigger-system.png"/>
-    <input class="combo-keyword" type="text" id="<?=$name?>-keyword" lookup="<?=$name?>" value="<?=$selected['title']?>"/>
+    <input class="combo-keyword" type="text" id="<?=$name?>-keyword" lookup="<?=$name?>" value="<?=$selected['title']?>" no-lookup="<?=$params['noLookup']?>"/>
     <input type="hidden" id="<?=$name?>" value="<?=$selected['value']?>" name="<?=$name?>"<?=$attrs?>/>
     <span class="combo-info" id="<?=$name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$pageUpDisabled?>" page-btm-reached="false" satellite="<?=$satellite->alias?>" changed="false">
             <span class="combo-count" id="<?=$name?>-count"></span>
