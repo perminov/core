@@ -424,6 +424,11 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             $dataRs->optionAttrs = explode(',', $params['optionAttrs']);
         }
 
+        // Set `enumset` property as false, because without definition it will have null value while passing
+        // to combo.js and and after deepObjCopy there - will have typeof == object, which is not actually boolean
+        // and will cause problems in combo.js
+        $dataRs->enumset = false;
+
         return $dataRs;
     }
 }
