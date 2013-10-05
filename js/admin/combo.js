@@ -803,7 +803,7 @@ var COMBO = (function (combo) {
                     if (force && sv != 0) {
                         var satellite = $('#'+name+'-info').attr('satellite');
                         $('#'+name+'-keyword').addClass('no-results-within');
-                        $('#'+name+'-keyword').removeAttr('readonly');
+                        $('#'+name+'-keyword').removeAttr('readonly'); // ? think about need
                         $('#'+name+'-keyword').val('No results within \'' + $('#'+satellite+'-keyword').val()+ '\'');
                     }
 
@@ -871,9 +871,12 @@ var COMBO = (function (combo) {
             // Setup combo as disabled, if needed
             setDisabled(name, comboOptions[name]['ids'].length == 0);
 
-            // Initially, setup all combos as not able to lookup
-            // However, if 'found' > 'count', lookup ability will be enabled after first click on keyword field
-            if ($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset) {
+            // Initially, we setup each combo as not able to lookup if there take place one of conditions:
+            // 1. combo is used in enumset field and is not disabled ('non-disabled' condition is here due to css styles
+            // conflict between input[disabled] and input[readonly]. ? - think about need)
+            // 2. combo lookup ability was manually switched off by special param
+            if (($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset) ||
+                $('#'+name+'-keyword').attr('no-lookup') == 'true') {
                 $(this).attr('readonly', 'readonly');
                 $(this).addClass('readonly');
             }
