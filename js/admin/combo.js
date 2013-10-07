@@ -1,9 +1,10 @@
 var COMBO = (function (combo) {
     "use strict";
     var process = function () {
-        var keyUpHandler, keyDownHandler, suggestions, input, select, hideSuggestions, timeout, bindTrigger, fetch, merge,
-            adjustComboInfoLeftMargin, adjustComboTriggerLeftMargin, adjustComboOptionsDivHeight, visibleCount = 20,
-            mergeOptgroupInfo, appendNotSameGroupParents, setDisabled, toggle, setDisabledOptions, fetchRelativePath;
+        var keyUpHandler, keyDownHandler, suggestions, input, select, hideSuggestions, timeout, bindTrigger, remoteFetch,
+            merge, adjustComboInfoLeftMargin, adjustComboTriggerLeftMargin, adjustComboOptionsDivHeight, visibleCount = 20,
+            mergeOptgroupInfo, appendNotSameGroupParents, setDisabled, toggle, setDisabledOptions, fetchRelativePath,
+            localFetch, afterFetchAdjustments;
 
         /**
          * Ajdust left margin for '.combo-info' elements
@@ -72,12 +73,126 @@ var COMBO = (function (combo) {
             $('#'+name+'-info').hide();
         }
 
+        afterFetchAdjustments = function(requestData, responseData) {
+            // Get name of field
+            var name = requestData.field;
+
+            // Remove more attribute
+            $('#'+name+'-suggestions').removeAttr('more');
+
+            // Rebuild options list
+            var html = suggestions(comboOptions[name], name);
+            $('#'+name+'-suggestions').html(html);
+
+            // Set scrolling if number of options more than visibleCount
+            $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > visibleCount ? 'scroll' : '');
+
+            // Adjust options div height
+            adjustComboOptionsDivHeight(name);
+
+            if (responseData['found']) {
+                // Adjust left margin for '.combo-info' because width of info could be changed
+                adjustComboInfoLeftMargin(name, true);
+
+                // We get json['found'] value only in case if we are running 'keyword' fetch mode,
+                // and in json is stored first portion of results and this mean that paging up shoud be disabled
+                $('#'+name+'-info').attr('page-top-reached', 'true');
+
+                // Also, we should renew 'page-btm-reached' attribute value
+                if (responseData['found'] <= visibleCount) {
+                    $('#'+name+'-info').attr('page-btm-reached', 'true');
+                } else {
+                    $('#'+name+'-info').attr('page-btm-reached', 'false');
+                }
+            }
+
+            // Bind handlers for hover and click events for each option
+            $('#'+name+'-suggestions'+' ul li[class!="disabled"]').hover(
+                function(){
+                    $(this).parent().find('li').removeClass('selected');
+                    $(this).addClass('selected');
+                    var k = $(this).parent().find('li[class!="disabled"]').index(this);
+                    $('#'+name+'-keyword').attr('selectedIndex', k+1);
+                }
+            );
+            $('#'+name+'-suggestions'+' ul li[class!="disabled"]').click(select);
+
+            // If results set is not empty
+            if ($(html).find('li[class!="disabled"]').length) {
+
+                // Show options list after keyword typing is finished
+                if ($('#'+name+'-suggestions').css('display') == 'none') {
+
+                    // If we selected some option in satellite and current results are
+                    // results for satellited field, we do not expand them at this time.
+                    // We just remove 'no-results-within' class from satellited field
+                    // keyword and set keyword to empty string
+                    if (requestData.mode == 'refresh-children') {
+                        $('#'+name+'-keyword').removeClass('no-results-within').val('');
+                        $('#'+name).val(0).change();
+
+                        // Show results
+                    } else {
+                        $('#'+name+'-keyword').click();
+                    }
+                }
+
+                // Options selected adjustments
+                if (requestData.more && requestData.more.toString().match(/^(upper|lower)$/)) {
+
+                    // If these was no more results
+                    if (responseData.ids['length'] <= visibleCount) {
+
+                        // We mark that top|bottom range is reached
+                        if (responseData.ids['length'] < visibleCount)
+                            $('#'+name+'-info').attr('page-'+(requestData.more == 'upper' ? 'top' : 'btm')+'-reached', 'true');
+
+                        // Move selectedIndex at the most top
+                        if (requestData.more == 'upper') {
+                            $('#'+name+'-keyword').attr('selectedIndex', 1);
+
+                        // Move selectedIndex at the most bottom
+                        } else if (requestData.more == 'lower' && responseData.ids['length'] < visibleCount) {
+                            $('#'+name+'-keyword').attr('selectedIndex', $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size());
+                        }
+                    }
+
+                    // Adjust selection based on selectedIndex
+                    keyDownHandler(name, requestData.more == 'upper' ? 33 : 34);
+
+                    // Update page-top|page-btm value
+                    $('#'+name+'-info').attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
+                }
+
+                // Restore trigger pic because previously it could have disabled-style of appearance
+                if ($('#'+name+'-keyword').parents('.combo-div').hasClass('simple-disabled') == false)
+                    $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system.png');
+
+            // Else if results set is empty (no non-disabled options), we hide options, and set red
+            // color for keyword, as there was no related results found
+            } else {
+                // Hide options list div
+                if ($('#'+name+'-suggestions').css('display') != 'none') $('#'+name+'-keyword').click();
+
+                // If just got resuts are result for satellited combo, autofetched after satellite value was changed
+                // and we have no results related to current satellite value, we disable satellited combo
+                if (requestData.mode == 'refresh-children') {
+                    setDisabled(name, true);
+
+                // Else if reason of no results was not in satellite, we add special css class for that case
+                } else {
+                    $('#'+name+'-keyword').addClass('no-results');
+                    $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
+                }
+            }
+        }
+
         /**
          * Prepare request parameters, do request, fetch data and rebuild combo
          *
          * @param data
          */
-        fetch = function(data){
+        remoteFetch = function(data){
             // Get name of field
             var name = data.field;
 
@@ -157,116 +272,94 @@ var COMBO = (function (combo) {
                     }
                     comboOptions[name].backup = backupOptions.backup;
 
-                    // Remove more attribute
-                    $('#'+name+'-suggestions').removeAttr('more');
-
-                    // Rebuild options list
-                    var html = suggestions(comboOptions[name], name);
-                    $('#'+name+'-suggestions').html(html);
-
-                    // Set scrolling if number of options more than visibleCount
-                    $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > visibleCount ? 'scroll' : '');
-
-                    // Adjust options div height
-                    adjustComboOptionsDivHeight(name);
-
-                    if (json['found']) {
-                        // Adjust left margin for '.combo-info' because width of info could be changed
-                        adjustComboInfoLeftMargin(name, true);
-
-                        // We get json['found'] value only in case if we are running 'keyword' fetch mode,
-                        // and in json is stored first portion of results and this mean that paging up shoud be disabled
-                        $('#'+name+'-info').attr('page-top-reached', 'true');
-
-                        // Also, we should renew 'page-btm-reached' attribute value
-                        if (json['found'] <= visibleCount) {
-                            $('#'+name+'-info').attr('page-btm-reached', 'true');
-                        } else {
-                            $('#'+name+'-info').attr('page-btm-reached', 'false');
-                        }
-                    }
-
-                    // Bind handlers for hover and click events for each option
-                    $('#'+name+'-suggestions'+' ul li[class!="disabled"]').hover(
-                        function(){
-                            $(this).parent().find('li').removeClass('selected');
-                            $(this).addClass('selected');
-                            var k = $(this).parent().find('li[class!="disabled"]').index(this);
-                            $('#'+name+'-keyword').attr('selectedIndex', k+1);
-                        }
-                    );
-                    $('#'+name+'-suggestions'+' ul li[class!="disabled"]').click(select);
-
-                    // If results set is not empty
-                    if ($(html).find('li[class!="disabled"]').length) {
-
-                        // Show options list after keyword typing is finished
-                        if ($('#'+name+'-suggestions').css('display') == 'none') {
-
-                            // If we selected some option in satellite and current results are
-                            // results for satellited field, we do not expand them at this time.
-                            // We just remove 'no-results-within' class from satellited field
-                            // keyword and set keyword to empty string
-                            if (data.mode == 'refresh-children') {
-                                $('#'+name+'-keyword').removeClass('no-results-within').val('');
-                                $('#'+name).val(0).change();
-
-                            // Show results
-                            } else {
-                                $('#'+name+'-keyword').click();
-                            }
-                        }
-
-                        // Options selected adjustments
-                        if (data.more && data.more.toString().match(/^(upper|lower)$/)) {
-
-                            // If these was no more results
-                            if (json.ids['length'] <= visibleCount) {
-
-                                // We mark that top|bottom range is reached
-                                if (json.ids['length'] < visibleCount)
-                                    $('#'+name+'-info').attr('page-'+(data.more == 'upper' ? 'top' : 'btm')+'-reached', 'true');
-
-                                // Move selectedIndex at the most top
-                                if (data.more == 'upper') {
-                                    $('#'+name+'-keyword').attr('selectedIndex', 1);
-
-                                // Move selectedIndex at the most bottom
-                                } else if (data.more == 'lower' && json.ids['length'] < visibleCount) {
-                                    $('#'+name+'-keyword').attr('selectedIndex', $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size());
-                                }
-                            }
-
-                            // Adjust selection based on selectedIndex
-                            keyDownHandler(name, data.more == 'upper' ? 33 : 34);
-
-                            // Update page-top|page-btm value
-                            $('#'+name+'-info').attr('page-'+ (data.more == 'upper' ? 'top' : 'btm'), data.page);
-                        }
-
-                        // Restore trigger pic because previously it could have disabled-style of appearance
-                        if ($('#'+name+'-keyword').parents('.combo-div').hasClass('simple-disabled') == false)
-                            $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system.png');
-
-                    // Else if results set is empty (no non-disabled options), we hide options, and set red
-                    // color for keyword, as there was no related results found
-                    } else {
-                        // Hide options list div
-                        if ($('#'+name+'-suggestions').css('display') != 'none') $('#'+name+'-keyword').click();
-
-                        // If just got resuts are result for satellited combo, autofetched after satellite value was changed
-                        // and we have no results related to current satellite value, we disable satellited combo
-                        if (data.mode == 'refresh-children') {
-                            setDisabled(name, true);
-
-                        // Else if reason of no results was not in satellite, we add special css class for that case
-                        } else {
-                            $('#'+name+'-keyword').addClass('no-results');
-                            $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
-                        }
-                    }
+                    afterFetchAdjustments(data, json);
                 }, 'json'
             )
+        }
+
+        /**
+         * Function is used in case if all possible options, within which keyword-search will be processing - are already collected.
+         * They can be collected initially (if their total count <= Indi_Db_Table_Row_Beautiful::$comboOptionsVisibleCount) or
+         * can be collected step by step while paging upper/lower. So, since they are a got, any keyword search will run
+         * without requests to database, and will be completely handled by javascript. Such scheme will be used until next
+         * database request - this can happen if current combo field has a satellite, and satellite value was changed
+         *
+         * @param data Request data object, containing same properties, as per remote-fetch scheme
+         */
+        localFetch = function(data) {
+
+            // Get the name of combo field
+            var name = data.field;
+
+            // Empty options
+            comboOptions[name].data = [];
+            comboOptions[name].ids = [];
+
+            // Prepare regular expression for keyword search
+            var reg = new RegExp('^'+data.keyword, 'i');
+
+            // If we are dealing with tree of options, we should find not only search results, but also all level parents
+            // for user to be able to view all parents of each result
+            if (comboOptions[name].tree) {
+                var results = [];
+                var parents = [];
+                var parentId, currentIndex;
+
+                // Collect ids of options that are primary results of search, and collect ids of all their distinct parents
+                for (var i = 0; i < comboOptions[name].backup.options.data.length; i++) {
+                    if (reg.test(comboOptions[name].backup.options.data[i].title)) {
+                        results.push(comboOptions[name].backup.options.ids[i]);
+                        currentIndex = i;
+                        while (parentId = parseInt(comboOptions[name].backup.options.data[currentIndex].system.parentId)) {
+                            if (parents.indexOf(parentId) == -1) {
+                                parents.push(parentId);
+                            }
+                            currentIndex = comboOptions[name].backup.options.ids.indexOf(parentId);
+                        }
+                        parentId = 0;
+                    }
+                }
+
+                // Remove items (from parents array), that also are primary results
+                for (var i = 0; i < results.length; i++) {
+                    if (parents.indexOf(results[i]) != -1) {
+                        parents.splice(parents.indexOf(results[i]), 1);
+                    }
+                }
+
+                // Walk though full backuped options list and pick items, that are primary results or are parents for
+                // primary results
+                for (var i = 0; i < comboOptions[name].backup.options.data.length; i++) {
+                    var optionId = comboOptions[name].backup.options.ids[i];
+                    if (results.indexOf(optionId) != -1 || parents.indexOf(optionId) != -1) {
+                        comboOptions[name].ids.push(comboOptions[name].backup.options.ids[i]);
+                        comboOptions[name].data.push(deepObjCopy(comboOptions[name].backup.options.data[i]));
+
+                        // Mark parents as disabled, so they will be no selectable
+                        if (parents.indexOf(optionId) != -1) {
+                            var disabledIndex = comboOptions[name].data.length - 1;
+                            comboOptions[name].data[disabledIndex].system.disabled = true;
+                        }
+                    }
+                }
+
+                // Set up number of found (primary) results
+                comboOptions[name].found = results.length;
+
+            // If we are dealing with non-tree list of options, all it simpler for a bit
+            } else {
+                for (var i in comboOptions[name].backup.options.data) {
+                    if (reg.test(comboOptions[name].backup.options.data[i].title)) {
+                        comboOptions[name].data.push(comboOptions[name].backup.options.data[i]);
+                        comboOptions[name].ids.push(comboOptions[name].backup.options.ids[i]);
+                    }
+                }
+                comboOptions[name].found = comboOptions[name].ids.length;
+            }
+
+            // Here we build html for options list, setup scrolling if needed, adjust combo options div height and
+            // margin-left for .combo-info, bind hover and click handlers on each option and do other things
+            afterFetchAdjustments(data, comboOptions[name]);
         }
 
         /**
@@ -423,8 +516,14 @@ var COMBO = (function (combo) {
 
             // Otherwise info should be
             } else {
+                //$('#'+name+'-info').css('visibility', 'visible');
+                //$('#'+name+'-keyword').removeClass('readonly').removeAttr('readonly');
+            }
+
+            if (($('#'+name+'-info').attr('fetch-mode') == 'keyword' ||
+                parseInt($('#'+name+'-found').text().replace(',','')) > visibleCount) &&
+                $('#'+name+'-keyword').attr('disabled') != 'disabled') {
                 $('#'+name+'-info').css('visibility', 'visible');
-                $('#'+name+'-keyword').removeClass('readonly').removeAttr('readonly');
             }
 
             var html = items.length ? '<ul>'+items.join("\n")+'</ul>' : '';
@@ -608,7 +707,7 @@ var COMBO = (function (combo) {
                     data.more = moreResultsNeeded;
 
                     // Fetch request
-                    fetch(data);
+                    remoteFetch(data);
 
                 // If we are searching by keyword
                 } else if (event.keyCode != '33') {
@@ -624,7 +723,18 @@ var COMBO = (function (combo) {
 
                     //$('#'+name+'-suggestions').attr('find', data.find);
                     //data.page = $('#'+name+'-suggestions').attr('page');
-                    timeout = setTimeout(fetch, 500, data);
+
+                    // Here we check if all possible results are already fetched, and if so, we will use local fetch
+                    // instead of remote fetch, so we will search keyword within currently loaded set of options. Such
+                    // scheme is useful for situations then number of results is not too large, and all results ARE already
+                    // collected (initially, by first combo load, and/or by additional hoarding while upper/lower pages fetching)
+                    if (comboOptions[name].backup &&
+                        comboOptions[name].backup.options.data.length == parseInt(comboOptions[name].backup.options.found) &&
+                        data.keyword.length) {
+                        localFetch(data);
+                    } else {
+                        timeout = setTimeout(remoteFetch, 500, data);
+                    }
                 }
             }
 
@@ -639,8 +749,9 @@ var COMBO = (function (combo) {
                 if (comboOptions[name].backup) {
                     $('#'+name+'-info')[0].outerHTML = comboOptions[name].backup.info;
                     $('#'+name+'-info').hide();
-                    comboOptions[name] = deepObjCopy(comboOptions[name].backup.options);
-                    delete comboOptions[name].backup;
+                    var restore = deepObjCopy(comboOptions[name].backup.options);
+                    comboOptions[name] = {};
+                    comboOptions[name] = restore;
                 }
             }
         }
@@ -766,8 +877,22 @@ var COMBO = (function (combo) {
                     }
                 }
                 return false;
+            // Esc key
             } else if (event.keyCode == '27') {
                 hideSuggestions(name);
+
+            // Here we provide nesessary operations if combo is running with no-lookup option
+            } else if ($('#'+name+'-keyword').attr('no-lookup') == 'true' && !comboOptions[name].enumset) {
+
+                // If Backspace or Del key is pressed, we should set current value as 0 and set keyword to ''
+                if (event.keyCode == '8' || event.keyCode == '46'){
+                    $('#'+name+'-keyword').val('');
+                    $('#'+name).val(0).change();
+
+                // If any other key was pressed, there should be no reaction
+                } else {
+                    return false;
+                }
             }
         }
 
@@ -875,8 +1000,7 @@ var COMBO = (function (combo) {
             // 1. combo is used in enumset field and is not disabled ('non-disabled' condition is here due to css styles
             // conflict between input[disabled] and input[readonly]. ? - think about need)
             // 2. combo lookup ability was manually switched off by special param
-            if (($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset) ||
-                $('#'+name+'-keyword').attr('no-lookup') == 'true') {
+            if (($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset)) {
                 $(this).attr('readonly', 'readonly');
                 $(this).addClass('readonly');
             }
@@ -948,7 +1072,7 @@ var COMBO = (function (combo) {
                     var satellited = $(this).parents('.combo-div').find('.combo-keyword').attr('lookup')
                     setDisabled(satellited);
                     if ($(this).parents('.combo-div').hasClass('disabled') == false) {
-                        fetch({
+                        remoteFetch({
                             field: satellited,
                             satellite: $('#'+$(this).attr('satellite')).val(),
                             mode: 'refresh-children'
@@ -1089,7 +1213,7 @@ var COMBO = (function (combo) {
         }
 
         /**
-         * If optgroups is used and we are deaing with items tree, we should distibute items by optgroups,
+         * If optgroups is used and we are dealing with items tree, we should distibute items by optgroups,
          * but insert all parents for options, if these parents not in same groups as child options
          *
          * @param items
