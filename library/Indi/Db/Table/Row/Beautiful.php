@@ -8,11 +8,11 @@
 class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
     /**
-     * Default count of options that will be fetched
+     * Count of options that will be fetched. It's 300 by default - hundred-rounded number of countries in the world
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 20;
+    public static $comboOptionsVisibleCount = 300;
 
     /**
      * Store regular expression for checks of email addresses validity
