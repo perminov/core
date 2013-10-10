@@ -411,7 +411,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                 foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->alias] = Misc::usubstr($groupByR->title, 50);
             } else {
                 $groupByRs = $groupByFieldEntityM->fetchAll(
-                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '"'
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 );
                 foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->id] = Misc::usubstr($groupByR->title, 50);
             }
