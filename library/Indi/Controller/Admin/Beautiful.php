@@ -74,7 +74,14 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->row->{$this->post['field']}, false, $this->post['satellite']);
             }
 
+            // Get field
+            $field = $this->trail->getItem()->getFieldByAlias($this->post['field']);
+
+            // Options array
             $options = array();
+
+            // Get params
+            $params = $field->getParams();
 
             // If 'optgroup' param is used
             if ($comboDataRs->optgroup) {
@@ -88,6 +95,22 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 $system = $o->system();
                 if ($by) $system = array_merge($system, array('group' => $o->$by));
                 $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->title, 50), 'system' => $system);
+
+                // Deal with optionTemplate param, if specified
+                if ($params['optionTemplate']) {
+                    $php = preg_split('/(<\?|\?>)/', $params['optionTemplate'], -1, PREG_SPLIT_DELIM_CAPTURE);
+                    $out = '';
+                    for ($i = 0; $i < count($php); $i++) {
+                        if ($php[$i] == '<?') {
+                            $php[$i+1] = preg_replace('/^=/', ' echo ', $php[$i+1]) . ';';
+                            ob_start(); eval($php[$i+1]); $out .= ob_get_clean();
+                            $i += 2;
+                        } else {
+                            $out .= $php[$i];
+                        }
+                    }
+                    $options[$o->$keyProperty]['option'] = $out;
+                }
 
                 // Deal with optionAttrs, if specified.
                 if ($comboDataRs->optionAttrs) {

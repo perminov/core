@@ -47,6 +47,7 @@ div.combo-div div.combo-data{
     border: 1px solid #99BCE8;
     margin-top: -1px;
     z-index: 1;
+    line-height: 13px;
 }
 div.combo-div div.combo-data ul {
     padding: 0px;
