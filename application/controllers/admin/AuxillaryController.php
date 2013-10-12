@@ -5,6 +5,9 @@
  */
 class Admin_AuxillaryController extends Indi_Controller
 {
+    public function preDispatch(){
+        eval('$this->' . $this->action . 'Action();');
+    }
     /**
      * Provide ability to use yahoo color picker
      *
@@ -111,67 +114,6 @@ function strip_tags( str ){
 		die();
 	}
 	
-	public function autocompleteAction(){
-		$json = array();
-		$limit = 10;
-		if ($this->post['id'] && $this->post['value']) {
-			$field = Misc::loadModel('Field')->fetchRow('`id` = "' . (int) $this->post['id'] . '"');
-			$params = $field->getParams();
-			if ($field->relation && $model = Entity::getModelById($field->relation)) {
-				$rs = $model->fetchAll('`title` LIKE "%' .  strip_tags($this->post['value']) .'%"', null, $limit);
-				$fields = $field->getTable()->getFieldsByEntityId($field->relation)->toArray();
-				$foreign = array();
-				$local = array();
-				$data = array();
-				if (trim($params['appendPattern'])) {
-					// Detect foreign keys
-					preg_match_all('/[a-zA-Z0-9]+\.[a-zA-Z0-9]+/', $params['appendPattern'], $matches);
-					$tforeign = array();
-					for ($i = 0; $i < count($matches[0]); $i++) {
-						$pair = explode('.', $matches[0][$i]);
-						$tforeign[$pair[0]] = $pair[1];
-					}
-					for ($i = 0; $i < count($fields); $i++) {
-						if ($fields[$i]['relation'] && in_array($fields[$i]['alias'], array_keys($tforeign))) {
-							$foreign[$fields[$i]['alias']] = $tforeign[$fields[$i]['alias']];
-						} else {
-							if (preg_match('/[^\.]' . $fields[$i]['alias'] . '/', $params['appendPattern'])) {
-								$local[] = $fields[$i]['alias'];
-							}
-						}
-					}
-					if (count($foreign)) $rs->setForeignRowsByForeignKeys(implode(',', array_keys($foreign)));
-				}
-				if (trim($params['additionalData'])) {
-					$tdataFields = explode(',', $params['additionalData']);
-					for ($i = 0; $i < count($tdataFields); $i++) $tdataFields[$i] = trim($tdataFields[$i]);
-					for ($i = 0; $i < count($fields); $i++) {
-						if (in_array($fields[$i]['alias'], $tdataFields)) {
-							$data[] = $fields[$i]['alias'];
-						}
-					}
-				}
-				$options = array();
-				foreach($rs as $r) {
-					$options[$r->id]['text'] = $r->getTitle();
-					$additional = $params['appendPattern'];
-					foreach ($foreign as $foreignKey => $foreignEntityField) {
-						$additional = str_replace($foreignKey . '.' . $foreignEntityField, $r->foreign[$foreignKey][$foreignEntityField], $additional);
-					}
-					for ($i = 0; $i < count($local); $i++) {
-						$additional = str_replace($local[$i], $r->{$local[$i]}, $additional);
-					}
-					$options[$r->id]['text'] .= $additional;
-					for ($i = 0; $i < count($data); $i++) {
-						$options[$r->id]['data'][$data[$i]] = $r->{$data[$i]};
-					}
-				}
-				$json = array('general' => $model->info('name').'Id', 'options' => $options);
-				die(json_encode($json));
-			}
-		}
-		die(json_encode($json));
-	}
 	public function downloadAction(){
 		$this->params['id'] = (int) $this->params['id'];
 		$this->params['field'] = (int) $this->params['field'];

@@ -139,6 +139,25 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
             $dataRs->enumset = true;
+
+            if ($fieldR->storeRelationAbility == 'many') {
+                if ($selected) {
+                    // Convert list of selected ids into array
+                    $selected = explode(',', $selected);
+
+                    // Declare and fill array of selected rows
+                    $data = array();
+                    foreach ($dataRs as $dataR)
+                        if (in_array($dataR->alias, $selected))
+                            $data[] = $dataR->toArray();
+
+                    // Create rowset of selected rows
+                    $dataRs->selected = $relatedM->createRowset(array('data' => $data));
+                } else {
+                    $dataRs->selected = $relatedM->createRowset(array('data' => array()));
+                }
+            }
+
             return $dataRs;
         }
 
@@ -278,7 +297,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         } else {
 
             // If we selected option is set, or if we have keyword that results should match, special logic will run
-            if ($selected) {
+            if ($selected && ($fieldR->storeRelationAbility == 'one' || $selectedTypeIsKeyword)) {
 
                 // We do a backup for WHERE clause, because it's backup version
                 // will be used to calc foundRows property in case if $selectedTypeIsKeyword = false
@@ -428,6 +447,40 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         // to combo.js and and after deepObjCopy there - will have typeof == object, which is not actually boolean
         // and will cause problems in combo.js
         $dataRs->enumset = false;
+
+        if ($fieldR->storeRelationAbility == 'many') {
+            if ($selected) {
+                // Convert list of selected ids into array
+                $selected = explode(',', $selected);
+
+                // Get array of ids of already fetched rows
+                $allFetchedIds = array(); foreach ($dataRs as $dataR) $allFetchedIds[] = $dataR->id;
+
+                // Check if some of selected rows are already presented in $dataRs
+                $selectedThatArePresentedInCurrentDataRs = array_intersect($selected, $allFetchedIds);
+
+                // Array for selected rows
+                $data = array();
+
+                // If some of selected rows are already presented in $dataRs, we pick them into $data array
+                if (count($selectedThatArePresentedInCurrentDataRs))
+                    foreach ($dataRs as $dataR)
+                        if (in_array($dataR->id, $selectedThatArePresentedInCurrentDataRs))
+                            $data[] = $dataR->toArray();
+
+                // If some of selected rows are not presented in $dataRs, we do additional fetch to retrieve
+                // them from database and append these rows to $data array
+                if(count($selectedThatShouldBeAdditionallyFetched = array_diff($selected, $allFetchedIds))) {
+                    $data = array_merge($data, $relatedM->fetchAll('
+                        FIND_IN_SET(`id`, "' . implode(',', $selectedThatShouldBeAdditionallyFetched) . '")
+                    ')->toArray());
+                }
+
+                $dataRs->selected = $relatedM->createRowset(array('data' => $data));
+            } else {
+                $dataRs->selected = $relatedM->createRowset(array('data' => array()));
+            }
+        }
 
         return $dataRs;
     }

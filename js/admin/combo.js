@@ -4,7 +4,8 @@ var COMBO = (function (combo) {
         var keyUpHandler, keyDownHandler, suggestions, input, select, hideSuggestions, timeout, bindTrigger, remoteFetch,
             merge, adjustComboInfoLeftMargin, adjustComboTriggerLeftMargin, adjustComboOptionsDivHeight, visibleCount = 20,
             mergeOptgroupInfo, appendNotSameGroupParents, setDisabled, toggle, setDisabledOptions, fetchRelativePath,
-            localFetch, afterFetchAdjustments;
+            localFetch, afterFetchAdjustments, bindDelete, adjustKeywordFieldWidth, pregQuote, postSelect, keywordErased,
+            rebuildComboData;
 
         /**
          * Ajdust left margin for '.combo-info' elements
@@ -13,13 +14,17 @@ var COMBO = (function (combo) {
          */
         adjustComboInfoLeftMargin = function(name, forceAdjust) {
             var input = $('.combo-keyword[lookup="'+name+'"]');
-            var text = [];
             var width = input.parent().find('.combo-info').width();
 
             // We set margin only once, or if forceAdjust agrument is passed.
             // forceAdjust argument is passed when response json has 'found' property
-            if(!parseInt(input.parent().find('.combo-info').css('margin-left')) || forceAdjust)
-                input.parent().find('.combo-info').css('margin-left', (input.width() - width - 15) + 'px');
+            if (!parseInt(input.parent().find('.combo-info').css('margin-left')) || forceAdjust) {
+                if ($('#'+name+'-info').hasClass('multiple')) {
+                    input.parent().find('.combo-info').css('margin-left', (input.parent().width() - width - 3) + 'px');
+                } else {
+                    input.parent().find('.combo-info').css('margin-left', (input.width() - width - 15) + 'px');
+                }
+            }
         }
 
         /**
@@ -45,6 +50,36 @@ var COMBO = (function (combo) {
         }
 
         /**
+         * Adjust keyword input field after each append new selected item to list of selected items or delete it from list
+         * Function is used only if combo is running in multiple mode
+         *
+         * @param name
+         */
+        adjustKeywordFieldWidth = function(name) {
+            if ($('#'+name+'-info').hasClass('multiple')) {
+                var width;
+                if ($('#'+name+'-keyword').parent().find('.combo-selected-item').length) {
+                    var last = $('#'+name+'-keyword').parent().find('.combo-selected-item').last();
+                    width = $('#'+name+'-keyword').parents('.combo-div').width() - last.position().left - last.width() - 20;//10;
+                } else {
+                    width = $('#'+name+'-keyword').parents('.combo-div').width() - 20;//10;
+                }
+                $('#'+name+'-keyword').css({width: width});
+            }
+        }
+
+        /**
+         * Quotes string that later will be used in regular expression.
+         *
+         * @param str
+         * @param delimiter
+         * @return {String}
+         */
+        pregQuote = function(str, delimiter) {
+            return (str + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-]', 'g'), '\\$&');
+        }
+
+        /**
          * Function for hiding options list, as Esc key was pressed
          *
          * @param name
@@ -54,20 +89,22 @@ var COMBO = (function (combo) {
             // Hide options
             $('#'+name+'-suggestions').hide();
 
-            // If keyword contents does not equal to any option, empty hidden value field
-            // 1. Set notEqual as true
-            var notEqual = true;
+            if ($('#'+name+'-info').hasClass('multiple') == false) {
+                // If keyword contents does not equal to any option, empty hidden value field
+                // 1. Set notEqual as true
+                var notEqual = true;
 
-            // 2. Get current keyword value
-            var lookup = $('#'+name+'-keyword').val();
+                // 2. Get current keyword value
+                var lookup = $('#'+name+'-keyword').val();
 
-            // 3. Check if keyword value match any existing option
-            for (var key in comboOptions[name]['data'])
-                if (comboOptions[name]['data'][key].title == lookup)
-                    notEqual = false;
+                // 3. Check if keyword value match any existing option
+                for (var key in comboOptions[name]['data'])
+                    if (comboOptions[name]['data'][key].title == lookup)
+                        notEqual = false;
 
-            // 4. If no match found, empty hidden value field
-            if (notEqual) $('#'+name).val("0");
+                // 4. If no match found, empty hidden value field
+                if (notEqual) $('#'+name).val("0");
+            }
 
             // 5. Hide info about count and found
             $('#'+name+'-info').hide();
@@ -197,7 +234,7 @@ var COMBO = (function (combo) {
             var name = data.field;
 
             // Show loading pic
-            $('#'+name+'-count').html('<img src="' + STD + '/i/loading/loading35.gif" class="combo-loader" width="15">');
+            $('#'+name+'-count').html('<img src="' + STD + '/i/admin/combo-loading-pic.gif" class="combo-loader" width="15">');
 
             // Fetch request
             var fetchRelativePath;
@@ -296,7 +333,7 @@ var COMBO = (function (combo) {
             comboOptions[name].ids = [];
 
             // Prepare regular expression for keyword search
-            var reg = new RegExp('^'+data.keyword, 'i');
+            var reg = new RegExp('^'+pregQuote(data.keyword, '/'), 'i');
 
             // If we are dealing with tree of options, we should find not only search results, but also all level parents
             // for user to be able to view all parents of each result
@@ -363,6 +400,48 @@ var COMBO = (function (combo) {
         }
 
         /**
+         * Rebuild html of options list of combo data, apply some styles, props, attrs and events
+         *
+         * @param name
+         */
+        rebuildComboData = function(name) {
+            // Set initial 'index' and 'selectedIndex' attribs values
+            if ($('#'+name+'-keyword').attr('selectedIndex') == undefined) {
+                $('#'+name+'-keyword').attr('selectedIndex', 0);
+            }
+
+            // Rebuild html for options
+            var html = suggestions(comboOptions[name], name);
+            $('#'+name+'-keyword').parent().find('.combo-data').html(html);
+
+            // Set height of options list div
+            adjustComboOptionsDivHeight(name);
+
+            // Set height of option height for all options
+            $('#'+name+'-suggestions li').css({height: comboOptions[name].optionHeight + 'px', overflow: 'hidden', 'vertical-align': 'top'});
+            $('#'+name+'-suggestions li:last-child').css({height: (comboOptions[name].optionHeight-1) + 'px', overflow: 'hidden', 'vertical-align': 'top'});
+
+            // Set special css class for options if optionHeight > 14
+            if (comboOptions[name].optionHeight > 14) $('#'+name+'-suggestions ul').addClass('tall');
+
+            // Set scrolling if number of options more than visibleCount
+            $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > visibleCount ? 'scroll' : '');
+
+            // Bind a 'selected' class adding on hover
+            $('#'+name+'-keyword').parent().find('.combo-data ul li[class!="disabled"]').hover(
+                function(){
+                    $(this).parent().find('li').removeClass('selected');
+                    $(this).addClass('selected');
+                    var k = $(this).parent().find('li[class!="disabled"]').index(this);
+                    $('#'+name+'-keyword').attr('selectedIndex', k+1);
+                }
+            );
+
+            // Bind a click event to each option
+            $('#'+name+'-keyword').parent().find('.combo-data ul li[class!="disabled"]').click(select);
+        }
+
+        /**
          * Set some option as selected, autosets value for hidden field
          */
         select = function (){
@@ -371,12 +450,11 @@ var COMBO = (function (combo) {
             if (typeof arguments[0] == 'string') {
                 name = arguments[0];
                 li = $('#'+name+'-suggestions ul li.selected');
+                if (li.length == 0) return;
             } else {
                 name = $(this).parents('.combo-div').find('.combo-keyword').attr('lookup');
                 li = $(this);
             }
-
-            $('#'+name).val(li.attr(name));
 
             // Get the index of selected option id in comboOptions[name].ids
             if (comboOptions[name].enumset) {
@@ -388,23 +466,98 @@ var COMBO = (function (combo) {
             // Find related title property in comboOptions[name].data
             title = comboOptions[name].data[index].title;
 
-            // Set keyword text
-            $('#'+name+'-keyword').val(title.trim());
-            $('#'+name+'-keyword').attr('prev', title.trim());
+            // If combo is in multiple-value mode
+            if ($('#'+name+'-info').hasClass('multiple')) {
+                var selected = $('#'+name).val() ? $('#'+name).val().split(',') : [];
+
+                // If option, that is going to be added to selected list, is not already exists there
+                if (selected.indexOf(li.attr(name)) == -1) {
+
+                    // Create visual representation and append it to existing
+                    $('<span class="combo-selected-item" selected-id="'+li.attr(name)+'">'+title.trim()+
+                        '<span class="combo-selected-item-delete"></span>' +
+                        '</span>').insertBefore('#'+name+'-keyword');
+                    bindDelete($('#'+name+'-info').parent().find('.combo-selected-item').last().find('.combo-selected-item-delete'));
+
+                    // Determine way of how to deal with .combo-data (rebuild|rebuild-and-show|no-rebuild)
+                    var mode = $('#'+name+'-keyword').val() ? 'selected-but-found-with-lookup' : '';
+
+                    // Reset keyword field and it's 'prev' attr, append just selected value to already selected and
+                    // adjust keyword field width
+                    $('#'+name+'-keyword').val('');
+                    $('#'+name+'-keyword').attr('prev', '');
+                    selected.push(li.attr(name));
+                    $('#'+name).val(selected.length > 1 ? selected.join(',') : selected[0]);
+                    adjustKeywordFieldWidth(name);
+
+                    // Hide options
+                    hideSuggestions(name);
+
+                    // Restore list of options
+                    keywordErased(name, mode);
+
+                    // Execute javascript-code, assigned to selected item
+                    if (comboOptions[name].enumset) {
+                        var index = comboOptions[name]['ids'].indexOf(li.attr(name));
+                        if (index != -1 && comboOptions[name]['data'][index].system.js) {
+                            eval(comboOptions[name]['data'][index].system.js);
+                        }
+                    }
+
+                    // Additional operations, that should be done after some option was selected
+                    postSelect(name, li);
+
+                // Indicate that option can't be once more selected because it's already selected
+                } else {
+                    var existing = $('#'+name+'-info').parent().find('.combo-selected-item[selected-id="'+li.attr(name)+'"] .combo-selected-item-delete');
+                    existing.fadeTo('fast', 0.2);
+                    existing.fadeTo(0, 1);
+                }
+
+            // Else if combo is running in single-value mode
+            } else {
+                // Set keyword text
+                $('#'+name+'-keyword').val(title.trim());
+                $('#'+name+'-keyword').attr('prev', title.trim());
+
+                // Update field value
+                $('#'+name).val(li.attr(name));
+
+                // Hide options
+                hideSuggestions(name);
+
+                // Additional operations, that should be done after some option was selected
+                postSelect(name, li);
+            }
+        }
+
+        /**
+         * Perform some additional things after option was selected
+         *
+         * @param name
+         * @param li
+         */
+        postSelect = function(name, li) {
+            // Detect multiple mode
+            var multiple = $('#'+name+'-info').hasClass('multiple');
 
             // Apply selected option additional attributes to a hidden input,
             // so attributes and their values to be accessible within hidden input context
             if (comboOptions[name].attrs && comboOptions[name].attrs.length) {
                 for(var n = 0; n < comboOptions[name].attrs.length; n++) {
-                    $('#'+name).attr(comboOptions[name].attrs[n], li.attr(comboOptions[name].attrs[n]));
+
+                    // If combo is running in multiple mode, we add a postfix to attribute names, for making a posibillity
+                    // of picking up attributes, related to each separate selected value from the whole list of selected values
+                    if (multiple) {
+                        $('#'+name).attr(comboOptions[name].attrs[n]+'-'+li.attr(name), li.attr(comboOptions[name].attrs[n]));
+                    } else {
+                        $('#'+name).attr(comboOptions[name].attrs[n], li.attr(comboOptions[name].attrs[n]));
+                    }
                 }
             }
 
             // Fire 'change' event
             $('#'+name).change();
-
-            // Hide options
-            hideSuggestions(name);
 
             // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
             // We will need this fact in request data prepare process, because if at the moment of sending
@@ -503,23 +656,7 @@ var COMBO = (function (combo) {
             $('#'+name+'-found').text(number_format(json['found']));
 
             // Info should be displayed only if maximum possible results per page is less that total found results
-
-            // We shoud mark keyword input field as readonly if:
-            // 1. We are running 'no-keyword' fetch-mode
-            // 2. Keyword input field is not already marked as 'disabled'
-            // 3. Current displayed count of results is not greater than visibleCount variable
-            if ($('#'+name+'-info').attr('fetch-mode') == 'no-keyword' &&
-                       $('#'+name+'-keyword').attr('disabled') != 'disabled' &&
-                       parseInt($('#'+name+'-found').text().replace(',','')) <= visibleCount
-                ) {
-                //$('#'+name+'-keyword').addClass('readonly').attr('readonly', 'readonly');
-
-            // Otherwise info should be
-            } else {
-                //$('#'+name+'-info').css('visibility', 'visible');
-                //$('#'+name+'-keyword').removeClass('readonly').removeAttr('readonly');
-            }
-
+            // or combo is running in 'keyword' mode
             if (($('#'+name+'-info').attr('fetch-mode') == 'keyword' ||
                 parseInt($('#'+name+'-found').text().replace(',','')) > visibleCount) &&
                 $('#'+name+'-keyword').attr('disabled') != 'disabled') {
@@ -568,7 +705,7 @@ var COMBO = (function (combo) {
         keyUpHandler = function (event){
 
             // Get input element
-            input = $(this);
+            var input = $(this);
 
             // Get field name
             var name = input.attr('lookup');
@@ -589,11 +726,18 @@ var COMBO = (function (combo) {
             // Variable for detection if next|prev page of results should be fetched
             var moreResultsNeeded = event.keyCode.toString().match(/^(34|33)$/) && $('#'+name+'-suggestions').attr('more') && $('#'+name+'-suggestions').attr('more').toString().match(/^(upper|lower)$/) ? $('#'+name+'-suggestions').attr('more') : false;
 
+            // We are detecting the change of keyword value by using 'keyup' event, instead of 'input' event, because 'input'
+            // is supported by not al browsers. But with 'keyup' event there is a small problem - if we will be inputting
+            // too fast
+            var tooFastKeyUp = comboOptions[name].lastTimeKeyUp && (new Date().getTime() - comboOptions[name].lastTimeKeyUp < 200);
+
             // Variable for detection if keyword was changed and first page of related results should be fetched
-            var keywordChanged = ($(this).attr('prev') != input.val() && input.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33)$/));
+            var keywordChanged = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33)$/));
 
             // Check if keyword was emptied
-            var keywordChangedToEmpty = ($(this).attr('prev') != input.val() && input.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33)$/));
+            var keywordChangedToEmpty = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33)$/));
+
+            comboOptions[name].lastTimeKeyUp = new Date().getTime();
 
             // If keyword was at least once changed, we switch fetch mode to 'keyword'.
             // We need to take it to attention, because PgUp fetching is impossible in case
@@ -625,17 +769,22 @@ var COMBO = (function (combo) {
                 // Scroll options list to the most top
                 $('#'+name+'-suggestions').scrollTo('0px');
 
-                // Set hidden value field as 0, and fire 'change' event, because if we are running keyword search
-                // hidden value should be 0 until some of search results will be selected
-                $('#'+name).val(0).change();
+                // Setting value to 0, firing 'change' event and setting 'changed' attr to 'true' here is needed only
+                // if we are dealing with non-multiple combo
+                if ($('#'+name+'-info').hasClass('multiple') == false) {
 
-                // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
-                // We will need this fact in request data prepare process, because if at the moment of sending
-                // request 'changed' will still be 'false' (initial value), satellite property won't be set in
-                // request data object. We need this to get upper and lower page results fetched from currently selected
-                // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
-                // have start point different to selected value, and based on most top alphabetic order.
-                $('#'+name+'-info').attr('changed', 'true');
+                    // Set hidden value field as 0, and fire 'change' event, because if we are running keyword search
+                    // hidden value should be 0 until some of search results will be selected
+                    $('#'+name).val(0).change();
+
+                    // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
+                    // We will need this fact in request data prepare process, because if at the moment of sending
+                    // request 'changed' will still be 'false' (initial value), satellite property won't be set in
+                    // request data object. We need this to get upper and lower page results fetched from currently selected
+                    // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
+                    // have start point different to selected value, and based on most top alphabetic order.
+                    $('#'+name+'-info').attr('changed', 'true');
+                }
             }
 
             // We will fetch data only if keyword was changed or if next|prev page of results
@@ -741,18 +890,54 @@ var COMBO = (function (combo) {
             // If keyword was changed to empty we fire 'change' event. We do that for being sure
             // that dependent combos (combos that are satellited by current combo) are disabled. Also,
             // after keyword was changed to empty, hidden value was set to 0, so we should call .change() anyway
+            // Note: 'change' event firing is need only if combo is running in non-multiple mode.
             if (keywordChangedToEmpty) {
+
+                // Hide options ist
                 hideSuggestions(name);
-                input.attr('prev', input.val());
-                $('#'+name).change();
-                // We restore combo state, that is had before first run of 'keyword' fetch mode
-                if (comboOptions[name].backup) {
-                    $('#'+name+'-info')[0].outerHTML = comboOptions[name].backup.info;
-                    $('#'+name+'-info').hide();
-                    var restore = deepObjCopy(comboOptions[name].backup.options);
-                    comboOptions[name] = {};
-                    comboOptions[name] = restore;
-                }
+
+                // Do some things after keyword was erased
+                keywordErased(name, 'only-erased-not-selected');
+            }
+        }
+
+        /**
+         * Do several thins after keyword was erased
+         *
+         * @param name
+         */
+        keywordErased = function(name, mode) {
+            // Get input
+            var input = $('#'+name+'-keyword');
+
+            // Correct value of 'prev' attr
+            input.attr('prev', input.val());
+
+            // We need to fire 'change' event only if combo is running in single-value mode.
+            // In that mode no keyword = no value. But in multiple-value mode combo may have a
+            // value without a keyword.
+            if($('#'+name+'-info').hasClass('multiple') == false) $('#'+name).change();
+
+            // We restore combo state, that is had before first run of 'keyword' fetch mode
+            if (comboOptions[name].backup) {
+                $('#'+name+'-info')[0].outerHTML = comboOptions[name].backup.info;
+                $('#'+name+'-info').hide();
+                var restore = deepObjCopy(comboOptions[name].backup.options);
+                comboOptions[name] = {};
+                comboOptions[name] = restore;
+            }
+
+            // If user erases wrong keyword, remove 'no-results' class and show options list, that was available
+            // before first run of 'keyword' fetch mode
+            if (input.hasClass('no-results')) input.removeClass('no-results');
+
+            // Rebuild combo and show it
+            if (mode == 'only-erased-not-selected') {
+                input.click();
+
+            // Rebuild combo but do not show at this time
+            } else if (mode == 'selected-but-found-with-lookup'){
+                rebuildComboData(name);
             }
         }
 
@@ -783,8 +968,8 @@ var COMBO = (function (combo) {
 
             // Enter - select an option
             if (code == '13') {
-                select(name);
-
+                if ($('#'+name+'-suggestions').css('display') == 'block') select(name);
+                return false;
             // Up or Down arrows
             } else if (code == '40' || code == '38' || code == '34' || code == '33') {
                 if (code == '40' && $('#'+name+'-suggestions').css('display') == 'none') {
@@ -862,7 +1047,7 @@ var COMBO = (function (combo) {
                     // If we were running fetch in 'keyword' mode, but then switched to 'no-keyword' mode,
                     // There can be a situation that there will be no li.selected in options list, so we wrap
                     // following code with a condition of li.selected existence
-                    if (id != undefined) {
+                    if (id != undefined && $('#'+name+'-info').hasClass('multiple') == false) {
                         $('#'+name).val(id);
 
                         // Get the index of selected option id in comboOptions[name].ids
@@ -881,17 +1066,43 @@ var COMBO = (function (combo) {
             } else if (event.keyCode == '27') {
                 hideSuggestions(name);
 
-            // Here we provide nesessary operations if combo is running with no-lookup option
-            } else if ($('#'+name+'-keyword').attr('no-lookup') == 'true' && !comboOptions[name].enumset) {
+            // Other keys
+            } else {
+                // If combo is multiple
+                if ($('#'+name+'-info').hasClass('multiple')) {
 
-                // If Backspace or Del key is pressed, we should set current value as 0 and set keyword to ''
-                if (event.keyCode == '8' || event.keyCode == '46'){
-                    $('#'+name+'-keyword').val('');
-                    $('#'+name).val(0).change();
+                    // If Delete or Backspace is pressed and current keyword value is '' - we should delete last selected
+                    // value from list of selected values. We will do it by firing 'click' event on .combo-selected-item-delete
+                    // because this element has a handler for that event, and that handler will perform all necessary operations
+                    if ((event.keyCode == '8' || event.keyCode == '46') && !$('#'+name+'-keyword').val()) {
+                        $('#'+name).parent().find('.combo-selected-item').last().find('.combo-selected-item-delete').click();
 
-                // If any other key was pressed, there should be no reaction
+                    // Otherwise, is any other key was pressed and no-lookup is true then ignore that key
+                    } else if ($('#'+name+'-keyword').attr('no-lookup') == 'true') {
+                        return false;
+                    }
+
+                // If combo is not multiple
                 } else {
-                    return false;
+
+                    // We provide necessary operations if combo is running with no-lookup option
+                    if ($('#'+name+'-keyword').attr('no-lookup') == 'true') {
+
+                        // If Backspace or Del key is pressed, we should set current value as 0 and set keyword to '',
+                        // but only if comboOptions[name].enumset == false, because there can be only one case then
+                        // both "comboOptions[name].enumset == true" and "multiple" are used - combo field is dealing
+                        // with ENUM database table column type and within that type no empty or zero values allowed,
+                        // except empty or zero value is in the list of ENUM values, specified in the process of column
+                        // declaration
+                        if ((event.keyCode == '8' || event.keyCode == '46') && !comboOptions[name].enumset){
+                            $('#'+name+'-keyword').val('');
+                            $('#'+name).val(0).change();
+
+                        // If any other key was pressed, there should be no reaction
+                        } else {
+                            return false;
+                        }
+                    }
                 }
             }
         }
@@ -982,6 +1193,13 @@ var COMBO = (function (combo) {
          */
         $('.combo-keyword').keydown(keyDownHandler);
 
+        setDisabledOptions = function(name, disabledIds) {
+            for (var i in comboOptions[name].data) {
+                comboOptions[name].data[i].system.disabled = disabledIds.indexOf(comboOptions[name].ids[i]) != -1;
+            }
+            comboOptions[name].found = comboOptions[name].data.length - disabledIds.length;
+        }
+
         /**
          * Bind handlers for click, blur events and misc things for keyword html-input
          */
@@ -1000,7 +1218,7 @@ var COMBO = (function (combo) {
             // 1. combo is used in enumset field and is not disabled ('non-disabled' condition is here due to css styles
             // conflict between input[disabled] and input[readonly]. ? - think about need)
             // 2. combo lookup ability was manually switched off by special param
-            if (($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset)) {
+            if (($(this).attr('disabled') != 'disabled' && comboOptions[name].enumset && !$('#'+name+'-info').hasClass('multiple'))) {
                 $(this).attr('readonly', 'readonly');
                 $(this).addClass('readonly');
             }
@@ -1013,47 +1231,12 @@ var COMBO = (function (combo) {
                 if ($('#'+name+'-suggestions').attr('hover') != 'true') hideSuggestions(name);
             });
 
-
             $(this).click(function(){
                 // Check if combo is disabled
                 if ($(this).parents('.combo-div').hasClass('disabled') || $(this).hasClass('no-results')) return;
 
                 if ($(this).parent().find('.combo-data').css('display') == 'none') {
-
-                    // Set initial 'index' and 'selectedIndex' attribs values
-                    if ($('#'+name+'-keyword').attr('selectedIndex') == undefined) {
-                        $('#'+name+'-keyword').attr('selectedIndex', 0);
-                    }
-
-                    // Rebuild html for options
-                    var html = suggestions(comboOptions[name], name);
-                    $(this).parent().find('.combo-data').html(html);
-
-                    // Set height of options list div
-                    adjustComboOptionsDivHeight(name);
-
-                    // Set height of option height for all options
-                    $('#'+name+'-suggestions li').css({height: comboOptions[name].optionHeight + 'px', overflow: 'hidden', 'vertical-align': 'top'});
-                    $('#'+name+'-suggestions li:last-child').css({height: (comboOptions[name].optionHeight-1) + 'px', overflow: 'hidden', 'vertical-align': 'top'});
-
-                    // Set special css class for options if optionHeight > 14
-                    if (comboOptions[name].optionHeight > 14) $('#'+name+'-suggestions ul').addClass('tall');
-
-                    // Set scrolling if number of options more than visibleCount
-                    $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > visibleCount ? 'scroll' : '');
-
-                    // Bind a 'selected' class adding on hover
-                    $(this).parent().find('.combo-data ul li[class!="disabled"]').hover(
-                        function(){
-                            $(this).parent().find('li').removeClass('selected');
-                            $(this).addClass('selected');
-                            var k = $(this).parent().find('li[class!="disabled"]').index(this);
-                            $('#'+name+'-keyword').attr('selectedIndex', k+1);
-                        }
-                    );
-
-                    // Bind a click event to each option
-                    $(this).parent().find('.combo-data ul li[class!="disabled"]').click(select);
+                    rebuildComboData($(this).attr('lookup'));
                 }
 
                 // Toggle options and info
@@ -1066,8 +1249,25 @@ var COMBO = (function (combo) {
                 adjustComboInfoLeftMargin(name);
             });
             adjustComboTriggerLeftMargin(name);
+            adjustKeywordFieldWidth(name);
 
             $('#'+name).change(function(){
+
+                // Erase keyword once hidden value is set to 0.
+                if ($('#'+name).val() == 0) $('#'+name+'-keyword').val('');
+
+                // Remove attributes from hidden field, if it's value became 0. We do it here ony for single-value combos
+                // because multiple-value combos have different way of how-and-when the same aim should be reached -
+                // attributes deletion for multiple-value combos is implemented in bindDelete() function of this script
+                if ($('#'+name+'-info').hasClass('multiple') == false && $(this).val() == '0') {
+                    if (comboOptions[name].attrs && comboOptions[name].attrs.length) {
+                        for(var n = 0; n < comboOptions[name].attrs.length; n++) {
+                            $('#'+name).removeAttr(comboOptions[name].attrs[n]);
+                        }
+                    }
+                }
+
+                // If current combo is a satelite for one or more other combos, we should refres data in that other combos
                 $('.combo-info[satellite="'+name+'"]').each(function(){
                     var satellited = $(this).parents('.combo-div').find('.combo-keyword').attr('lookup')
                     setDisabled(satellited);
@@ -1080,8 +1280,13 @@ var COMBO = (function (combo) {
                     }
                 });
 
-                // Execute javascript code, if it was assigned to selected option
-                if (comboOptions[name].enumset) {
+                // Execute javascript code, if it was assigned to selected option. The additional clause for execution
+                // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
+                // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
+                // know about the fact of new item was added, it also could be removed, because .change() (if combo is
+                // running in multiple-value mode) if firing in both cases. So, for the aim of selected item assigned javascript
+                // execution to be reached, we need this execution to be provided at select() function of this script
+                if (comboOptions[name].enumset && $('#'+name+'-info').hasClass('multiple') == false) {
                     var index = comboOptions[name]['ids'].indexOf($(this).val());
                     if (index != -1 && comboOptions[name]['data'][index].system.js) {
                         eval(comboOptions[name]['data'][index].system.js);
@@ -1098,7 +1303,11 @@ var COMBO = (function (combo) {
                 $(this).parent().find('.combo-keyword').click();
             });
 
-            $(this).parent().append('<div id="'+name+'-suggestions" class="combo-data" style="z-index: 1000' + index + '; width: ' + $(this).width() + 'px; margin-top: -1px; overflow-y: hidden;" hover="false"/>');
+            if ($('#'+name+'-info').hasClass('multiple')) {
+                $(this).parent().append('<div id="'+name+'-suggestions" class="combo-data" style="z-index: 1000' + index + '; width: ' + $(this).parents('.combo-div').width() + 'px; margin-top: 1px; overflow-y: hidden;" hover="false"/>');
+            } else {
+                $(this).parent().append('<div id="'+name+'-suggestions" class="combo-data" style="z-index: 1000' + index + '; width: ' + $(this).width() + 'px; margin-top: -1px; overflow-y: hidden;" hover="false"/>');
+            }
 
             $(this).parent().find('.combo-data').scroll(function(){
                 $('#'+name+'-keyword').focus();
@@ -1318,7 +1527,6 @@ var COMBO = (function (combo) {
             return neededItems;
         }
 
-
         /**
          * Set trigger button icon (pressed or unpressed)
          */
@@ -1341,12 +1549,41 @@ var COMBO = (function (combo) {
         }
         bindTrigger();
 
-        setDisabledOptions = function(name, disabledIds) {
-            for (var i in comboOptions[name].data) {
-                comboOptions[name].data[i].system.disabled = disabledIds.indexOf(comboOptions[name].ids[i]) != -1;
-            }
-            comboOptions[name].found = comboOptions[name].data.length - disabledIds.length;
+        /**
+         * Bind handers for clicks on .combo-selected-item-delete items
+         * @param appended
+         */
+        bindDelete = function(appended){
+            var scope = appended ? appended : $('.combo-selected-item-delete');
+            scope.click(function(){
+
+                // Set up auxilary variabes
+                var name = $(this).parents('.combo-div').find('.combo-keyword').attr('lookup');
+                var selected = $('#'+name).val().split(',');
+                var deleted = $(this).parent().attr('selected-id');
+                var index = selected.indexOf(deleted);
+
+                // Unset item from selected items array
+                selected.splice(index, 1);
+
+                // Remove visual representation of deleted item from combo
+                $(this).parent().remove();
+
+                // Adjust width of keyword field
+                adjustKeywordFieldWidth(name);
+
+                // Remove attributes
+                if (comboOptions[name].attrs && comboOptions[name].attrs.length) {
+                    for(var n = 0; n < comboOptions[name].attrs.length; n++) {
+                        $('#'+name).removeAttr(comboOptions[name].attrs[n]+'-'+deleted);
+                    }
+                }
+
+                // Set the updated value and fire change event
+                $('#'+name).val(selected.join(',')).change();
+            });
         }
+        bindDelete();
 
         combo.toggle = toggle;
         combo.setDisabledOptions = setDisabledOptions;
