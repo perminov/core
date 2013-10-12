@@ -1253,9 +1253,6 @@ var COMBO = (function (combo) {
 
             $('#'+name).change(function(){
 
-                // Erase keyword once hidden value is set to 0.
-                if ($('#'+name).val() == 0) $('#'+name+'-keyword').val('');
-
                 // Remove attributes from hidden field, if it's value became 0. We do it here ony for single-value combos
                 // because multiple-value combos have different way of how-and-when the same aim should be reached -
                 // attributes deletion for multiple-value combos is implemented in bindDelete() function of this script
