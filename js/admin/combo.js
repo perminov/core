@@ -961,7 +961,7 @@ var COMBO = (function (combo) {
                 name = eventOrName;
                 input = $('#'+name+'-keyword');
             } else {
-                code = event.keyCode;
+                code = eventOrName.keyCode;
                 input = $(this);
                 name = input.attr('lookup');
             }
@@ -1063,7 +1063,7 @@ var COMBO = (function (combo) {
                 }
                 return false;
             // Esc key
-            } else if (event.keyCode == '27') {
+            } else if (code == '27') {
                 hideSuggestions(name);
 
             // Other keys
@@ -1074,7 +1074,7 @@ var COMBO = (function (combo) {
                     // If Delete or Backspace is pressed and current keyword value is '' - we should delete last selected
                     // value from list of selected values. We will do it by firing 'click' event on .combo-selected-item-delete
                     // because this element has a handler for that event, and that handler will perform all necessary operations
-                    if ((event.keyCode == '8' || event.keyCode == '46') && !$('#'+name+'-keyword').val()) {
+                    if ((code == '8' || code == '46') && !$('#'+name+'-keyword').val()) {
                         $('#'+name).parent().find('.combo-selected-item').last().find('.combo-selected-item-delete').click();
 
                     // Otherwise, is any other key was pressed and no-lookup is true then ignore that key
@@ -1094,7 +1094,7 @@ var COMBO = (function (combo) {
                         // with ENUM database table column type and within that type no empty or zero values allowed,
                         // except empty or zero value is in the list of ENUM values, specified in the process of column
                         // declaration
-                        if ((event.keyCode == '8' || event.keyCode == '46') && !comboOptions[name].enumset){
+                        if ((code == '8' || code == '46') && !comboOptions[name].enumset){
                             $('#'+name+'-keyword').val('');
                             $('#'+name).val(0).change();
 
