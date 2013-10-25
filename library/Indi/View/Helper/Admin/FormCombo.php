@@ -50,7 +50,11 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @return bool
      */
     public function noSatellite(){
-        return false;
+        if ($satelliteFieldId = $this->getField($this->name)->satellite) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -61,6 +65,9 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @return string
      */
     public function formCombo($name, $tableName = null){
+        // Set name
+        $this->name = $name;
+
         // Get field
         $this->field = $this->getField($name, $tableName);
 
@@ -71,7 +78,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         $params = $this->field->getParams();
 
         // If current row does not exist, combo will use field's default value as selected value
-        if ($this->getRow()->id) {
+        if ($this->getRow()->$name) {
             $selected = $this->getRow()->$name;
         } else {
             $selected = $this->getDefaultValue();
@@ -164,7 +171,6 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
         if ($this->field->storeRelationAbility == 'one') {
-
             // Setup a key
             if ($this->getRow()->$name) {
                 $key = $this->getRow()->$name;

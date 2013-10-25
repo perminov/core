@@ -112,6 +112,15 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                                 }
                             },
                             setValue: function(value){
+                            },
+                            listeners: {
+                                render: function(){
+                                    var me = this, name = me.id.split('-')[1];
+                                    var width = parseInt($('#filter-'+name+'-combo').css('width'));
+                                    var diff = width - me.getWidth();
+                                    me.setWidth(width);
+                                    Ext.getCmp('filter-'+name+'-item').setWidth(Ext.getCmp('filter-'+name+'-item').getWidth() + diff);
+                                }
                             }
                         }]
                     },

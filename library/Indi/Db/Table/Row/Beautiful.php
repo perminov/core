@@ -165,8 +165,15 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             // Get satellite field row
             $satelliteR = $fieldR->getForeignRowByForeignKey('satellite');
 
-            // If we have no satellite value passed as a param, we get it from related row property by default
-            if (is_null($satellite)) $satellite = $this->{$satelliteR->alias};
+            // If we have no satellite value passed as a param, we get it from related row property
+            // or from satellite-field default value
+            if (is_null($satellite)) {
+                if (strlen($this->{$satelliteR->alias})) {
+                    $satellite = $this->{$satelliteR->alias};
+                } else {
+                    $satellite = $satelliteR->defaultValue;
+                }
+            }
 
             // If dependency type is not 'Variable entity'
             if ($fieldR->dependency != 'e') {
