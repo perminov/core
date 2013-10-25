@@ -155,7 +155,9 @@ var Indi = (function (indi) {
                     // Provide a delay befre for multiple-combo value change handler will run
                     if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
                         clearTimeout(instance.multipleComboFilterDelay);
-                        instance.multipleComboFilterDelay = setTimeout(filterChange, 400, {noReload: false, xtype: 'combobox'});
+                        instance.multipleComboFilterDelay = setTimeout(function(){
+                            filterChange({noReload: false, xtype: 'combobox'});
+                        }, 400);
                     } else {
                         filterChange({noReload: false, xtype: 'combobox'});
                     }

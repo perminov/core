@@ -50,7 +50,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @return bool
      */
     public function noSatellite(){
-        if ($satelliteFieldId = $this->getField($this->name)->satellite) {
+        if ($satelliteFieldId = $this->field->satellite) {
             return false;
         } else {
             return true;

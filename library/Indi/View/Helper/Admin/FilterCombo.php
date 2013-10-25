@@ -116,7 +116,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      */
     public function formComboMultiple() {
         ob_start();
-        ?><div style="width: <?=($this->getWidth()-20)*1.5?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="filter-<?=$this->name?>-combo"><?
+        ?><div style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="filter-<?=$this->name?>-combo"><?
             ?><img class="i-combo-trigger" id="<?=$this->name?>-trigger" src="/i/admin/trigger-system.png"/><?
             ?><div class="i-combo-multiple"><?
                 foreach($this->comboDataRs->selected as $selectedR) {
