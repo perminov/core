@@ -29,12 +29,12 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             $availableFilterA = $this->view->trail->getItem()->filters->toArray();
             foreach ($availableFilterA as $availableFilterI) {
                 if ($availableFilterI['fieldId'] == $satelliteFieldId) {
-                    return 'false';
+                    return false;
                 }
             }
-            return 'true';
+            return true;
         } else {
-            return 'true';
+            return true;
         }
     }
 

@@ -203,7 +203,7 @@ var Indi = (function (indi) {
                         $('#'+name+'-keyword').attr('selectedIndex', k+1);
                     }
                 );
-                $('#'+name+'-suggestions'+' ul li[class!="disabled"]').click(this.select);
+                $('#'+name+'-suggestions'+' ul li[class!="disabled"]').click(instance.select);
 
                 // If results set is not empty
                 if ($(html).find('li[class!="disabled"]').length) {
@@ -393,7 +393,7 @@ var Indi = (function (indi) {
                 instance.store[name].ids = [];
 
                 // Prepare regular expression for keyword search
-                var keywordReg = new RegExp('^'+this.pregQuote(data.keyword, '/'), 'i');
+                var keywordReg = new RegExp('^'+instance.pregQuote(data.keyword, '/'), 'i');
 
                 // This variable will contain a title, which will be tested against a keyword
                 var against;
@@ -488,10 +488,10 @@ var Indi = (function (indi) {
                 $('#'+name+'-suggestions').html(html);
 
                 // Set height of options list div
-                this.adjustComboOptionsDivHeight(name);
+                instance.adjustComboOptionsDivHeight(name);
 
                 // Adjust positioning
-                this.adjustComboOptionsDivPosition(name);
+                instance.adjustComboOptionsDivPosition(name);
 
                 // Set height of option height for all options
                 $('#'+name+'-suggestions li').css({height: instance.store[name].optionHeight + 'px', overflow: 'hidden', 'vertical-align': 'top'});
@@ -514,7 +514,7 @@ var Indi = (function (indi) {
                 );
 
                 // Bind a click event to each option
-                $('#'+name+'-suggestions ul li[class!="disabled"]').click(this.select);
+                $('#'+name+'-suggestions ul li[class!="disabled"]').click(instance.select);
             }
 
             /**
@@ -817,7 +817,7 @@ var Indi = (function (indi) {
 
                 // If optgroups is used and we are deaing with items tree, we should distibute items by optgroups,
                 // but insert all parents for options, if these parents not in same groups as child options
-                if (json.optgroup != undefined && json.tree) items = this.appendNotSameGroupParents(items, json, name);
+                if (json.optgroup != undefined && json.tree) items = instance.appendNotSameGroupParents(items, json, name);
 
                 // Stat info
                 $('#'+name+'-count').text(number_format(json['ids'].length - disabledCount));
@@ -842,7 +842,7 @@ var Indi = (function (indi) {
 
                         // We reset disabledCount here, because now, we should count all disabled html-items, not only json-items
                         // because now in options html there can be another disabled options, appeared as a result of using 'group'
-                        // (mean 'optgroup') ability and as result of this.appendNotSameGroupParents() function execution
+                        // (mean 'optgroup') ability and as result of instance.appendNotSameGroupParents() function execution
                         disabledCount = 0;
                         var selectedIndex = 0;
                         var selectedFound = false;
@@ -962,7 +962,7 @@ var Indi = (function (indi) {
                             // If keyword was at least once changed
                             if (fetchMode == 'keyword') {
                                 $('#'+data.field+'-keyword').attr('selectedIndex', 1);
-                                this.keyDownHandler(name, 33);
+                                instance.keyDownHandler(name, 33);
                                 return;
 
                             // Else if we are still walking through pages of all (not filtered by keyword) results
@@ -980,7 +980,7 @@ var Indi = (function (indi) {
                                 } else {
 
                                     $('#'+data.field+'-keyword').attr('selectedIndex', 1);
-                                    this.keyDownHandler(name, 33);
+                                    instance.keyDownHandler(name, 33);
                                     return;
                                 }
                             }
@@ -1002,14 +1002,14 @@ var Indi = (function (indi) {
                             // so it is biggest possible value for page number and therefore we won't do any request
                             } else {
                                 $('#'+data.field+'-keyword').attr('selectedIndex', $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size());
-                                this.keyDownHandler(name, 34);
+                                instance.keyDownHandler(name, 34);
                                 return;
                             }
                         }
                         data.more = moreResultsNeeded;
 
                         // Fetch request
-                        this.remoteFetch(data);
+                        instance.remoteFetch(data);
 
                     // If we are searching by keyword
                     } else if (event.keyCode != '33') {
@@ -1097,7 +1097,7 @@ var Indi = (function (indi) {
 
                 // Rebuild combo but do not show at this time
                 } else if (mode == 'selected-but-found-with-lookup'){
-                    this.rebuildComboData(name);
+                    instance.rebuildComboData(name);
                 }
             }
 
@@ -1204,7 +1204,7 @@ var Indi = (function (indi) {
                         // There can be a situation that there will be no li.selected in options list, so we wrap
                         // following code with a condition of li.selected existence
                         if (id != undefined && $('#'+name+'-info').hasClass('i-combo-info-multiple') == false) {
-                            $('#'+name).val(id);
+                            //$('#'+name).val(id);
 
                             // Get the index of selected option id in instance.store[name].ids
                             var index = instance.store[name].ids.indexOf(instance.store[name].enumset ? id : parseInt(id));
@@ -1676,7 +1676,7 @@ var Indi = (function (indi) {
 
                 // Remove attributes from hidden field, if it's value became 0. We do it here only for single-value combos
                 // because multiple-value combos have different way of how-and-when the same aim should be reached -
-                // attributes deletion for multiple-value combos is implemented in this.bindDelete() function of this script
+                // attributes deletion for multiple-value combos is implemented in instance.bindDelete() function of this script
                 if ($('#'+name+'-info').hasClass('i-combo-info-multiple') == false && $('#'+name).val() == '0') {
                     if (instance.store[name].attrs && instance.store[name].attrs.length) {
                         for(var n = 0; n < instance.store[name].attrs.length; n++) {
@@ -1707,7 +1707,7 @@ var Indi = (function (indi) {
                 // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
                 // know about the fact of new item was added, it also could be removed, because .change() (if combo is
                 // running in multiple-value mode) if firing in both cases. So, for the aim of selected item assigned javascript
-                // execution to be reached, we need this execution to be provided at this.select() function of this script
+                // execution to be reached, we need this execution to be provided at instance.select() function of this script
                 if (instance.store[name].enumset && $('#'+name+'-info').hasClass('i-combo-info-multiple') == false) {
                     var index = instance.store[name]['ids'].indexOf($(this).val());
                     if (index != -1 && instance.store[name]['data'][index].system.js) {
@@ -1735,12 +1735,12 @@ var Indi = (function (indi) {
                 /**
                  * Bind keyUpHandler on keyup event for keyword html-input
                  */
-                $('.i-combo-keyword').keyup(this.keyUpHandler);
+                $('.i-combo-keyword').keyup(instance.keyUpHandler);
 
                 /**
                  * Bind keyDownHandler on keyup event for keyword html-input
                  */
-                $('.i-combo-keyword').keydown(this.keyDownHandler);
+                $('.i-combo-keyword').keydown(instance.keyDownHandler);
 
                 /**
                  * Bind handlers for click, blur events and misc things for keyword html-input
@@ -1826,9 +1826,9 @@ var Indi = (function (indi) {
                     }
                 });
 
-                this.bindTrigger();
+                instance.bindTrigger();
 
-                this.bindDelete();
+                instance.bindDelete();
 
             }
         }
