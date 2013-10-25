@@ -634,8 +634,10 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 $params = $fieldR->getParams();
                 if ($params['displayFormat']) {
                     for ($j = 0; $j < count ($data); $j++) {
-                        $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
-                        if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
+                        if (preg_match($this->datePattern, $data[$j][$fieldR->alias])) {
+                            $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
+                            if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
+                        }
                     }
                 }
             } else if ($fieldR->elementId == 19) {
