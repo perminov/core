@@ -12,7 +12,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 300;
+    public static $comboOptionsVisibleCount = 50;
 
     /**
      * Store regular expression for checks of email addresses validity
@@ -20,7 +20,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      * @var string
      */
     public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
-	
+
     /**
      * Saves row into database table. But.
      * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
@@ -110,7 +110,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         return parent::delete();
     }
 
-    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false, $satellite = null){
+    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false, $satellite = null, $where = null){
         // Basic info
         $entityM = Misc::loadModel('Entity');
         $fieldM = Misc::loadModel('Field');
@@ -120,16 +120,14 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         $relatedM = Entity::getInstance()->getModelById($fieldR->relation);
         $params = $fieldR->getParams();
 
-        // Array for WHERE clause
-        $where = array();
+        // Array for WHERE clauses
+        $where = $where ? (is_array($where) ? $where : array($where)): array();
 
         // Setup filter, as one of possible parts of WHERE clause
-        if ($fieldR->filter) {
-            if (preg_match('/(\$|::)/', $fieldR->filter)) {
-                eval('$fieldR->filter = \'' . $fieldR->filter . '\';');
-            }
-            $where[] = $fieldR->filter;
-        }
+        if ($fieldR->filter) $where[] = $fieldR->filter;
+
+        // Compile filters if they contain php-expressions
+        for($i = 0; $i < count($where); $i++) $where[$i] = Indi::cmp($where[$i]);
 
         // If current field column type is ENUM or SET
         if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
@@ -306,7 +304,15 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                 // Get WHERE clause for options fetch
                 if ($selectedTypeIsKeyword) {
                     $order = 'TRIM(SUBSTR(`' . $titleColumn . '`, 1)) ASC';
-                    $where[] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+
+                    // Check if keyword is a part of color value in format #rrggbb, and if so, we use RLIKE instead
+                    // of LIKE, and prepare a special regular expression
+                    if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
+                        $rlike = '^[0-9]{3}' . $keyword . '[0-9a-fA-F]{' . (7 - mb_strlen($keyword, 'utf-8')) . '}$';
+                        $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
+                    } else {
+                        $where[] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+                    }
 
                 // We should get results started from selected value only if we have no $satellite argument passed
                 } else if (func_num_args() < 5 || is_null(func_get_arg(4))) {
@@ -483,5 +489,44 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         }
 
         return $dataRs;
+    }
+
+    /**
+     * Build and return a <span/> element with css class and styles definitions, that will represent a color value
+     * for each combo option, in case if combo options have color specification. This function was created for using in
+     * optionTemplate param within combos because if combo is simultaneously dealing with color and with optionTemplate
+     * param, javascript in indi.combo.form.js file will not create a color boxes to represent color-options,
+     * because optionTemplate param assumes, that height of each combo option may be different with default height,
+     * so default color box size may not match look and feel of options, builded with optionTemplate param usage.
+     * So this function provides a possibility to define custom size for color box
+     *
+     * @param $colorField
+     * @param string $size
+     * @return string
+     */
+    public function colorBox($colorField, $size = '14x9') {
+        list($width, $height) = explode('x', $size);
+        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->$colorField, $matches)) {
+            $style = array('background: #' . $matches[1]);
+            if (strlen($width)) $style[] = 'width: ' . $width . 'px';
+            if (strlen($height)) $style[] = 'height: ' . $height . 'px';
+            return '<span class="i-combo-color-box" style="' . implode('; ', $style) . '"></span> ';
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * Strips hue value from color in format 'xxx#rrggbb', where xxx - is hue value
+     *
+     * @param $colorField
+     * @return string
+     */
+    public function colorHex($colorField) {
+        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->$colorField, $matches)) {
+            return '#' . $matches[1];
+        } else {
+            return $this->$colorField;
+        }
     }
 }
