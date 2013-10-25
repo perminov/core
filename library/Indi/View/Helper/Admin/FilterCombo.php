@@ -15,7 +15,27 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
     public function filterCombo(Search_Row $filter){
         $this->filter = $filter;
         $this->where = $this->filter->filter;
+        $this->ignoreTemplate = $this->filter->ignoreTemplate;
         ob_start(); echo parent::formCombo($filter->foreign['fieldId']->alias); return ob_get_clean();
+    }
+
+
+    public function getField() {
+        return $this->filter->foreign['fieldId'];
+    }
+
+    public function noSatellite() {
+        if ($satelliteFieldId = $this->getField()->satellite) {
+            $availableFilterA = $this->view->trail->getItem()->filters->toArray();
+            foreach ($availableFilterA as $availableFilterI) {
+                if ($availableFilterI['fieldId'] == $satelliteFieldId) {
+                    return 'false';
+                }
+            }
+            return 'true';
+        } else {
+            return 'true';
+        }
     }
 
     /**
@@ -81,7 +101,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
                 $this->selected = $this->detectColor($this->selected, true); echo $this->selected['box'];
                 ?><input class="i-combo-keyword" style="width: <?=$this->getKeywordFieldWidth()?>px;" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=$this->selected['input'] ? $this->selected['input'] : $this->selected['title']?>" no-lookup="<?=$this->params['noLookup']?>"/><?
                 ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-                ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><?
+                ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><?
                     ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?
                     ?><span class="i-combo-of"><?=COMBO_OF?></span><?
                     ?><span class="i-combo-found" id="<?=$this->name?>-found"></span><?
@@ -108,7 +128,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
                 }
                 ?><input class="i-combo-keyword" type="text" id="<?=$this->name?>-keyword" lookup="<?=$this->name?>" value="" no-lookup="<?=$this->params['noLookup']?>"/><?
                 ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-                ?><span class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><?
+                ?><span class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><?
                     ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?
                     ?><span class="i-combo-of"><?=COMBO_OF?></span><?
                     ?><span class="i-combo-found" id="<?=$this->name?>-found"></span><?

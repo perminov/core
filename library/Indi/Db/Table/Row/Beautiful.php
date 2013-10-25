@@ -110,7 +110,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         return parent::delete();
     }
 
-    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false, $satellite = null, $where = null){
+    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false, $satellite = null, $where = null, $noSatellite = false){
         // Basic info
         $entityM = Misc::loadModel('Entity');
         $fieldM = Misc::loadModel('Field');
@@ -160,7 +160,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         }
 
         // Setup filter by satellite
-        if ($fieldR->satellite) {
+        if ($fieldR->satellite && $noSatellite != true) {
 
             // Get satellite field row
             $satelliteR = $fieldR->getForeignRowByForeignKey('satellite');

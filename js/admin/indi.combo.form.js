@@ -1299,8 +1299,8 @@ var Indi = (function (indi) {
             this.setDisabled = function(name, force){
                 // Check if this combo should be disabled
                 var satellite = $('#'+name+'-info').attr('satellite').toString();
-                if (satellite.length) {
-                    var sv = $('#'+satellite).val();
+                if (satellite.length && $('#'+satellite).length) {
+                    var sv = $('#'+satellite).val().toString();
                     sv = sv.length == 0 ? 0 : parseInt(sv);
                     if (sv == 0 || force == true) {
                         $('#'+name+'-keyword').attr('disabled', 'disabled');

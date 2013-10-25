@@ -32,14 +32,32 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         return $this->field->defaultValue;
     }
 
+    /**
+     * Setup field
+     *
+     * @param $name
+     * @return Field_Row
+     */
     public function getField($name) {
         return $this->view->trail->getItem()->getFieldByAlias($name);
     }
 
     /**
+     * Function to determime whether current field has a satellite, and if even have - does tha satellite exist in the same
+     * form (it may, for example, be switched off). This function currently returns false, but same function in inherited
+     * class *_FormFilter makes a check
+     *
+     * @return bool
+     */
+    public function noSatellite(){
+        return false;
+    }
+
+    /**
      * Builds the combo
      *
-     * @param Search_Row $filter
+     * @param $name
+     * @param null $tableName
      * @return string
      */
     public function formCombo($name, $tableName = null){
@@ -60,7 +78,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         }
 
         // Get initial set of combo options
-        $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null, $this->where);
+        $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null, $this->where, $this->noSatellite());
 
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->getForeignRowByForeignKey('satellite');
@@ -116,7 +134,10 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             // If color was found, we remember it for that option
             if ($info['style']) $options[$o->$keyProperty]['system']['color'] = $info['color'];
 
-            if ($params['optionTemplate']) {
+            // Current context does not have a $this->ignoreTemplate member, but inherited class *_FilterCombo does.
+            // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
+            // in *_FilterCombo is set to false
+            if ($params['optionTemplate'] && !$this->ignoreTemplate) {
                 $php = preg_split('/(<\?|\?>)/', $params['optionTemplate'], -1, PREG_SPLIT_DELIM_CAPTURE);
                 $out = '';
                 for ($i = 0; $i < count($php); $i++) {
@@ -206,8 +227,10 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // Setup groups for options
         if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
 
-        // Setup option height
-        $options['optionHeight'] = $params['optionHeight'] ? $params['optionHeight'] : 14;
+        // Setup option height. Current context does not have a $this->ignoreTemplate member,but inherited class *_FilterCombo
+        // does, so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
+        // in *_FilterCombo is set to false
+        $options['optionHeight'] = $params['optionHeight'] && !$this->ignoreTemplate ? $params['optionHeight'] : 14;
 
         // Setup groups for options
         if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
