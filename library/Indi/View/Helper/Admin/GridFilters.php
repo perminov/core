@@ -3,7 +3,8 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
     public function gridFilters(){
         if ($this->view->trail->getItem()->filters->count()) {
             $fieldsetMarginBottom = preg_match('/Opera/', $_SERVER['HTTP_USER_AGENT']) ? 2 : 1;
-        ob_start();?>
+            ob_start();
+            ?>
     {
         xtype: 'toolbar',
         dock: 'top',
@@ -25,23 +26,8 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                 afterrender: function(obj, width, height, eOpts){
                     <?foreach($this->view->trail->getItem()->filters as $filter){?>
                         <?if ($filter->defaultValue) {
-                            if (preg_match('/<\?|\?>/', $filter->defaultValue)) {
-                                $php = preg_split('/(<\?|\?>)/', $filter->defaultValue, -1, PREG_SPLIT_DELIM_CAPTURE);
-                                $out = '';
-                                for ($i = 0; $i < count($php); $i++) {
-                                    if ($php[$i] == '<?') {
-                                        $php[$i+1] = preg_replace('/^=/', ' echo ', $php[$i+1]) . ';';
-                                        ob_start(); eval($php[$i+1]); $out .= ob_get_clean();
-                                        $i += 2;
-                                    } else {
-                                        $out .= $php[$i];
-                                    }
-                                }
-                                $filter->defaultValue = $out;
-                            } else if (preg_match('/(\$|::)/', $filter->defaultValue)) {
-                                eval('$filter->defaultValue = \'' . $filter->defaultValue . '\';');
-                            }?>
-                            <?if (in_array($filter->foreign['fieldId']->getForeignRowByForeignKey('elementId')->alias, array('number', 'calendar', 'datetime'))) {?>
+                            $filter->defaultValue = Indi::cmp($filter->defaultValue);
+                            if (in_array($filter->foreign['fieldId']->getForeignRowByForeignKey('elementId')->alias, array('number', 'calendar', 'datetime'))) {?>
                                 <?$filter->defaultValue = json_decode(str_replace('\'','"',$filter->defaultValue), true)?>
                                 <?if($filter->defaultValue['gte']){?>
                                     Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-gte').noReload = true;
@@ -68,11 +54,11 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                 }
             },
             items: [<?foreach($this->view->trail->getItem()->filters as $filter){?>
-                <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'check' || $filter->foreign['fieldId']->relation) {?>
+                <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'check') {?>
                     <?$combo = $filter->combo();?>
                     <?$label = $filter->alt ? $filter->alt : $filter->foreign['fieldId']->title;?>
                     <?$labelWidth = mb_strlen($label, 'utf-8') * 7 + 10?>
-                    <?$totalWidth = $labelWidth + $combo['width'];?>
+                    <?$totalWidth = $this->view->section->alias == 'entities' ? 350 : $labelWidth + $combo['width'];?>
                     <?$padding = preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT']) ? 1 : 2?>
                     {
                         cls: 'filter-field',
@@ -86,14 +72,10 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                             xtype: 'combobox',
                             valueField: 'id',
                             displayField: 'title',
-                            <?if($filter->foreign['fieldId']->storeRelationAbility == 'many'){?>
-                            multiSelect: true,
-                            <?}else{?>
                             value: '%',
-                            <?}?>
                             cls: 'subsection-select',
-                            typeAhead: false,
-                            editable: false,
+                            typeAhead: true,
+                            editable: true,
                             width: <?=$combo['width']?>,
                             id: 'filter-<?=$filter->foreign['fieldId']->alias?>',
                             margin: 0,
@@ -101,60 +83,36 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                                 fields: ['id', 'title'],
                                 data: <?=$combo['store']?>
                             },
-                            <?if($combo['color'] || true){?>
-                            fieldSubTpl: [
-                                '<div class="{hiddenDataCls}" role="presentation"></div>',
-                                '<div id="{id}-div" style="position: absolute; width: <?=$combo['width']?$combo['width']-17:81?>px; padding-top: <?=$padding?>px; cursor: default; overflow: hidden; white-space: nowrap;" class="{fieldCls} {typeCls}"><?=GRID_FILTER_OPTION_DEFAULT?></div>',
-                                '<input id="{id}" type="{type}" class="{fieldCls} {typeCls}" autocomplete="off"',
-                                '<tpl if="size">size="{size}" </tpl>',
-                                '<tpl if="tabIdx">tabIndex="{tabIdx}" </tpl>',
-                                '/>',
-                                '<div id="{cmpId}-triggerWrap" class="{triggerWrapCls}" role="presentation">',
-                                '{triggerEl}',
-                                '<div class="{clearCls}" role="presentation"></div>',
-                                '</div>',
-                                {
-                                    compiled: true,
-                                    disableFormats: true
-                                }
-                            ],
-                            setRawValue: function(value) {
-                                var me = this;
-                                value = Ext.value(value, '');
-                                me.rawValue = value;
-                                if (me.el) {
-                                    $(me.el.dom).find('#'+me.inputId+'-div').html(value);
-                                    if (me.inputEl) {
-                                        me.inputEl.dom.value = value;
-                                    }
-                                }
-                                return value;
-                            },
-                            listeners: {
-                                change: filterChange,
-                                focus: function(obj){
-                                    if (obj.el) {
-                                        $(obj.el.dom).find('#'+obj.inputId+'-div').addClass('x-form-focus');
-                                    }
-                                },
-                                blur: function(obj){
-                                    if (obj.el) {
-                                        $(obj.el.dom).find('#'+obj.inputId+'-div').removeClass('x-form-focus');
-                                    }
-                                },
-                                afterrender: function(obj) {
-                                    if (obj.el) {
-                                        $(obj.el.dom).find('#'+obj.inputId+'-div').click(function(){
-                                            if(obj.isExpanded) obj.collapse(); else obj.expand();
-                                        });
-                                    }
-                                }
-                            }
-                            <?} else {?>
                             listeners: {
                                 change: filterChange
                             }
-                        <?}?>
+                        }]
+                    },
+                <?} else if ($filter->foreign['fieldId']->relation) {?>
+                    <?$label = $filter->alt ? $filter->alt : $filter->foreign['fieldId']->title;?>
+                    {
+                        cls: 'filter-field',
+                        margin: 0,
+                        id: 'filter-<?=$filter->foreign['fieldId']->alias?>-item',
+                        items:[{
+                            id: 'filter-<?=$filter->foreign['fieldId']->alias?>-label',
+                            html: '<label for="filter-<?=$filter->foreign['fieldId']->alias?>"><?=$label?></label>',
+                            cls: 'filter-field-label x-form-item',
+                            margin: '0 4 0 0'
+                        },{
+                            id: 'filter-<?=$filter->foreign['fieldId']->alias?>',
+                            contentEl: 'filter-<?=$filter->foreign['fieldId']->alias?>-combo',
+                            getValue: function(){
+                                var me = this;
+                                var hidden = $(me.el.dom).find('#'+me.id.split('-')[1]);
+                                if (hidden.parent().hasClass('i-combo-single')) {
+                                    return hidden.val() == '0' ? '' : hidden.val();
+                                } else if (hidden.parent().hasClass('i-combo-multiple')) {
+                                    return hidden.val().split(',');
+                                }
+                            },
+                            setValue: function(value){
+                            }
                         }]
                     },
                 <?} else if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('string', 'textarea, html'))) {?>
