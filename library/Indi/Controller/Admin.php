@@ -561,16 +561,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             }
         }
 
-        // set grid titles by custom logic
-        $this->setGridTitlesByCustomLogic($data);
-
-        // apply up custom titles
-        for ($i = 0; $i < count($data); $i++) {
-            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
-                $data[$i][$alias] = $data[$i][$alias] ? GRID_FILTER_CHECKBOX_YES : GRID_FILTER_CHECKBOX_NO;
-            }
-        }
-
         // add trailing zeros to column that have the 'DOUBLE' type
         $doubleColumns = $columntype->fetchAll('`type` LIKE "DOUBLE%"');
         foreach ($doubleColumns as $doubleColumn) {
@@ -635,6 +625,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 if ($params['displayFormat']) {
                     for ($j = 0; $j < count ($data); $j++) {
                         $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
+                        if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
                     }
                 }
             } else if ($fieldR->elementId == 19) {
@@ -648,6 +639,16 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 }
             }
         }
+
+        // apply up custom titles
+        for ($i = 0; $i < count($data); $i++) {
+            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
+                $data[$i][$alias] = $data[$i][$alias] ? GRID_FILTER_CHECKBOX_YES : GRID_FILTER_CHECKBOX_NO;
+            }
+        }
+
+        // set grid titles by custom logic
+        $this->setGridTitlesByCustomLogic($data);
 
         if ($json) {
             $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
