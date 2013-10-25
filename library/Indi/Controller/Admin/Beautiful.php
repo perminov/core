@@ -67,15 +67,25 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
     {
         if ($this->params['combo']) {
 
-            // Get options
-            if ($this->post['keyword']) {
-                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->post['keyword'], true, $this->post['satellite']);
-            } else {
-                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->row->{$this->post['field']}, false, $this->post['satellite']);
-            }
-
             // Get field
             $field = $this->trail->getItem()->getFieldByAlias($this->post['field']);
+
+            if ($this->params['filter']) {
+                foreach($this->trail->getItem()->filters as $filterR) {
+                    if ($filterR->fieldId == $field->id) {
+                        $where = $filterR->filter;
+                        break;
+                    }
+                }
+            }
+
+            // Get options
+            if ($this->post['keyword']) {
+                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->post['keyword'], true, $this->post['satellite'], $where);
+            } else {
+                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->row->{$this->post['field']}, false, $this->post['satellite'], $where);
+            }
+
 
             // Options array
             $options = array();

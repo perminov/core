@@ -14,7 +14,7 @@ class Admin_AuxillaryController extends Indi_Controller
      */
     public function colorpickerAction()
     {
-		$p = '/js/admin/';
+		$p = $_SERVER['STD'] . '/js/admin/';
 		$name = $this->params['name'];
         $out = '
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">

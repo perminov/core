@@ -13,6 +13,9 @@
 	<script type="text/javascript" src="/js/admin/index.js"></script>
 	<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
+    <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
+    <script type="text/javascript" src="/js/admin/indi.combo.form.js?<?=rand(0, 10000)?>"></script>
+    <script type="text/javascript" src="/js/admin/indi.combo.filter.js?<?=rand(0, 10000)?>"></script>
     <style>
         button span.add {
             background-image: url('<?=$_SERVER['STD']?>/library/extjs4/resources/themes/images/default/shared/add.gif') !important;
@@ -38,10 +41,18 @@
         button span.down{
             background-image: url('<?=$_SERVER['STD']?>/i/admin/icon-action-lower.png') !important;
         }
+        .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete{
+            background-image: url(<?=$_SERVER['STD']?>/i/admin/combo-multiple-remove-item-from.png);
+        }
     </style>
 </head>
 <body>
-<script>Ext.require(['*']); var viewport, menu, mainPanel, grid, form, loadContent, currentPanelId, locationHistory = [];</script>
+<script>
+Ext.require(['*']); var viewport, menu, mainPanel, grid, form, loadContent, currentPanelId, locationHistory = [];
+Indi.std = '<?=$_SERVER['STD']?>';
+Indi.com = '<?=$GLOBALS['cmsOnlyMode'] ? '' : '/admin'?>';
+Indi.pre = Indi.std + Indi.com;
+</script>
 <?=$this->menu()?>
 <?=$this->viewport()?>
 </body>
