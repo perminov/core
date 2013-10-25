@@ -74,7 +74,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
 
         return ($this->titleMaxIndent ? $this->titleMaxIndent * 3 : 0) +
                 ($this->hasColorBox ? 15 : 0) +
-                $this->titleMaxLength * 6.5 +
+                ceil($this->titleMaxLength * 6.5) +
                 ($this->params['noLookup'] == 'true' || $this->comboDataRs->enumset ? 0 : 30) +
                 20;
     }
