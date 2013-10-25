@@ -42,7 +42,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @param Search_Row $filter
      * @return string
      */
-    public function formCombo($name, $tableName){
+    public function formCombo($name, $tableName = null){
         // Get field
         $this->field = $this->getField($name, $tableName);
 
