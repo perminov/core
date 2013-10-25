@@ -44,7 +44,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
             $this->sections = $trail->authComponent->getSections($sectionId, $session['admin']['profileId']);
 
             // set up grid filters
-            if ($actionAlias == 'index') $this->filters = $this->section->getFilters();
+            $this->filters = $this->section->getFilters();
         }
         
         if ($this->section->sectionId) {

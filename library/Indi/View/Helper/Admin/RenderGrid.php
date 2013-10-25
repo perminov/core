@@ -9,11 +9,13 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 		$currentPage = $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] ? $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] : 1;
         $filterFieldAliases = array();
         $icons = array('form', 'delete', 'save', 'toggle', 'up', 'down');
+        $comboFilters = array();
         foreach ($this->view->trail->getItem()->filters as $filter) {
             if (in_array($filter->foreign['fieldId']->foreign['elementId']['alias'], array('number','calendar','datetime'))) {
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-gte';
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-lte';
             } else {
+                if ($filter->foreign['fieldId']->relation) $comboFilters[] = $this->view->filterCombo($filter);
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias;
             }
         }
@@ -128,9 +130,11 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			if ($GLOBALS['cmsOnlyMode']) $meta = json_decode(str_replace('\/admin\/', '\/', json_encode($meta)));
 			ob_start();?>
 			<script>
+            Indi.section = '<?=$this->view->trail->getItem()->section->alias?>';
 			var json = <?=json_encode($meta)?>;
             var timeout;
             var timeout2;
+            var filterChange;
 			Ext.onReady(function() {
                 var filterAliases = <?=json_encode($filterFieldAliases)?>;
                 var gridColumnsAliases = [];
@@ -139,7 +143,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         gridColumnsAliases.push(json.columns[i].dataIndex);
                     }
                 }
-                var filterChange = function(obj, newv, oldv){
+                filterChange = function(obj, newv, oldv){
                     var params = [];
                     var usedFilterAliasesThatHasGridColumnRepresentedBy = [];
                     for (var i in filterAliases) {
@@ -167,18 +171,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     Ext.getCmp('fast-search-keyword').setDisabled(usedFilterAliasesThatHasGridColumnRepresentedBy.length == gridColumnsAliases.length);
                     if (!obj.noReload) {
                         if (obj.xtype == 'combobox') {
-                            if (obj.multiSelect) {
-                                clearTimeout(timeout);
-                                timeout = setTimeout(function(){
-                                    gridStore.reload();
-                                }, 1000);
-                                clearTimeout(timeout2);
-                                timeout2 = setTimeout(function(){
-                                    obj.collapse();
-                                }, 2000);
-                            } else {
-                                gridStore.reload();
-                            }
+                            gridStore.reload();
                         } else if (obj.xtype == 'datefield' && (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/.test(obj.getRawValue()) || !obj.getRawValue().length)) {
                             clearTimeout(timeout);
                             timeout = setTimeout(function(){
@@ -428,6 +421,10 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				gridStore.load([{params:{start:0, limit: json.section.rowsOnPage, sort: {property: 'title', direction: 'ASC'}}}]);
 			});
 			</script>
+            <?if (count($comboFilters)){
+                echo implode('', $comboFilters);
+                ?><script>Indi.combo.filter = Indi.combo.filter || new Indi.proto.combo.filter(); Indi.combo.filter.run();</script><?
+            }?>
 
 		<? $xhtml = ob_get_clean();
 		}

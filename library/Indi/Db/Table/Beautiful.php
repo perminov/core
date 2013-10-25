@@ -66,8 +66,16 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
         // If we have to deal a keyword search clause we have different behaviour
         if ($keyword) {
 
+            // Check if keyword is a part of color value in format #rrggbb, and if so, we use RLIKE mysql command instead
+            // of LIKE, and prepare a special regular expression
+            if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
+                $rlike = '^[0-9]{3}' . $keyword . '[0-9a-fA-F]{' . (7 - mb_strlen($keyword, 'utf-8')) . '}$';
+                $where[] = '`' . $this->titleColumn() . '` RLIKE "' . $rlike . '"';
+            } else {
+                $where[] = '`' . $this->titleColumn() . '` LIKE "' . $keyword . '%"';
+            }
+
             // Fetch rows that match $where clause, ant set foundRows
-            $where[] = '`' . $this->titleColumn() . '` LIKE "' . $keyword . '%"';
             $foundRs = $this->fetchAll($where, $order, $count, $page);
             $foundRows = $foundRs->foundRows;
             $foundA = $foundRs->toArray();
