@@ -618,6 +618,16 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             }
         }
 
+        // set grid titles by custom logic
+        $this->setGridTitlesByCustomLogic($data);
+
+        // apply up custom titles
+        for ($i = 0; $i < count($data); $i++) {
+            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
+                $data[$i][$alias] = $data[$i][$alias] ? GRID_FILTER_CHECKBOX_YES : GRID_FILTER_CHECKBOX_NO;
+            }
+        }
+
         // find date and datetime fields and apply display format, if specified
         foreach ($this->trail->getItem()->gridFields as $fieldR) {
             if ($fieldR->elementId == 12) {
@@ -639,16 +649,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 }
             }
         }
-
-        // apply up custom titles
-        for ($i = 0; $i < count($data); $i++) {
-            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
-                $data[$i][$alias] = $data[$i][$alias] ? GRID_FILTER_CHECKBOX_YES : GRID_FILTER_CHECKBOX_NO;
-            }
-        }
-
-        // set grid titles by custom logic
-        $this->setGridTitlesByCustomLogic($data);
 
         if ($json) {
             $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
