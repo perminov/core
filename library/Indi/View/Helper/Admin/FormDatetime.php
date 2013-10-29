@@ -34,7 +34,7 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         if ($params['displayDateFormat']) $parts[0] = date($params['displayDateFormat'], strtotime($parts[0]));
 
         $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 62px; margin-top: 1px;" id="' . $name . 'Input"> ';
-		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
+		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
 		$time = explode(':', $parts[1]);
 		for ($i = 0; $i <= 2; $i++)	$time[$i] = strlen($time[$i]) == 1 ? $time[$i] . '0' : (strlen($time[$i]) == 0 ? '00' : $time[$i]);
 		$xhtml .= '&nbsp; &nbsp;<input type="text"'
@@ -61,27 +61,30 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px;">
 			<script>
 				Ext.onReady(function() {
-					//Ext.Date.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 					Ext.create('Ext.picker.Date', {
-						//dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
-						//monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
 						renderTo: '<?=$name?>CalendarRender',
-						width: 185,
-						//todayText: 'Сегодня',
-						//ariaTitle: 'Выбрать месяц и год',
+                        id: '<?=$name?>Calendar',
+                        width: 185,
 						ariaTitleDateFormat: '<?=$params['displayDateFormat']?>',
 						longDayFormat: '<?=$params['displayDateFormat']?>',
                         format: '<?=$params['displayDateFormat']?>',
                         value: Ext.Date.parse('<?=$parts[0]?>', '<?=$params['displayDateFormat']?>'),
-                        //nextText: 'Следующий месяц',
-						//prevText: 'Предыдущий месяц',
-						//todayTip: 'Выбрать сегодняшнюю дату',
-						//startDay: 1,
 						handler: function(picker, date) {
                             var selectedDate = Ext.Date.format(date, '<?=$params['displayDateFormat']?>');
                             $('#<?=$name?>Input').val(selectedDate);
 							$('#<?=$name?>CalendarRender').toggle();
-						}
+						},
+                        listeners: {
+                            render: function(cal) {
+                                $('body').bind('click', function(e) {
+                                    if($(e.target).closest('#'+cal.id).length == 0 &&
+                                        !($(e.srcElement).hasClass('calendar-trigger') || $(e.srcElement).parent().hasClass('calendar-trigger')) &&
+                                        $('#'+cal.id+'Render').css('display') != 'none') {
+                                        $('#'+cal.id+'Render').hide();
+                                    }
+                                });
+                            }
+                        }
 					});
 				});
 			</script>
