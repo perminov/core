@@ -13,9 +13,11 @@
 	<script type="text/javascript" src="/js/admin/index.js"></script>
 	<script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
+	<script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
     <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
     <script type="text/javascript" src="/js/admin/indi.combo.form.js?<?=rand(0, 10000)?>"></script>
     <script type="text/javascript" src="/js/admin/indi.combo.filter.js?<?=rand(0, 10000)?>"></script>
+    <link rel="stylesheet" href="/css/admin/combo.css?<?=rand(0, 10000)?>"/>
     <style>
         button span.add {
             background-image: url('<?=$_SERVER['STD']?>/library/extjs4/resources/themes/images/default/shared/add.gif') !important;
