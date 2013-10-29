@@ -42,28 +42,30 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
                     <?=$field->javascript?>
                 });
 				Ext.onReady(function() {
-					//Ext.Date.monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 					Ext.create('Ext.picker.Date', {
-						//dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
-						//monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
 						renderTo: '<?=$name?>CalendarRender',
                         id: '<?=$name?>Calendar',
 						width: 185,
-						//todayText: 'Сегодня',
-						//ariaTitle: 'Выбрать месяц и год',
                         ariaTitleDateFormat: '<?=$params['displayFormat']?>',
                         longDayFormat: '<?=$params['displayFormat']?>',
                         format: '<?=$params['displayFormat']?>',
                         value: Ext.Date.parse('<?=$value?>', '<?=$params['displayFormat']?>'),
-                        //nextText: 'Следующий месяц',
-						//prevText: 'Предыдущий месяц',
-						//todayTip: 'Выбрать сегодняшнюю дату',
-						//startDay: 1,
 						handler: function(picker, date) {
                             var selectedDate = Ext.Date.format(date, '<?=$params['displayFormat']?>');
                             $('#<?=$name?>').val(selectedDate);
 							$('#<?=$name?>CalendarRender').toggle();
                             $('#<?=$name?>').change();
+                        },
+                        listeners: {
+                            render: function(cal) {
+                                $('body').bind('click', function(e) {
+                                    if($(e.target).closest('#'+cal.id).length == 0 &&
+                                        !($(e.srcElement).hasClass('calendar-trigger') || $(e.srcElement).parent().hasClass('calendar-trigger')) &&
+                                        $('#'+cal.id+'Render').css('display') != 'none') {
+                                        $('#'+cal.id+'Render').hide();
+                                    }
+                                });
+                            }
                         }
 					});
 				});

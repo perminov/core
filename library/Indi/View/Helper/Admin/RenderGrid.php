@@ -48,6 +48,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					},' : '') . '{
 					text: "' . $actions[$i]['title'] . '",
 					actionAlias: "' . $actions[$i]['alias'] . '",
+					id: "action-button-' . $actions[$i]['alias'] . '",
 					'.(in_array($actions[$i]['alias'], $icons) ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
 					handler: function(){
 						var selection = grid.getSelectionModel().getSelection();
@@ -307,6 +308,9 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                                     }
                                 });
                             }
+                        },
+                        itemdblclick: function(view, row, el, index, e, eOpts){
+                            if (Ext.getCmp('action-button-form')) Ext.getCmp('action-button-form').handler();
                         }
                     },
                     store: gridStore,
