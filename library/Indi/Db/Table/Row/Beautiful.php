@@ -12,7 +12,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 50;
+    public static $comboOptionsVisibleCount = 300;
 
     /**
      * Store regular expression for checks of email addresses validity
