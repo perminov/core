@@ -2,7 +2,7 @@
 class Indi_View implements Indi_View_Interface
 {
     /**
-     * Path stack for script, helper, and filter directories.
+     * Path stack for script , helper, and filter directories.
      *
      * @var array
      */
@@ -1161,5 +1161,48 @@ class Indi_View implements Indi_View_Interface
      */
     protected function _run() {
         include func_get_arg(0);
+    }
+
+
+    /**
+     * Get the param or param's subparam of current section scope.
+     *
+     * @param $param the name of param (master|filters|keyword|order|page)
+     * @param null $sub can be boolean true or string, containing certain filter name
+     * @return mixed
+     */
+    public function getScope($param = null, $sub = null, $section = null, $hash = null) {
+        // Get the master hash
+        $primaryHash = $hash ? $hash : $this->trail->getItem()->section->primaryHash;
+
+        // Get scope
+        $scope = $_SESSION['indi']['admin'][$section ? $section : $this->trail->getItem()->section->alias][$primaryHash];
+
+        // If no $param specified, all params will be returned
+        if (!$param) {
+
+            // Setup absolute row index
+            if ($this->trail && $this->trail->getItem()->section->rowIndex)
+                $scope['aix'] = $this->trail->getItem()->section->rowIndex;
+
+            return $scope;
+        }
+
+        // Get the value of param
+        $value = $scope[$param];
+
+        // If second argument is not null
+        if ($sub) {
+
+            // Return the decoded value
+            $stdA =  json_decode($value);
+            if (is_string($sub)) {
+
+                // Return a value, assigned to $sub key within json-decoded value
+                if (is_array($stdA)) foreach ($stdA as $stdI) if (key($stdI) == $sub) return current($stdI);
+            } else return $stdA;
+
+        // Return the value
+        } else return $value;
     }
 }

@@ -13,6 +13,8 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      */
     public $where = null;
 
+    public $context = 'window';
+
     /**
      * Setup row object for combo
      *
@@ -85,7 +87,9 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         }
 
         // Get initial set of combo options
-        $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null, $this->where, $this->noSatellite());
+        $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
+            $this->where, $this->noSatellite(), $this->field, $this->comboDataOrderColumn,
+            $this->comboDataOrderDirection, $this->comboDataOffset);
 
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->getForeignRowByForeignKey('satellite');
@@ -145,18 +149,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
             // in *_FilterCombo is set to false
             if ($params['optionTemplate'] && !$this->ignoreTemplate) {
-                $php = preg_split('/(<\?|\?>)/', $params['optionTemplate'], -1, PREG_SPLIT_DELIM_CAPTURE);
-                $out = '';
-                for ($i = 0; $i < count($php); $i++) {
-                    if ($php[$i] == '<?') {
-                        $php[$i+1] = preg_replace('/^=/', ' echo ', $php[$i+1]) . ';';
-                        ob_start(); eval($php[$i+1]); $out .= ob_get_clean();
-                        $i += 2;
-                    } else {
-                        $out .= $php[$i];
-                    }
-                }
-                $options[$o->$keyProperty]['option'] = $out;
+                Indi::$cmpTpl = $params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::$cmpOut;
             }
 
             // Deal with optionAttrs, if specified.
@@ -224,7 +217,8 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             'found' => $comboDataRs->foundRows,
             'page' => $comboDataRs->page,
             'enumset' => $comboDataRs->enumset,
-            'js' => $this->field->javascript
+            'js' => $this->field->javascript,
+            'titleMaxLength' => $this->titleMaxLength
         );
 
         // Setup tree flag in entity has a tree structure
@@ -260,7 +254,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         }
 
         // Init combo store data
-        ?><script>Indi.ready(function(){Indi.combo.<?=$this->type?>.store['<?=$this->name?>'] = (<?=$options?>)}, 'combo.<?=$this->type?>');</script><?
+        ?><script>Indi.ready(function(){<?=$this->context?>.Indi.combo.<?=$this->type?>.store['<?=$this->name?>'] = (<?=$options?>)}, 'combo.<?=$this->type?>', <?=$this->context?>);</script><?
 
         return ob_get_clean();
     }

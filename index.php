@@ -7,6 +7,14 @@ if(isset($_GET['info'])){phpinfo();die();}
 // is located in DOCUMENT_ROOT and others are in subfolders, so STD server
 // variable is passed WITH 'REDIRECT_' prefix, which is not covered by engine 
 if (!$_SERVER['STD'] && $_SERVER['REDIRECT_STD']) $_SERVER['STD'] = $_SERVER['REDIRECT_STD'];
+// Setup $_SERVER['STD'] as php constant, for being easier accessible
+define('STD', $_SERVER['STD']);
+
+// Setup $GLOBALS['cmsOnlyMode'] as php constant, for being easier accessible
+define('COM', $GLOBALS['cmsOnlyMode']);
+
+// Setup PRE constant, representing total url shift for all urls in cms area
+define('PRE', STD . (COM ? '' : '/admin'));
 
 // Set up error reporting
 error_reporting(E_ALL^E_NOTICE);
@@ -30,10 +38,10 @@ $last = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n =
 $config = Misc::ini('application/config.ini');
 
 // Filter globals
-Indi_Registry::set('post', $_POST);
-Indi_Registry::set('get', $_GET);
-Indi_Registry::set('files', $_FILES);
-Indi_Registry::set('config', $config);
+Indi::registry('post', $_POST);
+Indi::registry('get', $_GET);
+Indi::registry('files', $_FILES);
+Indi::registry('config', $config);
 unset($_POST, $_GET, $_FILES);
 
 // Setup DB interface

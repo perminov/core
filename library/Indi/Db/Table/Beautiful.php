@@ -10,12 +10,17 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
      * @param int          $page             OPTIONAL page number
      * @return Indi_Db_Table_Rowset
      */
-    public function fetchAll($where = null, $order = null, $count = null, $page = null) {
+    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
         if (is_array($where) && count($where)) $where = implode(' AND ', $where);
         if (is_array($order) && count($order)) $order = implode(', ', $order);
 
         if ($count !== null || $page !== null) {
-            $limit = (is_null($page) ? ($count ? '0' : $page) : $count * ($page - 1)) . ($count ? ',' : '') . $count;
+            $offset = (is_null($page) ? ($count ? 0 : $page) : $count * ($page - 1)) + ($offset ? $offset : 0);
+            if ($offset < 0) {
+                $count -= abs($offset);
+                $offset = 0;
+            }
+            $limit = $offset . ($count ? ',' : '') . $count;
 
             // the SQL_CALC_FOUND_ROWS flag
             if (!is_null($page) || !is_null($count)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
@@ -269,11 +274,6 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
             }
         }
 
-        /*i('-----', 'a');
-        i($page, 'a');
-        i($start, 'a');
-        i($end, 'a');*/
-
         // Construct a WHERE and ORDER clauses for getting that particular
         // page of results, get it, and setup nesting level indents
         $wo = 'FIND_IN_SET(`id`, "' . implode(',', $ids) . '")';
@@ -471,5 +471,50 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
             $this->titleColumn = '_title';
         }
         return $this->titleColumn;
+    }
+
+    /**
+     * Detect index of certain row in a ordered scope of rows. Offset is 1-based, unlike mysql OFFSET
+     *
+     * @param $where
+     * @param $order
+     * @param $id
+     * @return int
+     */
+    public function detectOffset($where, $order, $id) {
+        // Prepare WHERE and ORDER clauses
+        if (is_array($where) && count($where)) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order)) $order = implode(', ', $order);
+
+        // Offset variable
+        $this->getAdapter()->query('SET @o=0;');
+
+        // Random temporary table name. We should ensure that there will be no table with such name
+        $tmpTableName = 'offset' . rand(2000, 8000);
+
+        // We are using a temporary table to place data into it, and the get of offset
+        $this->getAdapter()->query($sql = '
+            CREATE TEMPORARY TABLE `' . $tmpTableName . '`
+            SELECT @o:=@o+1 AS `offset`, `id`="' . $id . '" AS `found`
+            FROM `' . $this->info('name') .'`'
+             . ($where ? ' WHERE ' . $where : '')
+             . ($order ? ' ORDER BY ' . $order : '')
+        );
+
+        // Get the offset
+        $offset = $this->getAdapter()->query('
+            SELECT `offset`
+            FROM `' . $tmpTableName . '`
+            WHERE `found` = "1"'
+        )->fetchColumn(0);
+
+        // Unset offset variable
+        $this->getAdapter()->query('SET @o=null;');
+
+        // Truncate temporary table
+        $this->getAdapter()->query('DROP TABLE `' . $tmpTableName . '`');
+
+        // Return
+        return $offset;
     }
 }

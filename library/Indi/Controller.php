@@ -117,9 +117,9 @@ class Indi_Controller{
 
 	public function __construct($params = array()) {
 		// set up request variables
-		$this->post = Indi_Registry::get('post');
-		$this->get = Indi_Registry::get('get');
-		$this->files = Indi_Registry::get('files');
+		$this->post = Indi::registry('post');
+		$this->get = Indi::registry('get');
+		$this->files = Indi::registry('files');
 
 		// set up db adapter
 		$this->db = Indi_Db_Table::getDefaultAdapter();
@@ -137,9 +137,9 @@ class Indi_Controller{
 			$this->page     = $params['page'] ? $params['page'] : 1;
 		}
 		$this->view = new Indi_View();
-		$config = Indi_Registry::get('config');
+		$config = Indi::registry('config');
 
-		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . $_SERVER['STD'] . '/core/' . trim($config['view']->scriptPath, '/');
+		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/' . trim($config['view']->scriptPath, '/');
 		$wwwS  = preg_replace('/core(\/application)/', 'www$1', $coreS);
 
 		if(is_dir($wwwS)) {
@@ -149,24 +149,22 @@ class Indi_Controller{
 			$this->view->setScriptPath($coreS . ($this->module != 'front' ? '/' . $this->module : ''));
 		}
 
-		$coreH = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . $_SERVER['STD'] . '/core/library';
+		$coreH = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/library';
 		$wwwH  = preg_replace('/core(\/library)/', 'www$1', $coreH);
 
         $this->view->addHelperPath($coreH . '/Indi/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Indi_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));
         if (is_dir($wwwH)) $this->view->addHelperPath($wwwH . '/Project/View/Helper' . ($this->module != 'front' ? '/' . ucfirst($this->module) : ''), 'Project_View_Helper_'. ($this->module != 'front' ? ucfirst($this->module) . '_' : ''));
 
-		Indi_Registry::set('view', $this->view);
+		Indi::registry('view', $this->view);
 
         $this->params = $params;
 		$this->action = $params['action'];
 	}
 
-    public function modifyRowsetCondition($condition)
+    public function adjustPrimaryWHERE($where)
     {
-        return $condition;
+        return $where;
     }
-	public function preIndexJson(){
-	}
 	public function _redirect($location){
 		die('<script>window.parent.loadContent("' . $location . '");</script>');
 	}

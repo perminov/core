@@ -25,13 +25,13 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
      */
     public function preDispatch()
     {
-        // languages
-        $config = Indi_Registry::get('config');
-        @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/core/application/lang/admin/' . $config['view']->lang . '.php');
-        @include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . '/www/application/lang/admin/' . $config['view']->lang . '.php');
+        // Set current language
+        $config = Indi::registry('config');
+        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/core/application/lang/admin/' . $config['view']->lang . '.php');
+        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/www/application/lang/admin/' . $config['view']->lang . '.php');
         $GLOBALS['lang'] = $config['view']->lang;
 
-        // perform authentication
+        // Perform authentication
         Indi_Auth::getInstance()->auth($this);
 
         // set up all trail info
@@ -58,125 +58,53 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
         if ($this->section) {
 
-            $this->section->setForeignRowsByForeignKeysOld();
-
             // set up row of entity, assotiated with current section, if action != 'index'
             $this->row = $this->trail->getItem()->row;
 
-            // determine if current entity has a tree structure
-            if ($this->trail->getItem()->model) {
-                $fields = $this->trail->getItem()->fields->toArray();
-                foreach ($fields as $field) {
-                    $entityRow = Entity::getInstance()->fetchRow('`id`="' . $field['entityId'] . '"');
-                    if ($field['alias'] == $entityRow->table . 'Id' && $field['relation'] == $entityRow->id) {
-                        $this->trail->getItem()->treeColumn = $field['alias'];
-                        break;
-                    }
-                }
-            }
-
             // set up rowset
-            if ($this->trail->getItem()->model && $this->action == 'index') {
-                // rowset is default ordered by `move` field, if not exists then `title` field,
-                // if it also does not exist, so there will be no ordering.
-                $order = $this->trail->getItem()->model->fieldExists('move') ? 'move' : $this->order;
-                $order = $order ? $order : ($this->trail->getItem()->model->fieldExists('title') ? 'title' : null);
+            if ($this->trail->getItem()->model) {
 
-                // set up default sorting for json listing
-                if(!$this->params['json']) {
-                    $this->trail->getItem()->section->sorting = $order;
-                }
+                if ($this->action == 'index') {
+                    // rowset is default ordered by `move` field, if not exists then `title` field,
+                    // if it also does not exist, so there will be no ordering.
+                    $order = $this->trail->getItem()->model->fieldExists('move') ? 'move' : $this->order;
+                    $order = $order ? $order : ($this->trail->getItem()->model->fieldExists('title') ? 'title' : null);
 
-                // if this section have parent section, we should fetch only records, related to parent row
-                // for example if we want to see cities, we must define in WHAT country these cities are located
-                if ($this->trail->getItem(1)->row && !$this->noFilterByParent) {
-                    if (!is_null($this->specialParentCondition())) {
-                        $condition[] = $this->specialParentCondition();
-                    } else {
-                        if ($this->trail->getItem()->section->parentSectionConnector) {
-                            $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
-                            $condition[] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->id . '"';
-                        } else {
-                            $condition[] = '`' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
-                        }
+                    // set up default sorting for json listing
+                    if(!$this->params['json']) $this->trail->getItem()->section->sorting = $order;
+
+                    $primaryWHERE = $this->primaryWHERE();
+
+                    if ($this->params['json']) {
+
+                        // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
+                        $finalWHERE = $this->finalWHERE($primaryWHERE);
+
+                        // Get final ORDER clause, built regarding column name and sorting direction
+                        $finalORDER = $this->finalORDER($finalWHERE, $this->get['sort']);
+
+                        // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
+                        // constructed with usage of $this->limit and $this->page params
+                        $this->rowset = $this->trail->getItem()->model->{
+                            'fetch'. ($this->trail->getItem()->model->treeColumn ? 'Tree' : 'All')
+                        }($finalWHERE, $finalORDER, $this->limit, $this->page);
+
+                        // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
+                        // able to restore the state of panel, that is representing the rowset at cms interface.
+                        // State of the panel includes: filtering and search params, sorting params
+                        $this->setScope($primaryWHERE, $this->get['search'], $this->params['keyword'], $this->get['sort'],
+                            $this->get['page'], $this->rowset->foundRows, $finalWHERE, $finalORDER);
+
                     }
-                }
+                } else {
 
-                if ($this->rowsetCondition) $condition[] = $this->rowsetCondition;
-                if ($this->trail->getItem()->section->filter) $condition[] = $this->trail->getItem()->section->filter;
-                if ($this->rsc) $condition[] = $this->rsc;
+                    $this->trail->items[count($this->trail->items) - 1]->section->primaryHash = $this->params['ph'];
+                    $this->trail->items[count($this->trail->items) - 1]->section->rowIndex = $this->params['aix'];
 
-                // owner control
-                if($this->admin['alternate'] && $this->trail->getItem()->model->fieldExists($this->admin['alternate'] . 'Id')) $condition[] =  '`' . $this->admin['alternate'] . 'Id` = "' . $this->admin['id'] . '"';
-
-                // grid filters search
-                if ($this->get['search']) {
-                    $search = json_decode($this->get['search'], true);
-                    foreach ($search as $searchOnField) {
-                        $filterSearchFieldAlias = key($searchOnField);
-                        $filterSearchFieldValue = current($searchOnField);
-                        $found = null;
-                        foreach ($this->trail->getItem()->fields as $field) if ($field->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias)) $found = $field;
-                        if ($found->relation || $found->elementId == 9 || $found->elementId == 11) {
-                            if (is_array($filterSearchFieldValue)) {
-                                if ($found->storeRelationAbility == 'one') {
-                                    $condition[] = '`' . $filterSearchFieldAlias . '` IN ("' . implode('","', $filterSearchFieldValue) . '")';
-                                } else if ($found->storeRelationAbility == 'many') {
-                                    $findInSet = array();
-                                    foreach ($filterSearchFieldValue as $filterSearchFieldValueItem) {
-                                        $findInSet[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
-                                    }
-                                    $condition[] = '(' . implode(' AND ', $findInSet) . ')';
-                                } else if ($found->storeRelationAbility == 'none') {
-                                    if ($found->elementId == 11) {
-                                        list($hueFrom, $hueTo) = $filterSearchFieldValue;
-                                        if ($hueTo > $hueFrom) {
-                                            $condition[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) BETWEEN "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" AND "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '"';
-                                        } else if ($hueTo < $hueFrom) {
-                                            $condition[] = '(SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) >= "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" OR SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) <= "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '")';
-                                        } else {
-                                            $condition[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
-                                        }
-                                    }
-                                }
-                            } else {
-                                if (in_array($found->storeRelationAbility, array('none', 'one'))) {
-                                    $condition[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
-                                } else if ($found->storeRelationAbility == 'many') {
-                                    $condition[] = 'FIND_IN_SET("' . $filterSearchFieldValue . '", `' . $filterSearchFieldAlias . '`)';
-                                }
-                            }
-                        } else if ($found->elementId == 1) {
-                            $condition[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
-                        } else if (in_array($found->elementId, array(18,12,19))) {
-                            preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches);
-                            if ($found->elementId == 12 || $found->elementId ==19) $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
-                            if ($found->elementId == 19) $filterSearchFieldValue .= ' 00:00:00';
-                            $condition[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
-                        } else if ($found->columnTypeId == 4) {
-                            $condition[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue . '*" IN BOOLEAN MODE)';
-                        }
-                    }
-                }
-                // fast search
-                $condition = $this->appendFastSearchConditionIfNeed($condition);
-                
-                // set up sorting depend on ExtJS grid column click
-                if ($this->params['json']) {
-                    $condition = count($condition) ? implode(' AND ', $condition) : null;
-                    $condition = $this->modifyRowsetCondition($condition);
-                    $order = $this->getOrderForJsonRowset($condition, true);
-                    $this->preIndexJson();
-                    if ($this->trail->getItem()->model->treeColumn) {
-                        $this->rowset = $this->trail->getItem()->model->fetchTree($condition, $order, $this->limit, $this->page);
-                    } else {
-                        $order = $this->getOrderForJsonRowset($condition);
-                        $this->rowset = $this->trail->getItem()->model->fetchAll($condition, $order, $this->limit, $this->page);
-                    }
+                    if ($this->params['check']) die($this->checkRowIsInScope());
                 }
             }
         }
-        //parent::preDispatch();
     }
 
     /**
@@ -359,7 +287,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         } catch (Exception $e) {
             d($e);
             die();
-            throw new Exception('Cannot save into "' . $this->section->foreignRows->entityId->table . '" table');
         }
 
         $this->updateCacheIfNeed();
@@ -369,7 +296,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             if ($this->trail->getItem(1)->row) {
                 $id = $this->trail->getItem(1)->row->id;
             }
-            $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+            $this->_redirect(STD . (COM ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
         }
     }
 
@@ -384,71 +311,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         }
     }
 
-    /**
-     * Provide default form action
-     *
-     */
-    public function formAction()
-    {
-//		$this->post['field'] = 'defaultSort';
-//		$this->post['satellite'] = 93;
-        if ($this->params['json']) {
-            $fields = $this->trail->getItem()->fields;
-            for($i = 0; $i < $fields->count(); $i++) {
-                if ($fields[$i]->alias == $this->post['field']) {
-                    $elementAlias = Entity::getModelByTable('element')->fetchRow('`id` = "' . $fields[$i]->elementId . '"')->alias;
-                    if ($fields[$i]->dependency == 'e') {
-                        $entityId = $this->row->getEntityIdForVariableForeignKey($this->post['field'], $this->post['satellite']);
-                        $this->trail->items[count($this->trail->items)-1]->fields[$i]->relation = $entityId;
-                    } else if ($fields[$i]->dependency != 'u') {
-                        for($j = 0; $j < $fields->count(); $j++) {
-                            if ($fields[$i]->satellite == $fields[$j]->id) {
-                                if ($fields[$i]->alternative) {
-                                    $satelliteRow = Entity::getInstance()->getModelById($fields[$j]->relation)->fetchRow('`id` = "' .$this->post['satellite'] . '"');
-                                    $fields[$j]->alias = $fields[$i]->alternative;
-                                    $this->post['satellite'] = $satelliteRow->{$fields[$i]->alternative};
-                                }
-//								if (!$this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias]) $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = array();
-//                                $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias][] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';
-                                $this->trail->items[count($this->trail->items)-1]->dropdownWhere[$fields[$i]->alias] = 'FIND_IN_SET("' . $this->post['satellite'] . '", `' . ($fields[$j]->satellitealias ? $fields[$j]->satellitealias : $fields[$j]->alias) . '`)';
-                            }
-                        }
-                    } else if ($fields[$i]->dependency == 'u') {
-                    }
-                }
-            }
-            $this->view->trail = $this->trail;
-            $this->view->row = $this->row;
-            switch ($elementAlias) {
-                case 'select':
-                    $element = $this->view->formSelect($this->post['field'], null, array('optionsOnly' => true));
-                    break;
-                case 'dselect':
-                    $attribs = array(
-                        'optionsOnly' => true,
-                        'find' => str_replace('"','\"', $this->post['find']),
-                        'value' => $this->post['value'],
-                        'more' => $this->post['more'] == 'true' ? true : false,
-                        'element' => 'dselect'
-                    );
-                    if (isset($this->post['noempty'])) $attribs['noempty'] = $this->post['noempty'];
-                    if (isset($this->post['page'])) $attribs['page'] = $this->post['page'];
-                    if (isset($this->post['up'])) $attribs['up'] = $this->post['up'];
-
-                    $element = $this->view->formDselect($this->post['field'], null, $attribs);
-                    break;
-                case 'multicheck':
-                    $element = $this->view->formMulticheck($this->post['field'], 1, array('optionsOnly' => true));
-                    break;
-            }
-            die($element);
-        } else if ($this->params['combo']){
-            parent::formAction();
-        }
-    }
-
-    public function viewAction()
-    {
+    public function viewAction(){
 
     }
     public function prepareJsonDataForIndexAction($json = true){
@@ -662,154 +525,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
     function setGridTitlesByCustomLogic(&$data){}
 
-    public function getOrderForJsonRowset($condition = null){
-        //$this->get['sort'] = ;
-        if ($this->get['sort']) {
-            $sort = current(json_decode($this->get['sort'], 1));
-            $this->post['sort'] = $sort['property'];
-            $this->post['dir'] = $sort['direction'];
-            // Если не указано, по какому столбцу сорировать, не сортируем
-            if (!$this->post['sort']) return;
-        }
-//		$this->post['sort'] = 'identifier';
-//		$this->post['dir'] = 'ASC';
-        // get info about columns that will be presented in grid
-        $gridFields = $this->trail->getItem()->gridFields->toArray();
-
-        // check if field (that is to be sorted by) store relation
-        $entityId = false;
-        for ($i = 0; $i < count($gridFields); $i++) {
-            if($gridFields[$i]['alias'] == $this->post['sort']){//} && ($gridFields[$i]['relation'] || $gridFields[$i]['satellite'])) {
-                $entityId = $gridFields[$i]['relation'];
-                $fieldId  = $gridFields[$i]['id'];
-                $satellite = $gridFields[$i]['satellite'];
-                $columnTypeId = $gridFields[$i]['columnTypeId'];
-                break;
-            }
-        }
-
-        // get distinct entity ids that will be used to initialize models and retrieve rowsets
-        if ($entityId) {
-            // get distinct ids of foreign rows
-            $info = $this->trail->getItem()->model->info();
-            $query = 'SELECT DISTINCT `' . $this->post['sort'] . '` AS `id` FROM `' . $info['name'] . '` WHERE 1 ' . ($condition ? ' AND ' . $condition : '');
-            $result = $this->db->query($query)->fetchAll();
-            if (count($result)) {
-                // get distinct foreign key values, to avoid twice or more calculating title for equal ids
-                for ($i = 0; $i < count($result); $i++) $ids[] = $result[$i]['id'];
-
-                // create temporary table
-                $tmpTable = 'sorting';
-
-                $query = 'DROP TABLE IF EXISTS `' . $tmpTable . '`;';
-                $this->db->query($query);
-
-                $query = 'CREATE TEMPORARY TABLE `' . $tmpTable . '` (`id` VARCHAR(255) NOT NULL, `title` VARCHAR(255)  COLLATE utf8_general_ci NOT NULL);';
-                $this->db->query($query);
-
-                $query = ' INSERT INTO `' . $tmpTable . '` ';
-                if ($entityId == 6) {
-                    $condition  = '`alias` IN ("' . implode('","', $ids) . '")';
-                    $condition .= ' AND `fieldId` = "' . $fieldId . '"';
-                    $query .= 'VALUES ';
-                    $foreignRowset = Entity::getInstance()->getModelById($entityId)->fetchAll($condition);
-                    foreach ($foreignRowset as $foreignRow) {
-                        $values[] = '("' . $foreignRow->alias . '","' . str_replace('"', '&quote;', $foreignRow->getTitle()) . '")';
-                    }
-                    $query .= implode(',', $values) . ';';
-                } else {
-                    // in this block we investigate - have the 'getTitle' method been redeclared in child *_Row class, so if no - it
-                    // mean that we can get titles for foreign keys  directly from 'title' column on corresponding foreign table
-                    // and there is no need to preform any modifications on them before output in json format
-                    // this shit is need it to avoid unneeded abuse to mysql server - to improve performance
-                    $entity = Entity::getInstance()->fetchRow('`id` = "' . $entityId . '"')->toArray();
-                    $info = Entity::getModelById($entityId)->info();
-                    $modelsDirPath = trim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . '/application/';
-
-                    // get filename of row class
-                    $file = $backendModulePath . 'models/' . str_replace('_', '/', $info['rowClass']) . '.php';
-                    if (file_exists($file)) $code = file_get_contents($file);
-
-                    // if function 'getTitle' was not redeclared
-                    if (!strpos($code, 'function getTitle(')) {
-                        $foreignTableInfo = Entity::getModelById($entityId)->info();
-                        $query .= 'SELECT `id`,`title` FROM `' . $foreignTableInfo['name'] . '` WHERE `id` IN (' . implode(',', $ids) . ');';
-                    } else {
-                        // prepare and put data into temporary table
-                        $foreignRowset = Entity::getModelById($entityId)->fetchAll('`id` IN (' . implode(',', $ids) . ')');
-
-                        $query .= 'VALUES ';
-                        foreach ($foreignRowset as $foreignRow) {
-                            $values[] = '(' . $foreignRow->id . ', "' . str_replace('"', '&quote;', $foreignRow->getTitle()) . '")';
-                        }
-                        $query .= implode(',', $values) . ';';
-                    }
-                }
-                $this->db->query($query);
-
-                // sort data in temporary table by 'title' field
-                $result = $this->db->query('SELECT `id`,`title` FROM `' . $tmpTable . '` ORDER BY `title` ' . $this->post['dir'])->fetchAll();
-
-                $query = 'DROP TABLE `' . $tmpTable . '`;';
-                $this->db->query($query);
-
-                // get array of ids
-                $ids = array();
-                for ($i = 0; $i < count($result); $i++) $ids[] = $result[$i]['id'];
-
-                $order = 'POSITION(CONCAT("\'", ' . $this->post['sort'] . ', "\'") IN "\'' . implode("','", $ids) . '\'") ASC';
-            } else $ids = array();
-
-        // if column store foreign keys that are pointing to variable entties
-        } else if ($satellite){
-            $rowset = $this->trail->getItem()->model->fetchAll('1 ' . ($condition ? ' AND ' . $condition : ''));
-            $tmp = array();
-            foreach ($rowset as $row) {
-                $tmp[] = array('id' => $row->id, 'title' => $row->getForeignRowByForeignKey($this->post['sort'])->getTitle());
-            }
-            if (count($tmp)) {
-                // create temporary table
-                $tmpTable = 'sorting';
-
-                $query = 'DROP TABLE IF EXISTS `' . $tmpTable . '`;';
-                $this->db->query($query);
-
-                $query = 'CREATE TEMPORARY TABLE `' . $tmpTable . '` (`id` VARCHAR(255) NOT NULL, `title` VARCHAR(255) NOT NULL);';
-                $this->db->query($query);
-
-                $query = 'INSERT INTO `' . $tmpTable . '` ';
-                $values = array();
-                for ($i = 0; $i < count($tmp); $i ++) {
-                    $values[] = '(' . $tmp[$i]['id'] . ', "' . str_replace('"', '&quote;', $tmp[$i]['title']) . '")';
-                }
-                $query .= 'VALUES ' . implode(', ', $values) . ';';
-                $this->db->query($query);
-
-                // sort data in temporary table by 'title' field
-                $result = $this->db->query('SELECT `id`,`title` FROM `' . $tmpTable . '` ORDER BY `title` ' . $this->post['dir'])->fetchAll();
-
-                $query = 'DROP TABLE `' . $tmpTable . '`;';
-                $this->db->query($query);
-
-                // get array of ids
-                $ids = array();
-                for ($i = 0; $i < count($result); $i++) $ids[] = $result[$i]['id'];
-
-                $order = 'POSITION(CONCAT("\'", `id`, "\'") IN "\'' . implode("','", $ids) . '\'") ASC';
-            }
-        } else if (Misc::loadModel('ColumnType')->fetchRow('`id` = "' . $columnTypeId . '"')->type == 'BOOLEAN') {
-            if ($GLOBALS['lang'] == 'en') {
-                $order = 'IF(`' . $this->post['sort'] . '`, "' . GRID_FILTER_CHECKBOX_YES .'", "' . GRID_FILTER_CHECKBOX_NO . '") ' . $this->post['dir'];
-            } else {
-                $order = 'IF(`' . $this->post['sort'] . '`, "' . GRID_FILTER_CHECKBOX_NO .'", "' . GRID_FILTER_CHECKBOX_YES . '") ' . $this->post['dir'];
-            }
-        } else {
-            $order = '`' . $this->post['sort'] . '` ' . $this->post['dir'];
-        }
-        $order = trim($order) ? $order : null;
-        return $order;
-    }
-
     public function postSave(){
     }
     public function preSave(){
@@ -826,7 +541,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
         }
-        $this->_redirect($_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        $this->_redirect(STD . (COM ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
     }
     public function postDispatch($return = false){
         // assign general template data
@@ -834,16 +549,16 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         if (!$this->section && $this->action == 'index') {
             $out = $this->view->render('index.php');
         } else {
-            ob_start(); $this->view->renderContent(); $out = ob_get_clean();
+            $out = $this->view->renderContent();
         }
-        if ($GLOBALS['cmsOnlyMode']) {
+        if (COM) {
             $out = preg_replace('/("|\')\/admin/', '$1', $out);
         };
-        if ($_SERVER['STD']) {
-            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
-            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
-            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
-            $out = preg_replace('/value: \'\/admin/', 'value: \'' . $_SERVER['STD'] . '/admin', $out);
+        if (STD) {
+            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/value: \'\/admin/', 'value: \'' . STD . '/admin', $out);
         }
         if ($return) {
             return $out;
@@ -856,9 +571,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
       * that used in admin area in general
       *
       */
-    public function assign()
-    {
-        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . '] <a href="' . $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '' : '/admin') . '/logout/">' . LOGOUT . '</a>');
+    public function assign(){
+        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . '] <a href="' . PRE . '/logout/">' . LOGOUT . '</a>');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
         $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $this->view->assign('get', $this->get);
@@ -868,7 +582,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
-        $this->view->assign('entity', $this->section->foreignRows->entityId);
+        $this->view->assign('entity', $this->section ? $this->section->getForeignRowByForeignKey('entityId') : null);
         if ($this->trail->getItem()->model) {
             $this->view->assign('structure', $this->trail->getItem()->model->getFields());
         }
@@ -935,63 +649,5 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         if (Misc::loadModel('Entity')->fetchRow('`table` = "' . $table .'" AND `system` = "y"')->useCache) {
             Indi_Cache::update(get_class($this->trail->getItem()->model));
         }
-    }
-
-    public function appendFastSearchConditionIfNeed($condition) {
-        if (!$this->params['keyword']) return $condition;
-        $this->params['keyword'] = str_replace('"','&quot;', strip_tags(urldecode($this->params['keyword'])));
-        $keywordCondition = array();
-        $this->trail->getItem()->gridFields->setForeignRowsByForeignKeys('columnTypeId');
-        $exclude = array();
-        if ($this->get['search']) {
-            $search = json_decode($this->get['search'], true);
-            foreach ($search as $searchOnField) $exclude[] = key($searchOnField);
-        }
-        foreach ($this->trail->getItem()->gridFields as $gridField) {
-            if ($gridField->columnTypeId && !in_array($gridField->alias, $exclude)) {
-                // Поиск по текстовым полям
-                if (!$gridField->relation) {
-                    $reg = array(
-                        'YEAR' => '[0-9]', 'DATE' => '[0-9\-]', 'DATETIME' => '[0-9\- :]',
-                        'TIME' => '[0-9:]', 'INT' => '[0-9]', 'DOUBLE' => '[0-9\.]'
-                    );
-                    if (preg_match('/(' . implode('|', array_keys($reg)) . ')/', $gridField->foreign['columnTypeId']['type'], $matches)) {
-                        if (preg_match('/^' . $reg[$matches[1]] . '$/', $this->params['keyword'])) {
-                            $keywordCondition[] = '`' . $gridField->alias . '` LIKE "%' . $this->params['keyword'] . '%"';
-                        }
-                    } else if (preg_match('/BOOLEAN/', $gridField->foreign['columnTypeId']['type'])) {
-                        $keywordCondition[] = 'IF(`' . $gridField->alias . '`, "Да", "Нет") LIKE "%' . $this->params['keyword'] . '%"';
-                    } else {
-                        $keywordCondition[] = '`' . $gridField->alias . '` LIKE "%' . $this->params['keyword'] . '%"';
-                    }
-                // Поиск по полям типов ENUM и SET
-                } else if ($gridField->relation == 6) {
-                    $relativeValues = Misc::loadModel('Enumset')->fetchAll('`fieldId` = "' . $gridField->id . '" AND `title` LIKE "%' . $this->params['keyword'] . '%"');
-                    $set = array(); foreach ($relativeValues as $relativeValue) $set[] = $relativeValue->alias;
-                    if (count($set)) {
-                        $keywordCondition[] = 'FIND_IN_SET(`' . $gridField->alias . '`, "' . implode(',', $set) . '")';
-                    }
-                // Поиск по остальным типам
-                } else {
-                    // Если поле вообще без сателлайта или с сателлайтом, но с типом зависимости "Фильтрация"
-                    if (!$gridField->satellite || $gridField->dependency != 'e') {
-                        $entity = Entity::getInstance()->getModelById($gridField->relation);
-                        $relativeValues = $entity->fetchAll('`title` LIKE "%' . $this->params['keyword'] . '%"');
-                        $set = array(); foreach ($relativeValues as $relativeValue) $set[] = $relativeValue->id;
-                        if (count($set)) {
-                            $keywordCondition[] = 'FIND_IN_SET(`' . $gridField->alias . '`, "' . implode(',', $set) . '")';
-                        }
-                    // Если тип зависимости - переменная сущность
-                    } else {
-
-                    }
-                }
-            }
-        }
-        if (count($keywordCondition)) {
-            $keywordCondition = '(' . implode(' OR ', $keywordCondition) . ')';
-        }
-        if ($keywordCondition) $condition[] = $keywordCondition;
-        return $condition;
     }
 }

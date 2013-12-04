@@ -347,10 +347,10 @@ class Misc
         return $number;
     }
     
-	public function loadModel($modelClassName){
+	public static function loadModel($modelClassName){
 		// if file in which model is declared doesn't exists, so there will be performed emulation of it initialization
-		$systemModelsDir1 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/www/application/models/';
-		$systemModelsDir2 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/core/application/models/';
+		$systemModelsDir1 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/www/application/models/';
+		$systemModelsDir2 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/core/application/models/';
 		$modelFileName = $modelClassName . '.php';
 		$modelFilePath1 = $systemModelsDir1 . $modelFileName;
 		$modelFilePath2 = $systemModelsDir2 . $modelFileName;
@@ -499,7 +499,7 @@ class Misc
     	return $info[2] + $padding * 2;
     }
 	public function uploadFails($title = 'Тема была создана, но'){
-		if (count($uploadFails = Indi_Registry::get('uploadFails'))) {
+		if (count($uploadFails = Indi::registry('uploadFails'))) {
 			$m[] = $title . ' не загружены файлы:';
 			$m[] = '<ul>';
 			if (is_array($uploadFails['type'])) {

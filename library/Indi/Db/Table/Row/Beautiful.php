@@ -12,7 +12,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 300;
+    public static $comboOptionsVisibleCount = 20;
 
     /**
      * Store regular expression for checks of email addresses validity
@@ -65,6 +65,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
             // Adding conditions required to match the needed scope, there changeRow should be searched
             if (!is_array($within) && $within) $within = explode(',', $within);
+
             // Append tree-column to $within array, if such column exists
             if (array_key_exists($this->getTable()->info('name') . 'Id', $this->_original)) $within[] = $this->getTable()->info('name') . 'Id';
 
@@ -110,12 +111,15 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         return parent::delete();
     }
 
-    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false, $satellite = null, $where = null, $noSatellite = false){
+    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
+                                 $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
+                                 $order = null, $dir = 'ASC', $offset = null) {
+
         // Basic info
         $entityM = Misc::loadModel('Entity');
         $fieldM = Misc::loadModel('Field');
         $entityR = $entityM->fetchRow('`table` = "' . $this->_table->_name . '"');
-        $fieldR = $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
+        $fieldR = $fieldR ? $fieldR : $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
         $fieldColumnTypeR = $fieldR->getForeignRowByForeignKey('columnTypeId');
         $relatedM = Entity::getInstance()->getModelById($fieldR->relation);
         $params = $fieldR->getParams();
@@ -127,12 +131,14 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         if ($fieldR->filter) $where[] = $fieldR->filter;
 
         // Compile filters if they contain php-expressions
-        for($i = 0; $i < count($where); $i++) $where[$i] = Indi::cmp($where[$i]);
+        for($i = 0; $i < count($where); $i++) {
+            Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::$cmpOut;
+        }
 
         // If current field column type is ENUM or SET
         if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
             $where[] = '`fieldId` = "' . $fieldR->id . '"';
-            $dataRs = $relatedM->fetchAll($where, 'move');
+            $dataRs = $relatedM->fetchAll($where, '`move`');
 
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
@@ -250,11 +256,14 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         $titleColumn = $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
-        if ($relatedM->fieldExists('move')) {
-            $order = 'move';
-        } else {
-            $order = $titleColumn;
-        }
+        if (is_null($order))
+            if ($relatedM->fieldExists('move')) {
+                $order = 'move';
+            } else {
+                $order = $titleColumn;
+            }
+
+        if (!preg_match('/\(/', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
@@ -266,8 +275,10 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             // Get selected row
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
-            // Setup title as start point (title can be title of selected row, or can be keyword)
-            $keyword = str_replace('"','\"', $selectedR->title);
+            // Setup current value of a sorting field as start point
+            if (!preg_match('/\(/', $order)) {
+                $keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
+            }
         }
 
         // If related entity has tree-structure
@@ -281,7 +292,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
-                // So we mark that foundRows property of rowset should be unset, as in combo.js 'page-top-reached'
+                // So we mark that foundRows property of rowset should be unset, as in indi.combo.form.js 'page-top-reached'
                 // attribute is set depending on 'found' property existence in response json
                 $unsetFoundRows = true;
             }
@@ -289,11 +300,17 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             // Fetch results
             if ($selectedTypeIsKeyword) {
                 $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
-            } else if (func_num_args() < 5 || is_null(func_get_arg(4))) {
-                $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
             } else {
-                $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
+
+                $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                if (is_null(func_get_arg(4))) {
+                    $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
+                } else {
+                    $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
+                }
             }
+
 
             // Unset found rows to prevent disabling of paging up
             if ($unsetFoundRows) unset($dataRs->foundRows);
@@ -310,8 +327,9 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
                 // Get WHERE clause for options fetch
                 if ($selectedTypeIsKeyword) {
-                    $order = 'TRIM(SUBSTR(`' . $titleColumn . '`, 1)) ASC';
-
+                    if (!preg_match('/\(/', $order)) {
+                        //$order = 'TRIM(SUBSTR(`' . $titleColumn . '`, 1))';
+                    }
                     // Check if keyword is a part of color value in format #rrggbb, and if so, we use RLIKE instead
                     // of LIKE, and prepare a special regular expression
                     if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
@@ -322,16 +340,12 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                     }
 
                 // We should get results started from selected value only if we have no $satellite argument passed
-                } else if (func_num_args() < 5 || is_null(func_get_arg(4))) {
+                } else if (is_null(func_get_arg(4))) {
 
-                    // If we are sorting results by `move` column, results start point should be = value of `move`
-                    // property of $selectedR
-                    if ($order == 'move') {
-                        $where[] = '`move` '. (is_null($page) || $page > 0 ? '>=' : '<').' "' . $selectedR->move . '"';
-
-                    // Else start point for resutlts will be set as value of `title` or `_title` property of $selectedR
-                    } else {
-                        $where[] = '`' . $titleColumn . '` '. (is_null($page) || $page > 0 ? '>=' : '<').' "' . $keyword . '"';
+                    // If $order is a name of a column, and not an SQL expression, we setup results start point as
+                    // current row's column's value
+                    if (!preg_match('/\(/', $order)) {
+                        $where[] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . $keyword . '"';
                     }
 
                     // We set this flag to true, because the fact that we are in the body of current 'else if' operator
@@ -371,19 +385,30 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                     if ($page > 0) {
                         $page++;
 
+                        $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                    // Else if we go upper, but
+                    } else if ($offset) {
+                        $page++;
+                        $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
                     // Otherwise, if we go upper, we should make page number positive.
                     // Also we should adjust ORDER clause to make it DESC
                     } else {
                         $page = abs($page);
-                        $order = '`' . $order . '` DESC';
+                        $order .= ' ' . ($dir == 'DESC' ? 'ASC' : 'DESC');
 
                         // We remember the fact of getting upper page results, because after results is fetched,
                         // we will revert them
                         $upper = true;
                     }
+
+                } else {
+
+                    $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
                 }
 
-                $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page);
+                $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page, $offset);
 
                 // We set number of total found rows only if passed page number is null, so that means that
                 // we are doing a search of first page of results by a keyword, that just has been recently changed
@@ -410,6 +435,9 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                 // will be same as initial results got at combo initialization and that is a not correct
                 // way.
                 } else {
+
+                    $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
                     $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page + 1);
                 }
             }
@@ -457,8 +485,8 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         }
 
         // Set `enumset` property as false, because without definition it will have null value while passing
-        // to combo.js and and after deepObjCopy there - will have typeof == object, which is not actually boolean
-        // and will cause problems in combo.js
+        // to indi.combo.form.js and and after Indi.copy there - will have typeof == object, which is not actually boolean
+        // and will cause problems in indi.combo.form.js
         $dataRs->enumset = false;
 
         if ($fieldR->storeRelationAbility == 'many') {

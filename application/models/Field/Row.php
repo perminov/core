@@ -33,7 +33,7 @@ class Field_Row extends Indi_Db_Table_Row
 			$uploadPath = Indi_Image::getUploadPath();
 			
 			// absolute upload path  in filesystem
-			$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
+			$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/' . $uploadPath . '/' . $entity . '/';
 			
 			// array for filenames that should be deleted
 			$files = array();

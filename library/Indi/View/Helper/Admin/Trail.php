@@ -5,7 +5,7 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
         $items = $this->view->trail->items;
         $count = $this->view->trail->count();
         foreach ($items as $i=>$item) {
-            $href1 = $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode'] ? '': '/' . $this->view->module) . '/';
+            $href1 = STD . (COM ? '': '/' . $this->view->module) . '/';
             if ($item->section->sectionId) {
                 if ($i - 1) {
                     $s = '<div style="display: none;" class="trail-siblings" id="trail-item-' . $i . '-sections">';

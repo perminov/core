@@ -5,16 +5,25 @@ class Indi_View_Helper_Admin_RenderContent extends Indi_View_Helper_Abstract{
      * Render central cms page content
      *
      */
-	public function renderContent()
-	{
-		if ($this->view->trail->getItem()) {
-            $view = $this->view->trail->getItem()->section->alias . '/'. $this->view->trail->getItem()->action->alias . '.php';
-            if ($this->view->exists($view)) {
-                echo $this->view->render($this->view->trail->getItem()->section->alias . '/'. $this->view->trail->getItem()->action->alias . '.php');
-            } else if ($this->view->getHelper('render' . ucfirst($this->view->trail->getItem()->action->alias), false)) {
-                echo $this->view->{'render' . ucfirst($this->view->trail->getItem()->action->alias)}();
-            }
-		}
-	}
+    public function renderContent()
+    {
+        // If we are in a section
+        if ($this->view->trail->getItem()) {
+
+            // Construct filename of the template, which should be rendered by default
+            $script = $this->view->trail->getItem()->section->alias . '/'. $this->view->trail->getItem()->action->alias . '.php';
+
+            // Construct filename of the helper, which should be rendered if template file is not exist
+            $helper = 'render' . ucfirst($this->view->trail->getItem()->action->alias);
+
+            // If template with such filename exists, render the template
+            if ($this->view->exists($script))
+                return $this->view->render($script);
+
+            // Else if helper for current action exists
+            else if ($this->view->getHelper($helper, false))
+                return $this->view->$helper();
+        }
+    }
 
 }

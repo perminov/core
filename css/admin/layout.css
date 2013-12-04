@@ -181,7 +181,7 @@ controls{
 .x-form-trigger-wrap-focus .x-form-spinner-down-over {
     position: relative;
     top: 1px;
-    background-position: -68px -13px !important;
+    background-position: -68px -13px;
 }
 .x-form-trigger-wrap .x-form-spinner-down-over {
     position: relative;
@@ -190,7 +190,7 @@ controls{
 }
 .x-form-trigger-wrap .x-form-spinner-down-click {
     position: relative;
-    background-position: -34px -13px !important;
+    background-position: -34px -13px;
     top: 1px;
 }
 .filter-field .x-panel-body{
@@ -199,7 +199,7 @@ controls{
 .filter-field-label{
     float: left;
 }
-.filter-field .fast-search-keyword{
+.filter-field .i-form-text{
     float: left;
 }
 .filter-field .subsection-select .x-form-trigger-wrap {

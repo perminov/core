@@ -13,7 +13,7 @@
 .i-combo div.i-combo-trigger.x-form-trigger-over{
     border-left: 1px solid #99BCE8;
 }
-.i-combo.i-combo-filter div.i-combo-trigger{
+.i-combo.i-combo-filter div.i-combo-trigger, .i-combo.i-combo-sibling div.i-combo-trigger{
     margin-top: -1px;
 }
 .i-combo.i-combo-filter{
@@ -26,7 +26,7 @@
     margin-bottom: 0;
     display: none;
 }
-.i-combo.i-combo-form .i-combo-single, .i-combo.i-combo-filter-single{
+.i-combo.i-combo-form .i-combo-single, .i-combo.i-combo-filter-single, .i-combo.i-combo-sibling-single{
     -webkit-border-top-right-radius: 3px;
     -moz-border-radius-topright: 3px;
     border-top-right-radius: 3px;
@@ -34,13 +34,13 @@
 .i-combo .i-combo-keyword {
     border: 0px solid !important; width: 30px; height: 15px; margin-top: 1px;
 }
-.i-combo.i-combo-filter .i-combo-keyword{
+.i-combo.i-combo-filter .i-combo-keyword, .i-combo.i-combo-sibling .i-combo-keyword{
     background: transparent;
 }
-.i-combo.i-combo-filter.x-form-text{
+.i-combo.i-combo-filter.x-form-text, .i-combo.i-combo-sibling.x-form-text{
     padding: 0 !important;
 }
-.i-combo.i-combo-filter .i-combo-single, .i-combo.i-combo-filter .i-combo-multiple{
+.i-combo.i-combo-filter .i-combo-single, .i-combo.i-combo-filter .i-combo-multiple, .i-combo.i-combo-sibling .i-combo-single{
     border: 0;
     margin-top: 0;
 }

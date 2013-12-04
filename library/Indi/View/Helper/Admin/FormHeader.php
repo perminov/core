@@ -10,63 +10,49 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Indi Engine</title>
-    <link rel="stylesheet" type="text/css" href="/library/extjs4/resources/css/ext-all.css" />
-    <link rel="stylesheet" type="text/css" href="/css/admin/layout.css" />
-    <link rel="stylesheet" type="text/css" href="/css/admin/index.css" />
-    <link rel="stylesheet" type="text/css" href="/css/admin/form.css" />
-    <link rel="stylesheet" type="text/css" href="/css/admin/combo.css" />
-    <script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
-    <?$config = Indi_Registry::get('config');?>
-    <script type="text/javascript" src="/library/extjs4/ext-lang-<?=$config['view']->lang?>.js"></script>
-    <script type="text/javascript" src="/js/admin/index.js"></script>
+    <!-- jQuery -->
     <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
-    <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
-    <script type="text/javascript" src="/js/admin/indi.combo.form.js?<?=rand(0, 10000)?>"></script>
     <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
+    <!-- Ext -->
+    <link type="text/css" rel="stylesheet" href="/library/extjs4/resources/css/ext-all.css"/>
+    <script type="text/javascript" src="/library/extjs4/ext-all.js"></script><?$config = Indi::registry('config');?>
+    <script type="text/javascript" src="/library/extjs4/ext-lang-<?=$config['view']->lang?>.js"></script>
+    <!-- Indi styles -->
+    <link type="text/css" rel="stylesheet" href="/css/admin/layout.css?1"/>
+    <link type="text/css" rel="stylesheet" href="/css/admin/index.css"/>
+    <link type="text/css" rel="stylesheet" href="/css/admin/form.css"/>
+    <link type="text/css" rel="stylesheet" href="/css/admin/indi.css"/>
+    <link type="text/css" rel="stylesheet" href="/css/admin/indi.combo.css?<?=rand(0, 10000)?>"/>
+    <!-- Indi scripts -->
+    <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
+    <script type="text/javascript" src="/js/admin/indi.trail.js?<?=rand(0, 10000)?>"></script>
+    <script type="text/javascript" src="/js/admin/indi.combo.form.js?<?=rand(0, 10000)?>"></script>
+    <!--<script type="text/javascript" src="/js/admin/indi.combo.sibling.js?<?=rand(0, 10000)?>"></script>-->
+    <script type="text/javascript" src="/js/admin/indi.action.form.js?<?=rand(0, 10000)?>"></script>
+    <!-- CK editor and finder scripts -->
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
-    <style>
-        span.radio{
-            background: url(<?=$_SERVER['STD']?>/i/admin/radio.png) no-repeat;
-        }
-        span.radio.disabled{
-            background: url(<?=$_SERVER['STD']?>/i/admin/radio-disabled.png) no-repeat;
-        }
-        span.radio.checked{
-            background: url(<?=$_SERVER['STD']?>/i/admin/radioChecked.png) no-repeat;
-        }
-        span.radio.checked.disabled{
-            background: url(<?=$_SERVER['STD']?>/i/admin/radio-checked-disabled.png) no-repeat;
-        }
-
-        span.checkbox{
-            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox.png) no-repeat;
-        }
-        span.checkbox.disabled, table.multicheckbox.disabled span.checkbox{
-            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox-disabled.png) no-repeat;
-        }
-        span.checkbox.checked{
-            background: url(<?=$_SERVER['STD']?>/i/admin/checkboxChecked.png) no-repeat;
-        }
-        span.checkbox.checked.disabled, table.multicheckbox.disabled span.checkbox.checked{
-            background: url(<?=$_SERVER['STD']?>/i/admin/checkbox-checked-disabled.png) no-repeat;
-        }
-        controls.upload{
-            background: url(<?=$_SERVER['STD']?>/i/admin/transparentBg.png);
-        }
-        .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete{
-            background-image: url(<?=$_SERVER['STD']?>/i/admin/combo-multiple-remove-item-from.png);
-        }
-    </style>
+    <!-- STD dependent styles -->
+    <?=$this->view->styleStd()?>
 </head>
-<body>
-<script>window.cmsOnlyMode='<?=$GLOBALS['cmsOnlyMode']?>';</script>
+<body class="i-action-form">
+<script>window.cmsOnlyMode='<?=COM?>';</script>
 <script>Ext.require(['*']);</script>
+<script>
+Indi.std = '<?=STD?>';
+Indi.com = '<?=COM ? '' : '/admin'?>';
+Indi.pre = Indi.std + Indi.com;
+top.window.Indi.shareWith(window);
+Indi.trail = <?=json_encode($this->view->trail->toArray())?>;
+Indi.scope = <?=json_encode($this->view->getScope())?>;
+Indi.ready = top.Indi.ready;
+top.Indi.scope = Indi.scope;
+</script>
 <script>top.window.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>
 <script>
-var STD = '<?=$_SERVER['STD']?>';
-var COM = '<?=$GLOBALS['cmsOnlyMode'] ? '' : '/admin'?>';
+var STD = '<?=STD?>';
+var COM = '<?=COM ? '' : '/admin'?>';
 var PRE = STD+COM;
     Ext.onReady(function(){
         top.window.$('.trail-item-section').hover(function(){
@@ -85,11 +71,11 @@ var PRE = STD+COM;
         });
     })
 </script>
-<form class="form row-form" action="../<?=$this->view->row->id ? '../../' : ''?>save/<?=$this->view->row->id ? 'id/' . $this->view->row->id . '/' : ''?>"	name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
-	<table celpadding="2" cellspacing="1" border="0" width="100%">
-		<tr class="table_topics"><td colspan="2" align="center" class="table_topics"><?=$title?></td></tr>
-		<col width="50%"/><col width="50%"/>
-		<? $xhtml = ob_get_clean();
-        return $xhtml;
+<?=$this->view->siblingCombo()?>
+<form class="form row-form" action="<?=PRE?>/<?=$this->view->section->alias?>/save<?=$this->view->row->id ? '/id/' . $this->view->row->id : ''?>/" name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
+    <table celpadding="2" cellspacing="1" border="0" width="100%">
+        <tr class="table_topics"><td colspan="2" align="center" class="table_topics"><?=$title?></td></tr>
+        <col width="50%"/><col width="50%"/>
+        <? return ob_get_clean();
     }
 }

@@ -1,0 +1,44 @@
+.i-form-text .x-form-text {
+    color: #04408C;
+    font: 11px arial;
+    height: 19px !important;
+}
+.x-form-item-label {
+    padding-top: 1px;
+}
+.i-toolbar-label{
+    margin-top: -1px !important;
+}
+
+/* <combos> */
+.i-form-combo .x-form-text{font-size:11px !important; height: 19px !important; line-height: 14px !important; color: #04408C;}
+.i-form-combo .x-form-trigger-wrap{margin-top: 1px;}
+.i-form-combo .x-form-trigger{height: 19px !important;}
+.i-form-combo .x-form-item-label {padding-top: 2px;}
+/* </combos> */
+
+/* < Spinners: height reduced to 9px, but this causes the backgrounds positions adjustments > */
+.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-up,
+.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down{
+    height: 9px !important;
+}
+.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down {
+    background-position: 0 -11px;
+}
+.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down-over {
+    background-position: -17px -11px;
+}
+.x-field-default-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down-click {
+    background-position: -34px -11px !important;
+}
+.x-field-default-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down {
+    background-position: -51px -11px;
+}
+.x-field-default-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down-over {
+    background-position: -68px -11px;
+}
+
+/* </ Spinners: height reduced to 9px, but this causes the backgrounds positions adjustments> */
+.i-error-msg{
+    color: red;
+}

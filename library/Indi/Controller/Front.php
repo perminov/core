@@ -23,7 +23,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				$this->identifier = Entity::getModelById($this->section->entityId)->fetchRow($where)->id;
 			}
 		}
-		Indi_Registry::set('request', $this->params);
+		Indi::registry('request', $this->params);
 		
 		// Определяем текущее действие, ищем его в базе
 		$this->action = Misc::loadModel('Faction')->fetchRow('`alias` = "' . $this->action . '"');
@@ -100,10 +100,10 @@ class Indi_Controller_Front extends Indi_Controller{
 		$out = $this->subdomainMaintenance($out);
 		$out = $this->httpsMaintenance($out);
 
-        if ($_SERVER['STD']) {
-            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
-            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
-            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . $_SERVER['STD'] . '/', $out);
+        if (STD) {
+            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
         }
 		
 		if (isset($this->get['p']))echo mt();
@@ -369,7 +369,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	//		if ($this->model && $this->section->type == 'r' && $this->action->alias == 'index') {
 				// get rowset params and get rowset according to them
 				$rp = $this->getRowsetParams();
-				if ($tree = $this->model->getTreeColumnName()) {
+				if ($tree = $this->model->treeColumn) {
 					$this->rowset = $this->model->fetchTree($rp['where'], trim($this->getOrder($rp['order'], $rp['dir'])));
 				} else {
 					if ($this->exclusiveRowsetParams) {
@@ -452,7 +452,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				$limit = $entity->limit ? $entity->limit : null;
 				$page = $_SESSION['rowsetParams'][$this->section->alias][$this->action->alias]['independent'][$entity->alias]['page'];if (!$page) $page = 1;
 				
-				$rowset = Entity::getModelById($entity->entityId)->useDefaultFetchMethod()->fetchAll($where, $order ? $order : null, $limit, $page, $calc);
+				$rowset = Entity::getModelById($entity->entityId)->fetchAll($where, $order ? $order : null, $limit, $page, $calc);
 				$joins = $join->fetchAll('`independentRowsetId` = "' . $entity->id . '"');
 				if ($joins->count()) {
 					$rowset->setForeignRowsByForeignKeys($joins);
@@ -471,21 +471,21 @@ class Indi_Controller_Front extends Indi_Controller{
 		die();
 	}
 	public function subdomainMaintenance($html){
-		$config = Indi_Registry::get('config');
-		if (Indi_Registry::isRegistered('subdomains')) {
-			$subdomains = Indi_Registry::get('subdomains');
+		$config = Indi::registry('config');
+		if (Indi::registry('subdomains')) {
+			$subdomains = Indi::registry('subdomains');
 			for ($i = 0; $i < count($subdomains); $i++) {
 				$html = preg_replace('/(href|action)="\/' . $subdomains[$i] . '\//', '$1="http://' . $subdomains[$i] . '.' . $config['general']->domain .'/', $html);
 			}
 		}
-		if (Indi_Registry::isRegistered('subdomain')) {
+		if (Indi::registry('subdomain')) {
 			$html = preg_replace('/(href|action)="\//', '$1="http://' . $config['general']->domain.'/', $html);
 		}
 		return $html;
 	}
 	public function httpsMaintenance($html) {
 		if ($_SERVER['SERVER_PORT'] == 443) {
-			$config = Indi_Registry::get('config');
+			$config = Indi::registry('config');
 			$html = preg_replace('/(<link.*href=)"\//ui', '$1"https://' . $config['general']->domain . '/', $html);
 			$html = preg_replace('/(<link.*)href="http:/ui', '$1 href="https:', $html);
 			$html = preg_replace('/(<script.*)src="http:/ui', '$1 src="https:', $html);

@@ -6,7 +6,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
         $gridFields = $this->view->trail->getItem()->gridFields->toArray();
 		$actions    = $this->view->trail->getItem()->actions->toArray();
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
-		$currentPage = $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] ? $_SESSION['admin']['indexParams'][$this->view->trail->getItem()->section->alias]['page'] : 1;
+		$currentPage = $this->view->getScope('page') ? $this->view->getScope('page') : 1;
         $filterFieldAliases = array();
         $icons = array('form', 'delete', 'save', 'toggle', 'up', 'down');
         $comboFilters = array();
@@ -42,7 +42,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					iconCls: "add",
 					actionAlias: "' . $actions[$i]['alias'] . '",
 					handler: function(){
-	                    loadContent(grid.indi.href + this.actionAlias + "/");
+	                    loadContent(grid.indi.href + this.actionAlias + "/ph/" + Indi.trail.item().section.primaryHash + "/");
 					}
 
 					},' : '') . '{
@@ -52,7 +52,10 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					'.(in_array($actions[$i]['alias'], $icons) ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
 					handler: function(){
 						var selection = grid.getSelectionModel().getSelection();
-						if (selection.length) var row = selection[0].data;
+						if (selection.length) {
+						    var row = selection[0].data;
+						    var aix = selection[0].index + 1;
+						}
                         ' .
 						(
 						$actions[$i]['rowRequired'] == 'y' ?
@@ -98,8 +101,9 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                 {
                     xtype: 'textfield',
                     name: 'fast-search-keyword',
+                    value: '" . urldecode($this->view->getScope('keyword')) . "',
                     height: 19,
-                    cls: 'fast-search-keyword',
+                    cls: 'i-form-text',
 					margin: '0 4 0 0',
                     placeholder: 'Искать',
                     id: 'fast-search-keyword',
@@ -107,15 +111,18 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         change: function(obj, newValue, oldValue, eOpts){
                             clearTimeout(timeout);
                             timeout = setTimeout(function(keyword){
-                                grid.store.proxy.url = '" . $_SERVER['STD'] . ($GLOBALS['cmsOnlyMode']?'':'/admin') . "/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/' + (keyword ? 'keyword/' + keyword + '/' : '');
-                                gridStore.load();
+                                grid.store.proxy.url = '" . STD . (COM?'':'/admin') . "/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/' + (keyword ? 'keyword/' + keyword + '/' : '');
+                                filterChange({});
                             }, 500, newValue);
                         }
                     }
                 }
             ";
 			if ($sectionsDropdown) $tbarItems[] = $sectionsDropdown;
-			if ($defaultSortField = $this->view->trail->getItem()->section->getForeignRowByForeignKey('defaultSortField')){
+            if ($savedOrder = json_decode($this->view->getScope('order'))) {
+                $this->view->trail->getItem()->section->defaultSortFieldAlias = $savedOrder[0]->property;
+                $this->view->trail->getItem()->section->defaultSortDirection = $savedOrder[0]->direction;
+            } else if ($defaultSortField = $this->view->trail->getItem()->section->getForeignRowByForeignKey('defaultSortField')){
 				$this->view->trail->getItem()->section->defaultSortFieldAlias = $defaultSortField->alias;
 			}
 			$meta = array(
@@ -127,8 +134,8 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				'trail' => $this->view->trail(),
 				'entity' => $this->view->trail->getItem()->section->getForeignRowByForeignKey('entityId')->title
 			);
-            if ($_SERVER['STD']) $meta = json_decode(str_replace('\/admin\/', str_replace('/', '\/', $_SERVER['STD']) . '\/admin\/', json_encode($meta)));
-			if ($GLOBALS['cmsOnlyMode']) $meta = json_decode(str_replace('\/admin\/', '\/', json_encode($meta)));
+            if (STD) $meta = json_decode(str_replace('\/admin\/', str_replace('/', '\/', STD) . '\/admin\/', json_encode($meta)));
+			if (COM) $meta = json_decode(str_replace('\/admin\/', '\/', json_encode($meta)));
 			ob_start();?>
 			<script>
             Indi.section = '<?=$this->view->trail->getItem()->section->alias?>';
@@ -169,8 +176,17 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         }
                     }
                     gridStore.getProxy().extraParams = {search: JSON.stringify(params)};
+
+                    var keyword = Ext.getCmp('fast-search-keyword').disabled == false && Ext.getCmp('fast-search-keyword').getValue() ? Ext.getCmp('fast-search-keyword').getValue() : '';
+                    gridStore.getProxy().url = Indi.pre + '/' + json.params.section + '/index/' +
+                        (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/' +
+                        (keyword ? 'keyword/' + keyword + '/' : '');
+
                     Ext.getCmp('fast-search-keyword').setDisabled(usedFilterAliasesThatHasGridColumnRepresentedBy.length == gridColumnsAliases.length);
                     if (!obj.noReload) {
+                        gridStore.currentPage = 1;
+                        gridStore.lastOptions.page = 1;
+                        gridStore.lastOptions.start = 0;
                         if (obj.xtype == 'combobox') {
                             gridStore.reload();
                         } else if (obj.xtype == 'datefield' && (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/.test(obj.getRawValue()) || !obj.getRawValue().length)) {
@@ -197,7 +213,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						direction: json.section.defaultSortDirection
 					}] : []),
 					proxy:  new Ext.data.HttpProxy({
-						url: '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/',
+						url: '<?=PRE?>/' + json.params.section + '/index/' + (json.params.id ? 'id/' + json.params.id + '/' : '') + 'json/1/',
 						method: 'POST',
 						reader: {
 							type: 'json',
@@ -207,7 +223,6 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 						}
 					}),
 					currentPage: <?=$currentPage?>,
-					loadMask: true,
 					listeners: {
 						beforeload: function(){
 							myMask.show();
@@ -262,7 +277,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 								}
 							}
                             // Mark rows as disabled if such rows exist
-							myMask.hide()
+							myMask.hide();
 
                             // Set up full request string (but without paging params)
                             var url = grid.store.getProxy().url;
@@ -278,10 +293,9 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 					multiSelect: <?=$this->view->multiSelect ? 'true' : 'false'?>,
 					columns: json.columns,
 					title: json.section.title,
-					loadMask: true,
 					region: "center",
                     indi: {
-                        href : '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + json.params.section + '/',
+                        href : '<?=PRE?>/' + json.params.section + '/',
                         msgbox: {
                             confirm: {
                                 title: '<?=MSGBOX_CONFIRM_TITLE?>',
@@ -333,7 +347,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         items: eval('['+json.tbar+']')
                     }],
                     border: 1,
-					id: json.section.alias + 'Grid',
+					id: 'i-center-content',
 					bbar: new Ext.PagingToolbar({
 						store: gridStore,
 						displayInfo: true,
@@ -353,7 +367,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                         collapsible: true,
                         collapsed: false,
                         height: 300,
-                        html: '<iframe src="<?=$_SERVER['STD'].($_SERVER['cmsOnlyMode']?'':'/admin')?>/' + json.section.alias + '/form?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
+                        html: '<iframe src="<?=STD.($_SERVER['cmsOnlyMode']?'':'/admin')?>/' + json.section.alias + '/form?width='+maxImgWidth+'" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
                         closable: true,
                         weight: 10,
                         id: 'search-panel'
@@ -391,7 +405,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							var selection = grid.getSelectionModel().getSelection();
 							if (selection.length) {
 								if (this.getValue()) {
-									loadContent('<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/' + cmb.getValue() + '/index/id/' + selection[0].data.id + '/');
+									loadContent('<?=PRE?>/' + cmb.getValue() + '/index/id/' + selection[0].data.id + '/');
 								}
 							} else {
 								cmb.reset();
@@ -420,11 +434,13 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                 $('.trail-siblings').mouseleave(function(){
                     $(this).hide();
                 });
-                myMask = new Ext.LoadMask(grid.getEl(), {});
+                myMask = new Ext.LoadMask(grid.getView(), {});
 				myMask.show();
-				gridStore.load([{params:{start:0, limit: json.section.rowsOnPage, sort: {property: 'title', direction: 'ASC'}}}]);
+                filterChange({noReload: true});
+				gridStore.load();
 			});
 			</script>
+            <script>Indi.trail.apply(<?=json_encode($this->view->trail->toArray())?>);</script>
             <?if (count($comboFilters)){
                 echo implode('', $comboFilters);
                 ?><script>Indi.combo.filter = Indi.combo.filter || new Indi.proto.combo.filter(); Indi.combo.filter.run();</script><?

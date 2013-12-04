@@ -53,7 +53,7 @@ class Resize_Row extends Indi_Db_Table_Row
                 $entity = Entity::getInstance()->getModelById($field->entityId)->info('name');
                 $uploadPath = Indi_Image::getUploadPath();
                 $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
-                $absolute = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'] . $relative;
+                $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;
                 $key = $field->alias;
                 $copy = $was['alias'];
 
