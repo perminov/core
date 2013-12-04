@@ -46,11 +46,16 @@ abstract class Indi_Db_Table_Abstract {
      * @param string|array $order  OPTIONAL An SQL ORDER clause.
      * @return Indi_Db_Table_Row|null
      */
-    public function fetchRow($where = null, $order = null)
+    public function fetchRow($where = null, $order = null, $offset = null)
     {
         if (is_array($where) && count($where)) $where = implode(' AND ', $where);
         if (is_array($order) && count($order)) $order = implode(', ', $order);
-        if ($data = self::$_defaultDb->query('SELECT * FROM `' . $this->_name . '`' . ($where ? ' WHERE ' . $where : '') . ($order ? ' ORDER BY ' . $order : ''))->fetch()) {
+        if ($data = self::$_defaultDb->query(
+            $sql = 'SELECT * FROM `' . $this->_name . '`' .
+                ($where ? ' WHERE ' . $where : '') .
+                ($order ? ' ORDER BY ' . $order : '') .
+                ($offset ? ' LIMIT ' . $offset . ',1' : '')
+        )->fetch()) {
             $constructData = array(
                 'table'    => $this,
                 'original' => $data,

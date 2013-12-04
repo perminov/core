@@ -10,7 +10,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
     }
 
     public function deleteControllerClassIfExists(){
-        $controllersDir = rtrim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . $_SERVER['STD'] . '/application/controllers/admin/';
+        $controllersDir = rtrim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . STD . '/application/controllers/admin/';
         $controllerFile = $controllersDir . ucfirst($this->alias) . 'Controller.php';
         if (file_exists($controllerFile)) {
             unlink($controllerFile);
@@ -58,8 +58,8 @@ class Section_Row_Base extends Indi_Db_Table_Row
 
                     // Exclude tree column, if exists
                     if ($model = Misc::loadModel('Entity')->getModelById($this->_modified['entityId'])) {
-                        if ($treeColumnName = $model->getTreeColumnName()) {
-                            $exclusions[] = $treeColumnName;
+                        if ($model->treeColumn) {
+                            $exclusions[] = $model->treeColumn;
                         }
                     }
 

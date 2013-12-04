@@ -21,7 +21,7 @@ class Indi_View_Helper_Admin_Menu extends Indi_View_Helper_Abstract
 							cls: 'root-item',
 							children: [
 								<?$i=0;foreach($children[$item->id] as $child){?>
-									{text: '<?=$child->title?>', iconCls: 'no-icon', leaf: true, cls: 'cycle-<?=$i%2?>', value: '<?=$_SERVER['STD']?><?=$GLOBALS['cmsOnlyMode']?'':'/admin'?>/<?=$child->alias?>/'},
+									{text: '<?=$child->title?>', iconCls: 'no-icon', leaf: true, cls: 'cycle-<?=$i%2?>', value: '<?=PRE?>/<?=$child->alias?>/'},
 									<?$i++;}?>
 							]
 							<?}?>

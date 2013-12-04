@@ -5,12 +5,12 @@ class Indi_View_Helper_Admin_Viewport extends Indi_View_Helper_Abstract
 	{
 		$english = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
 		$russian = array('Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота');
-        $config = Indi_Registry::get('config');
+        $config = Indi::registry('config');
         $lang = $config['view']->lang;
 	ob_start();?>
 <script>
-var STD = '<?=$_SERVER['STD']?>';
-var COM = '<?=$GLOBALS['cmsOnlyMode'] ? '' : '/admin'?>';
+var STD = '<?=STD?>';
+var COM = '<?=COM ? '' : '/admin'?>';
 var PRE = STD+COM;
 Ext.onReady(function() {
 	viewport = Ext.create('Ext.Viewport', {
@@ -57,46 +57,30 @@ Ext.onReady(function() {
 		],
         listeners: {
             afterlayout: function(){
-                if (mainPanel) {
-                    mainPanel.doComponentLayout();
+                if (Ext.getCmp('i-center-content')) {
+                    Ext.getCmp('i-center-content').doComponentLayout();
                 }
             }
         }
 	});
-	loadContent = function(url, forceIframe){
-		locationHistory.push(url);
-		if (url.match(/\/form\//) || forceIframe) {
-			if (currentPanelId) {
-				if (viewport.getComponent(3).cls == 'center-all') {
-					viewport.getComponent(3).remove(currentPanelId);
-				} else if (viewport.getComponent(4).cls == 'center-all') {
-					viewport.getComponent(4).remove(currentPanelId);
-				}
-			}
-			var maxImgWidth = Math.floor(($('#center-content-body').width()-36)/2);
-            viewport.doComponentLayout();
-            $('#center-content-body').html('');
-            form = Ext.create('Ext.Panel', {
-                region: 'center',
-                border: 0,
-                align: 'stretch',
-                html: '<iframe src="'+url+'?width='+maxImgWidth+'" width="100%" height="1000" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe>',
-                renderTo: 'center-content-body'
-            });
-            mainPanel = form;
+
+    Indi.viewport = viewport;
+
+	loadContent = function(url, iframe){
+        Indi.load(url, iframe)
+
+        // Push the given url to a story stack
+        //Indi.story.push(url);
+
+        /*if (url.match(/\/form\//) || iframe) {
+            Indi.load(url, iframe)
 		} else {
 			$.post(url, function(response){
-				if (currentPanelId) {
-					if (viewport.getComponent(3).cls == 'center-all') {
-						viewport.getComponent(3).remove(currentPanelId);
-					} else if (viewport.getComponent(4).cls == 'center-all') {
-						viewport.getComponent(4).remove(currentPanelId);
-					}
-				}
+                Indi.clearCenter();
                 viewport.doComponentLayout();
                 $('#center-content-body').html(response);
             });
-		}
+		}*/
     }
 	locationHistoryBack = function(){
 		if (locationHistory.length > 1) {

@@ -20,9 +20,9 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
         }
 		// pattern and paths
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
-		$config = Indi_Registry::get('config');
+		$config = Indi::registry('config');
 		$relative = '/' . trim($config['upload']->uploadPath, '/') . '/' . $entity  . '/';
-		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '\\/') . $relative;
+		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . STD, '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
 			$types = array('image' => 'gif,png,jpg,jpeg', 'flash' => 'swf', 'video' => 'avi,mpg,mp4,3gp', 'file' => '');
@@ -35,7 +35,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));
 					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getimagesize($abs);
-                    if ($_SERVER['STD']) $uploaded = preg_replace('~src="' . preg_quote($_SERVER['STD']) . '~', 'src="', $uploaded);
+                    if (STD) $uploaded = preg_replace('~src="' . preg_quote(STD) . '~', 'src="', $uploaded);
                     if ($info[0] > $this->view->get['width'] + 8) {
 						$uploaded = preg_replace('/src="/', 'width="' . ($this->view->get['width'] + 8).'" src="', $uploaded);
 					}
@@ -45,7 +45,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
                     preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));$src = $matches[1];
                     $abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getflashsize($abs);
-                    if ($_SERVER['STD']) $uploaded = preg_replace('~src="' . preg_quote($_SERVER['STD']) . '~', 'src="', $uploaded);
+                    if (STD) $uploaded = preg_replace('~src="' . preg_quote(STD) . '~', 'src="', $uploaded);
                     if ($info[0] > $this->view->get['width'] + 8) {
                         $width = $this->view->get['width'] + 8;
                         $height = ceil($width/$info[0] * $info[1]);

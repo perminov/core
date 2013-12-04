@@ -275,7 +275,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
     
     public function getImageSrc($imageName, $copyName = null) {
         $entity = $this->getTable()->info('name');
-        $web =  $_SERVER['STD'] . '/' . Indi_Image::getUploadPath(). '/' . $entity . '/';
+        $web =  STD . '/' . Indi_Image::getUploadPath(). '/' . $entity . '/';
         $abs = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
 
         $pat = $abs . $web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
@@ -292,7 +292,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
     public function getImageAbs($imageName, $copyName = '') {
         $entity = $this->getTable()->info('name');
         $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
-        $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . $_SERVER['STD'], '/');
+        $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . STD, '/');
         $pat = $abs . '/' .$web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
         $files = glob($pat . '*');
         if(count($files) == 0) {
@@ -337,7 +337,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
         $uploadPath = Indi_Image::getUploadPath();
         
         // absolute upload path  in filesystem
-        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/' . $uploadPath . '/' . $entity . '/';
+        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/' . $uploadPath . '/' . $entity . '/';
 		// array for filenames that should be deleted
 		$files = array();
 
@@ -540,7 +540,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
 		}
 	}
 	public function getRequestParam($name){
-		$params = Indi_Registry::get('request');
+		$params = Indi::registry('request');
 		return $params[$name];
 	}
 }

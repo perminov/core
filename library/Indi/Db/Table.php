@@ -146,18 +146,6 @@ class Indi_Db_Table extends Indi_Db_Table_Beautiful
     }
 
     /**
-     * Return metadata of all table structure, but
-     * if $column specified - espesially for column
-     * 
-     * @param $column
-     * @return array
-     */
-    public function getMetadata($column = null)
-    {
-        return $column ? $this->_metadata[$column] : $this->_metadata;
-    }
-    
-    /**
      * Get ids of ordered rowset to use in
      * sql ORDER BY POSITION(`blabla` IN "orderedIds")
      * stamenents
@@ -199,18 +187,10 @@ class Indi_Db_Table extends Indi_Db_Table_Beautiful
         return $asArray ? $ids : '\'' . implode('\',\'', $ids) . '\'';
     }
 
-	public function getTreeColumnName(){
-        $treeColumnName = $this->info('name') . 'Id';
-        return $this->fieldExists($treeColumnName) ? $treeColumnName : null;
-    }
 	public function getSatellitedFields($gridFieldsAliases = array()){
 		$name = $this->info('name');
 		$entityRow = Misc::loadModel('Entity')->fetchRow('`table`= "' . $name . '"');
 		return Misc::loadModel('Field')->fetchAll('`entityId` = "' . $entityRow->id . '" AND `satellite` != "0"' . (count($gridFieldsAliases)? ' AND FIND_IN_SET(`alias`, "' . implode(',', $gridFieldsAliases) . '")' : ''));
-	}
-	public function useDefaultFetchMethod($use = true) {
-		$this->useDefaultFetchMethod = $use;
-		return $this;
 	}
 
 	public function getOptions($entityId = 0, $fieldAlias = '', $usedOnly = false, $where = '') {

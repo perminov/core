@@ -14,14 +14,13 @@ class Admin_AuxillaryController extends Indi_Controller
      */
     public function colorpickerAction()
     {
-		$p = $_SERVER['STD'] . '/js/admin/';
+		$p = STD . '/js/admin/';
 		$name = $this->params['name'];
         $out = '
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-<script type="text/javascript" src="' . $p .'index.js" ></script>
-<!-- Dependencies --> 
+<!-- Dependencies -->
 <script type="text/javascript" src="' . $p .'colorpicker/yahoo/utilities/utilities.js" ></script>
 <script type="text/javascript" src="' . $p .'colorpicker/yahoo/slider/slider-min.js" ></script>
 <!-- Color Picker source files for CSS and JavaScript -->
@@ -128,9 +127,9 @@ function strip_tags( str ){
 					$itemR = Entity::getModelById($entityR->id)->fetchRow('`id` = "' . $this->params['id'] . '"');
 					if ($itemR) {
 						$pattern  = $itemR->id . ($fieldR->alias ? '_' . $fieldR->alias : '') . '.*';
-						$config = Indi_Registry::get('config');
+						$config = Indi::registry('config');
 						$relative = '/' . trim($config['upload']->uploadPath, '/') . '/' . $entityR->table  . '/';
-						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . $relative;
+						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . $relative;
 						$file = glob($absolute . $pattern); $file = $file[0];
 						$info = pathinfo($file);
 						if (file_exists($file)) {

@@ -13,6 +13,12 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return string
      */
     public function filterCombo(Search_Row $filter){
+        // Here we create a shared *_Row object, that will be used by all filters, that are presented in current grid.
+        // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
+        // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
+        // there dependent combo can get that value.
+        if (!$this->view->filtersSharedRow) $this->view->filtersSharedRow = $this->view->trail->getItem()->model->createRow();
+
         $this->filter = $filter;
         $this->where = $this->filter->filter;
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
@@ -44,7 +50,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return Indi_Db_Table_Row
      */
     public function getRow(){
-        return $this->view->trail->getItem()->model->createRow();
+        return $this->view->filtersSharedRow;
     }
 
     /**
@@ -53,8 +59,16 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return string
      */
     public function getDefaultValue() {
+        if ($gotFromScope = $this->view->getScope('filters', $this->field->alias)) {
+            if ($this->field->storeRelationAbility == 'many')
+                $gotFromScope = implode(',', $gotFromScope);
+            $this->filter->defaultValue = $this->view->filtersSharedRow->{$this->field->alias} = $gotFromScope;
+            return $gotFromScope;
+        }
         if ($this->filter->defaultValue) {
-            return Indi::cmp($this->filter->defaultValue);
+            Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::$cmpOut;
+            $this->view->filtersSharedRow->{$this->field->alias} = $this->filter->defaultValue;
+            return $this->filter->defaultValue;
         } else {
             return '';
         }

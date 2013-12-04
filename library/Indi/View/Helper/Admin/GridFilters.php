@@ -3,8 +3,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
     public function gridFilters(){
         if ($this->view->trail->getItem()->filters->count()) {
             $fieldsetMarginBottom = preg_match('/Opera/', $_SERVER['HTTP_USER_AGENT']) ? 2 : 1;
-            ob_start();
-            ?>
+            ob_start();?>
     {
         xtype: 'toolbar',
         dock: 'top',
@@ -24,11 +23,27 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
             },
             listeners: {
                 afterrender: function(obj, width, height, eOpts){
-                    <?foreach($this->view->trail->getItem()->filters as $filter){?>
-                        <?if ($filter->defaultValue) {
-                            $filter->defaultValue = Indi::cmp($filter->defaultValue);
+                    <?foreach($this->view->trail->getItem()->filters as $filter){
+                        if (in_array($filter->foreign['fieldId']->getForeignRowByForeignKey('elementId')->alias, array('number', 'calendar', 'datetime'))) {
+                            $default = array();
+                            if ($gotFromScope = $this->view->getScope('filters', $filter->foreign['fieldId']->alias . '-gte')) {
+                                $default['gte'] = $gotFromScope;
+                            }
+                            if ($gotFromScope = $this->view->getScope('filters', $filter->foreign['fieldId']->alias . '-lte')) {
+                                $default['lte'] = $gotFromScope;
+                            }
+                            if (count($default)) $filter->defaultValue = json_encode($default);
+                        } else if ($gotFromScope = $this->view->getScope('filters', $filter->foreign['fieldId']->alias)) {
+                            if ($filter->foreign['fieldId']->storeRelationAbility == 'many') {
+                                $filter->defaultValue = implode(',', $gotFromScope);
+                            } else {
+                                $filter->defaultValue = $gotFromScope;
+                            }
+                        }
+                        if ($filter->defaultValue) {
+                            Indi::$cmpTpl = $filter->defaultValue; eval(Indi::$cmpRun); $filter->defaultValue = Indi::$cmpOut;
                             if (in_array($filter->foreign['fieldId']->getForeignRowByForeignKey('elementId')->alias, array('number', 'calendar', 'datetime'))) {?>
-                                <?$filter->defaultValue = json_decode(str_replace('\'','"',$filter->defaultValue), true)?>
+                               <?$filter->defaultValue = json_decode(str_replace('\'','"',$filter->defaultValue), true)?>
                                 <?if($filter->defaultValue['gte']){?>
                                     Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-gte').noReload = true;
                                     Ext.getCmp('filter-<?=$filter->foreign['fieldId']->alias?>-gte').setValue(<?=json_encode($filter->defaultValue['gte'])?>);
@@ -138,7 +153,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                             height: 19,
                             width: 80,
                             margin: 0,
-                            cls: 'fast-search-keyword',
+                            cls: 'i-form-text',
                             listeners: {
                                 change: filterChange
                             }
@@ -158,7 +173,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                         height: 19,
                         width: 60,
                         margin: '0 0 0 0',
-                        cls: 'fast-search-keyword',
+                        cls: 'i-form-text',
                         minValue: 0,
                         listeners: {
                             change: filterChange
@@ -173,7 +188,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                         height: 19,
                         width: 60,
                         margin: '0 0 0 0',
-                        cls: 'fast-search-keyword',
+                        cls: 'i-form-text',
                         minValue: 0,
                         listeners: {
                             change: filterChange
@@ -208,7 +223,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                                 longDayFormat: '<?=$params['displayDateFormat']?>',
                             <?}?>
                         <?}?>
-                        cls: 'fast-search-keyword calendar',
+                        cls: 'i-form-text calendar',
                         validateOnChange: false,
                         listeners: {
                             change: filterChange
@@ -238,7 +253,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
                                 longDayFormat: '<?=$params['displayDateFormat']?>',
                             <?}?>
                         <?}?>
-                cls: 'fast-search-keyword calendar',
+                cls: 'i-form-text calendar',
                         listeners: {
                             change: filterChange
                         }

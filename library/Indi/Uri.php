@@ -3,10 +3,10 @@ class Indi_Uri {
 	public function dispatch($params = array()){
 		$this->preDispatch();
 
-        if ($GLOBALS['cmsOnlyMode']) $_SERVER['REQUEST_URI'] = '/admin' . $_SERVER['REQUEST_URI'];
+        if (COM) $_SERVER['REQUEST_URI'] = '/admin' . $_SERVER['REQUEST_URI'];
 
         $uri = parse_url('http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-        $uri = str_replace($_SERVER['STD'], '', $uri);
+        $uri = str_replace(STD, '', $uri);
 		$uri = explode('/', trim($uri['path'], '/'));
 
 		$params['module'] = 'front';
@@ -85,13 +85,13 @@ class Indi_Uri {
 	}
 
 	public function setCookieDomain(){
-		$config = Indi_Registry::get('config');
+		$config = Indi::registry('config');
 		$domain = $config['general']->domain;
 		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
 	}
 
 	public function startSession() {
-		$post = Indi_Registry::get('post');
+		$post = Indi::registry('post');
 		if (isset($post['sessid'])) session_id($post['sessid']);
 		Indi_Session::start();
 	}
@@ -110,7 +110,7 @@ class Indi_Uri {
 	}
 
 	public function adjustUriIfSubdomain(){
-		$config = Indi_Registry::get('config');
+		$config = Indi::registry('config');
 		$db = Indi_Db_Table::getDefaultAdapter();
 		$subdomains = $db->query('SELECT `fs`.`alias` FROM `subdomain` `sd`, `fsection` `fs` WHERE `sd`.`fsectionId` = `fs`.`id`')->fetchAll();
 		$subdomainsArray = array(); foreach ($subdomains as $sd) $subdomainsArray[] = $sd['alias'];
@@ -119,9 +119,9 @@ class Indi_Uri {
 			if (in_array($subdomain, $subdomainsArray)) {
 				$_SERVER['REQUEST_URI'] = '/' . $subdomain . $_SERVER['REQUEST_URI'];
 			}
-			Indi_Registry::set('subdomain', $subdomain);
+			Indi::registry('subdomain', $subdomain);
 		}
-		Indi_Registry::set('subdomains', $subdomainsArray);
+		Indi::registry('subdomains', $subdomainsArray);
 	}
 
 	public function setDbCacheUsageIfNeed(){

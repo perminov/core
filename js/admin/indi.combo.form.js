@@ -6,7 +6,7 @@ var Indi = (function (indi) {
          *
          * @type {Object}
          */
-        indi.proto.combo = {};
+        indi.proto.combo = indi.proto.combo || {};
 
         /**
          * Setup `form` property of indi.proto.combo object - this will be main prototype for all combos
@@ -34,6 +34,8 @@ var Indi = (function (indi) {
              * @type {String}
              */
             this.componentName = 'combo.form';
+
+            this.averageTitleCharWidth = 6.5;
 
             /**
              * We need this to be able to separate options div visibility after keyword was erased
@@ -175,7 +177,6 @@ var Indi = (function (indi) {
 
                 // Adjust options div height
                 instance.adjustComboOptionsDivHeight(name);
-
                 // If at least one result was found
                 if (responseData['found']) {
 
@@ -245,11 +246,44 @@ var Indi = (function (indi) {
                             }
                         }
 
+                        if (requestData.more.toString() == 'upper') {
+                            instance.store[name].fetchedByPageUps = instance.store[name].fetchedByPageUps || 0;
+                            instance.store[name].fetchedByPageUps += responseData.data.length;
+
+                            for (var i = 0; i < responseData.data.length; i++)
+                                if (responseData['data'][i].system && responseData['data'][i].system['disabled'])
+                                    instance.store[name].fetchedByPageUps--;
+                        }
+
                         // Adjust selection based on selectedIndex
                         instance.keyDownHandler(name, requestData.more == 'upper' ? 33 : 34);
 
                         // Update page-top|page-btm value
                         $('#'+name+'-info').attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
+                    }
+
+                    // Increase combo width, if needed
+                    var prevMaxLength, backup;
+                    if (instance.store[name].backup
+                        && instance.store[name].backup.options
+                        && instance.store[name].backup.options.titleMaxLength) {
+                        prevMaxLength = instance.store[name].backup.options.titleMaxLength;
+                        backup = true;
+                    } else {
+                        prevMaxLength = instance.store[name].titleMaxLength;
+                        backup = false;
+                    }
+
+                    if (responseData.titleMaxLength > prevMaxLength) {
+                        var increasedMarginLeft = instance.increaseWidthBy(name, Math.round(
+                            (responseData.titleMaxLength - prevMaxLength) *
+                                instance.averageTitleCharWidth
+                        ));
+                        instance.store[name].titleMaxLength = responseData.titleMaxLength;
+                        if (backup && increasedMarginLeft) {
+                            instance.store[name].backup.options.titleMaxLength = responseData.titleMaxLength;
+                            instance.store[name].backup.info = instance.store[name].backup.info.replace(/margin-left: [0-9]+px/, 'margin-left: ' + increasedMarginLeft + 'px');
+                        }
                     }
 
                     // Restore trigger pic because previously it could have disabled-style of appearance
@@ -290,6 +324,10 @@ var Indi = (function (indi) {
                 }
             }
 
+            this.increaseWidthBy = function(name, pixels) {
+
+            }
+
             /**
              * Prepare request parameters, do request, fetch data and rebuild combo
              *
@@ -310,7 +348,7 @@ var Indi = (function (indi) {
                 $.post(instance.fetchRelativePath() + '/'+appendix+'/', data,
                     function(json) {
                         // Save current options to backup
-                        var backupOptions = []; backupOptions = deepObjCopy(instance.store[name]);
+                        var backupOptions = []; backupOptions = Indi.copy(instance.store[name]);
 
                         // If current options list should be prepended with fetched options
                         if (data.more == 'upper') {
@@ -438,7 +476,7 @@ var Indi = (function (indi) {
                         var optionId = instance.store[name].backup.options.ids[i];
                         if (results.indexOf(optionId) != -1 || parents.indexOf(optionId) != -1) {
                             instance.store[name].ids.push(instance.store[name].backup.options.ids[i]);
-                            instance.store[name].data.push(deepObjCopy(instance.store[name].backup.options.data[i]));
+                            instance.store[name].data.push(Indi.copy(instance.store[name].backup.options.data[i]));
 
                             // Mark parents as disabled, so they will be no selectable
                             if (parents.indexOf(optionId) != -1) {
@@ -580,7 +618,7 @@ var Indi = (function (indi) {
                     li = $('#'+name+'-suggestions ul li.selected');
                     if (li.length == 0) return;
                 } else {
-                    name = $(this).parents('.i-combo-data').attr('id').split('-')[0];
+                    name = $(this).parents('.i-combo-data').attr('id').replace('-suggestions', '');
                     li = $(this);
                 }
 
@@ -820,8 +858,8 @@ var Indi = (function (indi) {
                 if (json.optgroup != undefined && json.tree) items = instance.appendNotSameGroupParents(items, json, name);
 
                 // Stat info
-                $('#'+name+'-count').text(number_format(json['ids'].length - disabledCount));
-                $('#'+name+'-found').text(number_format(json['found']));
+                $('#'+name+'-count').text(Indi.numberFormat(json['ids'].length - disabledCount));
+                $('#'+name+'-found').text(Indi.numberFormat(json['found']));
 
                 // Info should be displayed only if maximum possible results per page is less that total found results
                 // or combo is running in 'keyword' mode
@@ -918,7 +956,7 @@ var Indi = (function (indi) {
                     // available results got by 'no-keyword' fetch mode, and we will be able to restore them from backup
                     if ($('#'+name+'-info').attr('fetch-mode') == 'no-keyword') {
                         var backup = {
-                            options: deepObjCopy(instance.store[name]),
+                            options: Indi.copy(instance.store[name]),
                             info: $('#'+name+'-info')[0].outerHTML
                         };
                         instance.store[name].backup = backup;
@@ -1029,7 +1067,7 @@ var Indi = (function (indi) {
                         // scheme is useful for situations then number of results is not too large, and all results ARE already
                         // collected (initially, by first combo load, and/or by additional hoarding while upper/lower pages fetching)
                         if (instance.store[name].backup &&
-                            instance.store[name].backup.options.data.length == parseInt(instance.store[name].backup.options.found) &&
+                            instance.store[name].backup.options.data.length >= parseInt(instance.store[name].backup.options.found) &&
                             data.keyword.length) {
                             instance.localFetch(data);
                         } else {
@@ -1082,7 +1120,7 @@ var Indi = (function (indi) {
                 if (instance.store[name].backup) {
                     $('#'+name+'-info')[0].outerHTML = instance.store[name].backup.info;
                     $('#'+name+'-info').hide();
-                    var restore = deepObjCopy(instance.store[name].backup.options);
+                    var restore = Indi.copy(instance.store[name].backup.options);
                     instance.store[name] = {};
                     instance.store[name] = restore;
                 }
@@ -1123,12 +1161,12 @@ var Indi = (function (indi) {
 
                 // Enter - select an option
                 if (code == '13') {
-                    if ($('#'+name+'-suggestions').css('display') == 'block') instance.select(name);
+                    if ($('#'+name+'-suggestions').css('display') == 'block' || arguments[2]) instance.select(name);
                     return false;
 
                 // Up or Down arrows
                 } else if (code == '40' || code == '38' || code == '34' || code == '33') {
-                    if (code == '40' && $('#'+name+'-suggestions').css('display') == 'none') {
+                    if (code == '40' && $('#'+name+'-suggestions').css('display') == 'none' && !arguments[2]) {
                         $('#'+name+'-suggestions').show();
                         $('#'+name+'-info').show();
                     } else {
@@ -1272,13 +1310,7 @@ var Indi = (function (indi) {
                             // except empty or zero value is in the list of ENUM values, specified in the process of column
                             // declaration
                             if ((code == '8' || code == '46') && (!instance.store[name].enumset || $('#'+name+'-keyword').parents('.i-combo').hasClass('i-combo-filter'))){
-                                // Remove color-box
-                                $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
-                                // Remove color
-                                $('#'+name+'-keyword').css({color: ''});
-                                $('#'+name+'-keyword').val('');
-                                $('#'+name).val(0);
-
+                                instance.clearCombo(name);
                                 // If any other key was pressed, there should be no reaction
                             } else {
                                 return false;
@@ -1286,6 +1318,15 @@ var Indi = (function (indi) {
                         }
                     }
                 }
+            }
+
+            this.clearCombo = function(name) {
+                // Remove color-box
+                $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
+                // Remove color
+                $('#'+name+'-keyword').css({color: ''});
+                $('#'+name+'-keyword').val('');
+                $('#'+name).val(0);
             }
 
             /**
@@ -1586,25 +1627,27 @@ var Indi = (function (indi) {
              * Set trigger button icon (pressed or unpressed)
              */
             this.bindTrigger = function(){
-                $('.i-combo-trigger').mousedown(function(){
+                $(instance.componentNameClass() + ' .i-combo-trigger').mousedown(function(){
                     if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find('.i-combo-keyword').hasClass('i-combo-keyword-no-results') ==  false)
+                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false)
                         $(this).addClass('x-form-arrow-trigger-click').addClass('x-form-trigger-click');
                 });
-                $('.i-combo-trigger').mouseover(function(){
+                $(instance.componentNameClass() + ' .i-combo-trigger').mouseover(function(){
                     if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find('.i-combo-keyword').hasClass('i-combo-keyword-no-results') ==  false)
+                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false)
                         $(this).parent().addClass('x-form-trigger-wrap-focus');
                 });
-                $('.i-combo-trigger').mouseleave(function(){
+                $(instance.componentNameClass() + ' .i-combo-trigger').mouseleave(function(){
                     if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find('.i-combo-keyword').hasClass('i-combo-keyword-no-results') ==  false)
+                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false)
                         $(this).parent().removeClass('x-form-trigger-wrap-focus');
                 });
-                $('.i-combo-trigger').mouseup(function(){
+                $(instance.componentNameClass() + ' .i-combo-trigger').mouseup(function(){
                     if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find('.i-combo-keyword').hasClass('i-combo-keyword-no-results') ==  false)
+                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false) {
+                        $(this).parents('.i-combo').find('.i-combo-keyword').click();
                         $(this).removeClass('x-form-arrow-trigger-click').removeClass('x-form-trigger-click');
+                    }
                 });
             }
 
@@ -1617,7 +1660,7 @@ var Indi = (function (indi) {
                 scope.click(function(){
 
                     // Set up auxilary variabes
-                    var name = $(this).parents('.i-combo').find('.i-combo-keyword').attr('lookup');
+                    var name = $(this).parents('.i-combo').find(instance.keywordSelector()).attr('lookup');
                     var selected = $('#'+name).val().split(',');
                     var deleted = $(this).parents('.i-combo-selected-item').attr('selected-id');
                     var index = selected.indexOf(deleted);
@@ -1688,10 +1731,9 @@ var Indi = (function (indi) {
                     if ($('#'+name+'-keyword').val() == '#' || $('#'+name+'-keyword').val() == '')
                         $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
                 }
-
                 // If current combo is a satelite for one or more other combos, we should refres data in that other combos
                 $('.i-combo-info[satellite="'+name+'"]').each(function(){
-                    var satellited = $(this).parents('.i-combo').find('.i-combo-keyword').attr('lookup')
+                    var satellited = $(this).parents('.i-combo').parent().find(instance.keywordSelector()).attr('lookup');
                     instance.setDisabled(satellited);
                     if ($(this).parents('.i-combo').hasClass('i-combo-disabled') == false) {
                         instance.remoteFetch({
@@ -1721,11 +1763,19 @@ var Indi = (function (indi) {
                 }
             }
 
+            this.keywordSelector = function(){
+                return instance.componentNameClass() + ' .i-combo-keyword';
+            }
+
+            this.componentNameClass = function(){
+                return '.i-' + instance.componentName.replace('.', '-');
+            }
+
             /**
              * The enter point.
              */
             this.run = function() {
-
+                //console.log(instance.componentName, window.location.toString());
                 if (indi.callbacks && indi.callbacks[instance.componentName] && indi.callbacks[instance.componentName].length) {
                     for (var i = 0; i < indi.callbacks[instance.componentName].length; i++) {
                         indi.callbacks[instance.componentName][i]();
@@ -1735,17 +1785,17 @@ var Indi = (function (indi) {
                 /**
                  * Bind keyUpHandler on keyup event for keyword html-input
                  */
-                $('.i-combo-keyword').keyup(instance.keyUpHandler);
+                $(instance.keywordSelector()).keyup(instance.keyUpHandler);
 
                 /**
                  * Bind keyDownHandler on keyup event for keyword html-input
                  */
-                $('.i-combo-keyword').keydown(instance.keyDownHandler);
+                $(instance.keywordSelector()).keydown(instance.keyDownHandler);
 
                 /**
                  * Bind handlers for click, blur events and misc things for keyword html-input
                  */
-                $('.i-combo-keyword').each(function(index){
+                $(instance.keywordSelector()).each(function(index){
 
                     // Get name
                     var name = $(this).attr('lookup');
@@ -1771,7 +1821,6 @@ var Indi = (function (indi) {
                     });
 
                     $(this).click(function(){
-
                         var name = $(this).attr('lookup');
                         // Check if combo is disabled
                         if ($(this).parents('.i-combo').hasClass('i-combo-disabled') || $(this).hasClass('i-combo-keyword-no-results')) return;
@@ -1800,7 +1849,7 @@ var Indi = (function (indi) {
                     $('#'+name).change(instance.changeHandler);
 
                     $('#'+name+'-trigger').click(function(){
-                        $(this).parent().find('.i-combo-keyword').click();
+                        $(this).parent().find(instance.keywordSelector()).click();
                     });
 
                     instance.getComboDataAppendToEl(name).append('<div id="'+name+'-suggestions" class="i-combo-data" style="z-index: 1000' + index + '; width: ' + $(this).parents('.i-combo').width() + 'px; margin-top: 1px; overflow-y: hidden;" hover="false"/>');
@@ -1845,7 +1894,7 @@ var Indi = (function (indi) {
      */
     (function () {
         var checkRequirementsId = setInterval(function () {
-            if ((typeof jQuery !== 'undefined')) {
+            if ((typeof indi !== 'undefined')) {
                 clearInterval(checkRequirementsId);
                 $(document).ready(function(){
                     process();

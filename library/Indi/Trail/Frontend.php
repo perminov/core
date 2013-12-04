@@ -68,7 +68,7 @@ class Indi_Trail_Frontend extends Indi_Trail
 		// set up tree key name for the last item
         $lastItemIndex = count($this->items) - 1;
 		if ($model = $this->items[$lastItemIndex]->model) {
-            if ($treeColumnName = $model->getTreeColumnName()) {
+            if ($treeColumnName = $model->treeColumn) {
                 $this->items[$lastItemIndex]->treeKeyName = $treeColumnName;
             }
         }

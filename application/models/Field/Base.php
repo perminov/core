@@ -17,7 +17,7 @@ class Field_Base extends Indi_Db_Table{
 
         $fieldIds = array();
         for($i = 0; $i < count($gridArray); $i++) $fieldIds[] = $gridArray[$i]['fieldId'];
-        $where = count($fieldIds) ? '`id` IN (' . implode(',', $fieldIds) . ')' : '`id` IN ("")';
+        $where = count($fieldIds) ? '`id` IN (' . implode(',', $fieldIds) . ') AND `columnTypeId` !="0"' : '`id` IN ("")';
         $order = count($fieldIds) ? 'POSITION(CONCAT("\'", `id`, "\'") IN "\'' . implode("','", $fieldIds) . '\'")' : null;
         $fieldsA = $this->fetchAll($where, $order)->toArray();
         for ($i = 0; $i < count($fieldsA); $i++) {
