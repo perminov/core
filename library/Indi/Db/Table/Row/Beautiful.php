@@ -127,7 +127,9 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         if ($fieldR->filter) $where[] = $fieldR->filter;
 
         // Compile filters if they contain php-expressions
-        for($i = 0; $i < count($where); $i++) $where[$i] = Indi::cmp($where[$i]);
+        for($i = 0; $i < count($where); $i++) {
+            Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::$cmpOut;
+        }
 
         // If current field column type is ENUM or SET
         if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
@@ -281,7 +283,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
-                // So we mark that foundRows property of rowset should be unset, as in combo.js 'page-top-reached'
+                // So we mark that foundRows property of rowset should be unset, as in indi.combo.form.js 'page-top-reached'
                 // attribute is set depending on 'found' property existence in response json
                 $unsetFoundRows = true;
             }
@@ -457,8 +459,8 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         }
 
         // Set `enumset` property as false, because without definition it will have null value while passing
-        // to combo.js and and after deepObjCopy there - will have typeof == object, which is not actually boolean
-        // and will cause problems in combo.js
+        // to indi.combo.form.js and and after Indi.copy there - will have typeof == object, which is not actually boolean
+        // and will cause problems in indi.combo.form.js
         $dataRs->enumset = false;
 
         if ($fieldR->storeRelationAbility == 'many') {
