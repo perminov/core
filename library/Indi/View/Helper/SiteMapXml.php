@@ -2,12 +2,13 @@
 class Indi_View_Helper_SiteMapXml extends Indi_View_Helper_Abstract{
     public function siteMapXml(){
         ob_start();?>
-<urlset>
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <?foreach($this->view->tree as $item){?>
     <url>
-        <loc>http://<?=$_SERVER['HTTP_HOST']?><?=$item['href'] == '/index'? '/' : $item['href']?></loc>
+        <loc>http://<?=$_SERVER['HTTP_HOST']?><?=$item['href'] == '/index/'? '/' : $item['href']?></loc>
         <changefreq>daily</changefreq>
-        <priority><?=$item['href'] == '/index'?'1.0':'0.8'?></priority>
+        <priority><?=$item['href'] == '/index/'?'1.0':'0.8'?></priority>
     </url>
 <?}?>
 </urlset><?
