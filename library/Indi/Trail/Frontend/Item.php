@@ -43,7 +43,7 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
                 // set up row
                 if ($rowIdentifier) {
                     $this->row = $this->model->fetchRow('`id` = "' . $rowIdentifier . '"');
-                    if ($this->section->fsectionId) {
+                    if ($this->row && $this->section->fsectionId) {
                         $parentSection = $this->section->getForeignRowByForeignKey('fsectionId');
                         $parentEntity = $parentSection->getForeignRowByForeignKey('entityId');
                         $parentEntityForeignKeyName = $parentEntity->table . 'Id';
