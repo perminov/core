@@ -1800,6 +1800,7 @@ var Indi = (function (indi) {
                     $('#'+name).change(instance.changeHandler);
 
                     $('#'+name+'-trigger').click(function(){
+                        $(this).parent().find('.i-combo-keyword').focus();
                         $(this).parent().find('.i-combo-keyword').click();
                     });
 
