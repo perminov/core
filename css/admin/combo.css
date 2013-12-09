@@ -189,3 +189,7 @@
     margin-right: 3px;
     margin-left: 3px;
 }
+.i-combo.i-combo-disabled .i-combo-multiple{
+    border-color: #cccccc !important;
+    background: #eeeeee;
+}
