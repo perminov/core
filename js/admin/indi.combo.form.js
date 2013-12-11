@@ -1824,6 +1824,10 @@ var Indi = (function (indi) {
                             instance.rebuildComboData(name);
                         }
 
+                        $('.i-combo-keyword').each(function(){
+                            if ($(this).attr('lookup') != name) $(this).blur();
+                        });
+
                         // Toggle options and info
                         $('#'+name+'-suggestions').toggle();
                         if ($(this).parent().find('.i-combo-info').css('display') == 'none') {
