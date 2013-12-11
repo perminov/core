@@ -638,7 +638,7 @@ var Indi = (function (indi) {
                         $('#'+name).val(selected.length > 1 ? selected.join(',') : selected[0]);
 
                         // Hide options
-                        instance.hideSuggestions(name);
+                        if (!(window.event.metaKey || window.event.ctrlKey)) instance.hideSuggestions(name);
 
                         // Restore list of options
                         instance.keywordErased(name, mode);
