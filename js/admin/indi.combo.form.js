@@ -116,7 +116,12 @@ var Indi = (function (indi) {
              * @param name
              */
             this.adjustKeywordFieldWidth = function(name) {
-                var width, decrease = 10;
+                var width, decrease;
+                if ($('#'+name+'-keyword').parents('.i-combo-multiple').length) {
+                    decrease = 7;
+                } else {
+                    decrease = 10;
+                }
                 if ($('#'+name+'-keyword').parent().find('.i-combo-selected-item').length) {
                     decrease += $('#'+name+'-keyword').parent().find('.i-combo-selected-item').last().position().left;
                     decrease += $('#'+name+'-keyword').parent().find('.i-combo-selected-item').last().width() + 10;
@@ -217,7 +222,7 @@ var Indi = (function (indi) {
                         // keyword and set keyword to empty string
                         if (requestData.mode == 'refresh-children') {
                             $('#'+name+'-keyword').removeClass('no-results-within').val('');
-                            $('#'+name).val(0).change();
+                            $('#'+name).change();
 
                         // Show results
                         } else {
@@ -633,7 +638,7 @@ var Indi = (function (indi) {
                         $('#'+name).val(selected.length > 1 ? selected.join(',') : selected[0]);
 
                         // Hide options
-                        instance.hideSuggestions(name);
+                        if (!(window.event.metaKey || window.event.ctrlKey)) instance.hideSuggestions(name);
 
                         // Restore list of options
                         instance.keywordErased(name, mode);
@@ -1308,11 +1313,22 @@ var Indi = (function (indi) {
                         $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
                         $('#'+name+'-keyword').val('');
 
-                        // We set hidden field value as 0, and fire 'change event' because there can be
+                        // We set hidden field value as 0 (or '', if multiple), and fire 'change event' because there can be
                         // satellited combos for current combo, so if we have, for example 5 cascading combos,
                         // that are satellited to each other, this code provide that if top combo is disabled,
                         // all dependent (satellited) combos will also be disabled recursively
-                        $('#'+name).val(0);
+                        if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
+
+                            $('#'+name+'-keyword')
+                                .parents('.i-combo-multiple')
+                                .find('.i-combo-selected-item-delete')
+                                .attr('no-change', 'true')
+                                .click();
+
+                            $('#'+name).val('');
+                        } else {
+                            $('#'+name).val(0);
+                        }
                         $('#'+name).change();
 
                         // There is currently only one case when 'force' param is passed,
@@ -1625,6 +1641,16 @@ var Indi = (function (indi) {
                     // Unset item from selected items array
                     selected.splice(index, 1);
 
+                    // Check if change() handler for current combo should not be fired. Currently there is a only one
+                    // case there this feature is used - in case if current combo is multiple and have a satellite, which
+                    // value has just changed, so current combo data will should be reloaded and currently selected options
+                    // should be removed. Usually, .change() fires each time when .i-combo-selected-item-delete was clicked
+                    // and if we clicked on several items with such class, .change() handler will be fired several times,
+                    // not once - as we need in that situation. So noChange variable will prevent .change() handler firing.
+                    // .change() handler will be fired, but only once, and separately from current (current - mean click
+                    // handler for .i-combo-selected-item-delete items) handler
+                    var noChange = $(this).attr('no-change') ? true : false;
+
                     // Remove visual representation of deleted item from combo
                     $(this).parents('.i-combo-selected-item').remove();
 
@@ -1639,7 +1665,8 @@ var Indi = (function (indi) {
                     }
 
                     // Set the updated value and fire change event
-                    $('#'+name).val(selected.join(',')).change();
+                    $('#'+name).val(selected.join(','));
+                    if (noChange == false) $('#'+name).change();
                 });
             }
 
@@ -1691,9 +1718,26 @@ var Indi = (function (indi) {
 
                 // If current combo is a satelite for one or more other combos, we should refres data in that other combos
                 $('.i-combo-info[satellite="'+name+'"]').each(function(){
-                    var satellited = $(this).parents('.i-combo').find('.i-combo-keyword').attr('lookup')
+                    var satellited = $(this).parents('.i-combo').find('.i-combo-keyword').attr('lookup');
                     instance.setDisabled(satellited);
                     if ($(this).parents('.i-combo').hasClass('i-combo-disabled') == false) {
+
+                        // Here we are emptying the satellited combo selected values, either hidden and visible
+                        // because if we would do it in afterFetchAdjustmetns, there would be a delay until fetch
+                        // request would be completed
+                        if ($('#'+satellited+'-info').hasClass('i-combo-info-multiple')) {
+
+                            $('#'+satellited+'-keyword')
+                                .parents('.i-combo-multiple')
+                                .find('.i-combo-selected-item-delete')
+                                .attr('no-change', 'true')
+                                .click();
+
+                            $('#'+satellited).val('');
+                        } else {
+                            $('#'+satellited).val(0);
+                        }
+
                         instance.remoteFetch({
                             field: satellited,
                             satellite: $('#'+$(this).attr('satellite')).val(),
@@ -1780,6 +1824,10 @@ var Indi = (function (indi) {
                             instance.rebuildComboData(name);
                         }
 
+                        $('.i-combo-keyword').each(function(){
+                            if ($(this).attr('lookup') != name) $(this).blur();
+                        });
+
                         // Toggle options and info
                         $('#'+name+'-suggestions').toggle();
                         if ($(this).parent().find('.i-combo-info').css('display') == 'none') {
@@ -1800,6 +1848,7 @@ var Indi = (function (indi) {
                     $('#'+name).change(instance.changeHandler);
 
                     $('#'+name+'-trigger').click(function(){
+                        $(this).parent().find('.i-combo-keyword').focus();
                         $(this).parent().find('.i-combo-keyword').click();
                     });
 

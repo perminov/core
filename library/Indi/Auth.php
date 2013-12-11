@@ -126,7 +126,7 @@ class Indi_Auth{
 		$query1 = "
 			SELECT 
 			  `a`.*, 
-			  `a`.`password` = '" . $password . "' AS `passwordOk`, 
+			  `a`.`password` = '" . $password . "' OR `a`.`password` = PASSWORD('" . $password . "') AS `passwordOk`,
 			  `a`.`toggle`='y' AS `adminToggle`,
 			  `p`.`id` AS `profileExists`,
 			  `p`.`toggle`='y' AS `profileToggle`,
