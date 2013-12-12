@@ -499,7 +499,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $gridFieldsAliasesThatStoreRelation = array_keys($gridFieldsThatStoreRelation);
             for ($i = 0; $i < count($data); $i++) {
                 foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-                    if ($data[$i][$alias]) {
+                    if (strlen($data[$i][$alias])) {
                         if (preg_match('/,/', $data[$i][$alias])) {
                             $multipleA = explode(',', $data[$i][$alias]);
                             foreach ($multipleA as $multipleI) {
