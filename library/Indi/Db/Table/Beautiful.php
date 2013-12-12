@@ -449,6 +449,14 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
         } else if (in_array('_title', $existing)) {
             $this->titleColumn = '_title';
 
+            // Initialize newly created column with value
+            /*$rs = $this->fetchAll();
+            foreach ($rs as $r) {
+                $r->_title = $r->getTitle();
+                $r->save();
+                unset($r);
+            }*/
+
         // If not
         } else {
             // Create it
