@@ -17,7 +17,8 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 			$value = $value != '0000-00-00 00:00:00' ? $value : $this->view->row->$name;
 		} else {
 			$value = $field->defaultValue;
-			if ($value == '0000-00-00 00:00:00') $value = date('Y-m-d H:i:s');
+            Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
+            //if ($value == '0000-00-00 00:00:00') $value = date('Y-m-d H:i:s');
 		}
         $value = $value ? $value : date('Y-m-d H:i:s');
 
@@ -26,12 +27,19 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         // if current value earlier than minimal date, minimal date is to be set
         // equal to value
         $minimal = $minimal > $value ? $value : $minimal;
-        $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '">';
+        if (preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT'])) $shift = 'top: -1px;';
+        $xhtml  = '<div style="position: relative; ' . $shift .  '">';
 		$parts = explode(' ', $value);
 		$minimal = explode(' ', $minimal);
 
         $params = $field->getParams();
-        if ($params['displayDateFormat']) $parts[0] = date($params['displayDateFormat'], strtotime($parts[0]));
+        if ($params['displayDateFormat']) {
+            if ($parts[0] == '0000-00-00' && $params['displayDateFormat'] == 'd.m.Y') {
+                $parts[0] = '00.00.0000';
+            } else {
+                $parts[0] = date($params['displayDateFormat'], strtotime($parts[0]));
+            }
+        }
 
         $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 62px; margin-top: 1px;" id="' . $name . 'Input"> ';
 		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
@@ -58,7 +66,7 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 				. $this->_htmlAttribs($attribs)
 				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . FORM_DATETIME_SECONDS . '</span>';
 		ob_start();?>
-		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px;">
+		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px; z-index: <?=(100 - $zIndex)?>;">
 			<script>
 				Ext.onReady(function() {
 					Ext.create('Ext.picker.Date', {
@@ -78,7 +86,7 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
                             render: function(cal) {
                                 $('body').bind('click', function(e) {
                                     if($(e.target).closest('#'+cal.id).length == 0 &&
-                                        !($(e.srcElement).hasClass('calendar-trigger') || $(e.srcElement).parent().hasClass('calendar-trigger')) &&
+                                        !($(e.srcElement || e.target).hasClass('calendar-trigger') || $(e.srcElement || e.target).parent().hasClass('calendar-trigger')) &&
                                         $('#'+cal.id+'Render').css('display') != 'none') {
                                         $('#'+cal.id+'Render').hide();
                                     }

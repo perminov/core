@@ -8,7 +8,8 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
 			$field = $this->view->trail->getItem()->getFieldByAlias($name);
 			if(empty($value)) {
 				$value = $field->defaultValue;
-			}
+                Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
+            }
 			if ($field->relation == 6) {
 				$enumset = Misc::loadModel('Enumset');
 				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', 'move')->toArray();
