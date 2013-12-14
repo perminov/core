@@ -34,8 +34,12 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 
         $params = $field->getParams();
         if ($params['displayDateFormat']) {
-            if ($parts[0] == '0000-00-00' && $params['displayDateFormat'] == 'd.m.Y') {
-                $parts[0] = '00.00.0000';
+            if ($parts[0] == '0000-00-00') {
+                if ($params['displayDateFormat'] == 'd.m.Y') {
+                    $parts[0] = '00.00.0000';
+                } else if (!$params['displayDateFormat'] || $params['displayDateFormat'] == 'Y-m-d'){
+                    $parts[0] = '0000-00-00';
+                }
             } else {
                 $parts[0] = date($params['displayDateFormat'], strtotime($parts[0]));
             }
