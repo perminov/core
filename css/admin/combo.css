@@ -34,6 +34,9 @@
 .i-combo .i-combo-keyword {
     border: 0px solid !important; width: 30px; height: 15px; margin-top: 1px;
 }
+.i-combo .i-combo-keyword[disabled] {
+    background: inherit;
+}
 .i-combo.i-combo-filter .i-combo-keyword{
     background: transparent;
 }

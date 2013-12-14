@@ -249,3 +249,6 @@ controls{
     -khtml-border-radius: 0px;
     border-radius: 0px;
 }
+tr.disabled{
+    background: #f5f5f5;
+}
