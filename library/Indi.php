@@ -35,15 +35,16 @@ class Indi{
      */
     public static $cmpRun = '
         if (preg_match(\'/<\?|\?>/\', Indi::$cmpTpl)) {
+            $iterator = \'i\' . md5(microtime());
             $php = preg_split(\'/(<\?|\?>)/\', Indi::$cmpTpl, -1, PREG_SPLIT_DELIM_CAPTURE);
             Indi::$cmpOut = \'\';
-            for ($i = 0; $i < count($php); $i++) {
-                if ($php[$i] == \'<?\') {
-                    $php[$i+1] = preg_replace(\'/^=/\', \' echo \', $php[$i+1]) . \';\';
-                    ob_start(); eval($php[$i+1]); Indi::$cmpOut .= ob_get_clean();
-                    $i += 2;
+            for ($$iterator = 0; $$iterator < count($php); $$iterator++) {
+                if ($php[$$iterator] == \'<?\') {
+                    $php[$$iterator+1] = preg_replace(\'/^=/\', \' echo \', $php[$$iterator+1]) . \';\';
+                    ob_start(); eval($php[$$iterator+1]); Indi::$cmpOut .= ob_get_clean();
+                    $$iterator += 2;
                 } else {
-                    Indi::$cmpOut .= $php[$i];
+                    Indi::$cmpOut .= $php[$$iterator];
                 }
             }
         } else if (preg_match(\'/(\$|::)/\', Indi::$cmpTpl)) {
