@@ -96,6 +96,7 @@
     border-left: 0;
     border-top: 0;
     border-bottom: 1px solid #dfffdf;
+    word-break: break-all;
 }
 .i-combo-data ul.i-combo-data-tall li {
     border-bottom: 1px solid #99BCE8;
