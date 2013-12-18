@@ -23,14 +23,13 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         $value = $value ? $value : date('Y-m-d H:i:s');
 
         //minimal date available to select in calendar, 2006-01-01 by default
-        $minimal = $minimal ? $minimal : '1930-01-01 12:00:00';
+        //$minimal = $minimal ? $minimal : '1930-01-01 12:00:00';
         // if current value earlier than minimal date, minimal date is to be set
         // equal to value
-        $minimal = $minimal > $value ? $value : $minimal;
+        //$minimal = $minimal > $value ? $value : $minimal;
         if (preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT'])) $shift = 'top: -1px;';
         $xhtml  = '<div style="position: relative; ' . $shift .  '">';
 		$parts = explode(' ', $value);
-		$minimal = explode(' ', $minimal);
 
         $params = $field->getParams();
         if ($params['displayDateFormat']) {
