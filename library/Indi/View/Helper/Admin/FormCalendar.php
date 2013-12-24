@@ -17,7 +17,8 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
 			$value = $value != '0000-00-00' ? $value : $this->view->row->$name;
 		} else {
 			$value = $field->defaultValue;
-			if ($value == '0000-00-00') $value = date('Y-m-d');
+            Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
+            //if ($value == '0000-00-00') $value = date('Y-m-d');
 		}
         $value = $value ? $value : date('Y-m-d');
 
@@ -29,14 +30,19 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
         $minimal = $minimal > $value ? $value : $minimal;
         $params = $field->getParams();
         if ($params['displayFormat']) {
-            $value = date($params['displayFormat'], strtotime($value));
-            if ($value == '30.11.-0001') $value = '00.00.0000';
+            if ($value == '0000-00-00' && $params['displayFormat'] == 'd.m.Y') {
+                $value = '00.00.0000';
+            } else {
+                $value = date($params['displayFormat'], strtotime($value));
+                if ($value == '30.11.-0001') $value = '00.00.0000';
+            }
         }
-        $xhtml  = '<div style="position: relative; z-index: ' . (100 - $zIndex) . '" id="calendar' . $name . 'Div" class="calendar-div">';
+        if (preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT'])) $shift = 'top: -1px;';
+        $xhtml  = '<div style="position: relative; ' . $shift .  '" id="calendar' . $name . 'Div" class="calendar-div">';
         $xhtml .= '<input type="text" name="' . $name . '" value="' . $value . '" style="width: 62px; margin-top: 1px;" id="' . $name . '" class="calendar-input"> ';
 		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
 		ob_start();?>
-		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px;">
+		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px; z-index: <?=(100 - $zIndex)?>;">
 			<script>
                 $('#<?=$name?>').change(function(){
                     <?=$field->javascript?>
@@ -60,7 +66,7 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
                             render: function(cal) {
                                 $('body').bind('click', function(e) {
                                     if($(e.target).closest('#'+cal.id).length == 0 &&
-                                        !($(e.srcElement).hasClass('calendar-trigger') || $(e.srcElement).parent().hasClass('calendar-trigger')) &&
+                                        !($(e.srcElement || e.target).hasClass('calendar-trigger') || $(e.srcElement || e.target).parent().hasClass('calendar-trigger')) &&
                                         $('#'+cal.id+'Render').css('display') != 'none') {
                                         $('#'+cal.id+'Render').hide();
                                     }

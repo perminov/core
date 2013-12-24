@@ -34,7 +34,10 @@
 .i-combo .i-combo-keyword {
     border: 0px solid !important; width: 30px; height: 15px; margin-top: 1px;
 }
-.i-combo.i-combo-filter .i-combo-keyword, .i-combo.i-combo-sibling .i-combo-keyword{
+.i-combo .i-combo-keyword[disabled] {
+    background: inherit;
+}
+.i-combo.i-combo-filter .i-combo-keyword{
     background: transparent;
 }
 .i-combo.i-combo-filter.x-form-text, .i-combo.i-combo-sibling.x-form-text{
@@ -118,6 +121,7 @@
     border-left: 0;
     border-top: 0;
     border-bottom: 1px solid #dfffdf;
+    word-break: break-all;
 }
 .i-combo-data ul.i-combo-data-tall li {
     border-bottom: 1px solid #99BCE8;
@@ -212,4 +216,8 @@
 }
 .i-combo-of{
     margin-left: 3px;
+}
+.i-combo.i-combo-disabled .i-combo-multiple{
+    border-color: #cccccc !important;
+    background: #eeeeee;
 }

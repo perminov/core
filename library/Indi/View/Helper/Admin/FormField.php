@@ -17,7 +17,12 @@ class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
 				$xhtml .= '</td>';
 				$xhtml .= '</tr>';
 			} else {
-				$xhtml = '<tr class="info" id="tr-' . $field->alias . '">';
+                if (in_array($field->alias, $this->view->trail->getItem()->disabledFields['save'])) {
+                    $disabled = ' disabled"';
+                } else {
+                    $disabled = '';
+                }
+				$xhtml = '<tr class="info' . $disabled . '" id="tr-' . $field->alias . '">';
 				$xhtml .= '<td width="50%" id="td-left-' . $field->alias . '">';
 				$xhtml .= $field->title . ':';
 				$xhtml .= '</td>';

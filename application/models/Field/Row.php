@@ -445,7 +445,7 @@ class Field_Row extends Indi_Db_Table_Row
 
             if (preg_match('/INT/', $columnTypeRow->type)) {
                 $valid = is_numeric($this->defaultValue);
-                if (!$valid) $this->defaultValue = '0';
+                if (!$valid) $this->defaultValueSql = '0';
 
             } else if ($columnTypeRow->type == 'BOOLEAN') {
                 $valid = preg_match('/^1|0$/', $this->defaultValue);
@@ -453,8 +453,8 @@ class Field_Row extends Indi_Db_Table_Row
 
             } else if ($columnTypeRow->type == 'DATE') {
                 $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/', $this->defaultValue, $parts);
-                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[1]), preg_replace('/^0/', '', $parts[2]), $parts[0]);
-                if (!$valid) $this->defaultValue = '0000-00-00';
+                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[2]), preg_replace('/^0/', '', $parts[3]), $parts[1]);
+                if (!$valid) $this->defaultValueSql = '0000-00-00';
 
             } else if ($columnTypeRow->type == 'TIME') {
                 $valid = preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->defaultValue, $parts);
@@ -474,7 +474,7 @@ class Field_Row extends Indi_Db_Table_Row
                 // check datetime format
                 $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->defaultValue, $parts);
                 // check date existence
-                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[1]), preg_replace('/^0/', '', $parts[2]), $parts[0]);
+                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[2]), preg_replace('/^0/', '', $parts[3]), $parts[1]);
                 // check time existence
                 if ($valid) {
                     $h = (int) preg_replace('/^0/', '', $parts[4]);
@@ -482,7 +482,7 @@ class Field_Row extends Indi_Db_Table_Row
                     $s = (int) preg_replace('/^0/', '', $parts[6]);
                     if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
                 }
-                if (!$valid) $this->defaultValue = '0000-00-00 00:00:00';
+                if (!$valid) $this->defaultValueSql = '0000-00-00 00:00:00';
 
             } else if (preg_match('/ENUM|SET|VARCHAR/', $columnTypeRow->type)) {
 
@@ -490,7 +490,7 @@ class Field_Row extends Indi_Db_Table_Row
                 $valid = preg_match('/^[0-9]{1,' . ($digits[1] - $digits[2]) . '}\.[0-9]{1,' . $digits[2] . '}$/', $this->defaultValue);
                 if (!$valid) $this->defaultValue = '0.' . str_repeat('0', $digits[2]);
             }
-            $query .= 'DEFAULT  "' . $this->defaultValue . '"';
+            $query .= 'DEFAULT  "' . (strlen($this->defaultValueSql) ? $this->defaultValueSql : $this->defaultValue) . '"';
             if (!$valid) $this->getTable()->getAdapter()->query('UPDATE `field` SET `defaultValue` = "' . $this->defaultValue . '" WHERE `id` = "' . $this->id . '"');
         }
 
