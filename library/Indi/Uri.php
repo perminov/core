@@ -42,7 +42,15 @@ class Indi_Uri {
                     $params['action'] = 'details';
                     $params['id'] = $staticA[0]['id'];
 				    if ($staticA[0]['alias'] == '404') {
-					    header('HTTP/1.1 404 Not Found');
+					    $notFound = true;
+				    }
+                } else if (!Misc::loadModel('Faction')->fetchRow('`alias` IN ("' . str_replace('"', '\"', $params['action']) . '")')) {
+                    $staticA = Misc::loadModel('Staticpage')->fetchAll('`alias` IN ("404") AND `toggle` = "y"', 'FIND_IN_SET(`alias`, "404")')->toArray();
+                    $params['section'] = 'static';
+                    $params['action'] = 'details';
+                    $params['id'] = $staticA[0]['id'];
+				    if ($staticA[0]['alias'] == '404') {
+					    $notFound = true;
 				    }
                 }
             }
@@ -51,6 +59,13 @@ class Indi_Uri {
             $sectionR = $sectionM->fetchRow('`alias` = "' . $params['section'] . '"');
             if ($sectionR) $sectionA = $sectionR->toArray();
         }
+        
+        if ($notFound) {
+            header('HTTP/1.1 404 Not Found');
+        } else {
+            $this->trailingSlash();
+        }
+        
         $controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
 
 		if (!class_exists($controllerClassName)) {
@@ -81,9 +96,19 @@ class Indi_Uri {
 	}
 
 	public function no3w(){
-		if (strpos($_SERVER['HTTP_HOST'], 'www') !== false) die(header('Location: http://' . str_replace('www.', '', $_SERVER['HTTP_HOST']) . $_SERVER['REQUEST_URI']));
+		if (strpos($_SERVER['HTTP_HOST'], 'www') !== false) {
+            header('HTTP/1.1 301 Moved Permanently');
+            die(header('Location: http://' . str_replace('www.', '', $_SERVER['HTTP_HOST']) . $_SERVER['REQUEST_URI']));
+        }
 	}
 
+    public function trailingSlash(){
+        if ($_SERVER['REQEST_URI'] != '/' && !preg_match('/\/$/', $_SERVER['REQUEST_URI']) && !preg_match('/\?/', $_SERVER['REQUEST_URI'])) {
+            header('HTTP/1.1 301 Moved Permanently');
+            header('Location: ' . $_SERVER['REQUEST_URI'] . '/');
+            die();
+        }    
+    }
 	public function setCookieDomain(){
 		$config = Indi::registry('config');
 		$domain = $config['general']->domain;

@@ -51,7 +51,18 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->maintenance();
 
 		$this->view->request = $this->params;
-	}
+
+        // Куски
+        if (Misc::loadModel('Entity')->fetchRow('`table` = "staticblock"')) {
+            $staticBlocksRs = Misc::loadModel('Staticblock')->fetchAll('`toggle` = "y"');
+            foreach ($staticBlocksRs as $staticBlocksR) {
+                $staticBlocks[$staticBlocksR->alias] = $staticBlocksR->{'details' . ucfirst($staticBlocksR->type)};
+                if ($staticBlocksR->type == 'textarea') $staticBlocks[$staticBlocksR->alias] = nl2br($staticBlocks[$staticBlocksR->alias]);
+            }
+            $this->view->blocks = $staticBlocks;
+        }
+
+    }
 	
 	public function postDispatch(){
 		$this->view->section = $this->section;
@@ -69,16 +80,6 @@ class Indi_Controller_Front extends Indi_Controller{
         if (Misc::loadModel('Entity')->fetchRow('`table` = "menu"') && !$this->view->menu) {
             $menu = Misc::loadModel('Menu')->init();
             $this->view->menu = $menu;
-        }
-
-        // Куски
-        if (Misc::loadModel('Entity')->fetchRow('`table` = "staticblock"')) {
-            $staticBlocksRs = Misc::loadModel('Staticblock')->fetchAll('`toggle` = "y"');
-            foreach ($staticBlocksRs as $staticBlocksR) {
-                $staticBlocks[$staticBlocksR->alias] = $staticBlocksR->{'details' . ucfirst($staticBlocksR->type)};
-                if ($staticBlocksR->type == 'textarea') $staticBlocks[$staticBlocksR->alias] = nl2br($staticBlocks[$staticBlocksR->alias]);
-            }
-            $this->view->blocks = $staticBlocks;
         }
 
         $this->view->get = $this->get;

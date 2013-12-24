@@ -1,6 +1,9 @@
 <?php
 class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 {
+    public function getFirstColumnWidthFraction(){
+        return 0.4;
+    }
     public function renderGrid()
     {
         $gridFields = $this->view->trail->getItem()->gridFields->toArray();
@@ -261,7 +264,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                                         smallColumnsWidth += columnWidths[i];
                                     }
                                 }
-                                var firstColumnWidth = Math.ceil(totalGridWidth*0.4);
+                                var firstColumnWidth = Math.ceil(totalGridWidth*<?=$this->getFirstColumnWidthFraction()?>);
                                 var percent = (totalGridWidth-firstColumnWidth-smallColumnsWidth)/(totalColumnsWidth-columnWidths[1]-smallColumnsWidth);
                                 var first = true;
 								for(i in columnWidths) {

@@ -181,7 +181,13 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     break;
                 case 'calendar':
                     $params = $field->getParams();
-                    if ($params['displayFormat']) $value = date('Y-m-d', strtotime($value));
+                    if ($params['displayFormat']) {
+                        if ($params['displayFormat'] == 'd.m.Y' && $value == '00.00.0000') {
+                            $value = '0000-00-00';
+                        } else {
+                            $value = date('Y-m-d', strtotime($value));
+                        }
+                    }
                     $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($value)) ? trim($value) : '0000-00-00';
                     break;
                 case 'dimension':
@@ -197,7 +203,11 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     if (is_array($this->post[$field->alias])) {
                         $params = $field->getParams();
                         if ($params['displayDateFormat']) {
-                            $this->post[$field->alias]['date'] = date('Y-m-d', strtotime($this->post[$field->alias]['date']));
+                            if ($params['displayDateFormat'] == 'd.m.Y' && $this->post[$field->alias]['date'] == '00.00.0000') {
+                                $this->post[$field->alias]['date'] = '0000-00-00';
+                            } else {
+                                $this->post[$field->alias]['date'] = date('Y-m-d', strtotime($this->post[$field->alias]['date']));
+                            }
                         }
                         $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($this->post[$field->alias]['date'])) ? trim($this->post[$field->alias]['date']) : '0000-00-00';
                         unset($this->post[$field->alias]['date']);
@@ -378,7 +388,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $gridFieldsAliasesThatStoreRelation = array_keys($gridFieldsThatStoreRelation);
             for ($i = 0; $i < count($data); $i++) {
                 foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-                    if ($data[$i][$alias]) {
+                    if (strlen($data[$i][$alias])) {
                         if (preg_match('/,/', $data[$i][$alias])) {
                             $multipleA = explode(',', $data[$i][$alias]);
                             foreach ($multipleA as $multipleI) {
@@ -514,8 +524,12 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 if ($params['displayFormat']) {
                     for ($j = 0; $j < count ($data); $j++) {
                         if (preg_match($this->datePattern, $data[$j][$fieldR->alias])) {
-                            $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
-                            if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
+                            if ($data[$j][$fieldR->alias] == '0000-00-00' && $params['displayFormat'] == 'd.m.Y') {
+                                $data[$j][$fieldR->alias] = '00.00.0000';
+                            } else {
+                                $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
+                                if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
+                            }
                         }
                     }
                 }
@@ -525,7 +539,15 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     if (!$params['displayDateFormat']) $params['displayDateFormat'] = 'Y-m-d';
                     if (!$params['displayTimeFormat']) $params['displayTimeFormat'] = 'H:i:s';
                     for ($j = 0; $j < count ($data); $j++) {
-                        $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
+                        if (preg_match('/^0000-00-00/', $data[$j][$fieldR->alias])
+                            && $params['displayDateFormat'] == 'd.m.Y'
+                            && preg_match('/00:00:00$/', $data[$j][$fieldR->alias])
+                            && $params['displayTimeFormat'] == 'H:i') {
+                            $data[$j][$fieldR->alias] = '00.00.0000 00:00';
+                        } else {
+                            $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
+                        }
+
                     }
                 }
             }
