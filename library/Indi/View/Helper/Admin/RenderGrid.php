@@ -140,8 +140,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 			<script>
             Indi.section = '<?=$this->view->trail->getItem()->section->alias?>';
 			var json = <?=json_encode($meta)?>;
-            var timeout;
-            var timeout2;
+            var timeout, timeout2;
             var filterChange;
 			Ext.onReady(function() {
                 var filterAliases = <?=json_encode($filterFieldAliases)?>;
@@ -405,7 +404,10 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 							var selection = grid.getSelectionModel().getSelection();
 							if (selection.length) {
 								if (this.getValue()) {
-									loadContent('<?=PRE?>/' + cmb.getValue() + '/index/id/' + selection[0].data.id + '/');
+									loadContent(
+                                        '<?=PRE?>/' + cmb.getValue() + '/index/id/' + selection[0].data.id + '/' +
+                                        'ph/'+Indi.scope.hash+'/aix/'+(selection[0].index + 1)+'/'
+                                    );
 								}
 							} else {
 								cmb.reset();
@@ -440,8 +442,12 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
 				gridStore.load();
 			});
 			</script>
-            <script>Indi.trail.apply(<?=json_encode($this->view->trail->toArray())?>);</script>
-            <?if (count($comboFilters)){
+            <script>
+            Indi.trail.apply(<?=json_encode($this->view->trail->toArray())?>);
+            Indi.scope = <?=json_encode($this->view->getScope())?>;
+            top.Indi.scope = Indi.scope;
+            </script>
+        <?if (count($comboFilters)){
                 echo implode('', $comboFilters);
                 ?><script>Indi.combo.filter = Indi.combo.filter || new Indi.proto.combo.filter(); Indi.combo.filter.run();</script><?
             }?>

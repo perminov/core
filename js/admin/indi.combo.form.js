@@ -74,7 +74,7 @@ var Indi = (function (indi) {
                     if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
                         input.parent().find('.i-combo-info').css('margin-left', (input.parent().width() - width - 3) + 'px');
                     } else {
-                        input.parent().find('.i-combo-info').css('margin-left', (input.parent().width() - width - 20) + 'px');
+                        input.parent().find('.i-combo-info').css('margin-left', (input.parent().width() - width - 16) + 'px');
                     }
                 }
             }
@@ -338,7 +338,9 @@ var Indi = (function (indi) {
                 var name = data.field;
 
                 // Show loading pic
-                $('#'+name+'-count').html('<img src="' + STD + '/i/admin/combo-loading-pic.gif" class="i-combo-loader" width="15">');
+                $('#'+name+'-count')
+                    .html('<img src="' + STD + '/i/admin/combo-loading-pic.gif" class="i-combo-loader" width="15">')
+                    .addClass('i-combo-count-visible');
 
                 // Appendix
                 var parts = instance.componentName.split('.'), appendix = [];
@@ -858,8 +860,14 @@ var Indi = (function (indi) {
                 if (json.optgroup != undefined && json.tree) items = instance.appendNotSameGroupParents(items, json, name);
 
                 // Stat info
-                $('#'+name+'-count').text(Indi.numberFormat(json['ids'].length - disabledCount));
+                $('#'+name+'-count').removeClass('i-combo-count-visible').text(Indi.numberFormat(json['ids'].length - disabledCount));
                 $('#'+name+'-found').text(Indi.numberFormat(json['found']));
+
+                if (json['ids'].length - disabledCount == json['found']) {
+                    $('#'+name+'-info').addClass('i-combo-info-fetched-all');
+                } else {
+                    $('#'+name+'-info').removeClass('i-combo-info-fetched-all');
+                }
 
                 // Info should be displayed only if maximum possible results per page is less that total found results
                 // or combo is running in 'keyword' mode
@@ -1775,7 +1783,9 @@ var Indi = (function (indi) {
              * The enter point.
              */
             this.run = function() {
-                //console.log(instance.componentName, window.location.toString());
+
+                top.window.$('body .i-combo-data').remove();
+
                 if (indi.callbacks && indi.callbacks[instance.componentName] && indi.callbacks[instance.componentName].length) {
                     for (var i = 0; i < indi.callbacks[instance.componentName].length; i++) {
                         indi.callbacks[instance.componentName][i]();

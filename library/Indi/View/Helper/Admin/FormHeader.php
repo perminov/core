@@ -28,7 +28,6 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
     <script type="text/javascript" src="/js/admin/indi.trail.js?<?=rand(0, 10000)?>"></script>
     <script type="text/javascript" src="/js/admin/indi.combo.form.js?<?=rand(0, 10000)?>"></script>
-    <!--<script type="text/javascript" src="/js/admin/indi.combo.sibling.js?<?=rand(0, 10000)?>"></script>-->
     <script type="text/javascript" src="/js/admin/indi.action.form.js?<?=rand(0, 10000)?>"></script>
     <!-- CK editor and finder scripts -->
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
@@ -43,10 +42,10 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 Indi.std = '<?=STD?>';
 Indi.com = '<?=COM ? '' : '/admin'?>';
 Indi.pre = Indi.std + Indi.com;
-top.window.Indi.shareWith(window);
+Indi.lang = top.window.Indi.lang;
+//top.window.Indi.shareWith(window);
 Indi.trail = <?=json_encode($this->view->trail->toArray())?>;
 Indi.scope = <?=json_encode($this->view->getScope())?>;
-Indi.ready = top.Indi.ready;
 top.Indi.scope = Indi.scope;
 </script>
 <script>top.window.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>

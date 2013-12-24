@@ -40,6 +40,11 @@ class Indi_Trail_Admin extends Indi_Trail
                     $parentEntityForeignKeyName = $parentSection->getForeignRowByForeignKey('entityId')->table;
                     $rowId = $lastItem->row->{$parentEntityForeignKeyName . 'Id'};
                 }
+                if (count($this->items) == 1) {
+                    $primaryHash = $requestParams['ph'];
+                } else {
+                    $primaryHash = '';
+                }
             } else {
                 $section = new Section();
                 // section id
@@ -55,7 +60,7 @@ class Indi_Trail_Admin extends Indi_Trail
                     $parentRowId = $rowIdentifier;
                 }
             }
-			$lastItem = $this->addItem($sectionId, $rowId, $actionAlias, $this);
+			$lastItem = $this->addItem($sectionId, $rowId, $actionAlias, $this, $primaryHash);
         } while ($lastItem->section->sectionId);
         
         // Reverse array to work with it from the start by the end, not from the end to the start.
@@ -103,10 +108,32 @@ class Indi_Trail_Admin extends Indi_Trail
      * @param string $actionAlias = 'index'
      * @return Indi_Trail_Item object
      */
-    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null)
+    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null, $primaryHash = null)
     {
 
-        $this->items[] = new Indi_Trail_Admin_Item($sectionId, $rowIdentifier, $actionAlias, $trail);
+        $this->items[] = new Indi_Trail_Admin_Item($sectionId, $rowIdentifier, $actionAlias, $trail, $primaryHash);
         return end($this->items);
+    }
+
+    public function setItemScopeHashes($hash, $aix, $index) {
+        $i = -1 + ($index ? 1 : 0);
+        do {
+            $i++;
+            $this->items[count($this->items) - 1 - $i]->section->primaryHash = $hash;
+            $this->items[count($this->items) - 1 - $i]->section->rowIndex = $aix;
+        } while (($hash = $_SESSION
+            ['indi']
+            ['admin']
+            [$this->items[count($this->items) - 1 - $i]->section->alias]
+            [$this->items[count($this->items) - 1 - $i]->section->primaryHash]
+            ['upperHash'])
+            &&
+            (($aix = $_SESSION
+            ['indi']
+            ['admin']
+            [$this->items[count($this->items) - 1 - $i]->section->alias]
+            [$this->items[count($this->items) - 1 - $i]->section->primaryHash]
+            ['upperAix']) || true)
+        );
     }
 }

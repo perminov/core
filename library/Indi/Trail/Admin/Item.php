@@ -23,7 +23,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
      * @param int $rowIdentifier
      * @param string $actionAlias
      */
-    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail)
+    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail, $primaryHash)
     {
         $session = $_SESSION;
         
@@ -36,7 +36,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
         }
 
 
-        if ($this->section) {
+        if ($this->section->id) {
             // set up actions of section
             $this->actions = $trail->authComponent->getActions($sectionId, $session['admin']['profileId']);
 
@@ -45,6 +45,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
 
             // set up grid filters
             $this->filters = $this->section->getFilters();
+
+            $this->section->primaryHash = $primaryHash;
         }
         
         if ($this->section->sectionId) {

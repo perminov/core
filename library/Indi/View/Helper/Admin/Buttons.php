@@ -13,11 +13,11 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
         if (($title != null) && ($action != null) && (is_array($title))&&(is_array($action))) {
         } else if ($this->view->action == 'form' || $this->view->alterForm) {
             $title[] = BUTTON_BACK;
-            $action[] = "top.window.loadContent('". STD . (COM ? '' : "/" . $this->view->module) . '/' . $this->view->section->alias . '/' . ($parent->row ? 'index/id/' . $parent->row->id . '/' : '') . '\')';
+            $action[] = "top.window.Ext.getCmp('i-action-form-topbar-button-back').handler();";
             foreach ($accessableActions as $accessableAction) {
                 if ($accessableAction['alias'] == 'save') {
                     $title[] = BUTTON_SAVE;
-                    $action[] = "javascript: $('form[name=" . $this->view->entity->table . "]').submit()";
+                    $action[] = "top.window.Ext.getCmp('i-action-form-topbar-button-save').handler();";
                     break;
                 }
             }
