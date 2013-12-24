@@ -60,7 +60,7 @@ Ext.require(['*']); var viewport, menu, mainPanel, grid, form, loadContent, curr
 Indi.std = '<?=STD?>';
 Indi.com = '<?=COM ? '' : '/admin'?>';
 Indi.pre = Indi.std + Indi.com;
-Indi.lang = <?=json_encode(array_pop(get_defined_constants(true)))?>;
+Indi.lang = <?=json_encode(json_decode(@json_encode(get_defined_constants(true)))->user)?>
 </script>
 <?=$this->menu()?>
 <?=$this->viewport()?>

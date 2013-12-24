@@ -248,7 +248,6 @@ var Indi = function(indi) {
             }));
         } else {
             $.post(url, function(response){
-                console.log(url);
                 Indi.clearCenter();
                 Indi.viewport.doComponentLayout();
                 $('#center-content-body').html(response);
