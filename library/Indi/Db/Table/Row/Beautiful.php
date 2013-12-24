@@ -256,13 +256,23 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         $titleColumn = $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
-        if (is_null($order))
+        if (is_null($order)) {
             if ($relatedM->fieldExists('move')) {
                 $order = 'move';
             } else {
                 $order = $titleColumn;
             }
 
+        // If $order is not null, but is an empty string, we set is as 'id' for results being fetched in the order of
+        // their physical appearance in database table, however, regarding $dir (ASC or DESC) param.
+        } else if (!strlen($order)) {
+            $order = 'id';
+        }
+
+        // Here and below we will be always checking if $order is not empty
+        // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
+        // So, if order is empty, the results will be retrieved in the order of their physical placement in
+        // their database table
         if (!preg_match('/\(/', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
@@ -276,7 +286,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if (!preg_match('/\(/', $order)) {
+            if ($order && !preg_match('/\(/', $order)) {
                 $keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
             }
         }
@@ -296,7 +306,6 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                 // attribute is set depending on 'found' property existence in response json
                 $unsetFoundRows = true;
             }
-
             // Fetch results
             if ($selectedTypeIsKeyword) {
                 $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);

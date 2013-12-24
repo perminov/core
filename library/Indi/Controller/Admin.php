@@ -75,8 +75,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
                     $primaryWHERE = $this->primaryWHERE();
 
-                    if ($this->params['json']) {
+                    $this->setScopeUpper($primaryWHERE);
 
+                    if ($this->params['json']) {
                         // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                         $finalWHERE = $this->finalWHERE($primaryWHERE);
 
@@ -94,7 +95,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         // State of the panel includes: filtering and search params, sorting params
                         $this->setScope($primaryWHERE, $this->get['search'], $this->params['keyword'], $this->get['sort'],
                             $this->get['page'], $this->rowset->foundRows, $finalWHERE, $finalORDER);
-
                     }
                 } else {
 
@@ -103,6 +103,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
                     if ($this->params['check']) die($this->checkRowIsInScope());
                 }
+
+                $this->trail->setItemScopeHashes($this->params['ph'], $this->params['aix'], $this->params['action'] == 'index');
             }
         }
     }
@@ -296,7 +298,21 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             if ($this->trail->getItem(1)->row) {
                 $id = $this->trail->getItem(1)->row->id;
             }
-            $this->_redirect(STD . (COM ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+            if ($this->post['redirect-url']) {
+                $url = $this->post['redirect-url'];
+                if (preg_match('/\/ph\/([0-9a-f]+)\//', $url, $matches)) {
+                    $_SESSION['indi']['admin'][$this->params['section']][$matches[1]]['toggledSave'] = true;
+                    if (!$this->params['id']) $_SESSION['indi']['admin'][$this->params['section']][$matches[1]]['found']++;
+                } else {
+                    if (!$this->params['id'])
+                        $this->post['redirect-url'] = str_replace('null', $this->identifier, $this->post['redirect-url']);
+                    die('<script>top.window.Indi.load("' . $this->post['redirect-url'] . '")</script>');
+                }
+            } else {
+                $url = STD . (COM ? '' : '/' . $this->module) . '/' . $this->section->alias . '/'
+                    . ($id ? 'index/id/' . $id . '/' : '');
+            }
+            $this->_redirect($url);
         }
     }
 
@@ -514,7 +530,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 }
             }
         }
-
         if ($json) {
             $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
             return json_encode($jsonData);
@@ -541,7 +556,14 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         if ($this->trail->getItem(1)->row) {
             $id = $this->trail->getItem(1)->row->id;
         }
-        $this->_redirect(STD . (COM ? '' : '/' . $this->module) . '/' . $this->section->alias . '/' . ($id ? 'index/id/' . $id . '/' : ''));
+        if ($this->params['ph']) $scope = $_SESSION['indi']['admin'][$this->section->alias][$this->params['ph']];
+        $this->_redirect(
+            STD . '/' .
+            (COM ? '' : $this->module . '/') .
+            $this->section->alias  . '/' .
+            ($id ? 'index/id/' . $id . '/' : '') . '/' .
+            ($scope ? 'ph/' . $scope['upperHash'] . '/aix/' . $scope['upperAix'] . '/' : '')
+        );
     }
     public function postDispatch($return = false){
         // assign general template data

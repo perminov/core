@@ -46,3 +46,21 @@ define('GRID_FILTER_NUMBER_TO', 'до');
 
 define('MSGBOX_CONFIRM_TITLE', 'Подтверждение');
 define('MSGBOX_CONFIRM_MESSAGE', 'Вы уверены?');
+
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_SPM', ' с учетом текущих параметров поиска');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_END', ' - нет записи с таким ID');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE', 'Запись #');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF', 'из ');
+
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_SPM', ' с учетом текущих параметров поиска');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_END', ' - нет записи с таким порядковым номером, но на момент загрузки формы она была');
+define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'Отсутствуют');
+define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Выберите--');
+
+
+
+

@@ -199,10 +199,27 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             'found' => $found,
             'WHERE' => $WHERE,
             'ORDER' => $ORDER,
-            'hash' => $primaryHash
+            'hash' => $primaryHash,
+            'upperHash' => $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperHash'],
+            'upperAix' => $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperAix']
         );
 
         //i($_SESSION['indi']['admin'][$this->params['section']]);
+    }
+
+    public function setScopeUpper($primary) {
+        // Get $primary as string
+        $primary = count($primary) ? implode(' AND ', $primary) : null;
+
+        // Get a scope hash
+        $primaryHash = substr(md5($primary), 0, 10);
+
+        // Remember hash of upper scope same place in $_SESSION where local scope params will be set
+        if ($this->params['ph'])
+            $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperHash'] = $this->params['ph'];
+
+        if ($this->params['aix'])
+            $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperAix'] = $this->params['aix'];
     }
 
     /**

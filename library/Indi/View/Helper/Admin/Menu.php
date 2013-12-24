@@ -40,6 +40,7 @@ class Indi_View_Helper_Admin_Menu extends Indi_View_Helper_Abstract
 		cls: 'menu',
 		padding: '41 0 0 0',
         weight: 300,
+        id: 'i-menu',
 		listeners: {
 			itemclick: function(view, rec, item, index, eventObj) {
 				if(rec.get('leaf') == false) {

@@ -80,8 +80,7 @@ var Indi = (function (indi) {
 
                 var index;
                 if (instance.particularList(valueFieldId)) {
-
-                    index = parseInt(indi.scope.aix)
+                    index = (indi.scope.aix ? parseInt(indi.scope.aix) : 1)
                         - 1
                         + parseInt($('input[lookup='+valueFieldId+']').attr('selectedIndex'))
                         - instance.store[valueFieldId].fetchedByPageUps;

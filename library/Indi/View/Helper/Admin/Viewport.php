@@ -68,19 +68,6 @@ Ext.onReady(function() {
 
 	loadContent = function(url, iframe){
         Indi.load(url, iframe)
-
-        // Push the given url to a story stack
-        //Indi.story.push(url);
-
-        /*if (url.match(/\/form\//) || iframe) {
-            Indi.load(url, iframe)
-		} else {
-			$.post(url, function(response){
-                Indi.clearCenter();
-                viewport.doComponentLayout();
-                $('#center-content-body').html(response);
-            });
-		}*/
     }
 	locationHistoryBack = function(){
 		if (locationHistory.length > 1) {

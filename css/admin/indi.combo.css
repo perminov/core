@@ -64,10 +64,35 @@
     display: inline-block;
     text-align: right;
 }
+.i-combo .i-combo-info .i-combo-found{
+    padding-right: 1px;
+    padding-left: 1px;
+    border: 1px solid rgba(255, 255, 255, 0);
+}
+.i-combo.i-combo-form .i-combo-info.i-combo-info-fetched-all .i-combo-found {
+    padding-bottom: 1px;
+}
 .i-combo .i-combo-info .i-combo-loader{
     position: relative;
     top: -1px;
     right: 2px;
+}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-loader{
+    right: -10px;
+}
+
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found{
+    background-color: #C2FCC2;
+    border: 1px solid #1BBB0D;
+}
+
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count,
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-of{
+    visibility: hidden;
+}
+
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible{
+    visibility: visible;
 }
 
 .i-combo-data{
@@ -186,6 +211,5 @@
     background: #eeeeee;
 }
 .i-combo-of{
-    margin-right: 3px;
     margin-left: 3px;
 }

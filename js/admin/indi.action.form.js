@@ -13,8 +13,6 @@ var Indi = (function (indi) {
          */
         indi.proto.action.form = function(){
 
-            indi.lang = {GRID_SUBSECTIONS_LABEL: 'Подразделы'};
-
             /**
              * This is for context stabilization
              *
@@ -70,7 +68,8 @@ var Indi = (function (indi) {
                     },
                     // Navigate-by-row-number field
                     RN: function(row) {
-                        var labelWidth = 50, triggerWidth = 20, inputWidth;
+                        var labelWidth = (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 3,
+                            triggerWidth = 20, inputWidth;
                         inputWidth = indi.scope.found.toString().length * 7 + 2;
                         inputWidth = inputWidth > 30 ? inputWidth : 30;
                         return labelWidth + inputWidth + triggerWidth;
@@ -93,6 +92,9 @@ var Indi = (function (indi) {
              */
             this.applyTopToolbar = function() {
 
+                // If there is a some custom implementation, return
+                if (!instance.getPanel()) return;
+
                 // Remove old toolbarr
                 var formPanelTopbar = instance.getPanel().getDockedComponent('i-action-form-topbar');
                 if (formPanelTopbar) instance.getPanel().removeDocked(formPanelTopbar);
@@ -106,12 +108,20 @@ var Indi = (function (indi) {
                     handler: function(){
                         //top.window.Indi.iframeMask.show();
                         top.window.Indi.load(
-                            Indi.pre + '/' + indi.trail.item().section.alias +
-                                '/' + (indi.trail.item(1).row ? 'index/id/' + indi.trail.item(1).row.id + '/' : '')
+                            Indi.pre +
+                                '/' + indi.trail.item().section.alias +
+                                '/' + (indi.trail.item(1).row
+                                      ?
+                                      'index/id/' + indi.trail.item(1).row.id + '/' +
+                                      (indi.scope.upperHash ? 'ph/'+indi.scope.upperHash+'/' : '') +
+                                      (indi.scope.upperAix ? 'aix/'+indi.scope.upperAix+'/' : '')
+                                      :
+                                      '')
                         )
                     },
                     iconCls: 'back',
-                    id: 'button-back'
+                    xtype: 'button',
+                    id: 'i-action-form-topbar-button-back'
                 });
 
                 // Add a separator
@@ -151,7 +161,7 @@ var Indi = (function (indi) {
                                     var existingIframeQueryString = '?' + instance.getIframe().attr('src').split('?')[1], url;
 
                                     // Build the request uri
-                                    var url = indi.pre+'/' + indi.trail.item().section.alias + '/form/id/' +
+                                    var url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias + '/id/' +
                                         input.getValue() + '/ph/'+ indi.trail.item().section.primaryHash+'/';
 
                                     var data = {
@@ -166,7 +176,17 @@ var Indi = (function (indi) {
 
                                         // If exists, we replace the iframe's src attribute with new one
                                         if (aix) {
-                                            instance.getIframe().attr('src', url + 'aix/' + aix + '/' + existingIframeQueryString);
+
+                                            // If save button is toggled
+                                            if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed)
+
+                                                // We save current row but remeber the redirect url
+                                                $('form[name='+indi.trail.item().model.tableName+']')
+                                                    .append('<input type="hidden" name="redirect-url" value="'+url + 'aix/' + aix + '/' + existingIframeQueryString+'"/>')
+                                                    .submit();
+
+                                            // Else we just update iframe's src
+                                            else instance.getIframe().attr('src', url + 'aix/' + aix + '/' + existingIframeQueryString);
 
                                         // Otherwise we build an warning message, and display Ext.MessageBox
                                         } else {
@@ -177,14 +197,14 @@ var Indi = (function (indi) {
                                             // If user was using filters or keyword for browsing the scope of rows,
                                             // the warning message will contain an indication about that
                                             if (indi.scope.filters != '[]' || (indi.scope.keyword && indi.scope.keyword.length))
-                                                spm = ' с учетом текущих параметров поиска';
+                                                spm = indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_SPM;
 
                                             // Display an Ext message box
                                             //top.window.Indi.iframeMask.hide();
                                             Ext.MessageBox.show({
-                                                title: 'Запись не найдена',
-                                                msg: 'Среди набора записей, доступных в рамках данного раздела,' +
-                                                    spm + ' - нет записи с таким ID',
+                                                title: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE,
+                                                msg: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START +
+                                                    spm + indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_END,
                                                 buttons: Ext.MessageBox.OK,
                                                 icon: Ext.MessageBox.WARNING,
 
@@ -213,14 +233,29 @@ var Indi = (function (indi) {
                 // 'Save' button
                 dockedItems.push({
                     xtype: 'splitbutton',
-                    text: 'Сохранить',
+                    text: indi.lang.BUTTON_SAVE,
                     handler: function(){
-                        //top.window.Indi.iframeMask.show();
-                        $('form[row-id]').submit();
+
+                        var url = Indi.pre +
+                            '/' + indi.trail.item().section.alias +
+                            '/' + (indi.trail.item(1).row
+                            ?
+                            'index/id/' + indi.trail.item(1).row.id + '/' +
+                                (indi.scope.upperHash ? 'ph/'+indi.scope.upperHash+'/' : '') +
+                                (indi.scope.upperAix ? 'aix/'+indi.scope.upperAix+'/' : '')
+                            :
+                            '');
+
+                        // We save current row but remeber the redirect url
+                        $('form[name='+indi.trail.item().model.tableName+']')
+                            .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                            .submit();
+
                     },
                     disabled: indi.trail.item().disableSave,
                     iconCls: 'save',
                     id: 'i-action-form-topbar-button-save',
+                    pressed: indi.scope.toggledSave,
                     arrowHandler: function(button, event){
                         button.toggle();
                         if (indi.trail.item().sections.length && !indi.trail.item().row.id) {
@@ -243,8 +278,12 @@ var Indi = (function (indi) {
                     disabled: parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) > 1 ? false : true,
                     handler: function(btn){
                         //top.window.Indi.iframeMask.show();
-                        top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '38', true);
-                        top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '13', true);
+                        if (typeof indi.trail.item().row.title != 'undefined') {
+                            top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '38', true);
+                            top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '13', true);
+                        } else {
+                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').spinDown();
+                        }
 
                         if(parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) - 1 > 1) {
                             btn.enable();
@@ -260,11 +299,12 @@ var Indi = (function (indi) {
                     }
                 });
 
-                // Combo for search and navigate to any sibling
+                // Combo for search and navigate to any sibling. We append this combo if row have a 'title' property
+                if (typeof indi.trail.item().row.title != 'undefined')
                 dockedItems.push({
                     xtype: 'component',
                     id: 'i-action-form-topbar-nav-to-sibling',
-                    contentEl: instance.getIframeContext().$('#i-action-form-topbar-nav-to-sibling-combo-wrapper')[0],
+                    contentEl: jQuery('#i-action-form-topbar-nav-to-sibling-combo-wrapper')[0],
                     setKeywordValue: function(value) {
                         top.window.Indi.combo.sibling.clearCombo('i-action-form-topbar-nav-to-sibling-id');
                     },
@@ -282,13 +322,8 @@ var Indi = (function (indi) {
 
                                 if (selected.mode == 'no-keyword') {
 
-                                    //if (top.window.Indi.combo.sibling.particularList('i-action-form-topbar-nav-to-sibling-id')) {
-                                    //    selected.index = parseInt(selected.index) - 1 + parseInt(indi.scope.aix);
-                                    //}
-
-
                                     // Build the request uri
-                                    url = indi.pre+'/' + indi.trail.item().section.alias + '/form'+
+                                    url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias+
                                         '/id/' + selected.value +
                                         '/aix/' + selected.index +
                                         '/ph/'+ indi.trail.item().section.primaryHash+'/' +
@@ -314,7 +349,7 @@ var Indi = (function (indi) {
 
                                 } else {
                                     // Build the request uri
-                                    url = indi.pre+'/' + indi.trail.item().section.alias + '/form' +
+                                    url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias+
                                         ''+
                                         '/id/' + selected.value +
                                         '/ph/'+ indi.trail.item().section.primaryHash+'/' +
@@ -323,8 +358,16 @@ var Indi = (function (indi) {
 
                                 top.window.$('#i-action-form-topbar-nav-to-sibling-id-suggestions').remove();
 
-                                // Update iframe's src
-                                instance.getIframe().attr('src', url);
+                                // If save button is toggled
+                                if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed)
+
+                                    // We save current row but remeber the redirect url
+                                    $('form[name='+indi.trail.item().model.tableName+']')
+                                        .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                                        .submit();
+
+                                // Else we just update iframe's src
+                                else instance.getIframe().attr('src', url);
                             }
 
                         }
@@ -344,9 +387,13 @@ var Indi = (function (indi) {
                             btn.disable();
                         }
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-prev').enable();
-                        //Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').disabled =
-                        top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '40', true);
-                        top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '13', true);
+
+                        if (typeof indi.trail.item().row.title != 'undefined') {
+                            top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '40', true);
+                            top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '13', true);
+                        } else {
+                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').spinUp();
+                        }
                     },
                     listeners: {
                         render: function(btn){
@@ -367,7 +414,7 @@ var Indi = (function (indi) {
                         //top.window.Indi.iframeMask.show();
 
                         // Build the request uri
-                        var url = indi.pre+'/' + indi.trail.item().section.alias + '/form/' + '/ph/'+
+                        var url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias + '/' + '/ph/'+
                             indi.trail.item().section.primaryHash+'/';
 
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').setValue('');
@@ -375,8 +422,17 @@ var Indi = (function (indi) {
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling').setKeywordValue('');
                         if (parseInt(indi.scope.found)) top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').setValue('');
-                        // Update iframe's src
-                        instance.getIframe().attr('src', url);
+
+                        // If save button is toggled
+                        if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed)
+
+                        // We save current row but remeber the redirect url
+                            $('form[name='+indi.trail.item().model.tableName+']')
+                                .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                                .submit();
+
+                        // Else we just update iframe's src
+                        else instance.getIframe().attr('src', url);
                     }
                 });
 
@@ -385,9 +441,9 @@ var Indi = (function (indi) {
 
                 // Add a separator
                 dockedItems.push({
-                    fieldLabel: 'Запись #',
+                    fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE,
                     labelSeparator: '',
-                    labelWidth: 50,
+                    labelWidth: (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 3,
                     xtype: 'numberfield',
                     value: (indi.trail.item().row.id ? indi.scope.aix : ''),
                     width: instance.widths.topbar.RN(),
@@ -431,7 +487,7 @@ var Indi = (function (indi) {
                                     var existingIframeQueryString = '?' + instance.getIframe().attr('src').split('?')[1];
 
                                     // Build the request uri
-                                    var url = indi.pre+'/' + indi.trail.item().section.alias + '/form/aix/' +
+                                    var url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias + '/aix/' +
                                         input.getValue() + '/ph/'+ indi.trail.item().section.primaryHash+'/';
 
                                     // We should ensure that row that user wants to retrieve - is exists within a current
@@ -445,7 +501,16 @@ var Indi = (function (indi) {
                                             url = url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1');
                                             url += existingIframeQueryString;
 
-                                            instance.getIframe().attr('src', url);
+                                            // If save button is toggled
+                                            if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed)
+
+                                            // We save current row but remeber the redirect url
+                                                $('form[name='+indi.trail.item().model.tableName+']')
+                                                    .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                                                    .submit();
+
+                                            // Else we just update iframe's src
+                                            else instance.getIframe().attr('src', url);
 
                                         // Otherwise we build an warning message, and display Ext.MessageBox
                                         } else {
@@ -456,13 +521,13 @@ var Indi = (function (indi) {
                                             // If user was using filters or keyword for browsing the scope of rows,
                                             // the warning message will contain an indication about that
                                             if (indi.scope.filters != '[]' || (indi.scope.keyword && indi.scope.keyword.length))
-                                                spm = ' с учетом текущих параметров поиска';
+                                                spm = indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_SPM;
 
                                             // Display an Ext message box
                                             Ext.MessageBox.show({
-                                                title: 'Запись не найдена',
-                                                msg: 'Среди набора записей, доступных в рамках данного раздела,' +
-                                                    spm + ' - нет записи с таким порядковым номером, но на момент загрузки формы она была',
+                                                title: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_TITLE,
+                                                msg: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_START +
+                                                    spm + indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_END,
                                                 buttons: Ext.MessageBox.OK,
                                                 icon: Ext.MessageBox.WARNING,
 
@@ -480,11 +545,14 @@ var Indi = (function (indi) {
                 }, {
                     xtype: 'textfield',
                     disabled: parseInt(indi.scope.found) ? false : true,
-                    fieldLabel: 'из ' + indi.numberFormat(indi.scope.found),
-                    width: (new Ext.util.TextMetrics()).getWidth('из ' + indi.numberFormat(indi.scope.found)) - 3,
+                    fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.scope.found),
+                    width: (new Ext.util.TextMetrics())
+                        .getWidth(
+                            indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF +
+                            indi.numberFormat(indi.scope.found)
+                        ) - 3,
                     labelSeparator: '',
                     inputType: 'hidden',
-                    id: 'test1',
                     cls: 'i-toolbar-label',
                     margin: '0 5 0 0'
                 });
@@ -514,10 +582,24 @@ var Indi = (function (indi) {
                     id: 'i-action-form-topbar-nav-to-subsection',
                     editable: false,
                     margin: '0 6 2 0',
-                    value: indi.trail.item().sections.length ? '--Выберите--' : 'Отсутствуют',
+                    value: indi.trail.item().sections.length ? indi.lang.I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT : indi.lang.I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS,
                     listeners: {
                         change: function(combo){
-                            indi.load(indi.pre + '/' + combo.getValue() + '/index/id/'+ indi.trail.item().row.id+'/');
+
+                            var url = indi.pre + '/' + combo.getValue() + '/index/id/'+ indi.trail.item().row.id
+                                +'/ph/'+indi.scope.hash
+                                +'/aix/'+top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').getValue()+'/';
+
+                            // If save button is toggled
+                            if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed) {
+                                // We save current row but remeber the redirect url
+                                $('form[name='+indi.trail.item().model.tableName+']')
+                                    .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                                    .submit();
+
+                            // Else we just update iframe's src
+                            } else top.window.Indi.load(url);
+
                         },
                         render: function(combo){
                             if (!indi.trail.item().row.id &&
@@ -559,148 +641,6 @@ var Indi = (function (indi) {
                 $(window).unload(function(){
                     //top.window.Indi.iframeMask.show();
                 });
-
-                /*
-                if ($ready = $this->view->trail->getItem()->section->javascriptForm) echo '<script>' . $ready . '</script>';
-
-
-                $sections = $this->view->trail->getItem()->sections->toArray();
-                if (count($sections)) {
-                    $sectionsDropdown = array();
-                    $maxLength = 12;
-                    for ($i = 0; $i < count($sections); $i++){
-                        $sectionsDropdown[] = array('alias' => $sections[$i]['alias'], 'title' => $sections[$i]['title']);
-                        $str = preg_replace('/&[a-z]+;/', '&', $sections[$i]['title']);
-                        $len = mb_strlen($str, 'utf-8');
-                        if ($len > $maxLength) $maxLength = $len;
-                    }
-                }
-                $parent = $this->view->trail->getItem(1);
-                $actionA = $this->view->trail->getItem()->actions->toArray();
-                foreach ($actionA as $actionI) if ($actionI['alias'] == 'save') {$save = true; break;}?>
-                <script>
-                var toolbar = {
-                    xtype: 'toolbar',
-                    dock: 'top',
-                    id: 'topbar',
-                    items: [{
-                    text: '',
-                    handler: function(){
-                    top.window.loadContent('<?=PRE . '/' . $this->view->section->alias . '/' . ($parent->row ?
-                    'index/id/' . $parent->row->id . '/' : '')?>')
-                    },
-                iconCls: 'back',
-                id: 'button-back'
-                },'-','ID:', {
-                    xtype: 'textfield',
-                    value: '<?=$this->view->row->id?>',
-                    width: 30,
-                    margin: '0 3 0 0',
-                    cls: 'i-form-text'
-                    }, '-', <?if ($save) {?>
-                    {
-                        xtype: 'splitbutton',
-                        text: '<?=BUTTON_SAVE?>',
-                        handler: function(){
-                        $('form[name="<?=$this->view->entity->table?>"]').submit()
-                        },
-                iconCls: 'save',
-                id: 'button-save',
-                arrowHandler: function(button, event){
-                    button.pressed = (button.pressed != true ? true : false);
-                    },
-                listeners: {
-                    render: function(button){
-                    button.arrowHandler(button);
-                    }
-                }
-                },'-',
-                    {
-                        text: '&nbsp;&nbsp;',
-                        id: 'button-prev',
-                        listeners: {
-                        render: function(btn){
-                        $(btn.el.dom).find('span.x-btn-inner').addClass('x-tbar-page-prev');
-                        }
-                }
-                }, top.window.Ext.create('Ext.form.ComboBox', {
-                    store: top.window.Ext.create('Ext.data.Store',{
-                    fields: ['alias', 'title'],
-                    data: <?=json_encode($sectionsDropdown)?>
-                    }),
-                valueField: 'alias',
-                hiddenName: 'alias',
-                displayField: 'title',
-                typeAhead: false,
-                width: <?=$maxLength*7+10?>,
-                style: 'font-size: 10px',
-                cls: 'subsection-select',
-                id: 'sibling-select',
-                editable: false,
-                value: '',
-                listeners: {
-                    change: function(cmb, newv, oldv){
-                    if (this.getValue()) {
-                    top.window.loadContent('<?=PRE?>/' + cmb.getValue() + '/index/id/' + <?=$this->view-
-                    >row->id?> + '/');
-                    }
-                }
-                }
-                }),
-                    {
-                        text: '&nbsp;&nbsp;',
-                        id: 'button-next',
-                        listeners: {
-                        render: function(btn){
-                        $(btn.el.dom).find('span.x-btn-inner').addClass('x-tbar-page-next');
-                        }
-                }
-                },'-',{iconCls: 'add'},'-','Запись #',{
-                    xtype: 'numberfield',
-                    value: '5',
-                    width: 30,
-                    margin: '0 3 0 0',
-                    cls: 'i-form-text',
-                    minValue: 1
-                    },'из <?=74?>','-'
-
-                <?}?>
-                <? if ($this->view->trail->getItem()->row->id && count($sections)){?>
-                ,'->','Подраздел: ',
-                top.window.Ext.create('Ext.form.ComboBox', {
-                    store: top.window.Ext.create('Ext.data.Store',{
-                    fields: ['alias', 'title'],
-                    data: <?=json_encode($sectionsDropdown)?>
-                    }),
-                valueField: 'alias',
-                hiddenName: 'alias',
-                displayField: 'title',
-                typeAhead: false,
-                width: <?=$maxLength*7+10?>,
-                style: 'font-size: 10px',
-                cls: 'subsection-select',
-                id: 'subsection-select',
-                editable: false,
-                margin: '0 6 2 0',
-                value: '<?=GRID_SUBSECTIONS_EMPTY_OPTION?>',
-                listeners: {
-                    change: function(cmb, newv, oldv){
-                    if (this.getValue()) {
-                    top.window.loadContent('<?=PRE?>/' + cmb.getValue() + '/index/id/' + <?=$this-
-                    >view->row->id?> + '/');
-                    }
-                }
-                }
-                })
-
-                <?}?>
-                ]
-                }
-                var topbar = top.window.form.getDockedComponent('topbar');
-                if (topbar) top.window.form.removeDocked(topbar);
-                top.window.form.addDocked(toolbar);
-                </script>*/
-
             }
         }
 

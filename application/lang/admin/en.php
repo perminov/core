@@ -44,6 +44,23 @@ define('GRID_FILTER_DATE_UNTIL', 'until');
 define('GRID_FILTER_NUMBER_FROM', 'between');
 define('GRID_FILTER_NUMBER_TO', 'and');
 
-
 define('MSGBOX_CONFIRM_TITLE', 'Confirm');
 define('MSGBOX_CONFIRM_MESSAGE', 'Are you sure?');
+
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'The current section\'s scope of available rows');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_SPM', ', in view with applied search options -');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_END', ' does not contain a row with such an ID');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE', 'Row #');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF', 'of ');
+
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_START', 'The scope of rows that are available in current section,');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_SPM', ' in view with applied search options');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_END', ' - does not contain a row with such an index, but it recently did');
+define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'No');
+define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Select--');
+
+
+
+
