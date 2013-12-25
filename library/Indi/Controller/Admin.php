@@ -583,8 +583,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             STD . '/' .
             (COM ? '' : $this->module . '/') .
             $this->section->alias  . '/' .
-            ($id ? 'index/id/' . $id . '/' : '') . '/' .
-            ($scope ? 'ph/' . $scope['upperHash'] . '/aix/' . $scope['upperAix'] . '/' : '')
+            ($id ? 'index/id/' . $id . '/' : ($scope ? 'index/' : '')) . 
+            ($scope['upperHash'] ? 'ph/' . $scope['upperHash'] . '/aix/' . $scope['upperAix'] . '/' : '')
         );
     }
     public function postDispatch($return = false){
