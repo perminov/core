@@ -120,7 +120,7 @@ var Indi = (function (indi) {
             this.adjustKeywordFieldWidth = function(name) {
                 var width, decrease;
                 if ($('#'+name+'-keyword').parents('.i-combo-multiple').length) {
-                    decrease = 7;
+                    decrease = 10;
                 } else {
                     decrease = 10;
                 }
@@ -1688,7 +1688,7 @@ var Indi = (function (indi) {
                 scope.click(function(){
 
                     // Set up auxilary variabes
-                    var name = $(this).parents('.i-combo').find(instance.keywordSelector()).attr('lookup');
+                    var name = $(this).parents('.i-combo').parent().find(instance.keywordSelector()).attr('lookup');
                     var selected = $('#'+name).val().split(',');
                     var deleted = $(this).parents('.i-combo-selected-item').attr('selected-id');
                     var index = selected.indexOf(deleted);
