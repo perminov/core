@@ -312,12 +312,14 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 $url = $this->post['redirect-url'];
                 if (preg_match('/\/ph\/([0-9a-f]+)\//', $url, $matches)) {
                     $_SESSION['indi']['admin'][$this->params['section']][$matches[1]]['toggledSave'] = true;
-                    if (!$this->params['id']) $_SESSION['indi']['admin'][$this->params['section']][$matches[1]]['found']++;
-                } else {
-                    if (!$this->params['id'])
+                    if (!$this->params['id']) {
+						$_SESSION['indi']['admin'][$this->params['section']][$matches[1]]['found']++;
                         $this->post['redirect-url'] = str_replace('null', $this->identifier, $this->post['redirect-url']);
-                    die('<script>top.window.Indi.load("' . $this->post['redirect-url'] . '")</script>');
+					}
+                } else {
+                    if (!$this->params['id']) $this->post['redirect-url'] = str_replace('null', $this->identifier, $this->post['redirect-url']);
                 }
+				die('<script>top.window.Indi.load("' . $this->post['redirect-url'] . '")</script>');
             } else {
                 $url = STD . (COM ? '' : '/' . $this->module) . '/' . $this->section->alias . '/'
                     . ($id ? 'index/id/' . $id . '/' : '');
