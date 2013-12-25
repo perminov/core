@@ -84,13 +84,11 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return int
      */
     public function getWidth() {
-        if ($this->name == 'lessonPracticeId' || $this->name == 'courseLessonId') i($this->comboDataRs, 'a');
         if (!$this->titleMaxLength) $this->titleMaxLength = 20;
         return ($this->titleMaxIndent ? $this->titleMaxIndent * 3 : 0) +
                 ($this->comboDataRs->optgroup ? 15 : 0) +
                 ($this->hasColorBox ? 15 : 0) +
                 ceil($this->titleMaxLength * 6.5) +
-                ($this->params['noLookup'] == 'true' || $this->comboDataRs->enumset ? 0 : 30) +
                 ($this->params['noLookup'] == 'true' || $this->comboDataRs->enumset ? 0 : 30) +
                 20;
     }
@@ -134,7 +132,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         ob_start();
         ?><div style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="filter-<?=$this->name?>-combo"><?
             ?><img class="i-combo-trigger" id="<?=$this->name?>-trigger" src="/i/admin/trigger-system.png"/><?
-            ?><div class="i-combo-multiple"><?
+            ?><div class="i-combo-multiple" style="width: 100% !important;"><?
                 foreach($this->comboDataRs->selected as $selectedR) {
                     $item = $this->detectColor(array('title' => $selectedR->title));
                     ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style']?>><?
