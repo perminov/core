@@ -89,7 +89,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
             ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
             ?><div class="i-combo-single"><?
                 $this->selected = $this->detectColor($this->selected, true); echo $this->selected['box'];
-                ?><input class="i-combo-keyword" style="width: <?=$this->getKeywordFieldWidth()?>px;" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=$this->selected['input'] ? $this->selected['input'] : $this->selected['title']?>" no-lookup="<?=$this->params['noLookup']?>"/><?
+                ?><input class="i-combo-keyword" style="width: <?=$this->getKeywordFieldWidth()?>px;" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title'])?>" no-lookup="<?=$this->params['noLookup']?>"/><?
                 ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
                 ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><?
                     ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?

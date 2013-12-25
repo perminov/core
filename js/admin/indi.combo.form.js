@@ -682,7 +682,8 @@ var Indi = (function (indi) {
                         $('#'+name).val(selected.length > 1 ? selected.join(',') : selected[0]);
 
                         // Hide options
-                        if (!(window.event.metaKey || window.event.ctrlKey)) instance.hideSuggestions(name);
+						var e = window.event || (typeof arguments[0] == 'object' ? arguments[0] : null);
+                        if ((e && !(e.metaKey || e.ctrlKey)) || !e) instance.hideSuggestions(name);
 
                         // Restore list of options
                         instance.keywordErased(name, mode);
