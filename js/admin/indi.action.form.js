@@ -603,8 +603,9 @@ var Indi = (function (indi) {
                         },
                         render: function(combo){
                             if (!indi.trail.item().row.id &&
-                                top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed == false)
-                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-subsection').disable();
+                                top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed != true) {
+									top.window.Ext.getCmp('i-action-form-topbar-nav-to-subsection').disable();
+								}
                         }
                     }
                 }));
