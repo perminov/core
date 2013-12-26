@@ -12,7 +12,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 20;
+    public static $comboOptionsVisibleCount = 300;
 
     /**
      * Store regular expression for checks of email addresses validity
@@ -221,7 +221,11 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                     // and do not use any external values
                     if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
                     $rowLinkedToSatellite = $this->getForeignRowByForeignKey($satelliteR->alias);
-                    $where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $fieldR->alternative . '`)';
+					if ($satelliteR->satellitealias) {
+						$where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $satelliteR->satellitealias . '`)';
+					} else {
+						$where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $fieldR->alternative . '`)';
+					}
 
                 // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
                 // we use it's alias instead. Example:
@@ -573,4 +577,13 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             return $this->$colorField;
         }
     }
+	/**
+	 * Gets the foreign row by foreign key name, using it's current value
+	 *
+	 * @param $key The name of foreign key
+	 * @return *_Row object
+	 */
+	public function foreign($key){
+		return $this->getForeignRowByForeignKey($key);
+	}
 }

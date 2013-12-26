@@ -31,10 +31,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
         $section = new Section();
         $this->section = $section->fetchRow('`id` = "' . $sectionId . '"');
 
-        if (preg_match('/(\$|::)/', $this->section->filter)) {
-            eval('$this->section->filter = ' . $this->section->filter . ';');
-        }
-
+		Indi::$cmpTpl = $this->section->filter; eval(Indi::$cmpRun); $this->section->filter = Indi::$cmpOut;
 
         if ($this->section->id) {
             // set up actions of section

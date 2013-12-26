@@ -419,7 +419,10 @@ var Indi = (function (indi) {
 
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').setValue('');
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-prev').disable();
-                        top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling').setKeywordValue('');
+                        
+						if (typeof indi.trail.item().row.title != 'undefined') 
+							top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling').setKeywordValue('');
+							
                         if (parseInt(indi.scope.found)) top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').setValue('');
 
