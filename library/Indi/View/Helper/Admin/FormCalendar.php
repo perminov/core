@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
         if ($params['displayFormat']) {
             if ($value == '0000-00-00' && $params['displayFormat'] == 'd.m.Y') {
                 $value = '00.00.0000';
-            } else {
+            } else if ($value != '0000-00-00'){
                 $value = date($params['displayFormat'], strtotime($value));
                 if ($value == '30.11.-0001') $value = '00.00.0000';
             }

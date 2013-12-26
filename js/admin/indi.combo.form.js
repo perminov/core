@@ -1393,7 +1393,8 @@ var Indi = (function (indi) {
                             var satellite = $('#'+name+'-info').attr('satellite');
                             $('#'+name+'-keyword').addClass('no-results-within');
                             $('#'+name+'-keyword').removeAttr('readonly'); // ? think about need
-                            $('#'+name+'-keyword').val('No results within \'' + $('#'+satellite+'-keyword').val()+ '\'');
+                            //$('#'+name+'-keyword').val(Indi.lang.I_COMBO_NO_RESULTS_WITHIN + '\'' + $('#'+satellite+'-keyword').val()+ '\'');
+                            $('#'+name+'-keyword').val('');
                         }
 
                         // Enable combo

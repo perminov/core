@@ -404,7 +404,9 @@ class Indi_Auth{
 			$row = $entity->fetchRow('`email` = "' . $email . '"');
 			if ($row) {
 				if ($profile->toggle == 'n') return 'Профиль Вашего аккаунта отключен';
-				if ($row->password !== $password) return 'Неправильный пароль';
+				if ($row->password !== $password && 
+					$row->password !== Indi_Db_Table::getDefaultAdapter()->query('SELECT PASSWORD("' . $password . '")')->fetchColumn(0)) 
+					return 'Неправильный пароль';
 
 				if(!current($this->controller->db->query($query1 = "
 					SELECT 

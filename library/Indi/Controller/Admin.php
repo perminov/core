@@ -258,9 +258,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     $disabledField = Misc::loadModel('DisabledField')->fetchRow('`sectionId` = "' . $sectionId . '" AND `fieldId` = "' . $fieldId . '"');
                     if (strlen($disabledField->defaultValue)) {
                         $value = $disabledField->defaultValue;
-                        if (preg_match('/(\$|::)/', $value)) {
-                            eval('$value = ' . $value . ';');
-                        }
+						Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
                         $set[] = $field->alias . ' = "' . $value . '"';
                         $data[$field->alias] = $value;
                     }
@@ -528,7 +526,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         if (preg_match($this->datePattern, $data[$j][$fieldR->alias])) {
                             if ($data[$j][$fieldR->alias] == '0000-00-00' && $params['displayFormat'] == 'd.m.Y') {
                                 $data[$j][$fieldR->alias] = '00.00.0000';
-                            } else {
+                            } else if ($data[$j][$fieldR->alias] != '0000-00-00'){
                                 $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
                                 if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
                             }
@@ -546,7 +544,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                             && preg_match('/00:00:00$/', $data[$j][$fieldR->alias])
                             && $params['displayTimeFormat'] == 'H:i') {
                             $data[$j][$fieldR->alias] = '00.00.0000 00:00';
-                        } else {
+                        } else if ($data[$j][$fieldR->alias] != ''){
                             $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
                         }
 
