@@ -236,6 +236,7 @@ var Indi = function(indi) {
 
         if (url.match(/\/form\//) || iframe) {
             Indi.clearCenter();
+
             Ext.create('Ext.Panel', {
                 //region: 'center',
                 border: 0,
@@ -247,6 +248,8 @@ var Indi = function(indi) {
                 height: '100%',
                 renderTo: 'center-content-body'
             });
+            new Ext.LoadMask(top.window.$('#iframe-wrapper')[0], {id: 'iframe-mask'});
+            Ext.getCmp('iframe-mask').show();
         } else {
             $.post(url, function(response){
                 Indi.clearCenter();

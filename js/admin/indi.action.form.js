@@ -70,7 +70,7 @@ var Indi = (function (indi) {
                     ID: function(row) {
                         var labelWidth = 20, inputWidth = 30;
                         if (row.id) {
-                            inputWidth = row.id.toString().length * 7 + 2;
+                            inputWidth = row.id.toString().length * 9;
                             inputWidth = inputWidth > 30 ? inputWidth : 30;
                         }
                         return labelWidth + inputWidth;
@@ -115,7 +115,7 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     text: '',
                     handler: function(){
-                        //top.window.Indi.iframeMask.show();
+                        top.window.Ext.getCmp('iframe-mask').show();
                         top.window.Indi.load(
                             Indi.pre +
                                 '/' + indi.trail.item().section.alias +
@@ -165,7 +165,7 @@ var Indi = (function (indi) {
                                 // If field's value is not empty, and value is not the same as last valid value
                                 if (input.getValue() && input.getValue() != input.lastValidValue) {
 
-                                    //top.window.Indi.iframeMask.show();
+                                    top.window.Ext.getCmp('iframe-mask').show();
 
                                     var existingIframeQueryString = '?' + instance.getIframe().attr('src').split('?')[1], url;
 
@@ -200,6 +200,8 @@ var Indi = (function (indi) {
                                         // Otherwise we build an warning message, and display Ext.MessageBox
                                         } else {
 
+                                            top.window.Ext.getCmp('iframe-mask').hide();
+
                                             // Declare `smp` variable. SMP - mean Search Params Mention
                                             var spm = '';
 
@@ -209,7 +211,7 @@ var Indi = (function (indi) {
                                                 spm = indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_SPM;
 
                                             // Display an Ext message box
-                                            //top.window.Indi.iframeMask.hide();
+                                            //top.window.Ext.getCmp('iframe-mask').hide();
                                             Ext.MessageBox.show({
                                                 title: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE,
                                                 msg: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START +
@@ -244,6 +246,8 @@ var Indi = (function (indi) {
                     xtype: 'splitbutton',
                     text: indi.lang.BUTTON_SAVE,
                     handler: function(){
+
+                        top.window.Ext.getCmp('iframe-mask').show();
 
                         var url = Indi.pre +
                             '/' + indi.trail.item().section.alias +
@@ -286,7 +290,7 @@ var Indi = (function (indi) {
                     id: 'i-action-form-topbar-nav-to-sibling-prev',
                     disabled: parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) > 1 ? false : true,
                     handler: function(btn){
-                        //top.window.Indi.iframeMask.show();
+                        top.window.Ext.getCmp('iframe-mask').show();
                         if (typeof indi.trail.item().row.title != 'undefined') {
                             top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '38', true);
                             top.window.Indi.combo.sibling.keyDownHandler('i-action-form-topbar-nav-to-sibling-id', '13', true);
@@ -325,7 +329,7 @@ var Indi = (function (indi) {
                         },
                         change: function(selected){
                             if (parseInt(selected.value)) {
-                                //top.window.Indi.iframeMask.show();
+                                top.window.Ext.getCmp('iframe-mask').show();
 
                                 var existingIframeQueryString = '?' + instance.getIframe().attr('src').split('?')[1], url;
 
@@ -389,7 +393,7 @@ var Indi = (function (indi) {
                     id: 'i-action-form-topbar-nav-to-sibling-next',
                     disabled: parseInt(indi.scope.found) && ((parseInt(indi.scope.aix) && parseInt(indi.scope.aix) < parseInt(indi.scope.found)) || !parseInt(indi.scope.aix)) ? false : true,
                     handler: function(btn){
-                        //top.window.Indi.iframeMask.show();
+                        top.window.Ext.getCmp('iframe-mask').show();
                         if(parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) + 1 < parseInt(indi.scope.found)) {
                             btn.enable();
                         } else {
@@ -421,7 +425,7 @@ var Indi = (function (indi) {
                     id: 'i-action-form-topbar-button-add',
                     handler: function(){
 
-                        //top.window.Indi.iframeMask.show();
+                        top.window.Ext.getCmp('iframe-mask').show();
 
                         // Build the request uri
                         var url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias + '/' + '/ph/'+
@@ -483,7 +487,7 @@ var Indi = (function (indi) {
                                     input.getValue() <= input.maxValue &&
                                     input.getValue() != input.lastValidValue) {
 
-                                    //top.window.Indi.iframeMask.show();
+                                    top.window.Ext.getCmp('iframe-mask').show();
 
                                     if (input.getValue() == input.maxValue) {
                                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').disable();
@@ -648,13 +652,11 @@ var Indi = (function (indi) {
                     }
                 }
 
-
                 instance.applyTopToolbar();
 
-                //top.window.Indi.iframeMask.hide();
-
-                $(window).unload(function(){
-                    //top.window.Indi.iframeMask.show();
+                $(document).ready(function(){
+                    if (top.window.Ext.getCmp('iframe-mask'))
+                        top.window.Ext.getCmp('iframe-mask').hide();
                 });
             }
         }
