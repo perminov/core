@@ -213,7 +213,14 @@ var Indi = function(indi) {
 
 
     indi.clearCenter = function() {
-        if (Ext.getCmp('i-center-content')) Ext.getCmp('i-center-content').close();
+        Ext.ComponentManager.unregister(Ext.getCmp('i-center-content'));
+        if (viewport.getComponent(3).cls == 'center-all') {
+            viewport.getComponent(3).remove('i-center-content');
+        } else if (viewport.getComponent(4).cls == 'center-all') {
+            viewport.getComponent(4).remove('i-center-content');
+        }
+        $('#center-content-body').html('');
+        viewport.doComponentLayout();
     };
 
     /**
@@ -229,31 +236,29 @@ var Indi = function(indi) {
 
         if (url.match(/\/form\//) || iframe) {
             Indi.clearCenter();
-            Indi.getCenter().add(Ext.create('Ext.Panel', {
-                region: 'center',
-                border: 1,
+            Ext.create('Ext.Panel', {
+                //region: 'center',
+                border: 0,
                 align: 'stretch',
                 html: '<div id="iframe-wrapper" style="height: 100%;"><iframe src="' + url + '?width=' + Math.floor(($('#center-content-body').width()-36)/2) +
                     '" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe></div>',
                 id: 'i-center-content',
                 iframed: true,
                 height: '100%',
-                listeners: {
-                    afterlayout: function(panel){
-                        $('#form-frame').height($(panel.el.dom).find('#'+panel.id+'-body').height());
-                        Indi.getCenter().getComponent('center-content').show();
-                        Indi.getCenter().getComponent('center-content').remove();
-                    }
-                }
-            }));
+                renderTo: 'center-content-body'
+            });
         } else {
             $.post(url, function(response){
                 Indi.clearCenter();
-                Indi.viewport.doComponentLayout();
                 $('#center-content-body').html(response);
             });
         }
     };
+
+    /**
+     * Deprecated section
+     */
+    window.loadContent = indi.load;
 
     /**
      * Wait until jQuery and Ext are ready, and then start all operations

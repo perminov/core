@@ -28,6 +28,15 @@ var Indi = (function (indi) {
              */
             this.componentName = 'action.form';
 
+            /**
+             * Configuration
+             *
+             * @type {Object}
+             */
+            this.options = {
+                hideTopbar: false
+            }
+
             this.getPanel = function() {
                 return top.window.Ext.getCmp('i-center-content');
             }
@@ -90,7 +99,7 @@ var Indi = (function (indi) {
             /**
              * Build the top toolbar for form action
              */
-            this.applyTopToolbar = function() {
+            this.applyTopToolbar = function(config) {
 
                 // If there is a some custom implementation, return
                 if (!instance.getPanel()) return;
@@ -409,6 +418,7 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     iconCls: 'add',
                     disabled: parseInt(indi.trail.item().section.disableAdd) || indi.trail.item().disableSave ? true : false,
+                    id: 'i-action-form-topbar-button-add',
                     handler: function(){
 
                         //top.window.Indi.iframeMask.show();
@@ -617,7 +627,8 @@ var Indi = (function (indi) {
                 instance.getPanel().addDocked({
                     xtype: 'toolbar',
                     id: 'i-action-form-topbar',
-                    items: dockedItems
+                    items: dockedItems,
+                    hidden: instance.options.hideTopbar
                 });
 
             }

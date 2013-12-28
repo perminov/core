@@ -214,6 +214,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // Get a scope hash
         $primaryHash = substr(md5($primary), 0, 10);
 
+        // Set the hash to be available at the stage then grid (or section's other panel) is rendered, but it's
+        // store is not yet loaded
+        $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['hash'] = $primaryHash;
+
         // Remember hash of upper scope same place in $_SESSION where local scope params will be set
         if ($this->params['ph'])
             $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperHash'] = $this->params['ph'];

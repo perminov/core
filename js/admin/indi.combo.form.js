@@ -35,6 +35,15 @@ var Indi = (function (indi) {
              */
             this.componentName = 'combo.form';
 
+            /**
+             * Configuration
+             *
+             * @type {Object}
+             */
+            this.options = {
+                removeComboDataDivs: true
+            }
+
             this.averageTitleCharWidth = 6.5;
 
             /**
@@ -1834,11 +1843,15 @@ var Indi = (function (indi) {
              */
             this.run = function() {
 
-                top.window.$('body .i-combo-data').remove();
-
                 if (indi.callbacks && indi.callbacks[instance.componentName] && indi.callbacks[instance.componentName].length) {
                     for (var i = 0; i < indi.callbacks[instance.componentName].length; i++) {
                         indi.callbacks[instance.componentName][i]();
+                    }
+                }
+
+                if (instance.options.removeComboDataDivs) {
+                    for (var i in instance.store) {
+                        top.window.$('body #' + i + '-suggestions').remove();
                     }
                 }
 
