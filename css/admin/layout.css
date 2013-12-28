@@ -252,3 +252,21 @@ controls{
 tr.disabled{
     background: #f5f5f5;
 }
+.x-gecko .x-btn-inner{
+    margin-top: -1px;
+}
+.x-gecko .x-form-trigger-wrap.x-unselectable .x-form-text{
+    padding-top: 3px;
+    padding-left: 1px;
+}
+.x-gecko .i-combo-info *{
+    position: relative;
+    top: -1px;
+    font-size: 9px;
+}
+.x-gecko #trail{
+    height: 17px;
+    position: relative;
+    top: -2px;
+    line-height: 14px;
+}
