@@ -79,7 +79,7 @@ var Indi = (function (indi) {
                     RN: function(row) {
                         var labelWidth = (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 3,
                             triggerWidth = 20, inputWidth;
-                        inputWidth = indi.scope.found.toString().length * 7 + 2;
+                        inputWidth = (indi.scope.found.toString().length + 1) * 7 + 2;
                         inputWidth = inputWidth > 30 ? inputWidth : 30;
                         return labelWidth + inputWidth + triggerWidth;
                     },
@@ -456,7 +456,7 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE,
                     labelSeparator: '',
-                    labelWidth: (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 3,
+                    labelWidth: (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 8,
                     xtype: 'numberfield',
                     value: (indi.trail.item().row.id ? indi.scope.aix : ''),
                     width: instance.widths.topbar.RN(),
