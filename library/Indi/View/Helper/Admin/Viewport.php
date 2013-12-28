@@ -65,16 +65,6 @@ Ext.onReady(function() {
 	});
 
     Indi.viewport = viewport;
-
-	loadContent = function(url, iframe){
-        Indi.load(url, iframe)
-    }
-	locationHistoryBack = function(){
-		if (locationHistory.length > 1) {
-			locationHistory.pop();
-			loadContent(locationHistory[locationHistory.length]);
-		}
-	}
 });
 </script>
 		<?$xhtml = ob_get_clean();

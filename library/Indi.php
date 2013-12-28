@@ -48,7 +48,14 @@ class Indi{
                 }
             }
         } else if (preg_match(\'/(\$|::)/\', Indi::$cmpTpl)) {
-            eval(\'Indi::$cmpOut = \\\'\' . Indi::$cmpTpl . \'\\\';\');
+            if (preg_match(\'/^\\\'/\', trim(Indi::$cmpTpl))) {
+                Indi::$cmpTpl = ltrim(Indi::$cmpTpl, "\' ");
+                if (preg_match(\'/\\\'$/\', trim(Indi::$cmpTpl)))
+                    Indi::$cmpTpl = rtrim(Indi::$cmpTpl, "\' ");
+                eval(\'Indi::$cmpOut = \\\'\' . Indi::$cmpTpl . \'\\\';\');
+            } else {
+                eval(\'Indi::$cmpOut = \\\'\' . Indi::$cmpTpl . \'\\\';\');
+            }
         } else {
             Indi::$cmpOut = Indi::$cmpTpl;
         }
