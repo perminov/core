@@ -163,4 +163,18 @@ class Indi{
         // Return reordered ids
         return $idA;
     }
+	
+    /**
+     * Return an array containing defined constants
+     *
+     * @static
+     * @param string $category
+     * @param boolean $json
+     * @return array|json
+     */
+	public static function constants($category = 'user', $json = false) {
+		$constants = get_defined_constants(true);
+		$constants = $category ? $constants[$category] : $constants;
+		return $json ? json_encode($constants) : $constants;
+	}
 }
