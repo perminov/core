@@ -163,6 +163,22 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             }
 
             return $dataRs;
+
+        // Else if current field column type is BOOLEAN - combo is used as an alternative for checkbox control
+        } else if ($fieldColumnTypeR->type == 'BOOLEAN') {
+
+            // Prepare the data
+            $dataRs = Indi::model('Enumset')->createRowset(
+                array(
+                    'data' => array(
+                        array('alias' => '0', 'title' => 'Нет'),
+                        array('alias' => '1', 'title' => 'Да')
+                    )
+                )
+            );
+
+            $dataRs->enumset = true;
+            return $dataRs;
         }
 
         // Setup filter by satellite

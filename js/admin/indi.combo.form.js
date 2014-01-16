@@ -302,7 +302,7 @@ var Indi = (function (indi) {
 
                     // Restore trigger pic because previously it could have disabled-style of appearance
                     if ($('#'+name+'-keyword').parents('.i-combo').hasClass('simple-disabled') == false)
-                        $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system.png');
+                        $('#'+name+'-trigger').attr('src', indi.std+'/i/admin/trigger-system.png');
 
                 // Else if results set is empty (no non-disabled options), we hide options, and set red
                 // color for keyword, as there was no related results found
@@ -319,7 +319,7 @@ var Indi = (function (indi) {
                     // Else if reason of no results was not in satellite, we add special css class for that case
                     } else {
                         $('#'+name+'-keyword').addClass('i-combo-keyword-no-results');
-                        $('#'+name+'-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
+                        $('#'+name+'-trigger').attr('src', indi.std+'/i/admin/trigger-system-disabled.png');
                     }
                 }
             }
@@ -332,7 +332,7 @@ var Indi = (function (indi) {
              */
             this.fetchRelativePath = function() {
                 if (window.comboFetchRelativePath) {
-                    return STD + window.comboFetchRelativePath;
+                    return indi.std + window.comboFetchRelativePath;
                 } else {
                     return '.';
                 }
@@ -353,7 +353,7 @@ var Indi = (function (indi) {
 
                 // Show loading pic
                 $('#'+name+'-count')
-                    .html('<img src="' + STD + '/i/admin/combo-loading-pic.gif" class="i-combo-loader" width="15">')
+                    .html('<img src="' + indi.std + '/i/admin/combo-loading-pic.gif" class="i-combo-loader" width="15">')
                     .addClass('i-combo-count-visible');
 
                 // Appendix
@@ -640,7 +640,7 @@ var Indi = (function (indi) {
 
                 // Get the index of selected option id in instance.store[name].ids
                 if (instance.store[name].enumset) {
-                    if (isNaN(parseInt(li.attr(name)))) {
+                    if (!li.attr(name).toString().match(/^[0-9]+$/)) {
                         index = instance.store[name].ids.indexOf(li.attr(name));
                     } else {
                         index = instance.store[name].ids.indexOf(parseInt(li.attr(name)));
@@ -1139,8 +1139,30 @@ var Indi = (function (indi) {
                 // We need to fire 'change' event only if combo is running in single-value mode.
                 // In that mode no keyword = no value. But in multiple-value mode combo may have a
                 // value without a keyword. Also, we fire change only if previous value was not 0
-                if($('#'+name+'-info').hasClass('i-combo-info-multiple') == false && $('#'+name).val()) {
-                    $('#'+name).val(0).change();
+                if($('#'+name+'-info').hasClass('i-combo-info-multiple') == false) {
+
+                    // If we have a value
+                    if ($('#'+name).val()) {
+
+                        // If combo is used to represent a checkbox (boolean value)
+                        if ($('#'+name).attr('boolean') == 'true') {
+
+                            // We set it's value to empty string and fire change handler
+                            $('#'+name).val('').change();
+
+                        // Else if is it non-boolean combo
+                        } else {
+
+                            // We set it's value to 0 and fire change handler
+                            $('#'+name).val(0).change();
+                        }
+
+                    // Else if we have no value (empty string), but combo is boolean
+                    } else if ($('#'+name).attr('boolean') == 'true') {
+
+                        // We just fire change handler
+                        $('#'+name).change();
+                    }
                 }
 
                 // We restore combo state, that is had before first run of 'keyword' fetch mode
@@ -1353,7 +1375,7 @@ var Indi = (function (indi) {
                 // Remove color
                 $('#'+name+'-keyword').css({color: ''});
                 $('#'+name+'-keyword').val('');
-                $('#'+name).val(0);
+                $('#'+name).val($('#'+name).attr('boolean') != 'true' ? 0 : '');
             }
 
             /**
@@ -1373,7 +1395,7 @@ var Indi = (function (indi) {
                     if (sv == 0 || force == true) {
                         $('#'+name+'-keyword').attr('disabled', 'disabled');
                         $('#'+name+'-keyword').parents('.i-combo').addClass('i-combo-disabled x-item-disabled');
-                        $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
+                        $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system-disabled.png');
                         $('#'+name+'-keyword').val('');
 
                         // We set hidden field value as 0 (or '', if multiple), and fire 'change event' because there can be
@@ -1410,7 +1432,7 @@ var Indi = (function (indi) {
                     } else {
                         $('#'+name+'-keyword').removeAttr('disabled');
                         $('#'+name+'-keyword').parents('.i-combo').removeClass('i-combo-disabled x-item-disabled');
-                        $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', STD+'/i/admin/trigger-system.png');
+                        $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system.png');
                     }
                 }
 
@@ -1434,7 +1456,7 @@ var Indi = (function (indi) {
                     $('#'+name+'-keyword').attr('disabled', 'disabled');
                     $('#'+name+'-keyword').parents('.i-combo').addClass('simple-disabled');
                     $('#'+name+'-keyword').parents('.i-combo').addClass('i-combo-disabled x-item-disabled');
-                    $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', STD+'/i/admin/trigger-system-disabled.png');
+                    $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system-disabled.png');
                     $('#'+name+'-keyword').val('');
                     // We set hidden field value as 0, and fire 'change event' because there can be
                     // satellited combos for current combo, so if we have, for example 5 cascading combos,
@@ -1448,7 +1470,7 @@ var Indi = (function (indi) {
                     $('#'+name+'-keyword').removeAttr('disabled');
                     $('#'+name+'-keyword').parents('.i-combo').removeClass('i-combo-disabled x-item-disabled');
                     $('#'+name+'-keyword').parents('.i-combo').removeClass('simple-disabled');
-                    $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', STD+'/i/admin/trigger-system.png');
+                    $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system.png');
                 }
             }
 

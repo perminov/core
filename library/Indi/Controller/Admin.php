@@ -424,7 +424,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                             $title = $foreignRow->getTitle();
                             if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$title)) {
                                 $color = substr($title, 4);
-                                $title = '<span class="color-box" style="background: #' . $color . ';"></span>#'. $color;
+                                $title = '<span class="i-color-box" style="background: #' . $color . ';"></span>#'. $color;
                             }
                             $titles[$fieldAlias][$foreignRow->id] = $title;
                         }
@@ -476,7 +476,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 if ($colorColumn->id == $gridFields[$i]['columnTypeId']) {
                     for ($j = 0; $j < count ($data); $j++) {
                         $color = substr($data[$j][$gridFields[$i]['alias']], 4);
-                        $data[$j][$gridFields[$i]['alias']] = '<span class="color-box" style="background: #' . $color . ';"></span>#'. $color;
+                        $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: #' . $color . ';"></span>#'. $color;
                     }
                 }
             }
@@ -486,7 +486,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         for ($i = 0; $i < count($gridFields); $i++) {
             for ($j = 0; $j < count ($data); $j++) {
                 if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $data[$j][$gridFields[$i]['alias']], $matches)) {
-                    $data[$j][$gridFields[$i]['alias']] = '<span class="color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
+                    $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
                 }
             }
         }
@@ -616,7 +616,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
       *
       */
     public function assign(){
-        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . '] <a href="' . PRE . '/logout/">' . LOGOUT . '</a>');
+        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
         $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
         $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $this->view->assign('get', $this->get);

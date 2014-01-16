@@ -12,7 +12,7 @@ class Indi_View_Helper_Admin_GridFilters extends Indi_View_Helper_Abstract{
         items: [{
             padding: '0 4 1 5',
             margin: '0 2 <?=$fieldsetMarginBottom?> 0',
-            xtype:'fieldset',
+            xtype: 'fieldset',
             title: '<?=GRID_FILTER?>',
             width: '100%',
             columnWidth: '100%',

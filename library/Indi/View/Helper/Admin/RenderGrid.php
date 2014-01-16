@@ -18,7 +18,8 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-gte';
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias . '-lte';
             } else {
-                if ($filter->foreign['fieldId']->relation) $comboFilters[] = $this->view->filterCombo($filter);
+                if ($filter->foreign['fieldId']->relation || $filter->foreign['fieldId']->columnTypeId == 12)
+                    $comboFilters[] = $this->view->filterCombo($filter);
                 $filterFieldAliases[] = $filter->foreign['fieldId']->alias;
             }
         }
@@ -349,7 +350,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     items: eval('['+json.tbar+']')
                 }],
                 border: 1,
-                id: 'i-center-content',//json.section.alias + 'Grid',//,
+                id: 'i-center-center-wrapper',//json.section.alias + 'Grid',//,
                 bbar: new Ext.PagingToolbar({
                     store: gridStore,
                     displayInfo: true,
@@ -416,16 +417,16 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
             $('.trail-siblings').mouseleave(function(){
                 $(this).hide();
             });
-            myMask = new Ext.LoadMask(Ext.getCmp('i-center-content').getEl().first('.x-panel-body'), {});
+            myMask = new Ext.LoadMask(Ext.getCmp('i-center-center-wrapper').getEl().first('.x-panel-body'), {});
             myMask.show();
             filterChange({noReload: true});
             gridStore.load();
         });
         </script>
+        <?ob_get_clean(); ob_start();?>
         <script>
+            Indi.scope = top.Indi.scope = <?=json_encode($this->view->getScope())?>;
             Indi.trail.apply(<?=json_encode($this->view->trail->toArray())?>);
-            Indi.scope = <?=json_encode($this->view->getScope())?>;
-            top.Indi.scope = Indi.scope;
         </script>
         <?if (count($comboFilters)){
                 echo implode('', $comboFilters);

@@ -118,6 +118,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
             }
         }
     }
+
     /**
      * Get array version of internal variables
      *
@@ -134,6 +135,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
         if ($this->model) $array['model'] = $this->model->toArray();
         if ($this->fields) $array['fields'] = $this->fields->toArray();
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
+        if ($this->filters) $array['filters'] = $this->filters->toArray(true);
         if ($this->dropdownWhere) $array['dropdownWhere'] = $this->dropdownWhere;
         return $array;
     }

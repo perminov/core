@@ -94,8 +94,12 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
      *
      * @return array
      */
-    public function toArray(){
-        return $this->_data;
+    public function toArray($deep = false){
+        if ($deep) {
+            $array = array(); foreach ($this as $row) $array[] = $row->toArray('current', true); return $array;
+        } else {
+            return $this->_data;
+        }
     }
 
     /**

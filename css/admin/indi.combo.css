@@ -18,6 +18,7 @@
 }
 .i-combo.i-combo-filter{
     overflow: hidden;
+    display: inline-block;
 }
 .i-combo img.i-combo-trigger{
     position: absolute;
@@ -32,7 +33,10 @@
     border-top-right-radius: 3px;
 }
 .i-combo .i-combo-keyword {
-    border: 0px solid !important; width: 30px; height: 15px; margin-top: 1px;
+    border: 0px solid !important; width: 30px; height: 15px; margin-top: 1px; font-size: 11px;
+}
+.i-combo .i-combo-single .i-combo-keyword {
+    padding-left: 2px;
 }
 .i-combo .i-combo-keyword[disabled] {
     background: inherit;
@@ -57,7 +61,7 @@
 }
 .i-combo .i-combo-info{
     position: absolute;
-    margin-top: -15px;
+    margin-top: -14px;
     font-size: 10px;
     visibility: hidden;
     display: none;
@@ -150,6 +154,8 @@
     padding: 0 2px 0px 2px;
     margin-top: 1px;
     display: inline-block;
+    font-size: 11px;
+    line-height: 15px;
 }
 .i-combo .i-combo-multiple, .i-combo .i-combo-single{
     border: 1px solid #99BCE8;
@@ -220,4 +226,10 @@
 .i-combo.i-combo-disabled .i-combo-multiple{
     border-color: #cccccc !important;
     background: #eeeeee;
+}
+/* Firefox style fixes */
+.x-gecko .i-combo-info *{
+    position: relative;
+    top: -1px;
+    font-size: 9px;
 }

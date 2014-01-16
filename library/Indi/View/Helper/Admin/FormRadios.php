@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
 
 			$id = ' id="' . $name . ucwords(str_replace('.', '', $values[$i])) .'"';
             if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $values[$i], $matches)) {
-                $color = '<span class="color-box" style="background: #' . $matches[1] . ';"></span> ';
+                $color = '<span class="i-color-box" style="background: #' . $matches[1] . ';"></span> ';
             } else {
                 $color = '';
             }

@@ -192,6 +192,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
                 $attrs = ' ' . implode(' ', $attrs);
             }
 
+        // Else if combo is mulptiple
         } else if ($this->field->storeRelationAbility == 'many') {
             // Set value for hidden input
             $selected = array('value' => $selected);
@@ -207,8 +208,25 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
                 }
             }
             $attrs = ' ' . implode(' ', $attrs);
-        }
 
+        // Else if combo is boolean
+        } else if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
+
+            // Setup a key
+            if ($this->getRow()->$name) {
+                $key = $this->getRow()->$name;
+            } else if ($comboDataRs->enumset && $this->type == 'form') {
+                $key = key($options);
+            } else {
+                $key = $this->getDefaultValue();
+            }
+
+            // Setup an info about selected value
+            $selected = array(
+                'title' => $options[$key]['title'],
+                'value' => $key
+            );
+        }
 
         // Prepare options data
         $options = array(
@@ -247,10 +265,13 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
 
         ob_start();
 
-        if ($this->field->storeRelationAbility == 'one') {
+        if ($this->field->storeRelationAbility == 'one' ||
+            ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12)) {
             echo $this->formComboSingle();
         } else if ($this->field->storeRelationAbility == 'many') {
             echo $this->formComboMultiple();
+        } else if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
+            echo $this->formComboBoolean();
         }
 
         // Init combo store data
@@ -325,7 +346,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             if ($s) {
                 $selected['title'] = strip_tags($selected['title']);
                 if (!$selected['style'])
-                    $selected['style'] = ' style="color: ' . $selected['color'] . '"'; //++
+                    $selected['style'] = ' style="color: ' . $selected['color'] . '"';
             } else {
                 if ($t) $selected['input'] = $color[1];
                 $selected['box'] = '<span class="i-combo-color-box" style="background: ' . $color[1] . '"></span>';

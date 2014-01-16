@@ -559,6 +559,11 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         // Use 'MATCH AGAINST' clause
                         $where[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
                             '*" IN BOOLEAN MODE)';
+
+                    // If $found field's column type is BOOLEAN ( - can be handled with control elements 'Check' and 'Combo')
+                    } else if ($found->columnTypeId == 12) {
+                        // Use '=' clause
+                        $where[] = '`' . $filterSearchFieldAlias . '` ="' . $filterSearchFieldValue . '"';
                     }
 
                 // Else if $found field is able to store only one foreign key, use '=' clause
@@ -580,6 +585,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     $where[] = '(' . implode(' AND ', $fisA) . ')';
                 }
             }
+            i($where);
         }
         return $where;
     }

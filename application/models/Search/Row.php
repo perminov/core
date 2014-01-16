@@ -21,7 +21,7 @@ class Search_Row extends Indi_Db_Table_Row{
                 foreach ($a as $i) {
                     if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$i->alias)) {
                         $color = substr($i->alias, 4);
-                        $i->title = '<span class="color-box" style="background: #' . $color . ';"></span> '. $i->title;
+                        $i->title = '<span class="i-color-box" style="background: #' . $color . ';"></span> '. $i->title;
                         $store[] = array('id' => $i->alias, 'title' => $i->title);
                     } else {
                         $store[] = array('id' => $i->alias, 'title' => strip_tags($i->title));
@@ -61,7 +61,7 @@ class Search_Row extends Indi_Db_Table_Row{
                 foreach ($a as $i) {
                     if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$i->title)) {
                         $color = substr($i->title, 4);
-                        $i->title = '<span class="color-box" style="background: #' . $color . ';"></span><span>#'. $color.'</span>';
+                        $i->title = '<span class="i-color-box" style="background: #' . $color . ';"></span><span>#'. $color.'</span>';
                         $store[] = array('id' => $i->id, 'title' => $i->title);
                     } else {
                         $store[] = array('id' => $i->id, 'title' => strip_tags($i->title));

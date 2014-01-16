@@ -97,15 +97,26 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      * @param string $type current|original|modified
      * @return array
      */
-    public function toArray($type = 'current')
+    public function toArray($type = 'current', $deep = true)
     {
         if ($type == 'current') {
-            return (array) array_merge($this->_original, $this->_modified);
+            $array = (array) array_merge($this->_original, $this->_modified);
         } else if ($type == 'original') {
-            return (array) $this->_original;
+            $array = (array) $this->_original;
         } else if ($type == 'modified') {
-            return (array) $this->_modified;
+            $array = (array) $this->_modified;
         }
+
+        if ($deep) {
+            if (is_array($array['foreign']) && count($array['foreign'])) {
+                foreach ($array['foreign'] as $key => $row) {
+                    if (is_object($row) && $row instanceof Indi_Db_Table_Row_Abstract)
+                        $array['foreign'][$key] = $row->toArray($type, $deep);
+                }
+            }
+        }
+
+        return $array;
     }
 
     /**

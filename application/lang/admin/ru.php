@@ -4,9 +4,9 @@ define('LOGIN_SCREEN_PASSWORD', 'Пароль');
 define('LOGIN_SCREEN_ENTER', 'Вход');
 define('LOGIN_SCREEN_RESET', 'Сброс');
 
-define('LOGOUT', 'Выход');
+define('I_LOGOUT', 'Выход');
 
-define('MENU', 'Меню');
+define('I_MENU', 'Меню');
 define('ACTION_CREATE', 'Создать');
 define('GRID_WARNING_SELECTROW_MSG', 'Выберите строку');
 define('GRID_WARNING_SELECTROW_TITLE', 'Сообщение');
@@ -61,6 +61,19 @@ define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_END', ' - не�
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'Отсутствуют');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Выберите--');
 
+define('I_ACTION_INDEX_KEYWORD_LABEL', 'Искать');
+define('I_ACTION_INDEX_SUBSECTIONS_LABEL', 'Подразделы');
+define('I_ACTION_INDEX_SUBSECTIONS_VALUE', '--Выберите--');
+define('I_ACTION_INDEX_SUBSECTIONS_NO', 'Отсутствуют');
+define('I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE', 'Сообщение');
+define('I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG', 'Выберите строку');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_TITLE', 'Фильтры');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_FROM', 'от');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO', 'до');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM', 'c');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO', 'по');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES', 'Да');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO', 'Нет');
 
-
-
+define('I_ACTION_DELETE_CONFIRM_TITLE', 'Подтверждение');
+define('I_ACTION_DELETE_CONFIRM_MSG', 'Вы уверены?');

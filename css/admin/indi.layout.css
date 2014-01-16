@@ -1,0 +1,200 @@
+/* General*/
+*{color: #04408C;}
+.x-css-shadow{display: none !important;}
+.x-textmetrics{font-size: 11px !important;}
+.x-border-box .x-field-default-toolbar .x-form-trigger,
+.x-border-box .x-field-default-toolbar .x-form-text,
+.x-border-box .x-form-trigger,.x-border-box .x-form-text{height: 19px; line-height: 13px;}
+.x-form-field, .x-form-display-field {font-size: 11px; color: #04408C;}
+.x-form-item-label{padding: 1px 0;}
+.i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px;}
+input[type=text]{padding-left: 2px; padding-right: 2px;}
+
+/* Logo */
+#i-logo .x-panel-body-default{
+    background: none;
+}
+
+/* Menu */
+.i-menu-root-item.x-grid-cell{
+    background-color: #D9E7F8 !important;
+    border-bottom: 1px solid #C8D6E7;
+}
+.i-menu-leaf-item.x-grid-cell{
+    border-bottom: 1px solid #e0eeff;
+}
+.i-menu-leaf-item-icon {
+    background-image: none !important;
+    width: 0;
+}
+#i-menu .x-grid-row-over.x-grid-tree-node-leaf td div{
+    background-color: #ecffeb !important;
+}
+#i-menu .x-grid-row-selected.x-grid-tree-node-leaf td div{
+    background-color: #dfffdf !important;
+}
+
+/* Center region */
+#i-center > .x-panel-body-default{
+    border: none;
+}
+
+/* North subregion of center region */
+#i-center-north{
+    height: auto !important;
+    overflow: visible;
+    z-index: 100;
+}
+#i-center-north .x-panel-body {
+    overflow: visible;
+    z-index: 100;
+    height: auto !important;
+    background-color: #DFE8F6 !important;
+}
+#i-center-north-date {
+    float: right;
+}
+#i-center-north-admin {
+    text-align: left;
+    margin-bottom: 3px;
+}
+#i-center-north-trail {
+    height: 17px;
+    border: 1px solid #99BCE8;
+    background-color: white;
+    padding-top: 0px;
+    padding-left: 2px;
+}
+
+/* Panel default style adjustments */
+.x-panel-header-text-default{
+    font-weight: normal !important;
+}
+.x-btn-default-toolbar-small-over{
+    -moz-border-radius: 0px !important;
+    -webkit-border-radius: 0px !important;
+    -o-border-radius: 0px !important;
+    -khtml-border-radius: 0px !important;
+    border-radius: 0px !important;
+}
+.x-field-default-toolbar .x-form-item-label-left {
+    padding-left: 0px;
+}
+
+/* Grids default style adjustments */
+.x-grid-with-row-lines .x-grid-row-selected td.x-grid-cell, .x-grid-row-selected .x-grid-rowwrap-div {
+    background-color: #dfffdf !important;
+    border-top: 1px solid #dfffdf;
+    border-bottom: 1px solid #e0eeff;
+}
+.x-grid-with-row-lines .x-grid-row-over td.x-grid-cell, .x-grid-row-over .x-grid-rowwrap-div {
+    background-color: #ecffeb !important;
+    border-top: 1px solid #ecffeb;
+    border-bottom: 1px solid #e0eeff;
+}
+.i-grid-row-disabled .x-grid-cell .x-grid-cell-inner, .i-grid-row-disabled .x-grid-cell .x-grid-cell-inner font{
+    color: lightgray !important;
+}
+.i-grid-row-disabled.x-grid-row-over .x-grid-cell,
+.i-grid-row-disabled.x-grid-row-over .x-grid-rowwrap-div {
+    background-color: white !important;
+    border-color: #ededed;
+    border-top-color: #fafafa;
+}
+.i-grid-row-disabled.x-grid-row-alt.x-grid-row-over .x-grid-cell,
+.i-grid-row-disabled.x-grid-row-over .x-grid-rowwrap-div {
+    background-color: #fafafa !important;
+    border-color: #ededed;
+    border-top-color: #fafafa;
+}
+
+/* Ext combos default style adjustments (Ext's combos, not Indi's combos mean here) */
+.x-boundlist-item{
+    border-right: 0;
+    border-left: 0;
+    border-bottom: 0;
+    padding: 0 2px 1px 4px;
+    border-top: 1px solid #dfffdf;
+    font-size: 11px;
+}
+.x-boundlist-item-over{
+    background-color: #ecffeb;
+}
+
+/* Indi combos default style adjustments - for cases, when indi combos are used as an ext components*/
+.i-filter-combo .x-panel-body-default{
+    background: transparent;
+}
+.i-filter-combo-label{
+    font-size: 11px;
+    line-height: 15px;
+}
+.i-filter-combo-component{
+    top: 1px;
+}
+.i-filter-combo-component .x-panel-body{
+    background: transparent;
+}
+
+/* Fieldset default style adjustments*/
+.x-fieldset-header-text{
+    color:  #04408C;
+    font: 10px arial;
+    line-height: 8px;
+}
+.x-fieldset{
+    border: 1px solid #99bce8;
+}
+
+/*Ext spinner (xtype: numberfield) style adjustments*/
+.x-form-spinner-up{
+    margin-top: -1px;
+}
+.x-form-trigger-wrap .x-form-spinner-up, .x-form-trigger-wrap .x-form-spinner-down{
+    height: 9px !important;
+}
+.x-form-trigger-wrap .x-form-spinner-down{
+    position: relative;
+    top: 1px;
+    background-position: 0 -13px;
+}
+.x-form-trigger-wrap-focus .x-form-spinner-down {
+    position: relative;
+    top: 1px;
+    background-position: -51px -13px;
+}
+.x-form-trigger-wrap-focus .x-form-spinner-down-over {
+    position: relative;
+    top: 1px;
+    background-position: -68px -13px;
+}
+.x-form-trigger-wrap .x-form-spinner-down-over {
+    position: relative;
+    top: 1px;
+    background-position: -17px -13px;
+}
+.x-form-trigger-wrap .x-form-spinner-down-click {
+    position: relative;
+    background-position: -34px -13px;
+    top: 1px;
+}
+
+/* Color multislider filter style adjustments */
+.i-multislider-color .x-slider-horz, .i-multislider-color .x-slider-horz .x-slider-end {
+    background: none;
+}
+.i-multislider-color-label{
+    margin-top: -1px;
+}
+
+/* Browsers fixes */
+.x-ie .x-fieldset .x-fieldset-body {
+    padding-top: 0px !important;
+}
+.x-gecko .x-btn-inner{
+    margin-top: -1px;
+}
+.x-gecko .x-form-trigger-wrap.x-unselectable .x-form-text{
+    padding-top: 3px;
+    padding-left: 1px;
+}
