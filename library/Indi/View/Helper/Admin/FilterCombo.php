@@ -76,7 +76,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
 
     /**
      * Calculates width for combo. Takes in attention:
-     * 1. Indents (if combo is deaing with tree of options)
+     * 1. Indents (if combo is dealing with tree of options)
      * 2. Color-boxes
      * 3. Titles width
      * 4. .i-combo-info visual availability. If can be visible - additional space will be reserved.
@@ -109,12 +109,12 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      */
     public function formComboSingle(){
         ob_start();
-        ?><div style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>" class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single x-form-text" id="filter-<?=$this->name?>-combo"><?
+        ?><div style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>" class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single x-form-text" id="i-section-<?=$this->view->trail->getItem()->section->alias?>-action-index-filter-<?=$this->name?>-combo"><?
             ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
             ?><div class="i-combo-single"><?
                 $this->selected = $this->detectColor($this->selected, true); echo $this->selected['box'];
                 ?><input class="i-combo-keyword" style="width: <?=$this->getKeywordFieldWidth()?>px;" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>"/><?
-                ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
+                ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?> boolean="<?=$this->field->columnTypeId==12 ? 'true' : 'false'?>"/><?
                 ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><?
                     ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?
                     ?><span class="i-combo-of"><?=COMBO_OF?></span><?
@@ -130,9 +130,9 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      */
     public function formComboMultiple() {
         ob_start();
-        ?><div style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="filter-<?=$this->name?>-combo"><?
+        ?><div style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="i-section-<?=$this->view->trail->getItem()->section->alias?>-action-index-filter-<?=$this->name?>-combo"><?
             ?><img class="i-combo-trigger" id="<?=$this->name?>-trigger" src="/i/admin/trigger-system.png"/><?
-            ?><div class="i-combo-multiple" style="width: 100% !important;"><?
+            ?><div class="i-combo-multiple" style="width: 200% !important;"><?
                 foreach($this->comboDataRs->selected as $selectedR) {
                     $item = $this->detectColor(array('title' => $selectedR->title));
                     ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style']?>><?

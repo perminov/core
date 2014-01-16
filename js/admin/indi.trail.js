@@ -32,7 +32,12 @@ var Indi = (function (indi) {
             this.store = store;
 
             this.apply = function(store){
+                // Update trail data
                 this.store = store;
+
+                // Run
+                indi.action = indi.action || {};
+                (indi.action.index = new indi.proto.action[indi.trail.item().action.alias]()).run();
             }
 
             this.item = function(stepsUp) {
@@ -42,7 +47,7 @@ var Indi = (function (indi) {
         }
 
         indi.trail = new indi.proto.trail(indi.trail);
-        top.Indi.trail = indi.trail;
+        top.Indi.trail.store = eval(JSON.stringify(indi.trail.store));
     };
 
     /**

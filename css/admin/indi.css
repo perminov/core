@@ -17,27 +17,6 @@
 .i-form-combo .x-form-item-label {padding-top: 2px;}
 /* </combos> */
 
-/* < Spinners: height reduced to 9px, but this causes the backgrounds positions adjustments > */
-.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-up,
-.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down{
-    height: 9px !important;
-}
-.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down {
-    background-position: 0 -11px;
-}
-.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down-over {
-    background-position: -17px -11px;
-}
-.x-field-default-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down-click {
-    background-position: -34px -11px !important;
-}
-.x-field-default-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down {
-    background-position: -51px -11px;
-}
-.x-field-default-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down-over {
-    background-position: -68px -11px;
-}
-
 /* </ Spinners: height reduced to 9px, but this causes the backgrounds positions adjustments> */
 .i-error-msg{
     color: red;

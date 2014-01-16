@@ -4,9 +4,9 @@ define('LOGIN_SCREEN_PASSWORD', 'Password');
 define('LOGIN_SCREEN_ENTER', 'Enter');
 define('LOGIN_SCREEN_RESET', 'Reset');
 
-define('LOGOUT', 'Logout');
+define('I_LOGOUT', 'Logout');
 
-define('MENU', 'Menu');
+define('I_MENU', 'Menu');
 define('ACTION_CREATE', 'Create');
 define('GRID_WARNING_SELECTROW_MSG', 'Select a row');
 define('GRID_WARNING_SELECTROW_TITLE', 'Message');
@@ -61,6 +61,20 @@ define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_END', ' - does 
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'No');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Select--');
 
+define('I_ACTION_INDEX_KEYWORD_LABEL', 'Search');
+define('I_ACTION_INDEX_SUBSECTIONS_LABEL', 'Subsections');
+define('I_ACTION_INDEX_SUBSECTIONS_VALUE', '--Select--');
+define('I_ACTION_INDEX_SUBSECTIONS_NO', 'No');
+define('I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE', 'Message');
+define('I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG', 'Select a row');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_TITLE', 'Options');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_FROM', 'between');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO', 'and');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM', 'from');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO', 'until');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES', 'Yes');
+define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO', 'No');
 
 
-
+define('I_ACTION_DELETE_CONFIRM_TITLE', 'Confirm');
+define('I_ACTION_DELETE_CONFIRM_MSG', 'Are you sure?');

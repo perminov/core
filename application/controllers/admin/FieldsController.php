@@ -135,7 +135,7 @@ class Admin_FieldsController extends Indi_Controller_Admin {
         for ($i = 0; $i < count($gridFields); $i++) {
             for ($j = 0; $j < count ($data); $j++) {
                 if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $data[$j][$gridFields[$i]['alias']], $matches)) {
-                    $data[$j][$gridFields[$i]['alias']] = '<span class="color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
+                    $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
                 }
             }
         }

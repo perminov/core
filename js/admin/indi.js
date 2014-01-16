@@ -86,6 +86,12 @@ var Indi = function(indi) {
             }
             return ret;
         }
+
+        indi.metrics = new Ext.util.TextMetrics();
+
+        indi.urldecode = function(str){
+            return decodeURIComponent((str + '').replace(/\+/g, '%20'));
+        }
     };
 
 
@@ -208,19 +214,15 @@ var Indi = function(indi) {
      * @return {*}
      */
     indi.getCenter = function() {
-        return Ext.getCmp('center-all');
+        return Ext.getCmp('i-center');
     };
 
 
     indi.clearCenter = function() {
-        Ext.ComponentManager.unregister(Ext.getCmp('i-center-content'));
-        if (viewport.getComponent(3).cls == 'center-all') {
-            viewport.getComponent(3).remove('i-center-content');
-        } else if (viewport.getComponent(4).cls == 'center-all') {
-            viewport.getComponent(4).remove('i-center-content');
-        }
-        $('#center-content-body').html('');
-        viewport.doComponentLayout();
+        Ext.ComponentManager.unregister(Ext.getCmp('i-center-center-wrapper'));
+        indi.getCenter().remove('i-center-center-wrapper');
+        $('#i-center-center-body').html('');
+        indi.layout.viewport.doComponentLayout();
     };
 
     /**
@@ -234,29 +236,36 @@ var Indi = function(indi) {
         // Push the given url to a story stack
         indi.story.push(url);
 
-        if (url.match(/\/form\//) || iframe) {
-            Indi.clearCenter();
 
+        if (url.match(/\/form\//) || iframe) {
+
+            Indi.clearCenter();
             Ext.create('Ext.Panel', {
-                //region: 'center',
                 border: 0,
                 align: 'stretch',
-                html: '<div id="iframe-wrapper" style="height: 100%;"><iframe src="' + url + '?width=' + Math.floor(($('#center-content-body').width()-36)/2) +
+                html: '<div id="iframe-wrapper" style="height: 100%;"><iframe src="' + url + '?width=' + Math.floor(($('#i-center-center-body').width()-36)/2) +
                     '" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe></div>',
-                id: 'i-center-content',
+                id: 'i-center-center-wrapper',
                 iframed: true,
                 height: '100%',
-                renderTo: 'center-content-body'
+                renderTo: 'i-center-center-body'
             });
             new Ext.LoadMask(top.window.$('#iframe-wrapper')[0], {id: 'iframe-mask'});
             Ext.getCmp('iframe-mask').show();
         } else {
             $.post(url, function(response){
                 Indi.clearCenter();
-                $('#center-content-body').html(response);
+                $('#i-center-center-body').html(response);
             });
         }
     };
+
+    /**
+     * Clock
+     */
+    indi.timer = setInterval(function(){
+        indi.time++;
+    }, 1000);
 
     /**
      * Deprecated section

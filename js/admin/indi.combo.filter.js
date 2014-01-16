@@ -113,7 +113,7 @@ var Indi = (function (indi) {
                         $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
                 }
 
-                if ($(this).val() == '0') $(this).val('');
+                if ($(this).val() == '0' && $(this).attr('boolean') != 'true') $(this).val('');
 
                 if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
                     var selectedItemsTotalWidth = 0;
@@ -156,10 +156,10 @@ var Indi = (function (indi) {
                     if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
                         clearTimeout(instance.multipleComboFilterDelay);
                         instance.multipleComboFilterDelay = setTimeout(function(){
-                            filterChange({noReload: false, xtype: 'combobox'});
+                            indi.action.index.filterChange({noReload: false, xtype: 'combobox'});
                         }, 400);
                     } else {
-                        filterChange({noReload: false, xtype: 'combobox'});
+                        indi.action.index.filterChange({noReload: false, xtype: 'combobox'});
                     }
                 } else {
                     $('#'+name).removeAttr('change-by-refresh-children');
@@ -172,7 +172,7 @@ var Indi = (function (indi) {
              * @return string
              */
             this.fetchRelativePath = function() {
-                return Indi.pre + '/' + Indi.section + '/form';
+                return indi.pre + '/' + indi.trail.item().section.alias + '/form';
             }
 
             /**

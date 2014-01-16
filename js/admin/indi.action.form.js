@@ -38,7 +38,7 @@ var Indi = (function (indi) {
             }
 
             this.getPanel = function() {
-                return top.window.Ext.getCmp('i-center-content');
+                return top.window.Ext.getCmp('i-center-center-wrapper');
             }
 
             /**
