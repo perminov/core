@@ -640,7 +640,7 @@ var Indi = (function (indi) {
 
                 // Get the index of selected option id in instance.store[name].ids
                 if (instance.store[name].enumset) {
-                    if (isNaN(parseInt(li.attr(name)))) {
+                    if (!li.attr(name).toString().match(/^[0-9]+$/)) {
                         index = instance.store[name].ids.indexOf(li.attr(name));
                     } else {
                         index = instance.store[name].ids.indexOf(parseInt(li.attr(name)));
