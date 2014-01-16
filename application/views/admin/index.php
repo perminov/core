@@ -7,6 +7,7 @@
     <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
     <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
+    <script type="text/javascript" src="/js/jquery.cookie.js"></script>
     <!-- Ext -->
     <link type="text/css" rel="stylesheet" href="/library/extjs4/resources/css/ext-all.css"/>
     <script type="text/javascript" src="/library/extjs4/ext-all.js"></script><?$config = Indi::registry('config');?>
