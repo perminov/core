@@ -9,6 +9,14 @@ class Indi{
     protected static $_registry = array();
 
     /**
+     * An internal static variable, will be used to store data, got from `staticblock` table 
+	 * as an assotiative array  and that should be accessible anywhere
+     *
+     * @var array|null
+     */
+    protected static $_blockA = null;
+
+    /**
      * Compilation template
      *
      * @var string
@@ -176,5 +184,35 @@ class Indi{
 		$constants = get_defined_constants(true);
 		$constants = $category ? $constants[$category] : $constants;
 		return $json ? json_encode($constants) : $constants;
+	}
+	
+	/**
+	 * Fetch rowset from `staticblock` table and return it as an assotiative array with aliases as keys.
+	 * Rows in `staticblock` table store some text phrases and settings, so function provide and ability to
+	 * access it from anywhere. Rowset fetch will be only done at first function call.
+	 *
+     * @param string $key
+     * @param string $default A value, that will be returned if $key will not be found in self::$_blockA array
+	 * @return array
+	 */
+	public static function blocks($key = null, $default = null){
+		// If self::$_blockA is null at the moment, we fetch it from `staticblock` table
+		if (self::$_blockA === null) {
+
+			// Setup self::$_blockA as an empty array at first
+			self::$_blockA = array();
+			
+			// Fetch rowset
+            $staticBlockRs = Indi::model('Staticblock')->fetchAll('`toggle` = "y"');
+			
+			// Setup values in self::$_blockA array under certain keys
+            foreach ($staticBlockRs as $staticBlockR) {
+                self::$_blockA[$staticBlockR->alias] = $staticBlockR->{'details' . ucfirst($staticBlockR->type)};
+                if ($staticBlockR->type == 'textarea') self::$_blockA[$staticBlockR->alias] = nl2br(self::$_blockA[$staticBlockR->alias]);
+            }
+		}
+
+		// If $key argument was specified, we return a certain value, or all array otherwise
+		return $key == null ? self::$_blockA : (array_key_exists($key, self::$_blockA) ? self::$_blockA[$key] : $default);
 	}
 }

@@ -53,14 +53,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->request = $this->params;
 
         // Куски
-        if (Misc::loadModel('Entity')->fetchRow('`table` = "staticblock"')) {
-            $staticBlocksRs = Misc::loadModel('Staticblock')->fetchAll('`toggle` = "y"');
-            foreach ($staticBlocksRs as $staticBlocksR) {
-                $staticBlocks[$staticBlocksR->alias] = $staticBlocksR->{'details' . ucfirst($staticBlocksR->type)};
-                if ($staticBlocksR->type == 'textarea') $staticBlocks[$staticBlocksR->alias] = nl2br($staticBlocks[$staticBlocksR->alias]);
-            }
-            $this->view->blocks = $staticBlocks;
-        }
+        $this->view->blocks = Indi::blocks();
 
     }
 	
