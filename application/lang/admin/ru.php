@@ -1,8 +1,9 @@
 <?php
-define('LOGIN_SCREEN_USERNAME', 'Пользователь');
-define('LOGIN_SCREEN_PASSWORD', 'Пароль');
-define('LOGIN_SCREEN_ENTER', 'Вход');
-define('LOGIN_SCREEN_RESET', 'Сброс');
+define('I_LOGIN_BOX_USERNAME', 'Пользователь');
+define('I_LOGIN_BOX_PASSWORD', 'Пароль');
+define('I_LOGIN_BOX_ENTER', 'Вход');
+define('I_LOGIN_BOX_RESET', 'Сброс');
+define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');
 
 define('I_LOGOUT', 'Выход');
 
@@ -74,6 +75,8 @@ define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM', 'c');
 define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO', 'по');
 define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES', 'Да');
 define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO', 'Нет');
+define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE', 'Сброс всех фильтров');
+define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Фильтры уже сброшены или на текущий момент не используются вовсе');
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Подтверждение');
 define('I_ACTION_DELETE_CONFIRM_MSG', 'Вы уверены?');

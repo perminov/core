@@ -77,21 +77,11 @@ var Indi = (function (indi) {
                     },
                     // Navigate-by-row-number field
                     RN: function(row) {
-                        var labelWidth = (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 3,
+                        var labelWidth = indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
                             triggerWidth = 20, inputWidth;
                         inputWidth = (indi.scope.found.toString().length + 1) * 7 + 2;
                         inputWidth = inputWidth > 30 ? inputWidth : 30;
                         return labelWidth + inputWidth + triggerWidth;
-                    },
-                    // Subsections combo
-                    SC: function (){
-                        var triggerWidth = 17, comboWidth = 100, metrics = new Ext.util.TextMetrics(),
-                            labelWidth = Math.ceil(metrics.getWidth(indi.lang.GRID_SUBSECTIONS_LABEL) * 0.9);
-                        for (var i = 0; i < indi.trail.item().sections.length; i++) {
-                            var titleWidth = Math.ceil(metrics.getWidth(indi.trail.item().sections[i].title) * 0.85);
-                            if (titleWidth > comboWidth) comboWidth = titleWidth;
-                        }
-                        return [labelWidth, labelWidth + comboWidth + triggerWidth];
                     }
                 }
             }
@@ -128,8 +118,7 @@ var Indi = (function (indi) {
                                       '')
                         )
                     },
-                    iconCls: 'back',
-                    xtype: 'button',
+                    iconCls: 'i-btn-icon-back',
                     id: 'i-action-form-topbar-button-back'
                 });
 
@@ -141,13 +130,13 @@ var Indi = (function (indi) {
 
                     // Configuration
                     fieldLabel: 'ID',
-                    labelWidth: 20,
+                    labelWidth: 15,
                     xtype: 'numberfield',
                     hideTrigger: true,
                     value: (indi.trail.item().row ? indi.trail.item().row.id : ''),
                     width: instance.widths.topbar.ID(indi.trail.item().row),
                     lastValidValue: (indi.trail.item().row ? indi.trail.item().row.id : ''),
-                    margin: '0 3 0 0',
+                    margin: '0 3 0 3',
                     disabled: parseInt(indi.scope.found) ? false : true,
                     cls: 'i-form-text',
                     errorMsgCls: '',
@@ -460,12 +449,12 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE,
                     labelSeparator: '',
-                    labelWidth: (new Ext.util.TextMetrics()).getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) - 8,
+                    labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
                     xtype: 'numberfield',
                     value: (indi.trail.item().row.id ? indi.scope.aix : ''),
                     width: instance.widths.topbar.RN(),
                     disabled: parseInt(indi.scope.found) ? false : true,
-                    margin: '0 3 0 0',
+                    margin: '0 5 0 3',
                     cls: 'i-form-text',
                     minValue: 1,
                     maxValue: indi.scope.found,
@@ -563,15 +552,16 @@ var Indi = (function (indi) {
                     xtype: 'textfield',
                     disabled: parseInt(indi.scope.found) ? false : true,
                     fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.scope.found),
-                    width: (new Ext.util.TextMetrics())
-                        .getWidth(
-                            indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF +
-                            indi.numberFormat(indi.scope.found)
-                        ) - 3,
+                    width: indi.metrics.getWidth(
+                            indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.scope.found)
+                    ),
                     labelSeparator: '',
                     inputType: 'hidden',
-                    cls: 'i-toolbar-label',
-                    margin: '0 5 0 0'
+                    cls: 'i-action-form-topbar-nav-to-row-number-of',
+                    margin: '0 5 0 0',
+                    style: {
+                        paddingTop: '0px'
+                    }
                 });
 
                 // Add a separator
@@ -586,19 +576,34 @@ var Indi = (function (indi) {
                         fields: ['alias', 'title'],
                         data: indi.trail.item().sections
                     }),
-                    fieldLabel: indi.lang.GRID_SUBSECTIONS_LABEL,
-                    labelWidth: instance.widths.topbar.SC()[0],
+                    fieldLabel: indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL,
+                    labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL),
+                    labelSeparator: '',
                     valueField: 'alias',
                     hiddenName: 'alias',
                     displayField: 'title',
                     typeAhead: false,
-                    width: instance.widths.topbar.SC()[1],
+                    width: function (){
+                        var triggerWidth = 17, maxTitleWidth = 0, maxTitle='', labelWidth =
+                                indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL),
+                            paddingsWidth = 6, labelPad = 5, maxTitleWidth = indi.metrics.getWidth(
+                                indi.lang['I_ACTION_INDEX_SUBSECTIONS_' + (indi.trail.item().sections.length ? 'VALUE' : 'NO')]
+                            )
+                        for (var i = 0; i < indi.trail.item().sections.length; i++) {
+                            var titleWidth = indi.metrics.getWidth(indi.trail.item().sections[i].title);
+                            if (titleWidth > maxTitleWidth) {
+                                maxTitleWidth = titleWidth;
+                                maxTitle = indi.trail.item().sections[i].title;
+                            }
+                        }
+                        return labelWidth + labelPad + maxTitleWidth + paddingsWidth + triggerWidth;
+                    }(),
                     style: 'font-size: 10px',
                     disabled: indi.trail.item().sections.length ? false : true,
                     cls: 'i-form-combo',
                     id: 'i-action-form-topbar-nav-to-subsection',
                     editable: false,
-                    margin: '0 6 2 0',
+                    margin: '0 3 2 0',
                     value: indi.trail.item().sections.length ? indi.lang.I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT : indi.lang.I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS,
                     listeners: {
                         change: function(combo){
@@ -631,6 +636,7 @@ var Indi = (function (indi) {
                 instance.getPanel().addDocked({
                     xtype: 'toolbar',
                     id: 'i-action-form-topbar',
+                    cls: 'i-action-form-topbar',
                     items: dockedItems,
                     hidden: instance.options.hideTopbar
                 });
@@ -653,6 +659,8 @@ var Indi = (function (indi) {
                 }
 
                 instance.applyTopToolbar();
+
+                indi.trail.breadCrumbs();
 
                 $(document).ready(function(){
                     if (top.window.Ext.getCmp('iframe-mask'))

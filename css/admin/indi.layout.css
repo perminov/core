@@ -1,4 +1,4 @@
-/* General*/
+/* General */
 *{color: #04408C;}
 .x-css-shadow{display: none !important;}
 .x-textmetrics{font-size: 11px !important;}
@@ -8,7 +8,26 @@
 .x-form-field, .x-form-display-field {font-size: 11px; color: #04408C;}
 .x-form-item-label{padding: 1px 0;}
 .i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px;}
+.x-btn .x-btn-inner{color: #04408C}
 input[type=text]{padding-left: 2px; padding-right: 2px;}
+.i-inline-block{display: inline-block;}
+
+/* Login screen */
+.i-login{
+    background-color: #dfe8f6;
+}
+#i-login-box{
+    width: 300px;
+    height: 125px;
+    position: absolute;
+    top: 50%;
+    margin-top: -100px;
+    left: 50%;
+    margin-left: -150px;
+}
+#i-login-box .x-form-cb-wrap {
+    padding-top: 2px;
+}
 
 /* Logo */
 #i-logo .x-panel-body-default{
@@ -43,7 +62,7 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
 #i-center-north{
     height: auto !important;
     overflow: visible;
-    z-index: 100;
+    z-index: 101;
 }
 #i-center-north .x-panel-body {
     overflow: visible;
@@ -70,12 +89,13 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
 .x-panel-header-text-default{
     font-weight: normal !important;
 }
-.x-btn-default-toolbar-small-over{
-    -moz-border-radius: 0px !important;
-    -webkit-border-radius: 0px !important;
-    -o-border-radius: 0px !important;
-    -khtml-border-radius: 0px !important;
-    border-radius: 0px !important;
+.x-btn-default-toolbar-small-over, .x-btn-default-toolbar-small, .x-menu-item-active .x-menu-item-link {
+    -moz-border-radius: 0px;
+    -webkit-border-radius: 0px;
+    -o-border-radius: 0px;
+    -ms-border-radius: 0px;
+    -khtml-border-radius: 0px;
+    border-radius: 0px;
 }
 .x-field-default-toolbar .x-form-item-label-left {
     padding-left: 0px;
@@ -106,6 +126,15 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
     background-color: #fafafa !important;
     border-color: #ededed;
     border-top-color: #fafafa;
+}
+.i-grid-filtered-column-cell{
+    opacity: 0.8;
+}
+.i-tool-search-reset .x-tool-search{
+    background-position: 0 -360px;
+}
+.i-tool-search-reset.x-tool-over .x-tool-search {
+    background-position: -15px -360px;
 }
 
 /* Ext combos default style adjustments (Ext's combos, not Indi's combos mean here) */
@@ -150,7 +179,10 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
 .x-form-spinner-up{
     margin-top: -1px;
 }
-.x-form-trigger-wrap .x-form-spinner-up, .x-form-trigger-wrap .x-form-spinner-down{
+.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-up,
+.x-field-default-toolbar .x-form-trigger-wrap .x-form-spinner-down,
+.x-form-trigger-wrap .x-form-spinner-up,
+.x-form-trigger-wrap .x-form-spinner-down{
     height: 9px !important;
 }
 .x-form-trigger-wrap .x-form-spinner-down{
@@ -158,25 +190,30 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
     top: 1px;
     background-position: 0 -13px;
 }
-.x-form-trigger-wrap-focus .x-form-spinner-down {
-    position: relative;
-    top: 1px;
-    background-position: -51px -13px;
-}
-.x-form-trigger-wrap-focus .x-form-spinner-down-over {
-    position: relative;
-    top: 1px;
-    background-position: -68px -13px;
-}
-.x-form-trigger-wrap .x-form-spinner-down-over {
-    position: relative;
-    top: 1px;
+.x-form-trigger-wrap .x-form-spinner-down.x-form-trigger-over.x-form-spinner-down-over,
+.x-form-trigger-wrap-focus .x-form-spinner-down.x-form-trigger {
     background-position: -17px -13px;
 }
-.x-form-trigger-wrap .x-form-spinner-down-click {
-    position: relative;
+.x-form-trigger-wrap-focus .x-form-spinner-down.x-form-spinner-down-over.x-form-trigger-over{
+    background-position: -68px -13px;
+}
+.x-form-trigger-wrap .x-form-spinner-down.x-form-spinner-down-over.x-form-spinner-down-click {
     background-position: -34px -13px;
-    top: 1px;
+}
+
+/* Style for action form topbar spinners*/
+.i-action-form-topbar .x-form-trigger-wrap .x-form-spinner-down{
+    background-position: 0 -11px;
+}
+.i-action-form-topbar .x-form-trigger-wrap .x-form-spinner-down.x-form-trigger-over.x-form-spinner-down-over,
+.i-action-form-topbar .x-form-trigger-wrap-focus .x-form-spinner-down.x-form-trigger {
+    background-position: -17px -11px;
+}
+.i-action-form-topbar .x-form-trigger-wrap-focus .x-form-spinner-down.x-form-spinner-down-over.x-form-trigger-over{
+    background-position: -68px -11px;
+}
+.i-action-form-topbar .x-form-trigger-wrap .x-form-spinner-down.x-form-spinner-down-over.x-form-spinner-down-click {
+    background-position: -34px -11px;
 }
 
 /* Color multislider filter style adjustments */
@@ -187,6 +224,11 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
     margin-top: -1px;
 }
 
+/*Form topbar styles - here (mean not in indi.action.form.css), because topbar styles are not affected by iframe styles*/
+.i-action-form-topbar-nav-to-row-number-of .x-form-item-label{
+    padding: 0;
+    margin-top: -1px;
+}
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
     padding-top: 0px !important;
@@ -197,4 +239,7 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
 .x-gecko .x-form-trigger-wrap.x-unselectable .x-form-text{
     padding-top: 3px;
     padding-left: 1px;
+}
+.x-gecko #i-menu .i-menu-leaf-item .x-grid-cell-inner{
+    padding-left: 3px;
 }

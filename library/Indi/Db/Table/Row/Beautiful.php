@@ -297,7 +297,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
-            $keyword = $selected;
+            $keyword = str_replace('"','\"', $selected);
 
         // Else if fetch-mode is 'no-keyword'
         } else {

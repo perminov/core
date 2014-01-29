@@ -270,8 +270,6 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             echo $this->formComboSingle();
         } else if ($this->field->storeRelationAbility == 'many') {
             echo $this->formComboMultiple();
-        } else if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
-            echo $this->formComboBoolean();
         }
 
         // Init combo store data

@@ -12,8 +12,8 @@ class Indi_View_Helper_Admin_StyleStd extends Indi_View_Helper_Abstract{
     button span.delete{
         background-image: url('<?=STD?>/library/extjs4/resources/themes/images/default/shared/delete.gif') !important;
     }
-    button span.back{
-        background-image: url('<?=STD?>/i/admin/icon-action-back.gif') !important;
+    .i-btn-icon-back{
+        background-image: url('<?=STD?>/i/admin/i-btn-icon-back.png') !important;
     }
     button span.save{
         background-image: url('<?=STD?>/i/admin/icon-action-save.png') !important;
@@ -26,6 +26,9 @@ class Indi_View_Helper_Admin_StyleStd extends Indi_View_Helper_Abstract{
     }
     button span.down{
         background-image: url('<?=STD?>/i/admin/icon-action-lower.png') !important;
+    }
+    .i-btn-icon-xls{
+        background-image: url('<?=STD?>/i/admin/icon-action-xls.png') !important;
     }
     .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete{
         background-image: url(<?=STD?>/i/admin/combo-multiple-remove-item-from.png);

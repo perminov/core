@@ -73,7 +73,7 @@ var Indi = (function (indi) {
                                 iconCls: 'i-menu-leaf-item-icon',
                                 leaf: true,
                                 cls: 'i-menu-leaf-item',
-                                value: indi.pre + '/' + instance.menu.data[i+1].alias
+                                value: indi.pre + '/' + instance.menu.data[i+1].alias + '/'
                             });
                             i++;
                         } while (instance.menu.data[i+1] && parseInt(instance.menu.data[i+1].sectionId));
@@ -102,9 +102,125 @@ var Indi = (function (indi) {
             };
 
             /**
+             * Build the signin box
+             */
+            this.buildLoginBox = function() {
+
+                // Create the panel
+                Ext.create('Ext.Panel', {
+                    title: 'Indi Engine',
+                    renderTo: 'i-login-box',
+                    titleAlign: 'center',
+                    height: 125,
+                    width: 300,
+                    bodyPadding: 10,
+                    items: [
+                        {
+                            xtype: 'textfield',
+                            id: 'i-login-box-username',
+                            fieldLabel: indi.lang.I_LOGIN_BOX_USERNAME,
+                            labelWidth: 90,
+                            value: Ext.util.Cookies.get('username'),
+                            width: 275
+                        },{
+                            xtype: 'textfield',
+                            id: 'i-login-box-password',
+                            inputType: 'password',
+                            fieldLabel: indi.lang.I_LOGIN_BOX_PASSWORD,
+                            value: Ext.util.Cookies.get('password'),
+                            labelWidth: 90,
+                            width: 246,
+                            cls: 'i-inline-block'
+                        },{
+                            xtype: 'checkboxfield',
+                            id: 'i-login-box-remember',
+                            checked: Ext.util.Cookies.get('remember') !== null,
+                            margin: '0 0 2 8',
+                            cls: 'i-inline-block'
+                        },{
+                            xtype: 'button',
+                            id: 'i-login-box-submit',
+                            text: indi.lang.I_LOGIN_BOX_ENTER,
+                            margin: '4 0 0 20',
+                            width: 113,
+                            handler: function(){
+
+                                // Prepare the request data
+                                var data = {
+                                    username: Ext.getCmp('i-login-box-username').getValue(),
+                                    password: Ext.getCmp('i-login-box-password').getValue(),
+                                    remember: Ext.getCmp('i-login-box-remember').getValue(),
+                                    enter: true
+                                }
+
+                                // Make an authentication request
+                                $.post(indi.pre + '/', data, function(response){
+
+                                    // If request returned an error, display a Ext.MessageBox
+                                    if (response.error) {
+                                        Ext.MessageBox.show({
+                                            title: indi.lang.I_LOGIN_ERROR_MSGBOX_TITLE,
+                                            msg: response.error,
+                                            buttons: Ext.MessageBox.OK,
+                                            icon: Ext.MessageBox.ERROR
+                                        });
+
+                                    // Else signin was ok, we check if 'remember' checkbox was checked,
+                                    // and if so - set the cookies. After that we do a page reload
+                                    } else if (response.ok) {
+
+                                        // Delete 'enter' property from 'data' object for it to be ready to
+                                        // set or remove cookies for it's all remaining properties
+                                        delete data.enter;
+
+                                        // For each remaining property in 'data' object
+                                        for (var i in data)
+
+                                            // If 'remember' checkbox was checked, we create cookie
+                                            if (data.remember)
+                                                Ext.util.Cookies.set(
+                                                    i,
+                                                    data[i],
+
+                                                    // We set cookie expire date as 1 month
+                                                    Ext.Date.add(new Date(), Ext.Date.MONTH, 1),
+                                                    indi.pre
+                                                );
+
+                                            // Else we delete cookie
+                                            else Ext.util.Cookies.clear(i, indi.pre);
+
+                                        // Reload window contents
+                                        window.location.replace(indi.pre);
+                                    }
+                                }, 'json');
+                            }
+                        },{
+                            xtype: 'button',
+                            id: 'i-login-box-reset',
+                            text: indi.lang.I_LOGIN_BOX_RESET,
+                            margin: '4 0 0 10',
+                            width: 113,
+                            handler: function(){
+                                Ext.getCmp('i-login-box-username').setValue();
+                                Ext.getCmp('i-login-box-password').setValue();
+                                Ext.getCmp('i-login-box-remember').setValue(false);
+                            }
+                        }
+                    ]
+                });
+            }
+
+            /**
              * Build the viewport
              */
             this.build = function(){
+
+                // If user has not yet signed in, we build signin box
+                if ($('#i-login-box').length) {
+                    this.buildLoginBox();
+                    return;
+                }
 
                 // Create the extjs treepanel, for menu
                 instance.menu.panel = Ext.create('Ext.tree.Panel', {

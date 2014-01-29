@@ -1369,13 +1369,31 @@ var Indi = (function (indi) {
                 }
             }
 
+            /**
+             * Clear combo's keyword and value (hidden and visual)
+             *
+             * @param name
+             */
             this.clearCombo = function(name) {
+
                 // Remove color-box
                 $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
+
                 // Remove color
                 $('#'+name+'-keyword').css({color: ''});
+
+                // Erase keyword
                 $('#'+name+'-keyword').val('');
-                $('#'+name).val($('#'+name).attr('boolean') != 'true' ? 0 : '');
+
+                // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
+                // value will be cleared automatically
+                if ($('#'+name).parent().find('.i-combo-info').hasClass('i-combo-info-multiple')) {
+                    $('#'+name).parent().find('.i-combo-selected-item-delete').click();
+
+                // Else combo is single, we set it's value to 0, if it's not boolean, or '' otherwise
+                } else {
+                    $('#'+name).val($('#'+name).attr('boolean') != 'true' ? 0 : '');
+                }
             }
 
             /**

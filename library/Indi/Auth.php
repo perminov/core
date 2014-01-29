@@ -62,13 +62,12 @@ class Indi_Auth{
 		} else {
             if ($controller->post['enter']) {
 				$controller->post = filter($controller->post);
-				if ($admin = $this->accessOk(null, 'index', null, $controller->post['email'], $controller->post['password'])) {
+				if ($admin = $this->accessOk(null, 'index', null, $controller->post['username'], $controller->post['password'])) {
 					$_SESSION['admin'] = $admin;
 		            $controller->admin = $_SESSION['admin'];
 					//header('Location: /' . (COM ? '': 'admin/'));die();
 					die(json_encode(array('ok' => true)));
 				} else {
-					$controller->view->assign('email', $controller->post['email']);
 					$controller->view->assign('error', $authResult->getMessages());
                 }
             }

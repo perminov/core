@@ -525,4 +525,13 @@ class Indi_Db_Table_Beautiful extends Indi_Db_Table_Abstract{
         // Return
         return $offset;
     }
+
+    /**
+     * Provide readonly access to _evalFields property
+     *
+     * @return array
+     */
+    public function getEvalFields() {
+        return $this->_evalFields;
+    }
 }

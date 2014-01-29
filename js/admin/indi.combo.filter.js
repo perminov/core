@@ -152,15 +152,20 @@ var Indi = (function (indi) {
                 // but here we do not need that
                 if (!$('#'+name).attr('change-by-refresh-children')) {
 
-                    // Provide a delay befre for multiple-combo value change handler will run
-                    if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
-                        clearTimeout(instance.multipleComboFilterDelay);
-                        instance.multipleComboFilterDelay = setTimeout(function(){
+                    // We fire indi.action.index.filterChange only if noReload flag if turned off
+                    if (!Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-filter-' + name).noReload) {
+
+                        // Provide a delay befre for multiple-combo value change handler will run
+                        if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
+                            clearTimeout(instance.multipleComboFilterDelay);
+                            instance.multipleComboFilterDelay = setTimeout(function(){
+                                indi.action.index.filterChange({noReload: false, xtype: 'combobox'});
+                            }, 400);
+                        } else {
                             indi.action.index.filterChange({noReload: false, xtype: 'combobox'});
-                        }, 400);
-                    } else {
-                        indi.action.index.filterChange({noReload: false, xtype: 'combobox'});
+                        }
                     }
+
                 } else {
                     $('#'+name).removeAttr('change-by-refresh-children');
                 }

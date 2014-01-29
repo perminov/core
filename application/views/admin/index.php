@@ -13,6 +13,7 @@
     <script type="text/javascript" src="/library/extjs4/ext-lang-<?=$config['view']->lang?>.js"></script>
     <!-- Indi styles -->
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.layout.css?<?=rand(0, 10000)?>"/>
+    <link type="text/css" rel="stylesheet" href="/css/admin/indi.trail.css?<?=rand(0, 10000)?>"/>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.combo.css?<?=rand(0, 10000)?>"/>
     <!-- Indi scripts -->
     <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
@@ -28,11 +29,13 @@
 <body>
 <script>
 Ext.require(['*']);
-Indi.std = '<?=STD?>';
-Indi.com = '<?=COM ? '' : '/admin'?>';
-Indi.pre = Indi.std + Indi.com;
-Indi.lang = <?=Indi::constants('user', true)?>;
-Indi.time = <?=time()?>;
+Indi = $.extend(Indi, {
+    std: '<?=STD?>',
+    com: '<?=COM ? '' : '/admin'?>',
+    pre: '<?=STD?><?=COM ? '' : '/admin'?>',
+    lang: <?=Indi::constants('user', true)?>,
+    time: <?=time()?>
+});
 Indi.ready(function(){
     Indi.layout.menu.data = <?=json_encode($this->menu->toArray())?>;
     Indi.layout.adminInfo = '<?=$this->admin?>';

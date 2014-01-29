@@ -23,6 +23,11 @@ abstract class Indi_Db_Table_Abstract {
     public $treeColumn = '';
 
     /**
+     * @var array
+     */
+    protected $_evalFields = array();
+
+    /**
      * Construct object. Set up table name, DB adapter and tree column name if exists
      *
      * @return void

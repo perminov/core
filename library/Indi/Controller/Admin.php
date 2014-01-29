@@ -65,13 +65,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             if ($this->trail->getItem()->model) {
 
                 if ($this->action == 'index') {
-                    // rowset is default ordered by `move` field, if not exists then `title` field,
-                    // if it also does not exist, so there will be no ordering.
-                    $order = $this->trail->getItem()->model->fieldExists('move') ? 'move' : $this->order;
-                    $order = $order ? $order : ($this->trail->getItem()->model->fieldExists('title') ? 'title' : null);
-
-                    // set up default sorting for json listing
-                    if(!$this->params['json']) $this->trail->getItem()->section->sorting = $order;
 
                     $primaryWHERE = $this->primaryWHERE();
 
@@ -333,7 +326,12 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     public function indexAction()
     {
         if ($this->params['json']) {
-            die($this->prepareJsonDataForIndexAction());
+
+            if ($this->params['xls']) {
+                $this->xls();
+            } else {
+                die($this->prepareJsonDataForIndexAction());
+            }
         }
     }
 

@@ -6,7 +6,13 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
     }
     public function renderGrid()
     {
-        $gridFields = $this->view->trail->getItem()->gridFields->toArray();
+        $comboFilters = array();
+        foreach ($this->view->trail->getItem()->filters as $filter)
+            if ($filter->foreign['fieldId']->relation || $filter->foreign['fieldId']->columnTypeId == 12)
+                $comboFilters[] = $this->view->filterCombo($filter);
+
+
+        /*        $gridFields = $this->view->trail->getItem()->gridFields->toArray();
         $actions    = $this->view->trail->getItem()->actions->toArray();
         $canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
         $currentPage = $this->view->getScope('page') ? $this->view->getScope('page') : 1;
@@ -42,41 +48,41 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
             for($i = 0; $i < count($actions); $i++) if ($actions[$i]['display'] == 1){
 
                 $a[] =  ($actions[$i]['alias'] == 'form' && $canadd && ! $this->view->trail->getItem()->section->disableAdd ? '{
-					text: "' . ACTION_CREATE . '",
-					iconCls: "add",
-					actionAlias: "' . $actions[$i]['alias'] . '",
-					handler: function(){
-	                    loadContent(grid.indi.href + this.actionAlias + "/ph/" + Indi.trail.item().section.primaryHash + "/");
-					}
+                    text: "' . ACTION_CREATE . '",
+                    iconCls: "add",
+                    actionAlias: "' . $actions[$i]['alias'] . '",
+                    handler: function(){
+                        loadContent(grid.indi.href + this.actionAlias + "/ph/" + Indi.trail.item().section.primaryHash + "/");
+                    }
 
-					},' : '') . '{
-					text: "' . $actions[$i]['title'] . '",
-					actionAlias: "' . $actions[$i]['alias'] . '",
-					id: "action-button-' . $actions[$i]['alias'] . '",
-					'.(in_array($actions[$i]['alias'], $icons) ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
-					handler: function(){
-						var selection = grid.getSelectionModel().getSelection();
-						if (selection.length) {
-						    var row = selection[0].data;
-						    var aix = selection[0].index + 1;
-						}
+                    },' : '') . '{
+                    text: "' . $actions[$i]['title'] . '",
+                    actionAlias: "' . $actions[$i]['alias'] . '",
+                    id: "action-button-' . $actions[$i]['alias'] . '",
+                    '.(in_array($actions[$i]['alias'], $icons) ? 'iconCls: "' . $actions[$i]['alias'] . '",' : '').'
+                    handler: function(){
+                        var selection = grid.getSelectionModel().getSelection();
+                        if (selection.length) {
+                            var row = selection[0].data;
+                            var aix = selection[0].index + 1;
+                        }
                         ' .
                     (
                     $actions[$i]['rowRequired'] == 'y' ?
                         'if (!selection.length) {
-							Ext.MessageBox.show({
-								title: "' . GRID_WARNING_SELECTROW_TITLE . '",
-								msg: "' . GRID_WARNING_SELECTROW_MSG . '",
-								buttons: Ext.MessageBox.OK,
-								icon: Ext.MessageBox.WARNING
-							});
-							return false;
-						} else {
-						    ' . $actions[$i]['javascript'] . '
-						}
-						' : $actions[$i]['javascript']) . '
-					}
-				}';
+                            Ext.MessageBox.show({
+                                title: "' . GRID_WARNING_SELECTROW_TITLE . '",
+                                msg: "' . GRID_WARNING_SELECTROW_MSG . '",
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.WARNING
+                            });
+                            return false;
+                        } else {
+                            ' . $actions[$i]['javascript'] . '
+                        }
+                        ' : $actions[$i]['javascript']) . '
+                    }
+                }';
             }
             $actions = $a;
 //			$actions = implode(',', $a);
@@ -108,7 +114,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
                     value: '" . urldecode($this->view->getScope('keyword')) . "',
                     height: 19,
                     cls: 'i-form-text',
-					margin: '0 4 0 0',
+                    margin: '0 4 0 0',
                     placeholder: 'Искать',
                     id: 'fast-search-keyword',
                     listeners: {
@@ -423,7 +429,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
             gridStore.load();
         });
         </script>
-        <?ob_get_clean(); ob_start();?>
+        <?ob_get_clean();*/ ob_start();?>
         <script>
             Indi.scope = top.Indi.scope = <?=json_encode($this->view->getScope())?>;
             Indi.trail.apply(<?=json_encode($this->view->trail->toArray())?>);
@@ -434,7 +440,7 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
             }?>
 
         <? $xhtml = ob_get_clean();
-        }
+        //}
         return $xhtml;
     }
 }

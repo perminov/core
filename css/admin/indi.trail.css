@@ -1,0 +1,50 @@
+#i-center-north-trail > *{
+    position: relative;
+    top: -1px;
+}
+#i-center-north-trail span{
+    cursor: default;
+}
+#i-center-north-trail a{
+    text-decoration: none;
+}
+#i-center-north-trail a:hover{
+    color: #99BCE8
+}
+.i-trail-item-row-title{
+    font-style: italic;
+}
+.i-trail-item-sections{
+    display: none;
+    background: white;
+    border: 1px solid #99BCE8;
+    border-top: none;
+    position: absolute !important;
+    margin-left: -16px;
+    margin-top: 37px;
+    z-index: 101;
+}
+.i-trail-item-sections ul{
+    margin-top: -1px;
+}
+.i-trail-item-sections ul li{
+    border-right: 0;
+    border-left: 0;
+    border-bottom: 0;
+    border-top: 1px solid #dfffdf;
+}
+.i-trail-item-sections ul li a{
+    padding: 0 4px 0px 4px;
+    display: block;
+    line-height: 15px;
+}
+.i-trail-item-sections ul li a:hover{
+    color: inherit !important;
+}
+.i-trail-item-sections ul li:hover{
+    background-color: #ecffeb;
+}
+.x-gecko .i-trail-item-sections ul li a{
+    position: relative;
+    top: -1px;
+}

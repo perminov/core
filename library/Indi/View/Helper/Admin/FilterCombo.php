@@ -59,13 +59,15 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return string
      */
     public function getDefaultValue() {
-        if ($gotFromScope = $this->view->getScope('filters', $this->field->alias)) {
+        $gotFromScope = $this->view->getScope('filters', $this->field->alias);
+
+        if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
             if ($this->field->storeRelationAbility == 'many')
                 $gotFromScope = implode(',', $gotFromScope);
             $this->filter->defaultValue = $this->view->filtersSharedRow->{$this->field->alias} = $gotFromScope;
             return $gotFromScope;
         }
-        if ($this->filter->defaultValue) {
+        if ($this->filter->defaultValue || ($this->field->columnTypeId == 12 && $this->filter->defaultValue != '')) {
             Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::$cmpOut;
             $this->view->filtersSharedRow->{$this->field->alias} = $this->filter->defaultValue;
             return $this->filter->defaultValue;

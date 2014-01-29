@@ -34,113 +34,183 @@ var Indi = (function (indi) {
              * @type {Object}
              */
             this.options = {
+                grid: {
+                    multiSelect: false,
+                    firstColumnWidthFraction: 0.4
+                }
             }
 
+            /**
+             * Get the panel, that wraps grid, tile or calendar, and that is rendered to center region of center region
+             * of viewport
+             *
+             * @return {*}
+             */
             this.getPanel = function() {
                 return top.window.Ext.getCmp('i-center-center-wrapper');
-            }
-
-            this.storeProxyUrl = function (){
-
-                // Setup keyword
-                var keyword = '';
-
-                var keywordCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-keyword';
-
-                // If we have keyword as a field value (mean that Ext component is already initialised)
-                if (Ext.getCmp(keywordCmpId)) {
-                    keyword =  Ext.getCmp(keywordCmpId).getValue();
-
-                // Else we get keyword from scope, if it is not null|empty there
-                } else if (indi.scope.keyword) {
-                    keyword = indi.urldecode(indi.scope.keyword);
-                }
-
-                // Build the store request url
-                return indi.pre + '/' +
-                    indi.trail.item().section.alias + '/' +
-                    indi.trail.item().action.alias + '/' +
-                   (indi.trail.item(1).row ? 'id/' + indi.trail.item(1).row.id + '/' : '') +
-                    'json/1/' +
-                    (keyword ? 'keyword/' + keyword + '/' : '');
             }
 
             /**
              * Handler for any filter change
              *
-             * @param obj
-             * @param newv
-             * @param oldv
+             * @param cmp Component, that fired filterChange
              */
             this.filterChange = function(cmp){
 
-                // Declare and fulfil an array with filters component ids
-                var filterAliases = [];
+                // Declare an array with filters component ids
+                var filterCmpIdA = [];
+
+                // Prepare a prefix for filter component ids
                 var filterCmpIdPrefix = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-';
+
+                // For each filter
                 for (var i = 0; i < indi.trail.item().filters.length; i++) {
+
+                    // Define a shortcut for filter field alias
+                    var alias =  indi.trail.item().filters[i].foreign.fieldId.alias;
+
+                    // If current filter is a range-filter, we push two filter component ids - for min and max values
                     if (['number', 'calendar', 'datetime']
                         .indexOf(indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias) != -1) {
-                        filterAliases.push(filterCmpIdPrefix+indi.trail.item().filters[i].foreign.fieldId.alias + '-gte');
-                        filterAliases.push(filterCmpIdPrefix+indi.trail.item().filters[i].foreign.fieldId.alias + '-lte');
+                        filterCmpIdA.push(filterCmpIdPrefix + alias + '-gte');
+                        filterCmpIdA.push(filterCmpIdPrefix + alias + '-lte');
+
+                    // Else we push one filter component id
                     } else {
-                        filterAliases.push(filterCmpIdPrefix+indi.trail.item().filters[i].foreign.fieldId.alias);
+                        filterCmpIdA.push(filterCmpIdPrefix + alias);
                     }
                 }
 
-                // Declare and fulfil an array with filters component ids
-                var gridColumnsAliases = [];
+                // Declare and fulfil an array with properties, available for each row in the rowset
+                var columnA = [];
                 for (var i = 0; i < indi.trail.item().gridFields.length; i++) {
-                    gridColumnsAliases.push(indi.trail.item().gridFields[i].alias);
+                    columnA.push(indi.trail.item().gridFields[i].alias);
                 }
 
-                var params = [];
-                var usedFilterAliasesThatHasGridColumnRepresentedBy = [];
-                for (var i in filterAliases) {
-                    var filterAlias = filterAliases[i].replace(filterCmpIdPrefix, '');
-                    var filterValue = Ext.getCmp(filterAliases[i]).getValue();
-                    if (filterValue != '%' && filterValue != '' && filterValue !== null) {
-                        var param = {};
-                        if (Ext.getCmp(filterAliases[i]).xtype == 'datefield') {
-                            if(Ext.getCmp(filterAliases[i]).format != 'Y-m-d') {
-                                param[filterAlias] = Ext.Date.format(Ext.Date.parse(Ext.getCmp(filterAliases[i]).getRawValue(), Ext.getCmp(filterAliases[i]).format), 'Y-m-d');
+                // Declare an array for params, which will be fulfiled with filters's values
+                var paramA = [];
+
+                // Declare an array for filter fields (that are currently use for search), that are presented in a list
+                // of properties, available for each row within a rowset, retrived by instance.store. We will need that
+                // array bit later, to be able to determine if corresponding filters are used for all available
+                // properties, and if so - keyword component from keyword toolbar should be disabled, because search
+                // mechanism, that keyword component is involved in - is searching value, inputted in keyword field,
+                // only within available properties. For example, if come row have a details field (as a HTML-editor)
+                // which is not in the list of available properties (because list of available properties - is the same
+                // almost the same as available grid columns, if Ext.panel.Grid is used to represent a rowset) - the
+                // value, inputted in keyword search field - will not be searched in that details field.
+                var usedFilterAliasesThatHasGridColumnRepresentedByA = [];
+
+                // Foreach filter component id in filterCmpIdA array
+                for (var i = 0; i < filterCmpIdA.length; i++) {
+
+                    // Define a shortcut for filter filed alias
+                    var alias = filterCmpIdA[i].replace(filterCmpIdPrefix, '');
+
+
+                    // Get current filter value
+                    var value = Ext.getCmp(filterCmpIdA[i]).getValue();
+
+                    // If current filter is filter for color-field, and it's value is [0, 360], we set 'value' variable
+                    // as '' (empty string) because such value for color field filter mean that filter is not used
+                    if (Ext.getCmp(filterCmpIdA[i]).xtype == 'multislider' &&
+                        JSON.stringify(Ext.getCmp(filterCmpIdA[i]).getValue()) == '[0,360]')
+                         value = '';
+
+                    // If value is not empty
+                    if (value + '' != '' && value !== null) {
+
+                        // Prepare param object for storing current filter value. We will be using separate objects for
+                        // each used filter, e.g [{property1: "value1"}, {property2: "value2"}], instead of single object
+                        // {property1: "value1", property2: "value2"}, because it's the way of how extjs use it, for
+                        // passing sorting params within store request, so here we just do by the same way
+                        var paramO = {};
+
+                        // If current filter is a ext's datefield components
+                        if (Ext.getCmp(filterCmpIdA[i]).xtype == 'datefield') {
+
+                            // If format of date, used in ext's datafield component - differs from 'Y-m-d'
+                            if (Ext.getCmp(filterCmpIdA[i]).format != 'Y-m-d') {
+
+                                // We get the raw value in that format, convert it back to 'Y-m-d' format
+                                // and assign to paramO's object certain property as a current filter value
+                                paramO[alias] = Ext.Date.format(
+                                    Ext.Date.parse(
+                                        Ext.getCmp(filterCmpIdA[i]).getRawValue(),
+                                        Ext.getCmp(filterCmpIdA[i]).format)
+                                    , 'Y-m-d');
+
+                            // Else we just assign the value to param's object certain property as a current filter value
                             } else {
-                                param[filterAlias] = Ext.getCmp(filterAliases[i]).getRawValue();
+                                paramO[alias] = Ext.getCmp(filterCmpIdA[i]).getRawValue();
                             }
+
+                        // Else if current filter is not a ext's datetime component
                         } else {
-                            param[filterAlias] = Ext.getCmp(filterAliases[i]).getValue();
+
+                            // We just assign the value to param's object certain property as a current filter value, too
+                            paramO[alias] = Ext.getCmp(filterCmpIdA[i]).getValue();
                         }
-                        params.push(param);
-                        for (var j =0; j < gridColumnsAliases.length; j++) {
-                            if (gridColumnsAliases[j] == filterAliases[i]) {
-                                usedFilterAliasesThatHasGridColumnRepresentedBy.push(filterAliases[i]);
-                            }
-                        }
+
+                        // Push the paramO object to the param stack
+                        paramA.push(paramO);
+
+                        // If current filter field alias is within an array of available properties (columns)
+                        for (var j =0; j < columnA.length; j++)
+                            if (columnA[j] == alias.replace(/-(g|l)te$/, '') &&
+                                usedFilterAliasesThatHasGridColumnRepresentedByA.indexOf(
+                                    alias.replace(/-(g|l)te$/, '')) == -1)
+
+                                // We remember that, by pushing curren filter field alias to the
+                                // usedFilterAliasesThatHasGridColumnRepresentedByA array
+                                usedFilterAliasesThatHasGridColumnRepresentedByA.push(alias.replace(/-(g|l)te$/, ''));
                     }
                 }
-                instance.store.getProxy().extraParams = {search: JSON.stringify(params)};
 
+                // Apply collected used filter alises and their values as a instance.store.proxy.extraParams property
+                //console.log(JSON.stringify(paramA));
+                instance.store.getProxy().extraParams = {search: JSON.stringify(paramA)};
+
+                // Get id of the keyword component
                 var keywordCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-keyword';
+
+                // Get the value of keyword component, if component is not disabled
                 var keyword = Ext.getCmp(keywordCmpId).disabled == false && Ext.getCmp(keywordCmpId).getValue() ?
                     Ext.getCmp(keywordCmpId).getValue() : '';
 
+                // Adjust an 'url' property of  instance.store.proxy object, to apply keyword search usage
                 instance.store.getProxy().url = indi.pre + '/' + indi.trail.item().section.alias + '/index/' +
                     (indi.trail.item(1).row ? 'id/' + indi.trail.item(1).row.id + '/' : '') + 'json/1/' +
                     (keyword ? 'keyword/' + keyword + '/' : '');
 
-                Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedBy.length == gridColumnsAliases.length);
+                // Disable keyword component, if all available properties are already involved in search by
+                // corresponding filters usage
+                Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
 
+                // If there is no noReload flag turned on
                 if (!cmp.noReload) {
+
+                    // We reset the page's number, that should be retrieved by search, to 1, because if it currently
+                    // is not 1, there is a possiblity of no results displayed, as there is no guarantee, that there
+                    // will be enough results found matched new filters params, to display the same page. Example:
+                    // we were in a Countries section, where were ~300 countries, and we were at page 6, which mean
+                    // that countries from (if countries-on-page = 25) 126 to 150 were displayed. So if we use filters
+                    // or keyword search, but page number will remain the same (6) - there should be at least 126 results
+                    // matched our keyword/filters search, to at least 1 row to be displayed, but there is no guarantee
+                    // that there will be such number of results, that match our search criteria
                     instance.store.currentPage = 1;
                     instance.store.lastOptions.page = 1;
                     instance.store.lastOptions.start = 0;
-                    if (cmp.xtype == 'combobox') {
+
+                    // If used filter is a combobox or multislider, we reload store data immideatly
+                    if (['combobox', 'multislider'].indexOf(cmp.xtype) != -1) {
                         instance.store.reload();
-                    } else if (cmp.xtype == 'datefield' && (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/.test(cmp.getRawValue()) || !cmp.getRawValue().length)) {
-                        clearTimeout(instance.timeout);
-                        instance.timeout = setTimeout(function(){
-                            instance.store.reload();
-                        }, 500);
-                    } else if (cmp.xtype != 'datefield') {
+
+                    // Else if used filter is not a datefield, or is, but it's value matches proper date format or
+                    // value is empty, we reload store data with a 500ms delay, because direct typing is allowed in that
+                    // datefield, so it's better to reload after user has finished typing.
+                    } else if (cmp.xtype != 'datefield' || (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/
+                        .test(cmp.getRawValue()) || !cmp.getRawValue().length)) {
                         clearTimeout(instance.timeout);
                         instance.timeout = setTimeout(function(){
                             instance.store.reload();
@@ -149,6 +219,11 @@ var Indi = (function (indi) {
                 }
             }
 
+            /**
+             * Build and return an array, containing definition of data, that will be got by instance.store's request
+             *
+             * @return {Array}
+             */
             this.storeFields = function (){
                 // Id field
                 var fieldA = [{name: 'id', type: 'int'}];
@@ -164,26 +239,174 @@ var Indi = (function (indi) {
                 return fieldA;
             }
 
+            /**
+             * Build and return an array, containing column definitions for grid panel
+             *
+             * @return {Array}
+             */
             this.gridColumns = function (){
-                // Id field
+
+                // Id column
                 var columnA = [{header: 'id', dataIndex: 'id', width: 30, sortable: true, align: 'right', hidden: true}];
 
-                // Other fields
-                for (var i = 0; i < indi.trail.item().gridFields.length; i++)
+                // Other columns
+                for (var i = 0; i < indi.trail.item().gridFields.length; i++) {
                     columnA.push({
                         id: 'i-section-' + indi.trail.item().section.alias + '-action-index-grid-column-' + indi.trail.item().gridFields[i].alias,
                         header: indi.trail.item().gridFields[i].title,
                         dataIndex: indi.trail.item().gridFields[i].alias,
+                        cls: 'i-grid-column-filtered',
                         sortable: true,
-                        align: [3,5].indexOf(indi.trail.item().gridFields[i].columnTypeId) != -1 ? 'right' : 'left',
+                        align: function(){
+                            return (indi.trail.item().gridFields[i].storeRelationAbility == 'none' &&
+                                [3,5].indexOf(parseInt(indi.trail.item().gridFields[i].columnTypeId)) != -1) ? 'right' : 'left';
+                        }(),
                         hidden: indi.trail.item().gridFields[i].alias == 'move' ? true : false
                     });
+                }
 
                 // Setup flex for first non-hidden column
                 columnA[1].flex = 1;
 
                 // Return array
                 return columnA;
+            }
+
+            /**
+             * Gets a value, stored in scope for filter, by given filter alias
+             *
+             * @param alias
+             * @return {*}
+             */
+            this.getScopeFilter = function(alias){
+
+                // If there is no filters used at all - return
+                if (indi.scope.filters == null) return;
+
+                var value = undefined;
+
+                // Filter values are stored in indi.scope as a stringified json array, so we need to convert it back,
+                // to be able to find something there
+                var values = eval(indi.scope.filters);
+
+                // Find a filter value
+                for (var i = 0; i < values.length; i++)
+                    if (values[i].hasOwnProperty(alias))
+                        value = values[i][alias];
+
+                // Return value
+                return value;
+            }
+
+
+            /**
+             * Assign values to filters, before store load, for store to be loaded with respect to filter params.
+             * These values will be got from indi.scope.filters, and if there is no value for some filter there - then
+             * we'll try to get that in indi.trail.item().filters[i].defaultValue. If there will no value too - then
+             * filter will be empty.
+             */
+            this.setFilterValues = function(){
+
+                // Foreach filter
+                for (var i = 0; i < indi.trail.item().filters.length; i++) {
+
+                    // Create a shortcut for filter field alias
+                    var name = indi.trail.item().filters[i].foreign.fieldId.alias;
+
+                    // Create a shortcut for filter field control element alias
+                    var control = indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias;
+
+                    // At first, we check if current scope contain the value for the current filter, and if so - we use
+                    // that value instead of filter's own default value, whether it was defined or not. Also, we
+                    // implement a bit different behaviour for range-filters (number, calendar, datetime) and for other
+                    // types of filters
+                    if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
+
+                        // Object for default values
+                        var def = {};
+
+                        // Assign the 'gte' and 'lte' properties to the object of default values
+                        if (instance.getScopeFilter(name + '-gte') + '') def.gte = instance.getScopeFilter(name + '-gte');
+                        if (instance.getScopeFilter(name + '-lte') + '') def.lte = instance.getScopeFilter(name + '-lte');
+
+                        // If at least 'gte' or 'lte' properies was set, we assing 'def' object as filter default value
+                        //if (Object.getOwnPropertyNames(def).length) indi.trail.item().filters[i].defaultValue = def;
+
+                    // Else current filter is not a range-filter
+                    } else if (instance.getScopeFilter(name)) {
+
+                        // Just assign the value, got from scope as filter default value
+                        indi.trail.item().filters[i].defaultValue = instance.getScopeFilter(name);
+                    }
+
+                    // Finally, if filter has a non-null default value
+                    if (indi.trail.item().filters[i].defaultValue) {
+
+                        // Define a shortcut for filter's default value
+                        var d = indi.trail.item().filters[i].defaultValue;
+
+                        // Prepare the id for current filter component
+                        var filterCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-' +
+                            indi.trail.item().filters[i].foreign.fieldId.alias;
+
+                        // If current filter is a range filter - set up min and/or max separately
+                        if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
+
+                            // If default value is a stringified javascript array of javascript object, we convert it back
+                            if ((typeof d == 'string') && (d.match(/^\[.*\]$/) || d.match(/^\{.*\}$/))) d = eval('('+ d + ')');
+
+                            // If default value is an object
+                            if (typeof d == 'object')
+
+                                // Foreach property in default value object (which nameds can be 'gte' and 'lte' only)
+                                for (var j in d) {
+
+                                    // Toggle 'noReload' property to 'true' to prevend store reload, because we do not need it
+                                    // to be reloaded at this time. We will need that later, after all values will be assigned
+                                    // to filters
+                                    Ext.getCmp(filterCmpId + '-' + j).noReload = true;
+
+                                    // Set filter value
+                                    Ext.getCmp(filterCmpId + '-' + j).setValue(d[j]);
+
+                                    // Revert back 'noReload' property to 'false'
+                                    Ext.getCmp(filterCmpId + '-' + j).noReload = false;
+                                }
+
+                        // Else current filter is not a renge-filter
+                        } else {
+
+                            // Toggle 'noReload' property to 'true' to prevent store reload
+                            Ext.getCmp(filterCmpId).noReload = true;
+
+                            // If filter is for multiple combo - set value as array, joined by comma
+                            if (indi.trail.item().filters[i].foreign.fieldId.storeRelationAbility == 'many')
+                                Ext.getCmp(filterCmpId).setValue(typeof d == 'string' ? d : d.join(','));
+
+                            // Else if filter is for color field, that is represented by two-thumb multislider
+                            // we set values separately for each thumb. According to Ext docs, there is a way to set
+                            // value at once, but for some reason that way gives an error, so we need to use the same
+                            // method (setValue) but with an alternative set of agruments
+                            else if (control == 'color') {
+
+                                // If color multislider default value is a stringified array e.g "[123, 234]", we should
+                                // convert it back
+                                if (typeof d == 'string') d = eval(d);
+
+                                // Set a value for each multislider thumb
+                                for (var j = 0; j < d.length; j++)
+                                    Ext.getCmp(filterCmpId).setValue(j, d[j], false);
+
+
+                            // Else set by original way
+                            } else
+                                Ext.getCmp(filterCmpId).setValue(d);
+
+                            // Revert back 'noReload' property to 'false'
+                            Ext.getCmp(filterCmpId).noReload = false;
+                        }
+                    }
+                }
             }
 
             /**
@@ -220,7 +443,10 @@ var Indi = (function (indi) {
                                 padding: '0 5 4 0',
                                 margin: '-1 0 0 0'
                             },
-                            items: instance.filterToolbarItems()
+                            items: instance.filterToolbarItems(),
+                            listeners: {
+                                afterrender: instance.setFilterValues
+                            }
                         }]
                     });
                 }
@@ -235,9 +461,12 @@ var Indi = (function (indi) {
                     items: instance.keywordToolbarItems()
                 });
 
+                // Return toolbars array
                 return toolbars;
             };
 
+            // Timeout variable (an identifier for javascript setTimeout function) for delay between last keyword
+            // letter was typed and store reload fired
             this.timeout;
 
             /**
@@ -253,9 +482,11 @@ var Indi = (function (indi) {
                 // For each filter
                 for (var i = 0; i < indi.trail.item().filters.length; i++) {
 
+                    // Define a shortcut for filter field alias
+                    var alias = indi.trail.item().filters[i].foreign.fieldId.alias;
+
                     // Prepare the id for current filter component
-                    var filterCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-' +
-                        indi.trail.item().filters[i].foreign.fieldId.alias;
+                    var filterCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-' + alias;
 
                     // If current filter is defined for 'string', 'textarea' or 'html' field
                     if (['string', 'textarea', 'html']
@@ -273,10 +504,13 @@ var Indi = (function (indi) {
                             fieldLabel: fieldLabel,
                             labelWidth: indi.metrics.getWidth(fieldLabel),
                             labelSeparator: '',
+                            hiddenName: alias,
                             width: 80 + indi.metrics.getWidth(fieldLabel),
                             margin: 0,
                             listeners: {
-                                change: instance.filterChange
+                                change: function(cmp){
+                                    if (!cmp.noReload) instance.filterChange(cmp);
+                                }
                             }
                         });
 
@@ -300,7 +534,9 @@ var Indi = (function (indi) {
                             margin: 0,
                             minValue: 0,
                             listeners: {
-                                change: instance.filterChange
+                                change: function(cmp){
+                                    if (!cmp.noReload) instance.filterChange(cmp);
+                                }
                             }
                         });
 
@@ -315,38 +551,29 @@ var Indi = (function (indi) {
                             margin: 0,
                             minValue: 0,
                             listeners: {
-                                change: instance.filterChange
+                                change: function(cmp){
+                                    if (!cmp.noReload) instance.filterChange(cmp);
+                                }
                             }
                         });
 
                     // Else if current filter is defined for 'calendar' or 'datetime' field
                     } else if (['calendar', 'datetime']
                         .indexOf(indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias) != -1) {
-                        /*
-                         <?if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'calendar') {?>
-                         <?if ($params['displayFormat']){?>
-                         format: '<?=$params['displayFormat']?>',
-                         ariaTitleDateFormat: '<?=$params['displayFormat']?>',
-                         longDayFormat: '<?=$params['displayFormat']?>',
-                         <?}?>
-                         <?} else if ($filter->foreign['fieldId']->foreign['elementId']['alias'] == 'datetime') {?>
-                         <?if ($params['displayDateFormat']){?>
-                         format: '<?=$params['displayDateFormat']?>',
-                         ariaTitleDateFormat: '<?=$params['displayDateFormat']?>',
-                         longDayFormat: '<?=$params['displayDateFormat']?>',
-                         <?}?>
-                         <?}?>
 
-                         */
+                        // Get the format
+                        var dateFormat = indi.trail.item().filters[i].foreign.fieldId.params['display' +
+                            (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'datetime' ?
+                                'Date': '') + 'Format'] || 'Y-m-d';
 
-                        // Get the label
+                        // Get the label for filter minimal value component
                         var fieldLabel = (indi.trail.item().filters[i].alt ?
                             indi.trail.item().filters[i].alt :
                             indi.trail.item().filters[i].foreign.fieldId.title) + ' ' +
                             indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM;
 
-                        // Append the extjs datefield component data object to filters stack, for minimum value
-                        items.push({
+                        // Prepare the data for extjs datefield component, for use as control for filter minimal value
+                        var datefieldFrom = {
                             xtype: 'datefield',
                             id: filterCmpId + '-gte',
                             fieldLabel: fieldLabel,
@@ -357,12 +584,14 @@ var Indi = (function (indi) {
                             margin: 0,
                             validateOnChange: false,
                             listeners: {
-                                change: instance.filterChange
+                                change: function(cmp){
+                                    if (!cmp.noReload) instance.filterChange(cmp);
+                                }
                             }
-                        });
+                        };
 
-                        // Append the extjs datefield component data object to filters stack, for maximum value
-                        items.push({
+                        // Prepare the data for extjs datefield component, for use as control for filter maximal value
+                        var datefieldUntil = {
                             xtype: 'datefield',
                             id: filterCmpId + '-lte',
                             fieldLabel: indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO,
@@ -373,9 +602,26 @@ var Indi = (function (indi) {
                             margin: 0,
                             validateOnChange: false,
                             listeners: {
-                                change: instance.filterChange
+                                change: function(cmp){
+                                    if (!cmp.noReload) instance.filterChange(cmp);
+                                }
                             }
+                        };
+
+                        // Append a number of format-related properties to the data objects
+                        datefieldFrom = $.extend(datefieldFrom, {
+                            format: dateFormat,
+                            ariaTitleDateFormat: dateFormat,
+                            longDayFormat: dateFormat
                         });
+                        datefieldUntil = $.extend(datefieldUntil, {
+                            format: dateFormat,
+                            ariaTitleDateFormat: dateFormat,
+                            longDayFormat: dateFormat
+                        });
+
+                        // Append the extjs datefield components to filters stack, for minimum and maximum
+                        items.push(datefieldFrom, datefieldUntil);
 
                     // Else if current filter is defined for 'color' field
                     } else if (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'color') {
@@ -399,11 +645,14 @@ var Indi = (function (indi) {
                             minValue: 0,
                             maxValue: 360,
                             constrainThumbs: false,
-                            width: 197,
+                            // Hue bg width + label width + labelPad + thumb-overlap * number-of-thumbs
+                            width: 183 + indi.metrics.getWidth(fieldLabel) + 5 + 7 * 2,
                             margin: '1 0 0 0',
                             cls: 'i-multislider-color',
                             listeners: {
-                                changecomplete: instance.filterChange
+                                changecomplete: function(cmp){
+                                    if (!cmp.noReload) instance.filterChange(cmp);
+                                }
                             }
                         });
 
@@ -440,20 +689,52 @@ var Indi = (function (indi) {
                                 id: filterCmpId,
                                 contentEl: filterCmpId + '-combo',
                                 border: 0,
+                                multiple: indi.trail.item().filters[i].foreign.fieldId.storeRelationAbility == 'many',
+                                boolean: indi.trail.item().filters[i].foreign.fieldId.storeRelationAbility == 'none',
                                 cls: 'i-filter-combo-component',
                                 getValue: function(){
+                                    // Me
                                     var me = this;
-                                    var hidden = $(me.el.dom).find('input[type="hidden"]');
+
+                                    // If at this monent combo DOM node is not yet picked by 'me', we set 'hidden'
+                                    // variable directly as a DOM node outside 'me'
+                                    if (!me.el) var hidden = $('#' + me.contentEl + ' input[type="hidden"]');
+
+                                    // Else we set 'hidden' variable as a node within 'me'
+                                    else var hidden = $(me.el.dom).find('input[type="hidden"]');
+
+                                    // If combo is single-value
                                     if (hidden.parent().hasClass('i-combo-single')) {
+
+                                        // If combo value is 0, and combo is not used to represent BOOLEAN database
+                                        // column - the '' (empty string) will be returned, or actial combo value otherwise
                                         return hidden.val() == '0' && hidden.attr('boolean') != 'true' ? '' : hidden.val();
+
+                                    // Else if combo is mltiple-value, an array of values (got by splitting combo value,
+                                    // by ',') will be returned
                                     } else if (hidden.parent().hasClass('i-combo-multiple')) {
                                         return hidden.val().split(',');
                                     }
                                 },
-                                setValue: function(){
+
+                                // Here we define a setValue method, because it will be called at certain stage
+                                // within instance.setFilterValues() execution, and if if won't define - error will
+                                // occur. Also we need it to be working at 'clear-all-filters' function, represented by
+                                // a special panel header tool
+                                setValue: function(value){
+                                    if (value == '') {
+                                        indi.combo.filter.clearCombo(
+                                            $('#'+this.contentEl).find('input[type="hidden"]').attr('name')
+                                        );
+                                    }
                                 },
+
+                                // Provide the event handlers
                                 listeners: {
+
+                                    // Provide a handler for 'render' event
                                     render: function(){
+
                                         // Here we provide an ability for width autoadjusting, in case if current combo has
                                         // a satellite, and satelitte value was changed, so maximum option width may change,
                                         // because options list was refreshed
@@ -471,7 +752,84 @@ var Indi = (function (indi) {
                     }
                 }
 
+                // Return filter toolbar items
                 return items;
+            }
+
+            /**
+             * Adjust grid columns widths, for widths to match column contents
+             */
+            this.adjustGridColumnsWidths = function() {
+                var grid = Ext.getCmp('i-center-center-wrapper').getComponent(0);
+                var columnWidths = {};
+                var totalColumnsWidth = 0;
+                for(var i in grid.columns) {
+                    if (grid.columns[i].hidden == false) {
+                        columnWidths[i] = indi.metrics.getWidth(grid.columns[i].text) + 12;
+                        for (var j in grid.store.data.items) {
+                            var cellWidth = indi.metrics.getWidth(grid.store.data.items[j].data[grid.columns[i].dataIndex]) + 12;
+                            if (cellWidth > columnWidths[i]) columnWidths[i] = cellWidth;
+                        }
+                        totalColumnsWidth += columnWidths[i];
+                    }
+                }
+                var totalGridWidth = grid.getWidth();
+                if (totalColumnsWidth < totalGridWidth) {
+                    var first = true;
+                    for(i in columnWidths) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            grid.columns[i].width = columnWidths[i];
+                        }
+                    }
+                } else {
+                    var smallColumnsWidth = 0;
+                    var first = true;
+                    for(var i in columnWidths) {
+                        if (first) {
+                            first = false;
+                        } else if (columnWidths[i] <= 100) {
+                            smallColumnsWidth += columnWidths[i];
+                        }
+                    }
+                    var firstColumnWidth = Math.ceil(totalGridWidth*instance.options.grid.firstColumnWidthFraction);
+                    var percent = (totalGridWidth-firstColumnWidth-smallColumnsWidth)/(totalColumnsWidth-columnWidths[1]-smallColumnsWidth);
+                    var first = true;
+                    for(i in columnWidths) {
+                        if (first) {
+                            grid.columns[i].width = firstColumnWidth;
+                            first = false;
+                        } else if (columnWidths[i] > 100) {
+                            grid.columns[i].width = columnWidths[i] * percent;
+                        } else {
+                            grid.columns[i].width = columnWidths[i];
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Set up and return store full request string (but without paging params)
+             */
+            this.lastRequest = function(){
+
+                // Get the initial uri
+                var url = instance.store.getProxy().url;
+
+                // Declare an array for $_GET params
+                var get = [];
+
+                // If filters were used during last store request, we retrieve info about, encode and append it to 'get'
+                if (instance.store.getProxy().extraParams.search)
+                    get.push('search=' + encodeURIComponent(instance.store.getProxy().extraParams.search));
+
+                // If sorters were used during last store request, we retrieve info about, encode and append it to 'get'
+                if (instance.store.getSorters().length)
+                    get.push('sort=' + encodeURIComponent(JSON.stringify(instance.store.getSorters())));
+
+                // Return the full url string
+                return url + (get.length ? '?' + get.join('&') : '');
             }
 
             /**
@@ -502,7 +860,7 @@ var Indi = (function (indi) {
                         actionAlias: 'form',
                         handler: function(){
                             indi.load(
-                                Ext.getCmp('i-center-center-wrapper').getComponent(0).indi.href +
+                                indi.trail.item().section.href +
                                     this.actionAlias + '/ph/' + Indi.trail.item().section.primaryHash + '/'
                             );
                         }
@@ -559,12 +917,12 @@ var Indi = (function (indi) {
                         if(iconA.indexOf(indi.trail.item().actions[i].alias) != -1)
                             item.iconCls = indi.trail.item().actions[i].alias;
 
-                        // Pustto the actions stack
+                        // Put to the actions stack
                         items.push(item);
                     }
                 }
 
-                // We figure that other items should be right-aligned
+                // We figure that other items should be right-aligned at the keyword toolbar
                 items.push('->');
 
                 // Append fast search keyword field component to the items stack
@@ -603,10 +961,12 @@ var Indi = (function (indi) {
                     valueField: 'alias',
                     displayField: 'title',
                     typeAhead: false,
-                    width: function (combo){
+                    width: function (){
                         var triggerWidth = 17, maxTitleWidth = 0, maxTitle='', labelWidth =
                             indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL),
-                            paddingsWidth = 6, labelPad = 5;
+                            paddingsWidth = 6, labelPad = 5, maxTitleWidth = indi.metrics.getWidth(
+                                indi.lang['I_ACTION_INDEX_SUBSECTIONS_' + (indi.trail.item().sections.length ? 'VALUE' : 'NO')]
+                            )
                         for (var i = 0; i < indi.trail.item().sections.length; i++) {
                             var titleWidth = indi.metrics.getWidth(indi.trail.item().sections[i].title);
                             if (titleWidth > maxTitleWidth) {
@@ -658,36 +1018,192 @@ var Indi = (function (indi) {
                 return items;
             };
 
+
+            /**
+             * Prepare and return an array with panel header tools
+             *
+             * @return {Array}
+             */
+            this.tools = function(){
+
+                // Declare tools array
+                var tools = [];
+
+                // We add the filter-reset tool only if there is at least one filter defined for current section
+                if (indi.trail.item().filters.length) {
+
+                    // Append tool data object to the 'tools' array
+                    tools.push({
+                        type: 'search',
+                        cls: 'i-tool-search-reset',
+                        handler: function(event, target, owner, tool){
+
+                            // Prepare a prefix for filter component ids
+                            var filterCmpIdPrefix = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-';
+
+                            // Setup a flag, what will
+                            var atLeastOneFilterIsUsed = false;
+
+                            var loopA = [function(cmp, control){
+                                if (control == 'color') {
+                                    if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
+                                } else {
+                                    if ([null, ''].indexOf(cmp.getValue()) == -1) {
+                                        if (JSON.stringify(cmp.getValue()) != '[""]') {
+                                            atLeastOneFilterIsUsed = true;
+                                        }
+                                    }
+                                }
+                            }, function(cmp, control){
+                                if (control == 'color') {
+                                    cmp.setValue(0, 0, false);
+                                    cmp.setValue(1, 360, false);
+                                } else {
+                                    cmp.setValue('');
+                                }
+                            }]
+
+                            for (var l = 0; l < loopA.length; l++) {
+
+                                // We prevent unsetting filters values if they are already empty
+                                if (l == 1 && atLeastOneFilterIsUsed == false) break;
+
+                                // For each filter
+                                for (var i = 0; i < indi.trail.item().filters.length; i++) {
+
+                                    // Define a shortcut for filter field alias
+                                    var alias =  indi.trail.item().filters[i].foreign.fieldId.alias;
+
+                                    // Shortcut for control element, assigned to filter field
+                                    var control = indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias;
+
+                                    // If current filter is a range-filter, we reset values for two filter components, that
+                                    // are representing min and max values
+                                    if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
+
+                                        // Range filters limits's postfixes
+                                        var limits = ['gte', 'lte'];
+
+                                        // Setup empty values for range filters
+                                        for (var j = 0; j < limits.length; j++) {
+                                            Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
+                                            loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
+                                            Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
+                                        }
+
+                                        // Else we reset one filter component
+                                    } else if (control == 'color') {
+
+                                        // Resetted values for color multislider filter
+                                        var v = [0, 360];
+
+                                        // Set a value for each multislider thumb
+                                        for (var j = 0; j < v.length; j++) {
+                                            Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                                            loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
+                                            Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                                        }
+
+                                    // Else set by original way
+                                    } else {
+                                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
+                                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                                    }
+                                }
+                            }
+
+                            // Reload store for empty filter values to be picked up.
+                            // We do reload only in case if at least one filter was emptied by reset filter tool
+                            if (atLeastOneFilterIsUsed)
+                                instance.filterChange({});
+
+                            // Otherwise we display a message box saying that filters cannot be emptied because
+                            // they are already empty
+                            else Ext.MessageBox.show({
+                                title: indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
+                                msg: indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.INFO
+                            });
+                        }
+                    });
+                }
+
+                // Return array of tools
+                return tools;
+            }
+
+            /**
+             * Prepare and return a sorters for instance.store
+             *
+             * @return {Array}
+             */
             this.storeSorters = function(){
-                if (indi.trail.item().section.defaultSortField) {
+
+                // If we have sorting params, stored in scope - we use them
+                if (indi.scope.order)
+                    return eval(indi.scope.order);
+
+                // Else we use current section's default sorting params, if specified
+                else if (indi.trail.item().section.defaultSortField)
                     return [{
                         property : indi.trail.item().section.defaultSortFieldAlias,
                         direction: indi.trail.item().section.defaultSortDirection
-                    }]
-                }
+                    }];
+
+                // Else no sorting at all
                 return [];
             }
 
-            instance.storeCurrentPage = function(){
+            /**
+             * Determines instance.store's current page. At first it will try to get it from indi.scope, at it it fails
+             *  - return 1
+             *
+             * @return {*}
+             */
+            this.storeCurrentPage = function(){
                 if (indi.scope.page)
                     return indi.scope.page;
 
                 return 1;
             }
 
-            this.gridFirstColumnWidthFraction = function(){
-                return 0.4;
+            this.highlightGridFilteredColumns = function(){
+
+                /*var filteredColumnA = ['title'];
+                var columnIdPrefix = 'i-section-' + indi.trail.item().section.alias + '-action-index-grid-column-';
+                var cellClassPrefix = '.x-grid-cell-';
+
+
+                for (var i = 0; i < filteredColumnA.length; i++) {
+                    var columnId = columnIdPrefix + filteredColumnA[i];
+                    if (!$(cellClassPrefix + columnId).hasClass('i-grid-filtered-column-cell'))
+                        $(cellClassPrefix + columnId).addClass('i-grid-filtered-column-cell');
+                }*/
             }
 
+            /**
+             * Callback for store load, will be fired if current section type = 'grid'
+             */
+            this.storeLoadCallbackGrid = function(){
+                instance.highlightGridFilteredColumns();
+                instance.adjustGridColumnsWidths();
+            }
+
+            /**
+             * Extjs's Store object for current section
+             *
+             * @type {*}
+             */
             this.store = Ext.create('Ext.data.Store', {
                 fields: instance.storeFields(),
                 sorters: instance.storeSorters(),
                 method: 'POST',
                 pageSize: indi.trail.item().section.rowsOnPage,
                 remoteSort: true,
-                currentPage: (indi.scope.page ? indi.scope.page : 1),
+                currentPage: instance.storeCurrentPage(),
                 proxy:  new Ext.data.HttpProxy({
-                    url: instance.storeProxyUrl(),
                     method: 'POST',
                     reader: {
                         type: 'json',
@@ -697,87 +1213,25 @@ var Indi = (function (indi) {
                     }
                 }),
                 listeners: {
-                    load: function (){
-                        var grid = Ext.getCmp('i-center-center-wrapper').getComponent(0);
-                        var columnWidths = {};
-                        var totalColumnsWidth = 0;
-                        for(var i in grid.columns) {
-                            if (grid.columns[i].hidden == false) {
-                                columnWidths[i] = indi.metrics.getWidth(grid.columns[i].text) + 10;
-                                for (var j in grid.store.data.items) {
-                                    var cellWidth = indi.metrics.getWidth(grid.store.data.items[j].data[grid.columns[i].dataIndex]) + 7;
-                                    if (cellWidth > columnWidths[i]) columnWidths[i] = cellWidth;
-                                }
-                                totalColumnsWidth += columnWidths[i];
-                            }
-                        }
-                        var totalGridWidth = grid.getWidth();
-                        if (totalColumnsWidth < totalGridWidth) {
-                            var first = true;
-                            for(i in columnWidths) {
-                                if (first) {
-                                    first = false;
-                                } else {
-                                    grid.columns[i].width = columnWidths[i];
-                                }
-                            }
-                        } else {
-                            var smallColumnsWidth = 0;
-                            var first = true;
-                            for(var i in columnWidths) {
-                                if (first) {
-                                    first = false;
-                                } else if (columnWidths[i] <= 100) {
-                                    smallColumnsWidth += columnWidths[i];
-                                }
-                            }
-                            var firstColumnWidth = Math.ceil(totalGridWidth*instance.gridFirstColumnWidthFraction());
-                            var percent = (totalGridWidth-firstColumnWidth-smallColumnsWidth)/(totalColumnsWidth-columnWidths[1]-smallColumnsWidth);
-                            var first = true;
-                            for(i in columnWidths) {
-                                if (first) {
-                                    grid.columns[i].width = firstColumnWidth;
-                                    first = false;
-                                } else if (columnWidths[i] > 100) {
-                                    grid.columns[i].width = columnWidths[i] * percent;
-                                } else {
-                                    grid.columns[i].width = columnWidths[i];
-                                }
-                            }
-                        }
-
-                        // Set up full request string (but without paging params)
-                        var url = grid.store.getProxy().url;
-                        var get = [];
-                        if (grid.store.getProxy().extraParams.search) get.push('search=' + encodeURIComponent(grid.store.getProxy().extraParams.search));
-                        if (grid.store.getSorters().length) get.push('sort=' + encodeURIComponent(JSON.stringify(grid.store.getSorters())));
-                            grid.indi.request = url + (get.length ? '?' + get.join('&') : '');
-
+                    beforeload: function(){
+                        instance.filterChange({noReload: true});
+                    },
+                    load: function(){
+                        var type = indi.trail.item().section.type;
+                        instance['storeLoadCallback'+type.charAt(0).toUpperCase() + type.slice(1)]();
                     }
                 }
             });
-            instance.store.load();
 
             /**
              * Build the grid
              */
             this.buildGrid = function() {
-
-                return Ext.create('Ext.grid.Panel', {
+                var gridO = {
                     id: 'i-section-' + indi.trail.item().section.alias + '-action-index-grid',
                     border: 0,
-                    multiSelect: false,
                     store: instance.store,
                     columns: instance.gridColumns(),
-                    indi: {
-                        href : indi.pre + '/' + indi.trail.item().section.alias + '/',
-                        msgbox: {
-                            confirm: {
-                                title: indi.lang.MSGBOX_CONFIRM_TITLE,
-                                message: indi.lang.MSGBOX_CONFIRM_MESSAGE
-                            }
-                        }
-                    },
                     viewConfig: {
                         getRowClass: function (row) {
                             if (row.raw._system && row.raw._system.disabled)
@@ -802,8 +1256,49 @@ var Indi = (function (indi) {
                                 Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-button-form')
                                     .handler();
                         }
+                    },
+                    bbar: new Ext.PagingToolbar({
+                        store: instance.store,
+                        displayInfo: true,
+                        items:instance.gridBarItems()
+                    })
+                };
+
+                return Ext.create('Ext.grid.Panel', $.extend(gridO, instance.options.grid));
+            }
+
+            instance.gridBarItems = function() {
+                var items = ['-'];
+
+                items.push({
+                    text: '',
+                    iconCls: 'i-btn-icon-xls',
+                    handler: function(){
+                        var request = instance.lastRequest().replace('json/1/', 'json/1/xls/1/');
+                        //console.log(request);
+                        var gridCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-grid';
+                        var gridColumnA = Ext.getCmp(gridCmpId).columns;
+                        var excelColumnA = [];
+
+                        // Setup a multiplier
+                        var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
+
+                        for (var i = 0; i < gridColumnA.length; i++) {
+                            if (gridColumnA[i].hidden == false) {
+                                excelColumnA.push({
+                                    title: gridColumnA[i].text,
+                                    dataIndex: gridColumnA[i].dataIndex,
+                                    align: gridColumnA[i].align,
+                                    width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
+                                });
+                            }
+                        }
+                        var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
+                        window.location = request + '&' + columns;
                     }
-                });
+                })
+
+                return items;
             }
 
             /**
@@ -824,12 +1319,13 @@ var Indi = (function (indi) {
                     layout: 'fit',
                     title: indi.trail.item().section.title,
                     items: [instance['build'+type.charAt(0).toUpperCase() + type.slice(1)]()],
-                    bbar: new Ext.PagingToolbar({
-                        store: instance.store,
-                        displayInfo: true,
-                        items:['-']
-                    }),
-                    dockedItems: instance.toolbars()
+                    tools: instance.tools(),
+                    dockedItems: instance.toolbars(),
+                    listeners: {
+                        afterrender: function(){
+                            instance.store.load();
+                        }
+                    }
                 });
             }
 

@@ -22,6 +22,13 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     protected $_system = array();
 
     /**
+     * Compiled data, used for storing eval-ed values for properties, that are allowed to contain php-expressions
+     *
+     * @var array
+     */
+    protected $_compiled = array();
+
+    /**
      * Object of type Indi_Db_Table_Abstract or some of extended class
      *
      * @var
@@ -44,6 +51,11 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         $this->_original = $config['original'];
         $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
         $this->_system = is_array($config['system']) ? $config['system'] : array();
+
+        // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
+        foreach ($this->_table->getEvalFields() as $evalField) {
+            Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::$cmpOut;
+        }
     }
 
     /**
@@ -100,7 +112,7 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     public function toArray($type = 'current', $deep = true)
     {
         if ($type == 'current') {
-            $array = (array) array_merge($this->_original, $this->_modified);
+            $array = (array) array_merge($this->_original, $this->_modified, $this->_compiled);
         } else if ($type == 'original') {
             $array = (array) $this->_original;
         } else if ($type == 'modified') {
@@ -236,10 +248,20 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         if (func_num_args() == 1) {
             return $this->_system[func_get_arg(0)];
         } else if (func_num_args() == 2) {
-            $this->_system[$key] = func_get_arg(1);
+            $this->_system[func_get_arg(0)] = func_get_arg(1);
             return $this;
         } else {
             return $this->_system;
         }
+    }
+
+    /**
+     * Return results of certain field value compilation
+     *
+     * @param $key
+     * @return mixed
+     */
+    public function compiled($key) {
+        return $this->_compiled[$key];
     }
 }
