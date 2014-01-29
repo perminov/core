@@ -11,7 +11,7 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                     $s = '<div style="display: none;" class="trail-siblings" id="trail-item-' . $i . '-sections">';
                     $s.= '<ul>';
                     foreach ($items[$i-1]->sections as $sibling) if ($sibling->id != $item->section->id){
-                        $s.= '<a href="#" onclick="loadContent(\''
+                        $s.= '<a href="#" onclick="Indi.load(\''
                             . $href1 . $sibling->alias . '/index/id/' . $items[$i-1]->row->id . '/'
                             . ($items[$i-1]->section->primaryHash ? 'ph/' . $items[$i-1]->section->primaryHash . '/' : '')
                             . ($items[$i-1]->section->rowIndex ? 'aix/' . $items[$i-1]->section->rowIndex . '/' : '')
@@ -32,7 +32,12 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                                 . ($items[$i-1]->section->primaryHash ? 'ph/' . $items[$i-1]->section->primaryHash . '/' : '')
                                 . ($items[$i-1]->section->rowIndex ? 'aix/' . $items[$i-1]->section->rowIndex . '/' : '');
                         }
-                        $trail[] = $s. '<a href="#" class="trail-item-section"' . ($itemIndex?' item-index="' . $itemIndex . '"':'') . ' onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . str_replace('<br>', ' ', $item->section->title) . '</a>';
+
+                        $trail[] = $s. '<a href="#" class="trail-item-section"' .
+                            ($itemIndex?' item-index="' . $itemIndex . '"':'') .
+                            ' onclick="Indi.load(\'' . $href1 . $href2 . '\');return false;">' .
+                            str_replace('<br>', ' ', $item->section->title) . '</a>';
+
                         if ($item->row->id) {
                             $title = str_replace('<br>', ' ',mb_substr(preg_replace('/[\n\r]/', '',$item->row->getTitle()),0, 50, 'utf-8'));
                             foreach ($item->fields as $fieldR) if ($fieldR->alias == 'title' && preg_match('/12|17/', $fieldR->elementId)) {
@@ -58,7 +63,13 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                             . ($items[$i-1]->section->primaryHash ? 'ph/' . $items[$i-1]->section->primaryHash . '/' : '')
                             . ($items[$i-1]->section->rowIndex ? 'aix/' . $items[$i-1]->section->rowIndex . '/' : '');
                     }
-                    $trail[] = $s . '<a class="trail-item-section"' . ($itemIndex?' item-index="' . $itemIndex . '"':'') . ' href="#" onclick="loadContent(\'' . $href1 . $href2 . '\');return false;">' . str_replace('<br>', ' ', $item->section->title) . '</a>';
+
+                    $trail[] = $s . '<a class="trail-item-section"' .
+                        ($itemIndex?' item-index="' . $itemIndex . '"':'') .
+                        ' href="#" onclick="Indi.load(\'' . $href1 . $href2 . '\');return false;">' .
+                        str_replace('<br>', ' ', $item->section->title) . '</a>';
+
+
                     if ($item->row->id) {
                         $title = str_replace('<br>', ' ',mb_substr(preg_replace('/[\n\r]/', '',$item->row->getTitle()),0, 50, 'utf-8'));
                         $formAllowed = false; foreach ($item->actions as $allowed) {
@@ -69,7 +80,12 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                         }
 
                         if ($formAllowed) {
-                            $trail[] = '<a href="#" style="font-style: italic;" onclick="loadContent(\'' . $href1 . $item->section->alias . '/form/id/' . $item->row->id . ($item->section->primaryHash ? '/ph/' . $item->section->primaryHash : '') . ($item->section->rowIndex ? '/aix/' . $item->section->rowIndex : '') . '/\')">' . $title . '</a>';
+                            $trail[] = '<a href="#" style="font-style: italic;" onclick="Indi.load(\'' .
+                                $href1 . $item->section->alias . '/form/id/' . $item->row->id .
+                                ($item->section->primaryHash ? '/ph/' . $item->section->primaryHash : '') .
+                                ($item->section->rowIndex ? '/aix/' . $item->section->rowIndex : '') .
+                                '/\')">' . $title . '</a>';
+
                         } else {
                             $trail[] = '<i style="cursor: default;">' . $title . '</i>';
                         }
@@ -77,7 +93,8 @@ class Indi_View_Helper_Admin_Trail extends Indi_View_Helper_Abstract
                     }
                 }
             } else {
-                $trail[] = '<span style="cursor: default" id="trail-item-' . $i . '-section">' . str_replace('<br>', ' ', $item->section->title) . '</span>';
+                $trail[] = '<span style="cursor: default" id="trail-item-' . $i . '-section">' .
+                    str_replace('<br>', ' ', $item->section->title) . '</span>';
             }
         }
         $xhtml = '';

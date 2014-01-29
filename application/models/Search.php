@@ -5,5 +5,7 @@ class Search extends Indi_Db_Table{
      *
      * @var string
      */
-    protected $_rowClass = 'Search_Row'; 
+    protected $_rowClass = 'Search_Row';
+
+    protected $_evalFields = array('defaultValue');
 }

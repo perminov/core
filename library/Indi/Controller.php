@@ -166,7 +166,7 @@ class Indi_Controller{
         return $where;
     }
 	public function _redirect($location){
-		die('<script>window.parent.loadContent("' . $location . '");</script>');
+		die('<script>window.parent.Indi.load("' . $location . '");</script>');
 	}
 	public function visitors($clearOnly = false){
 		$deleteBeforeStamp = mktime(date('H'), date('i')-5, date('s'), date('n'), date('j'), date('Y'));

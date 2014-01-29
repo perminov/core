@@ -1,8 +1,9 @@
 <?php
-define('LOGIN_SCREEN_USERNAME', 'Username');
-define('LOGIN_SCREEN_PASSWORD', 'Password');
-define('LOGIN_SCREEN_ENTER', 'Enter');
-define('LOGIN_SCREEN_RESET', 'Reset');
+define('I_LOGIN_BOX_USERNAME', 'Username');
+define('I_LOGIN_BOX_PASSWORD', 'Password');
+define('I_LOGIN_BOX_ENTER', 'Enter');
+define('I_LOGIN_BOX_RESET', 'Reset');
+define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');
 
 define('I_LOGOUT', 'Logout');
 
@@ -74,6 +75,8 @@ define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM', 'from');
 define('I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO', 'until');
 define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES', 'Yes');
 define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO', 'No');
+define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE', 'Nothing to be emptied');
+define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Options are already empty or not used at all');
 
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Confirm');

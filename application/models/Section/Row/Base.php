@@ -24,7 +24,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
         $filterA = $filterRs->toArray();
         $fieldIds = array(); foreach ($filterA as $filterI) $fieldIds[] = $filterI['fieldId'];
         $fieldRs = Misc::loadModel('Field')->fetchAll('FIND_IN_SET(`id`, "' . implode(',', $fieldIds) . '")');
-        $fieldRs->setForeignRowsByForeignKeys('columnTypeId,elementId');
+        $fieldRs->setForeignRowsByForeignKeys('columnTypeId,elementId')->setParams();
         for ($i = 0; $i < count($filterA); $i++) {
             foreach ($fieldRs as $fieldR) {
                 if ($filterA[$i]['fieldId'] == $fieldR->id) {

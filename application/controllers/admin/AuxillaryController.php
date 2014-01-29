@@ -40,6 +40,9 @@ top: -4px;
 function strip_tags( str ){
     return str.replace(/<\/?[^>]+>/gi, "");
 }
+function $(id){
+    return document.getElementById(id);
+}
     // set up "input" variable to point at text field, assotiated with color picker
     var input = top.frames["form-frame"].document.getElementById("' . $name . '" + "Input");
     var input = input ? input : new Object();

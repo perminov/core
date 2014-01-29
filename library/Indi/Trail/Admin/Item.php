@@ -127,7 +127,10 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
     public function toArray()
     {
         $array = array();
-        if ($this->section) $array['section'] = $this->section->toArray();
+        if ($this->section) {
+            $array['section'] = $this->section->toArray();
+            $array['section']['defaultSortFieldAlias'] = $this->section->foreign('defaultSortField')->alias;
+        }
         if ($this->sections) $array['sections'] = $this->sections->toArray();
         if ($this->action) $array['action'] = $this->action->toArray();
         if ($this->actions) $array['actions'] = $this->actions->toArray();

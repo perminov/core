@@ -1,0 +1,88 @@
+.i-action-form.x-body{
+    font-size: 11px;
+}
+.i-action-form .i-form{
+    padding: 10px;
+}
+.i-action-form .i-form .i-form-subheader{
+    background-color: #DDFFE0;
+    border: 1px solid #C7D4FF;
+}
+.i-action-form .i-form .i-form-subheader td{
+    text-align: center;
+}
+.i-action-form .i-form table tr {
+    border-bottom: 1px solid #C7D4FF;
+    height: 21px;
+}
+.i-action-form .i-form table tr td input, .i-action-form .i-form table tr td textarea{
+    padding: 0 2px 0 2px;
+    border: 1px solid #99BCE8;
+}
+.i-action-form .i-form table tr td input{
+    height: 18px;
+}
+.i-action-form .i-form table tr td textarea{
+    margin-top: 1px;
+    margin-bottom: -1px;
+}
+.i-action-form .i-form table tr td:first-child {
+    padding-left: 2px;
+}
+
+/* Not fully beautified yet styles */
+.i-action-form .i-form table tr td:last-child span.radio,
+.i-action-form .i-form table tr td:last-child span.checkbox {
+    display: block;
+    padding-left: 15px;
+    margin-top: 2px;
+    margin-bottom: 1px;
+}
+.i-action-form .i-form table tr td:last-child span.radio label{
+    position: relative;
+    top: -1px;
+}
+.i-action-form .i-form table tr td:last-child controls.upload.no-file-yet {
+    position: relative !important;
+    top: 1px !important;
+    padding: 0 !important;
+}
+.i-action-form .i-form table tr td:last-child controls.upload span.radio {
+    display: inline;
+}
+.i-action-form .i-form table tr td:last-child controls.upload a {
+    position: relative;
+    top: -1px;
+}
+.i-action-form .i-form table tr td:last-child controls.upload.no-file-yet span.selected-fname {
+    height: 16px;
+    position: relative;
+    top: -1px;
+}
+.i-action-form .i-form table tr td:last-child controls.upload span.selected-fname {
+    border: 1px solid #99BCE8;
+    padding: 0px 2px 0px 2px;
+    display: none;
+    max-width: 250px;
+    overflow: hidden;
+    height: 15px;
+    word-break: break-all;
+    position: relative;
+    margin-right: 4px;
+}
+.i-action-form .i-form table tr td:last-child input[type=file] {
+    position: absolute;
+    visibility: hidden;
+    width: 1px;
+    overflow: hidden;
+}
+.i-action-form .i-form table tr td:last-child controls.upload {
+    position: absolute;
+    height: 19px;
+    padding: 3px 0px 0 4px;
+}
+.i-action-form .i-form table tr td:last-child controls.upload span.selected {
+    position: relative;
+    top: -1px;
+    display: none;
+}

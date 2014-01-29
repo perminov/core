@@ -549,7 +549,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         // to filter that is associated with Datetime field to provide a valid WHERE clause
                         if (preg_match('/^12|19$/', $found->elementId))
                             $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
-                        if ($found->elementId == 19) $filterSearchFieldValue .= ' 00:00:00';
+
+                        // If we deal with DATETIME column, append a time postfix for a proper comparison
+                        if ($found->elementId == 19)
+                            $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
                         // Use a '>=' or '<=' clause, according to specified range border's type
                         $where[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
@@ -585,7 +588,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     $where[] = '(' . implode(' AND ', $fisA) . ')';
                 }
             }
-            i($where);
+//            i($where);
         }
         return $where;
     }
@@ -715,5 +718,177 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 return $R ? $R->id : null;
             }
         }
+    }
+
+    public function xls(){
+
+        /** Include path **/
+        ini_set('include_path', ini_get('include_path').';../Classes/');
+
+        /** PHPExcel */
+        include 'PHPExcel.php';
+
+        /** PHPExcel_Writer_Excel2007 */
+        include 'PHPExcel/Writer/Excel2007.php';
+
+        // Create new PHPExcel object
+        $objPHPExcel = new PHPExcel();
+
+        // Set properties
+        /*$objPHPExcel->getProperties()->setCreator("Maarten Balliauw");
+        $objPHPExcel->getProperties()->setLastModifiedBy("Maarten Balliauw");
+        $objPHPExcel->getProperties()->setTitle("Office 2007 XLSX Test Document");
+        $objPHPExcel->getProperties()->setSubject("Office 2007 XLSX Test Document");
+        $objPHPExcel->getProperties()->setDescription("Test document for Office 2007 XLSX, generated using PHP classes.");*/
+
+        // Set active sheet by index
+        $objPHPExcel->setActiveSheetIndex(0);
+
+        // Get the columns, that need to be presented in a spreadsheet
+        $columnA = json_decode($this->get['columns'], true);
+
+        // Get the data
+        $data = $this->prepareJsonDataForIndexAction(false);
+
+        // Set columns cells values as column titles
+        foreach ($columnA as $n => $columnI) {
+
+            // Get column letter
+            $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
+
+            // Setup autosize detect for column
+            $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/8.43));
+
+            // Write header title of a certain column to a header cell
+            $objPHPExcel->getActiveSheet()->SetCellValue($columnL . '1', $columnI['title']);
+
+            // Apply styles for all rows within current column (font and right border)
+            $objPHPExcel->getActiveSheet()->getStyle($columnL . '1:' . $columnL . (count($data) + 1))->applyFromArray(array(
+                'font' => array(
+                    'size' => 8,
+                    'name' => 'Tahoma',
+                    'color' => array(
+                        'argb' => 'FF04408C'
+                    )
+                ),
+                'borders' => array(
+                    'right' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN,
+                    )
+                ),
+                'alignment' => array(
+                    'vertical' => 'center'
+                )
+            ));
+
+            // Apply align for all rows within current column, except header rows
+            $objPHPExcel->getActiveSheet()->getStyle($columnL . '2:' . $columnL . (count($data) + 1))->applyFromArray(array(
+                'alignment' => array(
+                    'horizontal' => $columnI['align']
+                )
+            ));
+        }
+
+        // Apply header row style
+        $objPHPExcel->getActiveSheet()->getStyle('A1:' . $columnL . '1')->applyFromArray(array(
+            'borders' => array(
+                'bottom' => array(
+                    'style' => PHPExcel_Style_Border::BORDER_THIN,
+                ),
+            ),
+            'fill' => array(
+                'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
+                'rotation' => 90,
+                'startcolor' => array(
+                    'argb' => 'FFF9F9F9',
+                ),
+                'endcolor' => array(
+                    'argb' => 'FFE3E4E6',
+                ),
+            ),
+        ));
+
+        // Foreach item in $data array
+        for ($i = 0; $i < count($data); $i++) {
+
+            // Foreach column within needed columns
+            foreach ($columnA as $n => $columnI) {
+
+                // Convert the column index to excel column letter
+                $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
+
+                // Get the value
+                $value = $data[$i][$columnI['dataIndex']];
+
+                // If cell value contain a .i-color-box item, we replaced it with same-looking GD image box
+                if (preg_match('/<span class="i-color-box" style="background: #([0-9A-Fa-f]{6});"><\/span>/', $value, $c)) {
+
+                    // Create the GD image
+                    $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
+                    imagefill($gdImage, 0, 0, imagecolorallocate(
+                        $gdImage, hexdec(substr($c[1], 0, 2)), hexdec(substr($c[1], 2, 2)), hexdec(substr($c[1], 4, 2)))
+                    );
+
+                    //  Add the image to a worksheet
+                    $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
+                    $objDrawing->setCoordinates($columnL . ($i + 2));
+                    $objDrawing->setImageResource($gdImage);
+                    $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
+                    $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
+                    $objDrawing->setHeight(11);
+                    $objDrawing->setWidth(14);
+                    $objDrawing->setOffsetY(4)->setOffsetX(3);
+                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+                    // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                    // because gd image will override cell value otherwise
+                    $value = str_pad('', 6, ' ') . strip_tags($value);
+
+                // Else if cell value contain a color definition within 'color' attribute,
+                // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
+                } else if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $value, $c)) {
+
+                    // If we find a hex equivalent for found color definition (if it's not already in hex format)
+                    if ($hex = Indi::hexColor($c[1])) {
+
+                        // Strip html value
+                        $value = strip_tags($value);
+
+                        // Set cell's color
+                        $objPHPExcel->getActiveSheet()->getStyle($columnL . ($i + 2))
+                            ->getFont()->getColor()->setARGB('FF' . ltrim($hex, '#'));
+                    }
+                }
+
+                // Set cell value
+                $objPHPExcel->getActiveSheet()->SetCellValue($columnL . ($i + 2), $value);
+            }
+        }
+
+        // Apply last row style (bottom border)
+        $objPHPExcel->getActiveSheet()->getStyle('A' . (count($data) + 1) . ':' . $columnL . (count($data) + 1))->applyFromArray($rowStyle = array(
+            'borders' => array(
+                'bottom' => array(
+                    'style' => PHPExcel_Style_Border::BORDER_THIN,
+                )
+            )
+        ));
+
+        // Apply autofilter
+        // $objPHPExcel->getActiveSheet()->setAutoFilter('A1:' . $columnL . (count($data) + 1));
+
+        // Rename sheet
+        $objPHPExcel->getActiveSheet()->setTitle($this->trail->getItem()->section->title);
+
+        $objPHPExcel->getActiveSheet()->freezePane('A2');
+
+        // Output
+        $file = urlencode($this->trail->getItem()->section->title) . '.xlsx';
+        $file = str_replace('+', '%20', $file);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename=' . $file);
+        $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+        $objWriter->save('php://output');
+        die();
     }
 }

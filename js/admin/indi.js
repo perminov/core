@@ -87,7 +87,8 @@ var Indi = function(indi) {
             return ret;
         }
 
-        indi.metrics = new Ext.util.TextMetrics();
+        // Setup text metrics, for text width detection
+        indi.metrics = top.window.Indi.metrics || new Ext.util.TextMetrics();
 
         indi.urldecode = function(str){
             return decodeURIComponent((str + '').replace(/\+/g, '%20'));
@@ -266,11 +267,6 @@ var Indi = function(indi) {
     indi.timer = setInterval(function(){
         indi.time++;
     }, 1000);
-
-    /**
-     * Deprecated section
-     */
-    window.loadContent = indi.load;
 
     /**
      * Wait until jQuery and Ext are ready, and then start all operations

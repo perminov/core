@@ -1,11 +1,13 @@
 <?php
 class Indi_View_Helper_Admin_FormSpan extends Indi_View_Helper_FormElement
 {
-    public function formSpan($alias, $attribs = null)
+    public function formSpan($alias)
     {
-        $field = $this->view->trail->getItem()->getFieldByAlias($alias);
-        $xhtml = '<script>$("#tr-' . $alias . '").attr("class","info")</script>';
-		$xhtml .= '<script>$("#td-left-' . $alias . '").attr({"colspan": "2", "align":"center","class":"table_topics"});</script>';
-        return $xhtml;
+        ob_start();?>
+		<script>
+            $('#td-left-<?=$alias?>').attr('colspan', '2').parent().addClass('i-form-subheader');
+            $('#td-right-<?=$alias?>').remove();
+        </script>
+        <? return ob_get_clean();
     }    
 }
