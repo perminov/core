@@ -136,4 +136,52 @@ class Indi_Trail_Admin extends Indi_Trail
             ['upperAix']) || true)
         );
     }
+
+    public function toString($imploded = true) {
+
+         // Declare crumbs array and push the first item - section group
+        $crumbA = array($this->items[0]->section->title);
+
+        // For each remaining trail items
+        for ($i = 1; $i < count($this->items); $i++) {
+
+            // Define a shortcut for current trail item
+            $item = $this->items[$i];
+
+            // Append a current item section title
+            $crumbA[] = $item->section->title;
+
+            // If current trail item has a row
+            if ($item->row) {
+
+                // If that row has an id
+                if ($item->row->id) {
+
+                    // At first, we strip newline characters, html '<br>' tags
+                    $title = preg_replace('<br(|\/)>', '', preg_replace('/[\n\r]/' , '', $item->row->title));
+
+                    // Detect color
+                    preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $title, $color);
+
+                    // Strip the html tags from title, and extract first 50 characters
+                    $title = mb_substr(strip_tags($title), 0, 50, 'utf-8');
+
+                    // Append current trail item row title, with color definition
+                    $crumbA[] = '<i' . ($color ? ' style="color: ' . $color[1] . ';"' : '') . '>' . $title . '</i>';
+
+                    // If current trail item is a last item, append current trail item action title
+                    if ($i == count($this->items) - 1) $crumbA[] = $item->action->title;
+
+                // Else if current trail item row does not have and id, and current action alias is 'form'
+                } else if ($item->action->alias == 'form') {
+
+                    // We append 'form' action title, but it' version for case then new row is going to be
+                    // created, hovewer, got from localization object, instead of actual action title
+                    $crumbA[] = ACTION_CREATE;
+                }
+            }
+        }
+
+        return $imploded ? implode(' » ', $crumbA) : $crumbA;
+    }
 }

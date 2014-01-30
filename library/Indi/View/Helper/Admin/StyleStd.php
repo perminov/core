@@ -34,13 +34,13 @@ class Indi_View_Helper_Admin_StyleStd extends Indi_View_Helper_Abstract{
         background-image: url(<?=STD?>/i/admin/combo-multiple-remove-item-from.png);
     }
     .i-multislider-color .x-slider-horz .x-slider-inner {
-        background: url('<?=STD?>/i/admin/filter-slider-hue-bg.png') no-repeat 0px 3px;
+        background: url('<?=STD?>/i/admin/i-color-slider-bg.png') no-repeat 0px 3px;
     }
     .i-multislider-color .x-slider-horz .x-slider-inner .x-slider-thumb:first-child {
-        background-image: url(<?=STD?>/i/admin/filter-slider-thumb-first.png);
+        background-image: url(<?=STD?>/i/admin/i-color-slider-thumb-first.png);
     }
     .i-multislider-color .x-slider-horz .x-slider-inner .x-slider-thumb:last-child {
-        background-image: url(<?=STD?>/i/admin/filter-slider-thumb-last.png);
+        background-image: url(<?=STD?>/i/admin/i-color-slider-thumb-last.png);
     }
     span.radio{
         background: url(<?=STD?>/i/admin/radio.png) no-repeat;

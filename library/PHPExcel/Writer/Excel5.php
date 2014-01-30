@@ -518,12 +518,12 @@ class PHPExcel_Writer_Excel5 extends PHPExcel_Writer_Abstract implements PHPExce
 					$bstoreContainer->addBSE($BSE);
 
 				} else if ($drawing instanceof PHPExcel_Worksheet_MemoryDrawing) {
-
 					switch ($drawing->getRenderingFunction()) {
 
 					case PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG:
 						$blipType = PHPExcel_Shared_Escher_DggContainer_BstoreContainer_BSE::BLIPTYPE_JPEG;
 						$renderingFunction = 'imagejpeg';
+                        $quality = 100;
 						break;
 
 					case PHPExcel_Worksheet_MemoryDrawing::RENDERING_GIF:
@@ -531,12 +531,13 @@ class PHPExcel_Writer_Excel5 extends PHPExcel_Writer_Abstract implements PHPExce
 					case PHPExcel_Worksheet_MemoryDrawing::RENDERING_DEFAULT:
 						$blipType = PHPExcel_Shared_Escher_DggContainer_BstoreContainer_BSE::BLIPTYPE_PNG;
 						$renderingFunction = 'imagepng';
-						break;
+                        $quality = 0;
+                        break;
 
 					}
 
 					ob_start();
-					call_user_func($renderingFunction, $drawing->getImageResource());
+					call_user_func($renderingFunction, $drawing->getImageResource(), null, $quality);
 					$blipData = ob_get_contents();
 					ob_end_clean();
 

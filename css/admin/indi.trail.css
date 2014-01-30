@@ -7,6 +7,7 @@
 }
 #i-center-north-trail a{
     text-decoration: none;
+    cursor: pointer;
 }
 #i-center-north-trail a:hover{
     color: #99BCE8
