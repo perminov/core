@@ -44,33 +44,7 @@ Indi = $.extend(Indi, {
     scope: <?=json_encode($this->view->getScope())?>
 });
 top.Indi.scope = Indi.scope;
-/*Indi.ready(function(){
-    console.log('ss1');
-}, 'trail');*/
 </script>
-<?/*
-<script>top.window.$('#trail').html('<?=str_replace("'", "\'", $this->view->trail())?>')</script>
-<script>
-var STD = '<?=STD?>';
-var COM = '<?=COM ? '' : '/admin'?>';
-var PRE = STD+COM;
-    Ext.onReady(function(){
-        top.window.$('.trail-item-section').hover(function(){
-            top.window.$('.trail-siblings').hide();
-            var itemIndex = $(this).attr('item-index');
-            var width = (parseInt($(this).width()) + 27);
-            if (top.window.$('#trail-item-' + itemIndex + '-sections ul li').length) {
-                top.window.$('#trail-item-' + itemIndex + '-sections').css('min-width', width + 'px');
-                top.window.$('#trail-item-' + itemIndex + '-sections').css('display', 'inline-block');
-            }
-        }, function(){
-            if (parseInt(top.window.event.pageY) < parseInt($(this).offset().top) || parseInt(top.window.event.pageX) < parseInt($(this).offset().left)) top.window.$('.trail-siblings').hide();
-        });
-        top.window.$('.trail-siblings').mouseleave(function(){
-            $(this).hide();
-        });
-    })
-</script>*/?>
 <?=$this->view->siblingCombo()?>
 <form class="i-form" action="<?=PRE?>/<?=$this->view->section->alias?>/save<?=$this->view->row->id ? '/id/' . $this->view->row->id : ''?>/" name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
     <table celpadding="2" cellspacing="1" border="0" width="100%">

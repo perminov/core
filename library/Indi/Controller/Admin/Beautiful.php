@@ -480,6 +480,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      * @return array
      */
     public function filtersWHERE() {
+
+        // Defined an array for collecting data, that may be used in the process of building an excel spreadsheet
+        $excelA = array();
+
         // Clauses stack
         $where = array();
 
@@ -508,6 +512,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     if ($fieldR->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias))
                         $found = $fieldR;
 
+                // Pick the current filter field title to $excelA
+                if (array_key_exists($found->alias, $excelA) == false)
+                    $excelA[$found->alias] = array('title' => $found->title);
+
                 // If field is not storing foreign keys
                 if ($found->storeRelationAbility == 'none') {
 
@@ -528,13 +536,24 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                             $where[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
                         }
 
-                    // Else if $found field's control element is 'Check', we use '=' clause
-                    } else if ($found->elementId == 9) {
+                        // Pick the current filter value and field type to $excelA
+                        $excelA[$found->alias]['type'] = 'color';
+                        $excelA[$found->alias]['value'] = array($hueFrom, $hueTo);
+                        $excelA[$found->alias]['offset'] = $searchOnField['_xlsLabelWidth'];
+
+                    // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
+                    } else if ($found->elementId == 9 || $found->elementId == 23) {
                         $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+
+                        // Pick the current filter value to $excelA
+                        $excelA[$found->alias]['value'] = $filterSearchFieldValue ? I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES : I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO;
 
                     // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
                     } else if ($found->elementId == 1) {
                         $where[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
+
+                        // Pick the current filter value to $excelA
+                        $excelA[$found->alias]['value'] = $filterSearchFieldValue;
 
                     // Else if $found field's control element are 'Number', 'Date' or  'Datetime'
                     } else if (preg_match('/^18|12|19$/', $found->elementId)) {
@@ -550,6 +569,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         if (preg_match('/^12|19$/', $found->elementId))
                             $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
 
+                        // Pick the current filter value and field type to $excelA
+                        $excelA[$found->alias]['type'] = $found->elementId == 18 ? 'number' : 'date';
+                        $excelA[$found->alias]['value'][$matches[2]] = $filterSearchFieldValue;
+
                         // If we deal with DATETIME column, append a time postfix for a proper comparison
                         if ($found->elementId == 19)
                             $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
@@ -563,17 +586,24 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         $where[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
                             '*" IN BOOLEAN MODE)';
 
-                    // If $found field's column type is BOOLEAN ( - can be handled with control elements 'Check' and 'Combo')
-                    } else if ($found->columnTypeId == 12) {
-                        // Use '=' clause
-                        $where[] = '`' . $filterSearchFieldAlias . '` ="' . $filterSearchFieldValue . '"';
+                        // Pick the current filter value and field type to $excelA
+                        $excelA[$found->alias]['value'] = $filterSearchFieldValue;
                     }
 
                 // Else if $found field is able to store only one foreign key, use '=' clause
                 } else if ($found->storeRelationAbility == 'one') {
                     $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
-                // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
+                    // Pick the current filter value and fieldId (if foreign table name is 'enumset')
+                    // or foreign table name, to $excelA
+                    $excelA[$found->alias]['value'] = $filterSearchFieldValue;
+                    if ($found->relation == 6) {
+                        $excelA[$found->alias]['fieldId'] = $found->id;
+                    } else {
+                        $excelA[$found->alias]['table'] = $found->relation;
+                    }
+
+                    // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
                 } else if ($found->storeRelationAbility == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
@@ -586,10 +616,20 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
                     // Implode array of FIND_IN_SET clauses with AND, and enclose by round brackets
                     $where[] = '(' . implode(' AND ', $fisA) . ')';
+
+                    // Pick the current filter value and fieldId (if foreign table name is 'enumset')
+                    // or foreign table name, to $excelA
+                    $excelA[$found->alias]['value'] = $filterSearchFieldValue;
+                    if ($found->relation == 6) {
+                        $excelA[$found->alias]['fieldId'] = $found->id;
+                    } else {
+                        $excelA[$found->alias]['table'] = $found->relation;
+                    }
                 }
             }
 //            i($where);
         }
+        if ($this->params['xls']) $this->excelA = $excelA;
         return $where;
     }
 
@@ -720,6 +760,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         }
     }
 
+    /**
+     * Provide a download of a excel spreadsheet
+     */
     public function xls(){
 
         /** Include path **/
@@ -735,11 +778,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $objPHPExcel = new PHPExcel();
 
         // Set properties
-        /*$objPHPExcel->getProperties()->setCreator("Maarten Balliauw");
-        $objPHPExcel->getProperties()->setLastModifiedBy("Maarten Balliauw");
-        $objPHPExcel->getProperties()->setTitle("Office 2007 XLSX Test Document");
-        $objPHPExcel->getProperties()->setSubject("Office 2007 XLSX Test Document");
-        $objPHPExcel->getProperties()->setDescription("Test document for Office 2007 XLSX, generated using PHP classes.");*/
+        $objPHPExcel->getProperties()->setCreator($_SESSION['admin']['title']);
+        $objPHPExcel->getProperties()->setLastModifiedBy($_SESSION['admin']['title']);
+        $objPHPExcel->getProperties()->setTitle($this->trail->getItem()->section->title);
 
         // Set active sheet by index
         $objPHPExcel->setActiveSheetIndex(0);
@@ -750,68 +791,466 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // Get the data
         $data = $this->prepareJsonDataForIndexAction(false);
 
-        // Set columns cells values as column titles
+        // Setup a row index, which is data rows starting from
+        $currentRowIndex = 1;
+
+        // Calculate last row index
+        $lastRowIndex =
+            1 /* bread crumbs row*/ +
+            (is_array($this->excelA) && count($this->excelA) ? count($this->excelA) + 1 : 0) /* filters count */ +
+            (bool) ($this->params['keyword'] || (is_array($this->excelA) && count($this->excelA) > 1)) +
+            1 /* data header row */+
+            count($data);
+
+        // Set default row height
+        $objPHPExcel->getActiveSheet()->getDefaultRowDimension()->setRowHeight(15.75);
+
+        // Apply general styles for all spreadsheet
         foreach ($columnA as $n => $columnI) {
 
             // Get column letter
             $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
-            // Setup autosize detect for column
+            // Apply styles for all rows within current column (font and alignment)
+            $objPHPExcel->getActiveSheet()
+                ->getStyle($columnL . '1:' . $columnL . $lastRowIndex)
+                ->applyFromArray(array(
+                    'font' => array(
+                        'size' => 8,
+                        'name' => 'Tahoma',
+                        'color' => array(
+                            'rgb' => '04408C'
+                        )
+                    ),
+                    'alignment' => array(
+                        'vertical' => 'center'
+                    )
+                )
+            );
+        }
+
+        // Capture last column letter(s)
+        $lastColumnLetter = $columnL;
+
+        // Merge all cell at first row, and place as bread crumbs will be placed here
+        $objPHPExcel->getActiveSheet()->mergeCells('A1:' . $lastColumnLetter . '1');
+
+        // Write bread crumbs, where current spreadsheet was got from
+        $crumbA = $this->trail->toString(false);
+
+        // Defined a PHPExcel_RichText object
+        $objRichText = new PHPExcel_RichText();
+
+        // For each crumb
+        for ($i = 0; $i < count($crumbA); $i++) {
+
+            // Set font name, size and color
+            $objSelfStyled = $objRichText->createTextRun(strip_tags($crumbA[$i]));
+            $objSelfStyled->getFont()->setName('Tahoma')->setSize('9')->getColor()->setRGB('04408C');
+
+            // Check if crubs contains html-code
+            if (mb_strlen($crumbA[$i], 'utf-8') != mb_strlen(strip_tags($crumbA[$i]), 'utf-8')) {
+
+                // Set italic if detected
+                if (preg_match('/<\/i>/', $crumbA[$i])) $objSelfStyled->getFont()->setItalic(true);
+
+                // Set color if detected
+                if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $crumbA[$i], $c))
+
+                    // If we find a hex equivalent for found color definition (if it's not already in hex format)
+                    if ($hex = Indi::hexColor($c[1]))
+
+                        // We set font color
+                        $objSelfStyled->getFont()->getColor()->setRGB(ltrim($hex, '#'));
+
+            }
+
+            // Append separator
+            if ($i < count($crumbA) -1) {
+                $objSelfStyled = $objRichText->createTextRun(' » ');
+                $objSelfStyled->getFont()->setName('Tahoma')->setSize('9');
+                $objSelfStyled->getFont()->getColor()->setRGB('04408C');
+            }
+        }
+
+        // Write prepared rich text object to first row
+        $objPHPExcel->getActiveSheet()->SetCellValue('A1', $objRichText);
+
+        // Here we set row height, because OpenOffice Writer (unlike Microsoft Excel)
+        // ignores previously set default height definition
+        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+
+        // Increment current row index as we need to keep it actual after each new row added to the spreadsheet
+        $currentRowIndex++;
+
+        // If filters were used
+        if (is_array($this->excelA) && count($this->excelA)) {
+
+            // We shift current row index to provide a empty row for visual separation bread crubms row and filters rows
+            $currentRowIndex++;
+
+            // Info about filters was prepared to $this->filtersWHERE() method, as an array of used filters
+            // For each used filter:
+            foreach ($this->excelA as $alias => $excelI) {
+
+                // Create rich text object
+                $objRichText = new PHPExcel_RichText();
+
+                // Merge all cell within current row
+                $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+
+                // Write a filter title and setup a font name, size and color for it
+                $objSelfStyled = $objRichText->createTextRun($excelI['title'] . ' -» ');
+                $objSelfStyled->getFont()->setName('Tahoma')->setSize('8')->getColor()->setRGB('04408C');
+
+                // If filter type is 'date' (or 'datetime'. There is no difference at this case)
+                if ($excelI['type'] == 'date') {
+
+                    // Get the format
+                    foreach ($this->trail->getItem()->fields as $fieldR) {
+                        if ($fieldR->alias == $alias) {
+                            $paramA = $fieldR->getParams();
+                            $format = $paramA['display' . ($fieldR->elementId == 12 ? '' : 'Date') . 'Format'];
+                        }
+                    }
+
+                    // If start point for date range specified
+                    if (isset($excelI['value']['gte'])) {
+
+                        // Write the 'from ' string before actual filter date
+                        $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('04408C');
+
+                        // Deal with date converstion
+                        if (preg_match($this->datePattern, $excelI['value']['gte'])) {
+                            if ($excelI['value']['gte'] == '0000-00-00' && $format == 'd.m.Y') {
+                                $excelI['value']['gte'] = '00.00.0000';
+                            } else if ($excelI['value']['gte'] != '0000-00-00'){
+                                $excelI['value']['gte'] = date($format, strtotime($excelI['value']['gte']));
+                                if ($excelI['value']['gte'] == '30.11.-0001') $excelI['value']['gte'] = '00.00.0000';
+                            }
+                        }
+
+                        // Write the converted date
+                        $objSelfStyled = $objRichText->createTextRun($excelI['value']['gte'] . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                    }
+
+                    // If end point for date range specified
+                    if (isset($excelI['value']['lte'])) {
+
+                        // Write the 'until ' string before actual filter date
+                        $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('04408C');
+
+                        // Deal with date converstion
+                        if (preg_match($this->datePattern, $excelI['value']['lte'])) {
+                            if ($excelI['value']['lte'] == '0000-00-00' && $format == 'd.m.Y') {
+                                $excelI['value']['lte'] = '00.00.0000';
+                            } else if ($excelI['value']['gte'] != '0000-00-00'){
+                                $excelI['value']['lte'] = date($format, strtotime($excelI['value']['lte']));
+                                if ($excelI['value']['lte'] == '30.11.-0001') $excelI['value']['lte'] = '00.00.0000';
+                            }
+                        }
+
+                        // Write the converted date
+                        $objSelfStyled = $objRichText->createTextRun($excelI['value']['lte'] . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                    }
+
+                // If filter type is 'number'
+                } else if ($excelI['type'] == 'number') {
+
+                    // If start point for number range specified
+                    if (isset($excelI['value']['gte'])) {
+
+                        // Write the 'from ' string before actual filter value
+                        $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_FROM . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('04408C');
+
+                        // Write the actual filter start point value
+                        $objSelfStyled = $objRichText->createTextRun($excelI['value']['gte'] . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                    }
+
+                    // If start point for number range specified
+                    if (isset($excelI['value']['lte'])) {
+
+                        // Write the 'to ' string before actual filter value
+                        $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('04408C');
+
+                        // Write the actual filter end point value
+                        $objSelfStyled = $objRichText->createTextRun($excelI['value']['lte'] . ' ');
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                    }
+
+
+                // If filter type is 'number'
+                } else if ($excelI['type'] == 'color') {
+
+                    // Create the GD canvas image for hue background and thumbs to be placed there
+                    $canvasIm = imagecreatetruecolor(197, 15);
+                    imagecolortransparent($canvasIm, imagecolorallocate($canvasIm, 0, 0, 0));
+
+                    // Pick hue bg and place it on canvas
+                    $hueFn = $_SERVER['DOCUMENT_ROOT'] . '/core' . STD . '/i/admin/i-color-slider-bg.png';
+                    $hueIm = imagecreatefrompng($hueFn);
+                    imagecopy($canvasIm, $hueIm, 7, 2, 0, 0, 183, 11);
+
+                    // Pick first thumb and place it on canvas
+                    $firstThumbFn = $_SERVER['DOCUMENT_ROOT'] . '/core' . STD . '/i/admin/i-color-slider-thumb-first.png';
+                    $firstThumbIm = imagecreatefrompng($firstThumbFn);
+                    imagecopy($canvasIm, $firstThumbIm, floor(183/360*$excelI['value'][0]), 0, 0, 0, 15, 15);
+
+                    // Pick last thumb and place it on canvas
+                    $firstThumbFn = $_SERVER['DOCUMENT_ROOT'] . '/core' . STD . '/i/admin/i-color-slider-thumb-last.png';
+                    $firstThumbIm = imagecreatefrompng($firstThumbFn);
+                    imagecopy($canvasIm, $firstThumbIm, floor(183/360*$excelI['value'][1]), 0, 0, 0, 15, 15);
+
+                    //  Add the GD image to a spreadsheet
+                    $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
+                    $objDrawing->setCoordinates('A' . $currentRowIndex);
+                    $objDrawing->setImageResource($canvasIm);
+                    $objDrawing->setHeight(11)->setWidth(183)->setOffsetY(4)->setOffsetX($excelI['offset'] + 5);
+                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+
+                // If filter type is combo, with foreign table relation
+                } else if ($excelI['table']) {
+
+                    // Prepare the array of keys
+                    if (!is_array($excelI['value'])) $excelI['value'] = array($excelI['value']);
+
+                    // Fetch rows by keys
+                    $rs = Indi::model($excelI['table'])->fetchAll('`id` IN (' . implode(',', $excelI['value']) . ')')->toArray();
+
+                    // Foreach row
+                    for ($i = 0; $i < count($rs); $i++) {
+
+                        // Set default color
+                        $color = '7EAAE2';
+
+                        // Check if row title contains color definition
+                        if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $rs[$i]['title'], $c)) {
+
+                            // If we find a hex equivalent for found color definition (if it's not already in hex format)
+                            if ($hex = Indi::hexColor($c[1])) {
+
+                                // Strip html from row title
+                                $rs[$i]['title'] = strip_tags($rs[$i]['title']);
+
+                                // Capture color, for being available to setup as a font color
+                                $color = ltrim($hex, '#');
+                            }
+                        }
+
+                        // Write row title
+                        $objSelfStyled = $objRichText->createTextRun($rs[$i]['title']);
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB($color);
+
+                        // Write separator, if needed
+                        if ($i < count($rs) - 1) {
+                            $objSelfStyled = $objRichText->createTextRun(', ');
+                            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                            $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                        }
+                    }
+
+                // If filter type if also combo, but keys are from 'enumset' table
+                } else if ($excelI['fieldId']) {
+
+                    // Prepare the array of keys
+                    if (!is_array($excelI['value'])) $excelI['value'] = array($excelI['value']);
+
+                    // Fetch rows by keys
+                    $rs = Indi::model('enumset')->fetchAll(array(
+                        '`fieldId` = "' . $excelI['fieldId'] . '"',
+                        '`alias` IN ("' . implode('","', $excelI['value']) . '")'
+                    ))->toArray();
+
+                    // Foreach row
+                    for ($i = 0; $i < count($rs); $i++) {
+
+                        // Set default color
+                        $color = '7EAAE2';
+
+                        // Check if row title contains color definition
+                        if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $rs[$i]['title'], $c)) {
+
+                            // If we find a hex equivalent for found color definition (if it's not already in hex format)
+                            if ($hex = Indi::hexColor($c[1])) {
+
+                                // Strip html from row title
+                                $rs[$i]['title'] = strip_tags($rs[$i]['title']);
+
+                                // Capture color, for being available to setup as a font color
+                                $color = ltrim($hex, '#');
+                            }
+                        }
+
+                        // Write row title
+                        $objSelfStyled = $objRichText->createTextRun($rs[$i]['title']);
+                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->getColor()->setRGB($color);
+
+                        // Write separator, if needed
+                        if ($i < count($rs) - 1) {
+                            $objSelfStyled = $objRichText->createTextRun(', ');
+                            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                            $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                        }
+                    }
+
+                // Else if filter type is 'text' or 'html' (simple text search)
+                } else {
+
+                    // Write the filter value
+                    $objSelfStyled = $objRichText->createTextRun($excelI['value']);
+                    $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                    $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+                }
+
+                // Set rich text object as a cell value
+                $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, $objRichText);
+
+                // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+                $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+
+                // Increment current row index as we need to keep it actual after each new row added to the spreadsheet
+                $currentRowIndex++;
+            }
+        }
+
+        // Append row with keyword, if keyword search was used
+        if ($this->params['keyword']) {
+
+            // Setup new rich text object for keyword search usage mention
+            $objRichText = new PHPExcel_RichText();
+
+            // Merge current row sells and set alignment as 'right'
+            $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+            $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->getAlignment()
+                ->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+
+            // Write the keyword search method title, with a separator
+            $objSelfStyled = $objRichText->createTextRun('Искать -» ');
+            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+            $objSelfStyled->getFont()->getColor()->setRGB('04408C');
+
+            // Write used keyword
+            $objSelfStyled = $objRichText->createTextRun(urldecode($this->params['keyword']));
+            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+            $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
+
+            // Set rich text object as cell value
+            $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, $objRichText);
+
+            // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+            $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+
+            // Increment current row index as we need to keep it actual after each new row added to the spreadsheet
+            $currentRowIndex++;
+
+
+        // If no keyword search was used, but number of filters, involved in search is more than 1
+        // we provide an empty row, as a separator between filters mentions and found data
+        } else if (is_array($this->excelA) && count($this->excelA) > 1) {
+
+            // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+            $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+
+            // Increment current row index
+            $currentRowIndex++;
+        }
+
+        // Get the order column alias
+        $orderColumnAlias = @array_shift(json_decode($this->get['sort']))->property;
+
+        // For each column
+        foreach ($columnA as $n => $columnI) {
+
+            // Get column letter
+            $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
+
+            // Setup column width
             $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/8.43));
 
             // Write header title of a certain column to a header cell
-            $objPHPExcel->getActiveSheet()->SetCellValue($columnL . '1', $columnI['title']);
+            $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $columnI['title']);
 
-            // Apply styles for all rows within current column (font and right border)
-            $objPHPExcel->getActiveSheet()->getStyle($columnL . '1:' . $columnL . (count($data) + 1))->applyFromArray(array(
-                'font' => array(
-                    'size' => 8,
-                    'name' => 'Tahoma',
-                    'color' => array(
-                        'argb' => 'FF04408C'
+            // Apply header row style
+            $objPHPExcel->getActiveSheet()
+                ->getStyle($columnL . $currentRowIndex)
+                ->applyFromArray(
+                array(
+                    'borders' => array(
+                        'right' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'aaccf6':'c5c5c5')
+                            )
+                        ),
+                        'top' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'BDD5F1':'d5d5d5')
+                            )
+                        ),
+                        'bottom' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'A7C7EE':'c5c5c5')
+                            )
+                        )
+                    ),
+                    'fill' => array(
+                        'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
+                        'rotation' => 90,
+                        'startcolor' => array(
+                            'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'ebf3fd' : 'F9F9F9'),
+                        ),
+                        'endcolor' => array(
+                            'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'd9e8fb' : 'E3E4E6'),
+                        ),
                     )
-                ),
-                'borders' => array(
-                    'right' => array(
-                        'style' => PHPExcel_Style_Border::BORDER_THIN,
-                    )
-                ),
-                'alignment' => array(
-                    'vertical' => 'center'
                 )
-            ));
+            );
 
             // Apply align for all rows within current column, except header rows
-            $objPHPExcel->getActiveSheet()->getStyle($columnL . '2:' . $columnL . (count($data) + 1))->applyFromArray(array(
-                'alignment' => array(
-                    'horizontal' => $columnI['align']
+            $objPHPExcel->getActiveSheet()
+                ->getStyle($columnL . ($currentRowIndex + 1) . ':' . $columnL . $lastRowIndex)
+                ->applyFromArray(array(
+                    'alignment' => array(
+                        'horizontal' => $columnI['align']
+                    )
                 )
-            ));
+            );
         }
 
-        // Apply header row style
-        $objPHPExcel->getActiveSheet()->getStyle('A1:' . $columnL . '1')->applyFromArray(array(
-            'borders' => array(
-                'bottom' => array(
-                    'style' => PHPExcel_Style_Border::BORDER_THIN,
-                ),
-            ),
-            'fill' => array(
-                'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
-                'rotation' => 90,
-                'startcolor' => array(
-                    'argb' => 'FFF9F9F9',
-                ),
-                'endcolor' => array(
-                    'argb' => 'FFE3E4E6',
-                ),
-            ),
-        ));
+        // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+        $currentRowIndex++;
+
+        // We remember a current row index at this moment, because it is the index which data rows are starting from
+        $dataStartAtRowIndex = $currentRowIndex;
 
         // Foreach item in $data array
         for ($i = 0; $i < count($data); $i++) {
 
-            // Foreach column within needed columns
+            // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+            $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+
+            // Foreach column
             foreach ($columnA as $n => $columnI) {
 
                 // Convert the column index to excel column letter
@@ -831,13 +1270,13 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
                     //  Add the image to a worksheet
                     $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
-                    $objDrawing->setCoordinates($columnL . ($i + 2));
+                    $objDrawing->setCoordinates($columnL . $currentRowIndex);
                     $objDrawing->setImageResource($gdImage);
                     $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
                     $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
                     $objDrawing->setHeight(11);
                     $objDrawing->setWidth(14);
-                    $objDrawing->setOffsetY(4)->setOffsetX(3);
+                    $objDrawing->setOffsetY(5)->setOffsetX(5);
                     $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
                     // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
@@ -851,42 +1290,95 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     // If we find a hex equivalent for found color definition (if it's not already in hex format)
                     if ($hex = Indi::hexColor($c[1])) {
 
-                        // Strip html value
+                        // Strip html from value
                         $value = strip_tags($value);
 
                         // Set cell's color
-                        $objPHPExcel->getActiveSheet()->getStyle($columnL . ($i + 2))
-                            ->getFont()->getColor()->setARGB('FF' . ltrim($hex, '#'));
+                        $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)
+                            ->getFont()->getColor()->setRGB(ltrim($hex, '#'));
                     }
                 }
 
+                // Set right and bottom border, because cell fill will hide default Excel's ot OpenOffice Write's cell borders
+                $objPHPExcel->getActiveSheet()
+                    ->getStyle($columnL . $currentRowIndex)
+                    ->applyFromArray(
+                    array(
+                        'borders' => array(
+                            'right' => array(
+                                'style' => PHPExcel_Style_Border::BORDER_THIN,
+                                'color' => array(
+                                    'rgb' => 'D0D7E5'
+                                )
+                            ),
+                            'bottom' => array(
+                                'style' => PHPExcel_Style_Border::BORDER_THIN,
+                                'color' => array(
+                                    'rgb' => 'D0D7E5'
+                                )
+                            )
+                        )
+                    )
+                );
+
                 // Set cell value
-                $objPHPExcel->getActiveSheet()->SetCellValue($columnL . ($i + 2), $value);
+                $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
+
+                // Set odd-even rows background difference
+                if ($i%2) {
+                    $objPHPExcel->getActiveSheet()
+                        ->getStyle($columnL . $currentRowIndex)
+                        ->getFill()
+                        ->setFillType(PHPExcel_Style_Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('FAFAFA');
+                }
             }
+
+            // Increment current row index;
+            $currentRowIndex++;
         }
 
-        // Apply last row style (bottom border)
-        $objPHPExcel->getActiveSheet()->getStyle('A' . (count($data) + 1) . ':' . $columnL . (count($data) + 1))->applyFromArray($rowStyle = array(
-            'borders' => array(
-                'bottom' => array(
-                    'style' => PHPExcel_Style_Border::BORDER_THIN,
+        // Apply right border for the most right column
+        $objPHPExcel->getActiveSheet()
+            ->getStyle($lastColumnLetter . $dataStartAtRowIndex . ':' . $lastColumnLetter . $lastRowIndex)
+            ->applyFromArray(array(
+                'borders' => array(
+                    'right' => array(
+                        'style' => PHPExcel_Style_Border::BORDER_THIN,
+                        'color' => array(
+                            'rgb' => 'c5c5c5'
+                        )
+                    )
                 )
             )
-        ));
+        );
 
-        // Apply autofilter
-        // $objPHPExcel->getActiveSheet()->setAutoFilter('A1:' . $columnL . (count($data) + 1));
+        // Apply last row style (bottom border)
+        $objPHPExcel->getActiveSheet()
+            ->getStyle('A' . (count($data) + $dataStartAtRowIndex - 1) . ':' . $columnL . (count($data) + $dataStartAtRowIndex - 1))
+            ->applyFromArray(
+                array(
+                    'borders' => array(
+                        'bottom' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => 'c5c5c5'
+                            )
+                        )
+                    )
+                )
+            );
 
         // Rename sheet
         $objPHPExcel->getActiveSheet()->setTitle($this->trail->getItem()->section->title);
 
-        $objPHPExcel->getActiveSheet()->freezePane('A2');
+        // Freeze header
+        $objPHPExcel->getActiveSheet()->freezePane('A' . ($dataStartAtRowIndex));
 
         // Output
-        $file = urlencode($this->trail->getItem()->section->title) . '.xlsx';
-        $file = str_replace('+', '%20', $file);
+        $file = $this->trail->getItem()->section->title . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename=' . $file);
+        header('Content-Disposition: attachment; filename="' . $file . '"');
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save('php://output');
         die();

@@ -12,7 +12,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @param Search_Row $filter
      * @return string
      */
-    public function filterCombo(Search_Row $filter){
+    public function filterCombo($filter){
         // Here we create a shared *_Row object, that will be used by all filters, that are presented in current grid.
         // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
         // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place

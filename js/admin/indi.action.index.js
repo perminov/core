@@ -107,7 +107,6 @@ var Indi = (function (indi) {
                     // Define a shortcut for filter filed alias
                     var alias = filterCmpIdA[i].replace(filterCmpIdPrefix, '');
 
-
                     // Get current filter value
                     var value = Ext.getCmp(filterCmpIdA[i]).getValue();
 
@@ -1044,6 +1043,8 @@ var Indi = (function (indi) {
                             // Setup a flag, what will
                             var atLeastOneFilterIsUsed = false;
 
+                            // We define an array of functions, first within which will check if at least one filter is used
+                            // and if so, second will do a store reload
                             var loopA = [function(cmp, control){
                                 if (control == 'color') {
                                     if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
@@ -1061,8 +1062,9 @@ var Indi = (function (indi) {
                                 } else {
                                     cmp.setValue('');
                                 }
-                            }]
+                            }];
 
+                            // We iterate throgh filter twice - for each function within loopA array
                             for (var l = 0; l < loopA.length; l++) {
 
                                 // We prevent unsetting filters values if they are already empty
@@ -1091,7 +1093,7 @@ var Indi = (function (indi) {
                                             Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
                                         }
 
-                                        // Else we reset one filter component
+                                    // Else we reset one filter component
                                     } else if (control == 'color') {
 
                                         // Resetted values for color multislider filter
@@ -1227,6 +1229,8 @@ var Indi = (function (indi) {
              * Build the grid
              */
             this.buildGrid = function() {
+
+                // Prepare object with grid properties
                 var gridO = {
                     id: 'i-section-' + indi.trail.item().section.alias + '-action-index-grid',
                     border: 0,
@@ -1257,32 +1261,50 @@ var Indi = (function (indi) {
                                     .handler();
                         }
                     },
+
+                    // Padging toolbar
                     bbar: new Ext.PagingToolbar({
                         store: instance.store,
                         displayInfo: true,
-                        items:instance.gridBarItems()
+                        items:instance.gridBbarItems()
                     })
                 };
 
+                // Create and return ExtJs grid panel
                 return Ext.create('Ext.grid.Panel', $.extend(gridO, instance.options.grid));
             }
 
-            instance.gridBarItems = function() {
+            /**
+             * Prepare and return array of items, that are to be placed at grid paging bar
+             *
+             * @return {Array}
+             */
+            instance.gridBbarItems = function() {
+
+                // Init items array with a separator as first item
                 var items = ['-'];
 
+                // Push the excel export button to item array
                 items.push({
                     text: '',
                     iconCls: 'i-btn-icon-xls',
                     handler: function(){
+                        // Start preparing request string
                         var request = instance.lastRequest().replace('json/1/', 'json/1/xls/1/');
-                        //console.log(request);
+
+                        // Get grid component id
                         var gridCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-grid';
+
+                        // Get grid columns
                         var gridColumnA = Ext.getCmp(gridCmpId).columns;
+
+                        // Define and array for storing column info, required for excel columns building
                         var excelColumnA = [];
 
-                        // Setup a multiplier
+                        // Setup a multiplier, for proper column width calculation
                         var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
 
+                        // Collect needed data about columns
                         for (var i = 0; i < gridColumnA.length; i++) {
                             if (gridColumnA[i].hidden == false) {
                                 excelColumnA.push({
@@ -1293,11 +1315,25 @@ var Indi = (function (indi) {
                                 });
                             }
                         }
+
+                        // Set column info as a request variable
                         var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
+
+                        // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
+                        // property for each object, that is representing a color-filter in request
+                        for (var i = 0; i < indi.trail.item().filters.length; i++) {
+                            if (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'color') {
+                                var reg = new RegExp('(%7B%22' + indi.trail.item().filters[i].foreign.fieldId.alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                                request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + indi.metrics.getWidth(indi.trail.item().filters[i].foreign.fieldId.title + '&nbsp;-&raquo;&nbsp;') + '"'));
+                            }
+                        }
+
+                        // Do the request
                         window.location = request + '&' + columns;
                     }
-                })
+                });
 
+                // Return items
                 return items;
             }
 
