@@ -1009,17 +1009,17 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     imagecolortransparent($canvasIm, imagecolorallocate($canvasIm, 0, 0, 0));
 
                     // Pick hue bg and place it on canvas
-                    $hueFn = $_SERVER['DOCUMENT_ROOT'] . '/core' . STD . '/i/admin/i-color-slider-bg.png';
+                    $hueFn = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/i/admin/i-color-slider-bg.png';
                     $hueIm = imagecreatefrompng($hueFn);
                     imagecopy($canvasIm, $hueIm, 7, 2, 0, 0, 183, 11);
 
                     // Pick first thumb and place it on canvas
-                    $firstThumbFn = $_SERVER['DOCUMENT_ROOT'] . '/core' . STD . '/i/admin/i-color-slider-thumb-first.png';
+                    $firstThumbFn = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/i/admin/i-color-slider-thumb-first.png';
                     $firstThumbIm = imagecreatefrompng($firstThumbFn);
                     imagecopy($canvasIm, $firstThumbIm, floor(183/360*$excelI['value'][0]), 0, 0, 0, 15, 15);
 
                     // Pick last thumb and place it on canvas
-                    $firstThumbFn = $_SERVER['DOCUMENT_ROOT'] . '/core' . STD . '/i/admin/i-color-slider-thumb-last.png';
+                    $firstThumbFn = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/i/admin/i-color-slider-thumb-last.png';
                     $firstThumbIm = imagecreatefrompng($firstThumbFn);
                     imagecopy($canvasIm, $firstThumbIm, floor(183/360*$excelI['value'][1]), 0, 0, 0, 15, 15);
 
@@ -1205,8 +1205,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 imagecolortransparent($canvasIm, imagecolorallocate($canvasIm, 0, 0, 0));
 
                 // Pick hue bg and place it on canvas
-                $iconFn = rtrim($_SERVER['DOCUMENT_ROOT'], '\/') . 
-                    '/core' . STD . '/library/extjs4/resources/themes/images/default/grid/sort_' . $columnI['sortState'] . '.gif';
+                $iconFn = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/library/extjs4/resources/themes/images/default/grid/sort_' . $columnI['sortState'] . '.gif';
                 $iconIm = imagecreatefromgif($iconFn);
                 imagecopy($canvasIm, $iconIm, 0, 0, 0, 0, 13, 5);
 
