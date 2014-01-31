@@ -797,6 +797,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // Calculate last row index
         $lastRowIndex =
             1 /* bread crumbs row*/ +
+            1 /* row with total number of results found */ +
             (is_array($this->excelA) && count($this->excelA) ? count($this->excelA) + 1 : 0) /* filters count */ +
             (bool) ($this->params['keyword'] || (is_array($this->excelA) && count($this->excelA) > 1)) +
             1 /* data header row */+
@@ -881,6 +882,12 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
 
         // Increment current row index as we need to keep it actual after each new row added to the spreadsheet
+        $currentRowIndex++;
+
+        // Set total number of $data items
+        $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, 'Всего: ' . count($data));
+        $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
         $currentRowIndex++;
 
         // If filters were used
@@ -1023,7 +1030,6 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     $objDrawing->setHeight(11)->setWidth(183)->setOffsetY(4)->setOffsetX($excelI['offset'] + 5);
                     $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
-
                 // If filter type is combo, with foreign table relation
                 } else if ($excelI['table']) {
 
@@ -1073,7 +1079,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     if (!is_array($excelI['value'])) $excelI['value'] = array($excelI['value']);
 
                     // Fetch rows by keys
-                    $rs = Indi::model('enumset')->fetchAll(array(
+                    $rs = Indi::model('Enumset')->fetchAll(array(
                         '`fieldId` = "' . $excelI['fieldId'] . '"',
                         '`alias` IN ("' . implode('","', $excelI['value']) . '")'
                     ))->toArray();
@@ -1184,9 +1190,33 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
             // Setup column width
             $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/8.43));
-
+            
+            // Replace &nbsp;
+            $columnI['title'] = str_replace('&nbsp;', ' ', $columnI['title']);
+            
             // Write header title of a certain column to a header cell
             $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $columnI['title']);
+            
+            if ($columnI['dataIndex'] == $orderColumnAlias) {
+                // /library/extjs4/resources/themes/images/default/grid/sort_asc.gif
+
+                // Create the GD canvas image for hue background and thumbs to be placed there
+                $canvasIm = imagecreatetruecolor(13, 5);
+                imagecolortransparent($canvasIm, imagecolorallocate($canvasIm, 0, 0, 0));
+
+                // Pick hue bg and place it on canvas
+                $iconFn = rtrim($_SERVER['DOCUMENT_ROOT'], '\/') . 
+                    '/core' . STD . '/library/extjs4/resources/themes/images/default/grid/sort_' . $columnI['sortState'] . '.gif';
+                $iconIm = imagecreatefromgif($iconFn);
+                imagecopy($canvasIm, $iconIm, 0, 0, 0, 0, 13, 5);
+
+                //  Add the GD image to a spreadsheet
+                $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
+                $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                $objDrawing->setImageResource($canvasIm);
+                $objDrawing->setWidth(13)->setHeight(5)->setOffsetY(10)->setOffsetX($columnI['titleWidth'] + 6);
+                $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+            }
 
             // Apply header row style
             $objPHPExcel->getActiveSheet()
@@ -1288,16 +1318,36 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 } else if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $value, $c)) {
 
                     // If we find a hex equivalent for found color definition (if it's not already in hex format)
-                    if ($hex = Indi::hexColor($c[1])) {
-
-                        // Strip html from value
-                        $value = strip_tags($value);
+                    if ($hex = Indi::hexColor($c[1]))
 
                         // Set cell's color
                         $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)
                             ->getFont()->getColor()->setRGB(ltrim($hex, '#'));
-                    }
                 }
+                
+                // If cell contains an 'a' tag with href attribute, we set a hyperlink to current cell
+                if (preg_match('/<a/', $value) && preg_match('/href="([^"]+)"/', $value, $a)) {
+                
+
+                    // If there is no protocol definition within href, we set it as 'http://'
+                    $protocol = preg_match('/:\/\//', $a[1]) ? '' : 'http://';
+                    
+                    // If href start with a '/', it means that there is no hostname specified, so we define default
+                    $server = preg_match('/^\/[^\/]{0,1}/', $a[1]) ? $_SERVER['HTTP_HOST'] : ''; 
+                    
+                    // Prepend href with protocol and hostname
+                    $a[1] = $protocol . $server . $a[1];
+                    
+                    // Set cell value as hyperlink
+					$objPHPExcel->getActiveSheet()->getCell($columnL . $currentRowIndex)->getHyperlink()->setUrl($a[1]);
+					$objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getFont()->setUnderline(true);
+                }
+
+                // Strip html content from $value
+                $value = strip_tags($value);
+                
+                // Replace some special characters definitions to its actual symbols
+                $value = str_replace(array('&nbsp;','&laquo;','&raquo;','&mdash;','&quot;'), array(' ','«','»','—','"'), $value);
 
                 // Set right and bottom border, because cell fill will hide default Excel's ot OpenOffice Write's cell borders
                 $objPHPExcel->getActiveSheet()
@@ -1374,7 +1424,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
         // Freeze header
         $objPHPExcel->getActiveSheet()->freezePane('A' . ($dataStartAtRowIndex));
-
+        
         // Output
         $file = $this->trail->getItem()->section->title . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
