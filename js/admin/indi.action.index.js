@@ -1307,12 +1307,26 @@ var Indi = (function (indi) {
                         // Collect needed data about columns
                         for (var i = 0; i < gridColumnA.length; i++) {
                             if (gridColumnA[i].hidden == false) {
-                                excelColumnA.push({
+
+                                // Prepare the data object for excel column
+                                var excelColumnI = {
                                     title: gridColumnA[i].text,
                                     dataIndex: gridColumnA[i].dataIndex,
                                     align: gridColumnA[i].align,
                                     width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
-                                });
+                                }; 
+                                
+                                // If current grid column - is column, currently used for sorting, 
+                                // we pick sorting direction, and column title width
+                                if (gridColumnA[i].sortState) {
+                                    excelColumnI = $.extend(excelColumnI, {
+                                        sortState: gridColumnA[i].sortState.toLowerCase(),
+                                        titleWidth: indi.metrics.getWidth(gridColumnA[i].text)
+                                    })
+                                }
+                                
+                                // Push the data object to array
+                                excelColumnA.push(excelColumnI);
                             }
                         }
 
