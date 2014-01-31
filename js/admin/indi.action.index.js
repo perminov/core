@@ -329,7 +329,7 @@ var Indi = (function (indi) {
                         if (instance.getScopeFilter(name + '-lte') + '') def.lte = instance.getScopeFilter(name + '-lte');
 
                         // If at least 'gte' or 'lte' properies was set, we assing 'def' object as filter default value
-                        //if (Object.getOwnPropertyNames(def).length) indi.trail.item().filters[i].defaultValue = def;
+                        if (Object.getOwnPropertyNames(def).length) indi.trail.item().filters[i].defaultValue = def;
 
                     // Else current filter is not a range-filter
                     } else if (instance.getScopeFilter(name)) {
