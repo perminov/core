@@ -41,6 +41,10 @@ var Indi = (function (indi) {
                 html: '<img src="' + indi.std + '/i/admin/logo.png"/>'
             };
 
+            this.options = {
+                loginPanelTitle: 'Indi Engine'
+            }
+
             /**
              * Reads the instance.menu.data array and builds the items array, approriate for use as a extjs treepanel
              * store data
@@ -108,7 +112,8 @@ var Indi = (function (indi) {
 
                 // Create the panel
                 Ext.create('Ext.Panel', {
-                    title: 'Indi Engine',
+                    id: 'i-login-panel',
+                    title: instance.options.loginPanelTitle,
                     renderTo: 'i-login-box',
                     titleAlign: 'center',
                     height: 125,
@@ -207,7 +212,16 @@ var Indi = (function (indi) {
                                 Ext.getCmp('i-login-box-remember').setValue(false);
                             }
                         }
-                    ]
+                    ],
+                    listeners: {
+                        afterRender: function(){
+                            this.keyNav = Ext.create('Ext.util.KeyNav', this.el, {
+                                enter: function(){
+                                    Ext.getCmp('i-login-box-submit').handler();
+                                }
+                            });
+                        }
+                    }
                 });
             }
 

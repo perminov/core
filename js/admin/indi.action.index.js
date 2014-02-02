@@ -325,8 +325,10 @@ var Indi = (function (indi) {
                         var def = {};
 
                         // Assign the 'gte' and 'lte' properties to the object of default values
-                        if (instance.getScopeFilter(name + '-gte') + '') def.gte = instance.getScopeFilter(name + '-gte');
-                        if (instance.getScopeFilter(name + '-lte') + '') def.lte = instance.getScopeFilter(name + '-lte');
+                        if (['undefined', ''].indexOf(instance.getScopeFilter(name + '-gte') + '') == -1)
+                            def.gte = instance.getScopeFilter(name + '-gte');
+                        if (['undefined', ''].indexOf(instance.getScopeFilter(name + '-lte') + '') == -1)
+                            def.lte = instance.getScopeFilter(name + '-lte');
 
                         // If at least 'gte' or 'lte' properies was set, we assing 'def' object as filter default value
                         if (Object.getOwnPropertyNames(def).length) indi.trail.item().filters[i].defaultValue = def;

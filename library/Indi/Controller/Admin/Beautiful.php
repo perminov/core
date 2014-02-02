@@ -1289,13 +1289,17 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 $value = $data[$i][$columnI['dataIndex']];
 
                 // If cell value contain a .i-color-box item, we replaced it with same-looking GD image box
-                if (preg_match('/<span class="i-color-box" style="background: #([0-9A-Fa-f]{6});"><\/span>/', $value, $c)) {
+                if (preg_match('/<span class="i-color-box" style="[^"]*background: #([0-9A-Fa-f]{6});">/', $value, $c)) {
 
                     // Create the GD image
                     $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
                     imagefill($gdImage, 0, 0, imagecolorallocate(
                         $gdImage, hexdec(substr($c[1], 0, 2)), hexdec(substr($c[1], 2, 2)), hexdec(substr($c[1], 4, 2)))
                     );
+
+                    if (preg_match('/<span class="i-color-box" style="[^"]*margin-left: ([0-9]+)px/', $value, $o)) {
+                        $additionalOffsetX = $o[1] + 3;
+                    }
 
                     //  Add the image to a worksheet
                     $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
@@ -1305,7 +1309,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
                     $objDrawing->setHeight(11);
                     $objDrawing->setWidth(14);
-                    $objDrawing->setOffsetY(5)->setOffsetX(5);
+                    $objDrawing->setOffsetY(5)->setOffsetX(5 + $additionalOffsetX);
                     $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
                     // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
