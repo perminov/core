@@ -80,3 +80,5 @@ define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Фильтры уже с
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Подтверждение');
 define('I_ACTION_DELETE_CONFIRM_MSG', 'Вы уверены?');
+
+define('I_TOTAL', 'Всего');

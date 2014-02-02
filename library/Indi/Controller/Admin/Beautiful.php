@@ -885,7 +885,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $currentRowIndex++;
 
         // Set total number of $data items
-        $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, 'Всего: ' . count($data));
+        $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, I_TOTAL . ': ' . count($data));
         $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
         $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
         $currentRowIndex++;

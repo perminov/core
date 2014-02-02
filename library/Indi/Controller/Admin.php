@@ -81,7 +81,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         // constructed with usage of $this->limit and $this->page params
                         $this->rowset = $this->trail->getItem()->model->{
                             'fetch'. ($this->trail->getItem()->model->treeColumn ? 'Tree' : 'All')
-                        }($finalWHERE, $finalORDER, $this->limit, $this->page);
+                        }($finalWHERE, $finalORDER, $this->params['xls'] ? null : $this->limit, $this->page);
 
                         // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
                         // able to restore the state of panel, that is representing the rowset at cms interface.
