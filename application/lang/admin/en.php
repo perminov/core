@@ -81,3 +81,5 @@ define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Options are already empt
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Confirm');
 define('I_ACTION_DELETE_CONFIRM_MSG', 'Are you sure?');
+
+define('I_TOTAL', 'Total');
