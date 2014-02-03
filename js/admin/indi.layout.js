@@ -36,9 +36,9 @@ var Indi = (function (indi) {
             this.logo = {
                 id: 'i-logo',
                 width: 200,
-                height: 36,
+                height: 45,
                 border: 0,
-                html: '<img src="' + indi.std + '/i/admin/logo.png"/>'
+                html: '<img src="' + indi.std + '/i/admin/logo-slogan.png"/>'
             };
 
             this.options = {
@@ -246,7 +246,7 @@ var Indi = (function (indi) {
                     region: 'west',
                     width: 200,
                     collapsible: true,
-                    padding: '41 0 0 0',
+                    padding: '50 0 0 0',
                     weight: 300,
 
                     // Setup menu items store
