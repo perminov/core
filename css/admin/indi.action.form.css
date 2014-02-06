@@ -29,6 +29,9 @@
 .i-action-form .i-form table tr td:first-child {
     padding-left: 2px;
 }
+.i-action-form .i-form table .i-tr-disabled{
+    background: #eeeeee;
+}
 
 /* Not fully beautified yet styles */
 .i-action-form .i-form table tr td:last-child span.radio,
