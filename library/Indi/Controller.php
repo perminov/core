@@ -219,10 +219,7 @@ class Indi_Controller{
 	}
 
     public function preDispatch(){
-        die();
     }
     public function postDispatch(){
-        die();
     }
-
 }

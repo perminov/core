@@ -405,7 +405,7 @@ class Indi_Controller_Front extends Indi_Controller{
 					
 					$this->view->row = $this->row;
 				} else {
-					readfile('http://' . $_SERVER['HTTP_HOST'] . '/404/');
+					//readfile('http://' . $_SERVER['HTTP_HOST'] . '/404/');
 					die('No row found');
 				}
 			}
