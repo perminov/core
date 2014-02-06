@@ -18,7 +18,7 @@ class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
 				$xhtml .= '</tr>';
 			} else {
                 if (in_array($field->alias, $this->view->trail->getItem()->disabledFields['save'])) {
-                    $disabled = ' disabled"';
+                    $disabled = ' i-tr-disabled"';
                 } else {
                     $disabled = '';
                 }
