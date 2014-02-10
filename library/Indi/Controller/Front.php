@@ -269,9 +269,7 @@ class Indi_Controller_Front extends Indi_Controller{
             }
         }
 		if ($this->section->filter) {
-			if (preg_match('/(\$|::)/', $this->section->filter)) {
-				eval('$this->section->filter = \'' . $this->section->filter . '\';');
-			}
+            Indi::$cmpTpl = $this->section->filter; eval(Indi::$cmpRun); $this->section->filter = Indi::$cmpOut;
 			$this->post['indexWhere'][2] = $this->section->filter;
 		}
 		if (isset($this->post['indexWhere'])){

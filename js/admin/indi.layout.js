@@ -125,21 +125,21 @@ var Indi = (function (indi) {
                             id: 'i-login-box-username',
                             fieldLabel: indi.lang.I_LOGIN_BOX_USERNAME,
                             labelWidth: 90,
-                            value: Ext.util.Cookies.get('username'),
+                            value: Ext.util.Cookies.get('i-username'),
                             width: 275
                         },{
                             xtype: 'textfield',
                             id: 'i-login-box-password',
                             inputType: 'password',
                             fieldLabel: indi.lang.I_LOGIN_BOX_PASSWORD,
-                            value: Ext.util.Cookies.get('password'),
+                            value: Ext.util.Cookies.get('i-password'),
                             labelWidth: 90,
                             width: 246,
                             cls: 'i-inline-block'
                         },{
                             xtype: 'checkboxfield',
                             id: 'i-login-box-remember',
-                            checked: Ext.util.Cookies.get('remember') !== null,
+                            checked: Ext.util.Cookies.get('i-remember') !== null,
                             margin: '0 0 2 8',
                             cls: 'i-inline-block'
                         },{
@@ -184,7 +184,7 @@ var Indi = (function (indi) {
                                             // If 'remember' checkbox was checked, we create cookie
                                             if (data.remember)
                                                 Ext.util.Cookies.set(
-                                                    i,
+                                                    'i-' + i,
                                                     data[i],
 
                                                     // We set cookie expire date as 1 month
