@@ -3,10 +3,20 @@
  * This class is used to make a queries to some other databases
  */
 class Db {
+    public static $h;
+    public static $u;
+    public static $p;
+    public static $d;
     public static $c;
+    function __construct($h, $u, $p, $d) {
+        self::$h = $h;
+        self::$u = $u;
+        self::$p = $p;
+        self::$d = $d;
+    }
     function connect(){
-        self::$c = mysqli_connect('equatorlearning.com', 'equator_ul', 'sdifa9eskgfasdfo0qwkoegfSDFA');
-        mysqli_select_db(self::$c, 'equator_live');
+        self::$c = mysqli_connect(self::$h, self::$u, self::$p);
+        mysqli_select_db(self::$c, self::$d);
         self::query('SET NAMES utf8 COLLATE utf8_general_ci');
         self::query('SET CHARACTER SET utf8');
     }

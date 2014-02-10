@@ -1,5 +1,7 @@
 <?php
 class Indi_Uri {
+    public $staticpageAdditionalWHERE = array();
+
 	public function dispatch($params = array()){
 		$this->preDispatch();
 
@@ -37,7 +39,11 @@ class Indi_Uri {
                 $fsectionM = Misc::loadModel('Fsection');
                 $fsectionA = $fsectionM->fetchAll('`alias` IN ("' . $params['section'] . '", "static")', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',static")')->toArray();
                 if ($fsectionA[0]['alias'] == 'static') {
-                    $staticA = Misc::loadModel('Staticpage')->fetchAll('`alias` IN ("' . $params['section'] . '", "404") AND `toggle` = "y"', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',404")')->toArray();
+                    $where = array_merge(
+                        array('`alias` IN ("' . $params['section'] . '", "404")', '`toggle` = "y"'),
+                        $this->staticpageAdditionalWHERE
+                    );
+                    $staticA = Misc::loadModel('Staticpage')->fetchAll($where, 'FIND_IN_SET(`alias`, "' . $params['section'] . ',404")')->toArray();
                     $params['section'] = 'static';
                     $params['action'] = 'details';
                     $params['id'] = $staticA[0]['id'];
@@ -45,7 +51,11 @@ class Indi_Uri {
 					    $notFound = true;
 				    }
                 } else if (!Misc::loadModel('Faction')->fetchRow('`alias` IN ("' . str_replace('"', '\"', $params['action']) . '")')) {
-                    $staticA = Misc::loadModel('Staticpage')->fetchAll('`alias` IN ("404") AND `toggle` = "y"', 'FIND_IN_SET(`alias`, "404")')->toArray();
+                    $where = array_merge(
+                        array('`alias` IN ("404")', '`toggle` = "y"'),
+                        $this->staticpageAdditionalWHERE
+                    );
+                    $staticA = Misc::loadModel('Staticpage')->fetchAll($where, 'FIND_IN_SET(`alias`, "404")')->toArray();
                     $params['section'] = 'static';
                     $params['action'] = 'details';
                     $params['id'] = $staticA[0]['id'];
