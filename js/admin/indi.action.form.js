@@ -663,6 +663,8 @@ var Indi = (function (indi) {
                 indi.trail.breadCrumbs();
 
                 $(document).ready(function(){
+                    $('.i-tr-disabled input').attr('disabled', 'disabled');
+                    $('.i-tr-disabled .i-combo').addClass('x-item-disabled i-combo-disabled');
                     if (top.window.Ext.getCmp('iframe-mask'))
                         top.window.Ext.getCmp('iframe-mask').hide();
                 });
