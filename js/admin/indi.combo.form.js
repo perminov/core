@@ -463,7 +463,7 @@ var Indi = (function (indi) {
                     for (var i = 0; i < instance.store[name].backup.options.data.length; i++) {
 
                         // If tested title is a color, we should strip hue part of title, before keyword match will be performed
-                        against = instance.color(instance.store[name].backup.options.data[i].title).title;
+                        against = instance.color(instance.store[name].backup.options.data[i]).title;
 
                         // Test title against a keyword
                         if (keywordReg.test(against)) {
@@ -510,7 +510,7 @@ var Indi = (function (indi) {
                     for (var i in instance.store[name].backup.options.data) {
 
                         // If tested title is a color, we should strip hue part of title, before keyword match will be performed
-                        against = instance.color(instance.store[name].backup.options.data[i].title).title;
+                        against = instance.color(instance.store[name].backup.options.data[i]).title;
 
                         // Test title against a keyword
                         if (keywordReg.test(against)) {
@@ -572,24 +572,27 @@ var Indi = (function (indi) {
             }
 
             /**
-             * Try to find a color declaration in option title or option value, and if found, get that color,
-             * build .i-combo-color-box element
+             * Try to find a color declaration in option title or option value or option.system.boxColor,
+             * and if found, get that color and build .i-combo-color-box element
              *
-             * @param title
+             * @param data
              * @param value
              * @return {Object}
              */
-            this.color = function(title, value) {
+            this.color = function(data, value) {
                 value = value || '';
 
                 // Declare `info` object
-                var info = {title: title.trim(), color: '', src: '', box: '', css: {color: ''}}, color;
+                var info = {title: data.title.trim(), color: '', src: '', box: '', css: {color: ''}}, color;
 
                 // Check if `title` or `value` contain a color definition
                 if (color = value.toString().match(instance.colorReg)) {
                     info.src = 'value';
                 } else if (color = info.title.match(instance.colorReg)) {
                     info.src = 'title';
+                } else if (data.system && data.system['boxColor'] && typeof data.system['boxColor'] == 'string') {
+                    info.src = 'boxColor';
+                    var color = [true, data.system['boxColor']];
                 }
 
                 // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
@@ -662,7 +665,7 @@ var Indi = (function (indi) {
                     css.color = instance.store[name].data[index].system['color'];
 
                 // Detect if colorbox should be applied
-                var color = instance.color(title, li.attr(name));
+                var color = instance.color(instance.store[name].data[index], li.attr(name));
 
                 // If combo is in multiple-value mode
                 if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
@@ -861,7 +864,7 @@ var Indi = (function (indi) {
                             if (json['data'][i].option) {
                                 item += json['data'][i].option;
                             } else {
-                                var color = instance.color(json['data'][i].title, json['ids'][i]);
+                                var color = instance.color(json['data'][i], json['ids'][i]);
                                 item += color.box;
                                 item += color.title;
                             }
@@ -1300,7 +1303,7 @@ var Indi = (function (indi) {
                             var title = instance.store[name].data[index].title.toString().trim();
 
                             // Setup color box if needed
-                            var color = instance.color(title, instance.store[name].ids[index]);
+                            var color = instance.color(instance.store[name].data[index], instance.store[name].ids[index]);
                             color.apply(name);
 
                             // Apply css color, if it was passed within store. Currently this feature is used for
