@@ -165,7 +165,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // should have hidden field
         if ($this->field->storeRelationAbility == 'one') {
             // Setup a key
-            if ($this->getRow()->$name) {
+            if (($this->getRow()->$name && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
                 $key = $this->getRow()->$name;
             } else if ($comboDataRs->enumset && $this->type == 'form') {
                 $key = key($options);
