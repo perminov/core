@@ -387,7 +387,7 @@ class Indi{
 
 			// Setup self::$_blockA as an empty array at first
 			self::$_blockA = array();
-			
+
 			// Fetch rowset
             $staticBlockRs = Indi::model('Staticblock')->fetchAll('`toggle` = "y"');
 			

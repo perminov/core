@@ -217,15 +217,15 @@
     margin-left: 3px;
 }
 .i-combo.i-combo-disabled .i-combo-single{
-    border-color: #cccccc !important;
-    background: #eeeeee;
+    border-color: #DFDFDF !important;
+    background: #F7F7F7;
 }
 .i-combo-of{
     margin-left: 3px;
 }
 .i-combo.i-combo-disabled .i-combo-multiple{
-    border-color: #cccccc !important;
-    background: #eeeeee;
+    border-color: #DFDFDF !important;
+    background: #F7F7F7;
 }
 /* Firefox style fixes */
 .x-gecko .i-combo-info *{
