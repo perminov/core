@@ -442,7 +442,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         if ($title) $data[$i][$alias] = implode(', ', $title);
                     } else {
                         $title = $titles[$alias][$data[$i][$alias]];
-                        if ($title) $data[$i][$alias] = $title;
+                        if ($title || $data[$i][$alias] == 0) $data[$i][$alias] = $title;
                     }
                 }
             }
@@ -485,6 +485,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             for ($j = 0; $j < count ($data); $j++) {
                 if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $data[$j][$gridFields[$i]['alias']], $matches)) {
                     $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
+                } else if (preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $data[$j][$gridFields[$i]['alias']], $matches)) {
+                    $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: ' . $matches[1] . ';"></span>'. strip_tags($data[$j][$gridFields[$i]['alias']]);
                 }
             }
         }
@@ -499,7 +501,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $i = 0;
             foreach ($this->rowset as $row) {
                 if ($fr = $row->getForeignRowByForeignKey($fieldAlias))	{
-                    $data[$i][$fieldAlias] = $fr->getTitle();
+                    if ($fr instanceof Indi_Db_Table_Row) $data[$i][$fieldAlias] = $fr->getTitle();
                 }
                 $i++;
             }
