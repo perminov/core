@@ -24,6 +24,11 @@
 }
 .i-action-form .i-form table tr td textarea{
     margin-top: 1px;
+}
+.i-action-form.x-gecko .i-form table tr td textarea{
+    margin-bottom: 1px;
+}
+.i-action-form.x-chrome .i-form table tr td textarea{
     margin-bottom: -1px;
 }
 .i-action-form .i-form table tr td:first-child {
