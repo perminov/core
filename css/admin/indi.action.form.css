@@ -24,13 +24,23 @@
 }
 .i-action-form .i-form table tr td textarea{
     margin-top: 1px;
+}
+.i-action-form.x-gecko .i-form table tr td textarea{
+    margin-bottom: 1px;
+}
+.i-action-form.x-chrome .i-form table tr td textarea{
     margin-bottom: -1px;
 }
 .i-action-form .i-form table tr td:first-child {
     padding-left: 2px;
 }
-.i-action-form .i-form table .i-tr-disabled{
-    background: #eeeeee;
+.i-action-form .i-form table tr.i-tr-disabled td input{
+    border-color: #DFDFDF !important;
+    background: #F7F7F7;
+    color: rgba(4, 64, 140, 0.5);
+}
+.i-action-form .i-form table tr.i-tr-disabled td:first-child{
+    color: rgba(4, 64, 140, 0.5);
 }
 
 /* Not fully beautified yet styles */
