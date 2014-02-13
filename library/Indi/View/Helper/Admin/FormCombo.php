@@ -126,6 +126,9 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
             // We should do that because such tags existance may cause a dom errors while performing Misc::usubstr()
             $info = $this->detectColor(array('title' => $o->title, 'value' => $o->$keyProperty));
+
+            if ($info['box']) $system['boxColor'] = $info['color'];
+
             $options[$o->$keyProperty] = array('title' => Misc::usubstr($info['title'], 50), 'system' => $system);
 
             // If color was detected, and it has box-type, we remember this fact
@@ -165,7 +168,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // should have hidden field
         if ($this->field->storeRelationAbility == 'one') {
             // Setup a key
-            if ($this->getRow()->$name) {
+            if (($this->getRow()->$name && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
                 $key = $this->getRow()->$name;
             } else if ($comboDataRs->enumset && $this->type == 'form') {
                 $key = key($options);
@@ -178,6 +181,8 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
                 'title' => $options[$key]['title'],
                 'value' => $key
             );
+
+            if ($options[$key]['system']['boxColor']) $selected['boxColor'] = $options[$key]['system']['boxColor'];
 
             // Setup css color property for input, if original title of selected value contained a color definition
             if ($options[$selected['value']]['system']['color'])
@@ -286,7 +291,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         ?><div class="i-combo i-combo-<?=$this->type?>"><?
         ?><div class="i-combo-trigger x-form-trigger x-form-trigger-over" id="<?=$this->name?>-trigger"></div><?
         ?><div class="i-combo-single"><?
-            $this->selected = $this->detectColor($this->selected, true); echo $this->selected['box'];
+            $this->selected = $this->detectColor($this->selected); echo $this->selected['box'];
             ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>"/><?
             ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
             ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><?
@@ -337,17 +342,18 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
 
         ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $selected['value'], $color)) ||
         ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $selected['title'], $color)) ||
-        ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $selected['title'], $color));
+        ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $selected['title'], $color)) ||
+        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $selected['title'], $color));
 
-        if ($v || $t || $s) {
-            $selected['color'] = $color[1];
+        if ($v || $t || $s || $b || $selected['boxColor']) {
+            $selected['color'] = $color[1] ? $color[1] : $selected['boxColor'];
+            if ($s || $b) $selected['title'] = strip_tags($selected['title']);
             if ($s) {
-                $selected['title'] = strip_tags($selected['title']);
                 if (!$selected['style'])
                     $selected['style'] = ' style="color: ' . $selected['color'] . '"';
             } else {
-                if ($t) $selected['input'] = $color[1];
-                $selected['box'] = '<span class="i-combo-color-box" style="background: ' . $color[1] . '"></span>';
+                if ($t) $selected['input'] = $selected['color'];
+                $selected['box'] = '<span class="i-combo-color-box" style="background: ' . $selected['color'] . '"></span>';
             }
         }
 

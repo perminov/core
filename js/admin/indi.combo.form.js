@@ -429,6 +429,45 @@ var Indi = (function (indi) {
             }
 
             /**
+             * Converts a given string to version, representing this string as is it was types in a dirrerent keyboard
+             * layout
+             *
+             * @param string
+             * @return string
+             */
+            this.convertWKL = function(string){
+
+                // Define an array for english alphabetic characters
+                var en = ['~','Q','W','E','R','T','Y','U','I','O','P','{','}',
+                    'A','S','D','F','G','H','J','K','L',':','"',
+                    'Z','X','C','V','B','N','M','<','>',
+
+                    '`','q','w','e','r','t','y','u','i','o','p','[',']',
+                    'a','s','d','f','g','h','j','k','l',';',"'",
+                    'z','x','c','v','b','n','m',',','.'];
+
+                // Define an array for russian alphabetic characters
+                var ru = ['Ё','Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ',
+                    'Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э',
+                    'Я','Ч','С','М','И','Т','Ь','Б','Ю',
+
+                    'ё','й','ц','у','к','е','н','г','ш','щ','з','х','ъ',
+                    'ф','ы','в','а','п','р','о','л','д','ж','э',
+                    'я','ч','с','м','и','т','ь','б','ю'];
+
+                // Define a variable for converted equivalent, and index variable
+                var converted = '', j;
+
+                // For each character within given string find its equvalent and append to 'converted' variable
+                for (var i = 0; i < string.length; i++) {
+                    var c = string.substr(i, 1);
+                    converted += (j = en.indexOf(c)) != -1 ? ru[j] : ((j = ru.indexOf(c)) != -1 ? en[j] : c);
+                }
+
+                return converted;
+            }
+
+            /**
              * Function is used in case if all possible options, within which keyword-search will be processing - are already collected.
              * They can be collected initially (if their total count <= Indi_Db_Table_Row_Beautiful::$comboOptionsVisibleCount) or
              * can be collected step by step while paging upper/lower. So, since they are a got, any keyword search will run
@@ -449,6 +488,9 @@ var Indi = (function (indi) {
                 // Prepare regular expression for keyword search
                 var keywordReg = new RegExp('^'+instance.pregQuote(data.keyword, '/'), 'i');
 
+                // Prepare regular expression for keyword, if it was typed in wrong keyboard layout
+                var keywordRegWKL = new RegExp('^'+instance.pregQuote(instance.convertWKL(data.keyword), '/'), 'i');
+
                 // This variable will contain a title, which will be tested against a keyword
                 var against;
 
@@ -463,10 +505,10 @@ var Indi = (function (indi) {
                     for (var i = 0; i < instance.store[name].backup.options.data.length; i++) {
 
                         // If tested title is a color, we should strip hue part of title, before keyword match will be performed
-                        against = instance.color(instance.store[name].backup.options.data[i].title).title;
+                        against = instance.color(instance.store[name].backup.options.data[i]).title;
 
                         // Test title against a keyword
-                        if (keywordReg.test(against)) {
+                        if (keywordReg.test(against) || keywordRegWKL.test(against)) {
                             results.push(instance.store[name].backup.options.ids[i]);
                             currentIndex = i;
                             while (parentId = parseInt(instance.store[name].backup.options.data[currentIndex].system.parentId)) {
@@ -510,10 +552,10 @@ var Indi = (function (indi) {
                     for (var i in instance.store[name].backup.options.data) {
 
                         // If tested title is a color, we should strip hue part of title, before keyword match will be performed
-                        against = instance.color(instance.store[name].backup.options.data[i].title).title;
+                        against = instance.color(instance.store[name].backup.options.data[i]).title;
 
                         // Test title against a keyword
-                        if (keywordReg.test(against)) {
+                        if (keywordReg.test(against) || keywordRegWKL.test(against)) {
                             instance.store[name].data.push(instance.store[name].backup.options.data[i]);
                             instance.store[name].ids.push(instance.store[name].backup.options.ids[i]);
                         }
@@ -572,24 +614,27 @@ var Indi = (function (indi) {
             }
 
             /**
-             * Try to find a color declaration in option title or option value, and if found, get that color,
-             * build .i-combo-color-box element
+             * Try to find a color declaration in option title or option value or option.system.boxColor,
+             * and if found, get that color and build .i-combo-color-box element
              *
-             * @param title
+             * @param data
              * @param value
              * @return {Object}
              */
-            this.color = function(title, value) {
+            this.color = function(data, value) {
                 value = value || '';
 
                 // Declare `info` object
-                var info = {title: title.trim(), color: '', src: '', box: '', css: {color: ''}}, color;
+                var info = {title: data.title.trim(), color: '', src: '', box: '', css: {color: ''}}, color;
 
                 // Check if `title` or `value` contain a color definition
                 if (color = value.toString().match(instance.colorReg)) {
                     info.src = 'value';
                 } else if (color = info.title.match(instance.colorReg)) {
                     info.src = 'title';
+                } else if (data.system && data.system['boxColor'] && typeof data.system['boxColor'] == 'string') {
+                    info.src = 'boxColor';
+                    var color = [true, data.system['boxColor']];
                 }
 
                 // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
@@ -662,7 +707,7 @@ var Indi = (function (indi) {
                     css.color = instance.store[name].data[index].system['color'];
 
                 // Detect if colorbox should be applied
-                var color = instance.color(title, li.attr(name));
+                var color = instance.color(instance.store[name].data[index], li.attr(name));
 
                 // If combo is in multiple-value mode
                 if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
@@ -861,7 +906,7 @@ var Indi = (function (indi) {
                             if (json['data'][i].option) {
                                 item += json['data'][i].option;
                             } else {
-                                var color = instance.color(json['data'][i].title, json['ids'][i]);
+                                var color = instance.color(json['data'][i], json['ids'][i]);
                                 item += color.box;
                                 item += color.title;
                             }
@@ -1300,7 +1345,7 @@ var Indi = (function (indi) {
                             var title = instance.store[name].data[index].title.toString().trim();
 
                             // Setup color box if needed
-                            var color = instance.color(title, instance.store[name].ids[index]);
+                            var color = instance.color(instance.store[name].data[index], instance.store[name].ids[index]);
                             color.apply(name);
 
                             // Apply css color, if it was passed within store. Currently this feature is used for

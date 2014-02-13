@@ -767,6 +767,9 @@ var Indi = (function (indi) {
                 for(var i in grid.columns) {
                     if (grid.columns[i].hidden == false) {
                         columnWidths[i] = indi.metrics.getWidth(grid.columns[i].text) + 12;
+                        if (grid.columns[i].dataIndex == indi.trail.item().section.defaultSortFieldAlias) {
+                           columnWidths[i] += 12;
+                        }
                         for (var j in grid.store.data.items) {
                             var cellWidth = indi.metrics.getWidth(grid.store.data.items[j].data[grid.columns[i].dataIndex]) + 12;
                             if (cellWidth > columnWidths[i]) columnWidths[i] = cellWidth;
