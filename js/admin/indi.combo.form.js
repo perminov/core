@@ -549,7 +549,7 @@ var Indi = (function (indi) {
 
                 // If we are dealing with non-tree list of options, all it simpler for a bit
                 } else {
-                    for (var i in instance.store[name].backup.options.data) {
+                    for (var i = 0; i < instance.store[name].backup.options.data.length; i++) {
 
                         // If tested title is a color, we should strip hue part of title, before keyword match will be performed
                         against = instance.color(instance.store[name].backup.options.data[i]).title;
@@ -841,9 +841,8 @@ var Indi = (function (indi) {
                     if (j != 'none') {
                         items.push('<li class="disabled" group>' + groups[j] + '</li>');
                     }
-                    for (var i in json['ids']) {
-                        if (json['ids'][i] != undefined /*&& !isNaN(json['ids'][i])*/ && !isNaN(i)
-                            && (j == 'none' || json['data'][i].system.group == j)) {
+                    for (var i = 0; i < json['ids'].length; i++) {
+                        if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {
                             // Classes for option
                             var cls = [];
 

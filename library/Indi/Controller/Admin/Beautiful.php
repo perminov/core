@@ -1350,7 +1350,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 $value = strip_tags($value);
                 
                 // Replace some special characters definitions to its actual symbols
-                $value = str_replace(array('&nbsp;','&laquo;','&raquo;','&mdash;','&quot;'), array(' ','«','»','—','"'), $value);
+                $value = str_replace(
+                    array('&nbsp;','&laquo;','&raquo;','&mdash;','&quot;','&lt;','&gt;'),
+                    array(' ','«','»','—','"','<','>'), $value);
 
                 // Set right and bottom border, because cell fill will hide default Excel's ot OpenOffice Write's cell borders
                 $objPHPExcel->getActiveSheet()
@@ -1430,6 +1432,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         
         // Output
         $file = $this->trail->getItem()->section->title . '.xlsx';
+        if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) $file = iconv('utf-8', 'windows-1251', $file);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $file . '"');
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);

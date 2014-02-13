@@ -25,12 +25,6 @@
 .i-action-form .i-form table tr td textarea{
     margin-top: 1px;
 }
-.i-action-form.x-gecko .i-form table tr td textarea{
-    margin-bottom: 1px;
-}
-.i-action-form.x-chrome .i-form table tr td textarea{
-    margin-bottom: -1px;
-}
 .i-action-form .i-form table tr td:first-child {
     padding-left: 2px;
 }
@@ -98,4 +92,21 @@
     position: relative;
     top: -1px;
     display: none;
+}
+/* Browser fixes */
+.x-gecko.i-action-form .i-form table tr td textarea, 
+.x-ie9.i-action-form .i-form table tr td textarea,
+.x-ie8.i-action-form .i-form table tr td textarea{
+    margin-bottom: 1px;
+}
+.x-chrome.i-action-form .i-form table tr td textarea, 
+.x-safari.i-action-form .i-form table tr td textarea{
+    margin-bottom: -1px;
+}
+.x-safari.i-action-form .i-form table tr td input[type=text]{
+    padding-top: 4px;
+    padding-left: 1px;
+}
+.x-safari.i-action-form .i-form table tr td:last-child controls.upload {
+    margin-top: -3px;
 }
