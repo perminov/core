@@ -57,7 +57,7 @@ class Indi_Controller_Front extends Indi_Controller{
 
     }
 	
-	public function postDispatch(){
+	public function postDispatch($die = true){
 		$this->view->section = $this->section;
 		$this->view->indexParams = $_SESSION['indexParams'][$this->section->alias];
 		if ($this->section2action->imposition) $this->view->imposition = $this->section2action->imposition;
@@ -101,7 +101,7 @@ class Indi_Controller_Front extends Indi_Controller{
         }
 		
 		if (isset($this->get['p']))echo mt();
-        die($out);
+        if ($die) die($out); else return $out;
 	}
 	public function getOrder($orderById, $dir, $condition = null){
 		if (!$this->masterOrder) {
