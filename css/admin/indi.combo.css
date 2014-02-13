@@ -66,6 +66,9 @@
     visibility: hidden;
     display: none;
 }
+.i-combo.i-combo-form .i-combo-info{
+    margin-top: -15px;
+}
 .i-combo .i-combo-info .i-combo-count{
     width: 20px;
     display: inline-block;
