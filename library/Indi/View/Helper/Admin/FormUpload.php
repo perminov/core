@@ -28,7 +28,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$types = array('image' => 'gif,png,jpg,jpeg', 'flash' => 'swf', 'video' => 'avi,mpg,mp4,3gp', 'file' => '');
 			$info = pathinfo($file);
 			foreach ($types as $type => $extensions) if (in_array($info['extension'], explode(',', $extensions))) break;
-			$xhtml = '<field>';
+			$xhtml = '<div>';
 			switch ($type) {
 				case 'image':
 					$uploaded = $this->view->image($entity, $id, $name, $copy, $silence) . '<br>';
@@ -62,7 +62,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					break;
 			}
 
-			$xhtml .= '<controls class="upload' . (!in_array($type, array('image', 'video', 'flash'))?' no-file-yet':'') . '"  field="' . $name . '">';
+			$xhtml .= '<span class="upload' . (!in_array($type, array('image', 'video', 'flash'))?' no-file-yet':'') . '"  field="' . $name . '">';
 			$xhtml .= $type == 'file' ? $uploaded : '';
 			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
 			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_REMAIN . '</label>&nbsp;</span>';
@@ -71,42 +71,42 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$xhtml .= '<span class="selected" id="replace-by-'.$name.'">' . FORM_UPLOAD_REPLACE_WITH . '</span> <span id="selected' . $name . '" class="selected-fname"></span>';
             $xhtml .= '<a href="' . $src . '" target="_blank" class="original">' . FORM_UPLOAD_ORIGINAL . '</a>';
             $xhtml .= '<script>
-				$("controls.upload[field='.$name.'] span.radio").click(function(){
+				$("span.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
 					$(this).parent().find("input[name^=file-action]").val($(this).attr("val"));
 					$(this).addClass("checked");
-					if($(this).attr("val") == "m" && $(this).parents("controls.upload").find("input[id^=upload]").val() == "") {
-						$(this).parents("controls.upload").find("input[id^=upload]").click();
+					if($(this).attr("val") == "m" && $(this).parents("span.upload").find("input[id^=upload]").val() == "") {
+						$(this).parents("span.upload").find("input[id^=upload]").click();
 					}
 				});
-				$("controls.upload[field='.$name.'] a.browse").click(function(){
-					$(this).parents("controls.upload").find("input[id^=upload]").click();
-					$(this).parents("controls.upload").find("span.radio").removeClass("checked");
-					$(this).parents("controls.upload").find("input[name^=file-action]").val("m");
-					$(this).parents("controls.upload").find("span.radio[val=m]").addClass("checked");
+				$("span.upload[field='.$name.'] a.browse").click(function(){
+					$(this).parents("span.upload").find("input[id^=upload]").click();
+					$(this).parents("span.upload").find("span.radio").removeClass("checked");
+					$(this).parents("span.upload").find("input[name^=file-action]").val("m");
+					$(this).parents("span.upload").find("span.radio[val=m]").addClass("checked");
 					return false;
 				});
 			</script>';
 		} else {
-			$xhtml .= '<controls class="upload no-file-yet" field="' . $name . '">';
+			$xhtml .= '<span class="upload no-file-yet" field="' . $name . '">';
 			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
 			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_NO . '</label>&nbsp;</span>';
 			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_BROWSE . '</a></label>&nbsp;';
 			$xhtml .= '<span id="selected' . $name . '" class="selected-fname"></span>';
 			$xhtml .= '<script>
-				$("controls.upload[field='.$name.'] span.radio").click(function(){
+				$("span.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
 					$(this).parent().find("input[name^=file-action]").val($(this).attr("val"));
 					$(this).addClass("checked");
-					if($(this).attr("val") == "m" && $(this).parents("controls.upload").find("input[id^=upload]").val() == "") {
-						$(this).parents("controls.upload").find("input[id^=upload]").click();
+					if($(this).attr("val") == "m" && $(this).parents("span.upload").find("input[id^=upload]").val() == "") {
+						$(this).parents("span.upload").find("input[id^=upload]").click();
 					}
 				});
-				$("controls.upload[field='.$name.'] a.browse").click(function(){
-					$(this).parents("controls.upload").find("input[id^=upload]").click();
-					$(this).parents("controls.upload").find("span.radio").removeClass("checked");
-					$(this).parents("controls.upload").find("input[name^=file-action]").val("m");
-					$(this).parents("controls.upload").find("span.radio[val=m]").addClass("checked");
+				$("span.upload[field='.$name.'] a.browse").click(function(){
+					$(this).parents("span.upload").find("input[id^=upload]").click();
+					$(this).parents("span.upload").find("span.radio").removeClass("checked");
+					$(this).parents("span.upload").find("input[name^=file-action]").val("m");
+					$(this).parents("span.upload").find("span.radio[val=m]").addClass("checked");
 					return false;
 				});
 			</script>';
@@ -124,10 +124,10 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 				$(this).parent().find(\'span.radio[val=r]\').click();
 			}
 		"/>';
-		$xhtml .= '</controls>';
+		$xhtml .= '</span>';
 		$xhtml .= $type == 'file' ? '' : $uploaded;
-		$xhtml .= '<script>$(document).ready($("controls.upload").width($("td[id^=td-right]").first().width()))</script>';
-		$xhtml .= '</field>';
+		$xhtml .= '<script>$(document).ready($("span.upload").width($("td[id^=td-right]").first().width()))</script>';
+		$xhtml .= '</div>';
         return $xhtml;
     }
 }

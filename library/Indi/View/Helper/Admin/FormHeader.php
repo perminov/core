@@ -47,7 +47,7 @@ top.Indi.scope = Indi.scope;
 </script>
 <?=$this->view->siblingCombo()?>
 <form class="i-form" action="<?=PRE?>/<?=$this->view->section->alias?>/save<?=$this->view->row->id ? '/id/' . $this->view->row->id : ''?>/" name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
-    <table celpadding="2" cellspacing="1" border="0" width="100%">
+    <table cellspacing="1" border="0" width="100%" class="i-form-table">
         <tr class="i-form-subheader"><td colspan="2"><?=$title?></td></tr>
         <col width="50%"/><col width="50%"/>
         <? return ob_get_clean();

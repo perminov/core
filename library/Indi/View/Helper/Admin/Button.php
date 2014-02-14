@@ -10,6 +10,8 @@ class Indi_View_Helper_Admin_Button extends Indi_View_Helper_Abstract
 				renderTo: 'td-button-<?=$title?>',
 				text: '<?=$title?>',
 				padding: '3 10 3 10',
+                height: 26,
+                width: Indi.metrics.getWidth('<?=$title?>') + 40,
 				margin: 6,
 				handler: function(){
 					<?=str_replace('javascript: ', '', $action)?>

@@ -121,7 +121,7 @@ var Indi = (function (indi) {
                         selectedItemsTotalWidth += $(this).width();
                     })
                     selectedItemsTotalWidth += $('#'+name).width();
-                    $('#'+name).parent().width(selectedItemsTotalWidth);
+                    $('#'+name).parent().width(selectedItemsTotalWidth + ($('body').hasClass('x-ie8') ? 200 : 0));
                 }
 
                 // If current combo is a satellite for one or more other combos, we should refres data in that other combos

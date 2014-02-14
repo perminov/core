@@ -66,7 +66,7 @@ class Indi_View_Helper_Admin_StyleStd extends Indi_View_Helper_Abstract{
     span.checkbox.checked.disabled, table.multicheckbox.disabled span.checkbox.checked{
         background: url(<?=STD?>/i/admin/checkbox-checked-disabled.png) no-repeat;
     }
-    controls.upload{
+    span.upload{
         background: url(<?=STD?>/i/admin/transparentBg.png);
     }
 </style>
