@@ -27,8 +27,7 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         // if current value earlier than minimal date, minimal date is to be set
         // equal to value
         //$minimal = $minimal > $value ? $value : $minimal;
-        if (preg_match('/Firefox/', $_SERVER['HTTP_USER_AGENT'])) $shift = 'top: -1px;';
-        $xhtml  = '<div style="position: relative; ' . $shift .  '">';
+        $xhtml  = '<div class="i-element-datetime-wrapper">';
 		$parts = explode(' ', $value);
 
         $params = $field->getParams();

@@ -230,12 +230,41 @@
     border-color: #DFDFDF !important;
     background: #F7F7F7;
 }
-/* Browser fixes fixes */
+/* Browser fixes */
 .x-gecko .i-combo-info *{
     position: relative;
     top: -1px;
     font-size: 9px;
 }
-.x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword {
+.x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword{
+    padding-left: 1px;
+}
+.x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {
+    padding-left: 0px;
+}
+.x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {
+    padding-top: 1px;
+}
+.x-ie9 .i-combo .i-combo-single input[type=text].i-combo-keyword {
+    padding-top: 0px;
+}
+.x-ie8 .i-combo.i-combo-sibling .i-combo-info,
+.x-ie8 .i-combo.i-combo-filter .i-combo-info{
+    margin-top: -15px;
+}
+.x-ie8 .i-combo.i-combo-form .i-combo-info{
+    margin-top: -16px;
+}
+.x-ie9 .i-combo.i-combo-sibling .i-combo-info .i-combo-found,
+.x-ie9 .i-combo.i-combo-filter .i-combo-info .i-combo-found{
+    line-height: 12px;
+    padding-bottom: 0px;
+    height: 14px;
+    display: inline-block;
+    overflow: hidden;
+    position: relative;
+    top: -1px;
+}
+.x-gecko .i-combo .i-combo-single .i-combo-keyword {
     padding-left: 1px;
 }

@@ -9,7 +9,7 @@
 .x-form-item-label{padding: 1px 0;}
 .i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px;}
 .x-btn .x-btn-inner{color: #04408C}
-input[type=text]{padding-left: 2px; padding-right: 2px;}
+input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-inline-block{display: inline-block;}
 
 /* Login screen */
@@ -258,9 +258,31 @@ input[type=text]{padding-left: 2px; padding-right: 2px;}
 .x-ie8 input[type=text]{
     padding-top: 1px;
 }
-.x-ie8 input[type=text].x-form-text{
+.x-ie8 input[type=text].x-form-text,
+.x-ie8 input[type=password].x-form-text{
     padding-top: 2px;
 }
-.x-safari input[type=text]{
+.x-safari input[type=text],
+.x-safari input[type=password],
+.x-gecko input[type=text],
+.x-gecko input[type=text].x-form-text,
+.x-gecko input[type=password],
+.x-gecko input[type=password].x-form-text{
     padding-left: 1px;
+}
+.x-ie8.i-login .x-form-checkbox{
+    margin-top: 1px;
+}
+.x-ie8 .x-btn-default-toolbar-small  .x-btn-center .x-btn-inner{
+    position: relative;
+    top: -1px;
+}
+.x-ie8 .x-btn-default-toolbar-small  .x-btn-center .x-btn-inner.x-tbar-page-prev, 
+.x-ie8 .x-btn-default-toolbar-small  .x-btn-center .x-btn-inner.x-tbar-page-next{
+    position: relative;
+    top: 0px;
+}
+.x-gecko #i-login-box .x-form-cb-wrap,
+.x-safari #i-login-box .x-form-cb-wrap {
+    padding-top: 1px;
 }
