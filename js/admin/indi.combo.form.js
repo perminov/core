@@ -677,7 +677,7 @@ var Indi = (function (indi) {
                 if (typeof arguments[0] == 'string') {
                     name = arguments[0];
                     li = $('#'+name+'-suggestions ul li.selected');
-                    if (li.length == 0) return;
+                    if (li.length == 0) return false;
                 } else {
                     name = $(this).parents('.i-combo-data').attr('id').replace('-suggestions', '');
                     li = $(this);
@@ -1009,11 +1009,12 @@ var Indi = (function (indi) {
                 var tooFastKeyUp = instance.store[name].lastTimeKeyUp && (new Date().getTime() - instance.store[name].lastTimeKeyUp < 200);
 
                 // Variable for detection if keyword was changed and first page of related results should be fetched
-                var keywordChanged = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33)$/));
+                var keywordChanged = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/));
 
                 // Check if keyword was emptied
-                var keywordChangedToEmpty = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33)$/));
+                var keywordChangedToEmpty = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/));
 
+                // Renew lastTimeKeyUp
                 instance.store[name].lastTimeKeyUp = new Date().getTime();
 
                 // If keyword was at least once changed, we switch fetch mode to 'keyword'.
@@ -1260,8 +1261,16 @@ var Indi = (function (indi) {
                 // Up or Down arrows
                 } else if (code == '40' || code == '38' || code == '34' || code == '33') {
                     if (code == '40' && $('#'+name+'-suggestions').css('display') == 'none' && !arguments[2]) {
-                        $('#'+name+'-suggestions').show();
-                        $('#'+name+'-info').show();
+
+                        // If no suggestions list yet builded, build it
+                        if ($('#'+name+'-suggestions').html() == '') {
+                            $('#'+name+'-keyword').click();
+
+                        // Else show existing sugestions list
+                        } else {
+                            $('#'+name+'-suggestions').show();
+                            $('#'+name+'-info').show();
+                        }
                     } else {
                         // Get items count for calculations
                         var size = $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size();
@@ -1368,9 +1377,12 @@ var Indi = (function (indi) {
                     }
                     return false;
 
-                // Esc key
-                } else if (code == '27') {
-                    instance.hideSuggestions(name);
+                // Esc key or Tab key
+                } else if (code == '27' || code == '9') {
+
+                    // If there is no currently selected option, we just hide suggestions list,
+                    // Else if there is - we select it by the same way as it would clicked
+                    if (instance.select(name) === false) instance.hideSuggestions(name);
 
                 // Other keys
                 } else {
