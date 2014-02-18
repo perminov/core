@@ -31,13 +31,19 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
 		$ownerEntityId = Entity::getInstance()->fetchRow('`table` = "' . $this->getTable()->info('name') . '"')->id;
 		$field = Misc::loadModel('Field')->fetchRow('`alias` = "' . $foreignKey . '" AND `entityId` = "' . $ownerEntityId . '"');
 		$searchingEntityId = $field->relation;
-		if ($field->relation) {
+		if ($field->relation != 6) {
             if ($field->storeRelationAbility == 'one') {
                 return Entity::getInstance()->getModelById($field->relation)->fetchRow('`id` = "' . $this->$foreignKey . '"');
             } else if ($field->storeRelationAbility == 'many') {
                 return Entity::getInstance()->getModelById($field->relation)->fetchAll('FIND_IN_SET(`id`, "' . $this->$foreignKey . '")');
             }
-		}
+		} else {
+            if ($field->storeRelationAbility == 'one') {
+                return Entity::getInstance()->getModelById($field->relation)->fetchRow('`fieldId` = "' . $field->id . '" AND `alias` = "' . $this->$foreignKey . '"');
+            } else if ($field->storeRelationAbility == 'many') {
+                return Entity::getInstance()->getModelById($field->relation)->fetchAll('`fieldId` = "' . $field->id . '" AND FIND_IN_SET(`alias`, "' . $this->$foreignKey . '")');
+            }
+        }
 
 		if (!$entityId = $this->getEntityIdForVariableForeignKey($foreignKey)){
 	        // if $search param is not set, then it's default value is the table name of $foreignKey
