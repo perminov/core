@@ -161,6 +161,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 $value = '';
             }
             if (!in_array($field->alias, $this->trail->getItem()->disabledFields['save']))
+            i($field->foreign['elementId']);
             switch ($field->foreign['elementId']['alias']) {
                 case 'string':
                 case 'html':
@@ -235,6 +236,15 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     } else {
                         $value = $this->trail->getItem()->row->move;
                     }
+                case 'hidden':
+                    if ($field->alias == 'move') {
+                        if (!$this->identifier) {
+                            $value = $model->getLastPosition();
+                        } else {
+                            $value = $this->trail->getItem()->row->move;
+                        }
+                    }
+                    break;
                 default:
                     break;
             }
