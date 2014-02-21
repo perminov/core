@@ -123,7 +123,7 @@ class Indi_Uri {
 		$config = Indi::registry('config');
 		$domain = $config['general']->domain;
 		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
-        ini_set('session.cookie_path', PRE . '/');
+        if (PRE) ini_set('session.cookie_path', PRE);
 	}
 
 	public function startSession() {
