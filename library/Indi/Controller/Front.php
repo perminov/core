@@ -265,7 +265,13 @@ class Indi_Controller_Front extends Indi_Controller{
                 $parentSectionConnectorAlias = $this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
                 $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->$parentSectionConnectorAlias .'"';
             } else {
-                $this->post['indexWhere'][1] = '`' . $this->trail->getItem(1)->model->info('name') . 'Id` = "' . $this->trail->getItem(1)->row->id .'"';
+                $alias = $this->trail->getItem(1)->model->info('name') . 'Id';
+                $fieldR = Indi::model('Field')->fetchRow('`entityId` = "' . $this->trail->getItem()->section->entityId . '" AND `alias` = "' . $alias . '"');
+                if ($fieldR->storeRelationAbility == 'one') {
+                    $this->post['indexWhere'][1] = '`' . $alias . '` = "' . $this->trail->getItem(1)->row->id .'"';
+                } else {
+                    $this->post['indexWhere'][1] = 'FIND_IN_SET("' . $this->trail->getItem(1)->row->id .'", `' . $alias . '`)';
+                }
             }
         }
 		if ($this->section->filter) {
