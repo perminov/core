@@ -1,29 +1,13 @@
 <?php
 class Section_Row_Base extends Indi_Db_Table_Row
 {
-    public function delete(){
-        // delete controller class if exists
-        //$this->deleteControllerClassIfExists();
-
-        // standart Indi_Db_Table_Row deletion
-        parent::delete();
-    }
-
-    public function deleteControllerClassIfExists(){
-        $controllersDir = rtrim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . STD . '/application/controllers/admin/';
-        $controllerFile = $controllersDir . ucfirst($this->alias) . 'Controller.php';
-        if (file_exists($controllerFile)) {
-            unlink($controllerFile);
-        }
-    }
-
     public function getFilters() {
-        $filterM = Misc::loadModel('Search');
+        $filterM = Indi::model('Search');
         $filterRs = $filterM->fetchAll('`sectionId` = "' . $this->id . '" AND `toggle` = "y"', 'move');
         $data['foundRows'] = $filterRs->foundRows;
         $filterA = $filterRs->toArray();
         $fieldIds = array(); foreach ($filterA as $filterI) $fieldIds[] = $filterI['fieldId'];
-        $fieldRs = Misc::loadModel('Field')->fetchAll('FIND_IN_SET(`id`, "' . implode(',', $fieldIds) . '")');
+        $fieldRs = Indi::model('Field')->fetchAll('FIND_IN_SET(`id`, "' . implode(',', $fieldIds) . '")');
         $fieldRs->setForeignRowsByForeignKeys('columnTypeId,elementId')->setParams();
         for ($i = 0; $i < count($filterA); $i++) {
             foreach ($fieldRs as $fieldR) {
@@ -41,7 +25,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
         if (isset($this->_modified['entityId'])) {
 
             // Grid model
-            $gridM = Misc::loadModel('Grid');
+            $gridM = Indi::model('Grid');
 
             // Delete old grid info when assotiated entity has changed
             $gridM->fetchAll('`sectionId` = "' . $this->id . '"')->delete();
@@ -50,14 +34,14 @@ class Section_Row_Base extends Indi_Db_Table_Row
             if ($this->_modified['entityId']) {
 
                 // Get entity fields as grid columns candidates
-                $fields = Misc::loadModel('Field')->fetchAll('`entityId` = "' . $this->_modified['entityId'] . '"', 'move')->toArray();
+                $fields = Indi::model('Field')->fetchAll('`entityId` = "' . $this->_modified['entityId'] . '"', 'move')->toArray();
                 if (count($fields)) {
 
                     // Declare exclusions array, because not each entity field will have corresponding column in grid
                     $exclusions = array();
 
                     // Exclude tree column, if exists
-                    if ($model = Misc::loadModel('Entity')->getModelById($this->_modified['entityId'])) {
+                    if ($model = Indi::model($this->_modified['entityId'])) {
                         if ($model->treeColumn) {
                             $exclusions[] = $model->treeColumn;
                         }
@@ -80,7 +64,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
                     $parentSectionId = $this->sectionId;
                     do {
                         $parentSection = $this->_table->fetchRow('`id` = "' . $parentSectionId . '"');
-                        if ($parentSection && $parentEntity = $parentSection->getForeignRowByForeignKey('entityId')){
+                        if ($parentSection && $parentEntity = $parentSection->foreign('entityId')){
                             for ($i = 0; $i < count($fields); $i++) {
                                 if ($fields[$i]['alias'] == $parentEntity->table . 'Id' && $fields[$i]['relation'] == $parentEntity->id) {
                                     $exclusions[] = $fields[$i]['alias'];
@@ -95,7 +79,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
                     parent::save();
 
                     // create grid, stripping exclusions from final grid column list
-                    $lastPosition = $gridM->getLastPosition();
+                    $lastPosition = $gridM->getNextMove();
                     $j = 0;
                     for ($i = 0; $i < count($fields); $i++) {
                         if (!in_array($fields[$i]['alias'], $exclusions)) {

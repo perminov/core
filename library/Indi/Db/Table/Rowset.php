@@ -76,9 +76,9 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 			$subsectionIds[] = $countToGet->sectionId;
 			$where[] = $countToGet->where;
 		}
-		$subsections = Misc::loadModel('Section')->fetchAll('`id` IN (' . implode(',', $subsectionIds) . ')', 'FIND_IN_SET(`id`, "' . implode(',', $subsectionIds) . '")');
+		$subsections = Indi::model('Section')->fetchAll('`id` IN (' . implode(',', $subsectionIds) . ')', 'FIND_IN_SET(`id`, "' . implode(',', $subsectionIds) . '")');
 		foreach ($subsections as $subsection) $entityIds[] = $subsection->entityId;
-		$entities = Misc::loadModel('Entity')->fetchAll('`id` IN (' . implode(',', $entityIds) . ')', 'FIND_IN_SET(`id`, "' . implode(',', $entityIds) . '")');
+		$entities = Indi::model('Entity')->fetchAll('`id` IN (' . implode(',', $entityIds) . ')', 'FIND_IN_SET(`id`, "' . implode(',', $entityIds) . '")');
 		foreach ($entities as $entity) $tables[] = $entity->table;
 		$data = $this->toArray();
 		$ids = array();
@@ -92,15 +92,15 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 						`m`.`id`, 
 						COUNT(`s`.`id`) AS `count`
 					FROM 
-						`' . $this->getTable()->info('name') . '` `m` 
-						LEFT JOIN `' . $dependentTable . '` `s` ON (`m`.`id`=`s`.`' . $this->getTable()->info('name') . 'Id`)
+						`' . $this->_table . '` `m`
+						LEFT JOIN `' . $dependentTable . '` `s` ON (`m`.`id`=`s`.`' . $this->_table . 'Id`)
 					WHERE 1
 						AND `m`.`id` IN (' . implode(',', $ids) .')
 						' . ($where[$j] ? ' AND `s`.' . $where[$j] : '') . '
 					GROUP BY `m`.`id`
 				';
 //				echo $sql . '<br>';
-				$result = $this->getTable()->getAdapter()->query($sql)->fetchAll();
+				$result = Indi::db()->query($sql)->fetchAll();
 				for ($i = 0; $i < count($result); $i++) {
 					$counts[$result[$i]['id']][$info[$j]['alias']] = $result[$i]['count'];
 				}
@@ -120,15 +120,15 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 			}
 		} else {
 			$fields = explode(',', $info);
-			$entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $this->getTable()->info('name') . '"')->id;
-			$fieldsRs = Misc::loadModel('Field')->fetchAll('`entityId` = "' . $entityId . '" AND `alias` IN ("' . implode('","', $fields) . '")');
+			$entityId = Indi::model('Entity')->fetchRow('`table` = "' . $this->_table . '"')->id;
+			$fieldsRs = Indi::model('Field')->fetchAll('`entityId` = "' . $entityId . '" AND `alias` IN ("' . implode('","', $fields) . '")');
 			$fields = array();
 			foreach ($fieldsRs as $fieldR) $fields[] = $fieldR->id;
 		}
 		for ($i = 0; $i < count($fields); $i++) {
-			$field = Misc::loadModel('Field')->fetchRow('`id` = "' . $fields[$i] . '"');
+			$field = Indi::model('Field')->fetchRow('`id` = "' . $fields[$i] . '"');
 			if (!$field) continue;
-			if ($field['relation'] && $model = Misc::loadModel('Entity')->getModelById($field['relation'])) {
+			if ($field['relation'] && $model = Indi::model($field['relation'])) {
 				if ($field['storeRelationAbility'] == 'one') {
 					$keys = array();
 					for ($j = 0; $j < count($this->_data); $j++) { 
@@ -195,7 +195,7 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 					}
 				}
 			} else if ($field['dependency'] == 'e' && $field['satellite']) {
-                $satelliteAlias = Misc::loadModel('Field')->fetchRow('`id` = "' . $field['satellite'] . '"')->alias;
+                $satelliteAlias = Indi::model('Field')->fetchRow('`id` = "' . $field['satellite'] . '"')->alias;
                 $rowIdsByEntityId = array();
                 for ($j = 0; $j < count($this->_data); $j++) {
                     if ($this->_data[$j][$field['alias']])
@@ -204,7 +204,7 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
                 $foreignRs = array();
                 $arrayOfFr = array();
                 foreach ($rowIdsByEntityId as $entityId => $rowIds) {
-                    $foreignRs[$entityId] = Entity::getModelById($entityId)->fetchAll('`id` IN (' . implode(',', $rowIds) . ')');
+                    $foreignRs[$entityId] = Indi::model($entityId)->fetchAll('`id` IN (' . implode(',', $rowIds) . ')');
                     foreach($foreignRs[$entityId] as $foreignR) {
                         $arrayOfFr[$entityId][$foreignR->id] = $foreignR;
                     }
@@ -217,8 +217,8 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 		return $this;
 	}
 	public function setDependentRowsets($info) {
-		$name = $this->getTable()->info('name');
-		$selfEntityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $name . '"')->id;
+		$name = $this->_table;
+		$selfEntityId = Indi::model('Entity')->fetchRow('`table` = "' . $name . '"')->id;
 		$keys = array();
 		for ($j = 0; $j < count($this->_data); $j++) { 
 			if (!in_array($this->_data[$j]['id'], $keys)) {
@@ -227,14 +227,14 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 		}
 		foreach ($info as $entity) {
             if($entity->connector) {
-                $related = Misc::loadModel('Field')->fetchRow('`id` = "' . $entity->connector . '"');
+                $related = Indi::model('Field')->fetchRow('`id` = "' . $entity->connector . '"');
             } else {
-                $related = Misc::loadModel('Field')->fetchRow('`entityId` = "' . $entity->entityId . '" AND `relation` = "' . $selfEntityId . '"');
+                $related = Indi::model('Field')->fetchRow('`entityId` = "' . $entity->entityId . '" AND `relation` = "' . $selfEntityId . '"');
             }
             if ($related->storeRelationAbility == 'many') {
 				foreach ($keys as $key) $find[] = 'FIND_IN_SET("' . $key. '", `' . $related->alias .'`)';
 				$where = '1 AND (' . implode(' OR ', $find) . ')';
-				$rowset = Entity::getInstance()->getModelById($entity->entityId)->fetchAll($where);
+				$rowset = Indi::model($entity->entityId)->fetchAll($where);
 				$distributed = array();
 				foreach($rowset as $row) {
 					$masterIds = explode(',', $row->{$related->alias});
@@ -251,7 +251,7 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 				$order = null;
 				if ($entity->orderBy == 'c') {
 					if($entity->orderColumn) {
-						if($orderColumn = $entity->getForeignRowByForeignKey('orderColumn')) {
+						if($orderColumn = $entity->foreign('orderColumn')) {
 							$order = $orderColumn->alias . ' ' . $entity->orderDirection;
 						}
 					}
@@ -261,12 +261,12 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 					}
 				}
 				// get dependent rowset
-				$rowset = Entity::getInstance()->getModelById($entity->entityId)->fetchAll(implode(' AND ', $where), $order);
+				$rowset = Indi::model($entity->entityId)->fetchAll(implode(' AND ', $where), $order);
 
-				$info = Misc::loadModel('JoinFkForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
+				$info = Indi::model('JoinFkForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
 				if ($info->count()) $rowset->setForeignRowsByForeignKeys($info);
 
-				$info = Misc::loadModel('DependentCountForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
+				$info = Indi::model('DependentCountForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
 				if ($info->count()) $rowset->setDependentCounts($info);
 				
 
@@ -297,4 +297,14 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
 		$this->_count = count($this->_rows);
 		return $this;
 	}
+
+    /**
+     * Return a model, that current row is related to
+     *
+     * @return mixed
+     */
+    public function table() {
+        return Indi::model($this->_table);
+    }
+
 }

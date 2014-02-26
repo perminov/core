@@ -43,8 +43,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     public function __construct(array $config)
     {
         if (isset($config['table'])) {
-            $this->_table      = $config['table'];
-            $this->_tableClass = get_class($this->_table);
+            $this->_table      = $config['table']->_name;
         }
         if (isset($config['rowClass'])) {
             $this->_rowClass   = $config['rowClass'];
@@ -61,13 +60,12 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     }
 
     /**
-     * Returns the table object, or null if this is disconnected rowset
+     * Return a model, that current row is related to
      *
-     * @return Indi_Db_Table_Abstract
+     * @return mixed
      */
-    public function getTable()
-    {
-        return $this->_table;
+    public function table() {
+        return Indi::model($this->_table);
     }
 
     /**

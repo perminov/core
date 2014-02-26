@@ -67,7 +67,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             if (!is_array($within) && $within) $within = explode(',', $within);
 
             // Append tree-column to $within array, if such column exists
-            if (array_key_exists($this->getTable()->info('name') . 'Id', $this->_original)) $within[] = $this->getTable()->info('name') . 'Id';
+            if (array_key_exists($this->_table . 'Id', $this->_original)) $within[] = $this->_table . 'Id';
 
             for ($i = 0; $i < count($within); $i++) $where[] = '`' . trim($within[$i]) . '` = "' . $this->{trim($within[$i])} . '"';
 
@@ -80,7 +80,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             $order = 'move ' . ($direction == 'up' ? 'DE' : 'A') . 'SC';
 
             // Find
-            if ($changeRow = $this->getTable()->fetchRow($where, $order)) {
+            if ($changeRow = $this->table()->fetchRow($where, $order)) {
                 // Backup `move` of current row
                 $backup = $this->move;
 
@@ -116,12 +116,12 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                                  $order = null, $dir = 'ASC', $offset = null) {
 
         // Basic info
-        $entityM = Misc::loadModel('Entity');
-        $fieldM = Misc::loadModel('Field');
+        $entityM = Indi::model('Entity');
+        $fieldM = Indi::model('Field');
         $entityR = $entityM->fetchRow('`table` = "' . $this->_table->_name . '"');
         $fieldR = $fieldR ? $fieldR : $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
-        $fieldColumnTypeR = $fieldR->getForeignRowByForeignKey('columnTypeId');
-        $relatedM = Entity::getInstance()->getModelById($fieldR->relation);
+        $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
+        $relatedM = Indi::model($fieldR->relation);
         $params = $fieldR->getParams();
 
         // Array for WHERE clauses
@@ -185,7 +185,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         if ($fieldR->satellite && $noSatellite != true) {
 
             // Get satellite field row
-            $satelliteR = $fieldR->getForeignRowByForeignKey('satellite');
+            $satelliteR = $fieldR->foreign('satellite');
 
             // If we have no satellite value passed as a param, we get it from related row property
             // or from satellite-field default value
@@ -233,10 +233,10 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                 if ($fieldR->alternative) {
 
                     // If we have satellite value passed as a param, we set it as value for $this->{$satelliteR->alias},
-                    // because getForeignRowByForeignKey() menthod use internal row property value, that store a foreign key,
+                    // because foreign() menthod use internal row property value, that store a foreign key,
                     // and do not use any external values
                     if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
-                    $rowLinkedToSatellite = $this->getForeignRowByForeignKey($satelliteR->alias);
+                    $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
 					if ($satelliteR->satellitealias) {
 						$where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $satelliteR->satellitealias . '`)';
 					} else {
@@ -264,7 +264,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
             // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
             } else if ($fieldR->dependency == 'e' && $satellite) {
-                $relatedM = $entityM->getModelById($satellite);
+                $relatedM = Indi::model($satellite);
             }
         }
 
@@ -277,7 +277,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
         // Set ORDER clause for combo data
         if (is_null($order)) {
-            if ($relatedM->fieldExists('move')) {
+            if ($relatedM->fields('move')) {
                 $order = 'move';
             } else {
                 $order = $titleColumn;
@@ -394,7 +394,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                 $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . implode(' AND ', $foundRowsWhere) : '';
 
                 // Get number of total found rows
-                $foundRows = $this->getTable()->getAdapter()->query(
+                $foundRows = Indi::db()->query(
                     'SELECT COUNT(`id`) FROM `' . $relatedM->info('name') . '`' . $foundRowsWhere
                 )->fetchColumn(0);
 
@@ -456,7 +456,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
                 // If user try to get results of upper page, empty result set should be returned
                 if ($page < 0) {
-                    $dataRs = $this->getTable()->createRowset(array());
+                    $dataRs = $this->table()->createRowset(array());
 
                 // Increment page, as at stage of combo initialization passed page number was 0,
                 // and after first try to get lower page results passed page number is 1, that actually
@@ -488,7 +488,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                     ');
 
             // Get group field related entity model
-            $groupByFieldEntityM = $entityM->getModelById($groupByFieldR->relation);
+            $groupByFieldEntityM = Indi::model($groupByFieldR->relation);
 
             // Get titles for optgroups
             $groupByOptions = array();
@@ -593,13 +593,82 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
             return $this->$colorField;
         }
     }
-	/**
-	 * Gets the foreign row by foreign key name, using it's current value
-	 *
-	 * @param $key The name of foreign key
-	 * @return *_Row object
-	 */
-	public function foreign($key){
-		return $this->getForeignRowByForeignKey($key);
+
+    /**
+     * Gets the foreign row by foreign key name, using it's current value
+     *
+     * @param string $key The  name of foreign key
+     * @param bool $refresh If specified, cached foreign row will be refreshed
+     * @return Indi_Db_Table_Row|Indi_Db_Table_Rowset|null
+     * @throws Exception
+     */
+    public function foreign($key, $refresh = false){
+
+        // If foreign row, got by foreign key, was got already got earlier, and no refresh should be done - return it
+		if (array_key_exists($key, $this->_foreign) && !$refresh) {
+            return $this->_foreign[$key];
+
+        // Else
+        } else {
+
+            // If field, representing foreign key - is exist within current entity
+            if ($fieldR = $this->table()->fields($key)) {
+
+                // If field do not store foreign keys - throw exception
+                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e')) {
+                    throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
+
+                // Else if field is able to store single key, or able to store multiple, but current key's value isn't empty
+                } else if ($fieldR->storeRelationAbility == 'one' || strlen($this->$key)) {
+
+                    // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
+                    // then model is a value of satellite field. Otherwise model is field's `relation` property
+                    $model = $fieldR->dependency == 'e'
+                        ? $this->{$this->foreign('satellite')->alias}
+                        : $fieldR->relation;
+
+                    // Determine a fetch method
+                    $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
+
+                    // Declare array for WHERE clause
+                    $where = array();
+
+                    // If field is related to enumset entity, we should append an additional WHERE clause,
+                    // that will outline the `fieldId` value, because in this case current row store aliases
+                    // of rows from `enumset` table instead of ids, and aliases are not unique within that table.
+                    if (Indi::model($fieldR->relation)->_name == 'enumset') {
+                        $where[] = '`fieldId` = "' . $fieldR->id . '"';
+                        $col = 'alias';
+                    } else {
+                        $col = 'id';
+                    }
+
+                    // Finish building WHERE clause
+                    $where[] = '`' . $col . '` ' .
+                        ($fieldR->storeRelationAbility == 'many'
+                            ? 'IN(' . $this->$key . ')'
+                            : '= "' . $this->$key . '"');
+
+                    // Fetch foreign row/rows
+                    $foreign = Indi::model($model)->{'fetch' . $methodType}($where);
+                }
+
+            // Else there is no such a field within current entity - throw an exception
+            } else {
+                throw new Exception('Field with alias `' . $key . '` does not exists within entity with table name `' . $this->_table .'`');
+            }
+
+            // Save foreign row within a current row under key name, and return it
+            return $this->_foreign[$key] = $foreign;
+        }
 	}
+
+    /**
+     * Return a model, that current row is related to
+     *
+     * @return mixed
+     */
+    public function table() {
+        return Indi::model($this->_table);
+    }
 }

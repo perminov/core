@@ -36,26 +36,26 @@ class Indi_Uri {
         if ($params['module'] != 'admin') {
             $controllerClassName = ucfirst($params['section']) . 'Controller';
             if (!class_exists($controllerClassName)) {
-                $fsectionM = Misc::loadModel('Fsection');
+                $fsectionM = Indi::model('Fsection');
                 $fsectionA = $fsectionM->fetchAll('`alias` IN ("' . $params['section'] . '", "static")', 'FIND_IN_SET(`alias`, "' . $params['section'] . ',static")')->toArray();
                 if ($fsectionA[0]['alias'] == 'static') {
                     $where = array_merge(
                         array('`alias` IN ("' . $params['section'] . '", "404")', '`toggle` = "y"'),
                         $this->staticpageAdditionalWHERE
                     );
-                    $staticA = Misc::loadModel('Staticpage')->fetchAll($where, 'FIND_IN_SET(`alias`, "' . $params['section'] . ',404")')->toArray();
+                    $staticA = Indi::model('Staticpage')->fetchAll($where, 'FIND_IN_SET(`alias`, "' . $params['section'] . ',404")')->toArray();
                     $params['section'] = 'static';
                     $params['action'] = 'details';
                     $params['id'] = $staticA[0]['id'];
 				    if ($staticA[0]['alias'] == '404') {
 					    $notFound = true;
 				    }
-                } else if (!Misc::loadModel('Faction')->fetchRow('`alias` IN ("' . str_replace('"', '\"', $params['action']) . '")')) {
+                } else if (!Indi::model('Faction')->fetchRow('`alias` IN ("' . str_replace('"', '\"', $params['action']) . '")')) {
                     $where = array_merge(
                         array('`alias` IN ("404")', '`toggle` = "y"'),
                         $this->staticpageAdditionalWHERE
                     );
-                    $staticA = Misc::loadModel('Staticpage')->fetchAll($where, 'FIND_IN_SET(`alias`, "404")')->toArray();
+                    $staticA = Indi::model('Staticpage')->fetchAll($where, 'FIND_IN_SET(`alias`, "404")')->toArray();
                     $params['section'] = 'static';
                     $params['action'] = 'details';
                     $params['id'] = $staticA[0]['id'];
@@ -65,7 +65,7 @@ class Indi_Uri {
                 }
             }
         } else {
-            $sectionM = Misc::loadModel('Section');
+            $sectionM = Indi::model('Section');
             $sectionR = $sectionM->fetchRow('`alias` = "' . $params['section'] . '"');
             if ($sectionR) $sectionA = $sectionR->toArray();
         }
@@ -120,8 +120,7 @@ class Indi_Uri {
         }    
     }
 	public function setCookieDomain(){
-		$config = Indi::registry('config');
-		$domain = $config['general']->domain;
+		$domain = Indi::registry('config')->general->domain;
 		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
 	}
 
@@ -136,7 +135,7 @@ class Indi_Uri {
 		if ($first != 'admin') {
 			$this->setDbCacheUsageIfNeed();
 			$this->adjustUriIfSubdomain();
-			$GLOBALS['enableSeoUrls'] = current(Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "enableSeoUrls"')->fetch());
+			$GLOBALS['enableSeoUrls'] = current(Indi::db()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "enableSeoUrls"')->fetch());
             $GLOBALS['INITIAL_URI'] = $_SERVER['REQUEST_URI'];
             if ($GLOBALS['enableSeoUrls'] == 'true') {
                 $_SERVER['REQUEST_URI'] = $this->seo2sys($_SERVER['REQUEST_URI']);
@@ -145,12 +144,11 @@ class Indi_Uri {
 	}
 
 	public function adjustUriIfSubdomain(){
-		$config = Indi::registry('config');
-		$db = Indi_Db_Table::getDefaultAdapter();
+		$db = Indi::db();
 		$subdomains = $db->query('SELECT `fs`.`alias` FROM `subdomain` `sd`, `fsection` `fs` WHERE `sd`.`fsectionId` = `fs`.`id`')->fetchAll();
 		$subdomainsArray = array(); foreach ($subdomains as $sd) $subdomainsArray[] = $sd['alias'];
-		if ($_SERVER['HTTP_HOST'] != $config['general']->domain) {
-			$subdomain = str_replace('.'.$config['general']->domain, '',$_SERVER['HTTP_HOST']);
+		if ($_SERVER['HTTP_HOST'] != Indi::registry('config')->general->domain) {
+			$subdomain = str_replace('.'.Indi::registry('config')->general->domain, '',$_SERVER['HTTP_HOST']);
 			if (in_array($subdomain, $subdomainsArray)) {
 				$_SERVER['REQUEST_URI'] = '/' . $subdomain . $_SERVER['REQUEST_URI'];
 			}
@@ -160,13 +158,13 @@ class Indi_Uri {
 	}
 
 	public function setDbCacheUsageIfNeed(){
-		$useCache = Indi_Db_Table::getDefaultAdapter()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "useCache"')->fetch();
+		$useCache = Indi::db()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "useCache"')->fetch();
 		Indi_Db::$useCache = !(!is_array($useCache) || current($useCache) != 'true');
 		if (Indi_Db::$useCache) Indi_Cache::load();
 	}
 
 	public function seo2sys($seo){
-		$db = Indi_Db_Table::getDefaultAdapter();
+		$db = Indi::db();
 		$url = parse_url($seo);
 		$aim = explode('/', trim($url['path'], '/'));
 		if ($aim[count($aim)-1] == 'noseo') return $seo;
@@ -234,7 +232,7 @@ class Indi_Uri {
 				$sys[] = $parts[0]['alias'] ? $parts[0]['alias'] : ($parts[0]['rename'] ? $parts[0]['originalAlias'] : $aim[1]);
 				$alias = $parts[0]['alias'] ? $aim[1] : $aim[2];
 				for ($i = 0; $i < count($parts); $i++) {
-					if (!in_array($parts[$i]['entityId'], array_keys($models))) $models[$parts[$i]['entityId']] = Entity::getInstance()->getModelById($parts[$i]['entityId']);
+					if (!in_array($parts[$i]['entityId'], array_keys($models))) $models[$parts[$i]['entityId']] = Indi::model($parts[$i]['entityId']);
 				}
 				$where = '';
 				$lastId = 0;
@@ -278,7 +276,7 @@ class Indi_Uri {
 	public static function sys2seo($sys, $cr = false, $reg = ''){
 		preg_match_all($reg ? $reg: '/(href|url)="([0-9a-z\/#]+)"/', $sys, $matches);
 		$uri = $matches[2];
-		$db = Indi_Db_Table::getDefaultAdapter();
+		$db = Indi::db();
 		$furi = array();
 		for ($i = 0; $i < count($uri); $i++) if (count(explode('/', trim($uri[$i], '/'))) > 1) $furi[] = $uri[$i]; $uri = $furi; $furi = array();
 
@@ -347,7 +345,7 @@ class Indi_Uri {
 			}
 			$models = array();
 			for ($i = count($r[$concat1])-1; $i >= 0; $i--) {
-				if (!in_array($r[$concat1][$i]['entityId'], array_keys($models))) $models[$r[$concat1][$i]['entityId']] = Entity::getInstance()->getModelById($r[$concat1][$i]['entityId']);
+				if (!in_array($r[$concat1][$i]['entityId'], array_keys($models))) $models[$r[$concat1][$i]['entityId']] = Indi::model($r[$concat1][$i]['entityId']);
 			}
 			$continue = false;
 			for ($i = count($r[$concat1])-1; $i >= 0; $i--) {
@@ -392,7 +390,7 @@ class Indi_Uri {
 	public static function contextRows($sys){
 		preg_match_all('/[0-9a-z\/#]+/', $sys, $matches);
 		$uri = $matches[0][0];
-		$db = Indi_Db_Table::getDefaultAdapter();
+		$db = Indi::db();
 		$furi = ''; if (count(explode('/', trim($uri, '/'))) > 1) $furi = $uri; $uri = $furi; $furi = '';
 		list($empty, $section, $action, $prefix) = explode('/', $uri);
 		$group = '/' . $section . '/' . $action . '/';
@@ -441,7 +439,7 @@ class Indi_Uri {
 		list($empty, $section, $action, $prefix, $id) = explode('/', $search);
 		$models = array();
 		for ($i = count($r)-1; $i >= 0; $i--) {
-			if (!in_array($r[$i]['entityId'], array_keys($models))) $models[$r[$i]['entityId']] = Entity::getInstance()->getModelById($r[$i]['entityId']);
+			if (!in_array($r[$i]['entityId'], array_keys($models))) $models[$r[$i]['entityId']] = Indi::model($r[$i]['entityId']);
 		}
 		$continue = false;
 		$contextRows = array();

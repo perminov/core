@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
     }
 
     public function getField($name, $tableName) {
-        $pseudoFieldR = Misc::loadModel('Field')->createRow();
+        $pseudoFieldR = Indi::model('Field')->createRow();
         $pseudoFieldR->entityId = $this->view->trail->getItem()->section->entityId;
         $pseudoFieldR->alias = $name;
         $pseudoFieldR->storeRelationAbility = 'one';
@@ -29,11 +29,11 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->satellite = 0;
         $pseudoFieldR->filter = $this->view->getScope('WHERE');
 
-        return $pseudoFieldR;//Misc::loadModel('Field')->fetchRow('`id` = "19"');
+        return $pseudoFieldR;//Indi::model('Field')->fetchRow('`id` = "19"');
     }
 
     public static function createPseudoFieldR($name, $entityId, $filter) {
-        $pseudoFieldR = Misc::loadModel('Field')->createRow();
+        $pseudoFieldR = Indi::model('Field')->createRow();
         $pseudoFieldR->entityId = $entityId;
         $pseudoFieldR->alias = $name;
         $pseudoFieldR->storeRelationAbility = 'one';
@@ -48,7 +48,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
     }
 
     public function getRow(){
-        return $this->view->trail->getItem()->row;//Misc::loadModel('Section')->createRow();
+        return $this->view->trail->getItem()->row;//Indi::model('Section')->createRow();
     }
 
     /**

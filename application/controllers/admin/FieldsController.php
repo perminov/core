@@ -41,8 +41,8 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 			// get info about grid columns, that store relations, and their columns have SET and ENUM types
 			// we need this info because there will be another logic to get titles for them
 			// at first, get ids of 'columntypes' db table rows there was specified in 'type' column that they have SET or ENUM types
-			$columntype = Misc::loadModel('ColumnType');
-			$irregularColumnTypesIds = $columntype->getImplodedIds('`type` LIKE "ENUM%" OR `type` LIKE "SET%"', true);
+			$columntype = Indi::model('ColumnType');
+			$irregularColumnTypesIds = $columntype->fetchColumn('id', '`type` IN ("ENUM", "SET")');
 
 			$irregularGridFieldsThatStoreRelation = array();
 			foreach($gridFields as $gridField){
@@ -66,21 +66,20 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 					if (in_array($fieldAlias, $irregularGridFieldsAliasesThatStoreRelation)) {
 						$condition  = '`alias` IN ("' . implode('","', $foreignKeyValues) . '")';
 						$condition .= ' AND `fieldId` = "' . $irregularGridFieldsThatStoreRelation[$fieldAlias] . '"';
-						$foreignRowset = Entity::getInstance()->getModelById($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
+						$foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
 						foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->getTitle();
 
 					// get title for other columns that store relations
 					} else {
-						$foreignRowset = Entity::getInstance()->getModelById($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
+						$foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
 						foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->id] = $foreignRow->getTitle();
 					}
 				}
 			}
 			// get info about default values and related entities
 			for ($i = 0; $i < count($data); $i++) {
-				$model = Entity::getInstance()->getModelById($data[$i]['relation']);
 				if ($data[$i]['defaultValue'] || $data[$i]['relation'] == 6) {
-					if ($model) {
+					if ($data[$i]['relation'] && $model = Indi::model($data[$i]['relation'])) {
 						if ($data[$i]['relation'] != 6) {
 							if ($foreignRow = $model->fetchRow('`id` = "' . $data[$i]['defaultValue'] . '"')){
 								$data[$i]['defaultValue'] = '"' . $foreignRow->getTitle() . '"';
@@ -104,9 +103,9 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 				} else {
 					$data[$i]['defaultValue'] = '"' . $data[$i]['defaultValue'] . '"';
 				}
-				if (!$model && !$titles['relation'][$data[$i]['relation']]) {
+				if (!$data[$i]['relation'] && !$titles['relation'][$data[$i]['relation']]) {
 					if($data[$i]['satellite']) {
-						if (!$fieldModel) $fieldModel = Misc::loadModel('Field');
+						if (!$fieldModel) $fieldModel = Indi::model('Field');
 						$data[$i]['relation'] = '<font color="#aaaaaa">Зависит от поля "' . $fieldModel->fetchRow('`id` = "' . $data[$i]['satellite'] . '"')->getTitle() . '"</font>';
 					} else {
 						$data[$i]['relation'] = '<font color="#aaaaaa">Не будут</font>';

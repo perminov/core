@@ -122,16 +122,15 @@ function $(id){
 		if (!$this->params['id'] || !$this->params['field']) {
 			die('Ошибка входных данных');
 		} else {
-			$fieldR = Misc::loadModel('Field')->fetchRow('`id` = "' . $this->params['field'] . '"');
+			$fieldR = Indi::model('Field')->fetchRow('`id` = "' . $this->params['field'] . '"');
 			$params = $fieldR->getParams();
 			if ($fieldR) {
-				$entityR = Misc::loadModel('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"');
+				$entityR = Indi::model('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"');
 				if ($entityR) {
-					$itemR = Entity::getModelById($entityR->id)->fetchRow('`id` = "' . $this->params['id'] . '"');
+					$itemR = Indi::model($entityR->id)->fetchRow('`id` = "' . $this->params['id'] . '"');
 					if ($itemR) {
 						$pattern  = $itemR->id . ($fieldR->alias ? '_' . $fieldR->alias : '') . '.*';
-						$config = Indi::registry('config');
-						$relative = '/' . trim($config['upload']->uploadPath, '/') . '/' . $entityR->table  . '/';
+						$relative = '/' . trim(Indi::registry('config')->upload->uploadPath, '/') . '/' . $entityR->table  . '/';
 						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . $relative;
 						$file = glob($absolute . $pattern); $file = $file[0];
 						$info = pathinfo($file);
@@ -152,10 +151,10 @@ function $(id){
 
     public function indexesAction(){
         if($_SESSION['admin']['profileId'] == '1') {
-            $fieldRs = Misc::loadModel('Field')->fetchAll('`storeRelationAbility` IN ("one","many")', '`entityId`, `move`');
+            $fieldRs = Indi::model('Field')->fetchAll('`storeRelationAbility` IN ("one","many")', '`entityId`, `move`');
             foreach ($fieldRs as $fieldR) $fieldEA[$fieldR->entityId][] = $fieldR;
             foreach ($fieldEA as $entityId => $fieldA) {
-                $entity = $fieldA[0]->getForeignRowByForeignKey('entityId');
+                $entity = $fieldA[0]->foreign('entityId');
                 $aliases = array(); foreach ($fieldA as $fieldR) $aliases[] = $fieldR->alias;
                 d('Таблица: ' . $entity->table);
                 $indexesA = $this->db->query('SHOW INDEX FROM `' . $entity->table . '` WHERE FIND_IN_SET(`Column_name`, "' . implode(',', $aliases) . '")')->fetchAll();
@@ -176,10 +175,10 @@ function $(id){
             d('FULLTEXT индексы');
             $fieldEA = array();
             $sql = array();
-            $fieldRs = Misc::loadModel('Field')->fetchAll('`columnTypeId` IN ("4")', '`entityId`, `move`');
+            $fieldRs = Indi::model('Field')->fetchAll('`columnTypeId` IN ("4")', '`entityId`, `move`');
             foreach ($fieldRs as $fieldR) $fieldEA[$fieldR->entityId][] = $fieldR;
             foreach ($fieldEA as $entityId => $fieldA) {
-                $entity = $fieldA[0]->getForeignRowByForeignKey('entityId');
+                $entity = $fieldA[0]->foreign('entityId');
                 $aliases = array(); foreach ($fieldA as $fieldR) $aliases[] = $fieldR->alias;
                 d('Таблица: ' . $entity->table);
                 $indexesA = $this->db->query('SHOW INDEX FROM `' . $entity->table . '` WHERE FIND_IN_SET(`Column_name`, "' . implode(',', $aliases) . '") AND `Index_type` = "FULLTEXT"')->fetchAll();
@@ -202,14 +201,14 @@ function $(id){
 
     public function defaultsAction(){
         if($_SESSION['admin']['profileId'] == '1') {
-            $columnType = Misc::loadModel('ColumnType');
-            $fieldRs = Misc::loadModel('Field')->fetchAll(null, '`entityId`, `move`');
+            $columnType = Indi::model('ColumnType');
+            $fieldRs = Indi::model('Field')->fetchAll(null, '`entityId`, `move`');
             $fieldRs->setForeignRowsByForeignKeys('columnTypeId');
             $update = array();
             $alter = array();
             foreach ($fieldRs as $fieldR) $fieldEA[$fieldR->entityId][] = $fieldR;
             foreach ($fieldEA as $entityId => $fieldA) {
-                $entity = $fieldA[0]->getForeignRowByForeignKey('entityId');
+                $entity = $fieldA[0]->foreign('entityId');
                 $aliases = array(); foreach ($fieldA as $fieldR) $aliases[] = $fieldR->alias;
                 $columns = $this->db->query('SHOW COLUMNS FROM `' . $entity->table . '` WHERE `Field` IN ("' . implode('","', $aliases) . '") AND `Type` NOT LIKE "%TEXT%" AND ISNULL(`Default`)')->fetchAll();
                 $should = array();
@@ -291,40 +290,40 @@ function $(id){
         }
      }
     public function sAction(){
-//        $user = Misc::loadModel('User')->fetchRow('`id`="81"');
+//        $user = Indi::model('User')->fetchRow('`id`="81"');
 //        $user->email = '3334';
-//        $user = Misc::loadModel('User')->createRow();
+//        $user = Indi::model('User')->createRow();
 //        $user->id = '123';
 //        d($user);
 //        d($user->save());
-//        $c = Misc::loadModel('Fsection')->fetchRow('`alias` = "courses"');
+//        $c = Indi::model('Fsection')->fetchRow('`alias` = "courses"');
 //        d($c);
     }
 
     public function updateAction() {
-        /*if($price = Misc::loadModel('Element')->fetchRow('`alias` = "price"')) $price->delete();
+        /*if($price = Indi::model('Element')->fetchRow('`alias` = "price"')) $price->delete();
 
-        $u = Misc::loadModel('Element')->fetchRow('`alias` = "string"');
+        $u = Indi::model('Element')->fetchRow('`alias` = "string"');
         $u->title = 'Строка';
         $u->save();
 
-        $u = Misc::loadModel('Element')->fetchRow('`alias` = "textarea"');
+        $u = Indi::model('Element')->fetchRow('`alias` = "textarea"');
         $u->title = 'Текст';
         $u->save();
 
-        $u = Misc::loadModel('Element')->fetchRow('`alias` = "radio"');
+        $u = Indi::model('Element')->fetchRow('`alias` = "radio"');
         $u->title = 'Радио-кнопки';
         $u->save();
 
-        $u = Misc::loadModel('Element')->fetchRow('`alias` = "multicheck"');
+        $u = Indi::model('Element')->fetchRow('`alias` = "multicheck"');
         $u->title = 'Чекбоксы';
         $u->save();
 
-        $u = Misc::loadModel('Element')->fetchRow('`alias` = "color"');
+        $u = Indi::model('Element')->fetchRow('`alias` = "color"');
         $u->title = 'Цвет';
         $u->save();
 
-        $u = Misc::loadModel('Element')->fetchRow('`alias` = "upload"');
+        $u = Indi::model('Element')->fetchRow('`alias` = "upload"');
         $u->title = 'Файл';
         $u->save();
 
@@ -351,8 +350,8 @@ function $(id){
         $this->db->query('ALTER TABLE `action` DROP `condition`');
         $this->db->query('ALTER TABLE `action` DROP `display`');
 
-        $fieldR = Misc::loadModel('Field')->createRow();
-        $fieldR->entityId = Misc::loadModel('Entity')->fetchRow('`table` = "action"')->id;
+        $fieldR = Indi::model('Field')->createRow();
+        $fieldR->entityId = Indi::model('Entity')->fetchRow('`table` = "action"')->id;
         $fieldR->title = 'Отображать в панели действий грида';
         $fieldR->alias = 'display';
         $fieldR->elementId = 9;
@@ -361,11 +360,11 @@ function $(id){
         $fieldR->save();
 
         $this->db->query('UPDATE `action` SET `display` = "0" WHERE FIND_IN_SET(`alias`, "index,save")');
-        $fieldR = Misc::loadModel('Field')->fetchRow('`alias` = "javascript" AND `entityId` = "' . Misc::loadModel('Entity')->fetchRow('`table` = "action"')->id . '"');
+        $fieldR = Indi::model('Field')->fetchRow('`alias` = "javascript" AND `entityId` = "' . Indi::model('Entity')->fetchRow('`table` = "action"')->id . '"');
         $fieldR->defaultValue = 'loadContent(grid.indi.href + this.actionAlias + "/id/" + row.id + "/");';
         $fieldR->save();
 
-        $actionR = Misc::loadModel('Action')->fetchRow('`alias` = "delete"');
+        $actionR = Indi::model('Action')->fetchRow('`alias` = "delete"');
         $actionR->javascript = 'var actionAlias = this.actionAlias;
 Ext.MessageBox.show({
   title:grid.indi.msgbox.confirm.title,

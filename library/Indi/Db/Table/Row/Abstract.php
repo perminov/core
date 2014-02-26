@@ -29,6 +29,21 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     protected $_compiled = array();
 
     /**
+     * Temporary data, used for assigning some values to the current row object under some keys,
+     * but these key => value pairs will be never involved at SQL INSERT or UPDATE query executions
+     *
+     * @var array
+     */
+    protected $_temporary = array();
+
+    /**
+     * Rows, pulled for current row's foreign keys
+     *
+     * @var array
+     */
+    protected $_foreign = array();
+
+    /**
      * Object of type Indi_Db_Table_Abstract or some of extended class
      *
      * @var
@@ -53,7 +68,7 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         $this->_system = is_array($config['system']) ? $config['system'] : array();
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
-        foreach ($this->_table->getEvalFields() as $evalField) {
+        foreach ($this->table()->getEvalFields() as $evalField) {
             Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::$cmpOut;
         }
     }
@@ -80,7 +95,13 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         if ($columnName == 'title' && !$this->__isset($columnName)) {
             return $this->__isset('_title') ? $this->_title : 'No title';
         }
-        return array_key_exists($columnName, $this->_modified) ? $this->_modified[$columnName] : $this->_original[$columnName];
+
+        // We trying to find the key's ($columnName) value at first in $this->_modified array,
+        // then in $this->_original array, and then in $this->_temporary array, and return
+        // once value was found
+        if (array_key_exists($columnName, $this->_modified)) return $this->_modified[$columnName];
+        else if (array_key_exists($columnName, $this->_original)) return $this->_original[$columnName];
+        else if ($this->_temporary[$columnName]) return $this->_temporary[$columnName];
     }
 
     /**
@@ -98,7 +119,14 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
             $value = Misc::rgbPrependHue($value);
         }
 
-        if ($this->_original[$columnName] !== $value) $this->_modified[$columnName] = $value;
+        // We setup a value in a $this->_modified array only if this value is not equal to value, already
+        // existing in $this->_original array under same key ($columnName), and only if $columnName is
+        // exists as one of keys within $this->_original array
+        if ($this->_original[$columnName] !== $value && array_key_exists($columnName, $this->_original))
+            $this->_modified[$columnName] = $value;
+
+        // Otherwise we assign this key => value pair into a $this->_temporary array
+        else $this->_temporary[$columnName] = $value;
     }
 
     /**
@@ -112,11 +140,13 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     public function toArray($type = 'current', $deep = true)
     {
         if ($type == 'current') {
-            $array = (array) array_merge($this->_original, $this->_modified, $this->_compiled);
+            $array = (array) array_merge($this->_original, $this->_modified, $this->_compiled, $this->_temporary);
         } else if ($type == 'original') {
             $array = (array) $this->_original;
         } else if ($type == 'modified') {
             $array = (array) $this->_modified;
+        } else if ($type == 'temporary') {
+            $array = (array) $this->_temporary;
         }
 
         if ($deep) {
@@ -138,13 +168,13 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      */
     public function save(){
         if ($this->_original['id']) {
-			if ($affected = $this->_table->update($this->_modified, '`id` = "' . $this->_original['id'] . '"')) {
+			if ($affected = $this->table()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"')) {
 				$this->_original = (array) array_merge($this->_original, $this->_modified);
 				$this->_modified = array();
 			}
             return $affected;
         } else {
-			$this->_original['id'] = $this->_table->insert($this->_modified);
+			$this->_original['id'] = $this->table()->insert($this->_modified);
 			$this->_original = (array) array_merge($this->_original, $this->_modified);
 			$this->_modified = array();
             return $this->_original['id'];
@@ -158,16 +188,6 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      */
     public function delete() {
         return $this->_table->delete('`id` = "' . $this->_original['id'] . '"');
-    }
-
-    /**
-     * Returns the table object, or null if this is disconnected row
-     *
-     * @return Indi_Db_Table_Abstract|null
-     */
-    public function getTable()
-    {
-        return $this->_table;
     }
 
     /**

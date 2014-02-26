@@ -28,9 +28,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
     public function move($direction, $where = null) {
         // Get the scope of rows to move within
         if ($this->trail->getItem()->section->parentSectionConnector) {
-            $within = $this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+            $within = $this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
         } else if ($this->trail->getItem(1)->row){
-            $within = $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id';
+            $within = $this->trail->getItem(1)->section->foreign('entityId')->table . 'Id';
         }
         // Move
         $this->row->move($direction, $within, $this->trail->getItem()->section->filter);
@@ -49,6 +49,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         if ($redirect) $this->redirectToIndex();
     }
 
+    /**
+     * Provide form action
+     *
+     */
     public function formAction() {
         if ($this->params['combo']) {
 
@@ -137,7 +141,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             if ($comboDataRs->foundRows) $options['found'] = $comboDataRs->foundRows;
 
             // Setup tree flag
-            if ($comboDataRs->getTable()->treeColumn) $options['tree'] = true;
+            if ($comboDataRs->table()->treeColumn) $options['tree'] = true;
 
             // Setup groups for options
             if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
@@ -258,15 +262,15 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // Owner control. There can be a situation when some cms users are not stored in 'admin' db table - these users
         // called 'alternates'. Example: we have 'Experts' cms section (rows are fetched from 'expert' db table) and
         // public (mean non-cms) area logic allow any visitor to ask a questions to certain expert. So, if we want to
-        // provide and ability for experts to answer these questions, and if we do not want to create a number of special
+        // provide an ability for experts to answer these questions, and if we do not want to create a number of special
         // web-pages in public area that will handle all related things, we can provide a cms access for experts instead.
         // So we can create a 'Questions' section within cms, and if `question` table will contain `expertId` column
         // (it will contain - we will create it for that purpose) - the only questions, addressed to curently logged-in
         // expert will be available for view and answer.
-        if ($this->admin['alternate'] && $this->trail->getItem()->model->fieldExists($this->admin['alternate'] . 'Id'))
+        if ($this->admin['alternate'] && $this->trail->getItem()->model->fields($this->admin['alternate'] . 'Id'))
             $where[] =  '`' . $this->admin['alternate'] . 'Id` = "' . $this->admin['id'] . '"';
 
-        // Adjust primary WHERE clauses stack
+        // Adjust primary WHERE clauses stack - apply some custom adjustments
         $where = $this->adjustPrimaryWHERE($where);
 
         // Get a string version of WHERE stack
@@ -295,12 +299,12 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // as 'countryId', and we need it to have some another name - so in that cases we use parentSectionConnector
         // logic.
         if ($this->trail->getItem()->section->parentSectionConnector) {
-            $parentSectionConnectorAlias =$this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+            $parentSectionConnectorAlias =$this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
             $clause = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->id . '"';
 
         // Otherwise we use common, most used logic (e.g. SELECT * FROM `city` WHERE `countryId` = "<country id>")
         } else {
-            $clause = '`' . $this->trail->getItem(1)->section->getForeignRowByForeignKey('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
+            $clause = '`' . $this->trail->getItem(1)->section->foreign('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
         }
 
         // Return clause
@@ -388,7 +392,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 } else if ($fieldR->relation == 6) {
 
                     // Find `enumset` keys (mean `alias`-es), that have `title`-s, that match keyword
-                    $relatedRs = Misc::loadModel('Enumset')->fetchAll(
+                    $relatedRs = Indi::model('Enumset')->fetchAll(
                         '`fieldId` = "' . $fieldR->id . '" AND `title` LIKE "%' . $keyword . '%"'
                     );
                     $idA = array(); foreach ($relatedRs as $relatedR) $idA[] = $relatedR->alias;
@@ -405,7 +409,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     if (preg_match('/c|u/',$fieldR->dependency)) {
 
                         // Load related model
-                        $relatedM = Entity::getInstance()->getModelById($fieldR->relation);
+                        $relatedM = Indi::model($fieldR->relation);
 
                         // Find matched foreign rows, collect their ids, and add a clause
                         $relatedRs = $relatedM->fetchAll('`title` LIKE "%' . $keyword . '%"');
@@ -603,7 +607,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         $excelA[$found->alias]['table'] = $found->relation;
                     }
 
-                    // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
+                // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
                 } else if ($found->storeRelationAbility == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
@@ -1438,5 +1442,29 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save('php://output');
         die();
+    }
+
+    public function rowset2Store() {
+        /**
+         * Что должно хэндлить
+         *
+         * 1. Внешние ключи
+         *
+         *      $this->rowset->foreign('fkId,fkId')
+         *
+         *    1. Обычные
+         *       1. Single
+         *       2. Multiple
+         *    2. Enumset
+         *       1. Single
+         *       2. Multiple
+         *    3. Переменная сущность
+         *
+         * 2. Отступы для деревьев
+         * 3. Boolean - столбцы
+         * 4. Колор-боксы для значений в формате hue#rrggbb
+         * 5. Цены
+         * 6. Дата и время, с применением формата
+         */
     }
 }

@@ -346,36 +346,7 @@ class Misc
         }
         return $number;
     }
-    
-	public static function loadModel($modelClassName){
-		// if file in which model is declared doesn't exists, so there will be performed emulation of it initialization
-		$systemModelsDir1 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/www/application/models/';
-		$systemModelsDir2 = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/core/application/models/';
-		$modelFileName = $modelClassName . '.php';
-		$modelFilePath1 = $systemModelsDir1 . $modelFileName;
-		$modelFilePath2 = $systemModelsDir2 . $modelFileName;
-//		if ($modelClassName == 'Hotel') d(debug_backtrace());
-		if (!in_array($modelClassName, get_declared_classes())){
-			if (file_exists($modelFilePath1)) {
-				if (!class_exists($modelClassName))
-					require($modelFilePath1);
-			} else if (file_exists($modelFilePath2)) {
-				if (!class_exists($modelClassName))
-					require($modelFilePath2);
-			} else {
 
-				$entityRow = Entity::getInstance()->fetchRow('`table` = "' . lcfirst($modelClassName) . '"');
-				if ($entityRow) {
-					$extends = $entityRow->extends ? $entityRow->extends : 'Indi_Db_Table';
-					eval('class ' . $modelClassName . ' extends ' . $extends . '{}');
-				} else {
-					throw new Exception('Model is not in entities table');
-				}
-			}
-		}
-		$model = new $modelClassName();
-		return $model;
-	}
 	public function usubstr($string, $length, $addTripleDot = true){
 		if (mb_strlen($string, 'utf-8') > $length && $addTripleDot) $dots = '...';
 		$string = mb_substr($string, 0, $length, 'utf-8') . $dots;
@@ -409,61 +380,7 @@ class Misc
 	    }
 	    return $sequence;
 	}	
-	public function addStyleForTables($html) {
-		$tableStart = stripos($html, '<table', $tableEnd);
-		$sa = new StripAttributes();
-		while ($tableStart != false) {
-			$tableEnd = stripos($html, '</table>', $tableStart);
-			$table = substr($html, $tableStart, $tableEnd + 8 - $tableStart);
-			$oldTables[] = $table;
-			$tr = array();
-			$trStart = stripos($table, '<tr', 0);
-			while ($trStart != false) {
-				$trEnd = stripos($table, '</tr>', $trStart);
-				$tr[] = substr($table, $trStart, $trEnd + 5 - $trStart);
-				$trStart = stripos($table, '<tr', $trEnd);
-			}
-			$newTable = array();
-			$newTable[] = '<table>';
-			for($i = 0; $i < count($tr); $i++){
-				if($i == 0) {
-					$newTable[] = '<thead>';
-					$newTable[] = $sa->strip(strip_tags(str_ireplace(array('<td', '</td>'), array('<th', '</th>'), $tr[$i]), '<tr>,<th>'), 'class,colspan');
-					$newTable[] = '</thead>';
-				} else {
-					if ($i == 1) $newTable[] = '<tbody>';
-					$newTable[] = $sa->strip(strip_tags(str_ireplace(array('<tr','</p>'),array('<tr class="' . ($i%2?'odd':'even') . '"','</p><br>'), $tr[$i]),'<tr><td><br>'), 'class,colspan');
-					if ($i == count($tr) - 1)  $newTable[] = '</tbody>';
-				}
-			}
-			$newTable[] = '</table>';
-			$newTable = implode("\n", $newTable);
-			$newTables[] = $newTable;
-			$tableStart = stripos($html, '<table', $tableEnd);
-		}
-		$html = str_ireplace($oldTables, $newTables, $html);
-		return $html;
-	}
-	public function placeA($place, $singleTitle = true, $action = 'details', $urlAddition = '', $customTitle = '', $urlOnly = false){
-		$keys = array('c' => 'cityId', 's' => 'subregionId', 'r' => 'regionId', 't' => 'countryId', 'd' => 'directionId');
-		$urls = array('c' => 'cities', 's' => 'subregions', 'r' => 'regions', 't' => 'countries', 'd' => 'directions');
-		$titles = array();
-		if (is_object($place)) $place = $place->toArray();
-		foreach ($keys as $type => $key) {
-			if ($place['type'] == $type || $start) {
-				if (!$start) $url = '/' . $urls[$type] . '/' . $action . '/id/' . $place[$key] . '/' . $urlAddition;
-				if ($customTitle) {
-					$titles[] = $customTitle;
-				} else {
-					if (is_object($place['foreign'][$key])) $place['foreign'][$key] = $place['foreign'][$key]->toArray();
-					if (!in_array($place['foreign'][$key]['title'], $titles) && $place['foreign'][$key]['title']) $titles[] = $place['foreign'][$key]['title'];
-					if (!$singleTitle) $start = true;
-				}
-			}
-		}
-		return $urlOnly ? $url : '<a href="' . $url . '">' . implode(', ', $titles) . '</a>';
-	}
-	function ucfirstUtf8($string, $e ='utf-8') { 
+	function ucfirstUtf8($string, $e ='utf-8') {
 		if (function_exists('mb_strtoupper') && function_exists('mb_substr') && !empty($string)) { 
 			$string = mb_strtolower($string, $e); 
 			$upper = mb_strtoupper($string, $e); 
@@ -577,30 +494,13 @@ class Misc
 	public static function query($sql) {
 		if (self::$db == null) {
 			$config = parse_ini_file('application/config.ini', true);
-			self::$db = mysql_connect($config['db']['host'], $config['db']['username'], $config['db']['password']) or die(mysql_error());
-			mysql_select_db($config['db']['dbname'], self::$db) or die(mysql_error());
+			self::$db = mysql_connect(Indi::registry('config')->db['host'], Indi::registry('config')->db['username'], Indi::registry('config')->db['password']) or die(mysql_error());
+			mysql_select_db(Indi::registry('config')->db['dbname'], self::$db) or die(mysql_error());
 		}
 		$res =  mysql_query($sql) or die(mysql_error() . ':' . $sql);
 		return $res;
 	}
-	public function ini($file) {
-		$config = array();
-		if (is_file($file)) {
-			$ini = file_get_contents($file);
-			preg_match_all('/\[([^\]]+)\]\s([^\[]+)/', $ini, $blocks);
-			for ($i = 0; $i < count($blocks[1]); $i++) {
-				$lines = explode("\n", trim($blocks[2][$i]));
-				for ($j = 0; $j < count($lines); $j++) {
-					preg_match('/([^\s]+)+\s*=\s*([^\s]+)/', $lines[$j], $params);
-					if ($params[1]) {
-						if (! is_object($config[$blocks[1][$i]])) $config[$blocks[1][$i]] = new stdClass();
-						$config[$blocks[1][$i]]->$params[1] = $params[2];
-					}
-				}
-			}
-			return $config;
-		}
-	}
+
     public static function ago($datetime, $postfix = 'назад')
     {
         $curr = time();

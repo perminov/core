@@ -87,7 +87,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
 
 			if (!$attribs['optionsOnly']) {
 				if ($field->satellite) {
-					$satelliteRow = $field->getForeignRowByForeignKey('satellite');
+					$satelliteRow = $field->foreign('satellite');
 					$satellite = $satelliteRow->alias;
 					$xhtml .= "<script>\$('#". $satellite ."').change(function(){\$.post('./json/1/', { field: '" . $name . "', satellite: \$('#". $satellite ."').attr('value') },   function(data) {     \$('#". $name ."').html(data);" . str_replace(array('"', "\n", "\r"), array('\"',"",""), $satelliteRow->javascript) . "},'html');}); \$('#". $satellite ."').change();</script>";
 				}

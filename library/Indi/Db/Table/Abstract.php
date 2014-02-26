@@ -8,13 +8,6 @@ abstract class Indi_Db_Table_Abstract {
     const ROWSET_CLASS     = 'rowsetClass';
 
     /**
-     * Default Indi_Db object.
-     *
-     * @var Indi_Db
-     */
-    protected static $_defaultDb;
-
-    /**
      * Store column name, which is used to detect parent-child relationship between
      * rows within rowset
      *
@@ -32,46 +25,64 @@ abstract class Indi_Db_Table_Abstract {
      *
      * @return void
      */
-    public function __construct() {
+    public function __construct($config = array()) {
 
         // Set db table name and db adapter
         $this->_name = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
-        $this->_db = self::$_defaultDb;
+
+        // Set fields
+        $this->_fields = is_array($config['fields']) ? $config['fields'] : array();
 
         // Detect tree column name
-        $treeColumnName = $this->info('name') . 'Id';
-        $this->treeColumn = $this->fieldExists($treeColumnName) ? $treeColumnName : '';
+        $treeColumnName = $this->_name . 'Id';
+        $this->treeColumn = $this->fields($treeColumnName) ? $treeColumnName : '';
     }
 
     /**
      * Fetches one row in an object of type Indi_Db_Table_Row,
      * or returns null if no row matches the specified criteria.
      *
-     * @param string|array $where  OPTIONAL An SQL WHERE clause.
-     * @param string|array $order  OPTIONAL An SQL ORDER clause.
-     * @return Indi_Db_Table_Row|null
+     * @param null|array|string $where
+     * @param null|array|string $order
+     * @param null|int $offset
+     * @return null|Indi_Db_Table_Row object
      */
-    public function fetchRow($where = null, $order = null, $offset = null)
-    {
+    public function fetchRow($where = null, $order = null, $offset = null) {
+        // Build WHERE and ORDER clauses
         if (is_array($where) && count($where)) $where = implode(' AND ', $where);
         if (is_array($order) && count($order)) $order = implode(', ', $order);
-        if ($data = self::$_defaultDb->query(
-            $sql = 'SELECT * FROM `' . $this->_name . '`' .
+
+        // Build query, fetch row and return it as an Indi_Db_Table_Row object
+        if ($data = Indi::db()->query(
+            'SELECT * FROM `' . $this->_name . '`' .
                 ($where ? ' WHERE ' . $where : '') .
                 ($order ? ' ORDER BY ' . $order : '') .
                 ($offset ? ' LIMIT ' . $offset . ',1' : '')
-        )->fetch()) {
+            )->fetch()) {
+
+            // Release memory
+            unset($where, $order, $offset);
+
+            // Prepare data for Indi_Db_Table_Row object construction
             $constructData = array(
-                'table'    => $this,
+                'table'    => $this->_name,
                 'original' => $data,
             );
-            $rowClass = $this->getRowClass();
-            if (!class_exists($rowClass)) {
+
+            // Release memory
+            unset($data);
+
+            // Load class if need
+            if (!class_exists($this->_rowClass)) {
                 require_once 'Indi/Loader.php';
-                Indi_Loader::loadClass($rowClass);
+                Indi_Loader::loadClass($this->_rowClass);
             }
-            return new $rowClass($constructData);
+
+            // Construct and return Indi_Db_Table_Row object
+            return new $this->_rowClass($constructData);
         }
+
+        // NULL return
         return null;
     }
 
@@ -82,31 +93,44 @@ abstract class Indi_Db_Table_Abstract {
      * @return Indi_Db_Table_Row object
      */
     public function createRow($input = array()) {
-        $original['id'] = null;
-        foreach ($this->info('cols') as $col) {
-            $original[$col] = null;
-            if (isset($input[$col])) $modified[$col] = $input[$col];
-        }
+
+        // Prepare data for construction
         $constructData = array(
-            'table'   => $this,
-            'original'     => $original,
-            'modified' => is_array($modified) ? $modified : array()
+            'table'   => $this->_name,
+            'original'     => is_array($input['original']) ? $input['original'] : array(),
+            'modified' => is_array($input['modified']) ? $input['modified'] : array()
         );
+
+        // Get row class name
         $rowClass = $this->getRowClass();
+
+        // Load row class if need
         if (!class_exists($rowClass)) {
             require_once 'Indi/Loader.php';
             Indi_Loader::loadClass($rowClass);
         }
+
+        // Construct and return Indi_Db_Table_Row object
         return new $rowClass($constructData);
     }
 
+    /**
+     * Create Indi_Db_Table_Rowset object with some data, if passed
+     *
+     * @param array $input
+     * @return mixed
+     */
     public function createRowset($input = array()) {
+
+        // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this,
-            'data'     => $input['data'],
+            'data'     => is_array($input['data']) ? $input['data'] : array(),
             'rowClass' => $this->_rowClass,
-            'foundRows'=> isset($input['foundRows']) ? $input['foundRows'] : count($input['data'])
+            'foundRows'=> isset($input['foundRows']) ? $input['foundRows'] : (is_array($input['data']) ? count($input['data']) : 0)
         );
+
+        // Construct and return Indi_Db_Table_Rowset object
         return new $this->_rowsetClass($data);
     }
 
@@ -128,8 +152,8 @@ abstract class Indi_Db_Table_Abstract {
             }
         }
         $sql .= count($set) ? implode(', ', $set) : '`id` = NULL';
-        self::$_defaultDb->query($sql);
-        return(self::$_defaultDb->getPDO()->lastInsertId());
+        Indi::db()->query($sql);
+        return(Indi::db()->getPDO()->lastInsertId());
     }
 
     /**
@@ -151,7 +175,7 @@ abstract class Indi_Db_Table_Abstract {
                 if (is_array($where) && count($where)) $where = implode(' AND ', $where);
                 $sql .= ' WHERE ' . $where;
             }
-            return self::$_defaultDb->query($sql);
+            return Indi::db()->query($sql);
         } else {
             return -1;
         }
@@ -162,32 +186,9 @@ abstract class Indi_Db_Table_Abstract {
         if ($where) {
             if (is_array($where) && count($where)) $where = implode(' AND ', $where);
             $sql .= ' WHERE ' . $where;
-            return self::$_defaultDb->query($sql);
+            return Indi::db()->query($sql);
         }
         die($sql . '<br>No WHERE clause<br>');
-    }
-
-
-
-    /**
-     * Sets the default Indi_Db for all Indi_Db_Table objects.
-     *
-     * @param  $db Indi_Db object
-     * @return void
-     */
-    public static function setDefaultAdapter($db = null)
-    {
-        self::$_defaultDb = $db;
-    }
-
-    /**
-     * Gets the default Indi_Db for all Indi_Db_Table objects.
-     *
-     * @return Indi_Db or null
-     */
-    public static function getDefaultAdapter()
-    {
-        return self::$_defaultDb;
     }
 
     /**
@@ -204,16 +205,6 @@ abstract class Indi_Db_Table_Abstract {
     public function getRowsetClass()
     {
         return $this->_rowsetClass;
-    }
-
-    /**
-     * Gets the Indi_Db_Adapter_Abstract for this particular Indi_Db_Table object.
-     *
-     * @return Indi_Db_Adapter_Abstract
-     */
-    public function getAdapter()
-    {
-        return $this->_db;
     }
 
     /**
@@ -238,7 +229,7 @@ abstract class Indi_Db_Table_Abstract {
         }
 
         if ($key ==  'cols') {
-            $fields = $this->_db->query('
+            $fields = Indi::db()->query('
                 SELECT
                     `f`.`alias`
                 FROM
@@ -264,8 +255,8 @@ abstract class Indi_Db_Table_Abstract {
      * @return array
      */
     public function getDbFields() {
-        $entityId = $this->_db->query('SELECT `id` FROM `entity` WHERE `table` = "' . $this->_name . '"')->fetchColumn(0);
-        $fieldRs = Misc::loadModel('Field')->fetchAll('`entityId` = "' . $entityId . '" AND `columnTypeId` !="0"', 'move');
+        $entityId = Indi::db()->query('SELECT `id` FROM `entity` WHERE `table` = "' . $this->_name . '"')->fetchColumn(0);
+        $fieldRs = Indi::model('Field')->fetchAll('`entityId` = "' . $entityId . '" AND `columnTypeId` !="0"', 'move');
         $fieldRs->setForeignRowsByForeignKeys('columnTypeId');
         $fields = array(); foreach ($fieldRs as $fieldR) $fields[$fieldR->alias] = $fieldR;
         return $fields;

@@ -122,7 +122,7 @@ class Indi_Controller{
 		$this->files = Indi::registry('files');
 
 		// set up db adapter
-		$this->db = Indi_Db_Table::getDefaultAdapter();
+		$this->db = Indi::db();
 
 		$this->controller = $params['section'];
 		$this->action     = $params['action'];
@@ -137,9 +137,8 @@ class Indi_Controller{
 			$this->page     = $params['page'] ? $params['page'] : 1;
 		}
 		$this->view = new Indi_View();
-		$config = Indi::registry('config');
 
-		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/' . trim($config['view']->scriptPath, '/');
+		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/' . trim(Indi::registry('config')->view->scriptPath, '/');
 		$wwwS  = preg_replace('/core(\/application)/', 'www$1', $coreS);
 
 		if(is_dir($wwwS)) {
@@ -174,12 +173,12 @@ class Indi_Controller{
 		$this->db->query('DELETE FROM `visitor` WHERE `lastActivity` < "' . $deleteBeforeDate . '" OR `title` = "' . $_COOKIE['PHPSESSID'] . '"');
 		if (!$clearOnly) {
 			if ($_SESSION['userId']) {
-				$hidden = Misc::loadModel('User')->fetchRow('`id` = "' . $_SESSION['userId'] . '"')->hidden;
+				$hidden = Indi::model('User')->fetchRow('`id` = "' . $_SESSION['userId'] . '"')->hidden;
 			} else {
 				$hidden = 0;
 			}
 
-            $visitorR = Misc::loadModel('Visitor')->createRow();
+            $visitorR = Indi::model('Visitor')->createRow();
             $visitorR->title = $_COOKIE['PHPSESSID'];
             $visitorR->lastActivity = date('Y-m-d H:i:s');
             $visitorR->userId = ($_SESSION['userId'] ? $_SESSION['userId'] : 0);
@@ -201,7 +200,7 @@ class Indi_Controller{
 					$info['guests']++;
 				}
 			}
-			$users = Misc::loadModel('User')->fetchAll('`id` IN ("' . implode('","', $info['logged']) . '")')->toArray();
+			$users = Indi::model('User')->fetchAll('`id` IN ("' . implode('","', $info['logged']) . '")')->toArray();
 			$logged = array();
 			foreach ($users as $user) {
 				$logged[] = '<a href="/users/details/id/' . $user['id'] . '/">' . $user['title'] . '</a>';

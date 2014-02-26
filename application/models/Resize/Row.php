@@ -11,8 +11,8 @@ class Resize_Row extends Indi_Db_Table_Row
 
 	public function deleteUploadedImageCopiesByCopyName($copyname){
 		// get folder name where files of entity are stored
-		$entity = Entity::getInstance()->fetchRow('`id` = (SELECT `entityId` FROM `field` WHERE `id` = "' . $this->fieldId . '")')->table;
-		$image = $this->getForeignRowByForeignKey('fieldId')->alias;
+		$entity = Indi::model('Entity')->fetchRow('`id` = (SELECT `entityId` FROM `field` WHERE `id` = "' . $this->fieldId . '")')->table;
+		$image = $this->foreign('fieldId')->alias;
 
 		// get upload path from config
         $uploadPath = Indi_Image::getUploadPath();
@@ -49,8 +49,8 @@ class Resize_Row extends Indi_Db_Table_Row
             $became = $this->toArray();
             if ($was != $became) {
                 // Get files of copies to be resized
-                $field = $this->getForeignRowByForeignKey('fieldId');
-                $entity = Entity::getInstance()->getModelById($field->entityId)->info('name');
+                $field = $this->foreign('fieldId');
+                $entity = Indi::model($field->entityId)->info('name');
                 $uploadPath = Indi_Image::getUploadPath();
                 $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
                 $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;

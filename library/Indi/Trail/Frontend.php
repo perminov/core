@@ -21,7 +21,7 @@ class Indi_Trail_Frontend extends Indi_Trail
         do {
             if ($lastItem) {
                 $sectionId = $lastItem->section->fsectionId;
-                $parentSection = $lastItem->section->getForeignRowByForeignKey('fsectionId');
+                $parentSection = $lastItem->section->foreign('fsectionId');
 				if ($parentSection->type == 'r') {
 					$actionAlias = 'index';
 				} else {
@@ -32,8 +32,8 @@ class Indi_Trail_Frontend extends Indi_Trail
                     $rowId = $parentRowId ? $parentRowId : $info[$sectionId];
                     $parentRowId = null;
                 } else {
-                    $parentSection = $lastItem->section->getForeignRowByForeignKey('fsectionId');
-                    $parentEntityForeignKeyName = $parentSection->getForeignRowByForeignKey('entityId')->table;
+                    $parentSection = $lastItem->section->foreign('fsectionId');
+                    $parentEntityForeignKeyName = $parentSection->foreign('entityId')->table;
 					if ($parentSection->type == 'r') {
 						$rowId = $lastItem->row->{$parentEntityForeignKeyName . 'Id'};
 					} else {

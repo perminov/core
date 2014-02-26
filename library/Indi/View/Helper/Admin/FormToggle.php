@@ -10,7 +10,7 @@ class Indi_View_Helper_Admin_FormToggle extends Indi_View_Helper_Abstract
 			}
 			$field = $this->view->trail->getItem()->getFieldByAlias($name);
 			if ($field->relation == 6) {
-				$enumset = Misc::loadModel('Enumset');
+				$enumset = Indi::model('Enumset');
 				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', 'title')->toArray();
 				$texts = $values = $attrib = array();
 				for ($i = 0; $i < count ($array); $i++) {

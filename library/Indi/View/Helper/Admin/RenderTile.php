@@ -168,7 +168,7 @@ class Indi_View_Helper_Admin_RenderTile extends Indi_View_Helper_Abstract
 
 				<?=$section->alias?>viewPanel.render('<?php echo $section->alias?>view');
 				<?=$section->javascript?>
-				<?=$section->defaultSortField ? $section->alias . 'Store.setDefaultSort(\''. $section->getForeignRowByForeignKey('defaultSortField')->alias.'\', \'' . $section->defaultSortDirection .'\');' : '' ?>
+				<?=$section->defaultSortField ? $section->alias . 'Store.setDefaultSort(\''. $section->foreign('defaultSortField')->alias.'\', \'' . $section->defaultSortDirection .'\');' : '' ?>
 				<?=$section->alias?>Store.load({params:{start:0, limit:<?=$section->rowsOnPage?>}});
 				view = <?=$section->alias?>View;
 			});

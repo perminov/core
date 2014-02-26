@@ -9,9 +9,9 @@ class SitemapController extends Indi_Controller_Front{
                         $map[] = array('title' => $row->title, 'href' => '/' . $row->alias, 'level' => $row->level);
                         $row->hasIndexAction = true;
                     } else if ($action->foreign['factionId']->alias == 'details') {
-                        $model = Entity::getInstance()->getModelById($row->entityId);
-                        $toggle = $model->fieldExists('toggle');
-                        $move = $model->fieldExists('move');
+                        $model = Indi::model($row->entityId);
+                        $toggle = $model->fields('toggle');
+                        $move = $model->fields('move');
                         $rs = $model->fetchAll($toggle ? '`toggle` = "y"' : null, $move ? '`move`' : null);
                         if ($model->info('name') == 'staticpage') {
                             foreach ($rs as $r) {

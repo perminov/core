@@ -36,8 +36,8 @@ class Indi_Trail_Admin extends Indi_Trail
                     $rowId = $parentRowId ? $parentRowId : $info[$sectionId];
                     $parentRowId = null;
                 } else {
-                    $parentSection = $lastItem->section->getForeignRowByForeignKey('sectionId');
-                    $parentEntityForeignKeyName = $parentSection->getForeignRowByForeignKey('entityId')->table;
+                    $parentSection = $lastItem->section->foreign('sectionId');
+                    $parentEntityForeignKeyName = $parentSection->foreign('entityId')->table;
                     $rowId = $lastItem->row->{$parentEntityForeignKeyName . 'Id'};
                 }
                 if (count($this->items) == 1) {

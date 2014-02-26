@@ -26,10 +26,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     public function preDispatch()
     {
         // Set current language
-        $config = Indi::registry('config');
-        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/core/application/lang/admin/' . $config['view']->lang . '.php');
-        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/www/application/lang/admin/' . $config['view']->lang . '.php');
-        $GLOBALS['lang'] = $config['view']->lang;
+        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/core/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
+        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/www/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
+        $GLOBALS['lang'] = Indi::registry('config')->view->lang;
 
         // Perform authentication
         Indi_Auth::getInstance()->auth($this);
@@ -48,7 +47,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             }
         }
 
-        $section = Misc::loadModel('Section');
+        $section = Indi::model('Section');
 
         // set up all trail info
         $this->trail = new Indi_Trail_Admin($this->controller, $this->identifier, $this->action, null, $this->params, $this->authComponent);
@@ -231,7 +230,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     break;
                 case 'move':
                     if (!$this->identifier) {
-                        $value = $model->getLastPosition();
+                        $value = $model->getNextMove();
                     } else {
                         $value = $this->trail->getItem()->row->move;
                     }
@@ -250,7 +249,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 } else if (!$this->trail->getItem()->row->{$field->alias}){
                     $fieldId = $this->trail->getItem()->getFieldByAlias($field->alias)->id;
                     $sectionId = $this->trail->getItem()->section->id;
-                    $disabledField = Misc::loadModel('DisabledField')->fetchRow('`sectionId` = "' . $sectionId . '" AND `fieldId` = "' . $fieldId . '"');
+                    $disabledField = Indi::model('DisabledField')->fetchRow('`sectionId` = "' . $sectionId . '" AND `fieldId` = "' . $fieldId . '"');
                     if (strlen($disabledField->defaultValue)) {
                         $value = $disabledField->defaultValue;
 						Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
@@ -371,13 +370,13 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             if ($gridFields[$i]['relation']) $gridFieldsThatStoreRelation[$gridFields[$i]['alias']] = $gridFields[$i]['relation'];
             if ($gridFields[$i]['elementId'] == 9) $gridFieldsAliasesThatStoreBoolean[] = $gridFields[$i]['alias'];
         }
-        $columntype = Misc::loadModel('ColumnType');
+        $columntype = Indi::model('ColumnType');
 
         if (count($gridFieldsThatStoreRelation)) {
             // get info about grid columns, that store relations, and their columns have SET and ENUM types
             // we need this info because there will be another logic to get titles for them
             // at first, get ids of 'columntypes' db table rows there was specified in 'type' column that they have SET or ENUM types
-            $irregularColumnTypesIds = $columntype->getImplodedIds('`type` LIKE "ENUM%" OR `type` LIKE "SET%"', true);
+            $irregularColumnTypesIds = $columntype->fetchColumn('id', '`type` IN ("ENUM", "SET")');
 
             $irregularGridFieldsThatStoreRelation = array();
             foreach($gridFields as $gridField){
@@ -414,12 +413,12 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     if (in_array($fieldAlias, $irregularGridFieldsAliasesThatStoreRelation)) {
                         $condition  = '`alias` IN ("' . implode('","', $foreignKeyValues) . '")';
                         $condition .= ' AND `fieldId` = "' . $irregularGridFieldsThatStoreRelation[$fieldAlias] . '"';
-                        $foreignRowset = Entity::getInstance()->getModelById($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
+                        $foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
                         foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->getTitle();
 
                     // get title for other columns that store relations
                     } else {
-                        $foreignRowset = Entity::getInstance()->getModelById($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
+                        $foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
                         foreach ($foreignRowset as $foreignRow) {
                             $title = $foreignRow->getTitle();
                             if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$title)) {
@@ -496,13 +495,18 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
         // get custom titles for values in grid that are foreign keys, but each can relate to different entity
         // at first we should  find such a columns and their satellites
-        $satellitedFields = $this->trail->getItem()->model->getSatellitedFields($gridFieldsAliases);
+        $where = array(
+            '`entityId` = "' . $this->trail->getItem()->section->entityId . '"',
+            '`satellite` != "0"'
+        );
+        if (count($gridFieldsAliases)) $where[] = 'FIND_IN_SET(`alias`, "' . implode(',', $gridFieldsAliases) . '")';
+        $satellitedFields = Indi::model('Field')->fetchAll($where);
+
         foreach ($satellitedFields as $field) {
             $fieldAlias = $field->alias;
-            $satelliteAlias = $field->getForeignRowByForeignKey('satellite')->alias;
             $i = 0;
             foreach ($this->rowset as $row) {
-                if ($fr = $row->getForeignRowByForeignKey($fieldAlias))	{
+                if ($fr = $row->foreign($fieldAlias))	{
                     if ($fr instanceof Indi_Db_Table_Row) $data[$i][$fieldAlias] = $fr->getTitle();
                 }
                 $i++;
@@ -628,9 +632,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
-        $this->view->assign('entity', $this->section ? $this->section->getForeignRowByForeignKey('entityId') : null);
+        $this->view->assign('entity', $this->section ? $this->section->foreign('entityId') : null);
         if ($this->trail->getItem()->model) {
-            $this->view->assign('structure', $this->trail->getItem()->model->getFields());
+            $this->view->assign('structure', $this->trail->getItem()->model->fields(null, 'cols'));
         }
         if ($this->trail->getItem()->actions) {
             $this->view->assign('actions', $this->trail->getItem()->actions);
@@ -640,7 +644,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         }
         if ($this->row) {
             $this->view->assign('row', $this->row);
-            foreach ($this->trail->getItem()->model->getFields() as $field) {
+            foreach ($this->trail->getItem()->model->fields(null, 'cols') as $field) {
                 if (!is_array($this->row->$field) && !is_null($this->row->$field)) {
                     $this->row->$field = stripslashes($this->row->$field);
                 }
@@ -648,7 +652,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         }
         if ($this->rowset) {
             foreach ($this->rowset as $row) {
-                foreach ($this->trail->getItem()->model->getFields() as $field) {
+                foreach ($this->trail->getItem()->model->fields(null, 'cols') as $field) {
                     if (is_string($row->$field)) {
                         $row->$field = stripslashes($row->$field);
                     }
@@ -692,7 +696,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         }
 
         // Update cache if need
-        if (Misc::loadModel('Entity')->fetchRow('`table` = "' . $table .'" AND `system` = "y"')->useCache) {
+        if (Indi::model('Entity')->fetchRow('`table` = "' . $table .'" AND `system` = "y"')->useCache) {
             Indi_Cache::update(get_class($this->trail->getItem()->model));
         }
     }

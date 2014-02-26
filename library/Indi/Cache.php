@@ -2,7 +2,7 @@
 class Indi_Cache {
 	public static $useCache;
 	public function update($modelName){
-		$rs = Misc::loadModel($modelName)->fetchAll()->toArray();
+		$rs = Indi::model($modelName)->fetchAll()->toArray();
 		$fields = array_keys($rs[0]);
 		foreach ($fields as $field) {
 			foreach ($rs as $r) {
@@ -37,7 +37,7 @@ class Indi_Cache {
 
 	function compare($modelName) {
 		mt();
-		$rs = Misc::loadModel($modelName)->fetchAll()->toArray();
+		$rs = Indi::model($modelName)->fetchAll()->toArray();
 		d('Получение списка ' . $modelName . ' из базы: ' . mt());
 		include(self::fname($modelName));
 		d('Получение списка ' . $modelName . ' из вертикального кэша: ' . mt());
@@ -46,7 +46,7 @@ class Indi_Cache {
 		mt();
 
 		foreach ($ids as $id) {
-			$r = Misc::loadModel($modelName)->fetchRow('`id` = "' . $id . '"')->toArray();
+			$r = Indi::model($modelName)->fetchRow('`id` = "' . $id . '"')->toArray();
 		}
 		d(count($ids) . ' операций поиска по идентификаторам в ' . $modelName . ' в базе: ' . mt());
 

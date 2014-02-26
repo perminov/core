@@ -52,11 +52,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
             $this->action = $action->fetchRow('`alias` = "' . $actionAlias . '"');
             
             // set up row
-            $entityTitle = $this->section->getForeignRowByForeignKey('entityId')->table;
+            $entityTitle = $this->section->foreign('entityId')->table;
             if ($entityTitle) {
 
 				// set up model
-				$this->model = Misc::loadModel(ucfirst($entityTitle));
+				$this->model = Indi::model(ucfirst($entityTitle));
                 
                 // set up row
                 if ($rowIdentifier) {
@@ -69,13 +69,13 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
                     $this->row = $this->model->createRow();
                     
                     // if current section have parent section 
-                    $parentSection = $this->section->getForeignRowByForeignKey('sectionId');
+                    $parentSection = $this->section->foreign('sectionId');
 
                     // determining parent key value
                     $session = Indi_Session::namespaceGet('trail');
 
                     if ($this->section->parentSectionConnector) {
-                        $parentSectionConnectorAlias =$this->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                        $parentSectionConnectorAlias =$this->section->foreign('parentSectionConnector')->alias;
                         $info = $session['parentId'];
                         $parentId = $info->{$parentSection->id};
                         if (!$parentId) {
@@ -90,7 +90,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
                         if ($parentSection->sectionId != '0') {
                             // determining parent key name
                             $parentSectionId = $parentSection->id;
-                            $parentEntity = $parentSection->getForeignRowByForeignKey('entityId');
+                            $parentEntity = $parentSection->foreign('entityId');
                             $parentEntityForeignKeyName = $parentEntity->table . 'Id';
                             
                             // determining parent key value
@@ -104,7 +104,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
                             // set up key name with value
                             $this->row->$parentEntityForeignKeyName = $parentId;
                         }
-                    } while($parentSection = $parentSection->getForeignRowByForeignKey('sectionId'));
+                    } while($parentSection = $parentSection->foreign('sectionId'));
                 }
 				// set up row fields
 				$field = new Field();
