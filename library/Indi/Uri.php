@@ -93,7 +93,6 @@ class Indi_Uri {
 			}
 			eval('class ' . ucfirst($controllerClassName) . ' extends ' . $extendClass . '{}');
 		}
-
 		$controller = new $controllerClassName($params);
         $controller->dispatch();
     }
@@ -122,6 +121,7 @@ class Indi_Uri {
 	public function setCookieDomain(){
 		$domain = Indi::registry('config')->general->domain;
 		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
+        if (PRE) ini_set('session.cookie_path', STD);
 	}
 
 	public function startSession() {

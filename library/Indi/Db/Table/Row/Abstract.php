@@ -255,8 +255,10 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      * @param $value
      * @return mixed
      */
-    public function modified($key, $value) {
-        return $this->_modified[$key] = $value;
+    public function modified() {
+        if (func_num_args() == 0) return $this->_modified;
+        else if (func_num_args() == 1) return $this->_modified[func_get_arg(0)];
+        else return $this->_modified[func_get_arg(0)] = func_get_arg(1);
     }
 
     /**
