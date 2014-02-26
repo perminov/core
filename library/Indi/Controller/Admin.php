@@ -234,6 +234,15 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     } else {
                         $value = $this->trail->getItem()->row->move;
                     }
+                case 'hidden':
+                    if ($field->alias == 'move') {
+                        if (!$this->identifier) {
+                            $value = $model->getLastPosition();
+                        } else {
+                            $value = $this->trail->getItem()->row->move;
+                        }
+                    }
+                    break;
                 default:
                     break;
             }
