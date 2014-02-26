@@ -17,16 +17,16 @@ class Field_Row extends Indi_Db_Table_Row
 
 	public function deleteDbTableColumnIfFieldIsAssotiatedWithOne(){
 		if ($this->columnTypeId) {
-			$tableName = Entity::getInstance()->fetchRow('`id` = "' . $this->entityId . '"')->table;
+			$tableName = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"')->table;
 			$query = 'ALTER TABLE `' . $tableName . '` DROP `' . $this->alias . '`';
-			$this->getTable()->getAdapter()->query($query, true);
+			Indi::db()->query($query, true);
 		}
 	}
 
 	public function deleteUploadedFilesIfTheyWere(){
 		if (!$this->columnTypeId) {
 			// get folder name where files of entity are stored
-			$entity = Entity::getInstance()->fetchRow('`id` = "' . $this->entityId . '"')->table;
+			$entity = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"')->table;
 			$image = $this->alias;
 
 			// get upload path from config
@@ -61,7 +61,7 @@ class Field_Row extends Indi_Db_Table_Row
 	}
 
 	public function isSatellite(){
-		if ($satelliteForField = $this->getTable()->fetchRow('`satellite` = "' . $this->id . '"')){
+		if ($satelliteForField = $this->table()->fetchRow('`satellite` = "' . $this->id . '"')){
 			return $satelliteForField;
 		} else {
 			return false;
@@ -69,8 +69,8 @@ class Field_Row extends Indi_Db_Table_Row
 	}
 	
 	public function getParams(){
-		$possibleParams = Misc::loadModel('PossibleElementParam')->fetchAll('`elementId` = "' . $this->elementId . '"')->toArray();
-		$redefinedParams = Misc::loadModel('Param')->fetchAll('`fieldId` = "' . $this->id . '"')->toArray();
+		$possibleParams = Indi::model('PossibleElementParam')->fetchAll('`elementId` = "' . $this->elementId . '"')->toArray();
+		$redefinedParams = Indi::model('Param')->fetchAll('`fieldId` = "' . $this->id . '"')->toArray();
 		$redefine = array();
 		for ($i = 0; $i < count ($redefinedParams); $i++) {
 			$redefine[$redefinedParams[$i]['possibleParamId']] = $redefinedParams[$i]['value'];
@@ -99,13 +99,13 @@ class Field_Row extends Indi_Db_Table_Row
         }
 
         // Load columnType model
-        $columnTypeM = Misc::loadModel('ColumnType');
+        $columnTypeM = Indi::model('ColumnType');
 
         // Load enumset model
-        $enumsetM = Misc::loadModel('Enumset');
+        $enumsetM = Indi::model('Enumset');
 
         // Get current entity
-        $entityR = Misc::loadModel('Entity')->fetchRow('`id` = "' . $this->entityId . '"');
+        $entityR = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"');
 
         // Get previous column type row
         $oldColumnTypeR = $columnTypeM->fetchRow('`id` = "' . $original['columnTypeId'] . '"');
@@ -125,7 +125,7 @@ class Field_Row extends Indi_Db_Table_Row
         // If entity field was previously linked to db table column, but now it is not, we remove db table column
         if (array_key_exists('columnTypeId', $modified) && !$modified['columnTypeId']) {
             $query = 'ALTER TABLE  `' . $entityR->table . '` DROP `' . $original['alias'] . '`';
-            $this->getTable()->getAdapter()->query($query);
+            Indi::db()->query($query);
         }
 
         // If current column type is ENUM or SET we:
@@ -317,10 +317,10 @@ class Field_Row extends Indi_Db_Table_Row
             $this->save(true);
         }
         // Load columnType model
-        $columnType = Misc::loadModel('ColumnType');
+        $columnType = Indi::model('ColumnType');
 
         // Get current entity
-        $entityR = Misc::loadModel('Entity')->fetchRow('`id` = "' . $this->entityId . '"');
+        $entityR = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"');
 
         // first part of ALTER query
         $query = 'ALTER TABLE  `' . $entityR->table . '` ';
@@ -328,11 +328,11 @@ class Field_Row extends Indi_Db_Table_Row
         // if entity field was previously linked to db table column, but now it is not, we remove db table column
         if ($original['columnTypeId'] && !$this->columnTypeId) {
             $query .= 'DROP `' . $original['alias'] . '`';
-            $this->getTable()->getAdapter()->query($query);
+            Indi::db()->query($query);
 
             $oldColumnTypeRow = $columnType->fetchRow('`id`="' . $original['columnTypeId'] . '"');
             if (preg_match('/ENUM/', $oldColumnTypeRow->type) || preg_match('/SET/', $oldColumnTypeRow->type)) {
-                $this->getTable()->getAdapter()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
+                Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
             }
         }
 
@@ -346,16 +346,16 @@ class Field_Row extends Indi_Db_Table_Row
         if ($original['id']) {
             $oldColumnTypeRow = $columnType->fetchRow('`id`="' . $original['columnTypeId'] . '"');
             if ((preg_match('/ENUM/', $oldColumnTypeRow->type) && !preg_match('/ENUM/', $columnTypeRow->type)) || (preg_match('/SET/', $oldColumnTypeRow->type) && !preg_match('/SET/', $columnTypeRow->type))) {
-                $this->getTable()->getAdapter()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
+                Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
             }
         }
 
         if (preg_match('/ENUM|SET/', $columnTypeRow->type)) {
             // check if correct relation for ENUM and SET column type was set -  must be set to 6 (-id of 'enumset' entity)
-            $this->getTable()->getAdapter()->query('UPDATE `field` SET `relation`="6" WHERE `id` = "' . $this->id . '"');
+            Indi::db()->query('UPDATE `field` SET `relation`="6" WHERE `id` = "' . $this->id . '"');
 
             // before adding we check if these values are not already exist in 'enumset' table for that field
-            $enumset = Misc::loadModel('Enumset');
+            $enumset = Indi::model('Enumset');
             $enumsetArray = $enumset->fetchAll('`fieldId` = "' . $this->id . '"')->toArray();
             $existingValues = array();
             for ($i = 0; $i < count($enumsetArray); $i++) {
@@ -406,7 +406,7 @@ class Field_Row extends Indi_Db_Table_Row
                     if ($this->defaultValue == '' && count($enumsetValues) && preg_match('/SET/', $columnTypeRow->type)) {
 
                     } else {
-                        $this->getTable()->getAdapter()->query($enumsetInsertQuery);
+                        Indi::db()->query($enumsetInsertQuery);
                     }
                 }
             }
@@ -415,7 +415,7 @@ class Field_Row extends Indi_Db_Table_Row
             // (custom values, titles for which are stored in 'enumset'  table to ENUM('y','n')
             if ((preg_match('/ENUM/', $oldColumnTypeRow->type) && !preg_match('/ENUM/', $columnTypeRow->type)) || (preg_match('/SET/', $oldColumnTypeRow->type) && !preg_match('/SET/', $columnTypeRow->type))) {
                 $delete= 'DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '" AND `alias` NOT IN ("' . implode('","', $toInsert) . '")';
-                $this->getTable()->getAdapter()->query($delete);
+                Indi::db()->query($delete);
             }
         }
 
@@ -491,19 +491,19 @@ class Field_Row extends Indi_Db_Table_Row
                 if (!$valid) $this->defaultValue = '0.' . str_repeat('0', $digits[2]);
             }
             $query .= 'DEFAULT  "' . (strlen($this->defaultValueSql) ? $this->defaultValueSql : $this->defaultValue) . '"';
-            if (!$valid) $this->getTable()->getAdapter()->query('UPDATE `field` SET `defaultValue` = "' . $this->defaultValue . '" WHERE `id` = "' . $this->id . '"');
+            if (!$valid) Indi::db()->query('UPDATE `field` SET `defaultValue` = "' . $this->defaultValue . '" WHERE `id` = "' . $this->id . '"');
         }
 
         // If field changes affect db column properties we exec an ALTER sql query
         if ($original['columnTypeId'] != $this->columnTypeId ||
             $original['defaultValue'] != $this->defaultValue ||
             $original['alias'] != $this->alias) {
-            $this->getTable()->getAdapter()->query($query);
+            Indi::db()->query($query);
         }
 
         // If current column became 'move' column we automatically setup it's values
         if ($original['alias'] != $this->alias && $this->alias == 'move') {
-            $this->getTable()->getAdapter()->query('UPDATE `' . $entityR->table . '` SET `move` = `id`');
+            Indi::db()->query('UPDATE `' . $entityR->table . '` SET `move` = `id`');
         }
 
         ////////////////////////////
@@ -513,25 +513,25 @@ class Field_Row extends Indi_Db_Table_Row
         // check if where was a relation, but now there is not, so we should remove an INDEX index
         $remove = $original['id'] && $original['storeRelationAbility'] != 'none' && $this->storeRelationAbility == 'none';
         if ($remove) {
-            $indexes = $this->getTable()->getAdapter()->query('SHOW INDEXES FROM `' . $entityR->table .'` WHERE `Column_name` = "' . $this->alias . '"')->fetchAll();
-            foreach ($indexes as $index) $this->getTable()->getAdapter()->query('ALTER TABLE  `' . $entityR->table .'` DROP INDEX `' . $index['Key_name'] . '`');
+            $indexes = Indi::db()->query('SHOW INDEXES FROM `' . $entityR->table .'` WHERE `Column_name` = "' . $this->alias . '"')->fetchAll();
+            foreach ($indexes as $index) Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` DROP INDEX `' . $index['Key_name'] . '`');
         }
         // check if where was no relation, but now it exist, so we should add an INDEX index
         $appear = (!$original['id'] || $original['storeRelationAbility'] == 'none') && $this->storeRelationAbility != 'none';
         if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeRow->type) && $appear) {
-            $this->getTable()->getAdapter()->query('ALTER TABLE  `' . $entityR->table .'` ADD INDEX (`' . $this->alias . '`)');
+            Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` ADD INDEX (`' . $this->alias . '`)');
         }
 
         // check if where was a TEXT column, but now there is not, so we should remove a FULLTEXT index
         $remove = $original['id'] && $original['columnTypeId'] == 4 && $this->columnTypeId != 4;
         if ($remove) {
-            $indexes = $this->getTable()->getAdapter()->query('SHOW INDEXES FROM `' . $entityR->table .'` WHERE `Column_name` = "' . $this->alias . '"')->fetchAll();
-            foreach ($indexes as $index) $this->getTable()->getAdapter()->query('ALTER TABLE  `' . $entityR->table .'` DROP INDEX `' . $index['Key_name'] . '`');
+            $indexes = Indi::db()->query('SHOW INDEXES FROM `' . $entityR->table .'` WHERE `Column_name` = "' . $this->alias . '"')->fetchAll();
+            foreach ($indexes as $index) Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` DROP INDEX `' . $index['Key_name'] . '`');
         }
         // check if where was no TEXT column, but now it exist, so we should add a FULLTEXT index
         $appear = (!$original['id'] || $original['columnTypeId'] != 4) && $this->columnTypeId == 4;
         if (preg_match('/TEXT/', $columnTypeRow->type) && $appear) {
-            $this->getTable()->getAdapter()->query('ALTER TABLE  `' . $entityR->table .'` ADD FULLTEXT (`' . $this->alias . '`)');
+            Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` ADD FULLTEXT (`' . $this->alias . '`)');
         }
         return $return;
     }

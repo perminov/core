@@ -2,7 +2,7 @@
 class UsersController extends Indi_Controller_Front{
 	public function activationAction(){
 		$code = $this->getRequest()->getParam('code');
-		$user = Misc::loadModel('User')->fetchRow('`activationCode` = "' . substr($code, 0, 15) . '"');
+		$user = Indi::model('User')->fetchRow('`activationCode` = "' . substr($code, 0, 15) . '"');
 		if ($user) {
 			unset($_SESSION['naUserId']);
 			if ($user->activated) {

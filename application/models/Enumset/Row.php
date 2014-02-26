@@ -13,10 +13,10 @@ class Enumset_Row extends Indi_Db_Table_Row{
         if ($parentSave) return parent::save();
 
         // Get Field row
-        $fieldR = $this->getForeignRowByForeignKey('fieldId');
+        $fieldR = $this->foreign('fieldId');
 
         // Get ColumnType row
-        $columnTypeR = $fieldR->getForeignRowByForeignKey('columnTypeId');
+        $columnTypeR = $fieldR->foreign('columnTypeId');
 
         // Check that $columnTypeR->type is ENUM or SET
         if (in_array($columnTypeR->type, array('ENUM', 'SET'))) {
@@ -27,7 +27,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
             parent::save();
 
             // Get existing values
-            $values = $this->getTable()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
+            $values = $this->table()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
             for ($i = 0; $i < count($values); $i++) {
 
                 // Set up viewValues. Difference between viewValues and rawValues is that if viewValues
@@ -52,7 +52,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
                 // If field default value is not presented (for some reasons) in $viewValues array, we create corresponding value
                 if (!in_array($viewDefaultValue, $viewValues) && ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $fieldR->defaultValue != ''))) {
                     $rawValues[] = $fieldR->defaultValue;
-                    $new = $this->getTable()->createRow();
+                    $new = $this->table()->createRow();
                     $new->fieldId = $fieldR->id;
                     $new->alias = $fieldR->defaultValue;
                     $new->title = 'Укажите наименование для значения по умолчанию - "' . $viewDefaultValue . '"';
@@ -70,7 +70,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
                     // If field default value is not presented (for some reasons) in $viewValues array, we create corresponding value
                     if (!in_array($viewDefaultValue, $viewValues) && ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $defaultValues[$i] != ''))) {
                         $rawValues[] = $defaultValues[$i];
-                        $new = $this->getTable()->createRow();
+                        $new = $this->table()->createRow();
                         $new->fieldId = $fieldR->id;
                         $new->alias = $defaultValues[$i];
                         $new->title = 'Укажите наименование для значения по умолчанию - "' . $viewDefaultValue . '"';
@@ -80,13 +80,13 @@ class Enumset_Row extends Indi_Db_Table_Row{
             }
 
             // Construction and execution of ALTER sql query
-            $query  = 'ALTER TABLE `' . Misc::loadModel('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"')->table . '` ';
+            $query  = 'ALTER TABLE `' . Indi::model('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"')->table . '` ';
             $query .= 'CHANGE `' . $fieldR->alias . '` `' . $fieldR->alias . '` ';
             $query .=  $columnTypeR->type . '(' . "'" . implode("','", $rawValues) . "'" . ')';
             $query .= ' CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ';
             $query .= 'DEFAULT ' . "'" . $fieldR->defaultValue . "'";
             // different default setup for SET ??
-            $this->getTable()->getAdapter()->query($query);
+            Indi::db()->query($query);
         }
     }
 
@@ -103,16 +103,16 @@ class Enumset_Row extends Indi_Db_Table_Row{
         if ($parentDelete || $GLOBALS['enumsetForceDelete']) return parent::delete();
 
         // Get Field row
-        $fieldR = $this->getForeignRowByForeignKey('fieldId');
+        $fieldR = $this->foreign('fieldId');
 
         // Get ColumnType row
-        $columnTypeR = $fieldR->getForeignRowByForeignKey('columnTypeId');
+        $columnTypeR = $fieldR->foreign('columnTypeId');
 
         // Check that $columnTypeR->type is ENUM or SET
         if (in_array($columnTypeR->type, array('ENUM', 'SET'))) {
 
             // Get values
-            $values = $this->getTable()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
+            $values = $this->table()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
             $rawValues = array(); for ($i = 0; $i < count($values); $i++) $rawValues[] = $values[$i]['alias'];
 
             // Checks if deletion is not allowed
@@ -130,12 +130,12 @@ class Enumset_Row extends Indi_Db_Table_Row{
             unset($rawValues[array_search($this->alias, $rawValues)]);
 
             // Construction and execution of ALTER sql query
-            $query  = 'ALTER TABLE `' . Misc::loadModel('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"')->table . '` ';
+            $query  = 'ALTER TABLE `' . Indi::model('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"')->table . '` ';
             $query .= 'CHANGE `' . $fieldR->alias . '` `' . $fieldR->alias . '` ';
             $query .= $columnTypeR->type . "('" . implode("','", $rawValues) . "') ";
             $query .= 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ';
             $query .= 'DEFAULT ' . "'" . $fieldR->defaultValue . "'";
-            $this->getTable()->getAdapter()->query($query);
+            Indi::db()->query($query);
         }
         return parent::delete();
     }

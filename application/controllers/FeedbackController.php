@@ -7,7 +7,7 @@ class FeedbackController extends Project_Controller_Front{
 		} else {
 			$data = $this->post;
 			$data['date'] = date('Y-m-d');
-			Misc::loadModel('Feedback')->createRow($data)->save();
+			Indi::model('Feedback')->createRow($data)->save();
 			$json['ok'] = 'Ваше сообщение отправлено';
 		}
 		die(json_encode($json));

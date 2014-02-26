@@ -279,6 +279,7 @@ class Indi{
     }
 
     /**
+     * Shortcut for Indi_Db::model() function
      * Loads the model by model's entity's id, or model class name
      *
      * @static
@@ -286,11 +287,25 @@ class Indi{
      * @return Indi_Db_Table object
      */
     public static function model($identifier) {
-        if (preg_match('/^[0-9]+$/', $identifier)) {
-            return Entity::getInstance()->getModelById($identifier);
-        } else {
-            return Misc::loadModel($identifier);
-        }
+
+        // Call same method within Indi_Db object
+        return Indi_Db::model($identifier);
+    }
+
+    /**
+     * Shortcut for Indi_Db::factory() function
+     * Returns an singleton instance of Indi_Db
+     * If an argument is presented, it will be passed to Indi_Db::factory() method, for, in it's turn,
+     * usage as PDO connection properties
+     *
+     * @static
+     * @return Indi_Db object
+     */
+    public static function db() {
+
+        // Call 'factory' method of Indi_Db class, with first argument, if given. Otherwise just Indi_Db instance
+        // will be returned, with no PDO configuration setup
+        return Indi_Db::factory(func_num_args() ? func_get_arg(0) : null);
     }
 
     /**
@@ -313,7 +328,7 @@ class Indi{
         if ($titleColumn = current(array_intersect($columnA, array('title', '_title')))) {
 
             // Setup a new order for $idA
-            $idA = Indi_Db_Table::getDefaultAdapter()->query('
+            $idA = Indi::db()->query('
 
                 SELECT `id`
                 FROM `' . $model->info('name') . '`
@@ -401,4 +416,51 @@ class Indi{
 		// If $key argument was specified, we return a certain value, or all array otherwise
 		return $key == null ? self::$_blockA : (array_key_exists($key, self::$_blockA) ? self::$_blockA[$key] : $default);
 	}
+
+    /**
+     * Parses the given ini file, and create a stdClass object with recognized properties
+     *
+     * @static
+     * @param $file
+     * @return stdClass
+     */
+    public static function ini($file){
+        // Declare empty object
+        $config = new stdClass();
+
+        // Check if file exists
+        if (is_file($file)) {
+
+            // Get and parse the file contents
+            $ini = file_get_contents($file);
+            preg_match_all('/\[([^\]]+)\]\s([^\[]+)/', $ini, $blocks);
+
+            // For each parsed block
+            for ($i = 0; $i < count($blocks[1]); $i++) {
+
+                // Get lines
+                $lines = explode("\n", trim($blocks[2][$i]));
+
+                // For each line of file
+                for ($j = 0; $j < count($lines); $j++) {
+
+                    // Detect key=>value pair
+                    preg_match('/([^\s]+)+\s*=\s*([^\s]+)/', $lines[$j], $params);
+
+                    // If key has a value
+                    if ($params[1]) {
+
+                        // If group, there current key=>value pair is not yet exists - create it
+                        if (!is_object($config->{$blocks[1][$i]})) $config->{$blocks[1][$i]} = new stdClass();
+
+                        // Assign a value to a certain key, under certain group
+                        $config->{$blocks[1][$i]}->$params[1] = $params[2];
+                    }
+                }
+            }
+        }
+
+        // Return grouped key=>value pairs as an object
+        return $config;
+    }
 }

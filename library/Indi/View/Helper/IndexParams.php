@@ -10,7 +10,7 @@ class Indi_View_Helper_IndexParams extends Indi_View_Helper_Abstract{
 		if ($withDir) $xhtml .= '<input type="hidden" id="indexDir" name="indexDir" value="' . $this->view->indexParams['dir'] . '"/>';
 		$filters = $this->view->section->getFilters();
 		foreach ($filters as $filter) {
-			$column = $filter->getForeignRowByForeignKey('fieldId')->alias;
+			$column = $filter->foreign('fieldId')->alias;
 			if ($filter->type == 'b') {
 				$xhtml .= '<input type="hidden" id="indexWhere[' . $column . 'From]" name="indexWhere[' . $column . 'From]" value="' . $this->view->indexParams['where'][$column. 'From'] . '"/>';
 				$xhtml .= '<input type="hidden" id="indexWhere[' . $column . 'To]" name="indexWhere[' . $column . 'To]" value="' . $this->view->indexParams['where'][$column. 'To'] . '"/>';

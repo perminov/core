@@ -8,6 +8,6 @@ class Section2action_Row extends Indi_Db_Table_Row
      */
     public function getTitle()
     {
-        return $this->getForeignRowByForeignKey('actionId')->title;
+        return $this->foreign('actionId')->title;
     }
 }

@@ -24,7 +24,7 @@ class Indi_Auth{
     {
         // set up index action id
 		if (null === $this->_indexActionId) {
-	        $action = Misc::loadModel('Action');
+	        $action = Indi::model('Action');
 	        $this->_indexActionId = $action->fetchRow('`alias` = "index"')->id;
 		}
     }
@@ -74,8 +74,7 @@ class Indi_Auth{
             $controller->view->assign('project', $controller->config->project);
 			/*$out = $controller->view->render('login.php');
 			// perform hrefs adjustments in case if system used only as admin area
-			$config = Indi::registry('config');
-			if($config['general']->standalone == 'true') {
+			if(Indi::registry('config')->general->standalone == 'true') {
 				$out = preg_replace('/(src|href|background)=("|\')/', '$1=$2/admin', $out);
 				$out = preg_replace('/\/admin\/admin\//', '/admin/', $out);
 				$out = preg_replace('/\/adminjavascript/', 'javascript', $out);
@@ -198,7 +197,7 @@ class Indi_Auth{
 			} else {
 				$parentId = $info['sectionId'];
 				do {
-					$parent = Misc::loadModel('Section')->fetchRow('`id` = "' . $parentId . '"');
+					$parent = Indi::model('Section')->fetchRow('`id` = "' . $parentId . '"');
 					$parentId = $parent->sectionId;
 					if (!$parent) {
 						break;
@@ -209,9 +208,9 @@ class Indi_Auth{
 				} while (true);
 
 				if (!$redirect && $admin['alternate'] && $this->identifier && $info['entityId']) {
-					$entity = Entity::getModelById($info['entityId']);
+					$entity = Indi::model($info['entityId']);
 					$field = $admin['alternate']. 'Id';
-					if ($entity->fieldExists($field))
+					if ($entity->fields($field))
 					if ($action != 'index' && !($row = $entity->fetchRow('`id` = "' . $this->identifier . '" AND `' . $field. '` = "' . $admin['id'] . '"'))) {
 						$redirect = 'Эта объект вам не принадлежит';
 					}
@@ -312,7 +311,7 @@ class Indi_Auth{
 			  AND `p`.`id` = '1'
 			ORDER BY `s`.`move`
 		";
-		$result = Indi_Db_Table::getDefaultAdapter()->query($query)->fetch();
+		$result = Indi::db()->query($query)->fetch();
 		$accessibleSectionIds = $result['accessibleSectionIds'];
 		$section = new Section();
 		$where = $accessibleSectionIds ? '`id` IN (' . $accessibleSectionIds . ')' : '`id` IN ("")';
@@ -336,10 +335,10 @@ class Indi_Auth{
 		if (!$profileId) {
 			$profileId = $admin['profileId'];
 		}
-		$section = new Section();
+		$section = Indi::model('Section');
 		$groups = $section->fetchAll('`sectionId` = "0" AND `toggle`="y"', 'move');
-		foreach ($groups as $group) {
-			if (!$admin['alternate']) {
+        foreach ($groups as $group) {
+            if (!$admin['alternate']) {
     		$query = "
     			SELECT 
     			  GROUP_CONCAT(DISTINCT `s`.`id` ORDER BY `s`.`move`) AS `accessibleSectionIds` 
@@ -379,7 +378,7 @@ class Indi_Auth{
     			  AND `p`.`id` = '1'
     		";
 			}
-    		$result = Indi_Db_Table::getDefaultAdapter()->query($query)->fetch();
+    		$result = Indi::db()->query($query)->fetch();
     		$accessibleSectionIds[$group->id] = $result['accessibleSectionIds'];
 		}
 		$menuIds = array();
@@ -396,15 +395,15 @@ class Indi_Auth{
         return $return;
     }    
 	public function checkAlternate($admin = null, $section = '', $action = '', $email = null, $password = null, $logout, &$info){
-		$profiles = Misc::loadModel('Profile')->fetchAll('`entityId` != "0"');
+		$profiles = Indi::model('Profile')->fetchAll('`entityId` != "0"');
 		if (!$profiles->count()) return $logout;
 		foreach ($profiles as $profile) {
-			$entity = Entity::getModelById($profile->entityId);
+			$entity = Indi::model($profile->entityId);
 			$row = $entity->fetchRow('`email` = "' . $email . '"');
 			if ($row) {
 				if ($profile->toggle == 'n') return 'Профиль Вашего аккаунта отключен';
 				if ($row->password !== $password && 
-					$row->password !== Indi_Db_Table::getDefaultAdapter()->query('SELECT PASSWORD("' . $password . '")')->fetchColumn(0)) 
+					$row->password !== Indi::db()->query('SELECT PASSWORD("' . $password . '")')->fetchColumn(0))
 					return 'Неправильный пароль';
 
 				if(!current($this->controller->db->query($query1 = "

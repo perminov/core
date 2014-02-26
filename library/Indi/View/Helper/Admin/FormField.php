@@ -4,7 +4,7 @@ class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
     public function formField($field)
     {
 		if (!in_array($field->alias, $this->view->trail->getItem()->disabledFields['form'])) {
-			$elementRow = $field->getForeignRowByForeignKey('elementId');
+			$elementRow = $field->foreign('elementId');
 			$params = $field->getParams();
             if (isset($this->view->row->{$field->alias . 'Wide'})) {
                 $params['wide'] = $this->view->row->{$field->alias . 'Wide'};

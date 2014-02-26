@@ -9,8 +9,8 @@
     <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
     <!-- Ext -->
     <link type="text/css" rel="stylesheet" href="/library/extjs4/resources/css/ext-all.css"/>
-    <script type="text/javascript" src="/library/extjs4/ext-all.js"></script><?$config = Indi::registry('config');?>
-    <script type="text/javascript" src="/library/extjs4/ext-lang-<?=$config['view']->lang?>.js"></script>
+    <script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
+    <script type="text/javascript" src="/library/extjs4/ext-lang-<?=Indi::registry('config')->view->lang?>.js"></script>
     <!-- Indi styles -->
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.layout.css?<?=rand(0, 10000)?>"/>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.trail.css?<?=rand(0, 10000)?>"/>

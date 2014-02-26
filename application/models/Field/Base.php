@@ -38,16 +38,16 @@ class Field_Base extends Indi_Db_Table{
     }
 
     public function getFiltersCountBySectionId($sectionId) {
-        return $this->_db->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
+        return Indi::db()->query('SELECT COUNT(*) FROM `search` WHERE `sectionId` = "' . $sectionId . '"')->fetchColumn();
     }
 
     public function getFiltersBySectionId($sectionId){
-        return  Misc::loadModel('Search')->fetchAll('`sectionId` = "' . $sectionId . '" AND `toggle`="y"', '`move`');
+        return  Indi::model('Search')->fetchAll('`sectionId` = "' . $sectionId . '" AND `toggle`="y"', '`move`');
     }
 
     public function getDisabledFieldsBySectionId($sectionId){
 
-        $disabled = Misc::loadModel('DisabledField');
+        $disabled = Indi::model('DisabledField');
         $disabledArray = $disabled->fetchAll('`sectionId` = "' . $sectionId . '"')->toArray();
 
         $fieldIds = array();

@@ -44,6 +44,12 @@ var Indi = (function (indi) {
                 removeComboDataDivs: true
             }
 
+            /**
+             * This value is be used for combo width adjustment, if options list was refreshed and the longest
+             * option title became longer than it was before refresh
+             *
+             * @type {Number}
+             */
             this.averageTitleCharWidth = 6.5;
 
             /**
@@ -470,7 +476,7 @@ var Indi = (function (indi) {
             /**
              * Function is used in case if all possible options, within which keyword-search will be processing - are already collected.
              * They can be collected initially (if their total count <= Indi_Db_Table_Row_Beautiful::$comboOptionsVisibleCount) or
-             * can be collected step by step while paging upper/lower. So, since they are a got, any keyword search will run
+             * can be collected step by step while paging upper/lower. So, since they all are a got, any keyword search will run
              * without requests to database, and will be completely handled by javascript. Such scheme will be used until next
              * database request - this can happen if current combo field has a satellite, and satellite value was changed
              *

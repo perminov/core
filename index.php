@@ -32,23 +32,21 @@ spl_autoload_register('autoloader');
 require('Misc.php');
 
 // Performance detection
-$last = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();
+$mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();
 
-// Load config
-$config = Misc::ini('application/config.ini');
+// Memory usage detection
+$mu = 0; function mu(){$m = memory_get_usage(); $ret = $m - $GLOBALS['mu']; $GLOBALS['mu'] = $m; return $ret;} mu();
 
-// Filter globals
+// Load config and setup DB interface
+$config = Indi::ini('application/config.ini');
+Indi::db($config->db);
+
+// Save config and global request data to registry
 Indi::registry('post', $_POST);
 Indi::registry('get', $_GET);
 Indi::registry('files', $_FILES);
 Indi::registry('config', $config);
 unset($_POST, $_GET, $_FILES);
-
-// Setup DB interface
-$db = Indi_Db::factory($config['db']);
-Indi_Db_Table::setDefaultAdapter($db);
-$db->query('SET NAMES utf8');
-$db->query('SET CHARACTER SET utf8');
 
 // Dispatch uri request
 $uri = new Indi_Uri(); $uri->dispatch();

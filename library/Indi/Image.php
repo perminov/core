@@ -8,8 +8,7 @@ abstract class Indi_Image
      */
     public function getUploadPath()
     {
-		$config = Indi::registry('config');
-        return trim($config['upload']->uploadPath, '\\/');
+        return trim(Indi::registry('config')->upload->uploadPath, '\\/');
     }
     
     /**
@@ -23,7 +22,7 @@ abstract class Indi_Image
     {
 		// entity and identfier by default set up as values, got from
         // current controller
-        $entity = $entity ? $entity : $this->section->getForeignRowByForeignKey('entityId')->table;
+        $entity = $entity ? $entity : $this->section->foreign('entityId')->table;
         $id = $id ? $id : $this->identifier;
         
         // get upload path from config
@@ -68,7 +67,7 @@ abstract class Indi_Image
     {
         // entity and identfier by default set up as values, got from
         // current controller
-        $entity = $entity ? $entity : $this->section->getForeignRowByForeignKey('entityId')->table;
+        $entity = $entity ? $entity : $this->section->foreign('entityId')->table;
         $id = $id ? $id : $this->identifier;
 
         // get upload path from config
@@ -131,8 +130,8 @@ abstract class Indi_Image
 					
 			        if(!move_uploaded_file($tmp, $dst)) copy($tmp, $dst);
 					$entityId = $this->trail ? $this->trail->getItem()->fields[0]->entityId : $this->section->entityId;
-					$entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
-					$copies = Misc::loadModel('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
+					$entityId = Indi::model('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
+					$copies = Indi::model('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
 					for ($i = 0; $i < count($copies); $i++) {
 						switch($copies[$i]['proportions']){
 							case 'o': // original
@@ -454,8 +453,7 @@ abstract class Indi_Image
     public function image($entity, $id, $key = null, $copy = null, $silence = true, $width = null, $height = null)
     {
         if ($id) {
-			$config = Indi::registry('config');
-            $uploadPath = $config['upload']->uploadPath;
+            $uploadPath = Indi::registry('config')->upload->uploadPath;
             
             $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
             $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;
@@ -629,8 +627,7 @@ abstract class Indi_Image
     public function flash($entity, $id, $key = null, $silence = true, $width = null, $height = null)
     {
         if ($id) {
-			$config = Indi::registry('config');
-            $uploadPath = $config['upload']->uploadPath;
+            $uploadPath = Indi::registry('config')->upload->uploadPath;
             
             $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
             $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;
@@ -710,8 +707,8 @@ abstract class Indi_Image
 			
 			copy($url, $dst);
 			if ($tmpUsage) unlink($url);
-			$entityId = Misc::loadModel('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
-			$copies = Misc::loadModel('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
+			$entityId = Indi::model('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
+			$copies = Indi::model('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
 			for ($i = 0; $i < count($copies); $i++) {
 				switch($copies[$i]['proportions']){
 					case 'o': // original

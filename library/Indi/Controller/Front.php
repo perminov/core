@@ -12,7 +12,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->post = filter($this->post);
 		
 		// Определяем текущий раздел, ищем его в базе
-		$this->section = Misc::loadModel('Fsection')->fetchRow('`alias` = "' . $this->controller . '"');
+		$this->section = Indi::model('Fsection')->fetchRow('`alias` = "' . $this->controller . '"');
 		$this->view->section = $this->section;
 		if ($this->section->type == 's' && $this->action == 'index') {
 			$this->action = $this->section->index;
@@ -20,14 +20,14 @@ class Indi_Controller_Front extends Indi_Controller{
 				eval('$this->identifier = ' . $this->section->where . ';');
 			} else {
 				eval('$where = "' . $this->section->where . '";');
-				$this->identifier = Entity::getModelById($this->section->entityId)->fetchRow($where)->id;
+				$this->identifier = Indi::model($this->section->entityId)->fetchRow($where)->id;
 			}
 		}
 		Indi::registry('request', $this->params);
 		
 		// Определяем текущее действие, ищем его в базе
-		$this->action = Misc::loadModel('Faction')->fetchRow('`alias` = "' . $this->action . '"');
-		if(!Misc::loadModel('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"')) {
+		$this->action = Indi::model('Faction')->fetchRow('`alias` = "' . $this->action . '"');
+		if(!Indi::model('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"')) {
 			$this->action = null;
 		}
 		$this->view->action = $this->action;
@@ -39,12 +39,12 @@ class Indi_Controller_Front extends Indi_Controller{
 		// Определяем текущее id записи из таблицы fsection2faction, ищем его в базе чтобы по нему вытащить
 		// данные о том, какие  зависимые количества, зависимые множества и записи - соответствующие внешним
 		// ключам, нужно автоматически выташить
-		$this->section2action = Misc::loadModel('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"');
+		$this->section2action = Indi::model('Fsection2faction')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `factionId` = "' . $this->action->id . '"');
 		// Для хэлперов seoTitle, seoKeywords и seoDescription
 		$this->view->section2actionId = $this->section2action->id;
 
 		// Если к разделу прикреплена сущность, то назначаем текущаю модель, соответствующую этой сущности
-		if ($this->section->entityId) $this->model = Misc::loadModel(ucfirst($this->section->getForeignRowByForeignKey('entityId')->table));
+		if ($this->section->entityId) $this->model = Indi::model(ucfirst($this->section->foreign('entityId')->table));
 
 		// Стандартные задачи
 		$this->preMaintenance();
@@ -66,12 +66,12 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->params = $this->params;
 		$this->view->request = $this->getRequest();
 		$this->view->controller = $this->controller;
-		$this->view->staticPages = Misc::loadModel('Staticpage')->fetchAll('`toggle` = "y"', 'title')->toArray();
+		$this->view->staticPages = Indi::model('Staticpage')->fetchAll('`toggle` = "y"', 'title')->toArray();
 		$this->view->visitors = $this->visitors();
 
         // Меню
-        if (Misc::loadModel('Entity')->fetchRow('`table` = "menu"') && !$this->view->menu) {
-            $menu = Misc::loadModel('Menu')->init();
+        if (Indi::model('Entity')->fetchRow('`table` = "menu"') && !$this->view->menu) {
+            $menu = Indi::model('Menu')->init();
             $this->view->menu = $menu;
         }
 
@@ -110,14 +110,14 @@ class Indi_Controller_Front extends Indi_Controller{
 			$this->post['dir'] = $dir;
 			// check if field (that is to be sorted by) store relation
 			$entityId = false;	
-			$orderBy = Misc::loadModel('OrderBy')->fetchRow('`id` = "' . $orderById . '"');
+			$orderBy = Indi::model('OrderBy')->fetchRow('`id` = "' . $orderById . '"');
 			if ($orderBy->orderBy == "e") return $orderBy->expression . ' ' . $this->post['dir'];
-			$field = $orderBy->getForeignRowByForeignKey('fieldId');
+			$field = $orderBy->foreign('fieldId');
 		} else {
 			if ($this->section->orderBy == 'e') {
 				return $this->section->orderExpression;
 			} else {
-				$field = $this->section->getForeignRowByForeignKey('orderColumn');
+				$field = $this->section->foreign('orderColumn');
 				$this->post['dir'] = $this->section->orderDirection;
 			}
 		}
@@ -130,7 +130,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		// get distinct entity ids that will be used to initialize models and retrieve rowsets
 		if ($entityId) {
 			// get distinct ids of foreign rows
-			$info = Entity::getInstance()->getModelById($this->section->entityId)->info();
+			$info = Indi::model($this->section->entityId)->info();
 			$query = 'SELECT DISTINCT `' . $field->alias . '` AS `id` FROM `' . $info['name'] . '` WHERE 1 ' . ($condition ? ' AND ' . $condition : '');
 			$result = $this->db->query($query)->fetchAll();
 			if (count($result)) {
@@ -151,7 +151,7 @@ class Indi_Controller_Front extends Indi_Controller{
 					$condition  = '`alias` IN ("' . implode('","', $ids) . '")';
 					$condition .= ' AND `fieldId` = "' . $fieldId . '"';
 					$query .= 'VALUES ';
-					$foreignRowset = Entity::getInstance()->getModelById($entityId)->fetchAll($condition);
+					$foreignRowset = Indi::model($entityId)->fetchAll($condition);
 					foreach ($foreignRowset as $foreignRow) {
 						$values[] = '("' . $foreignRow->alias . '","' . $foreignRow->getTitle() . '")';
 					}
@@ -161,8 +161,8 @@ class Indi_Controller_Front extends Indi_Controller{
 					// mean that we can get titles for foreign keys  directly from 'title' column on corresponding foreign table
 					// and there is no need to preform any modifications on them before output in json format
 					// this shit is need it to avoid unneeded abuse to mysql server - to improve performance
-					$entity = Entity::getInstance()->fetchRow('`id` = "' . $entityId . '"')->toArray();
-					$info = Entity::getModelById($entityId)->info();
+					$entity = Indi::model('Entity')->fetchRow('`id` = "' . $entityId . '"')->toArray();
+					$info = Indi::model($entityId)->info();
 					$modelsDirPath = trim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . '/application/';
 
 					// get filename of row class
@@ -171,11 +171,11 @@ class Indi_Controller_Front extends Indi_Controller{
 
 					// if function 'getTitle' was not redeclared
 					if (!strpos($code, 'function getTitle(')) {
-						$foreignTableInfo = Entity::getModelById($entityId)->info();
+						$foreignTableInfo = Indi::model($entityId)->info();
 						$query .= 'SELECT `id`,`title` FROM `' . $foreignTableInfo['name'] . '` WHERE `id` IN (' . implode(',', $ids) . ');';
 					} else {
 						// prepare and put data into temporary table
-						$foreignRowset = Entity::getModelById($entityId)->fetchAll('`id` IN (' . implode(',', $ids) . ')');
+						$foreignRowset = Indi::model($entityId)->fetchAll('`id` IN (' . implode(',', $ids) . ')');
 						
 						$query .= 'VALUES ';
 						foreach ($foreignRowset as $foreignRow) {
@@ -204,7 +204,7 @@ class Indi_Controller_Front extends Indi_Controller{
 			$rowset = $this->trail->getItem()->model->fetchAll('1 ' . ($condition ? ' AND ' . $condition : ''));
 			$tmp = array();
 			foreach ($rowset as $row) {
-				$tmp[] = array('id' => $row->id, 'title' => $row->getForeignRowByForeignKey($this->post['sort'])->getTitle());
+				$tmp[] = array('id' => $row->id, 'title' => $row->foreign($this->post['sort'])->getTitle());
 			}
 			if (count($tmp)) {
 				// create temporary table
@@ -262,7 +262,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		}
         if ($this->trail->getItem(1)){
             if ($this->trail->getItem()->section->parentSectionConnector) {
-                $parentSectionConnectorAlias = $this->trail->getItem()->section->getForeignRowByForeignKey('parentSectionConnector')->alias;
+                $parentSectionConnectorAlias = $this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
                 $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->$parentSectionConnectorAlias .'"';
             } else {
                 $this->post['indexWhere'][1] = '`' . $this->trail->getItem(1)->model->info('name') . 'Id` = "' . $this->trail->getItem(1)->row->id .'"';
@@ -297,7 +297,7 @@ class Indi_Controller_Front extends Indi_Controller{
 			$_SESSION['indexParams'][$this->section->alias]['order'] = Misc::number($this->post['indexOrder']);
 		} else {
 			if ($this->section->orderBy == 'c') {
-				$_SESSION['indexParams'][$this->section->alias]['order'] = Misc::loadModel('OrderBy')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `fieldId` = "' . $this->section->orderColumn . '"')->id;
+				$_SESSION['indexParams'][$this->section->alias]['order'] = Indi::model('OrderBy')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `fieldId` = "' . $this->section->orderColumn . '"')->id;
 				$_SESSION['indexParams'][$this->section->alias]['dir'] = $this->section->orderDirection;
 			} else {
 				$_SESSION['indexParams'][$this->section->alias]['order'] = $this->section->orderExpression;
@@ -416,7 +416,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	public function setIndependentRowsets(){
 		if ($this->section2action) {
 			$info = $this->section2action->getInfoAboutIndependentCountsToBeGot();
-			$join = Misc::loadModel('JoinFkForIndependentRowset');
+			$join = Indi::model('JoinFkForIndependentRowset');
 			foreach ($info as $entity) {
 				if ($entity->calculatedColumns) {
 					if (preg_match('/\$/', $entity->calculatedColumns)) {
@@ -436,7 +436,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				} else {
 					$where = null;
 				}
-				$order = $entity->orderBy == 'c' && $entity->getForeignRowByForeignKey('fieldId')->alias ? $entity->getForeignRowByForeignKey('fieldId')->alias  . ' ' . $entity->orderDirection : $entity->expression;
+				$order = $entity->orderBy == 'c' && $entity->foreign('fieldId')->alias ? $entity->foreign('fieldId')->alias  . ' ' . $entity->orderDirection : $entity->expression;
 				if (preg_match('/\$/', $order)) {
 					eval('$order = \'' . $order . '\';');
 				}
@@ -444,7 +444,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				$limit = $entity->limit ? $entity->limit : null;
 				$page = $_SESSION['rowsetParams'][$this->section->alias][$this->action->alias]['independent'][$entity->alias]['page'];if (!$page) $page = 1;
 				
-				$rowset = Entity::getModelById($entity->entityId)->fetchAll($where, $order ? $order : null, $limit, $page, $calc);
+				$rowset = Indi::model($entity->entityId)->fetchAll($where, $order ? $order : null, $limit, $page, $calc);
 				$joins = $join->fetchAll('`independentRowsetId` = "' . $entity->id . '"');
 				if ($joins->count()) {
 					$rowset->setForeignRowsByForeignKeys($joins);
@@ -463,22 +463,20 @@ class Indi_Controller_Front extends Indi_Controller{
 		die();
 	}
 	public function subdomainMaintenance($html){
-		$config = Indi::registry('config');
 		if (Indi::registry('subdomains')) {
 			$subdomains = Indi::registry('subdomains');
 			for ($i = 0; $i < count($subdomains); $i++) {
-				$html = preg_replace('/(href|action)="\/' . $subdomains[$i] . '\//', '$1="http://' . $subdomains[$i] . '.' . $config['general']->domain .'/', $html);
+				$html = preg_replace('/(href|action)="\/' . $subdomains[$i] . '\//', '$1="http://' . $subdomains[$i] . '.' . Indi::registry('config')->general->domain .'/', $html);
 			}
 		}
 		if (Indi::registry('subdomain')) {
-			$html = preg_replace('/(href|action)="\//', '$1="http://' . $config['general']->domain.'/', $html);
+			$html = preg_replace('/(href|action)="\//', '$1="http://' . Indi::registry('config')->general->domain.'/', $html);
 		}
 		return $html;
 	}
 	public function httpsMaintenance($html) {
 		if ($_SERVER['SERVER_PORT'] == 443) {
-			$config = Indi::registry('config');
-			$html = preg_replace('/(<link.*href=)"\//ui', '$1"https://' . $config['general']->domain . '/', $html);
+			$html = preg_replace('/(<link.*href=)"\//ui', '$1"https://' . Indi::registry('config')->general->domain . '/', $html);
 			$html = preg_replace('/(<link.*)href="http:/ui', '$1 href="https:', $html);
 			$html = preg_replace('/(<script.*)src="http:/ui', '$1 src="https:', $html);
 		}

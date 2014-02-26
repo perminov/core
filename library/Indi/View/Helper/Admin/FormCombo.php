@@ -92,7 +92,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             $this->comboDataOrderDirection, $this->comboDataOffset);
 
         // Get satellite
-        if ($this->field->satellite) $satellite = $this->field->getForeignRowByForeignKey('satellite');
+        if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
 
         // If 'optgroup' param is used
         if ($comboDataRs->optgroup) $by = $comboDataRs->optgroup['by'];

@@ -9,7 +9,7 @@ class Entity_Row extends Indi_Db_Table_Row
 		$this->deleteAllUploadedFilesAndUploadFolder();
 
 		// delete db table
-		$this->getTable()->getAdapter()->query('DROP TABLE `' . $this->table . '`');
+		Indi::db()->query('DROP TABLE `' . $this->table . '`');
 
 		// delete model file and row, rowset classes
 		//$this->deleteClasses();

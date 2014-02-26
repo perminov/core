@@ -61,8 +61,7 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
                 }
             }
         }
-        $config = Indi::registry('config');
-        $CKconfig['language'] = $config['view']->lang;
+        $CKconfig['language'] = Indi::registry('config')->view->lang;
 
         ob_start();?>
         <textarea id="<?=$name?>" name="<?=$name?>"><?=str_replace(array('<','>'), array('&lt;','&gt;'), $value)?></textarea>

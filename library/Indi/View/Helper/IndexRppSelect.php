@@ -3,11 +3,11 @@ class Indi_View_Helper_IndexRppSelect extends Indi_View_Helper_Abstract
 {
 	public function indexRppSelect($rppId = null){
 		if (!$rppId && $this->view->section->rppId) {
-			$rpp = $this->view->section->getForeignRowByForeignKey('rppId')->title;
+			$rpp = $this->view->section->foreign('rppId')->title;
 	 	} else if ($rppId) {
-			$rpp = Misc::loadModel('Rpp')->fetchRow('`id` = "' . $rppId . '"')->title;
+			$rpp = Indi::model('Rpp')->fetchRow('`id` = "' . $rppId . '"')->title;
 		} else {
-			$rpp = Misc::loadModel('Rpp')->fetchRow(null, 'id ASC')->title;
+			$rpp = Indi::model('Rpp')->fetchRow(null, 'id ASC')->title;
 		}
 		$xhtml = '<select class="saas-select" onchange="$(\'#indexLimit\').attr(\'value\', this.value);$(\'#indexParams\').submit()">';
 		$rpp = explode(',', $rpp);

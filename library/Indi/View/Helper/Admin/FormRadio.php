@@ -11,7 +11,7 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
                 Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
             }
 			if ($field->relation == 6) {
-				$enumset = Misc::loadModel('Enumset');
+				$enumset = Indi::model('Enumset');
 				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', 'move')->toArray();
 				$texts = $values = array();
 				for ($i = 0; $i < count ($array); $i++) {

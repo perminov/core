@@ -8,18 +8,18 @@ class Fsection2faction_Row extends Indi_Db_Table_Row
      */
     public function getTitle()
     {
-        return $this->getForeignRowByForeignKey('factionId')->title;
+        return $this->foreign('factionId')->title;
     }
     public function getInfoAboutDependentCountsToBeGot(){
-    	return Misc::loadModel('DependentCount')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
+    	return Indi::model('DependentCount')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
     }
     public function getInfoAboutDependentRowsetsToBeGot(){
-    	return Misc::loadModel('DependentRowset')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
+    	return Indi::model('DependentRowset')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
     }	
     public function getInfoAboutForeignRowsToBeGot(){
-    	return Misc::loadModel('JoinFk')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
+    	return Indi::model('JoinFk')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
     }
 	public function getInfoAboutIndependentCountsToBeGot(){
-		return Misc::loadModel('IndependentRowset')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
+		return Indi::model('IndependentRowset')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
 	}
 }
