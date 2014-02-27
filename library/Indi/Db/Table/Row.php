@@ -31,6 +31,7 @@ class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
 		$ownerEntityId = Entity::getInstance()->fetchRow('`table` = "' . $this->getTable()->info('name') . '"')->id;
 		$field = Misc::loadModel('Field')->fetchRow('`alias` = "' . $foreignKey . '" AND `entityId` = "' . $ownerEntityId . '"');
 		$searchingEntityId = $field->relation;
+        if ($field->dependency == 'e') $field->relation = $this->{$field->foreign('satellite')->alias};
 		if ($field->relation != 6) {
             if ($field->storeRelationAbility == 'one') {
                 return Entity::getInstance()->getModelById($field->relation)->fetchRow('`id` = "' . $this->$foreignKey . '"');
