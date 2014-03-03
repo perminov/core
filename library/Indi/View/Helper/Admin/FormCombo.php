@@ -79,6 +79,9 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // Get params
         $params = $this->field->getParams();
 
+        // Get title column
+        $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';
+
         // If current row does not exist, combo will use field's default value as selected value
         if ($this->getRow()->$name) {
             $selected = $this->getRow()->$name;
@@ -125,7 +128,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             // Here we are trying to detect, does $o->title have tag with color definition, for example
             // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
             // We should do that because such tags existance may cause a dom errors while performing Misc::usubstr()
-            $info = $this->detectColor(array('title' => $o->title, 'value' => $o->$keyProperty));
+            $info = $this->detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
 
             if ($info['box']) $system['boxColor'] = $info['color'];
 

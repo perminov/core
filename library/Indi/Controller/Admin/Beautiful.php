@@ -102,6 +102,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             // Get params
             $params = $field->getParams();
 
+            // Get title column
+            $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';
+
             // If 'optgroup' param is used
             if ($comboDataRs->optgroup) {
                 $by = $comboDataRs->optgroup['by'];
@@ -115,7 +118,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             foreach ($comboDataRs as $o) {
                 $system = $o->system();
                 if ($by) $system = array_merge($system, array('group' => $o->$by));
-                $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->title, 50), 'system' => $system);
+                $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->$titleColumn, 50), 'system' => $system);
 
                 // Deal with optionTemplate param, if specified
                 if ($params['optionTemplate']) {
@@ -153,6 +156,24 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
             // Output
             die(json_encode($options));
+        } else if (is_array($this->trail->getItem()->disabledFields['save']) &&
+            count($this->trail->getItem()->disabledFields['save'])) {
+
+            $fieldIdA = array();
+            foreach ($this->trail->getItem()->fields as $fieldR)
+                if (in_array($fieldR->alias, $this->trail->getItem()->disabledFields['save']))
+                    $fieldIdA[$fieldR->id] = $fieldR->alias;
+
+            $disabledFieldRs = Indi::model('DisabledField')->fetchAll(array(
+                '`sectionId` = "' . $this->trail->getItem()->section->id . '"',
+                '`fieldId` IN (' . implode(',', array_keys($fieldIdA)) . ')'
+            ));
+            foreach ($disabledFieldRs as $disabledFieldR) {
+                if (strlen($disabledFieldR->defaultValue)) {
+                    Indi::$cmpTpl = $disabledFieldR->defaultValue; eval(Indi::$cmpRun); $disabledFieldR->defaultValue = Indi::$cmpOut;
+                    $this->row->{$fieldIdA[$disabledFieldR->fieldId]} = $disabledFieldR->defaultValue;
+                }
+            }
         }
     }
 

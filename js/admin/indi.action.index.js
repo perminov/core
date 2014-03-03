@@ -36,7 +36,9 @@ var Indi = (function (indi) {
             this.options = {
                 grid: {
                     multiSelect: false,
-                    firstColumnWidthFraction: 0.4
+                    firstColumnWidthFraction: 0.4,
+                    storeLoadCallback: function(){
+                    }
                 }
             }
 
@@ -1194,6 +1196,7 @@ var Indi = (function (indi) {
              * Callback for store load, will be fired if current section type = 'grid'
              */
             this.storeLoadCallbackGrid = function(){
+                instance.options.grid.storeLoadCallback();
                 instance.highlightGridFilteredColumns();
                 instance.adjustGridColumnsWidths();
             }
@@ -1390,7 +1393,7 @@ var Indi = (function (indi) {
             this.run = function() {
 
                 // Provide an ability for javascript to be executed, if specified
-                if (indi.trail.item().section.javascriptForm) eval(indi.trail.item().section.javascript);
+                if (indi.trail.item().section.javascript) eval(indi.trail.item().section.javascript);
 
                 // Call the callbacks
                 if (indi.callbacks && indi.callbacks[instance.componentName] && indi.callbacks[instance.componentName].length) {

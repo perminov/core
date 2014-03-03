@@ -50,7 +50,7 @@ class Indi_Auth{
     public function auth(&$controller)
     {
 		$this->controller = $controller;
-		// check access if cms user is already logged in
+		//  check access if cms user is already logged in
         if ($_SESSION['admin']['id']) {
             $controller->admin = $_SESSION['admin'];
 //			d($controller);
@@ -212,7 +212,7 @@ class Indi_Auth{
 					$field = $admin['alternate']. 'Id';
 					if ($entity->fields($field))
 					if ($action != 'index' && !($row = $entity->fetchRow('`id` = "' . $this->identifier . '" AND `' . $field. '` = "' . $admin['id'] . '"'))) {
-						$redirect = 'Эта объект вам не принадлежит';
+						//$redirect = 'Эта объект вам не принадлежит';
 					}
 				}
 			}
