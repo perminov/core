@@ -213,7 +213,7 @@ class Indi_Auth{
 					$field = $admin['alternate']. 'Id';
 					if ($entity->fieldExists($field))
 					if ($action != 'index' && !($row = $entity->fetchRow('`id` = "' . $this->identifier . '" AND `' . $field. '` = "' . $admin['id'] . '"'))) {
-						$redirect = 'Эта объект вам не принадлежит';
+						//$redirect = 'Эта объект вам не принадлежит';
 					}
 				}
 			}

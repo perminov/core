@@ -98,6 +98,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             // Get params
             $params = $field->getParams();
 
+            // Get title column
+            $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';
+
             // If 'optgroup' param is used
             if ($comboDataRs->optgroup) {
                 $by = $comboDataRs->optgroup['by'];
@@ -111,7 +114,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             foreach ($comboDataRs as $o) {
                 $system = $o->system();
                 if ($by) $system = array_merge($system, array('group' => $o->$by));
-                $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->title, 50), 'system' => $system);
+                $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->$titleColumn, 50), 'system' => $system);
 
                 // Deal with optionTemplate param, if specified
                 if ($params['optionTemplate']) {

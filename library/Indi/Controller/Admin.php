@@ -555,7 +555,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                             && preg_match('/00:00:00$/', $data[$j][$fieldR->alias])
                             && $params['displayTimeFormat'] == 'H:i') {
                             $data[$j][$fieldR->alias] = '00.00.0000 00:00';
-                        } else if ($data[$j][$fieldR->alias] != ''){
+                        } else if ($data[$j][$fieldR->alias] == '0000-00-00 00:00:00'){
+                            $data[$j][$fieldR->alias] = '';
+                        } else if ($data[$j][$fieldR->alias]){
                             $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
                         }
 

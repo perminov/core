@@ -1793,6 +1793,8 @@ var Indi = (function (indi) {
             this.bindDelete = function(appended){
                 var scope = appended ? appended : $('.i-combo-selected-item-delete');
                 scope.click(function(){
+                    // If combo is disabled, no selected item deletion should be performed
+                    if (scope.parents('.i-combo').hasClass('i-combo-disabled')) return;
 
                     // Set up auxilary variabes
                     var name = $(this).parents('.i-combo').parent().find(instance.keywordSelector()).attr('lookup');
