@@ -273,7 +273,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         if (!$relatedM) return new Indi_Db_Table_Rowset(array());
 
         // Get title column
-        $titleColumn = $relatedM->titleColumn();
+        $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
         if (is_null($order)) {

@@ -160,6 +160,10 @@
     font-size: 11px;
     line-height: 15px;
 }
+.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item{
+    background-color: #ECECEC;
+    color: rgba(4, 64, 140, 0.5);
+}
 .i-combo .i-combo-multiple, .i-combo .i-combo-single{
     border: 1px solid #99BCE8;
     padding-left: 0px;
@@ -177,12 +181,16 @@
 }
 .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete{
     background-repeat: no-repeat;
-    background-position: center center;
+    background-position: 0 0;
     width: 8px;
     height: 8px;
     display: inline-block;
     margin-left: 2px;
     cursor: pointer;
+}
+.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
+    background-position: 0 -8px;
+    cursor: default;
 }
 .i-combo .i-combo-multiple .i-combo-keyword{
     margin-left: 1px;

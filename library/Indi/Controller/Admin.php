@@ -178,7 +178,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     if ($params['displayFormat']) {
                         if ($params['displayFormat'] == 'd.m.Y' && $value == '00.00.0000') {
                             $value = '0000-00-00';
-                        } else {
+                        } else if ($value != '0000-00-00') {
                             $value = date('Y-m-d', strtotime($value));
                         }
                     }
@@ -539,8 +539,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                 if ($params['displayFormat']) {
                     for ($j = 0; $j < count ($data); $j++) {
                         if (preg_match($this->datePattern, $data[$j][$fieldR->alias])) {
-                            if ($data[$j][$fieldR->alias] == '0000-00-00' && $params['displayFormat'] == 'd.m.Y') {
-                                $data[$j][$fieldR->alias] = '00.00.0000';
+                            if ($data[$j][$fieldR->alias] == '0000-00-00') {
+                                $data[$j][$fieldR->alias] = '';
                             } else if ($data[$j][$fieldR->alias] != '0000-00-00'){
                                 $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
                                 if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
@@ -559,7 +559,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                             && preg_match('/00:00:00$/', $data[$j][$fieldR->alias])
                             && $params['displayTimeFormat'] == 'H:i') {
                             $data[$j][$fieldR->alias] = '00.00.0000 00:00';
-                        } else if ($data[$j][$fieldR->alias] != ''){
+                        } else if ($data[$j][$fieldR->alias] == '0000-00-00 00:00:00'){
+                            $data[$j][$fieldR->alias] = '';
+                        } else if ($data[$j][$fieldR->alias]){
                             $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
                         }
 
