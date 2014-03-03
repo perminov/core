@@ -50,7 +50,7 @@ class Indi_Auth{
     public function auth(&$controller)
     {
 		$this->controller = $controller;
-		// check access if cms user is already logged in
+		//  check access if cms user is already logged in
         if ($_SESSION['admin']['id']) {
             $controller->admin = $_SESSION['admin'];
 //			d($controller);
