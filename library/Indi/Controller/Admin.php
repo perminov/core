@@ -79,7 +79,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
                         // constructed with usage of $this->limit and $this->page params
                         $this->rowset = $this->trail->getItem()->model->{
-                            'fetch'. ($this->trail->getItem()->model->treeColumn ? 'Tree' : 'All')
+                            'fetch'. ($this->trail->getItem()->model->treeColumn() ? 'Tree' : 'All')
                         }($finalWHERE, $finalORDER,
                             $this->params['xls'] ? null : $this->limit,
                             $this->params['xls'] ? null : $this->page);
@@ -141,7 +141,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
         $fields = $this->trail->getItem()->fields->setForeignRowsByForeignKeys('elementId');
         $model = $this->trail->getItem()->model;
-        $table = $model->info('name');
+        $table = $model->name();
         $sql = array();
         $set = array();
         $data = array();
@@ -683,7 +683,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     public function updateCacheIfNeed(){
         if (!Indi_Cache::$useCache) return;
         // Get table name
-        $table = $this->trail->getItem()->model->info('name');
+        $table = $this->trail->getItem()->model->name();
 
         if ($table == 'entity') {
             // Сколько было кэшей в списке

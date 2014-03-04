@@ -22,9 +22,16 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
 				$texts = implode(',' , $texts);
 				$values = implode(',' , $values);
 			} else {
-			    $data  = $this->view->row->getDropdownData($name, $this->view->trail);
-				$texts = implode(',', array_values($data));
-				$values = implode(',', array_keys($data));
+			    $data  = $this->view->row->getComboData($name);
+                $texts = array();
+                $values = array();
+                $key = $data->enumset ? 'alias' : 'id';
+                foreach ($data as $item) {
+                    $texts[] = $item->title;
+                    $values[] = $item->$key;
+                }
+				$texts = implode(',', $texts);
+				$values = implode(',', $values);
 			}
 		}
 		$rowsHeightLimit = 10;

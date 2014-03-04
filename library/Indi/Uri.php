@@ -247,13 +247,13 @@ class Indi_Uri {
 							$sys[] = $parts[$i]['prefix'] . '/' . $component->id;
 							break;
 						} else if ($i > 0){
-							$where = ' AND `' . $models[$parts[$i]['entityId']]->info('name') . 'Id` = ' . $component->id;
+							$where = ' AND `' . $models[$parts[$i]['entityId']]->name() . 'Id` = ' . $component->id;
 							$alias = $aim[$i+($parts[0]['alias'] ? 2 : 3) - $shift];
 						}
-						$where = ' AND `' . $models[$parts[$i]['entityId']]->info('name') . 'Id` = ' . $component->id;
+						$where = ' AND `' . $models[$parts[$i]['entityId']]->name() . 'Id` = ' . $component->id;
 						$alias = $aim[$i+($parts[0]['alias'] ? 2 : 3) - $shift];
 					} else if ($component = $models[$parts[$i]['entityId']]->fetchRow('`alias` = ""' . $where)) {
-						$where = ' AND `' . $models[$parts[$i]['entityId']]->info('name') . 'Id` = ' . $component->id;
+						$where = ' AND `' . $models[$parts[$i]['entityId']]->name() . 'Id` = ' . $component->id;
 						$shift++;
 						$alias = $aim[$i+($parts[0]['alias'] ? 2 : 3) - $shift];
 					} else if (!$alias) {
@@ -352,7 +352,7 @@ class Indi_Uri {
 				if ($r[$concat1][$i]['prefix'] == $prefix || $continue) {
 					if ($components = $models[$r[$concat1][$i]['entityId']]->fetchAll('`id` IN ("' . implode('","', $ids) . '")')) {
 						if ($i > 0) {
-							$key = $models[$r[$concat1][$i-1]['entityId']]->info('name') . 'Id';
+							$key = $models[$r[$concat1][$i-1]['entityId']]->name() . 'Id';
 						}
 						$ids = array();
 						foreach ($components as $component) {

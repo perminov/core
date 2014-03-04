@@ -99,7 +99,8 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      * @return int Number of deleted rows (1|0)
      */
     public function delete(){
-        // Delete all files and images that have been attached to row
+
+        // Delete all files (images, etc) that have been attached to row
         $this->deleteUploadedFiles();
 
         // Delete other rows of entities, that have fields, related to entity of current row
@@ -118,7 +119,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         // Basic info
         $entityM = Indi::model('Entity');
         $fieldM = Indi::model('Field');
-        $entityR = $entityM->fetchRow('`table` = "' . $this->_table->_name . '"');
+        $entityR = $entityM->fetchRow('`table` = "' . $this->_table . '"');
         $fieldR = $fieldR ? $fieldR : $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
         $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
         $relatedM = Indi::model($fieldR->relation);
@@ -312,7 +313,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
         }
 
         // If related entity has tree-structure
-        if ($relatedM->treeColumn) {
+        if ($relatedM->treeColumn()) {
 
             // If we go lower, page number should be incremented, so if passed page number
             // is 1, it will be 2, because actually results of page 1 were already fetched
@@ -395,7 +396,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
                 // Get number of total found rows
                 $foundRows = Indi::db()->query(
-                    'SELECT COUNT(`id`) FROM `' . $relatedM->info('name') . '`' . $foundRowsWhere
+                    'SELECT COUNT(`id`) FROM `' . $relatedM->name() . '`' . $foundRowsWhere
                 )->fetchColumn(0);
 
                 // If results should be started from selected value but total found rows number if not too great
@@ -492,7 +493,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
 
             // Get titles for optgroups
             $groupByOptions = array();
-            if ($groupByFieldEntityM->info('name') == 'enumset') {
+            if ($groupByFieldEntityM->name() == 'enumset') {
                 $groupByRs = $groupByFieldEntityM->fetchAll('
                             `fieldId` = "' . $groupByFieldR->id . '" AND
                             FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")
@@ -636,7 +637,7 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
                     // If field is related to enumset entity, we should append an additional WHERE clause,
                     // that will outline the `fieldId` value, because in this case current row store aliases
                     // of rows from `enumset` table instead of ids, and aliases are not unique within that table.
-                    if (Indi::model($fieldR->relation)->_name == 'enumset') {
+                    if (Indi::model($fieldR->relation)->name() == 'enumset') {
                         $where[] = '`fieldId` = "' . $fieldR->id . '"';
                         $col = 'alias';
                     } else {
@@ -670,5 +671,117 @@ class Indi_Db_Table_Row_Beautiful extends Indi_Db_Table_Row_Abstract{
      */
     public function table() {
         return Indi::model($this->_table);
+    }
+
+    /**
+     * Provide Toggle On/Off action
+     *
+     * @throws Exception
+     */
+    public function toggle() {
+
+        // If `toggle` column exists
+        if ($this->table()->fields('toggle')) {
+
+            // Do the toggle
+            $this->toggle = $this->toggle == 'y' ? 'n' : 'y';
+            $this->save();
+
+            // Else throw exception
+        } else throw new Exception('Column `toggle` does not exist');
+    }
+
+    /**
+     * Delete all usages of current row
+     */
+    public function deleteForeignKeysUsages(){
+
+        // Declare entities array
+        $entities = array();
+
+        // Get all fields in whole database, which are containing keys related to this entity
+        $fieldRs = Indi::model('Field')->fetchAll('`relation` = "' . $this->table()->id() . '"');
+        foreach ($fieldRs as $fieldR) $entities[$fieldR->entityId]['fields'][] = $fieldR;
+
+        // Get auxillary deletion info within each entity
+        foreach ($entities as $eid => $data) {
+
+            // Load model
+            $model = Indi::model($eid);
+
+            // Foreach field within current model
+            foreach ($data['fields'] as $field) {
+                // We should check that column - which will be used in WHERE clause for retrieving a dependent rowset -
+                // still exists. We need to perform this check because this column may have already been deleted, if
+                // it was dependent of other column that was deleted.
+                if ($model->fields($field->alias)) {
+
+                    // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
+                    if ($field->storeRelationAbility == 'one') {
+                        $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
+
+                        // If storeRelationAbility = 'many', we do not delete rows, but we delete
+                        // mentions of $this->id from comma-separated sets of keys
+                    } else if ($field->storeRelationAbility == 'many') {
+                        $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
+                        foreach ($rs as $r) {
+                            $set = explode(',', $r->{$field->alias});
+                            $found = array_search($this->id, $set);
+                            if ($found !== false) unset($set[$found]);
+                            $r->{$field->alias} = implode(',', $set);
+                            $r->save(true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete all files (images, etc) that have been attached to row. Names of all uploaded files,
+     * are constructed by the following pattern
+     * <upload path>/<entity|table|model name>/<row id>_<file upload field alias>.<file extension>
+     * or
+     * <general upload path>/<entity|table|model name>/<row id>_<file upload field alias>,<resized copy name>.<file extension>
+     *  (in case if uploaded file is an image, and resized copy autocreation was set up)
+     *
+     * This function get all parts of the pattern, build it, and finds all files that match this pattern
+     * with glob() php function usage, so uploaded files names and/or paths and/or extensions are not stored in db,
+     *
+     * @param string $name The alias of field, that is File Upload field (Aliases of such fields are used in the
+     *                     process of filename construction for uploaded files to saved under)
+     * @throws Exception
+     */
+    public function deleteUploadedFiles($name = ''){
+
+        // Get upload path from config
+        $uploadPath = Indi_Image::getUploadPath();
+
+        // Absolute upload path in filesystem
+        $absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/' . $uploadPath . '/' . $this->_table . '/';
+
+        // Array for filenames that should be deleted
+        $files = array();
+
+        // We delete all files in case if there is no aim to delete only specified image copies
+        if (!$name){
+            $nonamed = glob($absolute . $this->id . '.*');
+            $named = glob($absolute . $this->id . ',*');
+            if (is_array($nonamed)) $files = array_merge($nonamed, $files);
+            if (is_array($named)) $files = array_merge($named, $files);
+        }
+
+        // All resized copies are to be deleted too
+        $resized = glob($absolute . $this->id . '_' . $name . '*.*');
+        if (is_array($resized)) $files = array_merge($resized, $files);
+
+        // Foreach file - delete it from server
+        for ($j = 0; $j < count($files); $j++) {
+            try {
+                unlink($files[$j]);
+            } catch (Exception $e) {
+                throw new Exception();
+            }
+        }
     }
 }

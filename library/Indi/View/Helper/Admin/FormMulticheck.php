@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
 {
     public function formMulticheck($name, $cols = 1, $attribs = array())
     {
-        $multi = $this->view->row->getDropdownData($name, $this->view->trail);
+        $multi = $this->view->row->getComboData($name);
         $multi = $multi ? $multi : array();
                 
         $data = array();
@@ -16,11 +16,11 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
 			$value = $this->view->row->$name;
 		}
 		$checked = explode(',', $value);
-        while(list($value, $text) = each($multi)) {
+        foreach ($multi as $multiI) {
             $item = new stdClass();
-            $item->value = $value;
-            $item->text = $text;
-            if (is_array($checked) && in_array($value, $checked)) $item->checked = true;
+            $item->value = $multiI->id;
+            $item->text = $multiI->title;
+            if (is_array($checked) && in_array($multiI->id, $checked)) $item->checked = true;
             $data[] = $item;
         }
         $rowsHeightLimit = 10;

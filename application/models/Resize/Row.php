@@ -50,7 +50,7 @@ class Resize_Row extends Indi_Db_Table_Row
             if ($was != $became) {
                 // Get files of copies to be resized
                 $field = $this->foreign('fieldId');
-                $entity = Indi::model($field->entityId)->info('name');
+                $entity = Indi::model($field->entityId)->name();
                 $uploadPath = Indi_Image::getUploadPath();
                 $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
                 $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;

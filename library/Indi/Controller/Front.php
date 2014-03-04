@@ -130,8 +130,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		// get distinct entity ids that will be used to initialize models and retrieve rowsets
 		if ($entityId) {
 			// get distinct ids of foreign rows
-			$info = Indi::model($this->section->entityId)->info();
-			$query = 'SELECT DISTINCT `' . $field->alias . '` AS `id` FROM `' . $info['name'] . '` WHERE 1 ' . ($condition ? ' AND ' . $condition : '');
+			$query = 'SELECT DISTINCT `' . $field->alias . '` AS `id` FROM `' . Indi::model($this->section->entityId)->name() . '` WHERE 1 ' . ($condition ? ' AND ' . $condition : '');
 			$result = $this->db->query($query)->fetchAll();
 			if (count($result)) {
 				// get distinct foreign key values, to avoid twice or more calculating title for equal ids
@@ -162,17 +161,15 @@ class Indi_Controller_Front extends Indi_Controller{
 					// and there is no need to preform any modifications on them before output in json format
 					// this shit is need it to avoid unneeded abuse to mysql server - to improve performance
 					$entity = Indi::model('Entity')->fetchRow('`id` = "' . $entityId . '"')->toArray();
-					$info = Indi::model($entityId)->info();
 					$modelsDirPath = trim($_SERVER['DOCUMENT_ROOT'] . '/www', '/') . '/application/';
 
 					// get filename of row class
-					$file = $backendModulePath . 'models/' . str_replace('_', '/', $info['rowClass']) . '.php';
+					$file = $backendModulePath . 'models/' . str_replace('_', '/', Indi::model($entityId)->rowClass()) . '.php';
 					if (file_exists($file)) $code = file_get_contents($file);
 
 					// if function 'getTitle' was not redeclared
 					if (!strpos($code, 'function getTitle(')) {
-						$foreignTableInfo = Indi::model($entityId)->info();
-						$query .= 'SELECT `id`,`title` FROM `' . $foreignTableInfo['name'] . '` WHERE `id` IN (' . implode(',', $ids) . ');';
+						$query .= 'SELECT `id`,`title` FROM `' . Indi::model($entityId)->name() . '` WHERE `id` IN (' . implode(',', $ids) . ');';
 					} else {
 						// prepare and put data into temporary table
 						$foreignRowset = Indi::model($entityId)->fetchAll('`id` IN (' . implode(',', $ids) . ')');
@@ -265,7 +262,7 @@ class Indi_Controller_Front extends Indi_Controller{
                 $parentSectionConnectorAlias = $this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
                 $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->$parentSectionConnectorAlias .'"';
             } else {
-                $alias = $this->trail->getItem(1)->model->info('name') . 'Id';
+                $alias = $this->trail->getItem(1)->model->name() . 'Id';
                 $fieldR = Indi::model('Field')->fetchRow('`entityId` = "' . $this->trail->getItem()->section->entityId . '" AND `alias` = "' . $alias . '"');
                 if ($fieldR->storeRelationAbility == 'one') {
                     $this->post['indexWhere'][1] = '`' . $alias . '` = "' . $this->trail->getItem(1)->row->id .'"';
@@ -367,7 +364,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	//		if ($this->model && $this->section->type == 'r' && $this->action->alias == 'index') {
 				// get rowset params and get rowset according to them
 				$rp = $this->getRowsetParams();
-				if ($tree = $this->model->treeColumn) {
+				if ($tree = $this->model->treeColumn()) {
 					$this->rowset = $this->model->fetchTree($rp['where'], trim($this->getOrder($rp['order'], $rp['dir'])));
 				} else {
 					if ($this->exclusiveRowsetParams) {
@@ -396,10 +393,6 @@ class Indi_Controller_Front extends Indi_Controller{
 					$where = $this->identifier;
 				}
 				if ($this->row = $this->model->fetchRow($where)) {
-					// set dependent counts or related items
-					$info = $this->section2action->getInfoAboutDependentCountsToBeGot();
-					if ($info->count()) $this->row->setDependentCounts($info);
-					
 					// set dependent rowsets of related items
 					$info = $this->section2action->getInfoAboutDependentRowsetsToBeGot();
 					if ($info->count()) $this->row->setDependentRowsets($info);
