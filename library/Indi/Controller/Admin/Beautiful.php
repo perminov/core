@@ -144,7 +144,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             if ($comboDataRs->foundRows) $options['found'] = $comboDataRs->foundRows;
 
             // Setup tree flag
-            if ($comboDataRs->table()->treeColumn) $options['tree'] = true;
+            if ($comboDataRs->table()->treeColumn()) $options['tree'] = true;
 
             // Setup groups for options
             if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
@@ -736,7 +736,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     // Get the possible foreign keys
                     $setA = $this->db->query('
                         SELECT DISTINCT `' . $column . '` AS `id`
-                        FROM `' . $this->trail->getItem()->model->info('name') . '`
+                        FROM `' . $this->trail->getItem()->model->name() . '`
                         ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
                     ')->fetchAll(PDO::FETCH_COLUMN);
 

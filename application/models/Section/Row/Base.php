@@ -42,8 +42,8 @@ class Section_Row_Base extends Indi_Db_Table_Row
 
                     // Exclude tree column, if exists
                     if ($model = Indi::model($this->_modified['entityId'])) {
-                        if ($model->treeColumn) {
-                            $exclusions[] = $model->treeColumn;
+                        if ($model->treeColumn()) {
+                            $exclusions[] = $model->treeColumn();
                         }
                     }
 

@@ -44,17 +44,17 @@ abstract class Indi_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
     protected $_foreign = array();
 
     /**
-     * Object of type Indi_Db_Table_Abstract or some of extended class
+     * Table name of table, that current row is related to
      *
-     * @var
+     * @var string
      */
-    protected $_table;
+    protected $_table = '';
 
     /**
      * Constructor.
      *
      * Supported params for $config are:-
-     * - table       = class name or object of type Indi_Db_Table_Abstract
+     * - table       = class name or object of type Indi_Db_Table
      * - data        = values of columns in this row.
      *
      * @param  array $config OPTIONAL Array of user-specified config options.

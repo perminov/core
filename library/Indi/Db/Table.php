@@ -1,6 +1,42 @@
 <?php
-class Indi_Db_Table extends Indi_Db_Table_Abstract
+class Indi_Db_Table
 {
+    /**
+     * Store the id of entity, related to current model
+     *
+     * @var string
+     */
+    protected $_id = 0;
+
+    /**
+     * Store the name of database table, related to current model
+     *
+     * @var string
+     */
+    protected $_name = '';
+
+    /**
+     * Store array of fields, that current model consists from
+     *
+     * @var array
+     */
+    protected $_fields = array();
+
+    /**
+     * Store column name, which is used to detect parent-child relationship between
+     * rows within rowset
+     *
+     * @var string
+     */
+    protected $_treeColumn = '';
+
+    /**
+     * Store array of aliases, related to fields, that can contain evaluable php expressions.
+     *
+     * @var array
+     */
+    protected $_evalFields = array();
+
     /**
      * Class name for row
      *
@@ -14,6 +50,26 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
      * @var string
      */
     protected $_rowsetClass = 'Indi_Db_Table_Rowset';
+
+    /**
+     * Construct the instance - setup table name, fields, and tree column if exists
+     *
+     * @param array $config
+     */
+    public function __construct($config = array()) {
+
+        // Set db table name and db adapter
+        $this->_id = $config['id'];
+
+        // Set db table name and db adapter
+        $this->_name = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
+
+        // Set fields
+        $this->_fields = is_array($config['fields']) ? $config['fields'] : array();
+
+        // Detect tree column name
+        $this->_treeColumn = $this->fields($this->_name . 'Id') ? $this->_name . 'Id' : '';
+    }
 
     /**
      * Fetches all rows, according the given criteria
@@ -56,7 +112,7 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
-            'table'   => $this,
+            'table'   => $this->_name,
             'data'     => $data,
             'rowClass' => $this->_rowClass,
             'foundRows'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($data),
@@ -323,18 +379,18 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 
         // Set 'parentId' system property. Despite of existence of parent branch identifier in list of properties,
         // we additionally set up this property as system property using static 'parentId' key, (e.g $row->system('parentId'))
-        // instead of using $row->{$row->table()->treeColumn} expression. Also, this will be useful in javascript, where
+        // instead of using $row->{$row->table()->treeColumn()} expression. Also, this will be useful in javascript, where
         // we have no ability to use such an expressions.
-        foreach ($data as $id => $props) $data[$id]['_system']['parentId'] = $props[$this->treeColumn];
+        foreach ($data as $id => $props) $data[$id]['_system']['parentId'] = $props[$this->_treeColumn];
 
         // Setup rowset info
         $data = array (
-            'table' => $this,
+            'table' => $this->_name,
             'data' => array_values($data),
             'rowClass' => $this->_rowClass,
             'foundRows' => $foundRows,
             'page' => $page,
-            'treeColumn' => $this->treeColumn
+            'treeColumn' => $this->_treeColumn
         );
 
         // Return rowset
@@ -683,5 +739,280 @@ class Indi_Db_Table extends Indi_Db_Table_Abstract
 
         // Fetch and return result
         return $data = Indi::db()->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Return the name of database table, related to current model
+     *
+     * @return string
+     */
+    public function name(){
+        return $this->_name;
+    }
+
+    /**
+     * Fetches one row in an object of type Indi_Db_Table_Row,
+     * or returns null if no row matches the specified criteria.
+     *
+     * @param null|array|string $where
+     * @param null|array|string $order
+     * @param null|int $offset
+     * @return null|Indi_Db_Table_Row object
+     */
+    public function fetchRow($where = null, $order = null, $offset = null) {
+        // Build WHERE and ORDER clauses
+        if (is_array($where) && count($where)) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order)) $order = implode(', ', $order);
+
+        // Build query, fetch row and return it as an Indi_Db_Table_Row object
+        if ($data = Indi::db()->query(
+            'SELECT * FROM `' . $this->_name . '`' .
+                ($where ? ' WHERE ' . $where : '') .
+                ($order ? ' ORDER BY ' . $order : '') .
+                ($offset ? ' LIMIT ' . $offset . ',1' : '')
+        )->fetch()) {
+
+            // Release memory
+            unset($where, $order, $offset);
+
+            // Prepare data for Indi_Db_Table_Row object construction
+            $constructData = array(
+                'table'    => $this->_name,
+                'original' => $data,
+            );
+
+            // Release memory
+            unset($data);
+
+            // Load class if need
+            if (!class_exists($this->_rowClass)) {
+                require_once 'Indi/Loader.php';
+                Indi_Loader::loadClass($this->_rowClass);
+            }
+
+            // Construct and return Indi_Db_Table_Row object
+            return new $this->_rowClass($constructData);
+        }
+
+        // NULL return
+        return null;
+    }
+
+    /**
+     * Create empty row
+     *
+     * @param array $input
+     * @return Indi_Db_Table_Row object
+     */
+    public function createRow($input = array()) {
+
+        // Prepare data for construction
+        $constructData = array(
+            'table'   => $this->_name,
+            'original'     => is_array($input['original']) ? $input['original'] : array(),
+            'modified' => is_array($input['modified']) ? $input['modified'] : array()
+        );
+
+        // Get row class name
+        $rowClass = $this->rowClass();
+
+        // Load row class if need
+        if (!class_exists($rowClass)) {
+            require_once 'Indi/Loader.php';
+            Indi_Loader::loadClass($rowClass);
+        }
+
+        // Construct and return Indi_Db_Table_Row object
+        return new $rowClass($constructData);
+    }
+
+    /**
+     * Create Indi_Db_Table_Rowset object with some data, if passed
+     *
+     * @param array $input
+     * @return mixed
+     */
+    public function createRowset($input = array()) {
+
+        // Prepare data for Indi_Db_Table_Rowset object construction
+        $data = array(
+            'table'   => $this->_name,
+            'data'     => is_array($input['data']) ? $input['data'] : array(),
+            'rowClass' => $this->_rowClass,
+            'foundRows'=> isset($input['foundRows']) ? $input['foundRows'] : (is_array($input['data']) ? count($input['data']) : 0)
+        );
+
+        // Construct and return Indi_Db_Table_Rowset object
+        return new $this->_rowsetClass($data);
+    }
+
+    /**
+     * Returns row class name
+     *
+     * @return string
+     */
+    public function rowClass()
+    {
+        return $this->_rowClass;
+    }
+
+    /**
+     * Returns rowset class name
+     *
+     * @return string
+     */
+    public function rowsetClass()
+    {
+        return $this->_rowsetClass;
+    }
+
+    /**
+     * Delete all rows from current database table, that match given WHERE clause
+     *
+     * @param $where
+     * @return int Number of affected rows
+     * @throws Exception
+     */
+    public function delete($where) {
+        // Basic SQL expression
+        $sql = 'DELETE FROM `' . $this->_name . '`';
+
+        // If $where argument is specified, append it as string to basic SQL expression
+        if ($where) {
+
+            // Get WHERE clause as string
+            if (is_array($where) && count($where)) $where = implode(' AND ', $where);
+
+            // Append WHERE clause to basic expression
+            $sql .= ' WHERE ' . $where;
+
+            // Execute the query
+            return Indi::db()->query($sql);
+
+            // Otherwise throw an exception, to avoid deleting all database table's rows
+        } else {
+            throw new Exception('No WHERE clause');
+        }
+    }
+
+    /**
+     * Return tree column name
+     *
+     * @return string
+     */
+    public function treeColumn()
+    {
+        return $this->_treeColumn;
+    }
+
+    /**
+     * Return id of entity, that current model is representing
+     *
+     * @return string
+     */
+    public function id()
+    {
+        return $this->_id;
+    }
+
+    /**
+     * Inserts new row into db table
+     *
+     * @param array $data
+     * @return string
+     */
+    public function insert($data) {
+
+        // Get existing fields
+        $fieldRs = $this->fields();
+
+        // Build the first part of sql expression
+        $sql = 'INSERT INTO `' . $this->_name . '` SET ';
+
+        // Declare array for sql SET statements
+        $setA = array();
+
+        // Foreach field within existing fields
+        foreach ($fieldRs as $fieldR) {
+
+            // We will insert values for fields, that are actually exist in database table structure
+            if ($fieldR->columnTypeId) {
+
+                // If current field alias is one of keys within data to be inserted,
+                // and if data's value for that field alias is not null
+                if (!is_null($data[$fieldR->alias])) {
+
+                    // We append value with related field alias to $set array
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+
+                    // Else if column type is TEXT, we use field's default value as value for insertion
+                } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $fieldR->defaultValue) .'"';
+
+            }
+        }
+
+        // Append imploded values from $set array to sql query, or append `id` = NULL expression, if no items in $set
+        $sql .= count($setA) ? implode(', ', $setA) : '`id` = NULL';
+
+        // Run the query
+        Indi::db()->query($sql);
+
+        // Return the id of inserted row
+        return Indi::db()->getPDO()->lastInsertId();
+    }
+
+    /**
+     * Update one or more db table columns within rows matching WHERE clause, specified by $where param
+     *
+     * @param array $data
+     * @param string $where
+     * @return int
+     * @throws Exception
+     */
+    public function update(array $data, $where = '') {
+
+        // Check if $data array is not empty
+        if (count($data)) {
+
+            // Get existing fields
+            $fieldRs = $this->fields();
+
+            // Build the first part of sql expression
+            $sql = 'UPDATE `' . $this->_name . '` SET ';
+
+            // Declare array for sql SET statements
+            $setA = array();
+
+            // Foreach field within existing fields
+            foreach ($fieldRs as $fieldR) {
+
+                // We will update values for fields, that are actually exist in database table structure
+                if ($fieldR->columnTypeId) {
+
+                    // If current field alias is one of keys within data to be updated,
+                    if (array_key_exists($fieldR->alias, $data))
+
+                        // We append value with related field alias to $set array
+                        $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                }
+            }
+
+            // Append comma-imploded items of $setA array to sql query
+            $sql .= implode(', ', $setA);
+
+            // If $where argument was specified
+            if ($where) {
+
+                // Append it to sql query
+                if (is_array($where) && count($where)) $where = implode(' AND ', $where);
+                $sql .= ' WHERE ' . $where;
+            }
+
+            // Execute query and return number of affected rows
+            return Indi::db()->query($sql);
+
+            // Else return 0, as indicator for situation when no columns could be updated
+        } else throw new Exception('$data array is empty');
     }
 }

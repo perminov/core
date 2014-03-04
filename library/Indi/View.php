@@ -1174,8 +1174,7 @@ class Indi_View implements Indi_View_Interface
     public function getScope($param = null, $sub = null, $section = null, $hash = null) {
         // Get the master hash
         $primaryHash = $hash ? $hash : $this->trail->getItem()->section->primaryHash;
-i($primaryHash, 'a');
-i($_SESSION['indi']['admin'], 'a');
+
         // Get scope
         $scope = $_SESSION['indi']['admin'][$section ? $section : $this->trail->getItem()->section->alias][$primaryHash];
 

@@ -422,7 +422,7 @@ class Indi_Auth{
 				$info['profileExists'] = 1;
 				$info['profileToggle'] = 1;
 				$info['atLeastOneSectionAccessible'] = 1;
-				$info['alternate'] = $entity->info('name');
+				$info['alternate'] = $entity->name();
                 $info['profile'] = $profile->title;
                 return false;
 			}

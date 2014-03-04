@@ -322,7 +322,7 @@ class Indi{
         $model = Indi::model($entityId);
 
         // Get the columns list
-        $columnA = $model->info('cols');
+        $columnA = $model->fields(null, 'cols');
 
         // Determine title column name
         if ($titleColumn = current(array_intersect($columnA, array('title', '_title')))) {
@@ -331,7 +331,7 @@ class Indi{
             $idA = Indi::db()->query('
 
                 SELECT `id`
-                FROM `' . $model->info('name') . '`
+                FROM `' . $model->name() . '`
                 WHERE `id` IN (' . implode(',', $idA) . ')
                 ORDER BY `' . $titleColumn . '` ' . $dir . '
 

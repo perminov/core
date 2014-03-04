@@ -8,11 +8,11 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     protected $_data = array();
 
     /**
-     * Indi_Db_Table_Abstract object.
+     * Table name of table, that current rowset is related to
      *
-     * @var Indi_Db_Table_Abstract
+     * @var string
      */
-    protected $_table;
+    protected $_table = '';
 
     /**
      * Indi_Db_Table_Row_Abstract class name.
@@ -43,7 +43,7 @@ abstract class Indi_Db_Table_Rowset_Abstract implements SeekableIterator, Counta
     public function __construct(array $config)
     {
         if (isset($config['table'])) {
-            $this->_table      = $config['table']->_name;
+            $this->_table      = $config['table'];
         }
         if (isset($config['rowClass'])) {
             $this->_rowClass   = $config['rowClass'];

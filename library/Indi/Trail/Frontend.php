@@ -68,7 +68,7 @@ class Indi_Trail_Frontend extends Indi_Trail
 		// set up tree key name for the last item
         $lastItemIndex = count($this->items) - 1;
 		if ($model = $this->items[$lastItemIndex]->model) {
-            if ($treeColumnName = $model->treeColumn) {
+            if ($treeColumnName = $model->treeColumn()) {
                 $this->items[$lastItemIndex]->treeKeyName = $treeColumnName;
             }
         }
@@ -77,7 +77,7 @@ class Indi_Trail_Frontend extends Indi_Trail
 		if ($model = $this->items[$lastItemIndex]->model) {
             $parentItem = $this->items[$lastItemIndex - 1];
             if ($parentItem->row) {
-                $parentColumn = $parentItem->model->info('name') . 'Id';
+                $parentColumn = $parentItem->model->name() . 'Id';
                 if ($treeColumnName = $this->items[$lastItemIndex]->treeKeyName) {
                     $this->items[$lastItemIndex]->dropdownWhere[$treeColumnName] = '`' . $parentColumn  . '` = "' . $parentItem->row->id . '"';
                 }
@@ -88,7 +88,7 @@ class Indi_Trail_Frontend extends Indi_Trail
 		if ($model = $this->items[$lastItemIndex - 1]->model) {
             $levelUpParentItem = $this->items[$lastItemIndex - 2];
             if ($levelUpParentItem->row) {
-                $levelUpParentColumn = $levelUpParentItem->model->info('name') . 'Id';
+                $levelUpParentColumn = $levelUpParentItem->model->name() . 'Id';
                 $this->items[$lastItemIndex]->dropdownWhere[$parentColumn] = '`' . $levelUpParentColumn  . '` = "' . $levelUpParentItem->row->id . '"';
             }
         }

@@ -138,6 +138,7 @@ class Indi_Db {
         }
 
         // Uppercase the first char, as keys in self::$_modelA and self::$_entityA arrays are capitalized
+        if (is_object($identifier)) throw new Exception();
         $identifier = ucfirst($identifier);
 
         // If model is already loaded, we return it
@@ -152,6 +153,7 @@ class Indi_Db {
 
                 // Create a model, push it to self::$_modelA array as a next item, and return that item
                 return self::$_modelA[$identifier] = new $identifier(array(
+                    'id' => self::$_entityA[$identifier]['id'],
                     'fields' => self::$_entityA[$identifier]['fields']
                 ));
 
@@ -167,6 +169,7 @@ class Indi_Db {
 
                 // Create a model, push it to self::$_modelA array as a next item, and return that item
                 return self::$_modelA[$identifier] = new $identifier(array(
+                    'id' => self::$_entityA[$identifier]['id'],
                     'fields' => self::$_entityA[$identifier]['fields']
                 ));
             }
@@ -241,7 +244,7 @@ class Indi_Db {
 
     /**
      * Return PDO object. Currently, the only purpose of this method is to provide an ability to call lastInsertId()
-     * method on it, in insert() method in Indi_Db_Table_Abstract class
+     * method on it, in insert() method in Indi_Db_Table class
      *
      * @return null|PDO
      */

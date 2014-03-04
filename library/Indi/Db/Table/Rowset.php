@@ -30,6 +30,10 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
      */
     public function __construct(array $config)
     {
+        if (isset($config['table'])) {
+            $this->_table     = $config['table'];
+        }
+
         if (isset($config['foundRows'])) {
             $this->foundRows     = $config['foundRows'];
         }
@@ -39,7 +43,7 @@ class Indi_Db_Table_Rowset extends Indi_Db_Table_Rowset_Abstract
         }
 
         if (isset($config['treeColumn'])) {
-            $this->treeColumn     = $config['treeColumn'];
+            $this->_treeColumn     = $config['treeColumn'];
         }
         parent::__construct($config);
     }
