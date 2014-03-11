@@ -88,7 +88,7 @@ var Indi = function(indi) {
         }
 
         // Setup text metrics, for text width detection
-        indi.metrics = top.window.Indi.metrics || new Ext.util.TextMetrics();
+        indi.metrics = (top.window.Indi ? top.window.Indi.metrics : new Ext.util.TextMetrics()) || new Ext.util.TextMetrics();
 
         indi.urldecode = function(str){
             return decodeURIComponent((str + '').replace(/\+/g, '%20'));

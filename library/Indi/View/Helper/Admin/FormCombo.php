@@ -295,7 +295,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         ?><div class="i-combo-trigger x-form-trigger x-form-trigger-over" id="<?=$this->name?>-trigger"></div><?
         ?><div class="i-combo-single"><?
             $this->selected = $this->detectColor($this->selected); echo $this->selected['box'];
-            ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>"/><?
+            ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>" placeholder="<?=$this->params['placeholder']?>"/><?
             ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
             ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><?
                 ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?
