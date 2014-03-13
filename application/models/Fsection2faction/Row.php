@@ -1,15 +1,6 @@
 <?php
 class Fsection2faction_Row extends Indi_Db_Table_Row
 {
-    /**
-     * Get title for fsection2faction row
-     *
-     * @return string
-     */
-    public function getTitle()
-    {
-        return $this->foreign('factionId')->title;
-    }
     public function getInfoAboutDependentCountsToBeGot(){
     	return Indi::model('DependentCount')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
     }
@@ -22,4 +13,9 @@ class Fsection2faction_Row extends Indi_Db_Table_Row
 	public function getInfoAboutIndependentCountsToBeGot(){
 		return Indi::model('IndependentRowset')->fetchAll('`fsection2factionId` = "' . $this->id . '"');
 	}
+
+    public function save(){
+        $this->title = $this->foreign('factionId')->title;
+        parent::save();
+    }
 }

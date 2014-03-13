@@ -34,7 +34,7 @@ class Field_Base extends Indi_Db_Table{
                 }
             }
         }
-        return $this->createRowset(array('data' => $fieldsA));
+        return $this->createRowset(array('original' => $fieldsA));
     }
 
     public function getFiltersCountBySectionId($sectionId) {

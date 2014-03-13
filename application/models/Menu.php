@@ -6,7 +6,7 @@ class Menu extends Indi_Db_Table{
 		$uri = $_SERVER['REQUEST_URI'];
 		$treeKeyName = 'menuId';
 		$rowset = $this->fetchAll(($parentId ? '`' . $treeKeyName . '` = "' . $parentId . '"' : '`' . $treeKeyName . '` = 0') . ($onlyToggledOn ? ' AND `toggle`="y"' : '') . ($condition ? ' AND ' . $condition : ''), $order);
-		$rowset->setForeignRowsByForeignKeys('staticpageId');
+		$rowset->foreign('staticpageId');
 		$rowset = $rowset->toArray();
 		$i = 0;
         $dec = 0;
@@ -34,7 +34,7 @@ class Menu extends Indi_Db_Table{
 			$i++;
 		}
         $data[count($rowset) - $dec - 1]['last'] = true;
-		$data = array ('table' => $this, 'data' => $data, 'rowClass' => $this->_rowClass, 'stored' => true, 'foundRows' => count($data) - $dec);
+		$data = array ('table' => $this, 'original' => $data, 'rowClass' => $this->_rowClass, 'stored' => true, 'found' => count($data) - $dec);
 		if ($activeItemHere) $data['activeBranch'] = true;
 		return new $this->_rowsetClass($data);
 	}

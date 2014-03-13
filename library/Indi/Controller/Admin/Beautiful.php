@@ -141,10 +141,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             $options = array('ids' => array_keys($options), 'data' => array_values($options));
 
             // Setup number of found rows
-            if ($comboDataRs->foundRows) $options['found'] = $comboDataRs->foundRows;
+            if ($comboDataRs->found()) $options['found'] = $comboDataRs->found();
 
             // Setup tree flag
-            if ($comboDataRs->table()->treeColumn()) $options['tree'] = true;
+            if ($comboDataRs->model()->treeColumn()) $options['tree'] = true;
 
             // Setup groups for options
             if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
@@ -356,7 +356,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $where = array();
 
         // Set up info about column types to be available within each grid field
-        $this->trail->getItem()->gridFields->setForeignRowsByForeignKeys('columnTypeId');
+        $this->trail->getItem()->gridFields->foreign('columnTypeId');
 
         // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
         // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
@@ -687,7 +687,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
 
         // Setup a foreign rows for $fieldR's foreign keys
-        $fieldR->setForeignRowsByForeignKeys('columnTypeId');
+        $fieldR->foreign('columnTypeId');
 
         // If this is a simple column
         if ($fieldR->storeRelationAbility == 'none') {

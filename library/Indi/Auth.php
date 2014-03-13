@@ -331,12 +331,12 @@ class Indi_Auth{
      */
     public function getMenu($profileId = null)
     {
-		$admin = $_SESSION['admin'];
+        $admin = $_SESSION['admin'];
 		if (!$profileId) {
 			$profileId = $admin['profileId'];
 		}
 		$section = Indi::model('Section');
-		$groups = $section->fetchAll('`sectionId` = "0" AND `toggle`="y"', 'move');
+        $groups = $section->fetchAll('`sectionId` = "0" AND `toggle`="y"', 'move');
         foreach ($groups as $group) {
             if (!$admin['alternate']) {
     		$query = "

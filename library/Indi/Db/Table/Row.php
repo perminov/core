@@ -1,141 +1,1270 @@
 <?php
-class Indi_Db_Table_Row extends Indi_Db_Table_Row_Beautiful
+class Indi_Db_Table_Row implements ArrayAccess
 {
     /**
-     * Default method for row classes
+     * Original data
      *
+     * @var array
+     */
+    protected $_original = array();
+
+    /**
+     * Modified data, used to construct correct sql-query for INSERT and UPDATE statements
+     *
+     * @var array
+     */
+    protected $_modified = array();
+
+    /**
+     * System data, used for internal needs
+     *
+     * @var array
+     */
+    protected $_system = array();
+
+    /**
+     * Compiled data, used for storing eval-ed values for properties, that are allowed to contain php-expressions
+     *
+     * @var array
+     */
+    protected $_compiled = array();
+
+    /**
+     * Temporary data, used for assigning some values to the current row object under some keys,
+     * but these key => value pairs will be never involved at SQL INSERT or UPDATE query executions
+     *
+     * @var array
+     */
+    protected $_temporary = array();
+
+    /**
+     * Rows, pulled for current row's foreign keys
+     *
+     * @var array
+     */
+    protected $_foreign = array();
+
+    /**
+     * Rowsets containing children for current row, but related to other models
+     *
+     * @var array
+     */
+    protected $_nested = array();
+
+    /**
+     * Table name of table, that current row is related to
+     *
+     * @var string
+     */
+    protected $_table = '';
+
+    /**
+     * Count of options that will be fetched. It's 300 by default - hundred-rounded number of countries in the world
+     *
+     * @var int
+     */
+    public static $comboOptionsVisibleCount = 300;
+
+    /**
+     * Store regular expression for checks of email addresses validity
+     *
+     * @var string
+     */
+    public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
+
+    /**
+     * Constructor
+     *
+     * @param array $config
+     */
+    public function __construct(array $config = array()) {
+
+        // Setup initial properties
+        $this->_table = $config['table'];
+        $this->_original = $config['original'];
+        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+        $this->_system = is_array($config['system']) ? $config['system'] : array();
+        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
+        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
+
+        // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
+        foreach ($this->model()->getEvalFields() as $evalField) {
+            Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::$cmpOut;
+        }
+    }
+
+    /**
+     * Saves row into database table. But.
+     * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
+     * (but is going to be inserted), and if so - autoset value for `move` column after row save
+     *
+     * @return int affected rows|last_insert_id
+     */
+    public function save() {
+
+        // Setup $orderAutoSet flag if need
+        if (!$this->_original['id'] && array_key_exists('move', $this->_original) && !$this->move) $orderAutoSet = true;
+
+        // If curren row is an existin row
+        if ($this->_original['id']) {
+
+            // Update it
+            if ($affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"')) {
+
+                // Merge $this->_original and $this->_modified arrays into $this->_original array
+                $this->_original = (array) array_merge($this->_original, $this->_modified);
+
+                // Empty $this->_modified array
+                $this->_modified = array();
+            }
+
+            // Setup $return variable as a number of affected rows, e.g 1 or 0
+            $return = $affected;
+
+        // Else current row is a new row
+        } else {
+
+            // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
+            $this->_original['id'] = $this->model()->insert($this->_modified);
+
+            // Merge $this->_original and $this->_modified arrays into $this->_original array
+            $this->_original = (array) array_merge($this->_original, $this->_modified);
+
+            // Empty $this->_modified array
+            $this->_modified = array();
+
+            // Setup $return variable as id of current (a moment ago inserted) row
+            $return = $this->_original['id'];
+        }
+
+        // Auto set `move` if need
+        if ($orderAutoSet) {
+
+            // Set `move` property equal to current row id
+            $this->move = $this->id;
+
+            // Update row data
+            $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"');
+            $this->_original = (array) array_merge($this->_original, $this->_modified);
+            $this->_modified = array();
+        }
+
+        // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
+        return $return;
+    }
+
+    /**
+     * Provide Move up/Move down actions for row within the needed area of rows
+     *
+     * @param string $direction (up|down)
+     * @param string $within
+     * @param string $condition
+     */
+    public function move($direction = 'up', $within = '', $condition = null) {
+        // Check direction validity
+        if (in_array($direction, array('up', 'down'))) {
+
+            // Array of WHERE clause items
+            $where = array();
+
+            // Adding conditions required to match the needed scope, there changeRow should be searched
+            if (!is_array($within) && $within) $within = explode(',', $within);
+
+            // Append tree-column to $within array, if such column exists
+            if (array_key_exists($this->_table . 'Id', $this->_original)) $within[] = $this->_table . 'Id';
+
+            for ($i = 0; $i < count($within); $i++) $where[] = '`' . trim($within[$i]) . '` = "' . $this->{trim($within[$i])} . '"';
+
+            // Adding custom condition
+            if (is_array($condition) && count($condition)) $where = array_merge($where, $condition);
+            else if ($condition) $where[] = $condition;
+
+            // Nearest neighbour clauses
+            $where[] = '`move` ' . ($direction == 'up' ? '<' : '>') . ' "' . $this->move . '"';
+            $order = 'move ' . ($direction == 'up' ? 'DE' : 'A') . 'SC';
+
+            // Find
+            if ($changeRow = $this->model()->fetchRow($where, $order)) {
+                // Backup `move` of current row
+                $backup = $this->move;
+
+                // We exchange values of `move` fields
+                $this->move = $changeRow->move;
+                $this->save(true);
+                $changeRow->move = $backup;
+                $changeRow->save(true);
+            }
+        }
+    }
+
+    /**
+     * Fully deletion - including attached files and foreign key usages, if will be found
+     *
+     * @return int Number of deleted rows (1|0)
+     */
+    public function delete() {
+
+        // Delete all files (images, etc) that have been attached to row
+        $this->deleteUploadedFiles();
+
+        // Delete other rows of entities, that have fields, related to entity of current row
+        // This function also covers other situations, such as if entity of current row has a tree structure,
+        // or row has dependent rowsets
+        $this->deleteForeignKeysUsages();
+
+        // Standard deletion
+        return $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+    }
+
+    public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
+                                 $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
+                                 $order = null, $dir = 'ASC', $offset = null) {
+
+        // Basic info
+        $entityM = Indi::model('Entity');
+        $fieldM = Indi::model('Field');
+        $entityR = $entityM->fetchRow('`table` = "' . $this->_table . '"');
+        $fieldR = $fieldR ? $fieldR : $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
+        $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
+        $relatedM = Indi::model($fieldR->relation);
+        $params = $fieldR->getParams();
+
+        // Array for WHERE clauses
+        $where = $where ? (is_array($where) ? $where : array($where)): array();
+
+        // Setup filter, as one of possible parts of WHERE clause
+        if ($fieldR->filter) $where[] = $fieldR->filter;
+
+        // Compile filters if they contain php-expressions
+        for($i = 0; $i < count($where); $i++) {
+            Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::$cmpOut;
+        }
+
+        // If current field column type is ENUM or SET
+        if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
+            $where[] = '`fieldId` = "' . $fieldR->id . '"';
+            $dataRs = $relatedM->fetchAll($where, '`move`');
+
+            // We should mark rowset as related to field, that has a ENUM or SET column type
+            // because values of property `alias` should be used as options keys, instead of values of property `id`
+            $dataRs->enumset = true;
+
+            if ($fieldR->storeRelationAbility == 'many') {
+                if ($selected) {
+                    // Convert list of selected ids into array
+                    $selected = explode(',', $selected);
+
+                    // Declare and fill array of selected rows
+                    $data = array();
+                    foreach ($dataRs as $dataR)
+                        if (in_array($dataR->alias, $selected))
+                            $data[] = $dataR->toArray();
+
+                    // Create rowset of selected rows
+                    $dataRs->selected = $relatedM->createRowset(array('original' => $data));
+                } else {
+                    $dataRs->selected = $relatedM->createRowset(array('original' => array()));
+                }
+            }
+
+            return $dataRs;
+
+            // Else if current field column type is BOOLEAN - combo is used as an alternative for checkbox control
+        } else if ($fieldColumnTypeR->type == 'BOOLEAN') {
+
+            // Prepare the data
+            $dataRs = Indi::model('Enumset')->createRowset(
+                array(
+                    'original' => array(
+                        array('alias' => '0', 'title' => 'Нет'),
+                        array('alias' => '1', 'title' => 'Да')
+                    )
+                )
+            );
+
+            $dataRs->enumset = true;
+            return $dataRs;
+        }
+
+        // Setup filter by satellite
+        if ($fieldR->satellite && $noSatellite != true) {
+
+            // Get satellite field row
+            $satelliteR = $fieldR->foreign('satellite');
+
+            // If we have no satellite value passed as a param, we get it from related row property
+            // or from satellite-field default value
+            if (is_null($satellite)) {
+                if (strlen($this->{$satelliteR->alias})) {
+                    $satellite = $this->{$satelliteR->alias};
+                } else {
+                    $satellite = $satelliteR->defaultValue;
+                }
+            }
+
+            // If dependency type is not 'Variable entity'
+            if ($fieldR->dependency != 'e') {
+
+                // Example of situation, that is covered by use of `alternative` logic
+                // 1. Indi Engine have tables `entity`, `field`, `element`, `possibleElementParam`
+                // 2. If somewhere in entity structure i have a field that is using, for example html-editor,
+                //    i want to be able to set some params to this html-editor, such as height, width and etc.
+                // 3. html-editor is a row in `element` table, it has, for example id = 13
+                // 4. All of possible html-editor params - are stored in `possibleElementParam` table, and are linked
+                //    to html-editor by column `elementId` with value = 13
+                // 5. I want to set width=500 for one html-editor, and width=600 to another html-editor
+                // 6. Both 'one' and 'another' html-editor are rows in `field` table, and can be both linked to same
+                //    entity, or to different entities, does not matter
+                // 7. For being able to do action from point 5, i want to go 'Entities > Some test entity >
+                //    Fields > Some html-editor field > Params > Create'
+                // 8. On 'Create' screen there is a form with fieds:
+                //    1. Entity (dropdown list)
+                //    2. Field  (dropdown list)
+                //    3. Param  (dropdown list)
+                //    4. Value  (textarea)
+                // 9. 'Entity' field is a satellite for 'Field' field, and if 'Entity' field value is changed,
+                //    options in 'Field' dropdown list should be refreshed
+                // 10. 'Field' field is a satellite for 'Param' field, and if 'Field' field value is changed,
+                //    options in 'Param' dropdown list should be refreshed
+                // 11. SQL Query for refreshing 'Field' options list, mentioned in point 9 will look like
+                //     SELECT * FROM `field` WHERE `entityId` = "x"
+                // 12. SQL Query for refreshing 'Field' options list, mentioned in point 10 will look like
+                //     SELECT * FROM `possibleElementParam` WHERE `fieldId` = "y"
+                // 13. The problem is that table `possibleElementParam` has no `fieldId` column, and that is why
+                //      here is `alternative` logic is used. Result of `alternative` logic is that:
+                //      1. SQL query will look like
+                //         SELECT * FROM `possibleElementParam` WHERE `elementId` = "z"
+                //      2. "z" - will be a value of `elementId` column of a selected row in 'Field' dropdown
+                if ($fieldR->alternative) {
+
+                    // If we have satellite value passed as a param, we set it as value for $this->{$satelliteR->alias},
+                    // because foreign() menthod use internal row property value, that store a foreign key,
+                    // and do not use any external values
+                    if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
+                    $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
+                    if ($satelliteR->satellitealias) {
+                        $where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $satelliteR->satellitealias . '`)';
+                    } else {
+                        $where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $fieldR->alternative . '`)';
+                    }
+
+                    // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
+                    // we use it's alias instead. Example:
+                    // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
+                    //    `similarCityId`
+                    // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
+                    //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
+                    //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
+                    //    `similarCountryId` column, it has only `countryId` column.
+                    // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
+                    //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
+                    //    `countryId` so the result will be exactly as we need
+                } else if ($satelliteR->satellitealias) {
+                    $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
+
+                    // Standard logic
+                } else {
+                    $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
+                }
+
+                // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
+            } else if ($fieldR->dependency == 'e' && $satellite) {
+                $relatedM = Indi::model($satellite);
+            }
+        }
+
+        // If we havу no related model - this happen if we have 'varibale entity' satellite dependency type
+        // and current satelite value is not defined - we return empty rowset
+        if (!$relatedM) return new Indi_Db_Table_Rowset(array());
+
+        // Get title column
+        $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : $relatedM->titleColumn();
+
+        // Set ORDER clause for combo data
+        if (is_null($order)) {
+            if ($relatedM->fields('move')) {
+                $order = 'move';
+            } else {
+                $order = $titleColumn;
+            }
+
+            // If $order is not null, but is an empty string, we set is as 'id' for results being fetched in the order of
+            // their physical appearance in database table, however, regarding $dir (ASC or DESC) param.
+        } else if (!strlen($order)) {
+            $order = 'id';
+        }
+
+        // Here and below we will be always checking if $order is not empty
+        // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
+        // So, if order is empty, the results will be retrieved in the order of their physical placement in
+        // their database table
+        if (!preg_match('/\(/', $order)) $order = '`' . $order . '`';
+
+        // If fetch-mode is 'keyword'
+        if ($selectedTypeIsKeyword) {
+            $keyword = str_replace('"','\"', $selected);
+
+            // Else if fetch-mode is 'no-keyword'
+        } else {
+
+            // Get selected row
+            $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
+
+            // Setup current value of a sorting field as start point
+            if ($order && !preg_match('/\(/', $order)) {
+                $keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
+            }
+        }
+
+        // If related entity has tree-structure
+        if ($relatedM->treeColumn()) {
+
+            // If we go lower, page number should be incremented, so if passed page number
+            // is 1, it will be 2, because actually results of page 1 were already fetched
+            // and displayed at the stage of combo first initialization
+            if ($page != null) {
+                if(!$selected || $selectedTypeIsKeyword || func_get_arg(4)) $page++;
+
+                // Page number is not null when we are paging, and this means that we are trying to fetch
+                // more results that are upper or lower and start point for paging ($selected) was not changed.
+                // So we mark that foundRows property of rowset should be unset, as in indi.combo.form.js 'page-top-reached'
+                // attribute is set depending on 'found' property existence in response json
+                $unsetFoundRows = true;
+            }
+            // Fetch results
+            if ($selectedTypeIsKeyword) {
+                $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
+            } else {
+
+                $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                if (is_null(func_get_arg(4))) {
+                    $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
+                } else {
+                    $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
+                }
+            }
+
+
+            // Unset found rows to prevent disabling of paging up
+            if ($unsetFoundRows) $dataRs->found('unset');
+
+            // Otherwise
+        } else {
+
+            // If we selected option is set, or if we have keyword that results should match, special logic will run
+            if ($selected && ($fieldR->storeRelationAbility == 'one' || $selectedTypeIsKeyword)) {
+
+                // We do a backup for WHERE clause, because it's backup version
+                // will be used to calc foundRows property in case if $selectedTypeIsKeyword = false
+                $whereBackup = $where;
+
+                // Get WHERE clause for options fetch
+                if ($selectedTypeIsKeyword) {
+                    if (!preg_match('/\(/', $order)) {
+                        //$order = 'TRIM(SUBSTR(`' . $titleColumn . '`, 1))';
+                    }
+                    // Check if keyword is a part of color value in format #rrggbb, and if so, we use RLIKE instead
+                    // of LIKE, and prepare a special regular expression
+                    if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
+                        $rlike = '^[0-9]{3}' . $keyword . '[0-9a-fA-F]{' . (7 - mb_strlen($keyword, 'utf-8')) . '}$';
+                        $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
+                    } else {
+                        $where[] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+                    }
+
+                    // We should get results started from selected value only if we have no $satellite argument passed
+                } else if (is_null(func_get_arg(4))) {
+
+                    // If $order is a name of a column, and not an SQL expression, we setup results start point as
+                    // current row's column's value
+                    if (!preg_match('/\(/', $order)) {
+                        $where[] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . $keyword . '"';
+                    }
+
+                    // We set this flag to true, because the fact that we are in the body of current 'else if' operator
+                    // mean that:
+                    // 1. we have selected value,
+                    // 2. selected value is not a keyword,
+                    // 3. $satellite logic is not used,
+                    // 4. first option of final results, fetched by current function (getComboData) - wil be option
+                    //    related to selected value
+                    // So, we remember this fact, because if $found will be not greater than self::$comboOptionsVisibleCount
+                    // there will be no need for results set to be started from selected value, and what is why this
+                    $resultsShouldBeStartedFromSelectedValue = true;
+                }
+
+                // Get foundRows WHERE clause
+                $foundRowsWhere = $selectedTypeIsKeyword ? $where : $whereBackup;
+                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . implode(' AND ', $foundRowsWhere) : '';
+
+                // Get number of total found rows
+                $found = Indi::db()->query(
+                    'SELECT COUNT(`id`) FROM `' . $relatedM->name() . '`' . $foundRowsWhere
+                )->fetchColumn(0);
+
+                // If results should be started from selected value but total found rows number if not too great
+                // we will not use selected value as start point for results, because there will be a sutiation
+                // that PgUp or PgDn should be pressed to view all available options in combo, instead of being
+                // available all initially
+                if ($resultsShouldBeStartedFromSelectedValue && $found <= self::$comboOptionsVisibleCount) {
+                    array_pop($where);
+                }
+
+                // Get results
+                if (!is_null($page)) {
+                    // If we go lower, page number should be incremented, so if passed page number
+                    // is 1, it will be 2, because actually results of page 1 were already fetched
+                    // and displayed at the stage of combo first initialization
+                    if ($page > 0) {
+                        $page++;
+
+                        $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                        // Else if we go upper, but
+                    } else if ($offset) {
+                        $page++;
+                        $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                        // Otherwise, if we go upper, we should make page number positive.
+                        // Also we should adjust ORDER clause to make it DESC
+                    } else {
+                        $page = abs($page);
+                        $order .= ' ' . ($dir == 'DESC' ? 'ASC' : 'DESC');
+
+                        // We remember the fact of getting upper page results, because after results is fetched,
+                        // we will revert them
+                        $upper = true;
+                    }
+
+                } else {
+
+                    $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+                }
+
+                $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page, $offset);
+
+                // We set number of total found rows only if passed page number is null, so that means that
+                // we are doing a search of first page of results by a keyword, that just has been recently changed
+                // so at this time we need to get total number of results that match given keyword
+                if (is_null($page)) {
+                    $dataRs->found($found);
+                } else {
+                    $dataRs->found('unset');
+                }
+
+                // Reverse results if we were getting upper page results
+                if ($upper) $dataRs->reverse();
+
+                // If we don't have neither initially selected options, nor keyword
+            } else {
+
+                // If user try to get results of upper page, empty result set should be returned
+                if ($page < 0) {
+                    $dataRs = $this->model()->createRowset(array());
+
+                // Increment page, as at stage of combo initialization passed page number was 0,
+                // and after first try to get lower page results passed page number is 1, that actually
+                // means that if we don't increment such page number, returned results for lower page
+                // will be same as initial results got at combo initialization and that is a not correct
+                // way.
+                } else {
+
+                    $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                    $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page + 1);
+                }
+            }
+        }
+
+        // If results should be grouped (similar way as <optgroup></optgroup> do)
+        if ($params['groupBy']) {
+
+            // Get distinct values
+            $distinctGroupByFieldValues = array();
+            foreach ($dataRs as $dataR)
+                if (!$distinctGroupByFieldValues[$dataR->{$params['groupBy']}])
+                    $distinctGroupByFieldValues[$dataR->{$params['groupBy']}] = true;
+
+            // Get group field
+            $groupByFieldR = $fieldM->fetchRow('
+                        `entityId` = "' . $entityM->fetchRow('`id` = "' . $fieldR->relation . '"')->id . '" AND
+                        `alias` = "' . $params['groupBy'] . '"
+                    ');
+
+            // Get group field related entity model
+            $groupByFieldEntityM = Indi::model($groupByFieldR->relation);
+
+            // Get titles for optgroups
+            $groupByOptions = array();
+            if ($groupByFieldEntityM->name() == 'enumset') {
+                $groupByRs = $groupByFieldEntityM->fetchAll('
+                            `fieldId` = "' . $groupByFieldR->id . '" AND
+                            FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")
+                        ');
+                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->alias] = Misc::usubstr($groupByR->title, 50);
+            } else {
+                $groupByRs = $groupByFieldEntityM->fetchAll(
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
+                );
+                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->id] = Misc::usubstr($groupByR->title, 50);
+            }
+
+            $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);
+        }
+
+        // If additional params should be passed as each option attributes, setup list of such params
+        if ($params['optionAttrs']) {
+            $dataRs->optionAttrs = explode(',', $params['optionAttrs']);
+        }
+
+        // Set `enumset` property as false, because without definition it will have null value while passing
+        // to indi.combo.form.js and and after Indi.copy there - will have typeof == object, which is not actually boolean
+        // and will cause problems in indi.combo.form.js
+        $dataRs->enumset = false;
+
+        if ($fieldR->storeRelationAbility == 'many') {
+            if ($selected) {
+                // Convert list of selected ids into array
+                $selected = explode(',', $selected);
+
+                // Get array of ids of already fetched rows
+                $allFetchedIds = array(); foreach ($dataRs as $dataR) $allFetchedIds[] = $dataR->id;
+
+                // Check if some of selected rows are already presented in $dataRs
+                $selectedThatArePresentedInCurrentDataRs = array_intersect($selected, $allFetchedIds);
+
+                // Array for selected rows
+                $data = array();
+
+                // If some of selected rows are already presented in $dataRs, we pick them into $data array
+                if (count($selectedThatArePresentedInCurrentDataRs))
+                    foreach ($dataRs as $dataR)
+                        if (in_array($dataR->id, $selectedThatArePresentedInCurrentDataRs))
+                            $data[] = $dataR->toArray();
+
+                // If some of selected rows are not presented in $dataRs, we do additional fetch to retrieve
+                // them from database and append these rows to $data array
+                if(count($selectedThatShouldBeAdditionallyFetched = array_diff($selected, $allFetchedIds))) {
+                    $data = array_merge($data, $relatedM->fetchAll('
+                        FIND_IN_SET(`id`, "' . implode(',', $selectedThatShouldBeAdditionallyFetched) . '")
+                    ')->toArray());
+                }
+
+                $dataRs->selected = $relatedM->createRowset(array('original' => $data));
+            } else {
+                $dataRs->selected = $relatedM->createRowset(array('original' => array()));
+            }
+        }
+
+        return $dataRs;
+    }
+
+    /**
+     * Build and return a <span/> element with css class and styles definitions, that will represent a color value
+     * for each combo option, in case if combo options have color specification. This function was created for using in
+     * optionTemplate param within combos because if combo is simultaneously dealing with color and with optionTemplate
+     * param, javascript in indi.combo.form.js file will not create a color boxes to represent color-options,
+     * because optionTemplate param assumes, that height of each combo option may be different with default height,
+     * so default color box size may not match look and feel of options, builded with optionTemplate param usage.
+     * So this function provides a possibility to define custom size for color box
+     *
+     * @param $colorField
+     * @param string $size
      * @return string
      */
-    public function getTitle() {
-        if ( !$this->title ) {
-            return  'No title';
+    public function colorBox($colorField, $size = '14x9') {
+        list($width, $height) = explode('x', $size);
+        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->$colorField, $matches)) {
+            $style = array('background: #' . $matches[1]);
+            if (strlen($width)) $style[] = 'width: ' . $width . 'px';
+            if (strlen($height)) $style[] = 'height: ' . $height . 'px';
+            return '<span class="i-combo-color-box" style="' . implode('; ', $style) . '"></span> ';
         } else {
-            return $this->title;
+            return '';
         }
     }
-    
-    public function getImageSrc($imageName, $copyName = null) {
-        $entity = $this->_table;
-        $web =  STD . '/' . Indi_Image::getUploadPath(). '/' . $entity . '/';
-        $abs = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
 
-        $pat = $abs . $web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
-
-        $files = glob($pat . '*');
-        if(count($files) == 0) {
-            return false;    
+    /**
+     * Strips hue value from color in format 'xxx#rrggbb', where xxx - is hue value
+     *
+     * @param $colorField
+     * @return string
+     */
+    public function colorHex($colorField) {
+        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->$colorField, $matches)) {
+            return '#' . $matches[1];
+        } else {
+            return $this->$colorField;
         }
-        
-        $src = str_replace($abs, '', $files[0]);
-        return $src;
     }
 
-    public function getImageAbs($imageName, $copyName = '') {
-        $entity = $this->_table;
-        $web = Indi_Image::getUploadPath(). '/' . $entity . '/';
-        $abs = rtrim($_SERVER['DOCUMENT_ROOT'] . STD, '/');
-        $pat = $abs . '/' .$web . $this->id . ($imageName ? '_' . $imageName : '') . ($copyName ? ',' . $copyName : '') . '.' ;
-        $files = glob($pat . '*');
-        if(count($files) == 0) {
-            return false;
+    /**
+     * Gets the foreign row by foreign key name, using it's current value
+     *
+     * @param string $key The  name of foreign key
+     * @param bool $refresh If specified, cached foreign row will be refreshed
+     * @return Indi_Db_Table_Row|Indi_Db_Table_Rowset|null
+     * @throws Exception
+     */
+    public function foreign($key = '', $refresh = false) {
+
+        // If $key argument contains more than one key name - we setup rows for all keys
+        if (preg_match('/,/',$key)) {
+            $keyA = explode(',', $key);
+            foreach ($keyA as $keyI) $this->foreign(trim($keyI));
+
+            // Return current row
+            return $this;
+
+        } else if (!$key) {
+            return $this->_foreign;
         }
+
+        // If foreign row, got by foreign key, was got already got earlier, and no refresh should be done - return it
+        if (array_key_exists($key, $this->_foreign) && !$refresh) {
+            return $this->_foreign[$key];
+
+            // Else
+        } else {
+
+            // If field, representing foreign key - is exist within current entity
+            if ($fieldR = $this->model()->fields($key)) {
+
+                // If field do not store foreign keys - throw exception
+                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e')) {
+                    throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
+
+                    // Else if field is able to store single key, or able to store multiple, but current key's value isn't empty
+                } else if ($fieldR->storeRelationAbility == 'one' || strlen($this->$key)) {
+
+                    // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
+                    // then model is a value of satellite field. Otherwise model is field's `relation` property
+                    $model = $fieldR->dependency == 'e'
+                        ? $this->{$this->foreign('satellite')->alias}
+                        : $fieldR->relation;
+
+                    // Determine a fetch method
+                    $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
+
+                    // Declare array for WHERE clause
+                    $where = array();
+
+                    // If field is related to enumset entity, we should append an additional WHERE clause,
+                    // that will outline the `fieldId` value, because in this case current row store aliases
+                    // of rows from `enumset` table instead of ids, and aliases are not unique within that table.
+                    if (Indi::model($fieldR->relation)->name() == 'enumset') {
+                        $where[] = '`fieldId` = "' . $fieldR->id . '"';
+                        $col = 'alias';
+                    } else {
+                        $col = 'id';
+                    }
+
+                    // Finish building WHERE clause
+                    $where[] = '`' . $col . '` ' .
+                        ($fieldR->storeRelationAbility == 'many'
+                            ? 'IN(' . $this->$key . ')'
+                            : '= "' . $this->$key . '"');
+
+                    // Fetch foreign row/rows
+                    $foreign = Indi::model($model)->{'fetch' . $methodType}($where);
+                }
+
+            // Else there is no such a field within current entity - throw an exception
+            } else {
+                throw new Exception('Field with alias `' . $key . '` does not exists within entity with table name `' . $this->_table .'`');
+            }
+
+            // Save foreign row within a current row under key name, and return it
+            return $this->_foreign[$key] = $foreign;
+        }
+    }
+
+    /**
+     * Return a model, that current row is related to
+     *
+     * @return mixed
+     */
+    public function model() {
+        return Indi::model($this->_table);
+    }
+
+    /**
+     * Return a database table name, that current row is dealing with
+     *
+     * @return mixed
+     */
+    public function table() {
+        return $this->_table;
+    }
+
+    /**
+     * Provide Toggle On/Off action
+     *
+     * @throws Exception
+     */
+    public function toggle() {
+
+        // If `toggle` column exists
+        if ($this->model()->fields('toggle')) {
+
+            // Do the toggle
+            $this->toggle = $this->toggle == 'y' ? 'n' : 'y';
+            $this->save();
+
+            // Else throw exception
+        } else throw new Exception('Column `toggle` does not exist');
+    }
+
+    /**
+     * Delete all usages of current row
+     */
+    public function deleteForeignKeysUsages() {
+
+        // Declare entities array
+        $entities = array();
+
+        // Get all fields in whole database, which are containing keys related to this entity
+        $fieldRs = Indi::model('Field')->fetchAll('`relation` = "' . $this->model()->id() . '"');
+        foreach ($fieldRs as $fieldR) $entities[$fieldR->entityId]['fields'][] = $fieldR;
+
+        // Get auxillary deletion info within each entity
+        foreach ($entities as $eid => $data) {
+
+            // Load model
+            $model = Indi::model($eid);
+
+            // Foreach field within current model
+            foreach ($data['fields'] as $field) {
+                // We should check that column - which will be used in WHERE clause for retrieving a dependent rowset -
+                // still exists. We need to perform this check because this column may have already been deleted, if
+                // it was dependent of other column that was deleted.
+                if ($model->fields($field->alias)) {
+
+                    // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
+                    if ($field->storeRelationAbility == 'one') {
+                        $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
+
+                        // If storeRelationAbility = 'many', we do not delete rows, but we delete
+                        // mentions of $this->id from comma-separated sets of keys
+                    } else if ($field->storeRelationAbility == 'many') {
+                        $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
+                        foreach ($rs as $r) {
+                            $set = explode(',', $r->{$field->alias});
+                            $found = array_search($this->id, $set);
+                            if ($found !== false) unset($set[$found]);
+                            $r->{$field->alias} = implode(',', $set);
+                            $r->save(true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete all files (images, etc) that have been attached to row. Names of all uploaded files,
+     * are constructed by the following pattern
+     * <upload path>/<entity|table|model name>/<row id>_<file upload field alias>.<file extension>
+     * or
+     * <general upload path>/<entity|table|model name>/<row id>_<file upload field alias>,<resized copy name>.<file extension>
+     *  (in case if uploaded file is an image, and resized copy autocreation was set up)
+     *
+     * This function get all parts of the pattern, build it, and finds all files that match this pattern
+     * with glob() php function usage, so uploaded files names and/or paths and/or extensions are not stored in db,
+     *
+     * @param string $name The alias of field, that is File Upload field (Aliases of such fields are used in the
+     *                     process of filename construction for uploaded files to saved under)
+     * @throws Exception
+     */
+    public function deleteUploadedFiles($name = '') {
+
+        // Absolute upload path in filesystem
+        $abs = DOC . STD . '/' . Indi::registry('config')->upload->path . '/' . $this->_table . '/';
+
+        // Array for filenames that should be deleted
+        $files = array();
+
+        // We delete all files in case if there is no aim to delete only specified image copies
+        if (!$name){
+            $nonamed = glob($abs . $this->id . '.*');
+            $named = glob($abs . $this->id . ',*');
+            if (is_array($nonamed)) $files = array_merge($nonamed, $files);
+            if (is_array($named)) $files = array_merge($named, $files);
+        }
+
+        // All resized copies are to be deleted too
+        $resized = glob($abs . $this->id . '_' . $name . '*.*');
+        if (is_array($resized)) $files = array_merge($resized, $files);
+
+        // Foreach file - delete it from server
+        for ($j = 0; $j < count($files); $j++) {
+            try {
+                unlink($files[$j]);
+            } catch (Exception $e) {
+                throw new Exception();
+            }
+        }
+    }
+
+    /**
+     * Get the absolute path to a file, that was attached to current row by uploading within field with $alias alias.
+     * If $copy argument is given, function will return a path to a resized copy of file - of course if uploaded file
+     * was an image. If file was not found - return false;
+     *
+     * @param string $alias
+     * @param string $copy
+     * @return bool|string
+     */
+    public function abs($alias, $copy = '') {
+        // Get the name of the directory, relative to document root,
+        // and where all files related model of current row are located
+        $src =  STD . '/' . Indi::registry('config')->upload->path . '/' . $this->_table . '/';
+
+        // Build the filename pattern for using in glob() php function
+        $pat = DOC . $src . $this->id . ($alias ? '_' . $alias : '') . ($copy ? ',' . $copy : '') . '.' ;
+
+        // Get the files, matching $pat pattern
+        $files = glob($pat . '*');
+
+        // If no files found, return false
+        if(count($files) == 0) return false;
+
+        // Else return absolute path to first found file
         return $files[0];
     }
 
-    public function image($imageName = null, $copyName = null, $attrib = null, $noCache = false, $sizeinfo = false) {
-        if ($src = $this->getImageSrc($imageName, $copyName)) {
-            if ($sizeinfo) {
-                $info = getimagesize($_SERVER['DOCUMENT_ROOT'] . $src);
-                $info = $info[3];
-                $info = ' ' . preg_replace('/(width|height)/', 'real-$1', $info);
+    /**
+     * Get the relative ( - relative to document root ) filename of the uploaded file, that was attached to current row
+     * by uploading within field with $alias alias. If $copy argument is given, function will return a path
+     * to a resized copy of file - of course if uploaded file was an image. If file was not found - will return false.
+     *
+     * @param $alias
+     * @param string $copy
+     * @return string|null
+     */
+    public function src($alias, $copy = '') {
+        // Get the filename with absolute path
+        if ($abs = $this->abs($alias, $copy))
+
+            // Else return path to first found file, relative to document root
+            return str_replace(DOC, '', $abs);
+    }
+
+    /**
+     * Create an return an <embed> tag with 'src' attribute, pointing to uploaded file
+     * of type application/x-shockwave-flash, if it exists, or return false otherwise
+     *
+     * @param $alias Alias of field of 'File' type
+     * @param string $attr Additional attributes list for <embed> tag
+     * @return bool|string
+     */
+    public function swf($alias, $attr = '') {
+
+        // If uploaded file exists, get it src
+        if ($src = $this->src($alias))
+
+            // Return <embed> tag with found src
+            return '<embed src="' . $src .'" border="0"' . ($attr ? $attr : '') . '/>';
+
+        // Return false otherwise
+        return false;
+    }
+
+    /**
+     * Build and return an <img> tag, representing an uploaded image
+     *
+     * @param null $alias Alias of field, image was uploaded using by
+     * @param null $copy Name of image resized copy, if resized copy should be displayed instead of original image
+     * @param string $attr Attributes list for <img> tag
+     * @param bool $noCache Append image last modification time to 'src' attribute
+     * @param bool $size Include real dimensions info as 'real-width' and 'real-height' attributes within <img> tag
+     * @return bool|string Built <img> tag, of false, if image file does not exists
+     */
+    public function img($alias = null, $copy = null, $attr = '', $noCache = true, $size = true) {
+
+        // If image file exists
+        if ($abs = $this->abs($alias, $copy)) {
+
+            // Start building <img> tag
+            $img = '<img';
+
+            // Get image filename, relative to $_SERVER['DOCUMENT_ROOT']
+            $src = str_replace(DOC, '', $abs);
+
+            // If $noCache argument is true, we append file modification time to 'src' attribute
+            if ($noCache) $src .= '?' . filemtime($abs);
+
+            // Append 'src' attribute to <img> tag
+            $img .= ' src="' . $src . '"';
+
+            // If $size argument is true, we should mention real image dimensions as additional attributes
+            if ($size) {
+                list($w, $h) = getimagesize($abs);
+                $img .= ' real-width="' . $w . '" real-height="' . $h . '"';
             }
-            return '<img src="' . $src .($noCache?'?'.rand():'') . '" ' . $attrib .$info. (preg_match('/alt="/', $attrib) ? '' : ' alt=""') . '>';
+
+            // If $attr argument is specified, we append it to <img> tag
+            if ($attr) $img .= ' ' .$attr;
+
+            // If $attr argument do not contain 'alt' attribute, we append it, but with empty value
+            if (!preg_match('/alt="/', $attr)) $img .= ' alt=""';
+
+            // Close <img> tag and return it
+            return $img . '/>';
+        }
+
+        // Return false
+        return false;
+    }
+    /**
+     * Fetch the rowset, nested to current row, assing that rowset within $this->_nested array under certain key,
+     * and return that rowset
+     *
+     * @param $table A table, where rowset will be fetched from
+     * @param array $fetch Array of fetch params, that are same as Indi_Db_Table::fetchAll() possible arguments
+     * @param null $alias The key, that fetched rowset will be stored in $this->_nested array under
+     * @param null $field Connector field, in case if it is different from $this->_table . 'Id'
+     * @param bool $fresh Flag for rowset refresh
+     * @return Indi_Db_Table_Rowset object
+     * @throws Exception
+     */
+    public function nested($table, $fetch = array(), $alias = null, $field = null, $fresh = false) {
+
+        // Determine the nested rowset identifier. If $alias argument is not null, we will assume that needed rowset
+        // is or should be stored under $alias key within $this->_nested array, or under $table key otherwise.
+        // This is useful in cases when we need to deal with nested rowsets, got from same database table, but
+        // with different fetch params, such as WHERE, ORDER, LIMIT clauses, etc.
+        $key = $alias ? $alias : $table;
+
+        // If needed nested rowset is already exists within $this->_nested array, and it shouldn't be refreshed
+        if (array_key_exists($key, $this->_nested) && !$fresh) {
+
+            // We return it
+            return $this->_nested[$key];
+
+            // Otherwise we fetch it, assign it under $key key within $this->_nested array and return it
         } else {
-            return false;
+
+            // Determine the field, that is a connector between current row and nested rowset
+            $connector = $field ? $field : $this->_table . 'Id';
+
+            // If $fetch argument is array
+            if (is_array($fetch)) {
+
+                // Define the allowed keys within $fetch array
+                $params = array('where', 'order', 'count', 'page', 'offset');
+
+                // Unset all keys within $fetch array, that are not allowed
+                foreach ($fetch as $k => $v) if (!in_array($k, $params)) unset($fetch[$k]);
+
+                // Extract allowed keys with their values from $fetch array
+                extract($fetch);
+            }
+
+            // Convert $where to array
+            $where = isset($where) && is_array($where) ? $where : (strlen($where) ? array($where) : array());
+
+            // If connector field store relation ability is multiple
+            if (Indi::model($table)->field($connector)->storeRelationAbility == 'many')
+
+                // We use FIND_IN_SET sql expression for prepending $where array
+                array_unshift($where, 'FIND_IN_SET("' . $this->id . '", `' . $connector . '`)');
+
+            // Else if connector field store relation ability is single
+            else if (Indi::model($table)->field($connector)->storeRelationAbility == 'one')
+
+                // We use '=' sql expression for prepending $where array
+                array_unshift($where, '`' . $connector . '` = "' . $this->id . '"');
+
+            // Else an Exception will be thrown, as connector field do not exists or don't have store relation ability
+            else throw new Exception();
+
+            // Fetch nested rowset, assign it under $key key within $this->_nested array and return that rowset
+            return $this->_nested[$key] = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
         }
     }
 
-    public function flash($imageName = null, $attrib = null) {
-        if ($src = $this->getImageSrc($imageName)) {        
-            return '<embed src="' . $src .'" border="0" ' . $attrib .'>';
+    /**
+     * Returns the column/value data as an array.
+     * If $type param is set to current (by default), the returned array will contain original data
+     * with overrided values for keys of $this->_modified array
+     *
+     * @param string $type current|original|modified|temporary
+     * @param bool $deep
+     * @return array
+     */
+    public function toArray($type = 'current', $deep = true) {
+        if ($type == 'current') {
+
+            // Merge _original, _modified, _compiled and _temporary array of properties
+            $array = (array) array_merge($this->_original, $this->_modified, $this->_compiled, $this->_temporary);
+
+            // Append _system array as separate array within returning array, under '_system' key
+            if (count($this->_system)) $array['_system'] = $this->_system;
+
+        } else if ($type == 'original') {
+            $array = (array) $this->_original;
+        } else if ($type == 'modified') {
+            $array = (array) $this->_modified;
+        } else if ($type == 'temporary') {
+            $array = (array) $this->_temporary;
+        }
+
+        if ($deep) {
+
+            if (count($this->_foreign))
+                foreach ($this->_foreign as $alias => $row)
+                    if (is_object($row) && $row instanceof Indi_Db_Table_Row)
+                        $array['_foreign'][$alias] = $row->toArray($type, $deep);
+
+            if (count($this->_nested))
+                foreach ($this->_nested as $alias => $rowset)
+                    if (is_object($rowset) && $rowset instanceof Indi_Db_Table_Rowset)
+                        $array['_nested'][$alias] = $rowset->toArray($deep);
+
+        }
+
+        return $array;
+    }
+
+    /**
+     * Test existence of row field
+     *
+     * @param  string  $columnName   The column key.
+     * @return boolean
+     */
+    public function __isset($columnName) {
+        return array_key_exists($columnName, $this->_original);
+    }
+
+    /**
+     * Retrieve row field value
+     *
+     * @param  string $columnName The user-specified column name.
+     * @return string             The corresponding column value.
+     */
+    public function __get($columnName) {
+        if ($columnName == 'title' && !$this->__isset($columnName)) {
+            return $this->__isset('_title') ? $this->_title : 'No title';
+
+        } else if ($columnName == 'foreign') {
+            return $this->foreign();
+        }
+
+        // We trying to find the key's ($columnName) value at first in $this->_modified array,
+        // then in $this->_original array, and then in $this->_temporary array, and return
+        // once value was found
+        if (array_key_exists($columnName, $this->_modified)) return $this->_modified[$columnName];
+        else if (array_key_exists($columnName, $this->_original)) return $this->_original[$columnName];
+        else if ($this->_temporary[$columnName]) return $this->_temporary[$columnName];
+    }
+
+    /**
+     * Set row field value, by creating an item of $this->_modified array, in case if
+     * value is different from value of $this->_original at same key ($columnName)
+     *
+     * @param  string $columnName The column key.
+     * @param  mixed  $value      The value for the property.
+     * @return void
+     */
+    public function __set($columnName, $value) {
+        // Check if value is a color in #RRGGBB format and prepend it with hue number
+        if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
+            $value = Misc::rgbPrependHue($value);
+        }
+
+        // We setup a value in a $this->_modified array only if this value is not equal to value, already
+        // existing in $this->_original array under same key ($columnName), and only if $columnName is
+        // exists as one of keys within $this->_original array
+        if ($this->_original[$columnName] !== $value && array_key_exists($columnName, $this->_original))
+            $this->_modified[$columnName] = $value;
+
+        // Otherwise we assign this key => value pair into a $this->_temporary array
+        else $this->_temporary[$columnName] = $value;
+    }
+    /**
+     * Forces value setting for a given key at $this->_modified array,
+     * without 'same-value' check. Actually this function was created
+     * to deal with cases, when we need to skip prepending a hue number
+     * to #RRGGBB color, because we need to display color value without hue number in forms.
+     *
+     * @param $key
+     * @param $value
+     * @return mixed
+     */
+    public function modified() {
+        if (func_num_args() == 0) return $this->_modified;
+        else if (func_num_args() == 1) return $this->_modified[func_get_arg(0)];
+        else return $this->_modified[func_get_arg(0)] = func_get_arg(1);
+    }
+
+    /**
+     * This function sets of gets a value of $this->_system array by a given key
+     *
+     * @return mixed
+     */
+    public function system() {
+        if (func_num_args() == 1) {
+            return $this->_system[func_get_arg(0)];
+        } else if (func_num_args() == 2) {
+            $this->_system[func_get_arg(0)] = func_get_arg(1);
+            return $this;
         } else {
-            return false;
+            return $this->_system;
         }
     }
 
-	public function setForeignRowsByForeignKeys($info){
-		if (is_object($info)) {
-			foreach ($info as $rowToGet) {
-				$fields[] = $rowToGet->fieldId;
-				$returnAs[] = $rowToGet->returnAs;
-			}
-		} else {
-			$fields = explode(',', $info);
-			$entityId = Indi::model('Entity')->fetchRow('`table` = "' . $this->_table . '"')->id;
-			$fieldsRs = Indi::model('Field')->fetchAll('`entityId` = "' . $entityId . '" AND `alias` IN ("' . implode('","', $fields) . '")');
-			$fields = array();
-			foreach ($fieldsRs as $fieldR) $fields[] = $fieldR->id;
-		}
-		for ($i = 0; $i < count($fields); $i++) {
-			$field = Indi::model('Field')->fetchRow('`id` = "' . $fields[$i] . '"');
-			$field = $field->toArray();
-			if ($field['relation'] && $model = Indi::model($field['relation'])) {
-				if ($field['storeRelationAbility'] == 'one') {
-					if ($field['relation'] == 6) {
-						$foreignR = $model->fetchRow('`alias` = "' . $this->{$field['alias']} . '" AND `fieldId` = "' . $field['id'] . '"');
-					} else {
-						$foreignR = $model->fetchRow('`id` = "' . $this->{$field['alias']} . '"');
-					}
-					if (!$foreignR) {
-						$foreignR = $model->createRow();
-					}
-					$this->_original['foreign'][$field['alias']] = $returnAs[$i] == 'a'? $foreignR->toArray(): $foreignR;
-				} else if ($field['storeRelationAbility'] == 'many') {
-					if ($field['relation'] == 6) {
-						$foreignR = $model->fetchAll('FIND_IN_SET(`alias`,"' . $this->{$field['alias']} . '") AND `fieldId` = "' . $field['id'] . '"');
-					} else {
-						$foreignR = $model->fetchAll('FIND_IN_SET(`id`,"' . $this->{$field['alias']} . '")');
-					}
-					if ($foreignR) $this->_original['foreign'][$field['alias']] = $returnAs[$i] == 'a'? $foreignR->toArray(): $foreignR;
-				}
-			}
-		}
-	}
-	public function setDependentRowsets($info) {
-		$name = $this->_table;
-		$selfEntityId = Indi::model('Entity')->fetchRow('`table` = "' . $name . '"')->id;
-		foreach ($info as $entity) {
-			$where = null;
-			if ($related = Indi::model('Field')->fetchRow('`entityId` = "' . $entity->entityId . '" AND `relation` = "' . $selfEntityId . '"')){
-				if ($related->storeRelationAbility == 'many') {
-					$where = 'FIND_IN_SET("' . $this->id. '", `' . $related->alias .'`)';
-				} else {
-					$where = '`' . $name . 'Id` = "' . $this->id . '"';
-				}
-			} else if($self = Indi::model('Field')->fetchRow('`entityId` = "' . $selfEntityId . '" AND `relation` = "' . $entity->entityId . '"')){
-				if ($self->storeRelationAbility == 'many') {
-					$where = 'FIND_IN_SET(`id`, "' . $this->{$self->alias} . '")';
-				}
-			}
-			if ($where) {
-				if ($entity->where) {
-					if (preg_match('/\$/', $entity->where)) {
-						eval('$entity->where = \'' . $entity->where . '\';');
-					}
-					$where .= ' AND ' . $entity->where;
-				}
-				$order = $entity->orderBy == 'c' && $entity->foreign('orderColumn')->alias ? $entity->foreign('orderColumn')->alias  . ' ' . $entity->orderDirection : $entity->orderExpression;
-				$limit = $entity->limit ? $entity->limit : null;
-				$rowset = Indi::model($entity->entityId)->fetchAll($where, $order ? $order : null, $limit);
+    /**
+     * Return results of certain field value compilation
+     *
+     * @param $key
+     * @return mixed
+     */
+    public function compiled($key) {
+        return $this->_compiled[$key];
+    }
 
-				$info = Indi::model('JoinFkForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
-				if ($info->count()) $rowset->setForeignRowsByForeignKeys($info);
+    /**
+     * Proxy to __isset
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     * @return boolean
+     */
+    public function offsetExists($offset) {
+        return $this->__isset($offset);
+    }
 
-				$info = Indi::model('DependentCountForDependentRowset')->fetchAll('`dependentRowsetId` = "' . $entity->id . '"');
-				if ($info->count()) $rowset->setDependentCounts($info);
+    /**
+     * Proxy to __get
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     * @return string
+     */
+    public function offsetGet($offset) {
+        return $this->__get($offset);
+    }
 
-				$this->_original['dependent'][$entity->alias] = $entity->returnAs == 'a' ? $rowset->toArray() : $rowset;
-			}
-		}
-	}
+    /**
+     * Proxy to __set
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     * @param mixed $value
+     */
+    public function offsetSet($offset, $value) {
+        $this->__set($offset, $value);
+    }
+
+    /**
+     * Proxy to __unset
+     * Required by the ArrayAccess implementation
+     *
+     * @param string $offset
+     */
+    public function offsetUnset($offset) {
+        return $this->__unset($offset);
+    }
 }

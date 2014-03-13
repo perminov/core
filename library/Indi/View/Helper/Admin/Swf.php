@@ -1,7 +1,7 @@
 <?php
-class Indi_View_Helper_Admin_Flash extends Indi_View_Helper_Abstract
+class Indi_View_Helper_Admin_Swf extends Indi_View_Helper_Abstract
 {
-    public function flash($entity = null, $id = null, $name = null, $silence = true, $width = null, $height = null)
+    public function swf($entity = null, $id = null, $name = null, $silence = true, $width = null, $height = null)
     {
         static $index = null;
 

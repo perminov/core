@@ -1,13 +1,5 @@
 <?php
 class Enumset_Row extends Indi_Db_Table_Row{
-    public function getTitle(){
-        if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->alias, $matches)) {
-            return '<span class="i-color-box" style="background: #' . $matches[1] . ';"></span> '. parent::getTitle();
-        } else {
-            return parent::getTitle();
-        }
-    }
-
     public function save($parentSave = false) {
         // Simple save
         if ($parentSave) return parent::save();
@@ -27,7 +19,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
             parent::save();
 
             // Get existing values
-            $values = $this->table()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
+            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
             for ($i = 0; $i < count($values); $i++) {
 
                 // Set up viewValues. Difference between viewValues and rawValues is that if viewValues
@@ -52,7 +44,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
                 // If field default value is not presented (for some reasons) in $viewValues array, we create corresponding value
                 if (!in_array($viewDefaultValue, $viewValues) && ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $fieldR->defaultValue != ''))) {
                     $rawValues[] = $fieldR->defaultValue;
-                    $new = $this->table()->createRow();
+                    $new = $this->model()->createRow();
                     $new->fieldId = $fieldR->id;
                     $new->alias = $fieldR->defaultValue;
                     $new->title = 'Укажите наименование для значения по умолчанию - "' . $viewDefaultValue . '"';
@@ -70,7 +62,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
                     // If field default value is not presented (for some reasons) in $viewValues array, we create corresponding value
                     if (!in_array($viewDefaultValue, $viewValues) && ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $defaultValues[$i] != ''))) {
                         $rawValues[] = $defaultValues[$i];
-                        $new = $this->table()->createRow();
+                        $new = $this->model()->createRow();
                         $new->fieldId = $fieldR->id;
                         $new->alias = $defaultValues[$i];
                         $new->title = 'Укажите наименование для значения по умолчанию - "' . $viewDefaultValue . '"';
@@ -112,7 +104,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
         if (in_array($columnTypeR->type, array('ENUM', 'SET'))) {
 
             // Get values
-            $values = $this->table()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
+            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
             $rawValues = array(); for ($i = 0; $i < count($values); $i++) $rawValues[] = $values[$i]['alias'];
 
             // Checks if deletion is not allowed

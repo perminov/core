@@ -101,21 +101,21 @@ class Indi_Db_Table
             $limit = false;
         }
 
-        // Build th query
+        // Build the query
         $sql = 'SELECT ' . ($limit ? $calcFoundRows : '') . '* FROM `' . $this->_name . '`'
             . ($where ? ' WHERE ' . $where : '')
             . ($order ? ' ORDER BY ' . $order : '')
             . ($limit ? ' LIMIT ' . $limit : '');
 
         // Fetch data
-        $data = Indi::db()->query($sql)->fetchAll();
+        $original = Indi::db()->query($sql)->fetchAll();
 
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this->_name,
-            'data'     => $data,
+            'original'     => $original,
             'rowClass' => $this->_rowClass,
-            'foundRows'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($data),
+            'found'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($original),
             'page' => $page
         );
 
@@ -139,13 +139,13 @@ class Indi_Db_Table
         // Get raw tree
         $tree = $this->fetchRawTree($order, $where);
 
-        // If we have WHERE clause, we extract values from $tree handled with keys 'tree', 'foundRows' and 'disabledA'
+        // If we have WHERE clause, we extract values from $tree handled with keys 'tree', 'found' and 'disabledA'
         if ($where) {
             extract($tree);
 
-            // Else we just set $foundRows
+            // Else we just set $found
         } else {
-            $foundRows = count($tree);
+            $found = count($tree);
         }
 
         // If we have to deal a keyword search clause we have different behaviour
@@ -162,7 +162,7 @@ class Indi_Db_Table
 
             // Fetch rows that match $where clause, ant set foundRows
             $foundRs = $this->fetchAll($where, $order, $count, $page);
-            $foundRows = $foundRs->foundRows;
+            $found = $foundRs->found();
             $foundA = $foundRs->toArray();
 
             // We replace indexes with actual ids in $foundA array
@@ -236,7 +236,7 @@ class Indi_Db_Table
             // so we should calculate needed page number, and replace $page argument with calculated value
             // Also, while retrieving upper and lower page (than page with selected vaue) results, we use $selected
             // argument as start point for distance and scope calculations
-            if ($selected && $foundRows > Indi_Db_Table_Row_Beautiful::$comboOptionsVisibleCount){
+            if ($selected && $found > Indi_Db_Table_Row::$comboOptionsVisibleCount){
 
                 // Get index of selected branch in raw tree
                 $i = 0;
@@ -357,7 +357,7 @@ class Indi_Db_Table
         $assocDataA = array();
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
-            $assocDataI['indent'] = $indents[$data[$i]['id']];
+            //$assocDataI['indent'] = $indents[$data[$i]['id']];
             $assocDataI['_system']['indent'] = $indents[$data[$i]['id']];
             $assocDataA[$data[$i]['id']] = $assocDataI;
         }
@@ -379,18 +379,25 @@ class Indi_Db_Table
 
         // Set 'parentId' system property. Despite of existence of parent branch identifier in list of properties,
         // we additionally set up this property as system property using static 'parentId' key, (e.g $row->system('parentId'))
-        // instead of using $row->{$row->table()->treeColumn()} expression. Also, this will be useful in javascript, where
+        // instead of using $row->{$row->model()->treeColumn()} expression. Also, this will be useful in javascript, where
         // we have no ability to use such an expressions.
         foreach ($data as $id => $props) $data[$id]['_system']['parentId'] = $props[$this->_treeColumn];
+
+        $system = array();
+        foreach ($data as $id => $props) {
+            $system[$id] = $data[$id]['_system'];
+            unset($data[$id]['_system']);
+        }
+
 
         // Setup rowset info
         $data = array (
             'table' => $this->_name,
-            'data' => array_values($data),
+            'original' => array_values($data),
+            'system' => $system,
             'rowClass' => $this->_rowClass,
-            'foundRows' => $foundRows,
-            'page' => $page,
-            'treeColumn' => $this->_treeColumn
+            'found' => $found,
+            'page' => $page
         );
 
         // Return rowset
@@ -456,7 +463,7 @@ class Indi_Db_Table
             }
 
             // Get found rows
-            $foundRows = count($primary);
+            $found = count($primary);
 
             // Then we should find disabled results
             $disabled = array();
@@ -483,7 +490,7 @@ class Indi_Db_Table
             unset($return, $primary);
 
             // Return array(data, foundRows)
-            return array('tree' => $tmp, 'foundRows' => $foundRows, 'disabledA' => $disabled);
+            return array('tree' => $tmp, 'found' => $found, 'disabledA' => $disabled);
         } else {
 
             // Return array
@@ -521,38 +528,17 @@ class Indi_Db_Table
         if (in_array('title', $existing)) {
             $this->titleColumn = 'title';
 
-            // Check if `_title` column already exists
-        } else if (in_array('_title', $existing)) {
-            $this->titleColumn = '_title';
-
-            // Initialize newly created column with value
-            /*$rs = $this->fetchAll();
-            foreach ($rs as $r) {
-                $r->_title = $r->getTitle();
-                $r->save();
-                unset($r);
-            }*/
-
-            // If not
+        // Else create it
         } else {
-            // Create it
             $fieldR = Indi::model('Field')->createRow();
             $fieldR->entityId = Indi::model('Entity')->fetchRow('`table` = "' . $this->_name . '"')->id;
-            $fieldR->title = 'System title';
-            $fieldR->alias = '_title';
+            $fieldR->title = 'Auto title';
+            $fieldR->alias = 'title';
             $fieldR->storeRelationAbility = 'none';
             $fieldR->columnTypeId = 1;
-            $fieldR->elementId = 22;
+            $fieldR->elementId = 1;
             $fieldR->save();
-
-            // Initialize newly created column with value
-            $rs = $this->fetchAll();
-            foreach ($rs as $r) {
-                $r->_title = $r->getTitle();
-                $r->save();
-                unset($r);
-            }
-            $this->titleColumn = '_title';
+            $this->titleColumn = 'title';
         }
         return $this->titleColumn;
     }
@@ -639,7 +625,7 @@ class Indi_Db_Table
             // If $format argument == 'rowset' - return all fields as Indi_Db_Table_Rowset object
             if ($format == 'rowset')
                 return Indi::model('Field')->createRowset(array(
-                    'data' => array_values($this->_fields)
+                    'original' => array_values($this->_fields)
                 ));
 
             // Else if $format == 'cols' - return all fields aliases as array
@@ -682,7 +668,7 @@ class Indi_Db_Table
 
                 // Return all found fields as Indi_Db_Table_Rowset object
                 return Indi::model('Field')->createRowset(array(
-                    'data' => array_values($found)
+                    'original' => array_values($found)
                 ));
 
             // Else if $format is set to 'cols', array if field aliases will be returned
@@ -837,9 +823,11 @@ class Indi_Db_Table
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this->_name,
-            'data'     => is_array($input['data']) ? $input['data'] : array(),
+            'original'     => is_array($input['original']) ? $input['original'] : array(),
             'rowClass' => $this->_rowClass,
-            'foundRows'=> isset($input['foundRows']) ? $input['foundRows'] : (is_array($input['data']) ? count($input['data']) : 0)
+            'found'=> isset($input['found'])
+                ? $input['found']
+                : (is_array($input['original']) ? count($input['original']) : 0)
         );
 
         // Construct and return Indi_Db_Table_Rowset object
@@ -1011,8 +999,6 @@ class Indi_Db_Table
 
             // Execute query and return number of affected rows
             return Indi::db()->query($sql);
-
-            // Else return 0, as indicator for situation when no columns could be updated
-        } else throw new Exception('$data array is empty');
+        }
     }
 }

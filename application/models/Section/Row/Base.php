@@ -2,22 +2,9 @@
 class Section_Row_Base extends Indi_Db_Table_Row
 {
     public function getFilters() {
-        $filterM = Indi::model('Search');
-        $filterRs = $filterM->fetchAll('`sectionId` = "' . $this->id . '" AND `toggle` = "y"', 'move');
-        $data['foundRows'] = $filterRs->foundRows;
-        $filterA = $filterRs->toArray();
-        $fieldIds = array(); foreach ($filterA as $filterI) $fieldIds[] = $filterI['fieldId'];
-        $fieldRs = Indi::model('Field')->fetchAll('FIND_IN_SET(`id`, "' . implode(',', $fieldIds) . '")');
-        $fieldRs->setForeignRowsByForeignKeys('columnTypeId,elementId')->setParams();
-        for ($i = 0; $i < count($filterA); $i++) {
-            foreach ($fieldRs as $fieldR) {
-                if ($filterA[$i]['fieldId'] == $fieldR->id) {
-                    $filterA[$i]['foreign']['fieldId'] = $fieldR;
-                    $data['data'][] = $filterA[$i];
-                }
-            }
-        }
-        return $filterM->createRowset($data);
+        return Indi::model('Search')
+            ->fetchAll('`sectionId` = "' . $this->id . '" AND `toggle` = "y"', 'move')
+            ->foreign(array('fieldId:setParams()' => 'columnTypeId,elementId'));
     }
 
     public function save(){
@@ -63,7 +50,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
                     // Exclude columns that are links to parent sections
                     $parentSectionId = $this->sectionId;
                     do {
-                        $parentSection = $this->_table->fetchRow('`id` = "' . $parentSectionId . '"');
+                        $parentSection = $this->model()->fetchRow('`id` = "' . $parentSectionId . '"');
                         if ($parentSection && $parentEntity = $parentSection->foreign('entityId')){
                             for ($i = 0; $i < count($fields); $i++) {
                                 if ($fields[$i]['alias'] == $parentEntity->table . 'Id' && $fields[$i]['relation'] == $parentEntity->id) {

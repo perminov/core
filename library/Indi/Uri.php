@@ -75,7 +75,7 @@ class Indi_Uri {
         } else {
             $this->trailingSlash();
         }
-        
+
         $controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
 
 		if (!class_exists($controllerClassName)) {

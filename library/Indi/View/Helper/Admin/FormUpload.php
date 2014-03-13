@@ -20,7 +20,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
         }
 		// pattern and paths
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
-		$relative = '/' . trim(Indi::registry('config')->upload->uploadPath, '/') . '/' . $entity  . '/';
+		$relative = '/' . trim(Indi::registry('config')->upload->path, '/') . '/' . $entity  . '/';
 		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . STD, '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
@@ -30,7 +30,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$xhtml = '<div>';
 			switch ($type) {
 				case 'image':
-					$uploaded = $this->view->image($entity, $id, $name, $copy, $silence) . '<br>';
+					$uploaded = $this->view->img($entity, $id, $name, $copy, $silence) . '<br>';
 					preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));
 					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getimagesize($abs);
@@ -40,7 +40,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					}
                     break;
 				case 'flash':
-					$uploaded = $this->view->flash($entity, $id, $name, $silence) . '<br>';
+					$uploaded = $this->view->swf($entity, $id, $name, $silence) . '<br>';
                     preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));$src = $matches[1];
                     $abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getflashsize($abs);

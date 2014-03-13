@@ -65,7 +65,7 @@ class Entity_Row extends Indi_Db_Table_Row
         } else if ($this->_original['table'] && $this->_modified['table'] && $this->_original['table'] != $this->_modified['table']) {
             $query = 'RENAME TABLE  `' . $this->_original['table'] . '` TO  `' . $this->_modified['table'] . '` ;';
         }
-        if ($query) $this->_table->_db->query($query);
+        if ($query) Indi::db()->query($query);
         return parent::save();
     }
 }

@@ -16,6 +16,9 @@ define('COM', $GLOBALS['cmsOnlyMode']);
 // Setup PRE constant, representing total url shift for all urls in cms area
 define('PRE', STD . (COM ? '' : '/admin'));
 
+// Setup DOC constant, representing $_SERVER['DOCUMENT_ROOT'] environment variable, with no right-side slash
+define('DOC', rtrim($_SERVER['DOCUMENT_ROOT'], '/'));
+
 // Set up error reporting
 error_reporting(E_ALL^E_NOTICE);
 ini_set('display_errors', 'On');
@@ -31,7 +34,7 @@ spl_autoload_register('autoloader');
 // Load misc features
 require('Misc.php');
 
-// Performance detection
+// Performance detection. '$mt' mean 'microtime'
 $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();
 
 // Memory usage detection
@@ -47,6 +50,15 @@ Indi::registry('get', $_GET);
 Indi::registry('files', $_FILES);
 Indi::registry('config', $config);
 unset($_POST, $_GET, $_FILES);
+/*mt();
+$t = Indi::model('Search')
+    ->fetchAll('`sectionId` = "394" AND `toggle` = "y"', 'move')
+    ->foreign(array('fieldId:setParams()' => array('columnTypeId' => 'elementId', 'elementId')))
+    ->select('126,127,130', 'id');
+//    ->exclude('126');
+d(Indi_Db::$queryCount);
+d($t);
+die('ss');*/
 
 // Dispatch uri request
 $uri = new Indi_Uri(); $uri->dispatch();

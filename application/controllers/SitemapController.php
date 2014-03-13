@@ -16,7 +16,7 @@ class SitemapController extends Indi_Controller_Front{
                         if ($model->name() == 'staticpage') {
                             foreach ($rs as $r) {
                                 $map[] = array(
-                                    'title' => $r->getTitle(),
+                                    'title' => $r->title,
                                     'href' => '/' . $r->alias,
                                     'level' => $row->level + ($row->hasIndexAction ? 1 : 0)
                                 );
@@ -24,7 +24,7 @@ class SitemapController extends Indi_Controller_Front{
                         } else {
                             foreach ($rs as $r) {
                                 $map[] = array(
-                                    'title' => $r->getTitle(),
+                                    'title' => $r->title,
                                     'href' => '/' . $row->alias . '/details/id/' . $r->id . '/',
                                     'level' => $row->level + ($row->hasIndexAction ? 1 : 0)
                                 );

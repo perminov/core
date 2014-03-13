@@ -152,7 +152,7 @@ class Indi_Controller_Front extends Indi_Controller{
 					$query .= 'VALUES ';
 					$foreignRowset = Indi::model($entityId)->fetchAll($condition);
 					foreach ($foreignRowset as $foreignRow) {
-						$values[] = '("' . $foreignRow->alias . '","' . $foreignRow->getTitle() . '")';
+						$values[] = '("' . $foreignRow->alias . '","' . $foreignRow->title . '")';
 					}
 					$query .= implode(',', $values) . ';';
 				} else {
@@ -176,7 +176,7 @@ class Indi_Controller_Front extends Indi_Controller{
 						
 						$query .= 'VALUES ';
 						foreach ($foreignRowset as $foreignRow) {
-							$values[] = '(' . $foreignRow->id . ', "' . str_replace('"', '&quote;', $foreignRow->getTitle()) . '")';
+							$values[] = '(' . $foreignRow->id . ', "' . str_replace('"', '&quote;', $foreignRow->title) . '")';
 						}
 						$query .= implode(',', $values) . ';';
 					}
@@ -201,7 +201,7 @@ class Indi_Controller_Front extends Indi_Controller{
 			$rowset = $this->trail->getItem()->model->fetchAll('1 ' . ($condition ? ' AND ' . $condition : ''));
 			$tmp = array();
 			foreach ($rowset as $row) {
-				$tmp[] = array('id' => $row->id, 'title' => $row->foreign($this->post['sort'])->getTitle());
+				$tmp[] = array('id' => $row->id, 'title' => $row->foreign($this->post['sort'])->title);
 			}
 			if (count($tmp)) {
 				// create temporary table
@@ -398,7 +398,7 @@ class Indi_Controller_Front extends Indi_Controller{
 					if ($info->count()) $this->row->setDependentRowsets($info);
 					// set join needed foreign rows on foreign keys
 					$info = $this->section2action->getInfoAboutForeignRowsToBeGot();
-					if ($info->count()) $this->row->setForeignRowsByForeignKeys($info);
+					if ($info->count()) $this->row->foreign($info);
 					
 					$this->view->row = $this->row;
 				} else {

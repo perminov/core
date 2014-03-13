@@ -198,6 +198,9 @@ class Indi_Db {
             // Execute query and get affected rows count
             $affected = self::$_pdo->exec($sql);
 
+            // Increment queries count
+            self::$queryCount++;
+
             // If no rows were affected and error reporting ($silence argument) is turned on
             if ($affected === false && $silence == false) {
 
@@ -222,6 +225,9 @@ class Indi_Db {
 
             // Exectute query by PDO->query() method
             $stmt = self::$_pdo->query($sql);
+
+            // Increment queries count
+            self::$queryCount++;
 
             // If query execition was not successful and mysql error reporting is on
             if (!$stmt && $silence == false) {
