@@ -32,12 +32,11 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
 
     public function noSatellite() {
         if ($satelliteFieldId = $this->getField()->satellite) {
-            $availableFilterA = $this->view->trail->getItem()->filters->toArray();
-            foreach ($availableFilterA as $availableFilterI) {
-                if ($availableFilterI['fieldId'] == $satelliteFieldId) {
+            $filters = clone $this->view->trail->getItem()->filters;
+            $availableFilterA = $filters->toArray();
+            foreach ($availableFilterA as $availableFilterI)
+                if ($availableFilterI['fieldId'] == $satelliteFieldId)
                     return false;
-                }
-            }
             return true;
         } else {
             return true;

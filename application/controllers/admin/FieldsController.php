@@ -67,12 +67,12 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 						$condition  = '`alias` IN ("' . implode('","', $foreignKeyValues) . '")';
 						$condition .= ' AND `fieldId` = "' . $irregularGridFieldsThatStoreRelation[$fieldAlias] . '"';
 						$foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
-						foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->getTitle();
+						foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->title;
 
 					// get title for other columns that store relations
 					} else {
 						$foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
-						foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->id] = $foreignRow->getTitle();
+						foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->id] = $foreignRow->title;
 					}
 				}
 			}
@@ -82,18 +82,18 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 					if ($data[$i]['relation'] && $model = Indi::model($data[$i]['relation'])) {
 						if ($data[$i]['relation'] != 6) {
 							if ($foreignRow = $model->fetchRow('`id` = "' . $data[$i]['defaultValue'] . '"')){
-								$data[$i]['defaultValue'] = '"' . $foreignRow->getTitle() . '"';
+								$data[$i]['defaultValue'] = '"' . $foreignRow->title . '"';
 							}
 						} else {
 							$condition  = '`alias` = "' . $data[$i]['defaultValue'] . '"';
 							$condition .= ' AND `fieldId` = "' . $data[$i]['id'] . '"';
 							$foreignRow = $model->fetchRow($condition);
 							if ($foreignRow) {
-                                $title = $foreignRow->getTitle();
+                                $title = $foreignRow->title;
                                 if ($title != strip_tags($title)) {
-                                    $data[$i]['defaultValue'] = $foreignRow->getTitle();
+                                    $data[$i]['defaultValue'] = $foreignRow->title;
                                 } else {
-                                    $data[$i]['defaultValue'] = '"' . $foreignRow->getTitle() . '"';
+                                    $data[$i]['defaultValue'] = '"' . $foreignRow->title . '"';
                                 }
                             }
 						}
@@ -106,7 +106,7 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 				if (!$data[$i]['relation'] && !$titles['relation'][$data[$i]['relation']]) {
 					if($data[$i]['satellite']) {
 						if (!$fieldModel) $fieldModel = Indi::model('Field');
-						$data[$i]['relation'] = '<font color="#aaaaaa">Зависит от поля "' . $fieldModel->fetchRow('`id` = "' . $data[$i]['satellite'] . '"')->getTitle() . '"</font>';
+						$data[$i]['relation'] = '<font color="#aaaaaa">Зависит от поля "' . $fieldModel->fetchRow('`id` = "' . $data[$i]['satellite'] . '"')->title . '"</font>';
 					} else {
 						$data[$i]['relation'] = '<font color="#aaaaaa">Не будут</font>';
 					}
@@ -139,6 +139,6 @@ class Admin_FieldsController extends Indi_Controller_Admin {
             }
         }
 
-        $jsonData = '({"totalCount":"'.$this->rowset->foundRows.'","blocks":'.json_encode($data).'})';
+        $jsonData = '({"totalCount":"'.$this->rowset->found().'","blocks":'.json_encode($data).'})';
 		return $jsonData;
 	}}

@@ -88,7 +88,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         // able to restore the state of panel, that is representing the rowset at cms interface.
                         // State of the panel includes: filtering and search params, sorting params
                         $this->setScope($primaryWHERE, $this->get['search'], $this->params['keyword'], $this->get['sort'],
-                            $this->get['page'], $this->rowset->foundRows, $finalWHERE, $finalORDER);
+                            $this->get['page'], $this->rowset->found(), $finalWHERE, $finalORDER);
                     }
                 } else {
 
@@ -139,14 +139,14 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
          * 5. ������������� ����������� ������� � ������ �����
          */
 
-        $fields = $this->trail->getItem()->fields->setForeignRowsByForeignKeys('elementId');
+        $fields = $this->trail->getItem()->fields->foreign('elementId');
         $model = $this->trail->getItem()->model;
         $table = $model->name();
         $sql = array();
         $set = array();
         $data = array();
         $sql[] = ($this->identifier ? 'UPDATE' : 'INSERT INTO') . ' `' . $table . '` SET';
-        $treeColumn = $this->trail->getItem()->treeKeyName;
+        $treeColumn = $this->trail->getItem()->model->treeColumn();
         foreach ($fields as $field) {
             if (isset($this->post[$field->alias])) {
                 $value = $this->post[$field->alias];
@@ -423,13 +423,13 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         $condition  = '`alias` IN ("' . implode('","', $foreignKeyValues) . '")';
                         $condition .= ' AND `fieldId` = "' . $irregularGridFieldsThatStoreRelation[$fieldAlias] . '"';
                         $foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
-                        foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->getTitle();
+                        foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->title;
 
                     // get title for other columns that store relations
                     } else {
                         $foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
                         foreach ($foreignRowset as $foreignRow) {
-                            $title = $foreignRow->getTitle();
+                            $title = $foreignRow->title;
                             if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$title)) {
                                 $color = substr($title, 4);
                                 $title = '<span class="i-color-box" style="background: #' . $color . ';"></span>#'. $color;
@@ -516,7 +516,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $i = 0;
             foreach ($this->rowset as $row) {
                 if ($fr = $row->foreign($fieldAlias))	{
-                    if ($fr instanceof Indi_Db_Table_Row) $data[$i][$fieldAlias] = $fr->getTitle();
+                    if ($fr instanceof Indi_Db_Table_Row) $data[$i][$fieldAlias] = $fr->title;
                 }
                 $i++;
             }
@@ -570,7 +570,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             }
         }
         if ($json) {
-            $jsonData = array("totalCount" => $this->rowset->foundRows, "blocks" => $data);
+            $jsonData = array("totalCount" => $this->rowset->found(), "blocks" => $data);
             return json_encode($jsonData);
         } else {
             return $data;
@@ -605,6 +605,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         );
     }
     public function postDispatch($return = false){
+
         // assign general template data
         $this->assign();
         if (!$this->section && $this->action == 'index') {

@@ -20,7 +20,7 @@ class Indi_View_Helper_Admin_IndexFile extends Indi_View_Helper_Abstract
         }
 		// pattern and paths
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
-		$relative = '/' . trim(Indi::registry('config')->upload->uploadPath, '/') . '/' . $entity  . '/';
+		$relative = '/' . trim(Indi::registry('config')->upload->path, '/') . '/' . $entity  . '/';
 		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
@@ -29,10 +29,10 @@ class Indi_View_Helper_Admin_IndexFile extends Indi_View_Helper_Abstract
 			foreach ($types as $type => $extensions) if (in_array($info['extension'], explode(',', $extensions))) break;
 			switch ($type) {
 				case 'image':
-					$xhtml = $this->view->image($entity, $id, $name, $copy, $silence) . '<br>';
+					$xhtml = $this->view->img($entity, $id, $name, $copy, $silence) . '<br>';
 					break;
 				case 'flash':
-					$xhtml = $this->view->flash($entity, $id, $name, $silence) . '<br>';
+					$xhtml = $this->view->swf($entity, $id, $name, $silence) . '<br>';
 					break;
 				case 'video':
 					$xhtml = 'Video in format ' . $info['extension'] . ' - <a href="' . $relative . $info['basename'] . '" target="_blank">Download</a> ,';

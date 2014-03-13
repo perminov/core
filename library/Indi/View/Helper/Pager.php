@@ -9,24 +9,24 @@ class Indi_View_Helper_Pager extends Indi_View_Helper_Abstract
     /**
      * Display total rows, and pages list
      *
-     * @param int $foundRows (total rows count, like there was no LIMIT clause, by default it is got from rowset object)
+     * @param int $found (total rows count, like there was no LIMIT clause, by default it is got from rowset object)
      * @param int $limit    (rows on page)
      * @param int $pageNumber (current page number)
      * @return string
      */
-    public function pager($foundRows = null, $limit = null, $pageNumber = null, $display = 5, $js = '$(\'#indexParams\').submit();return false;', $style = '')
+    public function pager($found = null, $limit = null, $pageNumber = null, $display = 5, $js = '$(\'#indexParams\').submit();return false;', $style = '')
     {
-        $foundRows  = $foundRows ? $foundRows : $this->view->rowset->foundRows;
+        $found  = $found ? $found : $this->view->rowset->found();
         $limit      = $limit ? $limit : $this->view->indexParams['limit'];
         $pageNumber = $pageNumber ? $pageNumber : $this->view->indexParams['page'];
 		$this->currentPage = $pageNumber;
 
         $this->pageNumber = $pageNumber;
 
-        if ($foundRows) {
+        if ($found) {
             $xhtml  = '<div class="pager" style="' . $style . '">';
 
-            $pagesNumber = ceil($foundRows / $limit);
+            $pagesNumber = ceil($found / $limit);
             if ($pagesNumber > 1) {
 				if ($pageNumber > 1) {
 					$xhtml .= '<a class="previous-link" href="#" onclick="' . $this->getPageUrl($pageNumber - 1, $js) . '">Предыдущая</a> ';

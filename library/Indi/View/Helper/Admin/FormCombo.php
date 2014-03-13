@@ -143,7 +143,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
                 $this->titleMaxLength = mb_strlen($noHtmlSpecialChars, 'utf-8');
 
             // Update maximum option title indent, if it exceeds previous maximum
-            if ($comboDataRs->treeColumn) {
+            if ($comboDataRs->model()->treeColumn()) {
                 $indent = mb_strlen(preg_replace('/&nbsp;/', ' ', $options[$o->$keyProperty]['system']['indent']), 'utf-8');
                 if ($indent > $this->titleMaxIndent) $this->titleMaxIndent = $indent;
             }
@@ -240,15 +240,15 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         $options = array(
             'ids' => array_keys($options),
             'data' => array_values($options),
-            'found' => $comboDataRs->foundRows,
-            'page' => $comboDataRs->page,
+            'found' => $comboDataRs->found(),
+            'page' => $comboDataRs->page(),
             'enumset' => $comboDataRs->enumset,
             'js' => $this->field->javascript,
             'titleMaxLength' => $this->titleMaxLength
         );
 
         // Setup tree flag in entity has a tree structure
-        if ($comboDataRs->treeColumn) $options['tree'] = true;
+        if ($comboDataRs->model()->treeColumn()) $options['tree'] = true;
 
         // Setup groups for options
         if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;

@@ -475,7 +475,7 @@ var Indi = (function (indi) {
 
             /**
              * Function is used in case if all possible options, within which keyword-search will be processing - are already collected.
-             * They can be collected initially (if their total count <= Indi_Db_Table_Row_Beautiful::$comboOptionsVisibleCount) or
+             * They can be collected initially (if their total count <= Indi_Db_Table_Row::$comboOptionsVisibleCount) or
              * can be collected step by step while paging upper/lower. So, since they all are a got, any keyword search will run
              * without requests to database, and will be completely handled by javascript. Such scheme will be used until next
              * database request - this can happen if current combo field has a satellite, and satellite value was changed

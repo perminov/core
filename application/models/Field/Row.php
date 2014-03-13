@@ -61,7 +61,7 @@ class Field_Row extends Indi_Db_Table_Row
 	}
 
 	public function isSatellite(){
-		if ($satelliteForField = $this->table()->fetchRow('`satellite` = "' . $this->id . '"')){
+		if ($satelliteForField = $this->model()->fetchRow('`satellite` = "' . $this->id . '"')){
 			return $satelliteForField;
 		} else {
 			return false;

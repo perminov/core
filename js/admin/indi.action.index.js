@@ -69,11 +69,11 @@ var Indi = (function (indi) {
                 for (var i = 0; i < indi.trail.item().filters.length; i++) {
 
                     // Define a shortcut for filter field alias
-                    var alias =  indi.trail.item().filters[i].foreign.fieldId.alias;
+                    var alias =  indi.trail.item().filters[i]._foreign.fieldId.alias;
 
                     // If current filter is a range-filter, we push two filter component ids - for min and max values
                     if (['number', 'calendar', 'datetime']
-                        .indexOf(indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias) != -1) {
+                        .indexOf(indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias) != -1) {
                         filterCmpIdA.push(filterCmpIdPrefix + alias + '-gte');
                         filterCmpIdA.push(filterCmpIdPrefix + alias + '-lte');
 
@@ -312,10 +312,10 @@ var Indi = (function (indi) {
                 for (var i = 0; i < indi.trail.item().filters.length; i++) {
 
                     // Create a shortcut for filter field alias
-                    var name = indi.trail.item().filters[i].foreign.fieldId.alias;
+                    var name = indi.trail.item().filters[i]._foreign.fieldId.alias;
 
                     // Create a shortcut for filter field control element alias
-                    var control = indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias;
+                    var control = indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias;
 
                     // At first, we check if current scope contain the value for the current filter, and if so - we use
                     // that value instead of filter's own default value, whether it was defined or not. Also, we
@@ -350,7 +350,7 @@ var Indi = (function (indi) {
 
                         // Prepare the id for current filter component
                         var filterCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-' +
-                            indi.trail.item().filters[i].foreign.fieldId.alias;
+                            indi.trail.item().filters[i]._foreign.fieldId.alias;
 
                         // If current filter is a range filter - set up min and/or max separately
                         if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
@@ -383,7 +383,7 @@ var Indi = (function (indi) {
                             Ext.getCmp(filterCmpId).noReload = true;
 
                             // If filter is for multiple combo - set value as array, joined by comma
-                            if (indi.trail.item().filters[i].foreign.fieldId.storeRelationAbility == 'many')
+                            if (indi.trail.item().filters[i]._foreign.fieldId.storeRelationAbility == 'many')
                                 Ext.getCmp(filterCmpId).setValue(typeof d == 'string' ? d : d.join(','));
 
                             // Else if filter is for color field, that is represented by two-thumb multislider
@@ -486,19 +486,19 @@ var Indi = (function (indi) {
                 for (var i = 0; i < indi.trail.item().filters.length; i++) {
 
                     // Define a shortcut for filter field alias
-                    var alias = indi.trail.item().filters[i].foreign.fieldId.alias;
+                    var alias = indi.trail.item().filters[i]._foreign.fieldId.alias;
 
                     // Prepare the id for current filter component
                     var filterCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-filter-' + alias;
 
                     // If current filter is defined for 'string', 'textarea' or 'html' field
                     if (['string', 'textarea', 'html']
-                        .indexOf(indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias) != -1) {
+                        .indexOf(indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias) != -1) {
 
                         // Get the label
                         var fieldLabel = indi.trail.item().filters[i].alt ?
                             indi.trail.item().filters[i].alt :
-                            indi.trail.item().filters[i].foreign.fieldId.title;
+                            indi.trail.item().filters[i]._foreign.fieldId.title;
 
                         // Append the extjs textfield component data object to filters stack
                         items.push({
@@ -518,12 +518,12 @@ var Indi = (function (indi) {
                         });
 
                     // Else if current filter is defined for 'number' field
-                    } else if (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'number') {
+                    } else if (indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias == 'number') {
 
                         // Get the label
                         var fieldLabel = (indi.trail.item().filters[i].alt ?
                             indi.trail.item().filters[i].alt :
-                            indi.trail.item().filters[i].foreign.fieldId.title) + ' ' +
+                            indi.trail.item().filters[i]._foreign.fieldId.title) + ' ' +
                             indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_FROM;
 
                         // Append the extjs numberfield component data object to filters stack, for minimum value
@@ -562,17 +562,17 @@ var Indi = (function (indi) {
 
                     // Else if current filter is defined for 'calendar' or 'datetime' field
                     } else if (['calendar', 'datetime']
-                        .indexOf(indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias) != -1) {
+                        .indexOf(indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias) != -1) {
 
                         // Get the format
-                        var dateFormat = indi.trail.item().filters[i].foreign.fieldId.params['display' +
-                            (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'datetime' ?
+                        var dateFormat = indi.trail.item().filters[i]._foreign.fieldId.params['display' +
+                            (indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias == 'datetime' ?
                                 'Date': '') + 'Format'] || 'Y-m-d';
 
                         // Get the label for filter minimal value component
                         var fieldLabel = (indi.trail.item().filters[i].alt ?
                             indi.trail.item().filters[i].alt :
-                            indi.trail.item().filters[i].foreign.fieldId.title) + ' ' +
+                            indi.trail.item().filters[i]._foreign.fieldId.title) + ' ' +
                             indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM;
 
                         // Prepare the data for extjs datefield component, for use as control for filter minimal value
@@ -627,12 +627,12 @@ var Indi = (function (indi) {
                         items.push(datefieldFrom, datefieldUntil);
 
                     // Else if current filter is defined for 'color' field
-                    } else if (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'color') {
+                    } else if (indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias == 'color') {
 
                         // Get the label
                         var fieldLabel = (indi.trail.item().filters[i].alt ?
                             indi.trail.item().filters[i].alt :
-                            indi.trail.item().filters[i].foreign.fieldId.title);
+                            indi.trail.item().filters[i]._foreign.fieldId.title);
 
                         // Append the extjs multislider component data object to filters stack, as multislider will
                         // be the approriate way to represent color hue range (0 to 360)
@@ -660,13 +660,13 @@ var Indi = (function (indi) {
                         });
 
                     // Else if current filter is defined for 'combo' or 'check' field
-                    } else if (parseInt(indi.trail.item().filters[i].foreign.fieldId.relation) || ['check', 'combo']
-                        .indexOf(indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias) != -1) {
+                    } else if (parseInt(indi.trail.item().filters[i]._foreign.fieldId.relation) || ['check', 'combo']
+                        .indexOf(indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias) != -1) {
 
                         // Get the label
                         var fieldLabel = (indi.trail.item().filters[i].alt ?
                             indi.trail.item().filters[i].alt :
-                            indi.trail.item().filters[i].foreign.fieldId.title);
+                            indi.trail.item().filters[i]._foreign.fieldId.title);
 
                         // Push the special extjs component data object to represent needed filter. Component consists of
                         // two hboxed components. First is extjs label component, and second - is setup to pick up
@@ -683,7 +683,7 @@ var Indi = (function (indi) {
                                 xtype: 'label',
                                 id: filterCmpId + '-label',
                                 text: fieldLabel,
-                                forId: indi.trail.item().filters[i].foreign.fieldId.alias + '-keyword',
+                                forId: indi.trail.item().filters[i]._foreign.fieldId.alias + '-keyword',
                                 margin: '0 5 0 0',
                                 padding: '1 0 1 0',
                                 cls: 'i-filter-combo-label',
@@ -692,8 +692,8 @@ var Indi = (function (indi) {
                                 id: filterCmpId,
                                 contentEl: filterCmpId + '-combo',
                                 border: 0,
-                                multiple: indi.trail.item().filters[i].foreign.fieldId.storeRelationAbility == 'many',
-                                boolean: indi.trail.item().filters[i].foreign.fieldId.storeRelationAbility == 'none',
+                                multiple: indi.trail.item().filters[i]._foreign.fieldId.storeRelationAbility == 'many',
+                                boolean: indi.trail.item().filters[i]._foreign.fieldId.storeRelationAbility == 'none',
                                 cls: 'i-filter-combo-component',
                                 getValue: function(){
                                     // Me
@@ -1081,10 +1081,10 @@ var Indi = (function (indi) {
                                 for (var i = 0; i < indi.trail.item().filters.length; i++) {
 
                                     // Define a shortcut for filter field alias
-                                    var alias =  indi.trail.item().filters[i].foreign.fieldId.alias;
+                                    var alias =  indi.trail.item().filters[i]._foreign.fieldId.alias;
 
                                     // Shortcut for control element, assigned to filter field
-                                    var control = indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias;
+                                    var control = indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias;
 
                                     // If current filter is a range-filter, we reset values for two filter components, that
                                     // are representing min and max values
@@ -1344,9 +1344,9 @@ var Indi = (function (indi) {
                         // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
                         // property for each object, that is representing a color-filter in request
                         for (var i = 0; i < indi.trail.item().filters.length; i++) {
-                            if (indi.trail.item().filters[i].foreign.fieldId.foreign.elementId.alias == 'color') {
-                                var reg = new RegExp('(%7B%22' + indi.trail.item().filters[i].foreign.fieldId.alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
-                                request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + indi.metrics.getWidth(indi.trail.item().filters[i].foreign.fieldId.title + '&nbsp;-&raquo;&nbsp;') + '"'));
+                            if (indi.trail.item().filters[i]._foreign.fieldId._foreign.elementId.alias == 'color') {
+                                var reg = new RegExp('(%7B%22' + indi.trail.item().filters[i]._foreign.fieldId.alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                                request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + indi.metrics.getWidth(indi.trail.item().filters[i]._foreign.fieldId.title + '&nbsp;-&raquo;&nbsp;') + '"'));
                             }
                         }
 

@@ -1,0 +1,78 @@
+1. \$config\['(general|db|view|upload|ckeditor|mandrill)'\]    =>    Indi::registry('config')->$1
+2. [<\?]*[ \t]*\$config\s*=\s*Indi::registry\('config'\);*(\?>|[^\n]*\n)   => пусто
+3. Misc::loadModel     =>      Indi::model
+4. self::$_defaultDb    => Indi::db()
+5. $this->_db           => Indi::db()
+6. Entity::getInstance()->getModelById    => Indi::model
+7. Entity::getInstance()->getModelByTable   => Indi::model
+8. Entity::getInstance() => Indi::model('Entity')
+9. getLastPosition      => getNextMove
+10. getForeignRowByForeignKey  => foreign
+11. fieldExists(   => fields(
+12. ->getFields(   => ->fields(null, 'cols'
+13. $this->getTable()->info('name')  =>  $this->_table
+14. [^\s\(]+->getTable\(\)->getAdapter\(\)  => Indi::db()
+15. $this->getAdapter()   => Indi::db()   // Кроме Indi/Session
+16. $this->info('name')   => $this->_name
+17. Indi_Db_Table::getDefaultAdapter()   =>   Indi::db()   // В базе тоже
+18. getTable()  => table()
+19. ->info('name')  => ->name()
+20. ->info('cols')  => ->fields(null, 'cols')
+21. getRowClass() => rowClass()
+22. getRowsetClass() => rowsetClass()
+23. $this->treeColumn  => $this->_treeColumn
+24. ->treeColumn => ->treeColumn()
+25.$this->_table->_name  => $this->_table
+26. setForeignRowsByForeignKeys   => foreign  (Row->*, $info)
+27. uploadPath  => path  (*.ini, *.php)
+28. getImageAbs   => abs
+29. getImageSrc   => src
+30. ->image(   => ->img(
+31. ->getTitle()  => title
+32. ->flash    => ->swf
+33. $this->_data  => $this->_original
+34. .foreign   => ._foreign
+35. setForeignRowsByForeignKeys  => foreign (Rowset->*, $info)
+36. ->filter(  => ->select(
+37. ->setData(   => ->original(
+38. ->foundRows  => ->found()
+39. $foundRows  => $found
+40. 'foundRows' => 'found'
+41. ->table()  => ->model()
+
+Check
+1. setForeignKeysByForeignKeysOld
+2. getEntityIdForVariableForeignKey
+3. getEntityIdForVariableForeignKeyByCustomLogic
+4. getTableNameByKeyName
+5. getOrderedIds
+6. Table -> getDropdownData
+7. getImplodedIds
+6. getSatellitedFields
+7. Table -> getOptions
+8. ->info(
+9. getRowClass, getRowsetClass
+10. getDbFields
+11.Row -> getRequestParam
+12.getDropdownData
+13.isListOfIds
+14.deleteRowChildrenIfEntityHasATreeStructure
+15.deleteDependentRowsets
+16.setDependentCounts (Row)
+17.function getTitle
+18. createRowset   // $this->_data  => $this->_original
+19. setDependentCounts
+20. $this->_rowsetClass(
+
+createRow(~)
+`col` = ?
+
+сделать чтобы значения по умолчанию 
+для отключенных полей задействовались не только при сохранении,
+но и при выводе формы
+
+сделать чтобы для filterSharedRow назначались свойства, соответствующие вышестоящим trail items
+везде, где удаляется или добавляется/меняется поле - должен обновляться прелоад
+
+
+

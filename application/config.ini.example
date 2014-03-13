@@ -14,7 +14,7 @@ scriptPath = application/views
 lang = ru
 
 [upload]
-uploadPath = core/data/upload
+path = core/data/upload
 
 [ckeditor]
 uploadPath = fck

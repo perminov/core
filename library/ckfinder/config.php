@@ -67,7 +67,7 @@ foreach (array('www', 'core') as $p) {
 		break;
 	}
 }
-$baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . $cnf['upload']->uploadPath . '/' . $cnf['ckeditor']->uploadPath .'/';
+$baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . $cnf['upload']->path . '/' . $cnf['ckeditor']->uploadPath .'/';
 /*
 $baseDir : the path to the local directory (in the server) which points to the
 above $baseUrl URL. This is the path used by CKFinder to handle the files in

@@ -8,7 +8,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract{
         echo $this->view->formHeader();
 
         // Assign an Element_Row objects for each field's `elementId` property
-        $this->view->trail->getItem()->fields->setForeignRowsByForeignKeys('elementId');
+        $this->view->trail->getItem()->fields->foreign('elementId');
 
         // Echo a <tr> for each form's field, but only if field's control element's 'hidden' checkbox is not checked
         foreach ($this->view->trail->getItem()->fields as $fieldR)
