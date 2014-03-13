@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
 {
     public function formCalendar($name = 'date', $minimal = null, $value = null, $attribs = '')
     {
-		$p = '/i/admin/';
+        $p = '/i/admin/';
 
         $value = $value ? $value : '0000-00-00';
 
@@ -13,7 +13,7 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
 
         $field = $this->view->trail->getItem()->getFieldByAlias($name);
         //by default, value is got from row object's value of $name field
-		if($this->view->row->id) {
+		if ($this->view->row->$name != '0000-00-00') {
 			$value = $value != '0000-00-00' ? $value : $this->view->row->$name;
 		} else {
 			$value = $field->defaultValue;

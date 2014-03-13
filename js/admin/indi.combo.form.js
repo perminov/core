@@ -1955,7 +1955,7 @@ var Indi = (function (indi) {
 
                 if (instance.options.removeComboDataDivs) {
                     for (var i in instance.store) {
-                        top.window.$('body #' + i + '-suggestions').remove();
+                        window.parent.$('body #' + i + '-suggestions').remove();
                     }
                 }
 
