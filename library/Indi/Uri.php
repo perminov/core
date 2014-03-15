@@ -5,33 +5,7 @@ class Indi_Uri {
 	public function dispatch($params = array()){
 		$this->preDispatch();
 
-        if (COM) $_SERVER['REQUEST_URI'] = '/admin' . $_SERVER['REQUEST_URI'];
-
-        $uri = parse_url('http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-        $uri = str_replace(STD, '', $uri);
-		$uri = explode('/', trim($uri['path'], '/'));
-
-		$params['module'] = 'front';
-		$params['section'] = 'index';
-		$params['action'] = 'index';
-
-		if ($uri[0] == 'admin') {
-			$params['module'] = 'admin';
-			array_shift($uri);
-		}
-
-		for ($i = 0; $i < count($uri); $i++) {
-			if ($i == 0 && $uri[$i]) {
-				$params['section'] = $uri[$i];
-			} else if ($i == 1) {
-				$params['action'] = $uri[$i];
-			} else if (count($uri) > $i) {
-				if ($uri[$i]) {
-					$params[$uri[$i]] = $uri[$i + 1];
-					$i++;
-				}
-			}
-		}
+        $params = Indi::uri();
 
         if ($params['module'] != 'admin') {
             $controllerClassName = ucfirst($params['section']) . 'Controller';
@@ -69,7 +43,7 @@ class Indi_Uri {
             $sectionR = $sectionM->fetchRow('`alias` = "' . $params['section'] . '"');
             if ($sectionR) $sectionA = $sectionR->toArray();
         }
-        
+
         if ($notFound) {
             header('HTTP/1.1 404 Not Found');
         } else {

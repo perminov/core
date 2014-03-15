@@ -68,7 +68,7 @@ function d($value, $hr=0){
     }
 }
 function filter($value){
-	if (!is_array($value)) {
+	if (is_string($value)) {
 		$value = str_replace(array('"','>','<'), array('&quot;', '&gt;', '&lt;'), strip_tags($value));
 	} else {
 		foreach ($value as $k => $v) {

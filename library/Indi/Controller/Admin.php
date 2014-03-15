@@ -26,11 +26,12 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     public function preDispatch()
     {
         // Set current language
-        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/core/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
-        @include_once($_SERVER['DOCUMENT_ROOT'] . STD . '/www/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
+        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
+        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
         $GLOBALS['lang'] = Indi::registry('config')->view->lang;
 
         // Perform authentication
+        //$this->auth();
         Indi_Auth::getInstance()->auth($this);
 
         // set up all trail info
@@ -204,7 +205,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                             }
                         }
                         $value = preg_match('/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/', trim($this->post[$field->alias]['date'])) ? trim($this->post[$field->alias]['date']) : '0000-00-00';
-                        unset($this->post[$field->alias]['date']);
+                        unset($this->post->{$field->alias}['date']);
                         foreach ($this->post[$field->alias] as $p => $v) {
                             $this->post[$field->alias][$p] = preg_match('/^[0-9]{2}$/', trim($v)) ? trim($v) : '00';
                         }
@@ -635,19 +636,14 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
       */
     public function assign(){
         $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
-        $this->view->assign('date', date('<b>l</b>, d.m.Y [H:i]'));
-        $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
+        if (Indi::uri()->section == 'index') $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
         $this->view->assign('get', $this->get);
         $this->view->assign('request', $this->params);
-
         $this->view->assign('trail', $this->trail);
         $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
         $this->view->assign('entity', $this->section ? $this->section->foreign('entityId') : null);
-        if ($this->trail->getItem()->model) {
-            $this->view->assign('structure', $this->trail->getItem()->model->fields(null, 'cols'));
-        }
         if ($this->trail->getItem()->actions) {
             $this->view->assign('actions', $this->trail->getItem()->actions);
         }
@@ -673,11 +669,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             $this->view->assign('rowset', $this->rowset);
             $this->view->page = $this->page;
             $this->view->limit = $this->limit;
-        }
-        // adding request object to view
-//        $this->view->assign('request', $this->getRequest());
-        if ($this->only) {
-            $this->view->assign('only',true);
         }
     }
 

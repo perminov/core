@@ -10,23 +10,28 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Indi Engine</title>
-    <!-- jQuery -->
-    <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
-    <script type="text/javascript" src="/js/jquery-migrate-1.1.1.min.js"></script>
-    <script type="text/javascript" src="/js/jquery.scrollTo-min.js"></script>
-    <!-- Ext -->
-    <link type="text/css" rel="stylesheet" href="/library/extjs4/resources/css/ext-all.css"/>
-    <script type="text/javascript" src="/library/extjs4/ext-all.js"></script>
-    <script type="text/javascript" src="/library/extjs4/ext-lang-<?=Indi::registry('config')->view->lang?>.js"></script>
-    <!-- Indi styles -->
-    <link type="text/css" rel="stylesheet" href="/css/admin/indi.layout.css?<?=rand(0, 10000)?>"/>
-    <link type="text/css" rel="stylesheet" href="/css/admin/indi.combo.css?<?=rand(0, 10000)?>"/>
-    <link type="text/css" rel="stylesheet" href="/css/admin/indi.action.form.css?<?=rand(0, 10000)?>"/>
-    <!-- Indi scripts -->
-    <script type="text/javascript" src="/js/admin/indi.js?<?=rand(0, 10000)?>"></script>
-    <script type="text/javascript" src="/js/admin/indi.trail.js?<?=rand(0, 10000)?>"></script>
-    <script type="text/javascript" src="/js/admin/indi.combo.form.js?<?=rand(0, 10000)?>"></script>
-    <script type="text/javascript" src="/js/admin/indi.action.form.js?<?=rand(0, 10000)?>"></script>
+    <?
+    Indi::implode(array(
+        '/js/jquery-1.9.1.min.js',
+        '/js/jquery-migrate-1.1.1.min.js',
+        '/js/jquery.scrollTo-min.js',
+        '/library/extjs4/ext-all.js',
+        '/library/extjs4/ext-lang-' . Indi::registry('config')->view->lang . '.js',
+        '/js/admin/indi.js',
+        '/js/admin/indi.trail.js',
+        '/js/admin/indi.combo.form.js',
+        '/js/admin/indi.action.form.js'
+    ), 'form');
+    Indi::implode(array(
+        '/library/extjs4/resources/css/ext-all.css',
+        '/css/admin/indi.layout.css',
+        '/css/admin/indi.combo.css',
+        '/css/admin/indi.action.form.css'
+    ), 'form');
+    ?>
+    <!-- Imploded and gzipped scripts and styles -->
+    <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.form.gz.css"/>
+    <script type="text/javascript" src="/js/admin/indi.all.form.gz.js"></script>
     <!-- CK editor and finder scripts -->
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>

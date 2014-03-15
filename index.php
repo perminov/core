@@ -7,6 +7,7 @@ if(isset($_GET['info'])){phpinfo();die();}
 // is located in DOCUMENT_ROOT and others are in subfolders, so STD server
 // variable is passed WITH 'REDIRECT_' prefix, which is not covered by engine 
 if (!$_SERVER['STD'] && $_SERVER['REDIRECT_STD']) $_SERVER['STD'] = $_SERVER['REDIRECT_STD'];
+
 // Setup $_SERVER['STD'] as php constant, for being easier accessible
 define('STD', $_SERVER['STD']);
 
@@ -45,20 +46,12 @@ $config = Indi::ini('application/config.ini');
 Indi::db($config->db);
 
 // Save config and global request data to registry
-Indi::registry('post', $_POST);
-Indi::registry('get', $_GET);
-Indi::registry('files', $_FILES);
+Indi::post($_POST);
+Indi::get($_GET);
+Indi::files($_FILES);
+
 Indi::registry('config', $config);
 unset($_POST, $_GET, $_FILES);
-/*mt();
-$t = Indi::model('Search')
-    ->fetchAll('`sectionId` = "394" AND `toggle` = "y"', 'move')
-    ->foreign(array('fieldId:setParams()' => array('columnTypeId' => 'elementId', 'elementId')))
-    ->select('126,127,130', 'id');
-//    ->exclude('126');
-d(Indi_Db::$queryCount);
-d($t);
-die('ss');*/
 
 // Dispatch uri request
 $uri = new Indi_Uri(); $uri->dispatch();
