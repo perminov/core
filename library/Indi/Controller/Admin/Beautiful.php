@@ -1488,4 +1488,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
          * 6. Дата и время, с применением формата
          */
     }
+
+    public function auth() {
+        //if (!$_)
+        d($_SESSION);
+        die('ss');
+    }
 }

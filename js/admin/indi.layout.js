@@ -196,7 +196,7 @@ var Indi = (function (indi) {
                                             else Ext.util.Cookies.clear(i, indi.pre);
 
                                         // Reload window contents
-                                        window.location.replace(indi.pre);
+                                        window.location.replace(indi.pre + '/');
                                     }
                                 }, 'json');
                             }
