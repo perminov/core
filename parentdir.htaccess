@@ -11,6 +11,16 @@ Options FollowSymLinks
   Deny from all 
 </Files>
 
+#################
+## Compression ##
+#################
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html
+</IfModule>
+<FilesMatch "gz\.(js|css)$">
+  Header set Content-Encoding gzip
+</FilesMatch>
+
 ###################
 ## Rewrite rules ##
 ###################
