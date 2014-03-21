@@ -230,9 +230,19 @@ var Indi = (function (indi) {
              */
             this.build = function(){
 
-                // If user has not yet signed in, we build signin box
+                // If user is not signed in, we build signin box
                 if ($('#i-login-box').length) {
                     this.buildLoginBox();
+
+                    // If user was thrown out, display a message box with a reason
+                    if (Indi.throwOutMsg) {
+                        Ext.MessageBox.show({
+                            title: indi.lang.I_LOGIN_ERROR_MSGBOX_TITLE,
+                            msg: Indi.throwOutMsg,
+                            buttons: Ext.MessageBox.OK,
+                            icon: Ext.MessageBox.ERROR
+                        });
+                    }
                     return;
                 }
 

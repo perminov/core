@@ -9,7 +9,7 @@
         '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
-        '/library/extjs4/ext-lang-' . Indi::registry('config')->view->lang . '.js',
+        '/library/extjs4/ext-lang-' . Indi::ini('view')->lang . '.js',
         '/js/admin/indi.js',
         '/js/admin/indi.layout.js',
         '/js/admin/indi.trail.js',
@@ -42,7 +42,7 @@ Indi = $.extend(Indi, {
     time: <?=time()?>
 });
 Indi.ready(function(){
-    Indi.layout.menu.data = <?=json_encode($this->menu->toArray())?>;
+    Indi.layout.menu.data = <?=json_encode($this->menu)?>;
     Indi.layout.adminInfo = '<?=$this->admin?>';
 }, 'layout');
 </script>

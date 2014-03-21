@@ -1298,7 +1298,7 @@ var Indi = (function (indi) {
                     iconCls: 'i-btn-icon-xls',
                     handler: function(){
                         // Start preparing request string
-                        var request = instance.lastRequest().replace('json/1/', 'json/1/xls/1/');
+                        var request = instance.lastRequest().replace('json/1/', 'excel/1/');
 
                         // Get grid component id
                         var gridCmpId = 'i-section-' + indi.trail.item().section.alias + '-action-index-grid';

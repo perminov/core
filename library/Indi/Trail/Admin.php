@@ -1,118 +1,118 @@
 <?php
-class Indi_Trail_Admin extends Indi_Trail
-{
-	/**
-	 * Store Indi_Auth instance
-	 *
-	 * @var object
-	 */
-	public $authComponent;
+class Indi_Trail_Admin{
+    /**
+     * Array of Indi_Trail_Admin_Item items
+     *
+     * @var array
+     */
+    public static $items = array();
 
     /**
-     * Instantiate a new Trail object and set up
-     * call path (trail) in $this->items variable as array of
-     * Indi_Trail_Item objects
+     * Constructor
      *
-     * @param string $sectionAlias
-     * @param int $rowIdentifier
-     * @param int $actionAlias
-     * @uses Indi_Session_Namespace, self::addItem(), Indi_Trail_Item::setTrail()
+     * @param array $routeA Array of section ids, starting from current section and up to the top
      */
-    public function __construct($sectionAlias, $rowIdentifier = null, $actionAlias = 'index', $specialSectionCondition = '', $requestParams = array(), $authComponent)
-    {
-        // Get session
-        $session = new Indi_Session_Namespace('trail');
-        // Set up auth component
-        $this->authComponent = $authComponent;
+    public function __construct($routeA) {
 
-        // Set up self::items array
-        do {
-            if ($lastItem) {
-                $sectionId = $lastItem->section->sectionId;
-                $actionAlias = 'index';
-				$info = (array) $session->parentId;
-				foreach ($info as $sId => $rId) if ($sId == $sectionId) $info[$sId] = $rId;
-                if ($info[$sectionId] || $parentRowId) {
-                    $rowId = $parentRowId ? $parentRowId : $info[$sectionId];
-                    $parentRowId = null;
-                } else {
-                    $parentSection = $lastItem->section->foreign('sectionId');
-                    $parentEntityForeignKeyName = $parentSection->foreign('entityId')->table;
-                    $rowId = $lastItem->row->{$parentEntityForeignKeyName . 'Id'};
-                }
-                if (count($this->items) == 1) {
-                    $primaryHash = $requestParams['ph'];
-                } else {
-                    $primaryHash = '';
-                }
-            } else {
-                $section = new Section();
-                // section id
-                $sectionRow = $section->fetchRow('`alias` = "' . $sectionAlias . '"' . $specialSectionCondition);
-                $sectionId = $sectionRow->id;
-                if ($actionAlias != 'index') {
-                    $rowId = $rowIdentifier;
-                } else {
-                    if (!$session->parentId) $session->parentId = new stdClass();
-                    if ($key = $sectionRow->sectionId) {
-                        $session->parentId->$key = $rowIdentifier;
-                    }
-                    $parentRowId = $rowIdentifier;
-                }
-            }
-			$lastItem = $this->addItem($sectionId, $rowId, $actionAlias, $this, $primaryHash);
-        } while ($lastItem->section->sectionId);
-        
-        // Reverse array to work with it from the start by the end, not from the end to the start.
-        $this->items = $this->items[0]->section ? array_reverse($this->items) : array();
-        end($this->items);
+        // Performance detection
+        $q = Indi_Db::$queryCount; mt();
 
-		// set up request params
-		$this->requestParams = $requestParams;
-//		d($this->getItem(1)->section);
+        // Get all sections, starting from current and up to the most top
+        $sectionRs = Indi::model('Section')->fetchAll(
+            '`id` IN (' . $route = implode(',', $routeA) . ')',
+            'FIND_IN_SET(`id`, "' . implode(',', $routeA) . '")'
+        )->foreign('parentSectionConnector,defaultSortField');
 
-	 // set up tree key name for the last item
-        $lastItemIndex = count($this->items) - 1;
-	 if ($model = $this->items[$lastItemIndex]->model) {
-            if ($treeColumnName = $model->treeColumn()) {
-                $this->items[$lastItemIndex]->treeKeyName = $treeColumnName;
-            }
+        // Get the id of most top section (menu group)
+        $top = $routeA[count($routeA) - 1];
+
+        // Setup accessible actions
+        $sectionRs->nested('section2action', array(
+            'where' => array(
+                '`sectionId` != "' . $top . '"',
+                '`toggle` = "y"',
+                'FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `profileIds`)',
+                '`actionId` IN (' . implode(',', Indi::db()
+                    ->query('SELECT `id` FROM `action` WHERE `toggle` = "y"')
+                    ->fetchAll(PDO::FETCH_COLUMN)) . ')'
+            ),
+            'order' => 'move',
+            'foreign' => 'actionId'
+        ));
+
+        // Get the array of accessible sections ids
+        $accessibleSectionIdA = array();
+        foreach ($sectionRs->nested('section2action') as $sectionId => $section2actionRs)
+            foreach ($section2actionRs->original() as $section2actionI)
+                if ($section2actionI['actionId'] == 1)
+                    $accessibleSectionIdA[] = $sectionId;
+
+        // Get accessible nested sections for each section within the trail
+        $sectionRs->nested('section', array(
+            'where' => '`sectionId` IN (' . implode(',', $accessibleSectionIdA) . ')',
+            'order' => 'move'
+        ));
+
+        // Get filters
+        $sectionRs->nested('search', array(
+            'where' => '`sectionId` = "' . $routeA[0] . '" AND `toggle` = "y"',
+            'order' => 'move'
+        ));
+
+        // Setup a primary hash for current section
+        $sectionRs->temporary($routeA[0], 'primaryHash', Indi::uri('ph'));
+
+        // Setup grid columns
+        $sectionRs->nested('grid', array(
+            'where' => '`sectionId` = "' . $routeA[0] . '" AND `toggle` = "y"',
+            'order' => 'move'
+        ));
+
+        // Setup disabled fields
+        $sectionRs->nested('disabledField', array(
+            'where' => '`sectionId` = "' . $routeA[0] . '"'
+        ));
+
+        // Setup initial set of properties
+        foreach ($sectionRs as $sectionR)
+            self::$items[] = new Indi_Trail_Admin_Item($sectionR);
+
+        // If currently we are at at least 2-level section, assuming that
+        // 0-level sections are the most top sections, e.g left menu groups,
+        // 1-level sections are sections, that are nested to menu groups
+        // For example, if we have the following structure:
+        //
+        // Geography   (0-level, menu group)
+        //   Countries (1-level)
+        //     Cities  (2-level)
+        //
+        // - example assumes, that we are viewing list of cities within sme certain country,
+        // and url is like /cities/index/id/123/, where 123 - is the id of country.
+        // So, in such situation we need to remember '123', because if user would like to add
+        // a new city within that certain country, he will be at url /cities/form/, and it does not
+        // contain any definition of country, that city should be added under. So, this solution
+        // allow to get the id of country
+
+        if (Indi::uri('section') != 'index' && Indi::uri('action') == 'index' && Indi::uri('id')) {
+
+            // If there is no info about nesting yet, we create an array, where it will be stored
+            if (!is_array($_SESSION['indi']['admin']['trail']['parentId']))
+                $_SESSION['indi']['admin']['trail']['parentId'] = array();
+
+            // Save id
+            $_SESSION['indi']['admin']['trail']['parentId'][self::$items[0]->section->sectionId] = Indi::uri('id');
         }
 
-        // set up dropdownWhere for the last item
-	 if ($model = $this->items[$lastItemIndex]->model) {
-            $parentItem = $this->items[$lastItemIndex - 1];
-            if ($parentItem->row) {
-                $parentColumn = $parentItem->model->name() . 'Id';
-                if ($treeColumnName = $this->items[$lastItemIndex]->treeKeyName) {
-                    $this->items[$lastItemIndex]->dropdownWhere[$treeColumnName] = '`' . $parentColumn  . '` = "' . $parentItem->row->id . '"';
-                }
-            }
-        }
+        // Setup row for each trail item
+        for ($i = 0; $i < count(self::$items); $i++)
+            self::$items[$i]->row($i);
 
-        // set up dropdownWhere for the previous of last item
-		if ($model = $this->items[$lastItemIndex - 1]->model) {
-            $levelUpParentItem = $this->items[$lastItemIndex - 2];
-            if ($levelUpParentItem->row) {
-                $levelUpParentColumn = $levelUpParentItem->model->name() . 'Id';
-                $this->items[$lastItemIndex]->dropdownWhere[$parentColumn] = '`' . $levelUpParentColumn  . '` = "' . $levelUpParentItem->row->id . '"';
-            }
-        }
+        // Reverse items
+        self::$items = array_reverse(self::$items);
     }
-    /**
-     * Push a new Indi_Trail_Item object into a $this->items
-     * array of these objects and return last pushed item
-     *
-     * @param int $sectionId
-     * @param int $rowIdentifier = null
-     * @param string $actionAlias = 'index'
-     * @return Indi_Trail_Item object
-     */
-    public function addItem($sectionId, $rowIdentifier = null, $actionAlias = null, $trail = null, $primaryHash = null)
-    {
 
-        $this->items[] = new Indi_Trail_Admin_Item($sectionId, $rowIdentifier, $actionAlias, $trail, $primaryHash);
-        return end($this->items);
+    public function item($stepsUp = 0){
+        return self::$items[count(self::$items) - 1 - $stepsUp];
     }
 
     public function setItemScopeHashes($hash, $aix, $index) {

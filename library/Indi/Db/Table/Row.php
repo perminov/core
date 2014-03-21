@@ -49,7 +49,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @var array
      */
-    protected $_nested = array();
+    protected $_nested = 'ss';
 
     /**
      * Table name of table, that current row is related to
@@ -66,13 +66,6 @@ class Indi_Db_Table_Row implements ArrayAccess
     public static $comboOptionsVisibleCount = 300;
 
     /**
-     * Store regular expression for checks of email addresses validity
-     *
-     * @var string
-     */
-    public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
-
-    /**
      * Constructor
      *
      * @param array $config
@@ -86,6 +79,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->_system = is_array($config['system']) ? $config['system'] : array();
         $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
         $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
+        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
@@ -725,7 +719,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (array_key_exists($key, $this->_foreign) && !$refresh) {
             return $this->_foreign[$key];
 
-            // Else
+        // Else
         } else {
 
             // If field, representing foreign key - is exist within current entity
@@ -880,7 +874,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function deleteUploadedFiles($name = '') {
 
         // Absolute upload path in filesystem
-        $abs = DOC . STD . '/' . Indi::registry('config')->upload->path . '/' . $this->_table . '/';
+        $abs = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
 
         // Array for filenames that should be deleted
         $files = array();
@@ -919,7 +913,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function abs($alias, $copy = '') {
         // Get the name of the directory, relative to document root,
         // and where all files related model of current row are located
-        $src =  STD . '/' . Indi::registry('config')->upload->path . '/' . $this->_table . '/';
+        $src =  STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
 
         // Build the filename pattern for using in glob() php function
         $pat = DOC . $src . $this->id . ($alias ? '_' . $alias : '') . ($copy ? ',' . $copy : '') . '.' ;
@@ -1066,13 +1060,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             $where = isset($where) && is_array($where) ? $where : (strlen($where) ? array($where) : array());
 
             // If connector field store relation ability is multiple
-            if (Indi::model($table)->field($connector)->storeRelationAbility == 'many')
+            if (Indi::model($table)->fields($connector)->storeRelationAbility == 'many')
 
                 // We use FIND_IN_SET sql expression for prepending $where array
                 array_unshift($where, 'FIND_IN_SET("' . $this->id . '", `' . $connector . '`)');
 
             // Else if connector field store relation ability is single
-            else if (Indi::model($table)->field($connector)->storeRelationAbility == 'one')
+            else if (Indi::model($table)->fields($connector)->storeRelationAbility == 'one')
 
                 // We use '=' sql expression for prepending $where array
                 array_unshift($where, '`' . $connector . '` = "' . $this->id . '"');
@@ -1183,6 +1177,19 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Otherwise we assign this key => value pair into a $this->_temporary array
         else $this->_temporary[$columnName] = $value;
     }
+
+    public function original() {
+        if (func_num_args() == 0) return $this->_original;
+        else if (func_num_args() == 1) return $this->_original[func_get_arg(0)];
+        else return $this->_original[func_get_arg(0)] = func_get_arg(1);
+    }
+
+    public function temporary() {
+        if (func_num_args() == 0) return $this->_temporary;
+        else if (func_num_args() == 1) return $this->_temporary[func_get_arg(0)];
+        else return $this->_temporary[func_get_arg(0)] = func_get_arg(1);
+    }
+
     /**
      * Forces value setting for a given key at $this->_modified array,
      * without 'same-value' check. Actually this function was created
@@ -1221,8 +1228,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $key
      * @return mixed
      */
-    public function compiled($key) {
-        return $this->_compiled[$key];
+    public function compiled() {
+        if (func_num_args() == 0) return $this->_compiled;
+        else if (func_num_args() == 1) return $this->_compiled[func_get_arg(0)];
+        else return $this->_compiled[func_get_arg(0)] = func_get_arg(1);
     }
 
     /**

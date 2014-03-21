@@ -11,7 +11,7 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
 
         // if buttons are to be displayeв on list screen
         if (($title != null) && ($action != null) && (is_array($title))&&(is_array($action))) {
-        } else if ($this->view->action == 'form' || $this->view->alterForm) {
+        } else if (Indi::uri()->action == 'form' || $this->view->alterForm) {
             $title[] = BUTTON_BACK;
             $action[] = "top.window.Ext.getCmp('i-action-form-topbar-button-back').handler();";
             foreach ($accessableActions as $accessableAction) {

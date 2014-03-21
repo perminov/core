@@ -10,8 +10,6 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
      */
     public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail)
     {
-        $session = Indi_Session::namespaceGet('admin');
-        
         // set up section row
         $section = new Fsection();
         $this->section = $section->fetchRow('`id` = "' . $sectionId . '"');
@@ -47,13 +45,7 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
                         $parentEntity = $parentSection->foreign('entityId');
                         $parentEntityForeignKeyName = $parentEntity->table . 'Id';
                         if (!in_array($parentEntityForeignKeyName, array_keys($this->row->toArray()))) {
-                            $session = Indi_Session::namespaceGet('trailfront');
-                            $info = $session['parentId'];
-                            $parentId = $info->{$parentSection->id};
-                            if (!$parentId) {
-                                $info = (array) $session['parentId'];
-                                $parentId = $info[$parentSection->id];
-                            }
+                            $parentId = $_SESSION['indi']['front']['trail']['parentId'][$parentSection->id];
                             $this->row->$parentEntityForeignKeyName = $parentId;
                         }
                     }
@@ -70,9 +62,7 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
 						$parentEntityForeignKeyName = $parentEntity->table . 'Id';
 						
 						// determining parent key value
-						$session = Indi_Session::namespaceGet('trail');
-						$info = (array) $session['parentId'];
-						$parentId = $info[$parentSectionId];
+						$parentId = $_SESSION['indi']['front']['trail']['parentId'][$parentSectionId];
 						// set up key name with value
 						$this->row->$parentEntityForeignKeyName = $parentId;
                     } while($parentSection = $parentSection->foreign('fsectionId'));
@@ -80,7 +70,7 @@ class Indi_Trail_Frontend_Item extends Indi_Trail_Item
                 }
 				// set up row fields
 				$field = new Field();
-				$this->fields = $field->getFieldsByEntityId($this->section->entityId);
+				$this->fields = $this->model()->fields();
             }
         }
     }

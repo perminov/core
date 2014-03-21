@@ -1,5 +1,5 @@
 <?php
-class Indi_View implements Indi_View_Interface
+class Indi_View
 {
     /**
      * Path stack for script , helper, and filter directories.
@@ -8,8 +8,7 @@ class Indi_View implements Indi_View_Interface
      */
     private $_path = array(
         'script' => array(),
-        'helper' => array(),
-        'filter' => array(),
+        'helper' => array()
     );
 
     /**
@@ -40,31 +39,6 @@ class Indi_View implements Indi_View_Interface
     private $_helperLoadedDir = array();
 
     /**
-     * Stack of Indi_View_Filter names to apply as filters.
-     * @var array
-     */
-    private $_filter = array();
-
-    /**
-     * Stack of Indi_View_Filter objects that have been loaded
-     * @var array
-     */
-    private $_filterClass = array();
-
-    /**
-     * Map of filter => class pairs to help in determining filter class from
-     * name
-     * @var array
-     */
-    private $_filterLoaded = array();
-
-    /**
-     * Map of filter => classfile pairs to aid in determining filter classfile
-     * @var array
-     */
-    private $_filterLoadedDir = array();
-
-    /**
      * Callback for escaping.
      *
      * @var string
@@ -78,12 +52,6 @@ class Indi_View implements Indi_View_Interface
     private $_encoding = 'UTF-8';
 
     /**
-     * Flag indicating whether or not LFI protection for rendering view scripts is enabled
-     * @var bool
-     */
-    private $_lfiProtectionOn = true;
-
-    /**
      * Plugin loaders
      * @var array
      */
@@ -93,14 +61,7 @@ class Indi_View implements Indi_View_Interface
      * Plugin types
      * @var array
      */
-    private $_loaderTypes = array('filter', 'helper');
-
-    /**
-     * Strict variables flag; when on, undefined variables accessed in the view
-     * scripts will trigger notices
-     * @var boolean
-     */
-    private $_strictVars = false;
+    private $_loaderTypes = array('helper');
 
     /**
      * Constructor.
@@ -111,19 +72,6 @@ class Indi_View implements Indi_View_Interface
     {
         // set inital paths and properties
         $this->setScriptPath(null);
-
-        // $this->setHelperPath(null);
-        $this->setFilterPath(null);
-
-        // user-defined escaping callback
-        if (array_key_exists('escape', $config)) {
-            $this->setEscape($config['escape']);
-        }
-
-        // encoding
-        if (array_key_exists('encoding', $config)) {
-            $this->setEncoding($config['encoding']);
-        }
 
         // base path
         if (array_key_exists('basePath', $config)) {
@@ -153,79 +101,6 @@ class Indi_View implements Indi_View_Interface
                 $this->addHelperPath($config['helperPath'], $prefix);
             }
         }
-
-        // user-defined filter path
-        if (array_key_exists('filterPath', $config)) {
-            if (is_array($config['filterPath'])) {
-                foreach ($config['filterPath'] as $prefix => $path) {
-                    $this->addFilterPath($path, $prefix);
-                }
-            } else {
-                $prefix = 'Indi_View_Filter';
-                if (array_key_exists('filterPathPrefix', $config)) {
-                    $prefix = $config['filterPathPrefix'];
-                }
-                $this->addFilterPath($config['filterPath'], $prefix);
-            }
-        }
-
-        // user-defined filters
-        if (array_key_exists('filter', $config)) {
-            $this->addFilter($config['filter']);
-        }
-
-        // strict vars
-        if (array_key_exists('strictVars', $config)) {
-            $this->strictVars($config['strictVars']);
-        }
-
-        // LFI protection flag
-        if (array_key_exists('lfiProtectionOn', $config)) {
-            $this->setLfiProtection($config['lfiProtectionOn']);
-        }
-
-        $this->init();
-    }
-
-    /**
-     * Return the template engine object
-     *
-     * Returns the object instance, as it is its own template engine
-     *
-     * @return Indi_View_Abstract
-     */
-    public function getEngine()
-    {
-        return $this;
-    }
-
-    /**
-     * Allow custom object initialization when extending Indi_View_Abstract or
-     * Indi_View
-     *
-     * Triggered by {@link __construct() the constructor} as its final action.
-     *
-     * @return void
-     */
-    public function init()
-    {
-    }
-
-    /**
-     * Prevent E_NOTICE for nonexistent values
-     *
-     * If {@link strictVars()} is on, raises a notice.
-     *
-     * @param  string $key
-     * @return null
-     */
-    public function __get($key)
-    {
-        if ($this->_strictVars) {
-            trigger_error('Key "' . $key . '" does not exist', E_USER_NOTICE);
-        }
-
-        return null;
     }
 
     /**
@@ -254,7 +129,7 @@ class Indi_View implements Indi_View_Interface
      * @param string $key The variable name.
      * @param mixed $val The variable value.
      * @return void
-     * @throws Indi_View_Exception if an attempt to set a private or protected
+     * @throws Exception if an attempt to set a private or protected
      * member is detected
      */
     public function __set($key, $val)
@@ -264,9 +139,7 @@ class Indi_View implements Indi_View_Interface
             return;
         }
 
-        require_once 'Indi/View/Exception.php';
-        $e = new Indi_View_Exception('Setting private or protected class members is not allowed');
-        $e->setView($this);
+        $e = new Exception('Setting private or protected class members is not allowed');
         throw $e;
     }
 
@@ -328,7 +201,6 @@ class Indi_View implements Indi_View_Interface
         $classPrefix = rtrim($classPrefix, '_') . '_';
         $this->setScriptPath($path . 'scripts');
         $this->setHelperPath($path . 'helpers', $classPrefix . 'Helper');
-        $this->setFilterPath($path . 'filters', $classPrefix . 'Filter');
         return $this;
     }
 
@@ -355,7 +227,6 @@ class Indi_View implements Indi_View_Interface
         $classPrefix = rtrim($classPrefix, '_') . '_';
         $this->addScriptPath($path . 'scripts');
         $this->addHelperPath($path . 'helpers', $classPrefix . 'Helper');
-        $this->addFilterPath($path . 'filters', $classPrefix . 'Filter');
         return $this;
     }
 
@@ -387,58 +258,6 @@ class Indi_View implements Indi_View_Interface
     }
 
     /**
-     * Return full path to a view script specified by $name
-     *
-     * @param  string $name
-     * @return false|string False if script not found
-     * @throws Indi_View_Exception if no script directory set
-     */
-    public function getScriptPath($name)
-    {
-        try {
-            $path = $this->_script($name);
-            return $path;
-        } catch (Indi_View_Exception $e) {
-            if (strstr($e->getMessage(), 'no view script directory set')) {
-                throw $e;
-            }
-
-            return false;
-        }
-    }
-
-    /**
-     * Returns an array of all currently set script paths
-     *
-     * @return array
-     */
-    public function getScriptPaths()
-    {
-        return $this->_getPaths('script');
-    }
-
-    /**
-     * Set plugin loader for a particular plugin type
-     *
-     * @param  Indi_Loader_PluginLoader $loader
-     * @param  string $type
-     * @return Indi_View_Abstract
-     */
-    public function setPluginLoader(Indi_Loader_PluginLoader $loader, $type)
-    {
-        $type = strtolower($type);
-        if (!in_array($type, $this->_loaderTypes)) {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception(sprintf('Invalid plugin loader type "%s"', $type));
-            $e->setView($this);
-            throw $e;
-        }
-
-        $this->_loaders[$type] = $loader;
-        return $this;
-    }
-
-    /**
      * Retrieve plugin loader for a specific plugin type
      *
      * @param  string $type
@@ -448,16 +267,13 @@ class Indi_View implements Indi_View_Interface
     {
         $type = strtolower($type);
         if (!in_array($type, $this->_loaderTypes)) {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception(sprintf('Invalid plugin loader type "%s"; cannot retrieve', $type));
-            $e->setView($this);
+            $e = new Exception(sprintf('Invalid plugin loader type "%s"; cannot retrieve', $type));
             throw $e;
         }
 
         if (!array_key_exists($type, $this->_loaders)) {
             $prefix     = 'Indi_View_';
             $pathPrefix = 'Indi/View/';
-
             $pType = ucfirst($type);
             switch ($type) {
                 case 'filter':
@@ -505,64 +321,6 @@ class Indi_View implements Indi_View_Interface
     }
 
     /**
-     * Get full path to a helper class file specified by $name
-     *
-     * @param  string $name
-     * @return string|false False on failure, path on success
-     */
-    public function getHelperPath($name)
-    {
-        return $this->_getPluginPath('helper', $name);
-    }
-
-    /**
-     * Returns an array of all currently set helper paths
-     *
-     * @return array
-     */
-    public function getHelperPaths()
-    {
-        return $this->getPluginLoader('helper')->getPaths();
-    }
-
-    /**
-     * Registers a helper object, bypassing plugin loader
-     *
-     * @param  Indi_View_Helper_Abstract|object $helper
-     * @param  string $name
-     * @return Indi_View_Abstract
-     * @throws Indi_View_Exception
-     */
-    public function registerHelper($helper, $name)
-    {
-        if (!is_object($helper)) {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception('View helper must be an object');
-            $e->setView($this);
-            throw $e;
-        }
-
-        if (!$helper instanceof Indi_View_Interface) {
-            if (!method_exists($helper, $name)) {
-                require_once 'Indi/View/Exception.php';
-                $e =  new Indi_View_Exception(
-                    'View helper must implement Indi_View_Interface or have a method matching the name provided'
-                );
-                $e->setView($this);
-                throw $e;
-            }
-        }
-
-        if (method_exists($helper, 'setView')) {
-            $helper->setView($this);
-        }
-
-        $name = ucfirst($name);
-        $this->_helper[$name] = $helper;
-        return $this;
-    }
-
-    /**
      * Get a helper by name
      *
      * @param  string $name
@@ -571,167 +329,6 @@ class Indi_View implements Indi_View_Interface
     public function getHelper($name, $throwExceptions = true)
     {
         return $this->_getPlugin('helper', $name, $throwExceptions);
-    }
-
-    /**
-     * Get array of all active helpers
-     *
-     * Only returns those that have already been instantiated.
-     *
-     * @return array
-     */
-    public function getHelpers()
-    {
-        return $this->_helper;
-    }
-
-    /**
-     * Adds to the stack of filter paths in LIFO order.
-     *
-     * @param string|array The directory (-ies) to add.
-     * @param string $classPrefix Class prefix to use with classes in this
-     * directory; defaults to Indi_View_Filter
-     * @return Indi_View_Abstract
-     */
-    public function addFilterPath($path, $classPrefix = 'Indi_View_Filter_')
-    {
-        return $this->_addPluginPath('filter', $classPrefix, (array) $path);
-    }
-
-    /**
-     * Resets the stack of filter paths.
-     *
-     * To clear all paths, use Indi_View::setFilterPath(null).
-     *
-     * @param string|array The directory (-ies) to set as the path.
-     * @param string $classPrefix The class prefix to apply to all elements in
-     * $path; defaults to Indi_View_Filter
-     * @return Indi_View_Abstract
-     */
-    public function setFilterPath($path, $classPrefix = 'Indi_View_Filter_')
-    {
-        unset($this->_loaders['filter']);
-        return $this->addFilterPath($path, $classPrefix);
-    }
-
-    /**
-     * Get full path to a filter class file specified by $name
-     *
-     * @param  string $name
-     * @return string|false False on failure, path on success
-     */
-    public function getFilterPath($name)
-    {
-        return $this->_getPluginPath('filter', $name);
-    }
-
-    /**
-     * Get a filter object by name
-     *
-     * @param  string $name
-     * @return object
-     */
-    public function getFilter($name)
-    {
-        return $this->_getPlugin('filter', $name);
-    }
-
-    /**
-     * Return array of all currently active filters
-     *
-     * Only returns those that have already been instantiated.
-     *
-     * @return array
-     */
-    public function getFilters()
-    {
-        return $this->_filter;
-    }
-
-    /**
-     * Returns an array of all currently set filter paths
-     *
-     * @return array
-     */
-    public function getFilterPaths()
-    {
-        return $this->getPluginLoader('filter')->getPaths();
-    }
-
-    /**
-     * Return associative array of path types => paths
-     *
-     * @return array
-     */
-    public function getAllPaths()
-    {
-        $paths = $this->_path;
-        $paths['helper'] = $this->getHelperPaths();
-        $paths['filter'] = $this->getFilterPaths();
-        return $paths;
-    }
-
-    /**
-     * Add one or more filters to the stack in FIFO order.
-     *
-     * @param string|array One or more filters to add.
-     * @return Indi_View_Abstract
-     */
-    public function addFilter($name)
-    {
-        foreach ((array) $name as $val) {
-            $this->_filter[] = $val;
-        }
-        return $this;
-    }
-
-    /**
-     * Resets the filter stack.
-     *
-     * To clear all filters, use Indi_View::setFilter(null).
-     *
-     * @param string|array One or more filters to set.
-     * @return Indi_View_Abstract
-     */
-    public function setFilter($name)
-    {
-        $this->_filter = array();
-        $this->addFilter($name);
-        return $this;
-    }
-
-    /**
-     * Sets the _escape() callback.
-     *
-     * @param mixed $spec The callback for _escape() to use.
-     * @return Indi_View_Abstract
-     */
-    public function setEscape($spec)
-    {
-        $this->_escape = $spec;
-        return $this;
-    }
-
-    /**
-     * Set LFI protection flag
-     *
-     * @param  bool $flag
-     * @return Indi_View_Abstract
-     */
-    public function setLfiProtection($flag)
-    {
-        $this->_lfiProtectionOn = (bool) $flag;
-        return $this;
-    }
-
-    /**
-     * Return status of LFI protection flag
-     *
-     * @return bool
-     */
-    public function isLfiProtectionOn()
-    {
-        return $this->_lfiProtectionOn;
     }
 
     /**
@@ -748,7 +345,7 @@ class Indi_View implements Indi_View_Interface
      * @param  mixed (Optional) If assigning a named variable, use this
      * as the value.
      * @return Indi_View_Abstract Fluent interface
-     * @throws Indi_View_Exception if $spec is neither a string nor an array,
+     * @throws Exception if $spec is neither a string nor an array,
      * or if an attempt to set a private or protected member is detected
      */
     public function assign($spec, $value = null)
@@ -757,9 +354,7 @@ class Indi_View implements Indi_View_Interface
         if (is_string($spec)) {
             // assign by name and value
             if ('_' == substr($spec, 0, 1)) {
-                require_once 'Indi/View/Exception.php';
-                $e = new Indi_View_Exception('Setting private or protected class members is not allowed');
-                $e->setView($this);
+                $e = new Exception('Setting private or protected class members is not allowed');
                 throw $e;
             }
             $this->$spec = $value;
@@ -774,57 +369,15 @@ class Indi_View implements Indi_View_Interface
                 $this->$key = $val;
             }
             if ($error) {
-                require_once 'Indi/View/Exception.php';
-                $e = new Indi_View_Exception('Setting private or protected class members is not allowed');
-                $e->setView($this);
+                $e = new Exception('Setting private or protected class members is not allowed');
                 throw $e;
             }
         } else {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception('assign() expects a string or array, received ' . gettype($spec));
-            $e->setView($this);
+            $e = new Exception('assign() expects a string or array, received ' . gettype($spec));
             throw $e;
         }
 
         return $this;
-    }
-
-    /**
-     * Return list of all assigned variables
-     *
-     * Returns all public properties of the object. Reflection is not used
-     * here as testing reflection properties for visibility is buggy.
-     *
-     * @return array
-     */
-    public function getVars()
-    {
-        $vars   = get_object_vars($this);
-        foreach ($vars as $key => $value) {
-            if ('_' == substr($key, 0, 1)) {
-                unset($vars[$key]);
-            }
-        }
-
-        return $vars;
-    }
-
-    /**
-     * Clear all assigned variables
-     *
-     * Clears all variables assigned to Indi_View either via {@link assign()} or
-     * property overloading ({@link __set()}).
-     *
-     * @return void
-     */
-    public function clearVars()
-    {
-        $vars   = get_object_vars($this);
-        foreach ($vars as $key => $value) {
-            if ('_' != substr($key, 0, 1)) {
-                unset($this->$key);
-            }
-        }
     }
 
     /**
@@ -840,9 +393,8 @@ class Indi_View implements Indi_View_Interface
         unset($name); // remove $name from local scope
 
         ob_start();
-        $this->_run($this->_file);
-
-        return $this->_filter(ob_get_clean()); // filter output
+        include $this->_file;
+        return ob_get_clean();
     }
 
     /**
@@ -868,47 +420,6 @@ class Indi_View implements Indi_View_Interface
     }
 
     /**
-     * Set encoding to use with htmlentities() and htmlspecialchars()
-     *
-     * @param string $encoding
-     * @return Indi_View_Abstract
-     */
-    public function setEncoding($encoding)
-    {
-        $this->_encoding = $encoding;
-        return $this;
-    }
-
-    /**
-     * Return current escape encoding
-     *
-     * @return string
-     */
-    public function getEncoding()
-    {
-        return $this->_encoding;
-    }
-
-    /**
-     * Enable or disable strict vars
-     *
-     * If strict variables are enabled, {@link __get()} will raise a notice
-     * when a variable is not defined.
-     *
-     * Use in conjunction with {@link Indi_View_Helper_DeclareVars the declareVars() helper}
-     * to enforce strict variable handling in your view scripts.
-     *
-     * @param  boolean $flag
-     * @return Indi_View_Abstract
-     */
-    public function strictVars($flag = true)
-    {
-        $this->_strictVars = ($flag) ? true : false;
-
-        return $this;
-    }
-
-    /**
      * Finds a view script from the available directories.
      *
      * @param $name string The base name of the script.
@@ -916,17 +427,13 @@ class Indi_View implements Indi_View_Interface
      */
     protected function _script($name)
     {
-        if ($this->isLfiProtectionOn() && preg_match('#\.\.[\\\/]#', $name)) {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception('Requested scripts may not include parent directory traversal ("../", "..\\" notation)');
-            $e->setView($this);
+        if (preg_match('#\.\.[\\\/]#', $name)) {
+            $e = new Exception('Requested scripts may not include parent directory traversal ("../", "..\\" notation)');
             throw $e;
         }
 
         if (0 == count($this->_path['script'])) {
-            require_once 'Indi/View/Exception.php';
-            $e = new Indi_View_Exception('no view script directory set; unable to determine location for view script');
-            $e->setView($this);
+            $e = new Exception('no view script directory set; unable to determine location for view script');
             throw $e;
         }
 
@@ -936,12 +443,10 @@ class Indi_View implements Indi_View_Interface
             }
         }
 
-        require_once 'Indi/View/Exception.php';
         $message = "script '$name' not found in path ("
                  . implode(PATH_SEPARATOR, $this->_path['script'])
                  . ")";
-        $e = new Indi_View_Exception($message);
-        $e->setView($this);
+        $e = new Exception($message);
         throw $e;
     }
 
@@ -952,24 +457,6 @@ class Indi_View implements Indi_View_Interface
             }
         }
         return false;
-    }
-    /**
-     * Applies the filter callback to a buffer.
-     *
-     * @param string $buffer The buffer contents.
-     * @return string The filtered buffer.
-     */
-    private function _filter($buffer)
-    {
-        // loop through each filter class
-        foreach ($this->_filter as $name) {
-            // load and apply the filter class
-            $filter = $this->getFilter($name);
-            $buffer = call_user_func(array($filter, 'filter'), $buffer);
-        }
-
-        // done!
-        return $buffer;
     }
 
     /**
@@ -1004,7 +491,6 @@ class Indi_View implements Indi_View_Interface
                     // add to the top of the stack.
                     array_unshift($this->_path[$type], $dir);
                     break;
-                case 'filter':
                 case 'helper':
                 default:
                     // add as array with prefix and dir keys
@@ -1068,20 +554,6 @@ class Indi_View implements Indi_View_Interface
     }
 
     /**
-     * Register filter class as loaded
-     *
-     * @param  string $name
-     * @param  string $class
-     * @param  string $file path to class file
-     * @return void
-     */
-    private function _setFilterClass($name, $class, $file)
-    {
-        $this->_filterLoadedDir[$name] = $file;
-        $this->_filterLoaded[$name]    = $class;
-    }
-
-    /**
      * Add a prefixPath for a plugin type
      *
      * @param  string $type
@@ -1115,7 +587,7 @@ class Indi_View implements Indi_View_Interface
         try {
             $loader->load($name);
             return $loader->getClassPath($name);
-        } catch (Indi_Loader_Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -1131,10 +603,6 @@ class Indi_View implements Indi_View_Interface
     {
         $name = ucfirst($name);
         switch ($type) {
-            case 'filter':
-                $storeVar = '_filterClass';
-                $store    = $this->_filterClass;
-                break;
             case 'helper':
                 $storeVar = '_helper';
                 $store    = $this->_helper;
@@ -1142,7 +610,7 @@ class Indi_View implements Indi_View_Interface
         }
         if (!isset($store[$name])) {
             $class = $this->getPluginLoader($type)->load($name, $throwExceptions);
-			if (!$class) return $class;
+            if (!$class) return $class;
             $store[$name] = new $class();
             if (method_exists($store[$name], 'setView')) {
                 $store[$name]->setView($this);
@@ -1152,17 +620,6 @@ class Indi_View implements Indi_View_Interface
         $this->$storeVar = $store;
         return $store[$name];
     }
-
-    /**
-     * Use to include the view script in a scope that only allows public
-     * members.
-     *
-     * @return mixed
-     */
-    protected function _run() {
-        include func_get_arg(0);
-    }
-
 
     /**
      * Get the param or param's subparam of current section scope.

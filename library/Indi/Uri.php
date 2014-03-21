@@ -52,7 +52,7 @@ class Indi_Uri {
 
         $controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
 
-		if (!class_exists($controllerClassName)) {
+        if (!class_exists($controllerClassName)) {
 			if ($params['module'] == 'admin') {
 				if ($sectionA) {
 					$extendClass = $sectionA['extends'];
@@ -67,7 +67,7 @@ class Indi_Uri {
 			}
 			eval('class ' . ucfirst($controllerClassName) . ' extends ' . $extendClass . '{}');
 		}
-		$controller = new $controllerClassName($params);
+        $controller = new $controllerClassName($params);
         $controller->dispatch();
     }
 
@@ -76,7 +76,7 @@ class Indi_Uri {
 		$this->setCookieDomain();
 		$this->startSession();
 		$this->checkSeoUrlsMode();
-	}
+    }
 
 	public function no3w(){
 		if (strpos($_SERVER['HTTP_HOST'], 'www') !== false) {
@@ -93,7 +93,7 @@ class Indi_Uri {
         }    
     }
 	public function setCookieDomain(){
-		$domain = Indi::registry('config')->general->domain;
+		$domain = Indi::ini()->general->domain;
 		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
         if (PRE) ini_set('session.cookie_path', STD);
 	}
@@ -101,8 +101,8 @@ class Indi_Uri {
 	public function startSession() {
 		$post = Indi::registry('post');
 		if (isset($post['sessid'])) session_id($post['sessid']);
-		Indi_Session::start();
-	}
+		session_start();
+    }
 
 	public function checkSeoUrlsMode(){
 		list($first) = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
@@ -121,8 +121,8 @@ class Indi_Uri {
 		$db = Indi::db();
 		$subdomains = $db->query('SELECT `fs`.`alias` FROM `subdomain` `sd`, `fsection` `fs` WHERE `sd`.`fsectionId` = `fs`.`id`')->fetchAll();
 		$subdomainsArray = array(); foreach ($subdomains as $sd) $subdomainsArray[] = $sd['alias'];
-		if ($_SERVER['HTTP_HOST'] != Indi::registry('config')->general->domain) {
-			$subdomain = str_replace('.'.Indi::registry('config')->general->domain, '',$_SERVER['HTTP_HOST']);
+		if ($_SERVER['HTTP_HOST'] != Indi::ini()->general->domain) {
+			$subdomain = str_replace('.'.Indi::ini()->general->domain, '',$_SERVER['HTTP_HOST']);
 			if (in_array($subdomain, $subdomainsArray)) {
 				$_SERVER['REQUEST_URI'] = '/' . $subdomain . $_SERVER['REQUEST_URI'];
 			}

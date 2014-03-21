@@ -31,6 +31,17 @@ class Indi{
     public static $cmpOut = '';
 
     /**
+     * Regular expressions patterns for common usage
+     *
+     * @var array
+     */
+    protected static $_rex = array(
+        'email' => '/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/',
+        'date' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/',
+        'hrgb' => '/^[0-9]{3}#([0-9a-fA-F]{6})$/'
+    );
+
+    /**
      * Array of HTML colors
      *
      * @var array
@@ -713,43 +724,66 @@ class Indi{
      * @param $file
      * @return stdClass
      */
-    public static function ini($file){
-        // Declare empty object
-        $config = new stdClass();
 
-        // Check if file exists
-        if (is_file($file)) {
+    /**
+     * Parses ini file given by $arg argument, convert it from array to ArrayObject and save into the registry
+     * If $arg agrument does not end with '.ini', it will be interpreted as a key, so it's value will be returned
+     * If $arg argument is not given or null, the whole ini ArrayObject object, that represents ini file contents
+     * will be returned
+     *
+     * @static
+     * @param null $arg
+     * @return mixed|null
+     */
+    public static function ini($arg = null) {
 
-            // Get and parse the file contents
-            $ini = file_get_contents($file);
-            preg_match_all('/\[([^\]]+)\]\s([^\[]+)/', $ini, $blocks);
+        // If $arg argument is a path end with '.ini', and file with that path exists
+        if (preg_match('/\.ini$/', $arg) && is_file($arg)) {
 
-            // For each parsed block
-            for ($i = 0; $i < count($blocks[1]); $i++) {
+            // Parse ini file
+            $ini = parse_ini_file($arg, true);
 
-                // Get lines
-                $lines = explode("\n", trim($blocks[2][$i]));
+            // Convert sections from type 'array' to type 'ArrayObject'
+            foreach ($ini as $sectionName => $sectionParamA)
+                $ini[$sectionName] = new ArrayObject($sectionParamA, ArrayObject::ARRAY_AS_PROPS);
 
-                // For each line of file
-                for ($j = 0; $j < count($lines); $j++) {
-
-                    // Detect key=>value pair
-                    preg_match('/([^\s]+)+\s*=\s*([^\s]+)/', $lines[$j], $params);
-
-                    // If key has a value
-                    if ($params[1]) {
-
-                        // If group, there current key=>value pair is not yet exists - create it
-                        if (!is_object($config->{$blocks[1][$i]})) $config->{$blocks[1][$i]} = new stdClass();
-
-                        // Assign a value to a certain key, under certain group
-                        $config->{$blocks[1][$i]}->$params[1] = $params[2];
-                    }
-                }
-            }
+            // Save into the registry
+            return Indi::registry('ini', $ini);
         }
 
-        // Return grouped key=>value pairs as an object
-        return $config;
+        // Else if $arg argument is a string, we assume that it is a key, so we return it's value
+        else if (is_string($arg)) return Indi::store('ini')->$arg;
+
+        // Else we return the whole ini object
+        else if (!$arg) return Indi::store('ini');
+    }
+
+    /**
+     * Return regular expressions pattern, stored within $this->_rex property under $alias key
+     *
+     * @param $alias
+     * @return null
+     */
+    public static function rex($alias){
+        return $alias ? self::$_rex[$alias] : null;
+    }
+
+    public static function trail($arg = null) {
+
+        // If $arg argument is an array, we assume that it's a route stack, so we create a new trail object and store
+        // it into the registry
+        if (is_array($arg)) {
+            $class = 'Indi_Trail_' . ucfirst(Indi::uri()->module);
+            return Indi::registry('trail', new $class($arg));
+        }
+
+        // Else if $arg argument is boolean 'true', we return the whole trail object
+        else if ($arg === true) return Indi::registry('trail');
+
+        // Else if $arg argument is not set, we return current trail item object
+        else if ($arg == null) return Indi::registry('trail')->item();
+
+        // Else if $arg argument is integer, we return item, that is at index, shifted from the last index by $arg number
+        else if (is_int($arg)) return Indi::registry('trail')->item($arg);
     }
 }

@@ -12,7 +12,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->post = filter($this->post);
 		
 		// Определяем текущий раздел, ищем его в базе
-		$this->section = Indi::model('Fsection')->fetchRow('`alias` = "' . $this->controller . '"');
+		$this->section = Indi::model('Fsection')->fetchRow('`alias` = "' . Indi::uri()->section . '"');
 		$this->view->section = $this->section;
 		if ($this->section->type == 's' && $this->action == 'index') {
 			$this->action = $this->section->index;
@@ -65,7 +65,6 @@ class Indi_Controller_Front extends Indi_Controller{
 		if($this->action->alias != 'index' && $this->identifier) $this->view->row = $this->trail->getItem()->row;
 		$this->view->params = $this->params;
 		$this->view->request = $this->getRequest();
-		$this->view->controller = $this->controller;
 		$this->view->staticPages = Indi::model('Staticpage')->fetchAll('`toggle` = "y"', 'title')->toArray();
 		$this->view->visitors = $this->visitors();
 
@@ -465,17 +464,17 @@ class Indi_Controller_Front extends Indi_Controller{
 		if (Indi::registry('subdomains')) {
 			$subdomains = Indi::registry('subdomains');
 			for ($i = 0; $i < count($subdomains); $i++) {
-				$html = preg_replace('/(href|action)="\/' . $subdomains[$i] . '\//', '$1="http://' . $subdomains[$i] . '.' . Indi::registry('config')->general->domain .'/', $html);
+				$html = preg_replace('/(href|action)="\/' . $subdomains[$i] . '\//', '$1="http://' . $subdomains[$i] . '.' . Indi::ini()->general->domain .'/', $html);
 			}
 		}
 		if (Indi::registry('subdomain')) {
-			$html = preg_replace('/(href|action)="\//', '$1="http://' . Indi::registry('config')->general->domain.'/', $html);
+			$html = preg_replace('/(href|action)="\//', '$1="http://' . Indi::ini()->general->domain.'/', $html);
 		}
 		return $html;
 	}
 	public function httpsMaintenance($html) {
 		if ($_SERVER['SERVER_PORT'] == 443) {
-			$html = preg_replace('/(<link.*href=)"\//ui', '$1"https://' . Indi::registry('config')->general->domain . '/', $html);
+			$html = preg_replace('/(<link.*href=)"\//ui', '$1"https://' . Indi::ini()->general->domain . '/', $html);
 			$html = preg_replace('/(<link.*)href="http:/ui', '$1 href="https:', $html);
 			$html = preg_replace('/(<script.*)src="http:/ui', '$1 src="https:', $html);
 		}

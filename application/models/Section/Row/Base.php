@@ -1,11 +1,7 @@
 <?php
 class Section_Row_Base extends Indi_Db_Table_Row
 {
-    public function getFilters() {
-        return Indi::model('Search')
-            ->fetchAll('`sectionId` = "' . $this->id . '" AND `toggle` = "y"', 'move')
-            ->foreign(array('fieldId:setParams()' => 'columnTypeId,elementId'));
-    }
+    protected $_evalFields = array('filter');
 
     public function save(){
         // If entity was changed

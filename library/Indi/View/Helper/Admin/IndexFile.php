@@ -20,7 +20,7 @@ class Indi_View_Helper_Admin_IndexFile extends Indi_View_Helper_Abstract
         }
 		// pattern and paths
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
-		$relative = '/' . trim(Indi::registry('config')->upload->path, '/') . '/' . $entity  . '/';
+		$relative = '/' . trim(Indi::ini()->upload->path, '/') . '/' . $entity  . '/';
 		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {

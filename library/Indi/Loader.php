@@ -1,32 +1,4 @@
 <?php
-/**
- * Indi Framework
- *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://framework.zend.com/license/new-bsd
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@zend.com so we can send you a copy immediately.
- *
- * @category   Indi
- * @package    Indi_Loader
- * @copyright  Copyright (c) 2005-2010 Indi Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Loader.php 22020 2010-04-27 16:35:56Z matthew $
- */
-
-/**
- * Static methods for loading classes and files.
- *
- * @category   Indi
- * @package    Indi_Loader
- * @copyright  Copyright (c) 2005-2010 Indi Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
- */
 class Indi_Loader
 {
     /**
@@ -56,8 +28,7 @@ class Indi_Loader
         }
 
         if ((null !== $dirs) && !is_string($dirs) && !is_array($dirs)) {
-            require_once 'Indi/Exception.php';
-            throw new Indi_Exception('Directory argument must be a string or an array');
+            throw new Exception('Directory argument must be a string or an array');
         }
 
         // Autodiscover the path from the class name
@@ -95,8 +66,7 @@ class Indi_Loader
         }
 
         if (!class_exists($class, false) && !interface_exists($class, false)) {
-            require_once 'Indi/Exception.php';
-            throw new Indi_Exception("File \"$file\" does not exist or class \"$class\" was not found in the file");
+            throw new Exception("File \"$file\" does not exist or class \"$class\" was not found in the file");
         }
     }
 
@@ -229,69 +199,11 @@ class Indi_Loader
     }
 
     /**
-     * spl_autoload() suitable implementation for supporting class autoloading.
-     *
-     * Attach to spl_autoload() using the following:
-     * <code>
-     * spl_autoload_register(array('Indi_Loader', 'autoload'));
-     * </code>
-     *
-     * @deprecated Since 1.8.0
-     * @param  string $class
-     * @return string|false Class name on success; false on failure
-     */
-    public static function autoload($class)
-    {
-        trigger_error(__CLASS__ . '::' . __METHOD__ . ' is deprecated as of 1.8.0 and will be removed with 2.0.0; use Indi_Loader_Autoloader instead', E_USER_NOTICE);
-        try {
-            @self::loadClass($class);
-            return $class;
-        } catch (Exception $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Register {@link autoload()} with spl_autoload()
-     *
-     * @deprecated Since 1.8.0
-     * @param string $class (optional)
-     * @param boolean $enabled (optional)
-     * @return void
-     * @throws Indi_Exception if spl_autoload() is not found
-     * or if the specified class does not have an autoload() method.
-     */
-    public static function registerAutoload($class = 'Indi_Loader', $enabled = true)
-    {
-        trigger_error(__CLASS__ . '::' . __METHOD__ . ' is deprecated as of 1.8.0 and will be removed with 2.0.0; use Indi_Loader_Autoloader instead', E_USER_NOTICE);
-        require_once 'Indi/Loader/Autoloader.php';
-        $autoloader = Indi_Loader_Autoloader::getInstance();
-        $autoloader->setFallbackAutoloader(true);
-
-        if ('Indi_Loader' != $class) {
-            self::loadClass($class);
-            $methods = get_class_methods($class);
-            if (!in_array('autoload', (array) $methods)) {
-                require_once 'Indi/Exception.php';
-                throw new Indi_Exception("The class \"$class\" does not have an autoload() method");
-            }
-
-            $callback = array($class, 'autoload');
-
-            if ($enabled) {
-                $autoloader->pushAutoloader($callback);
-            } else {
-                $autoloader->removeAutoloader($callback);
-            }
-        }
-    }
-
-    /**
      * Ensure that filename does not contain exploits
      *
      * @param  string $filename
      * @return void
-     * @throws Indi_Exception
+     * @throws Exception
      */
     protected static function _securityCheck($filename)
     {
@@ -299,31 +211,7 @@ class Indi_Loader
          * Security check
          */
         if (preg_match('/[^a-z0-9\\/\\\\_.:-]/i', $filename)) {
-            require_once 'Indi/Exception.php';
-            throw new Indi_Exception('Security check: Illegal character in filename');
-        }
-    }
-
-    /**
-     * Attempt to include() the file.
-     *
-     * include() is not prefixed with the @ operator because if
-     * the file is loaded and contains a parse error, execution
-     * will halt silently and this is difficult to debug.
-     *
-     * Always set display_errors = Off on production servers!
-     *
-     * @param  string  $filespec
-     * @param  boolean $once
-     * @return boolean
-     * @deprecated Since 1.5.0; use loadFile() instead
-     */
-    protected static function _includeFile($filespec, $once = false)
-    {
-        if ($once) {
-            return include_once $filespec;
-        } else {
-            return include $filespec ;
+            throw new Exception('Security check: Illegal character in filename');
         }
     }
 }

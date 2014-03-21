@@ -1,5 +1,13 @@
 <?php
 class Indi_Controller_Admin_Beautiful extends Indi_Controller{
+
+    /**
+     * Array of section ids, starting from current section and up to the top.
+     *
+     * @var array
+     */
+    private $_routeA = array();
+
     /**
      * Provide default downAction (Move down) for Admin Sections controllers
      *
@@ -288,8 +296,8 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // So we can create a 'Questions' section within cms, and if `question` table will contain `expertId` column
         // (it will contain - we will create it for that purpose) - the only questions, addressed to curently logged-in
         // expert will be available for view and answer.
-        if ($this->admin['alternate'] && $this->trail->getItem()->model->fields($this->admin['alternate'] . 'Id'))
-            $where[] =  '`' . $this->admin['alternate'] . 'Id` = "' . $this->admin['id'] . '"';
+        if ($_SESSION['admin']['alternate'] && $this->trail->getItem()->model->fields($_SESSION['admin']['alternate']['alternate'] . 'Id'))
+            $where[] =  '`' . $_SESSION['admin']['alternate'] . 'Id` = "' . $_SESSION['admin']['id'] . '"';
 
         // Adjust primary WHERE clauses stack - apply some custom adjustments
         $where = $this->adjustPrimaryWHERE($where);
@@ -654,7 +662,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             }
 //            i($where);
         }
-        if ($this->params['xls']) $this->excelA = $excelA;
+        if ($this->params['excel']) $this->excelA = $excelA;
         return $where;
     }
 
@@ -697,7 +705,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
                 // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
                 // values, depending on current language
-                if ($GLOBALS['lang'] == 'en')
+                if (Indi::ini('view')->lang == 'en')
                     return 'IF(`' . $column . '`, "' . GRID_FILTER_CHECKBOX_YES .'", "' . GRID_FILTER_CHECKBOX_NO . '") '
                         . $direction;
                 else
@@ -787,8 +795,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
     /**
      * Provide a download of a excel spreadsheet
+     *
+     * @param $data
      */
-    public function xls(){
+    public function excel($data){
 
         /** Include path **/
         ini_set('include_path', ini_get('include_path').';../Classes/');
@@ -812,9 +822,6 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
         // Get the columns, that need to be presented in a spreadsheet
         $columnA = json_decode($this->get['columns'], true);
-
-        // Get the data
-        $data = $this->prepareJsonDataForIndexAction(false);
 
         // Setup a row index, which is data rows starting from
         $currentRowIndex = 1;
@@ -955,7 +962,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
                         // Deal with date converstion
-                        if (preg_match($this->datePattern, $excelI['value']['gte'])) {
+                        if (preg_match(Indi::rex('date'), $excelI['value']['gte'])) {
                             if ($excelI['value']['gte'] == '0000-00-00' && $format == 'd.m.Y') {
                                 $excelI['value']['gte'] = '00.00.0000';
                             } else if ($excelI['value']['gte'] != '0000-00-00'){
@@ -979,7 +986,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                         $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
                         // Deal with date converstion
-                        if (preg_match($this->datePattern, $excelI['value']['lte'])) {
+                        if (preg_match(Indi::rex('date'), $excelI['value']['lte'])) {
                             if ($excelI['value']['lte'] == '0000-00-00' && $format == 'd.m.Y') {
                                 $excelI['value']['lte'] = '00.00.0000';
                             } else if ($excelI['value']['gte'] != '0000-00-00'){
@@ -1465,33 +1472,281 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         die();
     }
 
-    public function rowset2Store() {
-        /**
-         * Что должно хэндлить
-         *
-         * 1. Внешние ключи
-         *
-         *      $this->rowset->foreign('fkId,fkId')
-         *
-         *    1. Обычные
-         *       1. Single
-         *       2. Multiple
-         *    2. Enumset
-         *       1. Single
-         *       2. Multiple
-         *    3. Переменная сущность
-         *
-         * 2. Отступы для деревьев
-         * 3. Boolean - столбцы
-         * 4. Колор-боксы для значений в формате hue#rrggbb
-         * 5. Цены
-         * 6. Дата и время, с применением формата
-         */
+    protected function _findSigninUserData($username, $password, $place = 'admin', $profileId = null) {
+
+        $profileId = Indi::model($place)->fields('profileId') ? '`a`.`profileId`' : '"' . $profileId . '"';
+        $adminToggle = Indi::model($place)->fields('toggle') ? '`a`.`toggle` = "y"' : '1';
+
+        return Indi::db()->query('
+            SELECT
+                `a`.*,
+                `a`.`password` = "' . $password . '"
+                    OR `a`.`password` = PASSWORD("' . $password . '")
+                    OR `a`.`password` = OLD_PASSWORD("' . $password . '")
+                        AS `passwordOk`,
+                '. $adminToggle . ' AS `adminToggle`,
+                `p`.`toggle` = "y" AS `profileToggle`,
+                `p`.`title` AS `profileTitle`,
+                COUNT(`sa`.`sectionId`) > 0 AS `atLeastOneSectionAccessible`
+            FROM `' . $place . '` `a`
+                LEFT JOIN `profile` `p` ON (`p`.`id` = ' . $profileId . ')
+                LEFT JOIN `section2action` `sa` ON (
+                    FIND_IN_SET(' . $profileId . ', `sa`.`profileIds`)
+                    AND `sa`.`actionId` = "1"
+                )
+            WHERE `a`.`email` = "' . $username . '"
+            GROUP BY `sa`.`sectionId`
+        ')->fetch();
+    }
+
+    private function _authLevel1($username, $password) {
+
+        // Try to find user data in primary place - `admin` table
+        $data = $this->_findSigninUserData($username, $password);
+
+        // If not found
+        if (!$data) {
+
+            // Get the list of other possible places, there user with given credentials can be found
+            $profile2tableA = Indi::db()->query('
+                SELECT `e`.`table`, `p`.`id` AS `profileId`
+                FROM `entity` `e`, `profile` `p`
+                WHERE `p`.`entityId` != "0"
+                    AND `p`.`entityId` = `e`.`id`
+            ')->fetchAll();
+
+            // Foreach possible place - try to find
+            foreach ($profile2tableA as $profile2tableI)
+                if ($data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
+                    $profile2tableI['profileId']))
+                    break;
+
+            // If found - assign some additional info to found data
+            if ($profile2tableI) {
+                $data['alternate'] = $profile2tableI['table'];
+                $data['profileId'] = $profile2tableI['profileId'];
+            }
+        }
+
+        // Set approriate error messages if:
+        // 1. User data is still not found
+        if (!$data) $error = I_LOGIN_ERROR_NO_SUCH_ACCOUNT;
+
+        // 2. Given password is wrong
+        else if (!$data['passwordOk']) $error = I_LOGIN_ERROR_WRONG_PASSWORD;
+
+        // 3. User's signin ability is turned off
+        else if (!$data['adminToggle']) $error = I_LOGIN_ERROR_ACCOUNT_IS_OFF;
+
+        // 4. User's profile is turned off (So all users with such profile are unable to signin)
+        else if (!$data['profileToggle']) $error = I_LOGIN_ERROR_PROFILE_IS_OFF;
+
+        // 5. User have no accessbile sections
+        else if (!$data['atLeastOneSectionAccessible']) $error = I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS;
+
+        return $error ? $error : $data;
+    }
+
+    private function _authLevel2($section, $action) {
+        $data = Indi::db()->query('
+            SELECT
+                `s`.`id`,
+                `s`.`toggle` = "y" AS `sectionToggle`,
+                `a`.`id` > 0 AS `actionExists`,
+                `a`.`toggle` = "y" AS `actionToggle`,
+                `sa`.`id` > 0 AS `section2actionExists`,
+                `sa`.`toggle` = "y" AS `section2actionToggle`,
+                FIND_IN_SET(' . $_SESSION['admin']['profileId'] . ', `sa`.`profileIds`) > 0 AS `granted`,
+                `s`.`sectionId` as `sectionId`
+            FROM `section` `s`
+               LEFT JOIN `action` `a` ON (`a`.`alias` = "' . $action . '")
+               LEFT JOIN `section2action` `sa` ON (`sa`.`actionId` = `a`.`id` AND `sa`.`sectionId` = `s`.`id`)
+            WHERE 1
+                AND `s`.`alias` = "' . $section . '"
+                AND `s`.`sectionId` != "0"
+        ')->fetch();
+
+        // Set approriate error messages if:
+        // 1. Section was not found
+        if (!$data) $error = I_ACCESS_ERROR_NO_SUCH_SECTION;
+
+        // 2. Section is switched off
+        else if (!$data['sectionToggle']) $error = I_ACCESS_ERROR_SECTION_IS_OFF;
+
+        // 3. Action does not exist at all
+        else if (!$data['actionExists']) $error = I_ACCESS_ERROR_NO_SUCH_ACTION;
+
+        // 4. Action is switched off
+        else if (!$data['actionToggle']) $error = I_ACCESS_ERROR_ACTION_IS_OFF;
+
+        // 5. Action does not exits in that section
+        else if (!$data['section2actionExists']) $error = I_ACCESS_ERROR_NO_SUCH_ACTION_IN_SUCH_SECTION;
+
+        // 6. Action is switched off in that section
+        else if (!$data['section2actionToggle']) $error = I_ACCESS_ERROR_ACTION_IS_OFF_IN_SUCH_SECTION;
+
+        // 7. User have no rights on that action in that section
+        else if (!$data['granted']) $error = I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE;
+
+        // 8. One of parent sections for current section - is switched off
+        else {
+
+            // Start fulfil section id stack
+            $this->_routeA = array($data['id'], $data['sectionId']);
+
+            // Setup initial id of parent section
+            $parent = array('sectionId' => $data['sectionId']);
+
+            // Navigate through parent sections up to the root
+            while ($parent = Indi::db()->query('
+                SELECT `sectionId`, `toggle` FROM `section` WHERE `id` = "' . $parent['sectionId'] . '" LIMIT 1
+            ')->fetch()) {
+
+                // If any of parent sections if switched off - setup an error and break the loop
+                if ($parent['toggle'] == 'n') {
+                    $error = I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF;
+                    break;
+
+                // Else push new item in $this->_routeA stack
+                } else if ($parent['sectionId']) $this->_routeA[] = $parent['sectionId'];
+
+                // Else stop loop, as $parent['sectionId'] = 0, so there is no sense to find a section with such an `id`
+                else break;
+            }
+        }
+
+        // If $error was set - return error, or return $data otherwise
+        return $error ? $error : $data;
     }
 
     public function auth() {
-        //if (!$_)
-        d($_SESSION);
-        die('ss');
+
+        // If visitor is a visitor, e.g. he has not signed in yet
+        if (!$_SESSION['admin']) {
+
+            // If he is trying to do that
+            if (Indi::post()->enter && Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
+
+                // If no username given
+                if (!Indi::post()->username) $data = I_LOGIN_ERROR_ENTER_YOUR_USERNAME;
+
+                // Else if no password given
+                else if (!Indi::post()->password) $data = I_LOGIN_ERROR_ENTER_YOUR_PASSWORD;
+
+                // Else try to find user's data
+                else $data = $this->_authLevel1(Indi::post()->username, Indi::post()->password);
+
+                // If $data is not an array, e.g some error there, output it as json with that error
+                if (!is_array($data)) die(json_encode(array('error' => $data)));
+
+                // Else start a session for user and report that singin was ok
+                $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
+                foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
+                die(json_encode(array('ok' => '1')));
+            }
+
+            // If user was thrown out from the system, assing a throwOutMsg to $this->view object, for this message
+            // to be available for picking up and usage as Ext.MessageBox message, as a reason of throw out
+            if ($_SESSION['indi']['throwOutMsg']) {
+                $this->view->throwOutMsg = $_SESSION['indi']['throwOutMsg'];
+                unset($_SESSION['indi']['throwOutMsg']);
+            }
+
+            // Render login page
+            $out = $this->view->render('login.php');
+
+            // Do paths replacements, if current project runs within webroot subdirectory
+            if (STD) {
+                $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            }
+
+            // Flush the login page
+            die($out);
+
+        // Else if user is already signed in, and is trying to perform some action in some section
+        } else {
+
+            // Do the first level access check
+            $data = $this->_authLevel1($_SESSION['admin']['email'], $_SESSION['admin']['password']);
+
+            // If $data is not an array, e.g some error there, output it as json with that error
+            if (!is_array($data)) {
+
+                // Change the error message to it's version for case then user was thrown out
+                if ($data == I_LOGIN_ERROR_NO_SUCH_ACCOUNT) $data = I_THROW_OUT_ACCOUNT_DELETED;
+                else if ($data == I_LOGIN_ERROR_WRONG_PASSWORD) $data = I_THROW_OUT_PASSWORD_CHANGED;
+                else if ($data == I_LOGIN_ERROR_ACCOUNT_IS_OFF) $data = I_THROW_OUT_ACCOUNT_IS_OFF;
+                else if ($data == I_LOGIN_ERROR_PROFILE_IS_OFF) $data = I_THROW_OUT_PROFILE_IS_OFF;
+                else if ($data == I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS) $data = I_THROW_OUT_NO_ACCESSIBLE_SECTIONS;
+
+                // Save error message in session, for ability to display it in message box
+                $_SESSION['indi']['throwOutMsg'] = $data;
+
+                // Logout
+                if (Indi::uri()->section == 'index') die(header('Location: ' . PRE . '/logout/'));
+                else if (!Indi::uri()->json) die('<script>top.window.location="' . PRE .'/logout/"</script>');
+                else die(json_encode(array('trowOutMsg' => $data)));
+
+            // Else if current section is 'index', e.g we are in the root of interface
+            } else if (Indi::uri()->section != 'index') {
+
+                // Do the second level access check
+                $data = $this->_authLevel2(Indi::uri()->section, Indi::uri()->action);
+
+                // If $data is not an array, e.g some error there, output it as json with that error
+                if (!is_array($data)) die($data);
+
+                // Else go further and perform next auth check
+                else $this->_authLevel3();
+            }
+        }
+    }
+
+    private function _authLevel3() {
+        Indi::trail($this->_routeA);
+    }
+
+    /**
+     * Provide default index action
+     */
+    public function indexAction() {
+
+        // If data should be got as json or excel
+        if (Indi::uri('json') || Indi::uri('excel')) {
+
+            // Adjust rowset, before using it as a basement of grid data
+            $this->adjustGridDataRowset();
+
+            // Build the grid data, based on current rowset
+            $data = $this->rowset->toGridData($this->trail->getItem());
+
+            // Adjust grid data
+            $this->adjustGridData($data);
+
+            // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
+            if (Indi::uri('json')) die(json_encode(array('totalCount' => $this->rowset->found(), 'blocks' => $data)));
+
+            // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
+            if (Indi::uri('excel')) $this->excel($data);
+        }
+    }
+
+    /**
+     * Adjust rowset, before using it as a basement of grid data. This function is empty here, but may be useful in
+     * some situations
+     */
+    function adjustGridDataRowset() {
+
+    }
+
+    /**
+     * Adjust data, that was already prepared for usage in grid. This function is for ability to post-adjustments
+     *
+     * @param array $data This param is passed by reference
+     */
+    function adjustGridData(&$data) {
+
     }
 }

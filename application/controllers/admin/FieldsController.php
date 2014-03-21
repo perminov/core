@@ -1,7 +1,6 @@
 <?php
 class Admin_FieldsController extends Indi_Controller_Admin {
 	public function formAction(){
-		$this->trail->getItem()->dropdownWhere['satellite'] = '`entityId` = "' . $this->row->entityId . '"';
         if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $this->row->defaultValue, $matches)) {
             $this->row->modified('defaultValue', '#' . $matches[1]);
         }

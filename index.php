@@ -2,7 +2,7 @@
 // Displays phpinfo if needed
 if(isset($_GET['info'])){phpinfo();die();}
 
-// Set up STD server variable in case if multiple IndiEngine projects 
+// Set up STD server variable in case if multiple IndiEngine projects
 // are running within same document root, and there is one project that
 // is located in DOCUMENT_ROOT and others are in subfolders, so STD server
 // variable is passed WITH 'REDIRECT_' prefix, which is not covered by engine 
@@ -35,22 +35,20 @@ spl_autoload_register('autoloader');
 // Load misc features
 require('Misc.php');
 
-// Performance detection. '$mt' mean 'microtime'
+// Performance detection. 'mt' mean 'microtime'
 $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();
 
 // Memory usage detection
 $mu = 0; function mu(){$m = memory_get_usage(); $ret = $m - $GLOBALS['mu']; $GLOBALS['mu'] = $m; return $ret;} mu();
 
 // Load config and setup DB interface
-$config = Indi::ini('application/config.ini');
-Indi::db($config->db);
+Indi::ini('application/config.ini');
+Indi::db(Indi::ini()->db);
 
 // Save config and global request data to registry
 Indi::post($_POST);
 Indi::get($_GET);
 Indi::files($_FILES);
-
-Indi::registry('config', $config);
 unset($_POST, $_GET, $_FILES);
 
 // Dispatch uri request

@@ -4,6 +4,32 @@ define('I_LOGIN_BOX_PASSWORD', 'Пароль');
 define('I_LOGIN_BOX_ENTER', 'Вход');
 define('I_LOGIN_BOX_RESET', 'Сброс');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');
+define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Укажите имя пользователя');
+define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Укажите пароль');
+
+define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Нет такого аккаунта');
+define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Вы ввели неправильный пароль');
+define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Ваш аккаунт отключен');
+define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Тип вашего аккаунта отключен');
+define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'В системе пока нет ни одного доступного для вас раздела');
+
+define('I_THROW_OUT_ACCOUNT_DELETED', 'Ваш аккаунт только что был удален');
+define('I_THROW_OUT_PASSWORD_CHANGED', 'Ваш пароль только что был изменен');
+define('I_THROW_OUT_ACCOUNT_IS_OFF', 'Ваш аккаунт только что был отключен');
+define('I_THROW_OUT_PROFILE_IS_OFF', 'Тип вашего аккаунта только что был отключен');
+define('I_THROW_OUT_NO_ACCESSIBLE_SECTIONS', 'В системе не осталось ни одного доступного для вас раздела');
+
+define('I_ACCESS_ERROR_NO_SUCH_SECTION', 'Нет такого раздела');
+define('I_ACCESS_ERROR_SECTION_IS_OFF', 'Этот раздел выключен');
+define('I_ACCESS_ERROR_NO_SUCH_ACTION', 'Нет такого действия');
+define('I_ACCESS_ERROR_ACTION_IS_OFF', 'Это действие выключено');
+define('I_ACCESS_ERROR_NO_SUCH_ACTION_IN_SUCH_SECTION', 'Нет такого действия в этом разделе');
+define('I_ACCESS_ERROR_ACTION_IS_OFF_IN_SUCH_SECTION', 'Это действие выключено в этом разделе');
+define('I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE', 'У вас нет прав на это действие в этом разделе');
+define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'Один из вышестоящих разделов для этого раздела отключен');
+
+define('I_YES', 'Да');
+define('I_NO', 'Нет');
 
 define('I_LOGOUT', 'Выход');
 
