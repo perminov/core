@@ -796,8 +796,20 @@ class Indi_Db_Table
         $constructData = array(
             'table'   => $this->_name,
             'original'     => is_array($input['original']) ? $input['original'] : array(),
-            'modified' => is_array($input['modified']) ? $input['modified'] : array()
+            'modified' => is_array($input['modified']) ? $input['modified'] : array(),
+            'system' => is_array($input['system']) ? $input['system'] : array(),
+            'temporary' => is_array($input['temporary']) ? $input['temporary'] : array(),
+            'foreign' => is_array($input['foreign']) ? $input['foreign'] : array(),
+            'nested' => is_array($input['nested']) ? $input['nested'] : array(),
         );
+
+        // If $constructData['original'] is an empty array, we setup it according to model structure
+        if (count($constructData['original']) == 0) {
+            $constructData['original']['id'] = null;
+            foreach ($this->fields() as $fieldR)
+                if ($fieldR->columnTypeId)
+                    $constructData['original'][$fieldR->alias] = $fieldR->defaultValue;
+        }
 
         // Get row class name
         $rowClass = $this->rowClass();

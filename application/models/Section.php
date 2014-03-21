@@ -1,10 +1,84 @@
 <?php
-class Section extends Indi_Db_Table
-{
+class Section extends Indi_Db_Table {
     /**
      * Classname for row
      *
      * @var string
      */
-    protected $_rowClass = 'Section_Row';  
+    protected $_rowClass = 'Section_Row';
+
+    /**
+     * Get left menu data cms user
+     *
+     * @return array
+     */
+    public static function menu() {
+
+        // Fetch temporary data about root menu items
+        $tmpA = Indi::db()->query('
+            SELECT `id`, `sectionId`, `title`, `alias`
+            FROM `section`
+            WHERE `sectionId` = "0"
+            ORDER BY `move`
+        ')->fetchAll();
+
+        // Convert that temporary data to an array, that is using items ids as items keys, and unset $tmpA array
+        $rootA = array(); for ($i = 0; $i < count($tmpA); $i++) $rootA[$tmpA[$i]['id']] = $tmpA[$i]; unset($tmpA);
+
+        // Fetch menu items, that are 1st-level children for root items
+        $nestedA = Indi::db()->query('
+            SELECT `s`.`sectionId`, `s`.`title`, `s`.`alias`
+            FROM `section` `s`, `section2action` `sa`
+            WHERE 1
+                AND `s`.`sectionId` IN (' . implode(',', array_keys($rootA)) . ')
+                AND FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `sa`.`profileIds`)
+                AND `s`.`id` = `sa`.`sectionId`
+                AND `sa`.`actionId` = "1"
+                AND `s`.`toggle` = "y"
+                AND `sa`.`toggle` = "y"
+            ORDER BY `s`.`move`
+        ')->fetchAll();
+
+        // Declare an array for function return
+        $menu = array();
+
+        // Build the menu data
+        foreach ($rootA as $rootId => $rootSection) {
+
+            // Setup a flag, containing the info about whether at least one nested menu item
+            // for current root menu item was found or not
+            $found = false;
+
+            // Foreach nested item
+            foreach ($nestedA as $i => $nestedI)
+
+                // If current nested item relates to current root item
+                if ($nestedI['sectionId'] == $rootId) {
+
+                    // If it's a first time when nested menu item was found for current root item
+                    if (!$found) {
+
+                        // Append root item to the menu before appending nested item. We do that here to avoid
+                        // situation when we will have root menu items without at least one nested item
+                        $menu[] = $rootSection;
+
+                        // Setup $found flag to true, to prevent further cases of appending
+                        // current root item as it was already added
+                        $found = true;
+                    }
+
+                    // Append nested item to the menu
+                    $menu[] = $nestedI;
+
+                    // Free the memory
+                    unset($nestedA[$i]);
+                }
+
+            // Free the memory
+            unset($rootA[$rootId], $rootId, $rootSection);
+        }
+
+        // Return menu data
+        return $menu;
+    }
 }

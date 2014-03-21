@@ -73,9 +73,4 @@ class Indi_Trail
         end($this->items);
         return $array;
     }
-	
-	public function getRequestParam($paramName)
-	{
-		return $this->requestParams[$paramName];
-	}
 }

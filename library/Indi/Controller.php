@@ -71,13 +71,6 @@ class Indi_Controller{
     public $module;
 
     /**
-     * Store module session
-     *
-     * @var Indi_Session_Namespace object
-     */
-    public $session;
-    
-    /**
      * Store current controller name
      * 
      * @var string
@@ -124,13 +117,10 @@ class Indi_Controller{
 		// set up db adapter
 		$this->db = Indi::db();
 
-		$this->controller = $params['section'];
+		Indi::uri()->section = $params['section'];
 		$this->action     = $params['action'];
 		$this->module     = $params['module'];
 		$this->identifier = $params['id'];
-
-		// set up session
-		$this->session = new Indi_Session_Namespace($this->module);
 
         // if action == index, set up page number
 		if ($this->action == 'index') {
@@ -138,7 +128,7 @@ class Indi_Controller{
 		}
 		$this->view = new Indi_View();
 
-		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/' . trim(Indi::registry('config')->view->scriptPath, '/');
+		$coreS = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/' . trim(Indi::ini('view')->scriptPath, '/');
 		$wwwS  = preg_replace('/core(\/application)/', 'www$1', $coreS);
 
 		if(is_dir($wwwS)) {
@@ -167,49 +157,7 @@ class Indi_Controller{
 	public function _redirect($location){
 		die('<script>window.parent.Indi.load("' . $location . '");</script>');
 	}
-	public function visitors($clearOnly = false){
-		$deleteBeforeStamp = mktime(date('H'), date('i')-5, date('s'), date('n'), date('j'), date('Y'));
-		$deleteBeforeDate = date('Y-m-d H:i:s', $deleteBeforeStamp);
-		$this->db->query('DELETE FROM `visitor` WHERE `lastActivity` < "' . $deleteBeforeDate . '" OR `title` = "' . $_COOKIE['PHPSESSID'] . '"');
-		if (!$clearOnly) {
-			if ($_SESSION['userId']) {
-				$hidden = Indi::model('User')->fetchRow('`id` = "' . $_SESSION['userId'] . '"')->hidden;
-			} else {
-				$hidden = 0;
-			}
 
-            $visitorR = Indi::model('Visitor')->createRow();
-            $visitorR->title = $_COOKIE['PHPSESSID'];
-            $visitorR->lastActivity = date('Y-m-d H:i:s');
-            $visitorR->userId = ($_SESSION['userId'] ? $_SESSION['userId'] : 0);
-            $visitorR->hidden = $hidden;
-            $visitorR->save();
-
-			$visitors = $this->db->query('SELECT * FROM `visitor`')->fetchAll();
-			$info['logged'] = array();
-			$info['loggedIds'] = array();
-			$info['guests'] = 0;
-			$info['hidden'] = 0;
-			foreach ($visitors as $visitor) {
-				if ($visitor['hidden']) {
-					$info['hidden']++;
-				} else if ($visitor['userId']) {
-					$info['logged'][] = $visitor['userId'];
-					$info['loggedIds'][] = $visitor['userId'];
-				} else {
-					$info['guests']++;
-				}
-			}
-			$users = Indi::model('User')->fetchAll('`id` IN ("' . implode('","', $info['logged']) . '")')->toArray();
-			$logged = array();
-			foreach ($users as $user) {
-				$logged[] = '<a href="/users/details/id/' . $user['id'] . '/">' . $user['title'] . '</a>';
-			}
-			$info['logged'] = $logged;
-			$info['total'] = count($visitors);
-			return $info;
-		}
-	}
 	public function dispatch() {
         header('Content-Type: text/html; charset=utf-8');
         $this->preDispatch();

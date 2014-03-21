@@ -1,38 +1,5 @@
 <?php
-/**
- * Indi Framework
- *
- * LICENSE
- *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://framework.zend.com/license/new-bsd
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@zend.com so we can send you a copy immediately.
- *
- * @category   Indi
- * @package    Indi_View
- * @subpackage Helper
- * @copyright  Copyright (c) 2005-2010 Indi Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Abstract.php 20096 2010-01-06 02:05:09Z bkarwin $
- */
-
-/**
- * @see Indi_View_Helper_Interface
- */
-require_once 'Indi/View/Helper/Interface.php';
-
-/**
- * @category   Indi
- * @package    Indi_View
- * @subpackage Helper
- * @copyright  Copyright (c) 2005-2010 Indi Technologies USA Inc. (http://www.zend.com)
- * @license    http://framework.zend.com/license/new-bsd     New BSD License
- */
-abstract class Indi_View_Helper_Abstract implements Indi_View_Helper_Interface
+abstract class Indi_View_Helper_Abstract
 {
     /**
      * View object
@@ -44,21 +11,12 @@ abstract class Indi_View_Helper_Abstract implements Indi_View_Helper_Interface
     /**
      * Set the View object
      *
-     * @param  Indi_View_Interface $view
+     * @param  Indi_View $view
      * @return Indi_View_Helper_Abstract
      */
-    public function setView(Indi_View_Interface $view)
+    public function setView($view)
     {
         $this->view = $view;
         return $this;
-    }
-
-    /**
-     * Strategy pattern: currently unutilized
-     *
-     * @return void
-     */
-    public function direct()
-    {
     }
 }

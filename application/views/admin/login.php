@@ -9,7 +9,7 @@
         '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
-        '/library/extjs4/ext-lang-' . Indi::registry('config')->view->lang . '.js',
+        '/library/extjs4/ext-lang-' . Indi::ini('view')->lang . '.js',
         '/js/admin/indi.js',
         '/js/admin/indi.layout.js'
     ) ,'login');
@@ -26,7 +26,8 @@
         std: '<?=STD?>',
         com: '<?=COM ? '' : '/admin'?>',
         pre: '<?=STD?><?=COM ? '' : '/admin'?>',
-        lang: <?=Indi::constants('user', true)?>
+        lang: <?=Indi::constants('user', true)?>,
+        throwOutMsg: '<?=$this->throwOutMsg?>'
     });
     </script>
 </head>

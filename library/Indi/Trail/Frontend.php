@@ -9,14 +9,10 @@ class Indi_Trail_Frontend extends Indi_Trail
      * @param string $sectionAlias
      * @param int $rowIdentifier
      * @param int $actionAlias
-     * @uses Indi_Session_Namespace, self::addItem(), Indi_Trail_Item::setTrail()
      */
     public function __construct($sectionAlias, $rowIdentifier = null, $actionAlias = 'index', $specialSectionCondition = '', $requestParams = array())
     {
 		$initialId = $rowIdentifier;
-        // Get session
-        $session = new Indi_Session_Namespace('trailfront');
-
         // Set up self::items array
         do {
             if ($lastItem) {
@@ -27,7 +23,7 @@ class Indi_Trail_Frontend extends Indi_Trail
 				} else {
 					$actionAlias = $parentSection->index;
 				}
-				if (!$initialId) $info = (array) $session->parentId;
+				if (!$initialId) $info = $_SESSION['indi']['front']['trail']['parentId'];
                 if ($info[$sectionId] || $parentRowId) {
                     $rowId = $parentRowId ? $parentRowId : $info[$sectionId];
                     $parentRowId = null;
@@ -48,9 +44,10 @@ class Indi_Trail_Frontend extends Indi_Trail
                 if ($actionAlias != 'index') {
                     $rowId = $rowIdentifier;
                 } else {
-                    if (!$session->parentId) $session->parentId = new stdClass();
+                    if (!is_array($_SESSION['indi']['front']['trail']['parentId']))
+                        $_SESSION['indi']['front']['trail']['parentId'] = array();
                     if ($key = $sectionRow->fsectionId) {
-                        $session->parentId->$key = $rowIdentifier;
+                        $_SESSION['indi']['front']['trail']['parentId'][$key] = $rowIdentifier;
                     }
                     $parentRowId = $rowIdentifier;
                 }

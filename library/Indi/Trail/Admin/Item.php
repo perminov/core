@@ -1,5 +1,5 @@
 <?php
-class Indi_Trail_Admin_Item extends Indi_Trail_Item
+class Indi_Trail_Admin_Item
 {
 	/**
 	 * Store number of fields that associated with a ExtJs grid, in case if
@@ -14,108 +14,108 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
 	 *
 	 * @var array
 	 */
-	public $disabledFields = array();
+	public $disabledFields = array('save' => array(), 'form' => array());
+
+    public function __get($property) {
+        if ($property == 'model' && $this->section->entityId)
+            return Indi::model($this->section->entityId);
+    }
 
     /**
-     * Set up all internal variables
+     * Set up all internal properties
      *
-     * @param int $sectionId
-     * @param int $rowIdentifier
-     * @param string $actionAlias
+     * @param Indi_Db_Table_Row $sectionR
      */
-    public function __construct($sectionId, $rowIdentifier, $actionAlias, &$trail, $primaryHash)
+    public function __construct($sectionR)
     {
-        $session = $_SESSION;
-        
-        // set up section row
-        $section = new Section();
-        $this->section = $section->fetchRow('`id` = "' . $sectionId . '"');
+        // Setup $this->section
+        $config = array();
+        $dataTypeA = array('original', 'temporary', 'compiled', 'foreign');
+        foreach ($dataTypeA as $dataTypeI) $config[$dataTypeI] = $sectionR->$dataTypeI();
+        $this->section = Indi::model('Section')->createRow($config);
 
-		Indi::$cmpTpl = $this->section->filter; eval(Indi::$cmpRun); $this->section->filter = Indi::$cmpOut;
+        // Setup $this->actions
+        foreach ($sectionR->nested('section2action') as $section2actionR)
+            $actionA[] = $section2actionR->foreign('actionId')->original();
+        $this->actions = Indi::model('Action')->createRowset(array('original' => $actionA));
 
-        if ($this->section->id) {
-            // set up actions of section
-            $this->actions = $trail->authComponent->getActions($sectionId, $session['admin']['profileId']);
+        // Setup $this->sections
+        $this->sections = $sectionR->nested('section');
 
-            // set up subsections of section
-            $this->sections = $trail->authComponent->getSections($sectionId, $session['admin']['profileId']);
+        // If current trail item will be a first item
+        if (count(Indi_Trail_Admin::$items) == 0) {
 
-            // set up grid filters
-            $this->filters = $this->section->getFilters();
+            // Setup fields
+            $this->fields = $this->model->fields()->foreign(array(
+                'elementId' => array(
+                    'nested' => 'possibleElementParam'
+                ),
+                'columnTypeId' => array()
+            ))->nested('param')->params();
 
-            $this->section->primaryHash = $primaryHash;
-        }
-        
-        if ($this->section->sectionId) {
-            // set up action row
-            $action = new Action();
-            $this->action = $action->fetchRow('`alias` = "' . $actionAlias . '"');
-            
-            // set up row
-            $entityTitle = $this->section->foreign('entityId')->table;
-            if ($entityTitle) {
 
-				// set up model
-				$this->model = Indi::model(ucfirst($entityTitle));
-                
-                // set up row
-                if ($rowIdentifier) {
-					$where = array('`id` = "' . $rowIdentifier . '"');
-					if ($this->section->filter) $where[] = $this->section->filter;
-                    $this->row = $this->model->fetchRow($where);
-					if (!$this->row) die('Нет доступа к этой записи');
-                } else if ($this->action->alias == 'form') {
-                    // set up empty row if no row identifier
-                    $this->row = $this->model->createRow();
-                    
-                    // if current section have parent section 
-                    $parentSection = $this->section->foreign('sectionId');
+            // Setup filters
+            $this->filters = $sectionR->nested('search');
 
-                    // determining parent key value
-                    $session = Indi_Session::namespaceGet('trail');
+            // Setup action
+            foreach ($this->actions as $actionR)
+                if ($actionR->alias == Indi::uri('action'))
+                    $this->action = $actionR;
 
-                    if ($this->section->parentSectionConnector) {
-                        $parentSectionConnectorAlias =$this->section->foreign('parentSectionConnector')->alias;
-                        $info = $session['parentId'];
-                        $parentId = $info->{$parentSection->id};
-                        if (!$parentId) {
-                            $info = (array) $session['parentId'];
-                            $parentId = $info[$parentSection->id];
+            // Set fields, that will be used as grid columns in case if current action is 'index'
+            if (Indi::uri('action') == 'index') {
+                $gridFieldA = array();
+                foreach ($sectionR->nested('grid') as $gridR) {
+                    foreach ($this->fields as $fieldR) {
+                        if ($gridR->fieldId == $fieldR->id) {
+                            $gridFieldI = $fieldR->original();
+                            if ($gridR->alterTitle) $gridFieldI['title'] = $gridR->alterTitle;
+                            $gridFieldA[] = $gridFieldI;
                         }
-                        $this->row->$parentSectionConnectorAlias = $parentId;
                     }
-
-                    do{
-                        // and parent section is not a group
-                        if ($parentSection->sectionId != '0') {
-                            // determining parent key name
-                            $parentSectionId = $parentSection->id;
-                            $parentEntity = $parentSection->foreign('entityId');
-                            $parentEntityForeignKeyName = $parentEntity->table . 'Id';
-                            
-                            // determining parent key value
-							$info = $session['parentId'];
-                            $parentId = $info->$parentSectionId;
-							
-							if (!$parentId) {
-								$info = (array) $session['parentId'];
-								$parentId = $info[$parentSectionId];
-							}
-                            // set up key name with value
-                            $this->row->$parentEntityForeignKeyName = $parentId;
-                        }
-                    } while($parentSection = $parentSection->foreign('sectionId'));
                 }
-				// set up row fields
-				$field = new Field();
-				$this->fields = $field->getFieldsByEntityId($this->section->entityId);
-
-				// set up ExtJs grid fields definitions in case if current action is 'index'
-                $this->gridFields = $field->getGridFieldsBySectionId($sectionId);
-
-                // set up disabled (unreachable for view, edit and save) fields
-				$this->disabledFields = $field->getDisabledFieldsBySectionId($sectionId);
+                $this->gridFields = Indi::model('Field')->createRowset(array('original' => $gridFieldA));
             }
+
+            // Setup disabled fields
+            foreach ($sectionR->nested('disabledField') as $disabledFieldR) {
+                foreach ($this->fields as $fieldR) {
+                    if ($disabledFieldR->fieldId == $fieldR->id) {
+                        $this->disabledFields['save'][] = $fieldR->alias;
+                        if ($disabledFieldR->displayInForm) $this->disabledFields['form'][] = $fieldR->alias;
+                    }
+                }
+            }
+
+        } else {
+
+            // Setup action as 'index'
+            foreach ($this->actions as $actionR) if ($actionR->alias == 'index') $this->action = $actionR;
+        }
+    }
+
+    public function row($index){
+        if ($index == 0) {
+            if (Indi::uri('id') && Indi::uri('action') != 'index') {
+                // primaryWHERE
+                $this->row = $this->model->fetchRow('`id` = "' . (int) Indi::uri('id') . '"');
+                if (!$this->row) die('Нет доступа к этой записи');
+            } else {
+                $this->row = $this->model->createRow();
+                for ($i = 1; $i < count(Indi_Trail_Admin::$items) - 1; $i++) {
+                    $connector = Indi_Trail_Admin::$items[$i-1]->section->parentSectionConnector && $i == 1
+                        ? Indi_Trail_Admin::$items[$i-1]->section->foreign('parentSectionConnector')->alias
+                        : Indi_Trail_Admin::$items[$i]->model->name() . 'Id';
+
+                    if ($this->model->fields($connector))
+                        $this->row->$connector = $_SESSION['indi']['admin']['trail']['parentId'][$this->section->sectionId];
+                }
+            }
+        } else if ($this->section->sectionId) {
+            $id = Indi::uri('action') == 'index'
+                ? (int) Indi::uri('id')
+                : (int) Indi_Trail_Admin::$items[$index-1]->row->{$this->model->name() . 'Id'};
+            $this->row = $this->model->fetchRow('`id` = "' . $id . '"');
         }
     }
 
@@ -139,7 +139,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item
         if ($this->fields) $array['fields'] = $this->fields->toArray();
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray(true);
-        if ($this->dropdownWhere) $array['dropdownWhere'] = $this->dropdownWhere;
         return $array;
     }
 }

@@ -8,7 +8,7 @@ abstract class Indi_Image
      */
     public function getUploadPath()
     {
-        return trim(Indi::registry('config')->upload->path, '\\/');
+        return trim(Indi::ini()->upload->path, '\\/');
     }
     
     /**
@@ -453,7 +453,7 @@ abstract class Indi_Image
     public function image($entity, $id, $key = null, $copy = null, $silence = true, $width = null, $height = null)
     {
         if ($id) {
-            $uploadPath = Indi::registry('config')->upload->path;
+            $uploadPath = Indi::ini()->upload->path;
             
             $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
             $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;
@@ -627,7 +627,7 @@ abstract class Indi_Image
     public function flash($entity, $id, $key = null, $silence = true, $width = null, $height = null)
     {
         if ($id) {
-            $uploadPath = Indi::registry('config')->upload->path;
+            $uploadPath = Indi::ini()->upload->path;
             
             $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
             $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;

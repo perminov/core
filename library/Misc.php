@@ -1,32 +1,4 @@
 <?php
-if (!function_exists('lcfirst')) {
-	function lcfirst($value){
-		return strtolower(substr($value, 0, 1)) . substr($value, 1);
-	}
-}
-function onlyme(){
-	return $_SERVER['REMOTE_ADDR'] == '109.184.137.246';
-}
-function title2alias($title){
-//Ë À Ì Â Í Ã Î Ä Ï Ç Ò È Ó É Ô Ê Õ Ö ê Ù ë Ú î Û ï Ü ô Ý õ â û ã ÿ ç
-//E A I A I A I A I C O E O E O E O O e U e U i U i U o Y o a u a y c
-
-	$s = array("а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о","п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я","№"," ","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","-","0","1","2","3","4","5","6","7","8","9","Ë","À","Ì","Â","Í","Ã","Î","Ä","Ï","Ç","Ò","È","Ó","É","Ô","Ê","Õ","Ö","ê","Ù","ë","Ú","î","Û","ï","Ü","ô","Ý","õ","â","û","ã","ÿ","ç");
-	$r = array("a","b","v","g","d","e","yo","zh","z","i","i","k","l","m","n","o","p","r","c","t","u","f","h","ts","ch","sh","shh","","y","","e","yu","ya","#","-","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","-","0","1","2","3","4","5","6","7","8","9","e","a","i","a","i","a","i","a","i","c","o","e","o","e","o","e","o","o","e","u","e","u","i","u","i","u","o","u","o","a","u","a","y","c");
-	$alias = '';
-	$title = trim($title);
-	$title = mb_strtolower($title, 'utf-8');
-	for ($i = 0; $i < mb_strlen($title, 'utf-8'); $i++) {
-		$c = mb_substr($title, $i, 1, 'utf-8');
-		$index = array_search($c, $s);
-		if ($index !== false) $alias = $alias . $r[$index];
-	}
-	$alias = preg_replace('/^\-+/', '', $alias);
-	$alias = preg_replace('/\-+$/', '', $alias);
-	$alias = preg_replace('/\-{2,}/', '-', $alias);
-	return $alias;
-}
-
 /**
  * Displays or returns formatted view of a given value
  * $hr mean Hidden and/or Return
@@ -67,6 +39,11 @@ function d($value, $hr=0){
         return $dump;
     }
 }
+if (!function_exists('lcfirst')) {
+    function lcfirst($value){
+        return strtolower(substr($value, 0, 1)) . substr($value, 1);
+    }
+}
 function filter($value){
 	if (is_string($value)) {
 		$value = str_replace(array('"','>','<'), array('&quot;', '&gt;', '&lt;'), strip_tags($value));
@@ -87,227 +64,6 @@ function i($value, $type = 'w', $file = 'debug.txt'){
 	fwrite($fp, ob_get_clean());
 	fclose($fp);
 }
-function getOccurDate($startDate, $endDate = ''){
-	$russian = array('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря');
-	$english = array('january','february','march','april','may','june','july','august','september','october','november','december');
-//	$startDate = date('Y-m-j', strtotime($start));
-//	$endDate = date('Y-m-j', strtotime($end));
-	$startParts = explode('-', $startDate);
-	$endParts = explode('-', $endDate);
-	if ($startDate == $endDate || $endDate == '0000-00-00') {
-		return str_ireplace($english, $russian, date('j F', strtotime($startDate)));
-	} else if ($startParts[0] == $endParts[0] && $startParts[1] == $endParts[1] && $startParts[2] != $endParts[2]) {
-		return $startParts[2] . ' - ' . $endParts[2] . ' '. str_ireplace($english, $russian, date('F', strtotime($startDate)));
-	} else if ($startParts[0] == $endParts[0] && $startParts[1] != $endParts[1]) {
-		return $startParts[2] . str_ireplace($english, $russian, date(' F', strtotime($startDate))) . ' - ' . $endParts[2] . ' '. str_ireplace($english, $russian, date('F', strtotime($endDate)));
-	} else {
-		return str_ireplace($english, $russian, date('j F', strtotime($startDate)) . ' - ' . date('j F', strtotime($endDate)));
-	}
-}
-
-function rDate($date, $format = 'd-M-Y'){
-	$rus = array('янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек');
-	$eng = array('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec');
-	if (Misc::number($date)) return str_replace($eng, $rus, date($format,strtotime($date))); else return '';
-}
-function pDate($date, $format = 'j M Y'){
-	$rus = array('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря');
-	$eng = array('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec');
-	if (Misc::number($date)) return str_replace($eng, $rus, date($format,strtotime($date))); else return '';
-}
-function jDate($date, $format = 'j M Y'){
-	$rus = array('января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря');
-	$eng = array('January','February','March','April','May','June','July','August','September','October','November','December');
-	if (Misc::number($date)) return str_replace($eng, $rus, date($format,strtotime($date))); else return '';
-}
-function tDate($date, $format = 'M Y'){
-	$rus = array('Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь');
-	$eng = array('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec');
-	if (Misc::number($date)) return str_replace($eng, $rus, date($format,strtotime($date))); else return '';
-}
-function dayOfWeek($date = '', $format = 'l'){
-	if (!$date) $date = date('Y-m-d');
-	$rus = array('Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье');
-	$eng = array('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
-	if (Misc::number($date)) return str_replace($eng, $rus, date($format,strtotime($date))); else return '';
-}
-function dateDifference($d1, $d2){ 
-    $d1 = (is_string($d1) ? strtotime($d1) : $d1);
-    $d2 = (is_string($d2) ? strtotime($d2) : $d2);
-
-    $diff_secs = abs($d1 + 60*60*24 - $d2);
-    $base_year = min(date("Y", $d1), date("Y", $d2));
-
-    $diff = mktime(0, 0, $diff_secs, 1, 1, $base_year);
-    $info = array(
-        "years" => date("Y", $diff) - $base_year,
-//        "months_total" => (date("Y", $diff) - $base_year) * 12 + date("n", $diff) - 1,
-        "months" => date("n", $diff) - 1,
-//        "days_total" => floor($diff_secs / (3600 * 24)),
-        "days" => date("j", $diff) - 1,
-//        "hours_total" => floor($diff_secs / 3600),
-//        "hours" => date("G", $diff),
-//        "minutes_total" => floor($diff_secs / 60),
-//        "minutes" => (int) date("i", $diff),
-//        "seconds_total" => $diff_secs,
-//        "seconds" => (int) date("s", $diff)
-    );
-	extract($info);
-	if ($years) {
-		if ($years == 1) {
-			$ret = ' год';
-		} else if ($years >=2 && $years <=4) {
-			$ret = ' года';
-		} else if ($years >=5 && $years <= 20) {
-			$ret = ' лет';
-		} else if ($years >= 21) {
-			$last = substr($years, strlen($years) - 1, 1);
-			if ($last == 1) {
-				$ret = ' год';
-			} else if ($last >=2 && $last <=4) {
-				$ret = ' года';
-			} else if (($last >= 5 && $last <=9) || $last == 0) {
-				$ret = ' лет';
-			}
-		}
-	}
-	if ($years) $return = $years . $ret;
-
-	if ($months) {
-		if ($months == 1) {
-			$ret = ' месяц';
-		} else if ($months >=2 && $months <=4) {
-			$ret = ' месяца';
-		} else if ($months >=5 && $months <= 20) {
-			$ret = ' месяцев';
-		} else if ($months >= 21) {
-			$last = substr($months, strlen($months) - 1, 1);
-			if ($last == 1) {
-				$ret = ' месяц';
-			} else if ($last >=2 && $last <=4) {
-				$ret = ' месяца';
-			} else if (($last >= 5 && $last <=9) || $last == 0) {
-				$ret = ' месяцев';
-			}
-		}
-	}
-
-	if ($months) $return .= ' ' . $months . $ret;
-
-	if ($days) {
-		if ($days == 1) {
-			$ret = ' день';
-		} else if ($days >=2 && $days <=4) {
-			$ret = ' дня';
-		} else if ($days >=5 && $days <= 20) {
-			$ret = ' дней';
-		} else if ($days >= 21) {
-			$last = substr($days, strlen($days) - 1, 1);
-			if ($last == 1) {
-				$ret = ' день';
-			} else if ($last >=2 && $last <=4) {
-				$ret = ' дня';
-			} else if (($last >= 5 && $last <=9) || $last == 0) {
-				$ret = ' дней';
-			}
-		}
-	}
-	if (!$years && $days) $return .= ' ' . $days . $ret;
-	return $return;
-} 
-function mtrim(&$val){$val = trim($val);}
-function bylen($a, $b){return mb_strlen($a, 'utf-8') < mb_strlen($b, 'utf-8');}
-function sortByRDC($a, $b) {
-	$relevanceA = is_object($a) ? $a->relevance : $a['relevance'];
-	$relevanceB = is_object($b) ? $b->relevance : $b['relevance'];
-	$distanceA = is_object($a) ? $a->distance : $a['distance'];
-	$distanceB = is_object($b) ? $b->distance : $b['distance'];
-	$countA = is_object($a) ? $a->count : $a['count'];
-	$countB = is_object($b) ? $b->count : $b['count'];
-	$titleA = is_object($a) ? $a->title :$a['title'];
-	$titleB = is_object($b) ? $b->title :$b['title'];
-	if ($relevanceA == $relevanceB) {
-		if ($distanceA == $distanceB) {
-			if ($countA == $countB) {
-				return $titleA > $titleB;
-			} else {
-				return $countA < $countB;
-			}
-		} else {
-			return $distanceA > $distanceB;
-		}
-	} else {
-		return $relevanceA < $relevanceB;
-	}
-}
-function compare($S1,$S2,$limit)
-{
-  $S1=strtolower($S1);$S2=strtolower($S2);
-  $n=strlen($S1);$m=strlen($S2);
-////////////////////////
-  if($S1==$S2)
-	return 0;
-  if($limit==null)
-	$limit=9999998;
-  if(abs($n-$m)>$limit)
-    return 9999999;
-  if(!$n)
-	return $m;
-  if(!$m)
-	return $n;
-////////////////////////	
-  $dist=array_fill(0,2,array_fill(0,$m+1,0)); $ok=1; $current=1;
-  for($i=1;$i<=$m;$i++)
-  {	
-	  $dist[0][$i]=$i;
-  }
-  for($i=1;$i<=$n;$i++)
-  {
-    $ok=0;
-    $dist[$current][0]=$i;
-    if($i-$limit>=1)
-		$dist[$current][$i-$limit-1]=9999999;
-    for($j=max($i-$limit,1);$j<=min($i+$limit,$m);$j++)
-    {
-        if(substr($S1,$i-1,1)==substr($S2,$j-1,1))
-            $dist[$current][$j]=$dist[1-$current][$j-1];
-        else
-            $dist[$current][$j]=min($dist[1-$current][$j-1],$dist[1-$current][$j],$dist[$current][$j-1])+1;
-        if($dist[$current][$j]<=$limit)
-            $ok=1;
-    }
-    if($i+$limit<=$m)
-    {
-		$dist[$current][$i+$limit+1]=9999999;
-	}
-    if(!$ok)
-    {
-        return 9999999;
-	}
-    $current=1-$current;
-  }
-  return $dist[1-$current][$m];
-}
-
-function indexed($val){
-	// ненужные слова
-	$remove = 'г, о, оз, о ва, озеро, остров, острова, область, провинция, отель, спа, курорт, hotel, 
-	SPA, resort, beach, suites, эмират, регион, провинция, велаят, провинции,край, земля, район, уезд,
-	обл, ао, округ, и';
-	$remove = explode(',', $remove);
-	array_walk($remove, 'mtrim');
-	usort($remove, 'bylen');
-	//
-	$indexed = mb_strtoupper($val, 'utf-8');
-	$indexed = preg_replace('/[[:punct:]—]/ui', ' ', $indexed);
-	$indexed = preg_replace('/^(' . implode('|', $remove) . ') /ui', ' ', $indexed);
-	$indexed = preg_replace('/ (' . implode('|', $remove) . ') /ui', ' ', $indexed);
-	$indexed = preg_replace('/ (' . implode('|', $remove) . ')$/ui', ' ', $indexed);
-	$indexed = trim($indexed);
-	$indexed = preg_replace('/ {2,}/ui', ' ', $indexed);
-	return $indexed;
-}
-
 class Misc
 {
     
@@ -347,8 +103,8 @@ class Misc
         return $number;
     }
 
-	public function usubstr($string, $length, $addTripleDot = true){
-		if (mb_strlen($string, 'utf-8') > $length && $addTripleDot) $dots = '...';
+	public function usubstr($string, $length, $dots = true){
+		if (mb_strlen($string, 'utf-8') > $length && $dots) $dots = '..';
 		$string = mb_substr($string, 0, $length, 'utf-8') . $dots;
 		return $string;
 	}
@@ -380,66 +136,6 @@ class Misc
 	    }
 	    return $sequence;
 	}	
-	function ucfirstUtf8($string, $e ='utf-8') {
-		if (function_exists('mb_strtoupper') && function_exists('mb_substr') && !empty($string)) { 
-			$string = mb_strtolower($string, $e); 
-			$upper = mb_strtoupper($string, $e); 
-				preg_match('#(.)#us', $upper, $matches); 
-				$string = $matches[1] . mb_substr($string, 1, mb_strlen($string, $e), $e); 
-		} 
-		else { 
-			$string = ucfirst($string); 
-		} 
-		return $string; 
-	} 
-	function ucfirstWin($string, $e ='utf-8') { 
-		if (function_exists('mb_strtoupper') && function_exists('mb_substr') && !empty($string)) { 
-			$string = mb_strtolower($string, $e); 
-			$upper = mb_strtoupper($string, $e); 
-				preg_match('#(.)#s', $upper, $matches); 
-				$string = $matches[1] . mb_substr($string, 1, mb_strlen($string, $e), $e); 
-		} 
-		else { 
-			$string = ucfirst($string); 
-		} 
-		return $string; 
-	} 
-    /**
-     * Calculate and return string width in pixels
-     *
-     * @param int $padding
-     * @return int width
-     */
-    public function getStringWidth($string, $fontsize = 10, $padding = 2)
-    {
-		$info = imagettfbbox($fontsize, 0, 'data/fonts/arial.ttf', $string);
-    	return $info[2] + $padding * 2;
-    }
-	public function uploadFails($title = 'Тема была создана, но'){
-		if (count($uploadFails = Indi::registry('uploadFails'))) {
-			$m[] = $title . ' не загружены файлы:';
-			$m[] = '<ul>';
-			if (is_array($uploadFails['type'])) {
-				$m[] = '<li>' . Misc::indent(1, 4) . 'Из-за несоответствия допустимым типам</li>';
-				$m[] = '<ul>';for ($i = 0; $i < count($uploadFails['type']); $i++) $m[] = '<li>' . Misc::indent(2, 4) . '- ' . $uploadFails['type'][$i] . '</li>';$m[] = '</ul>';
-			}
-			if (is_array($uploadFails['maxsize'])) {
-				$m[] = '<li>' . Misc::indent(1, 4) . 'Из-за превышения допустимого размера</li>';
-				$m[] = '<ul>';for ($i = 0; $i < count($uploadFails['maxsize']); $i++) $m[] = '<li>' . Misc::indent(2, 4) . '- ' . $uploadFails['maxsize'][$i] . '</li>'; $m[] = '</ul>';
-			}
-			$m[] = '</ul><br>';
-			return implode("\n", $m);
-		}
-		return '';
-	}
-	public function replaceUrls($text){
-		$reg = "\b([\d\w\.\/\+\-\?\:]*)((ht|f)tp(s|)\:\/\/|[\d\d\d|\d\d]\.[\d\d\d|\d\d]\.|www\.|\.tv|\.ac|\.com|\.edu|\.gov|\.int|\.mil|\.net|\.org|\.biz|\.info|\.name|\.pro|\.museum|\.co|\.ru)([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)\b";
-		preg_match_all("/" . $reg . "/", $text, $matches);
-		for ($i = 0; $i < count($matches[0]); $i++) {
-			$text = str_replace($matches[0][$i], '<a href="' . $matches[0][$i] . '">' . $matches[0][$i] . '</a>', $text);
-		}
-		return $text;
-	}
 	public function mail($to, $from, $subj, $text, $files=null){
 		$boundary = md5(uniqid(time()));
 		$headers[] ="MIME-Version: 1.0";
@@ -452,7 +148,7 @@ class Misc
 		$multipart[]= "--" . $boundary;
 		$multipart[]= "Content-Type: text/html; charset=utf-8";
 		$multipart[]= "Content-Transfer-Encoding: Quot-Printed";
-		$multipart[]= ""; // раздел между заголовками и телом html-части
+		$multipart[]= "";
 		$multipart[]= $text;
 		$multipart[]= "";
 
@@ -478,29 +174,6 @@ class Misc
 
 		return mail($to, $subj, $multipart, $headers);
 	}
-	public function getMatchedTitle($row, $find){
-		$title = $row->title;
-		$synonyms = explode(',', $row->synonyms);
-		array_walk($synonyms, trim);
-		for ($i = 0; $i < count($synonyms); $i++) {
-			if (preg_match('/'.$find.'/ui', $synonyms[$i])) {
-				$title = $synonyms[$i];
-				break;
-			}
-		}
-		return array($title);
-	}
-	public static $db = null;
-	public static function query($sql) {
-		if (self::$db == null) {
-			$config = parse_ini_file('application/config.ini', true);
-			self::$db = mysql_connect(Indi::registry('config')->db['host'], Indi::registry('config')->db['username'], Indi::registry('config')->db['password']) or die(mysql_error());
-			mysql_select_db(Indi::registry('config')->db['dbname'], self::$db) or die(mysql_error());
-		}
-		$res =  mysql_query($sql) or die(mysql_error() . ':' . $sql);
-		return $res;
-	}
-
     public static function ago($datetime, $postfix = 'назад')
     {
         $curr = time();
@@ -701,11 +374,6 @@ class Misc
         return str_pad(round($hue*360), 3, '0', STR_PAD_LEFT) . '#' . $rgb;
     }
 
-}
-class Css{
-	public $s,$f,$t,$r=array();
-	public function __construct($s=''){$this->s=trim(str_replace('{','',$s));preg_match('/([#\.])([a-zA-Z][a-zA-Z0-9\-_]+)[ ,.:]/',$s,$m);$this->f=$m[2];$this->t=$m[1]=='#'?'id':'class';} 
-	public function toString($nl=true){$s=array($this->s.' {');$s=array_merge($s,$this->r);$s[]='}'.($nl?"\n":'');return implode($nl?"\n":'',$s);} 
 }
 function ie8() {
 	return preg_match('/MSIE 8/', $_SERVER['HTTP_USER_AGENT']);

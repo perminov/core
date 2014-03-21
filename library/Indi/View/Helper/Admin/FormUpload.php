@@ -20,7 +20,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
         }
 		// pattern and paths
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
-		$relative = '/' . trim(Indi::registry('config')->upload->path, '/') . '/' . $entity  . '/';
+		$relative = '/' . trim(Indi::ini()->upload->path, '/') . '/' . $entity  . '/';
 		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . STD, '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
@@ -35,8 +35,8 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getimagesize($abs);
                     if (STD) $uploaded = preg_replace('~src="' . preg_quote(STD) . '~', 'src="', $uploaded);
-                    if ($info[0] > $this->view->get['width'] + 8) {
-						$uploaded = preg_replace('/src="/', 'width="' . ($this->view->get['width'] + 8).'" src="', $uploaded);
+                    if ($info[0] > Indi::get('width') + 8) {
+						$uploaded = preg_replace('/src="/', 'width="' . (Indi::get('width') + 8).'" src="', $uploaded);
 					}
                     break;
 				case 'flash':
@@ -45,8 +45,8 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
                     $abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getflashsize($abs);
                     if (STD) $uploaded = preg_replace('~src="' . preg_quote(STD) . '~', 'src="', $uploaded);
-                    if ($info[0] > $this->view->get['width'] + 8) {
-                        $width = $this->view->get['width'] + 8;
+                    if ($info[0] > Indi::get('width') + 8) {
+                        $width = Indi::get('width') + 8;
                         $height = ceil($width/$info[0] * $info[1]);
                         $uploaded = preg_replace('/src="/', 'width="' . $width .'" height="' . $height . '" wmode="opaque" src="', $uploaded);
                     } else {

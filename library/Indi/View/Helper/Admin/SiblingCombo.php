@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $order = $this->view->getScope('ORDER');
         $this->comboDataOrderDirection = array_pop(explode(' ', $order));
         $this->comboDataOrderColumn = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
-        if (preg_match('/\(/', $order)) $this->comboDataOffset = $this->view->request['aix'] - 1;
+        if (preg_match('/\(/', $order)) $this->comboDataOffset = Indi::uri('aix') - 1;
 
         ob_start();
         ?><div style="display: none;"><div id="i-action-form-topbar-nav-to-sibling-combo-wrapper"><?

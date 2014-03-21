@@ -16,7 +16,7 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
         '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
-        '/library/extjs4/ext-lang-' . Indi::registry('config')->view->lang . '.js',
+        '/library/extjs4/ext-lang-' . Indi::ini('view')->lang . '.js',
         '/js/admin/indi.js',
         '/js/admin/indi.trail.js',
         '/js/admin/indi.combo.form.js',

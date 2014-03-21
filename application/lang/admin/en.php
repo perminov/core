@@ -4,6 +4,32 @@ define('I_LOGIN_BOX_PASSWORD', 'Password');
 define('I_LOGIN_BOX_ENTER', 'Enter');
 define('I_LOGIN_BOX_RESET', 'Reset');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');
+define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Enter your username');
+define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Enter your password');
+
+define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Such account does not exist');
+define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Wrong password');
+define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Your account is switched off');
+define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Your account is of type, that is switched off');
+define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'There is no sections accessible for you yet');
+
+define('I_THROW_OUT_ACCOUNT_DELETED', 'Your account had just been deleted');
+define('I_THROW_OUT_PASSWORD_CHANGED', 'Your password had just been changed');
+define('I_THROW_OUT_ACCOUNT_IS_OFF', 'Your account had just beed switched off');
+define('I_THROW_OUT_PROFILE_IS_OFF', 'Your account is of type, that had just been switched off');
+define('I_THROW_OUT_NO_ACCESSIBLE_SECTIONS', 'Now there is no sections remaining accessible for you');
+
+define('I_ACCESS_ERROR_NO_SUCH_SECTION', 'Such section does not exist');
+define('I_ACCESS_ERROR_SECTION_IS_OFF', 'Section is switched off');
+define('I_ACCESS_ERROR_NO_SUCH_ACTION', 'Such action does not exist');
+define('I_ACCESS_ERROR_ACTION_IS_OFF', 'This action is switched off');
+define('I_ACCESS_ERROR_NO_SUCH_ACTION_IN_SUCH_SECTION', 'This action does not exist in this section');
+define('I_ACCESS_ERROR_ACTION_IS_OFF_IN_SUCH_SECTION', 'This action is switched off in this section');
+define('I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE', 'You have no rights on this action in this section');
+define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'One of parent sections for current section - is switched off');
+
+define('I_YES', 'Yes');
+define('I_NO', 'No');
 
 define('I_LOGOUT', 'Logout');
 

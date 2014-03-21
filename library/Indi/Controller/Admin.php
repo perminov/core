@@ -1,60 +1,20 @@
 <?php
-class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
-    public $emailPattern = "/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$/";
-    public $datePattern = "/^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/";
-
-    public $condition = '';
-
-    /**
-     * Store Indi_Auth object
-     *
-     * @var Indi_Auth
-     */
-    public $auth;
-
-    /**
-     * Store info about current logged in admin
-     *
-     * @var object
-     */
-    public $admin;
+class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful {
 
     /**
      * Init all general cms features
-     *
      */
-    public function preDispatch()
-    {
+    public function preDispatch() {
+
         // Set current language
-        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
-        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::registry('config')->view->lang . '.php');
-        $GLOBALS['lang'] = Indi::registry('config')->view->lang;
+        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('view')->lang . '.php');
+        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('view')->lang . '.php');
 
         // Perform authentication
-        //$this->auth();
-        Indi_Auth::getInstance()->auth($this);
-
-        // set up all trail info
-        $sectionAlias = $this->controller;
-
-        // set up info for pagination
-        if (isset($this->get['limit'])) {
-            $this->limit = $this->get['limit'];
-            $this->start = $this->get['start'];
-            if (is_numeric($this->limit) && is_numeric($this->start)) {
-                $this->page = $_SESSION['admin']['indexParams'][$sectionAlias]['page'] = ($this->start/$this->limit)+1;
-            } else {
-                $this->page = 1;
-            }
-        }
-
-        $section = Indi::model('Section');
-
-        // set up all trail info
-        $this->trail = new Indi_Trail_Admin($this->controller, $this->identifier, $this->action, null, $this->params, $this->authComponent);
+        $this->auth();
 
         // set up current section and foreign rows, assotiated with
-        $this->section = $section->fetchRow('`alias` = "' . $this->controller . '"');
+        $this->section = $this->trail->getItem()->section;
 
         if ($this->section) {
 
@@ -70,7 +30,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
                     $this->setScopeUpper($primaryWHERE);
 
-                    if ($this->params['json']) {
+                    if ($this->params['json'] || $this->params['excel']) {
+
                         // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                         $finalWHERE = $this->finalWHERE($primaryWHERE);
 
@@ -78,12 +39,12 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                         $finalORDER = $this->finalORDER($finalWHERE, $this->get['sort']);
 
                         // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
-                        // constructed with usage of $this->limit and $this->page params
+                        // constructed with usage of $this->get('limit') and $this->get('page') params
                         $this->rowset = $this->trail->getItem()->model->{
                             'fetch'. ($this->trail->getItem()->model->treeColumn() ? 'Tree' : 'All')
                         }($finalWHERE, $finalORDER,
-                            $this->params['xls'] ? null : $this->limit,
-                            $this->params['xls'] ? null : $this->page);
+                            $this->params['excel'] ? null : (int) Indi::get('limit'),
+                            $this->params['excel'] ? null : (int) Indi::get('page'));
 
                         // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
                         // able to restore the state of panel, that is representing the rowset at cms interface.
@@ -108,17 +69,9 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
      * Provide default toggle on/off action for cms controllers
      *
      */
-    public function toggleAction()
-    {
-        $this->preToggle();
+    public function toggleAction() {
         $this->row->toggle();
-        $this->postToggle();
         $this->redirectToIndex();
-    }
-
-    public function preToggle(){
-    }
-    public function postToggle(){
     }
 
     /**
@@ -272,8 +225,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
                     $data[$field->alias] = $value;
                 }
                 // ��������� ���������
-                if ($this->admin['alternate'] && $field->alias == $this->admin['alternate'] . 'Id') {
-                    $value = $this->admin['id'];
+                if ($_SESSION['admin']['alternate'] && $field->alias == $_SESSION['admin']['alternate'] . 'Id') {
+                    $value = $_SESSION['admin']['id'];
                     $set[] = $field->alias . ' = "' . $value . '"';
                     $data[$field->alias] = $value;
                 }
@@ -330,256 +283,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
         }
     }
 
-    /**
-     * Provide default index action
-     *
-     */
-    public function indexAction()
-    {
-        if ($this->params['json']) {
-
-            if ($this->params['xls']) {
-                $this->xls();
-            } else {
-                die($this->prepareJsonDataForIndexAction());
-            }
-        }
-    }
-
-    public function viewAction(){
-
-    }
-    public function prepareJsonDataForIndexAction($json = true){
-        // set up raw grid data
-        $data = $this->rowset->toArray();
-        $this->doSomethingCustom();
-
-        // set up indent in case of tree structure of entity
-        for($i = 0; $i < count($data); $i++) {
-            $data[$i]['title'] = $data[$i]['_system']['indent'] . $data[$i]['title'];
-        }
-
-        // get info about columns that wiil be presented in grid
-        $gridFields = $this->trail->getItem()->gridFields->toArray();
-        $gridFieldsAliases = array('id'); for ($i = 0; $i < count ($gridFields); $i++) $gridFieldsAliases[] = $gridFields[$i]['alias'];
-
-        // get info about all columns that are exists at the present moment in $data
-        $columns = count($data) ? array_keys($data[0]) : array();
-
-        // unset columns in $data that will not be used in grid
-        for ($i = 0; $i < count($data); $i++) {
-            foreach ($columns as $column) {
-                if (!in_array($column, $gridFieldsAliases) && $column != '_system') {
-                    unset($data[$i][$column]);
-                }
-            }
-        }
-        $gridFieldsAliasesThatStoreBoolean = array();
-        // get info about grid columns, that store relations and boolean values
-        for ($i = 0; $i < count ($gridFields); $i++) {
-            if ($gridFields[$i]['relation']) $gridFieldsThatStoreRelation[$gridFields[$i]['alias']] = $gridFields[$i]['relation'];
-            if ($gridFields[$i]['elementId'] == 9) $gridFieldsAliasesThatStoreBoolean[] = $gridFields[$i]['alias'];
-        }
-        $columntype = Indi::model('ColumnType');
-
-        if (count($gridFieldsThatStoreRelation)) {
-            // get info about grid columns, that store relations, and their columns have SET and ENUM types
-            // we need this info because there will be another logic to get titles for them
-            // at first, get ids of 'columntypes' db table rows there was specified in 'type' column that they have SET or ENUM types
-            $irregularColumnTypesIds = $columntype->fetchColumn('id', '`type` IN ("ENUM", "SET")');
-
-            $irregularGridFieldsThatStoreRelation = array();
-            foreach($gridFields as $gridField){
-                if(in_array($gridField['columnTypeId'], $irregularColumnTypesIds)) $irregularGridFieldsThatStoreRelation[$gridField['alias']] = $gridField['id'];
-            }
-            $keys = array();
-            // get distinct values for grid columns, that store relations
-            $gridFieldsAliasesThatStoreRelation = array_keys($gridFieldsThatStoreRelation);
-            for ($i = 0; $i < count($data); $i++) {
-                foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-                    if (strlen($data[$i][$alias])) {
-                        if (preg_match('/,/', $data[$i][$alias])) {
-                            $multipleA = explode(',', $data[$i][$alias]);
-                            foreach ($multipleA as $multipleI) {
-                                if (@!in_array($multipleI, $keys[$alias])) {
-                                    $keys[$alias][] = $multipleI;
-                                }
-                            }
-                        } else {
-                            if (@!in_array($data[$i][$alias], $keys[$alias])) {
-                                $keys[$alias][] = $data[$i][$alias];
-                            }
-                        }
-                    }
-                }
-            }
-
-            $irregularGridFieldsAliasesThatStoreRelation = array_keys($irregularGridFieldsThatStoreRelation);
-            // get custom titles for values of grid columns, that store relations
-            foreach ($keys as $fieldAlias => $foreignKeyValues) {
-                if (count($foreignKeyValues)) {
-
-                    // get titles for ENUM and SET columns (we called them 'irregular')
-                    if (in_array($fieldAlias, $irregularGridFieldsAliasesThatStoreRelation)) {
-                        $condition  = '`alias` IN ("' . implode('","', $foreignKeyValues) . '")';
-                        $condition .= ' AND `fieldId` = "' . $irregularGridFieldsThatStoreRelation[$fieldAlias] . '"';
-                        $foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll($condition);
-                        foreach ($foreignRowset as $foreignRow) $titles[$fieldAlias][$foreignRow->alias] = $foreignRow->title;
-
-                    // get title for other columns that store relations
-                    } else {
-                        $foreignRowset = Indi::model($gridFieldsThatStoreRelation[$fieldAlias])->fetchAll('`id` IN (' . implode(',', $foreignKeyValues) . ')');
-                        foreach ($foreignRowset as $foreignRow) {
-                            $title = $foreignRow->title;
-                            if(preg_match('/^[0-9]{3}#[0-9a-fA-F]{6}$/',$title)) {
-                                $color = substr($title, 4);
-                                $title = '<span class="i-color-box" style="background: #' . $color . ';"></span>#'. $color;
-                            }
-                            $titles[$fieldAlias][$foreignRow->id] = $title;
-                        }
-                    }
-                }
-            }
-
-            // apply up custom titles
-            for ($i = 0; $i < count($data); $i++) {
-                foreach ($gridFieldsAliasesThatStoreRelation as $alias) {
-                    if (preg_match('/,/', $data[$i][$alias])) {
-                        $multipleA = explode(',', $data[$i][$alias]);
-                        $title = array();
-                        foreach ($multipleA as $multipleI) {
-                            $title[] = $titles[$alias][$multipleI];
-                        }
-                        if ($title) $data[$i][$alias] = implode(', ', $title);
-                    } else {
-                        $title = $titles[$alias][$data[$i][$alias]];
-                        if ($title || $data[$i][$alias] == 0) $data[$i][$alias] = $title;
-                    }
-                }
-            }
-        }
-
-        // add trailing zeros to column that have the 'DOUBLE' type
-        $doubleColumns = $columntype->fetchAll('`type` LIKE "DOUBLE%"');
-        foreach ($doubleColumns as $doubleColumn) {
-            preg_match("/\(\d+,(\d+)\)/i", $doubleColumn->type, $matches);
-            $pad = $matches[1];
-            for ($i = 0; $i < count($gridFields); $i++) {
-                if ($doubleColumn->id == $gridFields[$i]['columnTypeId']) {
-                    for ($j = 0; $j < count ($data); $j++) {
-                        $double = $data[$j][$gridFields[$i]['alias']];
-                        if (count($parts = explode('.', $double))) {
-                            $data[$j][$gridFields[$i]['alias']] = $parts[0] . '.' . str_pad($parts[1], $pad, '0', STR_PAD_RIGHT);
-                        } else {
-                            $data[$j][$gridFields[$i]['alias']] = $double . str_pad('.', $pad + 1, '0', STR_PAD_RIGHT);
-                        }
-                    }
-                }
-            }
-        }
-
-        // convert hue part from columns of type Color to color box
-        $colorColumns = $columntype->fetchAll('`type` = "VARCHAR(10)"');
-        foreach ($colorColumns as $colorColumn) {
-            for ($i = 0; $i < count($gridFields); $i++) {
-                if ($colorColumn->id == $gridFields[$i]['columnTypeId']) {
-                    for ($j = 0; $j < count ($data); $j++) {
-                        $color = substr($data[$j][$gridFields[$i]['alias']], 4);
-                        $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: #' . $color . ';"></span>#'. $color;
-                    }
-                }
-            }
-        }
-//#3667f0
-        // check if data at any column has color format and convert hue part to color box
-        for ($i = 0; $i < count($gridFields); $i++) {
-            for ($j = 0; $j < count ($data); $j++) {
-                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $data[$j][$gridFields[$i]['alias']], $matches)) {
-                    $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: #' . $matches[1] . ';"></span>#'. $matches[1];
-                } else if (preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $data[$j][$gridFields[$i]['alias']], $matches)) {
-                    $data[$j][$gridFields[$i]['alias']] = '<span class="i-color-box" style="background: ' . $matches[1] . ';"></span>'. strip_tags($data[$j][$gridFields[$i]['alias']]);
-                }
-            }
-        }
-
-
-        // get custom titles for values in grid that are foreign keys, but each can relate to different entity
-        // at first we should  find such a columns and their satellites
-        $where = array(
-            '`entityId` = "' . $this->trail->getItem()->section->entityId . '"',
-            '`satellite` != "0"'
-        );
-        if (count($gridFieldsAliases)) $where[] = 'FIND_IN_SET(`alias`, "' . implode(',', $gridFieldsAliases) . '")';
-        $satellitedFields = Indi::model('Field')->fetchAll($where);
-
-        foreach ($satellitedFields as $field) {
-            $fieldAlias = $field->alias;
-            $i = 0;
-            foreach ($this->rowset as $row) {
-                if ($fr = $row->foreign($fieldAlias))	{
-                    if ($fr instanceof Indi_Db_Table_Row) $data[$i][$fieldAlias] = $fr->title;
-                }
-                $i++;
-            }
-        }
-
-        // set grid titles by custom logic
-        $this->setGridTitlesByCustomLogic($data);
-
-        // apply up custom titles
-        for ($i = 0; $i < count($data); $i++) {
-            foreach ($gridFieldsAliasesThatStoreBoolean as $alias) {
-                $data[$i][$alias] = $data[$i][$alias] ? GRID_FILTER_CHECKBOX_YES : GRID_FILTER_CHECKBOX_NO;
-            }
-        }
-
-        // find date and datetime fields and apply display format, if specified
-        foreach ($this->trail->getItem()->gridFields as $fieldR) {
-            if ($fieldR->elementId == 12) {
-                $params = $fieldR->getParams();
-                if ($params['displayFormat']) {
-                    for ($j = 0; $j < count ($data); $j++) {
-                        if (preg_match($this->datePattern, $data[$j][$fieldR->alias])) {
-                            if ($data[$j][$fieldR->alias] == '0000-00-00') {
-                                $data[$j][$fieldR->alias] = '';
-                            } else if ($data[$j][$fieldR->alias] != '0000-00-00'){
-                                $data[$j][$fieldR->alias] = date($params['displayFormat'], strtotime($data[$j][$fieldR->alias]));
-                                if ($data[$j][$fieldR->alias] == '30.11.-0001') $data[$j][$fieldR->alias] = '00.00.0000';
-                            }
-                        }
-                    }
-                }
-            } else if ($fieldR->elementId == 19) {
-                $params = $fieldR->getParams();
-                if ($params['displayDateFormat'] || $params['displayTimeFormat']) {
-                    if (!$params['displayDateFormat']) $params['displayDateFormat'] = 'Y-m-d';
-                    if (!$params['displayTimeFormat']) $params['displayTimeFormat'] = 'H:i:s';
-                    for ($j = 0; $j < count ($data); $j++) {
-                        if (preg_match('/^0000-00-00/', $data[$j][$fieldR->alias])
-                            && $params['displayDateFormat'] == 'd.m.Y'
-                            && preg_match('/00:00:00$/', $data[$j][$fieldR->alias])
-                            && $params['displayTimeFormat'] == 'H:i') {
-                            $data[$j][$fieldR->alias] = '00.00.0000 00:00';
-                        } else if ($data[$j][$fieldR->alias] == '0000-00-00 00:00:00'){
-                            $data[$j][$fieldR->alias] = '';
-                        } else if ($data[$j][$fieldR->alias]){
-                            $data[$j][$fieldR->alias] = date($params['displayDateFormat'] . ' ' . $params['displayTimeFormat'], strtotime($data[$j][$fieldR->alias]));
-                        }
-
-                    }
-                }
-            }
-        }
-        if ($json) {
-            $jsonData = array("totalCount" => $this->rowset->found(), "blocks" => $data);
-            return json_encode($jsonData);
-        } else {
-            return $data;
-        }
-    }
-
-    function setGridTitlesByCustomLogic(&$data){}
-
     public function postSave(){
     }
     public function preSave(){
@@ -587,10 +290,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
     public function postDelete(){
     }
     public function preDelete(){
-    }
-    public function postMove(){
-    }
-    public function doSomethingCustom(){
     }
     public function redirectToIndex(){
         if ($this->trail->getItem(1)->row) {
@@ -609,7 +308,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
 
         // assign general template data
         $this->assign();
-        if (!$this->section && $this->action == 'index') {
+        if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
             $out = $this->view->render('index.php');
         } else {
             $out = $this->view->renderContent();
@@ -629,47 +328,22 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful{
             die($out);
         }
     }
+
     /**
       * Assigns admin name, date, menu, trail and all
       * that used in admin area in general
       *
       */
-    public function assign(){
-        $this->view->assign('admin', $this->admin['title'] . ' [' . $this->admin['profile']  . ']');
-        if (Indi::uri()->section == 'index') $this->view->assign('menu', Indi_Auth::getInstance()->getMenu());
-        $this->view->assign('get', $this->get);
-        $this->view->assign('request', $this->params);
+    public function assign() {
+        if (Indi::uri()->section == 'index') {
+            $this->view->assign('menu', Section::menu());
+            $this->view->assign('admin', $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']');
+        }
         $this->view->assign('trail', $this->trail);
-        $this->view->assign('module', $this->module);
         $this->view->assign('section', $this->section);
         $this->view->assign('action', $this->action);
         $this->view->assign('entity', $this->section ? $this->section->foreign('entityId') : null);
-        if ($this->trail->getItem()->actions) {
-            $this->view->assign('actions', $this->trail->getItem()->actions);
-        }
-        if ($this->trail->getItem()->sections) {
-            $this->view->assign('sections', $this->trail->getItem()->sections);
-        }
-        if ($this->row) {
-            $this->view->assign('row', $this->row);
-            foreach ($this->trail->getItem()->model->fields(null, 'cols') as $field) {
-                if (!is_array($this->row->$field) && !is_null($this->row->$field)) {
-                    $this->row->$field = stripslashes($this->row->$field);
-                }
-            }
-        }
-        if ($this->rowset) {
-            foreach ($this->rowset as $row) {
-                foreach ($this->trail->getItem()->model->fields(null, 'cols') as $field) {
-                    if (is_string($row->$field)) {
-                        $row->$field = stripslashes($row->$field);
-                    }
-                }
-            }
-            $this->view->assign('rowset', $this->rowset);
-            $this->view->page = $this->page;
-            $this->view->limit = $this->limit;
-        }
+        if ($this->row) $this->view->row = $this->row;
     }
 
     public function updateCacheIfNeed(){

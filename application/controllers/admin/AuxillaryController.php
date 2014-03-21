@@ -105,7 +105,7 @@ function $(id){
 					$itemR = Indi::model($entityR->id)->fetchRow('`id` = "' . $this->params['id'] . '"');
 					if ($itemR) {
 						$pattern  = $itemR->id . ($fieldR->alias ? '_' . $fieldR->alias : '') . '.*';
-						$relative = '/' . trim(Indi::registry('config')->upload->path, '/') . '/' . $entityR->table  . '/';
+						$relative = '/' . trim(Indi::ini()->upload->path, '/') . '/' . $entityR->table  . '/';
 						$absolute = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . $relative;
 						$file = glob($absolute . $pattern); $file = $file[0];
 						$info = pathinfo($file);

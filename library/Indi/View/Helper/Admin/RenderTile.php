@@ -87,7 +87,7 @@ class Indi_View_Helper_Admin_RenderTile extends Indi_View_Helper_Abstract
 					],
 
 					proxy: new Ext.data.HttpProxy({
-						url: '/admin/<?php echo $section->alias?>/index/<?php echo $this->view->trail->requestParams['id'] ? 'id/' . $this->view->trail->requestParams['id'] . '/' : ''?>json/1/'
+						url: '/admin/<?php echo $section->alias?>/index/<?=Indi::uri('id') ? 'id/' . Indi::uri('id') . '/' : ''?>json/1/'
 					})
 				});
 
