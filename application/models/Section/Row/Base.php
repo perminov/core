@@ -1,7 +1,9 @@
 <?php
 class Section_Row_Base extends Indi_Db_Table_Row
 {
-    protected $_evalFields = array('filter');
+    public function __get($property) {
+        return $property == 'href' ? PRE . '/' . $this->alias : parent::__get($property);
+    }
 
     public function save(){
         // If entity was changed

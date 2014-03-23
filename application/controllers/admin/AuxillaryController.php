@@ -6,7 +6,7 @@
 class Admin_AuxillaryController extends Indi_Controller
 {
     public function preDispatch(){
-        eval('$this->' . $this->action . 'Action();');
+        eval('$this->' . Indi::uri('action') . 'Action();');
     }
     /**
      * Provide ability to use yahoo color picker
@@ -15,7 +15,7 @@ class Admin_AuxillaryController extends Indi_Controller
     public function colorpickerAction()
     {
 		$p = STD . '/js/admin/';
-		$name = $this->params['name'];
+		$name = Indi::uri()->name;
         $out = '
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -92,17 +92,17 @@ function $(id){
         die($out);
     }
 	public function downloadAction(){
-		$this->params['id'] = (int) $this->params['id'];
-		$this->params['field'] = (int) $this->params['field'];
-		if (!$this->params['id'] || !$this->params['field']) {
+		Indi::uri()->id = (int) Indi::uri()->id;
+		Indi::uri()->field = (int) Indi::uri()->field;
+		if (!Indi::uri()->id || !Indi::uri()->field) {
 			die('Ошибка входных данных');
 		} else {
-			$fieldR = Indi::model('Field')->fetchRow('`id` = "' . $this->params['field'] . '"');
+			$fieldR = Indi::model('Field')->fetchRow('`id` = "' . Indi::uri()->field . '"');
 			$params = $fieldR->getParams();
 			if ($fieldR) {
 				$entityR = Indi::model('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"');
 				if ($entityR) {
-					$itemR = Indi::model($entityR->id)->fetchRow('`id` = "' . $this->params['id'] . '"');
+					$itemR = Indi::model($entityR->id)->fetchRow('`id` = "' . Indi::uri()->id . '"');
 					if ($itemR) {
 						$pattern  = $itemR->id . ($fieldR->alias ? '_' . $fieldR->alias : '') . '.*';
 						$relative = '/' . trim(Indi::ini()->upload->path, '/') . '/' . $entityR->table  . '/';

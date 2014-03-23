@@ -27,6 +27,8 @@ define('I_ACCESS_ERROR_NO_SUCH_ACTION_IN_SUCH_SECTION', 'Нет такого д�
 define('I_ACCESS_ERROR_ACTION_IS_OFF_IN_SUCH_SECTION', 'Это действие выключено в этом разделе');
 define('I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE', 'У вас нет прав на это действие в этом разделе');
 define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'Один из вышестоящих разделов для этого раздела отключен');
+define('I_ACCESS_ERROR_ROW_ADDING_DISABLED', 'Право на создание записей недоступно в этом разделе');
+define('I_ACCESS_ERROR_ROW_DOESNT_EXIST', 'Нет записи с таким id в этом разделе');
 
 define('I_YES', 'Да');
 define('I_NO', 'Нет');

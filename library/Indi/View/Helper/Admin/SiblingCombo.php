@@ -18,13 +18,13 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
 
     public function getField($name, $tableName) {
         $pseudoFieldR = Indi::model('Field')->createRow();
-        $pseudoFieldR->entityId = $this->view->trail->getItem()->section->entityId;
+        $pseudoFieldR->entityId = Indi::trail()->section->entityId;
         $pseudoFieldR->alias = $name;
         $pseudoFieldR->storeRelationAbility = 'one';
         $pseudoFieldR->elementId = 23;
         $pseudoFieldR->columnTypeId = 3;
-        $pseudoFieldR->defaultValue = $this->view->trail->getItem()->row->id;
-        $pseudoFieldR->relation = $this->view->trail->getItem()->section->entityId;
+        $pseudoFieldR->defaultValue = Indi::trail()->row->id;
+        $pseudoFieldR->relation = Indi::trail()->section->entityId;
         $pseudoFieldR->dependency = 'u';
         $pseudoFieldR->satellite = 0;
         $pseudoFieldR->filter = $this->view->getScope('WHERE');
@@ -39,7 +39,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->storeRelationAbility = 'one';
         $pseudoFieldR->elementId = 23;
         $pseudoFieldR->columnTypeId = 3;
-        //$pseudoFieldR->defaultValue = $this->view->trail->getItem()->row->id;
+        //$pseudoFieldR->defaultValue = Indi::trail()->row->id;
         $pseudoFieldR->relation = $entityId;
         $pseudoFieldR->dependency = 'u';
         $pseudoFieldR->satellite = 0;
@@ -48,7 +48,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
     }
 
     public function getRow(){
-        return $this->view->trail->getItem()->row;//Indi::model('Section')->createRow();
+        return Indi::trail()->row;//Indi::model('Section')->createRow();
     }
 
     /**

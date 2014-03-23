@@ -8,6 +8,12 @@ class Section extends Indi_Db_Table {
     protected $_rowClass = 'Section_Row';
 
     /**
+     * Array of fields, which contents will be evaluated with php's eval() function
+     * @var array
+     */
+    protected $_evalFields = array('filter');
+
+    /**
      * Get left menu data cms user
      *
      * @return array

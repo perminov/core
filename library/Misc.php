@@ -104,7 +104,7 @@ class Misc
     }
 
 	public function usubstr($string, $length, $dots = true){
-		if (mb_strlen($string, 'utf-8') > $length && $dots) $dots = '..';
+        $dots = mb_strlen($string, 'utf-8') > $length && $dots ? '..' : '';
 		$string = mb_substr($string, 0, $length, 'utf-8') . $dots;
 		return $string;
 	}

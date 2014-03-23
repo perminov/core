@@ -13,7 +13,7 @@ class Indi_View_Helper_Admin_FormColor extends Indi_View_Helper_Abstract
 		if ($this->view->row->id) {
 	        $value = $value ? $value : $this->view->row->$name;
 		} else {
-			$value = $this->view->trail->getItem()->getFieldByAlias($name)->defaultValue;
+			$value = Indi::trail()->model->fields($name)->defaultValue;
 		}
         
         $xhtml  = '<div style="position: relative; z-index: ' . (200 - $zIndex) . '">';

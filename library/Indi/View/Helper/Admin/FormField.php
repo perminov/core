@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
 {
     public function formField($field)
     {
-		if (!in_array($field->alias, $this->view->trail->getItem()->disabledFields['form'])) {
+		if (!in_array($field->alias, Indi::trail()->disabledFields['form'])) {
 			$elementRow = $field->foreign('elementId');
 			$params = $field->getParams();
             if (isset($this->view->row->{$field->alias . 'Wide'})) {
@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
 				$xhtml .= '</td>';
 				$xhtml .= '</tr>';
 			} else {
-                if (in_array($field->alias, $this->view->trail->getItem()->disabledFields['save'])) {
+                if (in_array($field->alias, Indi::trail()->disabledFields['save'])) {
                     $disabled = ' i-tr-disabled"';
                 } else {
                     $disabled = '';

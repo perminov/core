@@ -11,7 +11,7 @@ class Admin_FieldsController extends Indi_Controller_Admin {
 		$data = $this->rowset->toArray();
 
 		// get info about columns that will be presented in grid
-		$gridFields = $this->trail->getItem()->gridFields->toArray();
+		$gridFields = Indi::trail()->gridFields->toArray();
 		$gridFieldsAliases = array('id'); for ($i = 0; $i < count ($gridFields); $i++) $gridFieldsAliases[] = $gridFields[$i]['alias'];
 		
 		// get info about all columns that are exists at the present moment in $data

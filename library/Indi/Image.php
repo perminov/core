@@ -22,7 +22,7 @@ abstract class Indi_Image
     {
 		// entity and identfier by default set up as values, got from
         // current controller
-        $entity = $entity ? $entity : $this->section->foreign('entityId')->table;
+        $entity = $entity ? $entity : Indi::trail()->model->name();
         $id = $id ? $id : $this->identifier;
         
         // get upload path from config
@@ -67,7 +67,7 @@ abstract class Indi_Image
     {
         // entity and identfier by default set up as values, got from
         // current controller
-        $entity = $entity ? $entity : $this->section->foreign('entityId')->table;
+        $entity = $entity ? $entity : Indi::trail()->model->name();
         $id = $id ? $id : $this->identifier;
 
         // get upload path from config
@@ -129,7 +129,7 @@ abstract class Indi_Image
                     $dst = $absolute . $id . (!in_array($name, array('0','1')) ? '_' . $name : '') . '.' . strtolower($info['extension']);
 					
 			        if(!move_uploaded_file($tmp, $dst)) copy($tmp, $dst);
-					$entityId = $this->trail ? $this->trail->getItem()->fields[0]->entityId : $this->section->entityId;
+					$entityId = Indi::trail(true) ? Indi::trail()->fields[0]->entityId : Indi::trail()->section->entityId;
 					$entityId = Indi::model('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
 					$copies = Indi::model('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
 					for ($i = 0; $i < count($copies); $i++) {
@@ -181,7 +181,7 @@ abstract class Indi_Image
     {
         // entity and identfier by default set up as values, got from
         // current controller
-        $entity = $entity ? $entity : $this->section->foreignRows->entityId->table;
+        $entity = $entity ? $entity : Indi::trail()->model->name();
         $id = $id ? $id : $this->identifier;
 
         // get upload path from config
@@ -421,7 +421,7 @@ abstract class Indi_Image
     {
         // entity and identfier by default set up as values, got from
         // current controller
-        $entity = $entity ? $entity : $this->section->foreignRows->entityId->class;
+        $entity = $entity ? $entity : Indi::trail()->model->name();
         $id = $id ? $id : $this->identifier;
         
         // get upload path from config

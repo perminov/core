@@ -8,13 +8,13 @@ class Indi_View_Helper_Admin_RenderContent extends Indi_View_Helper_Abstract{
     public function renderContent()
     {
         // If we are in a section
-        if ($this->view->trail->getItem()) {
+        if (Indi::trail()) {
 
             // Construct filename of the template, which should be rendered by default
-            $script = $this->view->trail->getItem()->section->alias . '/'. $this->view->trail->getItem()->action->alias . '.php';
+            $script = Indi::trail()->section->alias . '/'. Indi::trail()->action->alias . '.php';
 
             // Construct filename of the helper, which should be rendered if template file is not exist
-            $helper = 'render' . ucfirst($this->view->trail->getItem()->action->alias);
+            $helper = 'render' . ucfirst(Indi::trail()->action->alias);
 
             // If template with such filename exists, render the template
             if ($this->view->exists($script))

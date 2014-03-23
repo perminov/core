@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
 {
     public function formHeader($title = null)
     {
-        $title = $title ? $title : $this->view->entity->title;
+        $title = $title ? $title : Indi::trail()->section->foreign('entityId')->title;
 		ob_start();?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -45,13 +45,13 @@ Indi = $.extend(Indi, {
     com: '<?=COM ? '' : '/admin'?>',
     pre: '<?=STD?><?=COM ? '' : '/admin'?>',
     lang: <?=Indi::constants('user', true)?>,
-    trail: <?=json_encode($this->view->trail->toArray())?>,
+    trail: <?=json_encode(Indi::trail(true)->toArray())?>,
     scope: <?=json_encode($this->view->getScope())?>
 });
 top.Indi.scope = Indi.scope;
 </script>
 <?=$this->view->siblingCombo()?>
-<form class="i-form" action="<?=PRE?>/<?=$this->view->section->alias?>/save<?=$this->view->row->id ? '/id/' . $this->view->row->id : ''?>/" name="<?=$this->view->entity->table?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
+<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=$this->view->row->id ? '/id/' . $this->view->row->id : ''?>/" name="<?=Indi::trail()->model->name()?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
     <table cellspacing="1" border="0" width="100%" class="i-form-table">
         <tr class="i-form-subheader"><td colspan="2"><?=$title?></td></tr>
         <col width="50%"/><col width="50%"/>

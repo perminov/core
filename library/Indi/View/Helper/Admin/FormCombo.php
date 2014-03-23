@@ -41,7 +41,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @return Field_Row
      */
     public function getField($name) {
-        return $this->view->trail->getItem()->getFieldByAlias($name);
+        return Indi::trail()->model->fields($name);
     }
 
     /**

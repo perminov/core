@@ -33,9 +33,9 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->action = $this->action;
 		
 		// Трейл
-		$this->trail = new Indi_Trail_Frontend($this->section->alias, $this->identifier, $this->action->alias, null, $this->params);
+		Indi::trail(true) = new Indi_Trail_Frontend($this->section->alias, $this->identifier, $this->action->alias, null, $this->params);
 
-		$this->view->trail = $this->trail;
+		Indi::trail(true) = Indi::trail(true);
 		// Определяем текущее id записи из таблицы fsection2faction, ищем его в базе чтобы по нему вытащить
 		// данные о том, какие  зависимые количества, зависимые множества и записи - соответствующие внешним
 		// ключам, нужно автоматически выташить
@@ -62,7 +62,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$this->view->indexParams = $_SESSION['indexParams'][$this->section->alias];
 		if ($this->section2action->imposition) $this->view->imposition = $this->section2action->imposition;
 		$this->view->rowset = $this->rowset;
-		if($this->action->alias != 'index' && $this->identifier) $this->view->row = $this->trail->getItem()->row;
+		if($this->action->alias != 'index' && $this->identifier) $this->view->row = Indi::trail()->row;
 		$this->view->params = $this->params;
 		$this->view->request = $this->getRequest();
 		$this->view->staticPages = Indi::model('Staticpage')->fetchAll('`toggle` = "y"', 'title')->toArray();
@@ -197,7 +197,7 @@ class Indi_Controller_Front extends Indi_Controller{
 			
 		// if column store foreign keys that are pointing to variable entties
 		} else if ($satellite){
-			$rowset = $this->trail->getItem()->model->fetchAll('1 ' . ($condition ? ' AND ' . $condition : ''));
+			$rowset = Indi::trail()->model->fetchAll('1 ' . ($condition ? ' AND ' . $condition : ''));
 			$tmp = array();
 			foreach ($rowset as $row) {
 				$tmp[] = array('id' => $row->id, 'title' => $row->foreign($this->post['sort'])->title);
@@ -256,17 +256,17 @@ class Indi_Controller_Front extends Indi_Controller{
 //				if (array_key_exists($index, $this->post['indexWhere'])) $this->post['indexWhere'][$index] = $value;
 			}
 		}
-        if ($this->trail->getItem(1)){
-            if ($this->trail->getItem()->section->parentSectionConnector) {
-                $parentSectionConnectorAlias = $this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
-                $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->$parentSectionConnectorAlias .'"';
+        if (Indi::trail(1)){
+            if (Indi::trail()->section->parentSectionConnector) {
+                $parentSectionConnectorAlias = Indi::trail()->section->foreign('parentSectionConnector')->alias;
+                $this->post['indexWhere'][1] = '`' . $parentSectionConnectorAlias . '` = "' . Indi::trail(1)->row->$parentSectionConnectorAlias .'"';
             } else {
-                $alias = $this->trail->getItem(1)->model->name() . 'Id';
-                $fieldR = Indi::model('Field')->fetchRow('`entityId` = "' . $this->trail->getItem()->section->entityId . '" AND `alias` = "' . $alias . '"');
+                $alias = Indi::trail(1)->model->name() . 'Id';
+                $fieldR = Indi::model('Field')->fetchRow('`entityId` = "' . Indi::trail()->section->entityId . '" AND `alias` = "' . $alias . '"');
                 if ($fieldR->storeRelationAbility == 'one') {
-                    $this->post['indexWhere'][1] = '`' . $alias . '` = "' . $this->trail->getItem(1)->row->id .'"';
+                    $this->post['indexWhere'][1] = '`' . $alias . '` = "' . Indi::trail(1)->row->id .'"';
                 } else {
-                    $this->post['indexWhere'][1] = 'FIND_IN_SET("' . $this->trail->getItem(1)->row->id .'", `' . $alias . '`)';
+                    $this->post['indexWhere'][1] = 'FIND_IN_SET("' . Indi::trail(1)->row->id .'", `' . $alias . '`)';
                 }
             }
         }
@@ -333,7 +333,7 @@ class Indi_Controller_Front extends Indi_Controller{
 						$where[] = '`' . str_replace('To', '', $filterParam) . '` <= "' . $requiredValue . '"';
 					} else {
 						$findInSet = false;
-						foreach ($this->trail->getItem()->fields as $field) if ($field['alias'] == $filterParam && $field['storeRelationAbility'] == 'many') $findInSet = true;
+						foreach (Indi::trail()->fields as $field) if ($field['alias'] == $filterParam && $field['storeRelationAbility'] == 'many') $findInSet = true;
 						if ($findInSet) {
 							$idsToFind = explode(',', $requiredValue);
 							$find = array();

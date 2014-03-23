@@ -630,17 +630,17 @@ class Indi_View
      */
     public function getScope($param = null, $sub = null, $section = null, $hash = null) {
         // Get the master hash
-        $primaryHash = $hash ? $hash : $this->trail->getItem()->section->primaryHash;
+        $primaryHash = $hash ? $hash : Indi::trail()->section->primaryHash;
 
         // Get scope
-        $scope = $_SESSION['indi']['admin'][$section ? $section : $this->trail->getItem()->section->alias][$primaryHash];
+        $scope = $_SESSION['indi']['admin'][$section ? $section : Indi::trail()->section->alias][$primaryHash];
 
         // If no $param specified, all params will be returned
         if (!$param) {
 
             // Setup absolute row index
-            if ($this->trail && $this->trail->getItem()->section->rowIndex)
-                $scope['aix'] = $this->trail->getItem()->section->rowIndex;
+            if (Indi::trail(true) && Indi::trail()->section->rowIndex)
+                $scope['aix'] = Indi::trail()->section->rowIndex;
 
             return $scope;
         }
