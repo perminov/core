@@ -53,6 +53,7 @@ var Indi = (function (indi) {
 
                 // Then we check if title contains a date or datetime, and if so we check if there was format
                 // params set and in that case we convert date or datetime for it to be in defined format
+                if (item.fields)
                 for (var f = 0; f < item.fields.length; f++) {
                     if (item.fields[f].alias == 'title' && [12, 17].indexOf(parseInt(item.fields[f].elementId))) {
                         if (item.fields[f].params) {
@@ -91,7 +92,7 @@ var Indi = (function (indi) {
 
                 // If source of a scope of additional info is provided
                 if (hero) {
-
+                    console.log(hero.section);
                     // We determine an action
                     href += (hero.row && hero.section.alias == section) ? 'form' : 'index';
 
@@ -267,8 +268,14 @@ var Indi = (function (indi) {
 
                 // Setup a 'href' property for each store's item's section object, as a shortcut, which will be used
                 // in configuring urls for all system interface components, that are used for navigation
-                for (var i = 0; i < this.store.length; i++)
-                    this.store[i].section.href = indi.pre + '/' + this.store[i].section.alias + '/'
+                for (var i = 0; i < this.store.length; i++) {
+                    this.store[i].section.href = indi.pre + '/' + this.store[i].section.alias + '/';
+                    if (this.store[i].filters) {
+                        for (var j = 0; j < this.store[i].filters.length; j++) {
+                            this.store[i].filters[j] = new indi.proto.row.filter(this.store[i].filters[j]);
+                        }
+                    }
+                }
 
                 // Run
                 indi.action = indi.action || {};
@@ -286,6 +293,19 @@ var Indi = (function (indi) {
 
         indi.trail = new indi.proto.trail(indi.trail);
         top.Indi.trail.store = eval(JSON.stringify(indi.trail.store));
+
+        indi.proto.row = indi.proto.row || {};
+        indi.proto.row.filter = function(row) {
+            for (var i in row) this[i] = row[i];
+            this.foreign = function(key) {
+                if (key == 'fieldId')
+                    for (var i = 0; i < indi.trail.item().fields.length; i++)
+                        if (indi.trail.item().fields[i].id == this.fieldId)
+                            return indi.trail.item().fields[i];
+
+            }
+        }
+
     };
 
     /**

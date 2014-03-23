@@ -12,6 +12,11 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
         return $this;
     }
 
+    /**
+     * Setup a usage-friendly data about params for fields within current rowset, and afer that unset temporary data
+     *
+     * @return Field_Rowset_Base
+     */
     public function params() {
 
         // Foreach row within current rowset
@@ -29,6 +34,15 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
                         ? $override[$possible->id]
                         : $possible->defaultValue;
         }
+
+        // After params was set, mean was set as key-value pairs, we do not need 'param' nested data, nested to
+        // current rowset, and 'possibleElementParam' nested data, nested to foreign element rows, so we unset it
+        //unset($this->_nested['param']);
+        $this->nested('param', 'unset');
+        foreach ($this->_foreign['elementId'] as $fieldId => $elementR)
+            $this->_foreign['elementId'][$fieldId]->nested('possibleElementParam', 'unset');
+
+        // Return rowset itself
         return $this;
     }
 }

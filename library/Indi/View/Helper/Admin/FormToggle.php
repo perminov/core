@@ -6,9 +6,9 @@ class Indi_View_Helper_Admin_FormToggle extends Indi_View_Helper_Abstract
 		if (isset($this->view->row->$name)){
 			$value = $this->view->row->$name;
 			if(empty($this->view->row->id)) {
-				$value = $this->view->trail->getItem()->getFieldByAlias($name)->defaultValue;
+				$value = Indi::trail()->model->fields($name)->defaultValue;
 			}
-			$field = $this->view->trail->getItem()->getFieldByAlias($name);
+			$field = Indi::trail()->model->fields($name);
 			if ($field->relation == 6) {
 				$enumset = Indi::model('Enumset');
 				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', 'title')->toArray();

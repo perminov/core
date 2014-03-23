@@ -8,14 +8,18 @@ class Indi_Trail_Admin{
     public static $items = array();
 
     /**
+     * Indi_Controller_Admin object, by reference
+     *
+     * @var array
+     */
+    public static $controller = null;
+
+    /**
      * Constructor
      *
      * @param array $routeA Array of section ids, starting from current section and up to the top
      */
     public function __construct($routeA) {
-
-        // Performance detection
-        $q = Indi_Db::$queryCount; mt();
 
         // Get all sections, starting from current and up to the most top
         $sectionRs = Indi::model('Section')->fetchAll(
@@ -103,40 +107,82 @@ class Indi_Trail_Admin{
             $_SESSION['indi']['admin']['trail']['parentId'][self::$items[0]->section->sectionId] = Indi::uri('id');
         }
 
-        // Setup row for each trail item
-        for ($i = 0; $i < count(self::$items); $i++)
-            self::$items[$i]->row($i);
-
         // Reverse items
         self::$items = array_reverse(self::$items);
     }
 
-    public function item($stepsUp = 0){
+    /**
+     * Performs the last set auth checks, or, if no errors met - setup a row for each item within trail
+     *
+     * @param Indi_Controller_Admin $controller
+     */
+    public function authLevel3(Indi_Controller_Admin &$controller) {
+
+        // Setup controller
+        self::$controller = &$controller;
+
+        // If user is trying to create row, despite on it's restricted - raise up an error
+        if ((Indi::uri('action') == 'form' || Indi::uri('action') == 'save') &&
+            !Indi::uri('id') && $this->item()->section->disableAdd) {
+            $error = I_ACCESS_ERROR_ROW_ADDING_DISABLED;
+        }
+
+        // Setup row for each trail item, or setup an access error
+        else
+            for ($i = 0; $i < count(self::$items) - 1; $i++)
+                if ($error = Indi::trail($i)->row($i))
+                    break;
+
+        // Flush an error in json format, if error was met
+        if ($error) die(json_encode(array('error' => $error)));
+    }
+
+    /**
+     * Get trail item
+     *
+     * @param int $stepsUp
+     * @return mixed
+     */
+    public function item($stepsUp = 0) {
         return self::$items[count(self::$items) - 1 - $stepsUp];
     }
 
+    /**
+     * Set scope hashes for each item within trail, starting from item, related to current section, and up to the top
+     *
+     * @param $hash
+     * @param $aix
+     * @param $index
+     */
     public function setItemScopeHashes($hash, $aix, $index) {
         $i = -1 + ($index ? 1 : 0);
         do {
             $i++;
-            $this->items[count($this->items) - 1 - $i]->section->primaryHash = $hash;
-            $this->items[count($this->items) - 1 - $i]->section->rowIndex = $aix;
+            self::$items[count(self::$items) - 1 - $i]->section->primaryHash = $hash;
+            self::$items[count(self::$items) - 1 - $i]->section->rowIndex = $aix;
         } while (($hash = $_SESSION
             ['indi']
             ['admin']
-            [$this->items[count($this->items) - 1 - $i]->section->alias]
-            [$this->items[count($this->items) - 1 - $i]->section->primaryHash]
+            [self::$items[count(self::$items) - 1 - $i]->section->alias]
+            [self::$items[count(self::$items) - 1 - $i]->section->primaryHash]
             ['upperHash'])
             &&
             (($aix = $_SESSION
             ['indi']
             ['admin']
-            [$this->items[count($this->items) - 1 - $i]->section->alias]
-            [$this->items[count($this->items) - 1 - $i]->section->primaryHash]
+            [self::$items[count(self::$items) - 1 - $i]->section->alias]
+            [self::$items[count(self::$items) - 1 - $i]->section->primaryHash]
             ['upperAix']) || true)
         );
     }
 
+    /**
+     * Build and return a string representation of trail, e.g bread crumbs
+     * Currently used in excel export
+     *
+     * @param bool $imploded
+     * @return array|string
+     */
     public function toString($imploded = true) {
 
          // Declare crumbs array and push the first item - section group
@@ -182,6 +228,23 @@ class Indi_Trail_Admin{
             }
         }
 
+        // Return bread crumbs as ' » '-separated string, or array, depending on $imploded argument
         return $imploded ? implode(' » ', $crumbA) : $crumbA;
+    }
+
+    /**
+     * Get an array version of trail. Method is used to pass trail data to javascript as json
+     *
+     * @uses Indi_Trail_Item::toArray()
+     * @return array
+     */
+    public function toArray()
+    {
+        $array = array();
+        foreach (self::$items as $item) {
+            $array[] = $item->toArray();
+        }
+        end(self::$items);
+        return $array;
     }
 }

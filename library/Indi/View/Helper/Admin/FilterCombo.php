@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
         // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
         // there dependent combo can get that value.
-        if (!$this->view->filtersSharedRow) $this->view->filtersSharedRow = $this->view->trail->getItem()->model->createRow();
+        if (!$this->view->filtersSharedRow) $this->view->filtersSharedRow = Indi::trail()->model->createRow();
 
         $this->filter = $filter;
         $this->where = $this->filter->filter;
@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
 
     public function noSatellite() {
         if ($satelliteFieldId = $this->getField()->satellite) {
-            $filters = clone $this->view->trail->getItem()->filters;
+            $filters = clone Indi::trail()->filters;
             $availableFilterA = $filters->toArray();
             foreach ($availableFilterA as $availableFilterI)
                 if ($availableFilterI['fieldId'] == $satelliteFieldId)
@@ -110,7 +110,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      */
     public function formComboSingle(){
         ob_start();
-        ?><div style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>" class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single x-form-text" id="i-section-<?=$this->view->trail->getItem()->section->alias?>-action-index-filter-<?=$this->name?>-combo"><?
+        ?><div style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>" class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single x-form-text" id="i-section-<?=Indi::trail()->section->alias?>-action-index-filter-<?=$this->name?>-combo"><?
             ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
             ?><div class="i-combo-single"><?
                 $this->selected = $this->detectColor($this->selected, true); echo $this->selected['box'];
@@ -131,7 +131,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      */
     public function formComboMultiple() {
         ob_start();
-        ?><div style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="i-section-<?=$this->view->trail->getItem()->section->alias?>-action-index-filter-<?=$this->name?>-combo"><?
+        ?><div style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;" class="i-combo i-combo-<?=$this->type?> x-form-text" id="i-section-<?=Indi::trail()->section->alias?>-action-index-filter-<?=$this->name?>-combo"><?
             ?><img class="i-combo-trigger" id="<?=$this->name?>-trigger" src="/i/admin/trigger-system.png"/><?
             ?><div class="i-combo-multiple" style="width: 200% !important;"><?
                 foreach($this->comboDataRs->selected as $selectedR) {

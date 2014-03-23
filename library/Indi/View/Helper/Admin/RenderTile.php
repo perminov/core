@@ -4,9 +4,9 @@ class Indi_View_Helper_Admin_RenderTile extends Indi_View_Helper_Abstract
     public function renderTile()
     {
 		ob_start();
-		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
-		$actions    = $this->view->trail->getItem()->actions->toArray();
-		$section = $this->view->trail->getItem()->section;
+		$gridFields = Indi::trail()->gridFields->toArray();
+		$actions    = Indi::trail()->actions->toArray();
+		$section = Indi::trail()->section;
 		$canadd = false; foreach ($actions as $action) if ($action['alias'] == 'save') {$canadd = true; break;}
 		if (!count($gridFields)) {
 			echo 'Отсутствуют сведения о структуре ExtJs таблицы для этого раздела.';
@@ -58,7 +58,7 @@ class Indi_View_Helper_Admin_RenderTile extends Indi_View_Helper_Abstract
 			$actions = implode(',', $a);
 
 			// set up dropdown to navigate through related different types of related items
-			$sections = $this->view->trail->getItem()->sections->toArray();
+			$sections = Indi::trail()->sections->toArray();
 			if (count($sections)) {
 				$sectionsDropdown = "'->', 'Subsections:  ', '";
 				$sectionsDropdown .= '<select name="sectionId" onchange=redirect(this.value)>';

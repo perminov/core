@@ -9,6 +9,75 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
     private $_routeA = array();
 
     /**
+     * Init all general cms features
+     */
+    public function preDispatch() {
+
+        // Set current language
+        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('view')->lang . '.php');
+        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('view')->lang . '.php');
+
+        // Perform authentication
+        $this->auth();
+        d(mt() . ' ' . Indi_Db::$queryCount);
+        die();
+        // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
+        if (Indi::trail(true) && Indi::trail()->model) {
+
+            // If action is 'index'
+            if (Indi::uri('action') == 'index') {
+
+                // Get the primary WHERE clause
+                $primaryWHERE = $this->primaryWHERE();
+
+                // Set info (about primary hash and row index), related to parent section, if these params are
+                // passed within the uri
+                $this->setScopeUpper($primaryWHERE);
+
+                // If a rowset should be fetched
+                if (Indi::uri()->json || Indi::uri()->excel) {
+
+                    // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
+                    $finalWHERE = $this->finalWHERE($primaryWHERE);
+
+                    // Get final ORDER clause, built regarding column name and sorting direction
+                    $finalORDER = $this->finalORDER($finalWHERE, $this->get['sort']);
+
+                    // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
+                    // constructed with usage of $this->get('limit') and $this->get('page') params
+                    $this->rowset = Indi::trail()->model->{
+                    'fetch'. (Indi::trail()->model->treeColumn() ? 'Tree' : 'All')
+                    }($finalWHERE, $finalORDER,
+                        Indi::uri()->excel ? null : (int) Indi::get('limit'),
+                        Indi::uri()->excel ? null : (int) Indi::get('page'));
+
+                    // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
+                    // able to restore the state of panel, that is representing the rowset at cms interface.
+                    // State of the panel includes: filtering and search params, sorting params
+                    $this->setScope($primaryWHERE, $this->get['search'], Indi::uri()->keyword, $this->get['sort'],
+                        $this->get['page'], $this->rowset->found(), $finalWHERE, $finalORDER);
+                }
+
+            // Else if where is some another action
+            } else {
+
+                // Setup a primary hash and row index for current trail item
+                Indi::trail()->section->primaryHash = Indi::uri()->ph;
+                Indi::trail()->section->rowIndex = Indi::uri()->aix;
+
+                // Setup current row
+                $this->row = &Indi::trail()->row;
+
+                // If we are here for just check of row availability, do it
+                if (Indi::uri()->check) die($this->checkRowIsInScope());
+            }
+
+            // Set scope hashes for each item within trail, starting from item, related to current section, and up to the top
+            Indi::trail(true)->setItemScopeHashes(Indi::uri()->ph, Indi::uri()->aix, Indi::uri()->action == 'index');
+        }
+    }
+
+    /**
      * Provide default downAction (Move down) for Admin Sections controllers
      *
      * @param string $where
@@ -35,15 +104,15 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      */
     public function move($direction, $where = null) {
         // Get the scope of rows to move within
-        if ($this->trail->getItem()->section->parentSectionConnector) {
-            $within = $this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
-        } else if ($this->trail->getItem(1)->row){
-            $within = $this->trail->getItem(1)->section->foreign('entityId')->table . 'Id';
+        if (Indi::trail(1)->section->parentSectionConnector) {
+            $within = Indi::trail(1)->section->foreign('parentSectionConnector')->alias;
+        } else if (Indi::trail(1)->row){
+            $within = Indi::trail(1)->section->foreign('entityId')->table . 'Id';
         }
         // Move
-        $this->row->move($direction, $within, $this->trail->getItem()->section->filter);
+        $this->row->move($direction, $within, Indi::trail(1)->section->filter);
         $this->postMove();
-        $this->redirectToIndex();
+        $this->redirect();
     }
 
     /**
@@ -54,7 +123,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $this->preDelete();
         $this->row->delete();
         $this->postDelete();
-        if ($redirect) $this->redirectToIndex();
+        if ($redirect) $this->redirect();
     }
 
     /**
@@ -62,30 +131,28 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      *
      */
     public function formAction() {
-        if ($this->params['combo']) {
+        if (Indi::uri()->combo) {
 
             // Get field
-            if ($this->params['sibling']) {
+            if (Indi::uri()->sibling) {
                 $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                     $this->post['field'],
-                    $this->trail->getItem()->section->entityId,
-                    $this->view->getScope('WHERE', null, $this->params['section'], $this->params['ph'])
+                    Indi::trail(1)->section->entityId,
+                    $this->view->getScope('WHERE', null, Indi::uri()->section, Indi::uri()->ph)
                 );
-                $this->row->{$this->post['field']} = $this->params['id'];
-
-                $this->view->trail = $this->trail;
+                $this->row->{$this->post['field']} = Indi::uri()->id;
 
                 $order = $this->view->getScope('ORDER');
                 $dir = array_pop(explode(' ', $order));
                 $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
-                if (preg_match('/\(/', $order)) $offset = $this->params['aix'] - 1;
+                if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
             } else {
-                $field = $this->trail->getItem()->getFieldByAlias($this->post['field']);
+                $field = Indi::trail(1)->getFieldByAlias($this->post['field']);
             }
 
-            if ($this->params['filter']) {
-                foreach($this->trail->getItem()->filters as $filterR) {
+            if (Indi::uri()->filter) {
+                foreach(Indi::trail(1)->filters as $filterR) {
                     if ($filterR->fieldId == $field->id) {
                         $where = $filterR->filter;
                         break;
@@ -164,16 +231,16 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
             // Output
             die(json_encode($options));
-        } else if (is_array($this->trail->getItem()->disabledFields['save']) &&
-            count($this->trail->getItem()->disabledFields['save'])) {
+        } else if (is_array(Indi::trail(1)->disabledFields['save']) &&
+            count(Indi::trail(1)->disabledFields['save'])) {
 
             $fieldIdA = array();
-            foreach ($this->trail->getItem()->fields as $fieldR)
-                if (in_array($fieldR->alias, $this->trail->getItem()->disabledFields['save']))
+            foreach (Indi::trail(1)->fields as $fieldR)
+                if (in_array($fieldR->alias, Indi::trail(1)->disabledFields['save']))
                     $fieldIdA[$fieldR->id] = $fieldR->alias;
 
             $disabledFieldRs = Indi::model('DisabledField')->fetchAll(array(
-                '`sectionId` = "' . $this->trail->getItem()->section->id . '"',
+                '`sectionId` = "' . Indi::trail(1)->section->id . '"',
                 '`fieldId` IN (' . implode(',', array_keys($fieldIdA)) . ')'
             ));
             foreach ($disabledFieldRs as $disabledFieldR) {
@@ -223,7 +290,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $primaryHash = substr(md5($primary), 0, 10);
 
         // Remember all scope params in $_SESSION under a hash
-        $_SESSION['indi']['admin'][$this->params['section']][$primaryHash] = array(
+        $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash] = array(
             'primary' => $primary,
             'filters' => $filters,
             'keyword' => $keyword,
@@ -233,14 +300,15 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             'WHERE' => $WHERE,
             'ORDER' => $ORDER,
             'hash' => $primaryHash,
-            'upperHash' => $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperHash'],
-            'upperAix' => $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperAix']
+            'upperHash' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperHash'],
+            'upperAix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix']
         );
 
-        //i($_SESSION['indi']['admin'][$this->params['section']]);
+        //i($_SESSION['indi']['admin'][Indi::uri()->section]);
     }
 
     public function setScopeUpper($primary) {
+
         // Get $primary as string
         $primary = count($primary) ? implode(' AND ', $primary) : null;
 
@@ -249,14 +317,14 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
         // Set the hash to be available at the stage then grid (or section's other panel) is rendered, but it's
         // store is not yet loaded
-        $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['hash'] = $primaryHash;
+        $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['hash'] = $primaryHash;
 
         // Remember hash of upper scope same place in $_SESSION where local scope params will be set
-        if ($this->params['ph'])
-            $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperHash'] = $this->params['ph'];
+        if (Indi::uri()->ph)
+            $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperHash'] = Indi::uri()->ph;
 
-        if ($this->params['aix'])
-            $_SESSION['indi']['admin'][$this->params['section']][$primaryHash]['upperAix'] = $this->params['aix'];
+        if (Indi::uri()->aix)
+            $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix'] = Indi::uri()->aix;
     }
 
     /**
@@ -276,16 +344,17 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      * @return array
      */
     public function primaryWHERE() {
+
         // Define an array for WHERE clauses
         $where = array();
 
         // Append a childs-by-parent clause to primaryWHERE stack
-        if ($this->trail->getItem(1)->row && $parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
+        if (Indi::uri('action') == 'index' && Indi::trail(1)->section->sectionId
+            && $parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
 
-        // If a special section's primary filter was defined, we compile it if it contains php expressions
-        // and add it to primary WHERE clauses stack
-        if ($this->trail->getItem()->section->filter) {
-            Indi::$cmpTpl = $this->trail->getItem()->section->filter; eval(Indi::$cmpRun); $where[] = Indi::$cmpOut;
+        // If a special section's primary filter was defined, add it to primary WHERE clauses stack
+        if (strlen(Indi::trail()->section->compiled('filter'))) {
+            $where[] = Indi::trail()->section->compiled('filter');
         }
 
         // Owner control. There can be a situation when some cms users are not stored in 'admin' db table - these users
@@ -296,20 +365,27 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // So we can create a 'Questions' section within cms, and if `question` table will contain `expertId` column
         // (it will contain - we will create it for that purpose) - the only questions, addressed to curently logged-in
         // expert will be available for view and answer.
-        if ($_SESSION['admin']['alternate'] && $this->trail->getItem()->model->fields($_SESSION['admin']['alternate']['alternate'] . 'Id'))
-            $where[] =  '`' . $_SESSION['admin']['alternate'] . 'Id` = "' . $_SESSION['admin']['id'] . '"';
+        if ($alternateWHERE = $this->alternateWHERE()) $where[] =  $alternateWHERE;
 
         // Adjust primary WHERE clauses stack - apply some custom adjustments
         $where = $this->adjustPrimaryWHERE($where);
 
-        // Get a string version of WHERE stack
-        $whereS = count($where) ? implode(' AND ', $where) : null;
+        if (Indi::uri('action') == 'index') {
 
-        // Set a hash
-        $this->trail->items[count($this->trail->items)-1]->section->primaryHash = substr(md5($whereS), 0, 10);
+            // Get a string version of WHERE stack
+            $whereS = count($where) ? implode(' AND ', $where) : null;
+
+            // Set a hash
+            Indi::trail()->section->primaryHash = substr(md5($whereS), 0, 10);
+        }
 
         // Return primary WHERE clauses stack
         return $where;
+    }
+
+    public function alternateWHERE($trailStepsUp = 0) {
+        if ($_SESSION['admin']['alternate'] && Indi::trail($trailStepsUp)->model->fields($_SESSION['admin']['alternate'] . 'Id'))
+            return '`' . $_SESSION['admin']['alternate'] . 'Id` = "' . $_SESSION['admin']['id'] . '"';
     }
 
     /**
@@ -321,23 +397,26 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      * @return string|null
      */
     public function parentWHERE() {
+
         // We check if a non-standard parent connector field name should be used to fetch childs
         // For example, if we have 'Countries' section (displayed rows a fetched from 'country' db table)
         // and 'Cities' section (displayed rows a fetched from 'city' db table) and 'city' table have a column
         // where country identifier of each city is specified, but this column is not named (for some reason)
         // as 'countryId', and we need it to have some another name - so in that cases we use parentSectionConnector
         // logic.
-        if ($this->trail->getItem()->section->parentSectionConnector) {
-            $parentSectionConnectorAlias =$this->trail->getItem()->section->foreign('parentSectionConnector')->alias;
-            $clause = '`' . $parentSectionConnectorAlias . '` = "' . $this->trail->getItem(1)->row->id . '"';
+        $connectorAlias = Indi::trail()->section->parentSectionConnector
+            ? Indi::trail()->section->foreign('parentSectionConnector')->alias
+            : Indi::trail(1)->model->name() . 'Id';
 
-        // Otherwise we use common, most used logic (e.g. SELECT * FROM `city` WHERE `countryId` = "<country id>")
-        } else {
-            $clause = '`' . $this->trail->getItem(1)->section->foreign('entityId')->table . 'Id` = "' . $this->trail->getItem(1)->row->id . '"';
-        }
+        // Get the connector value
+        $connectorValue = Indi::uri('action') == 'index'
+            ? Indi::uri('id')
+            : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id];
 
         // Return clause
-        return $clause;
+        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+            ? 'FIND_IN_SET("' . $connectorValue . '" IN `' . $connectorAlias . '`)'
+            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
 
     /**
@@ -351,8 +430,8 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
      */
     public function keywordWHERE($keyword = '') {
 
-        // If $keyword param is not passed we pick $this->params['keyword'] as $keyword
-        if (strlen($keyword) == 0) $keyword = $this->params['keyword'];
+        // If $keyword param is not passed we pick Indi::uri()->keyword as $keyword
+        if (strlen($keyword) == 0) $keyword = Indi::uri()->keyword;
 
         // If keyword is empty, nothing to do here
         if (strlen($keyword) == 0) return;
@@ -364,7 +443,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $where = array();
 
         // Set up info about column types to be available within each grid field
-        $this->trail->getItem()->gridFields->foreign('columnTypeId');
+        Indi::trail()->gridFields->foreign('columnTypeId');
 
         // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
         // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
@@ -376,7 +455,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         }
 
         // Build WHERE clause for each db table column, that is presented in section's grid
-        foreach ($this->trail->getItem()->gridFields as $fieldR) {
+        foreach (Indi::trail()->gridFields as $fieldR) {
 
             // Check that grid field's alias (same as db tabe column name) is not in exclusions
             if (!in_array($fieldR->alias, $exclude)) {
@@ -472,7 +551,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
 
             // Get the scope
-            $scope = $this->view->getScope(null, null, $this->params['section'], $primaryWHERE);
+            $scope = $this->view->getScope(null, null, Indi::uri()->section, $primaryWHERE);
 
             // Prepare $primaryWHERE
             $primaryWHERE = $scope['primary'] ? array($scope['primary']) : array();
@@ -481,7 +560,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             $this->get['search'] = $scope['filters'];
 
             // Prepare search data for $this->keywordWHERE()
-            $this->params['keyword'] = urlencode($scope['keyword']);
+            Indi::uri()->keyword = urlencode($scope['keyword']);
 
             // Prepare sort params for $this->finalORDER()
             $this->get['sort'] = $scope['order'];
@@ -541,7 +620,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 // this does not matter, as color type of filters does not affect passed filter alias, so it's the same
                 // as field alias and corresponding db table column name
                 $found = null;
-                foreach ($this->trail->getItem()->fields as $fieldR)
+                foreach (Indi::trail()->fields as $fieldR)
                     if ($fieldR->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias))
                         $found = $fieldR;
 
@@ -662,7 +741,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             }
 //            i($where);
         }
-        if ($this->params['excel']) $this->excelA = $excelA;
+        if (Indi::uri()->excel) $this->excelA = $excelA;
         return $where;
     }
 
@@ -686,7 +765,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         if (!$column) return null;
 
         // Find a field, that column is linked to
-        foreach ($this->trail->getItem()->gridFields as $fieldR) if ($fieldR->alias == $column) break;
+        foreach (Indi::trail()->gridFields as $fieldR) if ($fieldR->alias == $column) break;
 
         // If there is no grid field with such a name, return null
         if ($fieldR->alias !== $column) return null;
@@ -744,7 +823,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                     // Get the possible foreign keys
                     $setA = $this->db->query('
                         SELECT DISTINCT `' . $column . '` AS `id`
-                        FROM `' . $this->trail->getItem()->model->name() . '`
+                        FROM `' . Indi::trail()->model->name() . '`
                         ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
                     ')->fetchAll(PDO::FETCH_COLUMN);
 
@@ -768,23 +847,23 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
     public function checkRowIsInScope(){
         // Get scope params
-        $scope = $this->view->getScope(null, null, $this->params['section'], $this->params['ph']);
+        $scope = $this->view->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
 
-        if ($this->params['aix'] && !$this->params['id']) {
-            $R = $this->trail->getItem()->model->fetchRow($scope['WHERE'], $scope['ORDER'], $this->params['aix'] - 1);
+        if (Indi::uri()->aix && !Indi::uri()->id) {
+            $R = Indi::trail()->model->fetchRow($scope['WHERE'], $scope['ORDER'], Indi::uri()->aix - 1);
             return $R ? $R->id : null;
 
-        } else if ($this->params['id']){
+        } else if (Indi::uri()->id){
             // Prepare WHERE clause
-            $where  = '`id` = "' . $this->params['id'] . '"';
+            $where  = '`id` = "' . Indi::uri()->id . '"';
             if ($scope['WHERE'])  $where .= ' AND ' . $scope['WHERE'];
 
             // Check that row exists
-            $R = $this->trail->getItem()->model->fetchRow($where);
+            $R = Indi::trail()->model->fetchRow($where);
 
             // Get the offest, if needed
             if ($this->post['forceOffsetDetection'] && $R) {
-                return $this->trail->getItem()->model->detectOffset($scope['WHERE'], $scope['ORDER'], $R->id);
+                return Indi::trail()->model->detectOffset($scope['WHERE'], $scope['ORDER'], $R->id);
 
             // Or just return the id, as an ensurement, that such row exists
             } else {
@@ -815,7 +894,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         // Set properties
         $objPHPExcel->getProperties()->setCreator($_SESSION['admin']['title']);
         $objPHPExcel->getProperties()->setLastModifiedBy($_SESSION['admin']['title']);
-        $objPHPExcel->getProperties()->setTitle($this->trail->getItem()->section->title);
+        $objPHPExcel->getProperties()->setTitle(Indi::trail()->section->title);
 
         // Set active sheet by index
         $objPHPExcel->setActiveSheetIndex(0);
@@ -831,7 +910,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             1 /* bread crumbs row*/ +
             1 /* row with total number of results found */ +
             (is_array($this->excelA) && count($this->excelA) ? count($this->excelA) + 1 : 0) /* filters count */ +
-            (bool) ($this->params['keyword'] || (is_array($this->excelA) && count($this->excelA) > 1)) +
+            (bool) (Indi::uri()->keyword || (is_array($this->excelA) && count($this->excelA) > 1)) +
             1 /* data header row */+
             count($data);
 
@@ -869,7 +948,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         $objPHPExcel->getActiveSheet()->mergeCells('A1:' . $lastColumnLetter . '1');
 
         // Write bread crumbs, where current spreadsheet was got from
-        $crumbA = $this->trail->toString(false);
+        $crumbA = Indi::trail(true)->toString(false);
 
         // Defined a PHPExcel_RichText object
         $objRichText = new PHPExcel_RichText();
@@ -946,7 +1025,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 if ($excelI['type'] == 'date') {
 
                     // Get the format
-                    foreach ($this->trail->getItem()->fields as $fieldR) {
+                    foreach (Indi::trail()->fields as $fieldR) {
                         if ($fieldR->alias == $alias) {
                             $paramA = $fieldR->getParams();
                             $format = $paramA['display' . ($fieldR->elementId == 12 ? '' : 'Date') . 'Format'];
@@ -1170,7 +1249,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         }
 
         // Append row with keyword, if keyword search was used
-        if ($this->params['keyword']) {
+        if (Indi::uri()->keyword) {
 
             // Setup new rich text object for keyword search usage mention
             $objRichText = new PHPExcel_RichText();
@@ -1186,7 +1265,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
             // Write used keyword
-            $objSelfStyled = $objRichText->createTextRun(urldecode($this->params['keyword']));
+            $objSelfStyled = $objRichText->createTextRun(urldecode(Indi::uri()->keyword));
             $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
             $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
 
@@ -1457,13 +1536,13 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             );
 
         // Rename sheet
-        $objPHPExcel->getActiveSheet()->setTitle($this->trail->getItem()->section->title);
+        $objPHPExcel->getActiveSheet()->setTitle(Indi::trail()->section->title);
 
         // Freeze header
         $objPHPExcel->getActiveSheet()->freezePane('A' . ($dataStartAtRowIndex));
         
         // Output
-        $file = $this->trail->getItem()->section->title . '.xlsx';
+        $file = Indi::trail()->section->title . '.xlsx';
         if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) $file = iconv('utf-8', 'windows-1251', $file);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $file . '"');
@@ -1472,11 +1551,21 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         die();
     }
 
-    protected function _findSigninUserData($username, $password, $place = 'admin', $profileId = null) {
+    /**
+     * Try to find user data in certain place (database table), identified by $place argument
+     *
+     * @param $username
+     * @param $password
+     * @param string $place
+     * @param null $profileId
+     * @param array $level1ToggledSectionIdA
+     * @return array|mixed
+     */
+    protected function _findSigninUserData($username, $password, $place = 'admin', $profileId = null,
+                                           $level1ToggledSectionIdA = array()) {
 
         $profileId = Indi::model($place)->fields('profileId') ? '`a`.`profileId`' : '"' . $profileId . '"';
         $adminToggle = Indi::model($place)->fields('toggle') ? '`a`.`toggle` = "y"' : '1';
-
         return Indi::db()->query('
             SELECT
                 `a`.*,
@@ -1493,16 +1582,44 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 LEFT JOIN `section2action` `sa` ON (
                     FIND_IN_SET(' . $profileId . ', `sa`.`profileIds`)
                     AND `sa`.`actionId` = "1"
+                    AND `sa`.`toggle` = "y"
+                    AND FIND_IN_SET(`sa`.`sectionId`, "' . implode(',', $level1ToggledSectionIdA) . '")
                 )
             WHERE `a`.`email` = "' . $username . '"
-            GROUP BY `sa`.`sectionId`
+            LIMIT 1
         ')->fetch();
     }
 
+    /**
+     * Perform first level of authentication - check that:
+     * 1. User exists
+     * 2. Password is ok
+     * 3. User is not disabled
+     * 4. User have a type, that is not disabled
+     * 5. There is at least one toggled 'On' section at level 1, that user have access to
+     *
+     * @param $username
+     * @param $password
+     * @return array|mixed|string
+     */
     private function _authLevel1($username, $password) {
 
+        // Get array of most top toggled 'On' sections ids
+        $level0ToggledOnSectionIdA = Indi::db()->query('
+            SELECT `id`
+            FROM `section`
+            WHERE `sectionId` = "0" AND `toggle` = "y"
+        ')->fetchAll(PDO::FETCH_COLUMN);
+
+        // Get array of level 1 toggled 'On' sections ids.
+        $level1ToggledOnSectionIdA = Indi::db()->query('
+            SELECT `id`
+            FROM `section`
+            WHERE FIND_IN_SET(`sectionId`, "' . implode(',', $level0ToggledOnSectionIdA) . '") AND `toggle` = "y"
+        ')->fetchAll(PDO::FETCH_COLUMN);
+
         // Try to find user data in primary place - `admin` table
-        $data = $this->_findSigninUserData($username, $password);
+        $data = $this->_findSigninUserData($username, $password, 'admin', null, $level1ToggledOnSectionIdA);
 
         // If not found
         if (!$data) {
@@ -1518,7 +1635,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             // Foreach possible place - try to find
             foreach ($profile2tableA as $profile2tableI)
                 if ($data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
-                    $profile2tableI['profileId']))
+                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA))
                     break;
 
             // If found - assign some additional info to found data
@@ -1547,6 +1664,21 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         return $error ? $error : $data;
     }
 
+    /**
+     * Check is user has access to perform $action action within $section section. Checks include:
+     * 1. Section exists
+     * 2. Section is switched on
+     * 3. Action exists
+     * 4. Action is switched on
+     * 5. Action exists within section
+     * 6. Action is switched in within section
+     * 7. User has access to action within section
+     * 8. Section is a child of a section that is switched on, and all parents up to the top are switched on too
+     *
+     * @param $section
+     * @param $action
+     * @return array|mixed|string
+     */
     private function _authLevel2($section, $action) {
         $data = Indi::db()->query('
             SELECT
@@ -1619,6 +1751,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
         return $error ? $error : $data;
     }
 
+    /**
+     * Perform authentication by 3 levels
+     */
     public function auth() {
 
         // If visitor is a visitor, e.g. he has not signed in yet
@@ -1698,14 +1833,10 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 // If $data is not an array, e.g some error there, output it as json with that error
                 if (!is_array($data)) die($data);
 
-                // Else go further and perform next auth check
-                else $this->_authLevel3();
+                // Else go further and perform last auth check, within Indi_Trail_Admin::__construct()
+                else Indi::trail($this->_routeA)->authLevel3($this);
             }
         }
-    }
-
-    private function _authLevel3() {
-        Indi::trail($this->_routeA);
     }
 
     /**
@@ -1720,7 +1851,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             $this->adjustGridDataRowset();
 
             // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData($this->trail->getItem());
+            $data = $this->rowset->toGridData(Indi::trail());
 
             // Adjust grid data
             $this->adjustGridData($data);
@@ -1749,4 +1880,121 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
     function adjustGridData(&$data) {
 
     }
+
+    /**
+     * Render the output. If $return argument is true, builded output will be returned instead of flushing into the
+     * browser
+     *
+     * @param bool $return
+     * @return mixed|string|void
+     */
+    public function postDispatch($return = false) {
+
+        // If we are in a root of interface, build the general layout
+        if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
+
+            // Setup the left menu
+            $this->view->menu = Section::menu();
+
+            // Setup info about current logged in cms user
+            $this->view->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
+
+            // Render the layout
+            $out = $this->view->render('index.php');
+
+            // Else, if we are doing something in a certain section
+        } else {
+
+            // Setup a row object to be available within view engine
+            if (Indi::trail()->row) $this->view->row = Indi::trail()->row;
+
+            // Render the contents
+            $out = $this->view->renderContent();
+        }
+
+        // Strip '/admin' from $out, if cms-only mode is enabled
+        if (COM) $out = preg_replace('/("|\')\/admin/', '$1', $out);
+
+        // Make a src|href replacements, if project is running in a subfolder of document root
+        if (STD) {
+            $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<form[^>]+)(action)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+        }
+
+        // If $return argument is true, return builded data, or flush it otherwise
+        if ($return) return $out; else die($out);
+    }
+
+    /**
+     * Redirect from non-index action to index action, with taking in attention such things as
+     * 1. Parentness
+     * 2. Primary hash
+     * 3. Row index
+     * Or redirect to custom location, if $location argument is given
+     *
+     * @param string $location
+     */
+    public function redirect($location = ''){
+
+        // If $location argument is empty
+        if (!$location) {
+
+            // Setup parentness
+            if (Indi::trail(1)->row) $id = Indi::trail(1)->row->id;
+
+            // Get scope data
+            if (Indi::uri()->ph) $scope = $_SESSION['indi']['admin'][Indi::uri('section')][Indi::uri()->ph];
+
+            // Build uri location for redirect
+            $location = Indi::trail()->section->href  . '/' .
+                ($id ? 'index/id/' . $id . '/' : ($scope ? 'index/' : '')) .
+                ($scope['upperHash'] ? 'ph/' . $scope['upperHash'] . '/aix/' . $scope['upperAix'] . '/' : '');
+        }
+
+        // Redirect
+        die('<script>window.parent.Indi.load("' . $location . '");</script>');
+    }
+
+    /**
+     * Toggle current row, and redirect back
+     */
+    public function toggleAction() {
+
+        // Toggle
+        Indi::trail()->row->toggle();
+
+        // Redirect
+        $this->redirect();
+    }
+
+    /**
+     * Do custom things before saveAction() call
+     */
+    public function postSave() {
+
+    }
+
+    /**
+     * Do custom things after saveAction() call
+     */
+    public function preSave() {
+
+    }
+
+    /**
+     * Do custom things before deleteAction() call
+     */
+    public function preDelete() {
+
+    }
+
+    /**
+     * Do custom things after deleteAction() call
+     */
+    public function postDelete() {
+
+    }
+
 }

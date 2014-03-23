@@ -283,27 +283,27 @@ class Field_Row extends Indi_Db_Table_Row
         ////////////////////////////
 
         // check if where was a relation, but now there is not, so we should remove an INDEX index
-        $remove = $original['id'] && $this->trail->getItem()->row->storeRelationAbility != 'none' && $this->post['storeRelationAbility'] == 'none';
+        $remove = $original['id'] && Indi::trail()->row->storeRelationAbility != 'none' && $this->post['storeRelationAbility'] == 'none';
         if ($remove) {
-            $indexes = $this->db->query('SHOW INDEXES FROM `' . $this->trail->getItem(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
-            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
+            $indexes = $this->db->query('SHOW INDEXES FROM `' . Indi::trail(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
+            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
         }
         // check if where was no relation, but now it exist, so we should add an INDEX index
-        $appear = (!$this->trail->getItem()->row || $this->trail->getItem()->row->storeRelationAbility == 'none') && $this->post['storeRelationAbility'] != 'none';
+        $appear = (!Indi::trail()->row || Indi::trail()->row->storeRelationAbility == 'none') && $this->post['storeRelationAbility'] != 'none';
         if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeR->type) && $appear) {
-            $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` ADD INDEX (`' . $this->post['alias'] . '`)');
+            $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` ADD INDEX (`' . $this->post['alias'] . '`)');
         }
 
         // check if where was a TEXT column, but now there is not, so we should remove a FULLTEXT index
-        $remove = $this->trail->getItem()->row && $this->trail->getItem()->row->columnTypeId == 4 && $this->post['columnTypeId'] != 4;
+        $remove = Indi::trail()->row && Indi::trail()->row->columnTypeId == 4 && $this->post['columnTypeId'] != 4;
         if ($remove) {
-            $indexes = $this->db->query('SHOW INDEXES FROM `' . $this->trail->getItem(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
-            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
+            $indexes = $this->db->query('SHOW INDEXES FROM `' . Indi::trail(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
+            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
         }
         // check if where was no TEXT column, but now it exist, so we should add a FULLTEXT index
-        $appear = (!$this->trail->getItem()->row || $this->trail->getItem()->row->columnTypeId != 4) && $this->post['columnTypeId'] == 4;
+        $appear = (!Indi::trail()->row || Indi::trail()->row->columnTypeId != 4) && $this->post['columnTypeId'] == 4;
         if (preg_match('/TEXT/', $columnTypeR->type) && $appear) {
-            $this->db->query('ALTER TABLE  `' . $this->trail->getItem(1)->row->table .'` ADD FULLTEXT (`' . $this->post['alias'] . '`)');
+            $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` ADD FULLTEXT (`' . $this->post['alias'] . '`)');
         }
     }
 

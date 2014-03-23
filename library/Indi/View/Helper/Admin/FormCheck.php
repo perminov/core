@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_FormCheck extends Indi_View_Helper_Abstract
 {
     public function formCheck($name = null, $texts = null, $values = null, $value = null, $attribs = null)
     {
-		$field = $this->view->trail->getItem()->getFieldByAlias($name);
+		$field = Indi::trail()->model->fields($name);
 
 		$value = $this->view->row->$name;
 		if (!$this->view->row->id) {

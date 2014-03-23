@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
         $multi = $multi ? $multi : array();
                 
         $data = array();
-		$field = $this->view->trail->getItem()->getFieldByAlias($name);
+		$field = Indi::trail()->model->fields($name);
 		$params = $field->getParams();
 		if ($params['cols']) $cols = $params['cols'];
 		if(!$this->view->row->id) {

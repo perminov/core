@@ -12,7 +12,7 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         $zIndex++;
         
         //by default, value is got from row object's value of $name field
-        $field = $this->view->trail->getItem()->getFieldByAlias($name);
+        $field = Indi::trail()->model->fields($name);
 		if($this->view->row->id) {
 			$value = $value != '0000-00-00 00:00:00' ? $value : $this->view->row->$name;
 		} else {

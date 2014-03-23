@@ -3,7 +3,7 @@ class Indi_Uri {
     public $staticpageAdditionalWHERE = array();
 
 	public function dispatch($params = array()){
-		$this->preDispatch();
+        $this->preDispatch();
 
         $params = Indi::uri();
 
@@ -53,22 +53,24 @@ class Indi_Uri {
         $controllerClassName = ($params['module'] == 'front' ? '' : ucfirst($params['module']) . '_') . ucfirst($params['section']) . 'Controller';
 
         if (!class_exists($controllerClassName)) {
+
 			if ($params['module'] == 'admin') {
 				if ($sectionA) {
 					$extendClass = $sectionA['extends'];
 				} else {
 					$extendClass = 'Project_Controller_Admin';
 				}
-				if (!class_exists($extendClass)) $extendClass = 'Indi_Controller_Admin';
-			} else {
+                if (!class_exists($extendClass)) $extendClass = 'Indi_Controller_Admin';
+            } else {
                 $extendClass = 'Project_Controller_Front';
                 if ($fsectionA[0]['extends']) $extendClass = implode('_', array($extendClass, $fsectionA[0]['extends']));
 				if (!class_exists($extendClass)) $extendClass = preg_replace('/^Project/', 'Indi', $extendClass);
 			}
-			eval('class ' . ucfirst($controllerClassName) . ' extends ' . $extendClass . '{}');
+            eval('class ' . ucfirst($controllerClassName) . ' extends ' . $extendClass . '{}');
 		}
+
         $controller = new $controllerClassName($params);
-        $controller->dispatch();
+                $controller->dispatch();
     }
 
 	public function preDispatch() {

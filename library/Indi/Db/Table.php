@@ -753,7 +753,7 @@ class Indi_Db_Table
         // Build query, fetch row and return it as an Indi_Db_Table_Row object
         if ($data = Indi::db()->query(
             'SELECT * FROM `' . $this->_name . '`' .
-                ($where ? ' WHERE ' . $where : '') .
+                (strlen($where) ? ' WHERE ' . $where : '') .
                 ($order ? ' ORDER BY ' . $order : '') .
                 ($offset ? ' LIMIT ' . $offset . ',1' : '')
         )->fetch()) {

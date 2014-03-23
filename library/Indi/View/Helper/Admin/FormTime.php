@@ -5,7 +5,7 @@ class Indi_View_Helper_Admin_FormTime extends Indi_View_Helper_FormElement
     {
         if ($value === null) {
 			if(!$this->view->row->id) {
-				$value = $this->view->trail->getItem()->getFieldByAlias($name)->defaultValue;
+				$value = Indi::trail()->model->fields($name)->defaultValue;
 			} else {
 	            $value = $this->view->row->$name;
 				if (!$value) $value = '00:00:00';

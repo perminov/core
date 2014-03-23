@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_FormNumber extends Indi_View_Helper_FormElement
 {
     public function formNumber($name, $value = null, $attribs = null)
     {
-		$field = $this->view->trail->getItem()->getFieldByAlias($name);
+		$field = Indi::trail()->model->fields($name);
 		$params = $field->getParams();
         if ($value === null) {
 			if(!$this->view->row->id) {

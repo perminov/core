@@ -5,7 +5,7 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
     {
 		if (isset($this->view->row->$name)){
 			$value = $this->view->row->$name;
-			$field = $this->view->trail->getItem()->getFieldByAlias($name);
+			$field = Indi::trail()->model->fields($name);
 			if(empty($value)) {
 				$value = $field->defaultValue;
                 Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;

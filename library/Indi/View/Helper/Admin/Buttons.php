@@ -4,10 +4,10 @@ class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
     public function buttons( $title = null, $action = null, $post = null)
     {
         // set up parents of 1 and 2 levels up
-        $parent = $this->view->trail->getItem(1);
-        $grandParent = $this->view->trail->getItem(2);
+        $parent = Indi::trail(1);
+        $grandParent = Indi::trail(2);
 
-        $accessableActions = $this->view->trail->getItem()->actions->toArray();
+        $accessableActions = Indi::trail()->actions->toArray();
 
         // if buttons are to be displayeв on list screen
         if (($title != null) && ($action != null) && (is_array($title))&&(is_array($action))) {

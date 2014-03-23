@@ -8,7 +8,7 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
             $value = $this->view->row->$name;
         }
 
-		$field = $this->view->trail->getItem()->getFieldByAlias($name);
+		$field = Indi::trail()->model->fields($name);
 		$params = $field->getParams();
 
         $customParams = array('width','height','bodyClass','style','script','sourceStripper');

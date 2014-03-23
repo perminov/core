@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 
         $xhtml = '';
         
-        $entity = $entity ? $entity : $this->view->entity->table;
+        $entity = $entity ? $entity : Indi::trail()->model->name();
         $id = $id ? $id : $this->view->row->id;
 
         if ($name === null) {
@@ -57,7 +57,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					$uploaded = '<a href="' . $relative . $info['basename'] . '" target="_blank" title="Скачать">Видео</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
 					break;
 				default:
-					$uploaded = '<a href="/admin/auxillary/download/id/'.$id . '/field/' . $this->view->trail->getItem()->getFieldByAlias($name)->id . '/" title="Скачать">Файл</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
+					$uploaded = '<a href="/admin/auxillary/download/id/'.$id . '/field/' . Indi::trail()->model->fields($name)->id . '/" title="Скачать">Файл</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
 					break;
 			}
 

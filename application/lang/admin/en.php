@@ -27,6 +27,8 @@ define('I_ACCESS_ERROR_NO_SUCH_ACTION_IN_SUCH_SECTION', 'This action does not ex
 define('I_ACCESS_ERROR_ACTION_IS_OFF_IN_SUCH_SECTION', 'This action is switched off in this section');
 define('I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE', 'You have no rights on this action in this section');
 define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'One of parent sections for current section - is switched off');
+define('I_ACCESS_ERROR_ROW_ADDING_DISABLED', 'Row adding is restricted in this section');
+define('I_ACCESS_ERROR_ROW_DOESNT_EXIST', 'Row with such an id does not exist in this section');
 
 define('I_YES', 'Yes');
 define('I_NO', 'No');

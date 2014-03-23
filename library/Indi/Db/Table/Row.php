@@ -1034,10 +1034,21 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If needed nested rowset is already exists within $this->_nested array, and it shouldn't be refreshed
         if (array_key_exists($key, $this->_nested) && !$fresh) {
 
-            // We return it
-            return $this->_nested[$key];
+            // If $fetch argument is 'unset', we do unset nested data, stored under $key key within $this->_nested
+            // Here we use $fetch argument, instead of $fresh agrument, for more friendly unsetting usage, e.g
+            // $rs->nested('table', 'unset') instead of $rs->nested('table', null, null, null, 'unset')
+            if ($fetch == 'unset') {
 
-            // Otherwise we fetch it, assign it under $key key within $this->_nested array and return it
+                // Unset nested data
+                unset($this->_nested[$key]);
+
+                // Return row itself
+                return $this;
+
+            // Else we return it
+            } else return $this->_nested[$key];
+
+        // Otherwise we fetch it, assign it under $key key within $this->_nested array and return it
         } else {
 
             // Determine the field, that is a connector between current row and nested rowset

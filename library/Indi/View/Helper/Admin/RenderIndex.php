@@ -3,7 +3,7 @@ class Indi_View_Helper_Admin_RenderIndex extends Indi_View_Helper_Abstract
 {
     public function renderIndex()
     {
-		$gridFields = $this->view->trail->getItem()->gridFields->toArray();
+		$gridFields = Indi::trail()->gridFields->toArray();
 		foreach ($gridFields as $gridField) {
 			if ($gridField['columnTypeId'] == 0) {
 				if ($gridField['elementId'] == 14) {

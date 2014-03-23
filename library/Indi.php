@@ -781,7 +781,7 @@ class Indi{
         else if ($arg === true) return Indi::registry('trail');
 
         // Else if $arg argument is not set, we return current trail item object
-        else if ($arg == null) return Indi::registry('trail')->item();
+        else if ($arg == null) {/*d(debug_print_backtrace());*/return Indi::registry('trail')->item();}
 
         // Else if $arg argument is integer, we return item, that is at index, shifted from the last index by $arg number
         else if (is_int($arg)) return Indi::registry('trail')->item($arg);

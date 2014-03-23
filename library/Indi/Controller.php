@@ -161,7 +161,7 @@ class Indi_Controller{
 	public function dispatch() {
         header('Content-Type: text/html; charset=utf-8');
         $this->preDispatch();
-        eval('$this->' . $this->params['action'] . 'Action();');
+        eval('$this->' . Indi::uri()->action . 'Action();');
         $this->postDispatch();
     }
 
