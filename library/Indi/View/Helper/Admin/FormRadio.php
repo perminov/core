@@ -12,7 +12,7 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
             }
 			if ($field->relation == 6) {
 				$enumset = Indi::model('Enumset');
-				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', 'move')->toArray();
+				$array = $enumset->fetchAll('`fieldId` = "' . $field->id . '"', '`move`')->toArray();
 				$texts = $values = array();
 				for ($i = 0; $i < count ($array); $i++) {
 					$texts[] =  str_replace(',', '&sbquo;', $array[$i]['title']);

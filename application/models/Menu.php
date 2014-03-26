@@ -1,7 +1,7 @@
 <?php
 class Menu extends Indi_Db_Table{
 	protected $_rowsetClass = 'Menu_Rowset';
-	public function init($uri = '', $parentId = 0, $onlyToggledOn = true, $recursive = true, $level = 0, $order = 'move', $condition = null)
+	public function init($uri = '', $parentId = 0, $onlyToggledOn = true, $recursive = true, $level = 0, $order = '`move`', $condition = null)
 	{
 		$uri = $_SERVER['REQUEST_URI'];
 		$treeKeyName = 'menuId';

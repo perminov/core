@@ -21,7 +21,7 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
             if ($this->view->row->useSystemSeoSolution == 'n') {
 				return $this->view->row->{'seo' . ucfirst($what)};
 			} else {
-				$parts = Indi::model('Seo'. ucfirst($what))->fetchAll('`fsection2factionId`="' . $this->view->section2actionId . '"', 'move');
+				$parts = Indi::model('Seo'. ucfirst($what))->fetchAll('`fsection2factionId`="' . $this->view->section2actionId . '"', '`move`');
 				$parts->setForeignRowsbyForeignKeys('fieldId,sibling');
 				$this->title = array();
 				static $siblingRow;
@@ -103,7 +103,7 @@ class Indi_View_Helper_SeoTDK extends Indi_View_Helper_Abstract{
 		return str_replace('<br>', ' ', $xhtml);
 	}
 	function constructSeoForRowsetActions($what, $parentId = 0){
-		$parts = Indi::model('Seo'. ucfirst($what))->fetchAll('`seo'. ucfirst($what) . 'Id` = "' . $parentId . '" AND `fsection2factionId`="' . $this->view->section2actionId . '"', 'move');
+		$parts = Indi::model('Seo'. ucfirst($what))->fetchAll('`seo'. ucfirst($what) . 'Id` = "' . $parentId . '" AND `fsection2factionId`="' . $this->view->section2actionId . '"', '`move`');
 		$parts->setForeignRowsbyForeignKeys('fieldId,sibling');
 		static $siblingRow;
 		if (!is_array($siblingRow)) $siblingRow = array();

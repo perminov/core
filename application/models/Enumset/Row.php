@@ -19,7 +19,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
             parent::save();
 
             // Get existing values
-            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
+            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', '`move`')->toArray();
             for ($i = 0; $i < count($values); $i++) {
 
                 // Set up viewValues. Difference between viewValues and rawValues is that if viewValues
@@ -104,7 +104,7 @@ class Enumset_Row extends Indi_Db_Table_Row{
         if (in_array($columnTypeR->type, array('ENUM', 'SET'))) {
 
             // Get values
-            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', 'move')->toArray();
+            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', '`move`')->toArray();
             $rawValues = array(); for ($i = 0; $i < count($values); $i++) $rawValues[] = $values[$i]['alias'];
 
             // Checks if deletion is not allowed

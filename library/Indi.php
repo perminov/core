@@ -622,7 +622,7 @@ class Indi{
         $model = Indi::model($entityId);
 
         // Get the columns list
-        $columnA = $model->fields(null, 'cols');
+        $columnA = $model->fields(null, 'aliases');
 
         // Determine title column name
         if ($titleColumn = current(array_intersect($columnA, array('title', '_title')))) {
@@ -718,14 +718,6 @@ class Indi{
 	}
 
     /**
-     * Parses the given ini file, and create a stdClass object with recognized properties
-     *
-     * @static
-     * @param $file
-     * @return stdClass
-     */
-
-    /**
      * Parses ini file given by $arg argument, convert it from array to ArrayObject and save into the registry
      * If $arg agrument does not end with '.ini', it will be interpreted as a key, so it's value will be returned
      * If $arg argument is not given or null, the whole ini ArrayObject object, that represents ini file contents
@@ -768,6 +760,17 @@ class Indi{
         return $alias ? self::$_rex[$alias] : null;
     }
 
+    /**
+     * Shortcut for Indi_Trail_Admin. Usage:
+     *
+     * Indi::trail(true) - whole Indi_Trail_Admin object
+     * Indi::trail()->row/section/sections/filters/grid/etc.
+     * Indi::trail(1)->row - goes to parent trail item
+     *
+     * @static
+     * @param null $arg
+     * @return mixed
+     */
     public static function trail($arg = null) {
 
         // If $arg argument is an array, we assume that it's a route stack, so we create a new trail object and store
@@ -785,5 +788,15 @@ class Indi{
 
         // Else if $arg argument is integer, we return item, that is at index, shifted from the last index by $arg number
         else if (is_int($arg)) return Indi::registry('trail')->item($arg);
+    }
+
+
+    /**
+     * Load cache files if need
+     *
+     * @static
+     */
+    public static function cache(){
+        Indi_Cache::load();
     }
 }

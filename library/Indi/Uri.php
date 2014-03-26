@@ -109,7 +109,6 @@ class Indi_Uri {
 	public function checkSeoUrlsMode(){
 		list($first) = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 		if ($first != 'admin') {
-			$this->setDbCacheUsageIfNeed();
 			$this->adjustUriIfSubdomain();
 			$GLOBALS['enableSeoUrls'] = current(Indi::db()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "enableSeoUrls"')->fetch());
             $GLOBALS['INITIAL_URI'] = $_SERVER['REQUEST_URI'];
@@ -131,12 +130,6 @@ class Indi_Uri {
 			Indi::registry('subdomain', $subdomain);
 		}
 		Indi::registry('subdomains', $subdomainsArray);
-	}
-
-	public function setDbCacheUsageIfNeed(){
-		$useCache = Indi::db()->query('SELECT `value` FROM `fconfig` WHERE `alias` = "useCache"')->fetch();
-		Indi_Db::$useCache = !(!is_array($useCache) || current($useCache) != 'true');
-		if (Indi_Db::$useCache) Indi_Cache::load();
 	}
 
 	public function seo2sys($seo){

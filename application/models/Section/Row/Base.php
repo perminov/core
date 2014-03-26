@@ -19,7 +19,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
             if ($this->_modified['entityId']) {
 
                 // Get entity fields as grid columns candidates
-                $fields = Indi::model('Field')->fetchAll('`entityId` = "' . $this->_modified['entityId'] . '"', 'move')->toArray();
+                $fields = Indi::model('Field')->fetchAll('`entityId` = "' . $this->_modified['entityId'] . '"', '`move`')->toArray();
                 if (count($fields)) {
 
                     // Declare exclusions array, because not each entity field will have corresponding column in grid

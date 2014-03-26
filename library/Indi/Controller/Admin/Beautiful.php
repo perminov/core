@@ -19,8 +19,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
 
         // Perform authentication
         $this->auth();
-        d(mt() . ' ' . Indi_Db::$queryCount);
-        die();
+
         // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
         if (Indi::trail(true) && Indi::trail()->model) {
 
@@ -137,7 +136,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             if (Indi::uri()->sibling) {
                 $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                     $this->post['field'],
-                    Indi::trail(1)->section->entityId,
+                    Indi::trail()->section->entityId,
                     $this->view->getScope('WHERE', null, Indi::uri()->section, Indi::uri()->ph)
                 );
                 $this->row->{$this->post['field']} = Indi::uri()->id;
@@ -148,11 +147,11 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
             } else {
-                $field = Indi::trail(1)->getFieldByAlias($this->post['field']);
+                $field = Indi::trail()->model->fields($this->post['field']);
             }
 
             if (Indi::uri()->filter) {
-                foreach(Indi::trail(1)->filters as $filterR) {
+                foreach(Indi::trail()->filters as $filterR) {
                     if ($filterR->fieldId == $field->id) {
                         $where = $filterR->filter;
                         break;

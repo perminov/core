@@ -7,7 +7,7 @@ class Fsection_Row extends Indi_Db_Table_Row{
 		return Indi::model('Filter')->fetchAll('`fsectionId` = "' . $this->id . '"');
 	}
 	public function getOrder(){
-		$orderByRs = Indi::model('OrderBy')->fetchAll('`fsectionId` = "' . $this->id . '"', 'move');
+		$orderByRs = Indi::model('OrderBy')->fetchAll('`fsectionId` = "' . $this->id . '"', '`move`');
 		$options = array();
 		foreach($orderByRs as $orderByRow) $options[$orderByRow->id] = $orderByRow->title;
 		return $options;
