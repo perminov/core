@@ -192,7 +192,7 @@ class Indi_Trail_Admin_Item
             if (!($this->row = $this->model->fetchRow($where)))
 
                 // If row was not found, return an error
-                return I_ACCESS_ERROR_ROW_DOESNT_EXIST;
+                return false;//I_ACCESS_ERROR_ROW_DOESNT_EXIST;
         }
     }
 

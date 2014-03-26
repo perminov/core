@@ -16,6 +16,13 @@ class Indi_Db_Table
     protected $_name = '';
 
     /**
+     * Flag, that figures out whether or not cache is used for that model
+     *
+     * @var boolean
+     */
+    protected $_useCache = false;
+
+    /**
      * Store array of fields, that current model consists from
      *
      * @var array
@@ -69,6 +76,9 @@ class Indi_Db_Table
 
         // Detect tree column name
         $this->_treeColumn = $this->fields($this->_name . 'Id') ? $this->_name . 'Id' : '';
+
+        // Setup 'useCache' flag
+        $this->_useCache = isset($config['useCache']) ? true : false;
     }
 
     /**
@@ -522,7 +532,7 @@ class Indi_Db_Table
 
     public function titleColumn(){
         // Get array of existing columns
-        $existing = $this->fields(null, 'cols');
+        $existing = $this->fields(null, 'aliases');
 
         // Check if `title` column already exists
         if (in_array('title', $existing)) {
@@ -628,21 +638,37 @@ class Indi_Db_Table
                     'original' => array_values($this->_fields)
                 ));
 
-            // Else if $format == 'cols' - return all fields aliases as array
-            else if ($format == 'cols')
+            // Else if $format == 'aliases' - return all fields aliases as array
+            else if ($format == 'aliases')
                 return array_keys($this->_fields);
 
-            // Else if $name argument is presented, and it contains only one field name
-        } else if (!preg_match('/,/', $names)){
+            // Else if $format == 'columns', return only aliases for fields,
+            // that are represented by database table columns
+            else if ($format == 'columns') {
+
+                // Declare array for columns
+                $columnA = array();
+
+                // For each field check whether it have columnTypeId != 0, and if so, append field alias to columns array
+                foreach ($this->_fields as $alias => $info)
+                    if ($info['columnTypeId'])
+                        $columnA[] = $alias;
+
+                // Return columns array
+                return $columnA;
+            }
+
+        // Else if $name argument is presented, and it contains only one field name
+        } else if (!preg_match('/,/', $names)) {
 
             // Return certain field as Indi_Db_Table_Row object, if found
-            if (array_key_exists($names, $this->_fields)) {
+            if (isset($this->_fields[$names])) {
                 return Indi::model('Field')->createRow(array(
                     'original' => $this->_fields[$names]
                 ));
             }
 
-            // Else if $name argument contains several field names
+        // Else if $name argument contains several field names
         } else {
 
             // Convert field names list to array
@@ -658,7 +684,7 @@ class Indi_Db_Table
                 $nameI = trim($nameI);
 
                 // If field was found, append it to $found array
-                if (array_key_exists($nameI, $this->_fields)) {
+                if (isset($this->_fields[$nameI])) {
                     $found[$nameI] = $this->_fields[$nameI];
                 }
             }
@@ -672,7 +698,7 @@ class Indi_Db_Table
                 ));
 
             // Else if $format is set to 'cols', array if field aliases will be returned
-            else if ($format == 'cols') return array_keys($found);
+            else if ($format == 'aliases') return array_keys($found);
 
         }
     }
@@ -751,7 +777,7 @@ class Indi_Db_Table
         if (is_array($order) && count($order)) $order = implode(', ', $order);
 
         // Build query, fetch row and return it as an Indi_Db_Table_Row object
-        if ($data = Indi::db()->query(
+        if ($data = Indi::db()->query($sql =
             'SELECT * FROM `' . $this->_name . '`' .
                 (strlen($where) ? ' WHERE ' . $where : '') .
                 ($order ? ' ORDER BY ' . $order : '') .
@@ -1012,5 +1038,14 @@ class Indi_Db_Table
             // Execute query and return number of affected rows
             return Indi::db()->query($sql);
         }
+    }
+
+    /**
+     * Return the 'useCache' flag value
+     *
+     * @return bool
+     */
+    public function useCache() {
+        return $this->_useCache;
     }
 }

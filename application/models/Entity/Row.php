@@ -66,6 +66,14 @@ class Entity_Row extends Indi_Db_Table_Row
             $query = 'RENAME TABLE  `' . $this->_original['table'] . '` TO  `' . $this->_modified['table'] . '` ;';
         }
         if ($query) Indi::db()->query($query);
+
+        if (isset($this->_modified['useCache'])) {
+            if ($this->_modified['useCache']) {
+                Indi_Cache::update($this->table);
+            } else {
+                Indi_Cache::remove($this->table);
+            }
+        }
         return parent::save();
     }
 }

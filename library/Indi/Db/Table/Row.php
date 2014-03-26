@@ -143,6 +143,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->_modified = array();
         }
 
+        // Update cache if need
+        if ($this->model()->useCache()) Indi_Cache::update($this->model()->name());
+
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
     }

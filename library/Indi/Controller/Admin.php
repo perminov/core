@@ -112,7 +112,7 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful {
                 case 'hidden':
                     if ($field->alias == 'move') {
                         if (!$this->identifier) {
-                            $value = $model->getLastPosition();
+                            $value = $model->getNextMove();
                         } else {
                             $value = Indi::trail()->row->move;
                         }
@@ -163,7 +163,8 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful {
                 $row->save();
                 //Indi::trail()->model->update($data, '`id` = "' . $this->identifier . '"');
             } else {
-                $row = Indi::trail()->model->createRow($data);
+                $row = Indi::trail()->model->createRow();
+                foreach ($data as $f => $v) $row->$f = $v;
                 $row->save();
                 $this->identifier = $row->id;
                 //$this->identifier = Indi::trail()->model->insert($data);
@@ -176,8 +177,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful {
             d($e);
             die();
         }
-
-        $this->updateCacheIfNeed();
 
         $this->postSave();
         if ($redirect) {
@@ -201,38 +200,6 @@ class Indi_Controller_Admin extends Indi_Controller_Admin_Beautiful {
                     . ($id ? 'index/id/' . $id . '/' : '');
             }
             $this->_redirect($url);
-        }
-    }
-
-    public function updateCacheIfNeed(){
-        if (!Indi_Cache::$useCache) return;
-        // Get table name
-        $table = Indi::trail()->model->name();
-
-        if ($table == 'entity') {
-            // Сколько было кэшей в списке
-            $tablesName = Indi_Cache::fname('tables');
-            require_once($tablesName);
-            $was = $GLOBALS['cache']['tables'];
-            // Сколько должно теперь быть
-            $rs = $this->db->query('SELECT `table` FROM `entity` WHERE `useCache` = "1"')->fetchAll();
-            foreach ($rs as $r) $now[] = $r['table'];
-            // Генерим дополнительные файлы кэша, если нужно
-            $add = array_diff($now, $was);
-            foreach ($add as $new) Indi_Cache::update(ucfirst($new));
-            // Удаляем старые файлы кэша, елси нужно
-            $rem = array_diff($was, $now);
-            foreach ($rem as $del) unlink(Indi_Cache::fname(ucfirst($del)));
-            // Обновляем кэш списка кэшей
-            $php = '<?php $GLOBALS["cache"]["tables"] = array("' . implode('","', $now) . '");';
-            $fp = fopen($tablesName, 'w');
-            fwrite($fp, $php);
-            fclose($fp);
-        }
-
-        // Update cache if need
-        if (Indi::model('Entity')->fetchRow('`table` = "' . $table .'" AND `system` = "y"')->useCache) {
-            Indi_Cache::update(get_class(Indi::trail()->model));
         }
     }
 }

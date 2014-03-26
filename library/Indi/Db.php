@@ -44,14 +44,6 @@ class Indi_Db {
      */
     public static $queryCount = 0;
 
-
-    /**
-     * Flag for cache usage
-     *
-     * @var bool
-     */
-    public static $useCache = false;
-
     /**
      * Initial database setup, if $config argument is provided, or just return the singleton instance otherwise
      *
@@ -154,6 +146,7 @@ class Indi_Db {
                 // Create a model, push it to self::$_modelA array as a next item, and return that item
                 return self::$_modelA[$identifier] = new $identifier(array(
                     'id' => self::$_entityA[$identifier]['id'],
+                    'useCache' => self::$_entityA[$identifier]['useCache'],
                     'fields' => self::$_entityA[$identifier]['fields']
                 ));
 
@@ -215,7 +208,7 @@ class Indi_Db {
             return $affected;
 
         // If cache usage is turned on, and current query match cache usage requirements
-        } else if (Indi_Db::$useCache == true && $params = self::shouldUseCache($sql)) {
+        } else if (Indi::ini()->db->cache && $params = self::shouldUseCache($sql)) {
 
             // Pass query to Indi_Cache::fetcher() method
             return Indi_Cache::fetcher($params);
@@ -267,25 +260,22 @@ class Indi_Db {
      */
     public function shouldUseCache($sql) {
 
-        // Replace newlines with spaces within a $sql argument, to make the query string single-line, for proper check
-        // of match to Indi_Cache requirements
-        $sql = preg_replace("/\n/", " ", $sql);
-
         // Check if query is enough simple for Indi_Cache::fetcher() to deal with it
-        preg_match('/^SELECT (.*) FROM `(.*)` +WHERE(.*)$/', $sql, $matches);
+        if ($params = Indi_Cache_Fetcher::support($sql))
 
-        // If table name, got from query FROM clause is within keys of self::$_cacheA array
-        if (self::$_cacheA[$matches[2]]) {
+            // If table name, got from query FROM clause is within keys of self::$_cacheA array
+            if (self::$_cacheA[$params['table']] || $params['table'] == 'entity' || true)
 
-            // And if file with cached data for that table exists
-            if (file_exists(Indi_Cache::fname(ucfirst($matches[2])))) {
+                // And if file with cached data for that table exists
+                if (file_exists(Indi_Cache::file($params['table'])))
 
-                // Return info about catched table name, WHERE clause and columns, that should be retrieved
-                return $matches;
-            }
-        }
+                    // Return info about catched table name, WHERE, ORDER and LIMIT clauses
+                    // and columns, that should be retrieved
+                    return $params;
 
         // Return false
         return false;
     }
+
+
 }

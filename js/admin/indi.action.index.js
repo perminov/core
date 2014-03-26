@@ -233,7 +233,8 @@ var Indi = (function (indi) {
                 for (var i = 0; i < indi.trail.item().gridFields.length; i++)
                     fieldA.push({
                         name: indi.trail.item().gridFields[i].alias,
-                        type: [3,5].indexOf(indi.trail.item().gridFields[i].columnTypeId) != -1 ? 'int' : 'string'
+                        type: !parseInt(indi.trail.item().gridFields[i].entityId) &&
+                            [3,5].indexOf(indi.trail.item().gridFields[i].columnTypeId) != -1 ? 'int' : 'string'
                     });
 
                 // Return array

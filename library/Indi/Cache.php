@@ -1,71 +1,140 @@
 <?php
 class Indi_Cache {
-	public static $useCache;
-	public function update($modelName){
-		$rs = Indi::model($modelName)->fetchAll()->toArray();
-		$fields = array_keys($rs[0]);
-		foreach ($fields as $field) {
-			foreach ($rs as $r) {
-				$data[$field][] = $r[$field];
-			}
+    /**
+     * Create/update cache file, that contains contents of database table, that model $model is related to
+     *
+     * @static
+     * @param string $table
+     */
+    public static function update($table){
+
+        // Get the model name
+        $model = ucfirst($table);
+
+        // Get the columns array
+        $columnA = Indi::model($model)->fields(null, 'columns');
+
+        // Prepend columns array with 'id' item
+        array_unshift($columnA, 'id');
+
+        // Fetch all data from database table
+		$dataA = Indi::model($model)->fetchAll()->toArray();
+
+        // Start building data section of cache file
+        $php = "<?php \$GLOBALS['cache']['" . $table . "']['myd'] = Array";
+        $php .= "\n(\n";
+
+        // Declare array for database table columns values data representation
+        $cacheColumnA = array();
+
+        // For each column within $columnA array
+		foreach ($columnA as $columnI) {
+
+            // Start building certain column and it's values data representation
+            $cacheColumnI = "    '" . $columnI . "'=>Array(";
+
+            // Declare/Reset array for certain column values data representation
+            $cacheColumnDataA = array();
+
+            // For each item within fetched data
+			foreach ($dataA as $dataI)
+                $cacheColumnDataA[] = preg_match('/^[0-9]+\.?[0-9]*$/', $dataI[$columnI])
+                    ? $dataI[$columnI] : "'" . preg_replace("/'/", "\'", $dataI[$columnI]) . "'";
+
+            // Append imploded values and enclosing bracket
+            $cacheColumnI .= implode(',', $cacheColumnDataA) . ')';
+
+            // Append whole column values data representation to columns representation array
+            $cacheColumnA[] = $cacheColumnI;
 		}
-		ob_start();
-		print_r($data);
-		$php = ob_get_clean();
-		if (!function_exists('dump2phpCallback')) {
-			function dump2phpCallback($m){
-				if (!is_numeric($m[1])) $m[1] = "'" . $m[1] . "'=>"; else $m[1] = '';
-				if (!is_numeric($m[2]) && $m[2] != 'Array') $m[2] = "'" . preg_replace("/'/", "\'", $m[2]) . "'";
-				return $m[1] . $m[2] . ',';
-			}
-		}
-		$php = preg_replace_callback('/\[([^\]]+)\] => ([^\n]*)\n\s*/', 'dump2phpCallback', $php);
-		$php = preg_replace('/(Array),\s*(\()\n\s*/', '$1$2', $php);
-		$php = preg_replace('/,\)\n/', '),', $php);
-		$php = preg_replace('/\),\s*\)$/', ")\n);", $php);
-		$php = preg_replace('/[0-9]+=>Array\(\'id\'=>([0-9]+),/', "$1=>Array('id'=>$1,", $php);
-		$php = '<?php $GLOBALS["cache"]["' . $modelName . '"] = ' . $php;
-		$fp = fopen(self::fname($modelName), 'w');
-		fwrite($fp, $php);
-		fclose($fp);
-//		d($php);
+
+        // Append imploded columns values representation to contents
+        $php .= implode(",\n", $cacheColumnA) . "\n);\n";
+
+        // Start building indexes/usage section of cache file
+        $php .= "\n\$GLOBALS['cache']['" . $table . "']['myi'] = Array";
+        $php .= "\n(\n";
+
+        // Reset array for database table columns values representation
+        $cacheColumnA = array();
+
+        // For each column within $columnA array
+        foreach ($columnA as $columnI) {
+
+            // Start building certain column and it's values usage representation
+            $cacheColumnI = "    '" . $columnI . "'=>Array(";
+
+            // Declare/Reset array for certain column values usage representation
+            $cacheColumnValueUsageA = array();
+
+            // For each item within fetched data - get the usage
+            foreach ($dataA as $i => $dataI)
+                $cacheColumnValueUsageA[preg_match('/^[0-9]+\.?[0-9]*$/', $dataI[$columnI])
+                    ? $dataI[$columnI] : "'" . preg_replace("/'/", "\'", $dataI[$columnI]) . "'"][] = $i;
+
+
+            // For each item within column value usage - convert usage info format from array to string,
+            // for it to be recognizable by php interpreter
+            foreach ($cacheColumnValueUsageA as $value => $indexA)
+                $cacheColumnValueUsageA[$value] = $value . '=>' .
+                    (count($indexA) > 1
+                        ? 'Array(' . implode(',', array_unique($indexA)) . ')'
+                        : $indexA[0]);
+
+            // Append imploded values and enclosing bracket
+            $cacheColumnI .= implode(',', $cacheColumnValueUsageA) . ')';
+
+            // Append whole column values representation to columns representation array
+            $cacheColumnA[] = $cacheColumnI;
+        }
+
+        // Append imploded columns values representation to contents
+        $php .= implode(",\n", $cacheColumnA) . "\n);\n";
+
+        // Write contents to cache file
+		file_put_contents(self::file($table), $php);
+    }
+
+    /**
+     * Remove cache file for certain database table
+
+     * @static
+     * @param $table
+     */
+    public static function remove($table) {
+        unlink(self::file($table));
+    }
+
+    /**
+     * Get filename of cache file for certain database table
+     *
+     * @static
+     * @param $table
+     * @return string
+     */
+    public static function file($table) {
+		return DOC . '/www/application/cache/' . $table . '.php';
 	}
 
-	function fname($modelName) {
-		return $_SERVER['DOCUMENT_ROOT'] . '/www/application/cache/' . $modelName . '.php';
-	}
 
-	function compare($modelName) {
-		mt();
-		$rs = Indi::model($modelName)->fetchAll()->toArray();
-		d('Получение списка ' . $modelName . ' из базы: ' . mt());
-		include(self::fname($modelName));
-		d('Получение списка ' . $modelName . ' из вертикального кэша: ' . mt());
-
-		$ids = array_keys($GLOBALS['cache'][$modelName]);
-		mt();
-
-		foreach ($ids as $id) {
-			$r = Indi::model($modelName)->fetchRow('`id` = "' . $id . '"')->toArray();
-		}
-		d(count($ids) . ' операций поиска по идентификаторам в ' . $modelName . ' в базе: ' . mt());
-
-		foreach ($ids as $id) {
-			$r = $cache[$modelName][$id];
-		}
-		d(count($ids) . ' операций поиска по идентификаторам в ' . $modelName . ' в кэше: ' . mt());
-	}
-
-	public function fetcher($params) {
+    /**
+     * Create  a new Indi_Cache_Fetcher object, pass query params to, and return it
+     *
+     * @param $params
+     * @return Indi_Cache_Fetcher
+     */
+    public function fetcher($params) {
 		return new Indi_Cache_Fetcher($params);
 	}
 
-	public function load() {
-		require_once(self::fname('tables'));
-		foreach ($GLOBALS['cache']['tables'] as $table) {
-			$mname = ucfirst($table);
-			$fname = Indi_Cache::fname($mname);
-			if (file_exists($fname)) require_once($fname);
-		}
-	}
+    /**
+     * Load all existing cache files, if cache usage it switched on
+     *
+     * @static
+     */
+    public static function load() {
+        if (Indi::ini()->db->cache)
+            foreach (glob(DOC . '/www/application/cache/*.php') as $cacheI)
+                require_once($cacheI);
+    }
 }

@@ -39,10 +39,11 @@ require('Misc.php');
 $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();
 
 // Memory usage detection
-$mu = 0; function mu(){$m = memory_get_usage(); $ret = $m - $GLOBALS['mu']; $GLOBALS['mu'] = $m; return $ret;} mu();
+$mu = 0; function mu(){$m = memory_get_usage(); $ret = $m - $GLOBALS['mu']; $GLOBALS['mu'] = $m; return number_format($ret);} mu();
 
 // Load config and setup DB interface
 Indi::ini('application/config.ini');
+Indi::cache();
 Indi::db(Indi::ini()->db);
 
 // Save config and global request data to registry
