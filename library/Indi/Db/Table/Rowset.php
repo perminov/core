@@ -703,22 +703,22 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             foreach ($nestedRs as $nestedR)
 
                 // If connector field is multiple, foreach unique value within that multiple - append a row
-                if (Indi::model($table)->fields($connector)->storeRelationAbility == 'many')
+                if (Indi::model($table)->fields($connector)->storeRelationAbility == 'many') {
                     foreach (explode(',', $nestedR->$connector) as $i)
                         if (strlen($i))
                             $cNested[$i][] = $nestedR;
 
                 // Else we use usual approach
-                else if (Indi::model($table)->fields($connector)->storeRelationAbility == 'one')
+                } else if (Indi::model($table)->fields($connector)->storeRelationAbility == 'one') {
                     $cNested[$nestedR->$connector][] = $nestedR;
-
+                }
 
             // Now we should assign appropriate nested data to each row within current rowset
             foreach ($this as $r) {
 
                 // Assign
                 $r->nested($key, Indi::model($table)->createRowset(
-                    count($nested[$r->id]) ? array('rows' => $nested[$r->id]) : array()
+                    count($cNested[$r->id]) ? array('rows' => $cNested[$r->id]) : array()
                 ));
 
                 // Setup a flag indicating that there is a nested data for $key key within rows in current rowset
