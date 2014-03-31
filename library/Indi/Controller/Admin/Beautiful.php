@@ -1901,7 +1901,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             // Render the layout
             $out = $this->view->render('index.php');
 
-            // Else, if we are doing something in a certain section
+        // Else, if we are doing something in a certain section
         } else {
 
             // Setup a row object to be available within view engine

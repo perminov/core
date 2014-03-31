@@ -70,7 +70,7 @@ class Indi_Uri {
 		}
 
         $controller = new $controllerClassName($params);
-                $controller->dispatch();
+        $controller->dispatch();
     }
 
 	public function preDispatch() {
@@ -97,7 +97,7 @@ class Indi_Uri {
 	public function setCookieDomain(){
 		$domain = Indi::ini()->general->domain;
 		if (strpos($domain, '.') !== false) ini_set('session.cookie_domain', '.' . $domain);
-        if (PRE) ini_set('session.cookie_path', STD);
+        if (STD) ini_set('session.cookie_path', STD);
 	}
 
 	public function startSession() {

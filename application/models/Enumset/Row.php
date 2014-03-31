@@ -1,5 +1,5 @@
 <?php
-class Enumset_Row extends Indi_Db_Table_Row{
+class Enumset_Row extends Indi_Db_Table_Row_Noeval{
     public function save($parentSave = false) {
         // Simple save
         if ($parentSave) return parent::save();

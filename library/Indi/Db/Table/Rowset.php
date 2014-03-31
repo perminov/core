@@ -2,11 +2,25 @@
 class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
     /**
+     * Array of rows, that are stored within current rowset
+     *
+     * @var array
+     */
+    protected $_rows = array();
+
+    /**
      * Table name of table, that current rowset is related to
      *
      * @var string
      */
     protected $_table = '';
+
+    /**
+     * Contain keys, that current rowset have nested rowset under
+     *
+     * @var array
+     */
+    public $_nested = array();
 
     /**
      * Iterator pointer.
@@ -38,57 +52,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     protected $_page = null;
 
     /**
-     * The original data for each row within current rowset
-     *
-     * @var array
-     */
-    protected $_original = array();
-
-    /**
-     * Modified data for each row within current rowset
-     *
-     * @var array
-     */
-    protected $_modified = array();
-
-    /**
-     * System data for each row within current rowset
-     *
-     * @var array
-     */
-    protected $_system = array();
-
-    /**
-     * Compiled data for each row within current rowset, used for storing eval-ed values for properties,
-     * that are allowed to contain php-expressions
-     *
-     * @var array
-     */
-    protected $_compiled = array();
-
-    /**
-     * Temporary data, used for assigning some values to any row (within current rowset) object under some keys,
-     * but these key => value pairs will be never involved at SQL INSERT or UPDATE query executions
-     *
-     * @var array
-     */
-    protected $_temporary = array();
-
-    /**
-     * Rows, pulled by foreign keys of any row within current rowset
-     *
-     * @var array
-     */
-    protected $_foreign = array();
-
-    /**
-     * Rowsets containing children for any row within current rowset, but related to other models
-     *
-     * @var array
-     */
-    protected $_nested = array();
-
-    /**
      * Indi_Db_Table_Row class name.
      *
      * @var string
@@ -104,16 +67,40 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     {
         // Setup properties from $config argument
         if (isset($config['table'])) $this->_table = $config['table'];
-        if (isset($config['original'])) $this->_original = $config['original'];
-        if (isset($config['system'])) $this->_system = $config['system'];
+
+        // If 'data' key exists within $config array
+        if (isset($config['data'])) {
+
+            // Declare an array of special properties, that will be picked up from $config argument
+            $specialA = array('modified', 'system', 'temporary', 'compiled', 'foreign', 'nested');
+
+            // Foreach data item create a $rowConfig variable
+            foreach ($config['data'] as $item) {
+
+                // Assign values for special properties within $rowConfig variable
+                foreach ($specialA as $specialI) {
+                    $rowConfig[$specialI] = $item['_' . $specialI];
+                    unset($item['_' . $specialI]);
+                }
+
+                // Assing 'original' and 'table' properties
+                $rowConfig['original'] = $item; unset($item);
+                $rowConfig['table'] = $this->_table;
+
+                // Use $rowConfig as an argument for row construction
+                $this->_rows[] = new $this->_rowClass($rowConfig);
+            }
+
+        // Else if 'data' key does not exist within $config array, but 'rows' key do, setup $this->_rows property directly
+        } else if (isset($config['rows'])) $this->_rows = $config['rows'];
+
+        // Setup page and total found results number
         if (isset($config['page'])) $this->_page = $config['page'];
         if (isset($config['found'])) $this->_found = $config['found'];
 
-        // Setup row class
+        // Setup row class, and the count of rows within current rowset
         $this->_rowClass = isset($config['rowClass']) ? $config['rowClass'] : $this->model()->rowClass();
-
-        // Set the count of rows within current rowset
-        $this->_count = count($this->_original);
+        $this->_count = count($this->_rows);
     }
 
     /**
@@ -123,40 +110,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @return Indi_Db_Table_Row|mixed Current element from the current rowset
      */
-    public function current()
-    {
+    public function current() {
         // If $this->_pointer is out of bounds - return null
         if ($this->valid() === false) return null;
 
-        // Get the id of current/original row
-        $id = $this->_original[$this->_pointer]['id'];
-
-        // Get the foreign rows/rowsets separately, as $this->_foreign store concept
-        // is different from $this->_modified, $this->_system etc
-        $_foreign = array();
-        foreach ($this->_foreign as $foreignKeyName => $foreignByOriginalRowIdA) {
-            foreach ($foreignByOriginalRowIdA as $originalRowId => $foreign) {
-                if ($id ==  $originalRowId) $_foreign[$foreignKeyName] = $foreign;
-            }
-        }
-
-        $_nested = array();
-        foreach (array_keys($this->_nested) as $alias)
-            $_nested[$alias] = $this->_nested[$alias][$id];
-
-        // Create and return an instance of row
-        return new $this->_rowClass(
-            array(
-                'table'    => $this->_table,
-                'original'     => $this->_original[$this->_pointer],
-                'modified'   => $this->_modified[$id],
-                'system'   => $this->_system[$id],
-                'compiled'   => $this->_compiled[$id],
-                'temporary'   => $this->_temporary[$id],
-                'foreign'   => $_foreign,
-                'nested'   => $_nested,
-            )
-        );
+        // Return current row
+        return $this->_rows[$this->_pointer];
     }
 
     /**
@@ -222,8 +181,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Reverse order of items in $this->_original array
      */
-    public function reverse(){
-        $this->_original = array_reverse($this->_original);
+    public function reverse() {
+        $this->_rows = array_reverse($this->_rows);
     }
 
     /**
@@ -232,8 +191,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @return int
      */
-    public function count()
-    {
+    public function count() {
         return $this->_count;
     }
 
@@ -244,9 +202,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @param string $offset
      * @return boolean
      */
-    public function offsetExists($offset)
-    {
-        return isset($this->_original[(int) $offset]);
+    public function offsetExists($offset) {
+        return isset($this->_rows[(int) $offset]);
     }
 
     /**
@@ -257,8 +214,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @throws Exception
      * @return Indi_Db_Table_Row|mixed
      */
-    public function offsetGet($offset)
-    {
+    public function offsetGet($offset) {
         $offset = (int) $offset;
         if ($offset < 0 || $offset >= $this->_count) {
             throw new Exception("Illegal index $offset");
@@ -275,8 +231,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @param string $offset
      * @param mixed $value
      */
-    public function offsetSet($offset, $value)
-    {
+    public function offsetSet($offset, $value) {
+
     }
 
     /**
@@ -285,8 +241,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @param string $offset
      */
-    public function offsetUnset($offset)
-    {
+    public function offsetUnset($offset) {
+
     }
 
     /**
@@ -296,8 +252,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @return Indi_Db_Table_Rowset|void Fluent interface.
      */
-    public function rewind()
-    {
+    public function rewind() {
         // Set the internal pointer to 0
         $this->_pointer = 0;
 
@@ -312,8 +267,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @return scalar
      */
-    public function key()
-    {
+    public function key() {
         return $this->_pointer;
     }
 
@@ -340,8 +294,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @return bool False if there's nothing more to iterate over
      */
-    public function valid()
-    {
+    public function valid() {
         return $this->_pointer >= 0 && $this->_pointer < $this->_count;
     }
 
@@ -353,8 +306,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @throws Exception
      * @return Indi_Db_Table_Rowset_Abstract|void Fluent interface
      */
-    public function seek($position)
-    {
+    public function seek($position) {
         // Force $position argument to int
         $position = (int) $position;
 
@@ -412,23 +364,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         $keys = array_flip($keys);
 
         // For each item in $this->_original array
-        foreach ($this->_original as $index => $original) {
+        foreach ($this->_rows as $index => $row) {
 
             // If item id is in exclusion/selection list
-            if ($inverse ? !array_key_exists($original[$type], $keys) : array_key_exists($original[$type], $keys)) {
+            if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
 
-                // Unset foreign data for excluded rows
-                foreach ($this->_foreign as $key => $data) unset($this->_foreign[$key][$original['id']]);
-
-                // Unset other data for excluded rows
-                unset(
-                $this->_original[$index],
-                $this->_modified[$original['id']],
-                $this->_nested[$original['id']],
-                $this->_system[$original['id']],
-                $this->_temporary[$original['id']],
-                $this->_compiled[$original['id']]
-                );
+                // Unset row from current rowset
+                unset($this->_rows[$index]);
 
                 // Decrement count of items in current rowset
                 $this->_count --;
@@ -436,7 +378,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         }
 
         // Force zero-indexing
-        $this->_original = array_values($this->_original);
+        $this->_rows = array_values($this->_rows);
 
         // Force $this->_pointer to be not out from the bounds of current rowset
         if ($this->_pointer > $this->_count) $this->_pointer = $this->_count;
@@ -453,13 +395,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     public function truncate(){
         $this->_found = 0;
         $this->_count = 0;
-        $this->_original = array();
-        $this->_modified = array();
-        $this->_system = array();
-        $this->_temporary = array();
-        $this->_compiled = array();
-        $this->_foreign = array();
-        $this->_nested = array();
+        $this->_rows = array();
         return $this;
     }
 
@@ -472,26 +408,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function select($keys, $type = 'id') {
         return $this->exclude($keys, $type, true);
-    }
-
-    /**
-     * Set or get $this->_original property, depending on whether or not $data argument is passed
-     *
-     * @param null $data
-     * @return array|Indi_Db_Table_Rowset
-     */
-    public function original($data = null){
-
-        // If no arguments passed, return $this->_original property
-        if (is_null($data)) return $this->_original;
-
-        // Else assign first argument to $this->_original property
-        else if (is_array($data)) $this->_original = $data;
-
-        else if (preg_match('/^[0-9]+$/', $data)) return $this->_original[$data];
-
-        // Return rowset itself
-        return $this;
     }
 
     /**
@@ -524,6 +440,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         else return $this->_found;
     }
 
+    /**
+     * Converts a rowset to grid data array, using current trail item details, such as columns, filters, etc
+     *
+     * @param Indi_Trail_Admin_Item $ti
+     * @return array
+     */
     public function toGridData(Indi_Trail_Admin_Item $ti) {
 
         // If there are no rows in $this argument - return
@@ -565,9 +487,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Date and datetime values. Also we're getting additional params - display format at least
             else if ($gridFieldR->foreign('columnTypeId')->type == 'DATE')
-                $typeA['date'][$gridFieldR->alias] = $gridFieldR->getParams();
+                $typeA['date'][$gridFieldR->alias] = $gridFieldR->params;
             else if ($gridFieldR->foreign('columnTypeId')->type == 'DATETIME')
-                $typeA['datetime'][$gridFieldR->alias] = $gridFieldR->getParams();
+                $typeA['datetime'][$gridFieldR->alias] = $gridFieldR->params;
 
             // All other types
             else $typeA['other'][$gridFieldR->alias] = true;
@@ -638,7 +560,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                     $data[$pointer][$columnI] = $r->$columnI == '0000-00-00 00:00:00'
                         ? '' : date( $typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
-                            $typeA['datetime'][$columnI]['displayTimeFormat'], $r->$columnI);
+                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI));
                 }
 
                 // If there the color-value in format 'hue#rrgbb' can probably be found in field value
@@ -680,6 +602,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @throws Exception
      */
     public function nested($table, $fetch = array(), $alias = null, $field = null, $fresh = false) {
+
         // Determine the nested rowset identifier. If $alias argument is not null, we will assume that needed rowset
         // is or should be stored under $alias key within $this->_nested array, or under $table key otherwise.
         // This is useful in cases when we need to deal with nested rowsets, got from same database table, but
@@ -694,14 +617,21 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // $rs->nested('table', 'unset') instead of $rs->nested('table', null, null, null, 'unset')
             if ($fetch == 'unset') {
 
+                foreach ($this as $r) $r->nested($key, 'unset');
+
                 // Unset nested data
                 unset($this->_nested[$key]);
 
                 // Return row itself
                 return $this;
 
-                // Else we return it
-            } else return $this->_nested[$key];
+            // Else we return it
+            } else {
+
+                foreach ($this as $r) $nested[$r->id] = $r->nested($key);
+
+                return $nested;
+            }
 
         // Otherwise we fetch it, assign it under $key key within $this->_nested array and return it
         } else {
@@ -726,7 +656,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $where = isset($where) && is_array($where) ? $where : (strlen($where) ? array($where) : array());
 
             // Get all the ids of rows within current rowset
-            $idA = array(); foreach ($this->_original as $i) $idA[] = $i['id'];
+            $idA = array(); foreach ($this as $i) $idA[] = $i->id;
 
             // If current rowset is not empty
             if ($this->_count) {
@@ -755,48 +685,47 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             } else array_unshift($where, '0');
 
             // Fetch rowset containing rows, that are nested to at least one row of current rowset
-            $allNestedRs = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
+            $nestedRs = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
 
             // Setup foreign data for nested rowset, if need
-            if ($foreign) $allNestedRs->foreign($foreign);
+            if ($foreign) $nestedRs->foreign($foreign);
 
             // Setup foreign data for nested rowset, if need
             if ($nested) {
-                if (is_array($nested))
-                    $allNestedRs->nested($nested[0], $nested[1], $nested[2], $nested[3], $nested[4]);
-                else
-                    $allNestedRs->nested($nested);
+                if (is_array($nested)) $nestedRs->nested($nested[0], $nested[1], $nested[2], $nested[3], $nested[4]);
+                else $nestedRs->nested($nested);
             }
+
+            // Declare an array for nested rows distribution by connector values
+            $cNested = array();
+
+            // Find matches, and collected keys or rows, that won't be excluded from clone of $allNestedRs rowset
+            foreach ($nestedRs as $nestedR)
+
+                // If connector field is multiple, foreach unique value within that multiple - append a row
+                if (Indi::model($table)->fields($connector)->storeRelationAbility == 'many')
+                    foreach (explode(',', $nestedR->$connector) as $i)
+                        if (strlen($i))
+                            $cNested[$i][] = $nestedR;
+
+                // Else we use usual approach
+                else if (Indi::model($table)->fields($connector)->storeRelationAbility == 'one')
+                    $cNested[$nestedR->$connector][] = $nestedR;
+
 
             // Now we should assign appropriate nested data to each row within current rowset
-            for ($i = 0; $i < count($idA); $i++) {
+            foreach ($this as $r) {
 
-                // Make a clone
-                $rowNestedRs = clone $allNestedRs;
+                // Assign
+                $r->nested($key, Indi::model($table)->createRowset(
+                    count($nested[$r->id]) ? array('rows' => $nested[$r->id]) : array()
+                ));
 
-                // Delcare an array for keys within clone of nested rowset, that match certain row within current rowset
-                $select = array();
-
-                // Find matches, and collected keys or rows, that won't be excluded from clone of $allNestedRs rowset
-                foreach ($rowNestedRs->original() as $data) {
-
-                    // If connector field is multiple, we use regexp to find a match
-                    if (Indi::model($table)->fields($connector)->storeRelationAbility == 'many') {
-                        if (preg_match('/,' . $idA[$i] . ',/', ',' . $data[$connector] . ','))
-                            $select[] = $data['id'];
-
-                    // Else we use usual approach
-                    } else if (Indi::model($table)->fields($connector)->storeRelationAbility == 'one') {
-                        if ($idA[$i] == $data[$connector]) $select[] = $data['id'];
-                    }
-                }
-                // Assign filtered clone of $allNestedRs rowset under $key key within $this->_nested property
-                // and under certain id of row within current rowset. If there was no keys found, we do empty
-                // clone before assigning it
-                $this->_nested[$key][$idA[$i]] = count($select)
-                    ? $rowNestedRs->select($select) : $rowNestedRs->truncate();
+                // Setup a flag indicating that there is a nested data for $key key within rows in current rowset
+                $this->_nested[$key] = true;
             }
 
+            // Return rowset itself
             return $this;
         }
     }
@@ -1012,10 +941,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 // Call a user-defined method for foreign data rowset, if need
                 if ($call) eval('$foreignRs[$entityId]->' . $call . ';');
 
-                // Setup a foreign data for jus fetched foreign data, if argument #3 is given. Argument #3 is not
-                // presented in function signature, because it's detection is automated, and all calls of foreign()
-                // method with argument #3 pass are performed within itself, by a recursive logic
+                // Setup a foreign and nested data for just fetched foreign data, by a recursive logic
                 if (is_array($subs)) {
+
+                    // Setup foreign data
                     if ($subs['foreign']) {
                         if (is_string($subs['foreign'])) {
                             $foreignRs[$entityId]->foreign($subs['foreign']);
@@ -1026,6 +955,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         }
                     }
 
+                    // Setup nested data
                     if ($subs['nested']) {
                         if (is_array($subs['nested'])) {
                             if (key($subs['nested']) == '0') {
@@ -1069,8 +999,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         // If foreign key value of current row is equal to foreign row id
                         if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && $r->$key == $foreignR->$col) {
 
-                            // Assign foreign row to $this->_foreign array, under foreign key name and current row id
-                            $this->_foreign[$key][$r->id] = $foreignR;
+                            // Assign foreign row directly
+                            $r->foreign($key, $foreignR);
 
                             // Stop searching for matches, as there could be only one foreign row found,
                             // and it was already found and assigned
@@ -1098,12 +1028,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         // column/property within `enumset` table are unique only within their fields, but are not
                         // within global scope
                         if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && in_array($foreignR->$col, $set))
-                            $original[] = $foreignR->toArray();
+                            $rows[] = $foreignR;
 
-                    // Create a rowset object, with usage of data, collected in $original array, and assing that rowset
-                    // as a value within $this->_foreign property under current foreign key field name and current row id
-                    $this->_foreign[$key][$r->id] = Indi::model($foreignKeyEntityId)
-                        ->createRowset(array('original' => $original));
+                    // Create a rowset object, with usage of data, collected in $rows array, and assing that rowset
+                    // as a value within $this->_foreign property under current foreign key field name and current row
+                    $r->foreign($key, Indi::model($foreignKeyEntityId)->createRowset(array('rows' => $rows)));
 
                     // Release the memory
                     unset($original, $set);
@@ -1119,22 +1048,27 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     : $this->_foreign[$key])
                 : $this;
 
-            // Else there is no such a field within current entity - throw an exception
+        // Else there is no such a field within current entity - throw an exception
         } else {
             throw new Exception('Field with alias `' . $key . '` does not exists within entity with table name `' . $this->_table .'`');
         }
     }
 
-    public function temporary($id = null, $arg2 = null) {
+    /**
+     * Get value of a single column within curent rowset, as array
+     *
+     * @param $column
+     * @return array
+     */
+    public function column($column) {
 
-        if (is_null($id)) return $this->_temporary;
+        // Declare array for single column
+        $valueA = array();
 
-        if (is_null($arg2)) return $this->_temporary[$id];
+        // Collect column data
+        foreach ($this as $r) $valueA[] = $r->$column;
 
-        if (is_array($arg2)) return $this->_temporary[$id] = $arg2;
-
-        if (func_num_args() == 2) return $this->_temporary[$id][$arg2];
-
-        if (func_num_args() == 3) return $this->_temporary[$id][$arg2] = func_get_arg(2);
+        // Return column data
+        return $valueA;
     }
 }

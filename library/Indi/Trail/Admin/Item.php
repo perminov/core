@@ -9,13 +9,6 @@ class Indi_Trail_Admin_Item
 	 */
 	public $gridFields = null;
 
-	/**
-	 * Store number of fields that are unaccessible in grid and form
-	 *
-	 * @var array
-	 */
-	public $disabledFields = array('save' => array(), 'form' => array());
-
     /**
      * Getter. Currently declared only for getting 'model' property
      *
@@ -23,8 +16,9 @@ class Indi_Trail_Admin_Item
      * @return Indi_Db_Table
      */
     public function __get($property) {
-        if ($property == 'model' && $this->section->entityId)
-            return Indi::model($this->section->entityId);
+        if ($this->section->entityId)
+            if ($property == 'model') return Indi::model($this->section->entityId);
+            else if ($property == 'fields') return Indi::model($this->section->entityId)->fields();
     }
 
     /**
@@ -42,8 +36,8 @@ class Indi_Trail_Admin_Item
 
         // Setup $this->actions
         foreach ($sectionR->nested('section2action') as $section2actionR)
-            $actionA[] = $section2actionR->foreign('actionId')->original();
-        $this->actions = Indi::model('Action')->createRowset(array('original' => $actionA));
+            $actionA[] = $section2actionR->foreign('actionId');
+        $this->actions = Indi::model('Action')->createRowset(array('rows' => $actionA));
 
         // Setup $this->sections
         $this->sections = $sectionR->nested('section');
@@ -51,13 +45,8 @@ class Indi_Trail_Admin_Item
         // If current trail item will be a first item
         if (count(Indi_Trail_Admin::$items) == 0) {
 
-            // Setup fields
-            $this->fields = $this->model->fields()->foreign(array(
-                'elementId' => array(
-                    'nested' => 'possibleElementParam'
-                ),
-                'columnTypeId' => array()
-            ))->nested('param')->params();
+            // Setup a primary hash for current section
+            $this->section->temporary('primaryHash', Indi::uri('ph'));
 
             // Setup filters
             $this->filters = $sectionR->nested('search');
@@ -73,24 +62,16 @@ class Indi_Trail_Admin_Item
                 foreach ($sectionR->nested('grid') as $gridR) {
                     foreach ($this->fields as $fieldR) {
                         if ($gridR->fieldId == $fieldR->id) {
-                            $gridFieldI = $fieldR->original();
-                            if ($gridR->alterTitle) $gridFieldI['title'] = $gridR->alterTitle;
+                            $gridFieldI = $fieldR;
+                            if ($gridR->alterTitle) $gridFieldI->title = $gridR->alterTitle;
                             $gridFieldA[] = $gridFieldI;
                         }
                     }
                 }
-                $this->gridFields = Indi::model('Field')->createRowset(array('original' => $gridFieldA));
+                $this->gridFields = Indi::model('Field')->createRowset(array('rows' => $gridFieldA));
             }
 
-            // Setup disabled fields
-            foreach ($sectionR->nested('disabledField') as $disabledFieldR) {
-                foreach ($this->fields as $fieldR) {
-                    if ($disabledFieldR->fieldId == $fieldR->id) {
-                        $this->disabledFields['save'][] = $fieldR->alias;
-                        if ($disabledFieldR->displayInForm) $this->disabledFields['form'][] = $fieldR->alias;
-                    }
-                }
-            }
+            $this->disabledFields = $sectionR->nested('disabledField');
 
         } else {
 
