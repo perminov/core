@@ -49,7 +49,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @var array
      */
-    protected $_nested = 'ss';
+    protected $_nested = array();
 
     /**
      * Table name of table, that current row is related to
@@ -158,6 +158,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $condition
      */
     public function move($direction = 'up', $within = '', $condition = null) {
+
         // Check direction validity
         if (in_array($direction, array('up', 'down'))) {
 
@@ -718,6 +719,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             return $this->_foreign;
         }
 
+        // If $refresh argument is an object, we interpret it as a foreign row, and assign it directly
+        if (is_string($key) && is_object($refresh)) return $this->_foreign[$key] = $refresh;
+
         // If foreign row, got by foreign key, was got already got earlier, and no refresh should be done - return it
         if (array_key_exists($key, $this->_foreign) && !$refresh) {
             return $this->_foreign[$key];
@@ -1028,6 +1032,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function nested($table, $fetch = array(), $alias = null, $field = null, $fresh = false) {
 
+        // Id $fetch argument is object, we interpret it as nested data, so we assign it directly
+        if (is_object($fetch)) return $this->_nested[$table] = $fetch;
+
         // Determine the nested rowset identifier. If $alias argument is not null, we will assume that needed rowset
         // is or should be stored under $alias key within $this->_nested array, or under $table key otherwise.
         // This is useful in cases when we need to deal with nested rowsets, got from same database table, but
@@ -1120,7 +1127,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         if ($deep) {
-
             if (count($this->_foreign))
                 foreach ($this->_foreign as $alias => $row)
                     if (is_object($row) && $row instanceof Indi_Db_Table_Row)
@@ -1192,12 +1198,24 @@ class Indi_Db_Table_Row implements ArrayAccess
         else $this->_temporary[$columnName] = $value;
     }
 
+    /**
+     * This function sets of gets a value of $this->_temporary array by a given key (argument #1)
+     * using a given value (argument # 2)
+
+     * @return mixed
+     */
     public function original() {
         if (func_num_args() == 0) return $this->_original;
         else if (func_num_args() == 1) return $this->_original[func_get_arg(0)];
         else return $this->_original[func_get_arg(0)] = func_get_arg(1);
     }
 
+    /**
+     * This function sets of gets a value of $this->_temporary array by a given key (argument #1)
+     * using a given value (argument # 2)
+     *
+     * @return mixed
+     */
     public function temporary() {
         if (func_num_args() == 0) return $this->_temporary;
         else if (func_num_args() == 1) return $this->_temporary[func_get_arg(0)];
@@ -1210,8 +1228,6 @@ class Indi_Db_Table_Row implements ArrayAccess
      * to deal with cases, when we need to skip prepending a hue number
      * to #RRGGBB color, because we need to display color value without hue number in forms.
      *
-     * @param $key
-     * @param $value
      * @return mixed
      */
     public function modified() {
@@ -1221,7 +1237,8 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * This function sets of gets a value of $this->_system array by a given key
+     * This function sets of gets a value of $this->_system array by a given key (argument #1)
+     * using a given value (argument # 2)
      *
      * @return mixed
      */
@@ -1239,7 +1256,6 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Return results of certain field value compilation
      *
-     * @param $key
      * @return mixed
      */
     public function compiled() {
@@ -1264,7 +1280,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Required by the ArrayAccess implementation
      *
      * @param string $offset
-     * @return string
+     * @return mixed|string
      */
     public function offsetGet($offset) {
         return $this->__get($offset);

@@ -47,8 +47,8 @@ class Indi_Trail_Admin{
         // Get the array of accessible sections ids
         $accessibleSectionIdA = array();
         foreach ($sectionRs->nested('section2action') as $sectionId => $section2actionRs)
-            foreach ($section2actionRs->original() as $section2actionI)
-                if ($section2actionI['actionId'] == 1)
+            foreach ($section2actionRs as $section2actionR)
+                if ($section2actionR->actionId == 1)
                     $accessibleSectionIdA[] = $sectionId;
 
         // Get accessible nested sections for each section within the trail
@@ -62,9 +62,6 @@ class Indi_Trail_Admin{
             'where' => '`sectionId` = "' . $routeA[0] . '" AND `toggle` = "y"',
             'order' => 'move'
         ));
-
-        // Setup a primary hash for current section
-        $sectionRs->temporary($routeA[0], 'primaryHash', Indi::uri('ph'));
 
         // Setup grid columns
         $sectionRs->nested('grid', array(

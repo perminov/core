@@ -49,6 +49,9 @@ class Indi_Cache_Fetcher {
                 if (preg_match('/^`([a-zA-Z0-9_]+)`\s*=\s*"([^"]+)"$/', $whereI, $criteria)) {
                     $indexA = $GLOBALS['cache'][$this->config['table']]['myi'][$criteria[1]][$criteria[2]];
 
+                    // If there is a single index found, and it is 0, convert it to array
+                    if ($indexA == 0) $indexA = array(0);
+
                 // Else if type of current search criteria is sql `IN` or 'FIND_IN_SET(`column`, "valueslist")' clause
                 } else if (preg_match('/^`([a-zA-Z0-9_]+)`\s+IN\s*\(([a-zA-ZА-Яа-я0-9_"\',]+)\)$/', $whereI, $criteria)
                     || preg_match('/^FIND_IN_SET\s*\(`([a-zA-Z0-9_]+)`,\s*"([a-zA-Zа-яА-Я0-9,_]+)"\)$/', $whereI, $criteria)) {
@@ -144,8 +147,10 @@ class Indi_Cache_Fetcher {
                 foreach ($this->data as $index => $data) $column[$index] = $data[$this->config['order']['column']];
             }
 
-            // Do an array_multisort()
-            array_multisort($column, $this->config['order']['direction'] == 'DESC' ? SORT_DESC : SORT_ASC, $this->data);
+            // Do an array_multisort(), but only if we have non-empty data array
+            if (count($this->data))
+                array_multisort($column,
+                    $this->config['order']['direction'] == 'DESC' ? SORT_DESC : SORT_ASC, $this->data);
         }
     }
 

@@ -73,14 +73,101 @@ class Indi_Db {
             // Get info about existing entities
             $fieldA = self::$_instance->query('SELECT * FROM `field` ORDER BY `move`')->fetchAll();
 
-            // Group fields by their entity ids
-            $eFieldA = array(); foreach ($fieldA as $fieldI) $eFieldA[$fieldI['entityId']][] = $fieldI; unset($fieldA);
+            // Get info about existing control elements
+            $elementA = self::$_instance->query('SELECT * FROM `element`')->fetchAll();
+            $iElementA = array(); foreach ($elementA as $elementI)
+                $iElementA[$elementI['id']] = new Indi_Db_Table_Row_Noeval(array(
+                    'table' => 'element',
+                    'original' => $elementI
+                ));
+            unset($elementA);
 
-            // Group fields by their entity ids, and set aliases as keys for second dimension
-            $efFieldA = array();
-            foreach ($eFieldA as $entityId => $fieldA)
-                foreach ($fieldA as $fieldI)
-                    $efFieldA[$entityId][$fieldI['alias']] = $fieldI; unset($eFieldA);
+            // Get info about existing column types
+            $columnTypeA = self::$_instance->query('SELECT * FROM `columnType`')->fetchAll();
+            $iColumnTypeA = array(); foreach ($columnTypeA as $columnTypeI)
+                $iColumnTypeA[$columnTypeI['id']] = new Indi_Db_Table_Row_Noeval(array(
+                    'table' => 'columnType',
+                    'original' => $columnTypeI
+                ));
+            unset($columnTypeA);
+
+            // Get info about existing enumset values
+            $enumsetA = self::$_instance->query('SELECT * FROM `enumset` ORDER BY `move`')->fetchAll();
+            $fEnumsetA = array(); foreach ($enumsetA as $enumsetI)
+                $fEnumsetA[$enumsetI['fieldId']][] = new Indi_Db_Table_Row_Noeval(array(
+                    'table' => 'enumset',
+                    'original' => $enumsetI
+                ));
+            unset($enumsetA);
+
+            // Get info about existing field params
+            // 1. Get info about possible field element params
+            $possibleElementParamA = self::$_instance->query('SELECT * FROM `possibleElementParam`')->fetchAll();
+
+            // 2. Declare two arrays, where:
+            //   a. possible params as array of arrays, each having params aliases as keys, and devault values as
+            //      values, grouped by elementId
+            //   b. possible params as array, having params ids as keys, and aliases as values
+            // - respectively
+            $ePossibleElementParamA = array(); $possibleElementParamAliasA = array();
+
+            // 3. Fulfil these two arrays
+            foreach ($possibleElementParamA as $possibleElementParamI) {
+                $ePossibleElementParamA[$possibleElementParamI['elementId']]
+                    [$possibleElementParamI['alias']] = $possibleElementParamI['defaultValue'];
+                $possibleElementParamAliasA[$possibleElementParamI['id']] = $possibleElementParamI['alias'];
+            }
+            unset($possibleElementParamA);
+
+            // 4. Get info about existing field parameters
+            $paramA = self::$_instance->query('SELECT * FROM `param`')->fetchAll();
+            $fParamA = array(); foreach ($paramA as $paramI) $fParamA[$paramI['fieldId']]
+            [$possibleElementParamAliasA[$paramI['possibleParamId']]] = $paramI['value']; unset($paramA);
+            unset($paramA);
+
+            // Group fields by their entity ids, and append system info
+            $eFieldA = array();
+            foreach ($fieldA as $fieldI) {
+
+                // Setup original data
+                $fieldI = array('original' => $fieldI);
+
+                // Setup foreign data for 'elementId' foreign key
+                $fieldI['foreign']['elementId'] = $iElementA[$fieldI['original']['elementId']];
+
+                // Setup foreign data for 'columnTypeId' foreign key, if field has a non-zero columnTypeId
+                if ($iColumnTypeA[$fieldI['original']['columnTypeId']])
+                    $fieldI['foreign']['columnTypeId'] = $iColumnTypeA[$fieldI['original']['columnTypeId']];
+
+                // Setup nested rowset with 'enumset' rows, if field contains foreign keys from 'enumset' table
+                if ($fieldI['original']['relation'] == '6') {
+                    $fieldI['nested']['enumset'] = new Indi_Db_Table_Rowset(array(
+                        'table' => 'enumset',
+                        'rows' => $fEnumsetA[$fieldI['original']['id']],
+                        'rowClass' => 'Enumset_Row'
+                    ));
+                    unset($fEnumsetA[$fieldI['id']]);
+                }
+
+                // Setup params, as array, containing default values, and actual values arrays merged to single array
+                if ($ePossibleElementParamA[$fieldI['original']['elementId']] || $fParamA[$fieldI['original']['id']]) {
+                    $fieldI['temporary']['params'] = array_merge(
+                        is_array($ePossibleElementParamA[$fieldI['original']['elementId']])
+                            ? $ePossibleElementParamA[$fieldI['original']['elementId']]
+                            : array(),
+                        is_array($fParamA[$fieldI['original']['id']])
+                            ? $fParamA[$fieldI['original']['id']]
+                            : array()
+                    );
+                }
+
+                // Append current field data to $eFieldA array
+                $eFieldA[$fieldI['original']['entityId']]['rows'][] = new Field_Row($fieldI);
+                $eFieldA[$fieldI['original']['entityId']]['aliases'][] = $fieldI['original']['alias'];
+            }
+
+            // Release memory
+            unset($fieldA, $iElementA, $iColumnTypeA, $fEnumsetA, $ePossibleElementParamA, $fParamA);
 
             // Foreach existing entity
             foreach ($entityA as $entityI) {
@@ -90,11 +177,16 @@ class Indi_Db {
                     'id' => $entityI['id'],
                     'extends' => $entityI['extends'],
                     'useCache' => $entityI['useCache'],
-                    'fields' => $efFieldA[$entityI['id']]
+                    'fields' => new Field_Rowset_Base(array(
+                        'table' => 'field',
+                        'rows' => $eFieldA[$entityI['id']]['rows'],
+                        'aliases' => $eFieldA[$entityI['id']]['aliases'],
+                        'rowClass' => 'Field_Row'
+                    ))
                 );
 
                 // Free memory, used by fields array for current entity
-                unset($efFieldA[$entityI['id']]);
+                unset($eFieldA[$entityI['id']]);
 
                 // If cache usage is setup for current entity, we append it's table name as a key in self::$_cacheA array
                 if ($entityI['useCache']) self::$_cacheA[$entityI['table']] = true;
@@ -113,7 +205,8 @@ class Indi_Db {
      * @return Indi_Db_Table
      * @throws Exception
      */
-    public static function model($identifier){
+    public static function model($identifier) {
+
         // If $identifier argument is an entity id
         if (preg_match('/^[0-9]+$/', $identifier)) {
 
@@ -140,18 +233,8 @@ class Indi_Db {
         // Else if model not loaded, but it's entity exists within self::$_entityA array
         } else if (array_key_exists($identifier, self::$_entityA)) {
 
-            // If model class exists
-            if (class_exists($identifier)) {
-
-                // Create a model, push it to self::$_modelA array as a next item, and return that item
-                return self::$_modelA[$identifier] = new $identifier(array(
-                    'id' => self::$_entityA[$identifier]['id'],
-                    'useCache' => self::$_entityA[$identifier]['useCache'],
-                    'fields' => self::$_entityA[$identifier]['fields']
-                ));
-
-            // If model class is no exist
-            } else {
+            // If model class does not exist
+            if (!class_exists($identifier)) {
 
                 // Get model's parent class name from self::$_entityA array. If not parent class name there, set
                 // it as 'Indi_Db_Table' by default
@@ -159,13 +242,16 @@ class Indi_Db {
 
                 // Declare model class, using php eval()
                 eval('class ' . $identifier . ' extends ' . $extends . '{}');
-
-                // Create a model, push it to self::$_modelA array as a next item, and return that item
-                return self::$_modelA[$identifier] = new $identifier(array(
-                    'id' => self::$_entityA[$identifier]['id'],
-                    'fields' => self::$_entityA[$identifier]['fields']
-                ));
             }
+
+            // Create a model, push it to self::$_modelA array as a next item
+            self::$_modelA[$identifier] = new $identifier(self::$_entityA[$identifier]);
+
+            // Free memory
+            unset(self::$_entityA[$identifier]['fields']);
+
+            // Return model
+            return self::$_modelA[$identifier];
         }
 
         // Throw exception
@@ -264,7 +350,7 @@ class Indi_Db {
         if ($params = Indi_Cache_Fetcher::support($sql))
 
             // If table name, got from query FROM clause is within keys of self::$_cacheA array
-            if (self::$_cacheA[$params['table']] || $params['table'] == 'entity' || true)
+            if (self::$_cacheA[$params['table']] || $params['table'] == 'entity')
 
                 // And if file with cached data for that table exists
                 if (file_exists(Indi_Cache::file($params['table'])))
@@ -276,6 +362,4 @@ class Indi_Db {
         // Return false
         return false;
     }
-
-
 }

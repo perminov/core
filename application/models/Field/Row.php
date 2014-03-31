@@ -1,7 +1,29 @@
 <?php
 class Field_Row extends Indi_Db_Table_Row
 {
-	public function delete(){
+    /**
+     * Constructor
+     *
+     * @param array $config
+     */
+    public function __construct(array $config = array()) {
+
+        // Setup initial properties
+        $this->_table = 'field';
+        $this->_original = $config['original'];
+        $this->_system = is_array($config['system']) ? $config['system'] : array();
+        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
+        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
+        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
+        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+
+        // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
+        if (strlen($this->_original['defaultValue']) && preg_match('/<\?/', $this->_original['defaultValue'])) {
+            Indi::$cmpTpl = $this->_original[$this->_original['defaultValue']]; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::$cmpOut;
+        }
+    }
+
+    public function delete(){
 		// delete uploaded images or files as they were uploaded as values
 		// of this field if they were uploaded
 		$this->deleteUploadedFilesIfTheyWere();

@@ -63,7 +63,7 @@ class Indi_Db_Table
      *
      * @param array $config
      */
-    public function __construct($config = array()) {
+    public function __construct($config) {
 
         // Set db table name and db adapter
         $this->_id = $config['id'];
@@ -72,10 +72,10 @@ class Indi_Db_Table
         $this->_name = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
 
         // Set fields
-        $this->_fields = is_array($config['fields']) ? $config['fields'] : array();
+        $this->_fields = $config['fields'];
 
         // Detect tree column name
-        $this->_treeColumn = $this->fields($this->_name . 'Id') ? $this->_name . 'Id' : '';
+        $this->_treeColumn = $config['fields']->field($this->_name . 'Id') ? $this->_name . 'Id' : '';
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
@@ -118,14 +118,14 @@ class Indi_Db_Table
             . ($limit ? ' LIMIT ' . $limit : '');
 
         // Fetch data
-        $original = Indi::db()->query($sql)->fetchAll();
+        $data = Indi::db()->query($sql)->fetchAll();
 
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this->_name,
-            'original'     => $original,
+            'data' => $data,
             'rowClass' => $this->_rowClass,
-            'found'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($original),
+            'found'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($data),
             'page' => $page
         );
 
@@ -367,13 +367,11 @@ class Indi_Db_Table
         $assocDataA = array();
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
-            //$assocDataI['indent'] = $indents[$data[$i]['id']];
             $assocDataI['_system']['indent'] = $indents[$data[$i]['id']];
             $assocDataA[$data[$i]['id']] = $assocDataI;
         }
         $data = $assocDataA;
         unset($assocDataA);
-
 
         // Set 'disabled' system property for results that should have such a property
         if (is_array($disabledA)) {
@@ -393,18 +391,10 @@ class Indi_Db_Table
         // we have no ability to use such an expressions.
         foreach ($data as $id => $props) $data[$id]['_system']['parentId'] = $props[$this->_treeColumn];
 
-        $system = array();
-        foreach ($data as $id => $props) {
-            $system[$id] = $data[$id]['_system'];
-            unset($data[$id]['_system']);
-        }
-
-
         // Setup rowset info
         $data = array (
             'table' => $this->_name,
-            'original' => array_values($data),
-            'system' => $system,
+            'data' => array_values($data),
             'rowClass' => $this->_rowClass,
             'found' => $found,
             'page' => $page
@@ -530,7 +520,13 @@ class Indi_Db_Table
         return $data;
     }
 
-    public function titleColumn(){
+    /**
+     * Create a `title` column in database table, if it does not exist.
+     *
+     * @return 'title'. Always.
+     */
+    public function titleColumn() {
+
         // Get array of existing columns
         $existing = $this->fields(null, 'aliases');
 
@@ -562,6 +558,7 @@ class Indi_Db_Table
      * @return int
      */
     public function detectOffset($where, $order, $id) {
+
         // Prepare WHERE and ORDER clauses
         if (is_array($where) && count($where)) $where = implode(' AND ', $where);
         if (is_array($order) && count($order)) $order = implode(', ', $order);
@@ -621,26 +618,24 @@ class Indi_Db_Table
      * and contains only one field name. If $names argument contains comma-separated field names,
      * function will return a Indi_Db_Table_Rowset object, containing all found fields
      * or return all fields within current model. Second argument - $format, is applied only if $names argument
-     * is empty|null. If $format = 'cols', array of field aliases will be returned, else if $format = 'rowset',
-     * fields info will be returned as Indi_Db_Table_Rowset object
+     * is empty|null. If $format = 'columns', array of field aliases will be returned, else if $format = 'rowset',
+     * fields info will be returned as Indi_Db_Table_Rowset object, else if format = 'rowset', the results will be
+     * returned as a rowset
      *
      * @param string $names
      * @param string $format rowset|cols
      * @return Indi_Db_Table_Row|Indi_Db_Table_Rowset
      */
     public function fields($names = '', $format = 'rowset') {
+
         // If $name argument was not given
         if ($names == '') {
 
             // If $format argument == 'rowset' - return all fields as Indi_Db_Table_Rowset object
-            if ($format == 'rowset')
-                return Indi::model('Field')->createRowset(array(
-                    'original' => array_values($this->_fields)
-                ));
+            if ($format == 'rowset') return $this->_fields;
 
             // Else if $format == 'aliases' - return all fields aliases as array
-            else if ($format == 'aliases')
-                return array_keys($this->_fields);
+            else if ($format == 'aliases') return $this->_fields->column('alias');
 
             // Else if $format == 'columns', return only aliases for fields,
             // that are represented by database table columns
@@ -650,9 +645,7 @@ class Indi_Db_Table
                 $columnA = array();
 
                 // For each field check whether it have columnTypeId != 0, and if so, append field alias to columns array
-                foreach ($this->_fields as $alias => $info)
-                    if ($info['columnTypeId'])
-                        $columnA[] = $alias;
+                foreach ($this->_fields as $field) if ($field->columnTypeId) $columnA[] = $field->alias;
 
                 // Return columns array
                 return $columnA;
@@ -662,44 +655,16 @@ class Indi_Db_Table
         } else if (!preg_match('/,/', $names)) {
 
             // Return certain field as Indi_Db_Table_Row object, if found
-            if (isset($this->_fields[$names])) {
-                return Indi::model('Field')->createRow(array(
-                    'original' => $this->_fields[$names]
-                ));
-            }
+            return $this->_fields->field($names);
 
         // Else if $name argument contains several field names
         } else {
 
-            // Convert field names list to array
-            $nameA = explode(',', $names);
-
-            // Declare $found array
-            $found = array();
-
-            // Fore each field name
-            foreach ($nameA as $nameI) {
-
-                // Remove whitespaces
-                $nameI = trim($nameI);
-
-                // If field was found, append it to $found array
-                if (isset($this->_fields[$nameI])) {
-                    $found[$nameI] = $this->_fields[$nameI];
-                }
-            }
-
-            // If $format argument is set to 'rowset'
-            if ($format == 'rowset')
-
-                // Return all found fields as Indi_Db_Table_Rowset object
-                return Indi::model('Field')->createRowset(array(
-                    'original' => array_values($found)
-                ));
+            // Get them as a rowset, if $format argument is 'rowset'
+            if ($format == 'rowset') return $this->_fields->select($names, 'alias');
 
             // Else if $format is set to 'cols', array if field aliases will be returned
-            else if ($format == 'aliases') return array_keys($found);
-
+            else if ($format == 'aliases') return $this->_fields->select($names, 'alias')->column('alias');
         }
     }
 
@@ -758,7 +723,7 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function name(){
+    public function name() {
         return $this->_name;
     }
 
@@ -858,14 +823,17 @@ class Indi_Db_Table
      */
     public function createRowset($input = array()) {
 
+        // Get the type of construction
+        $index = isset($input['rows']) ? 'rows' : 'data';
+
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this->_name,
-            'original'     => is_array($input['original']) ? $input['original'] : array(),
+            $index     => is_array($input[$index]) ? $input[$index] : array(),
             'rowClass' => $this->_rowClass,
             'found'=> isset($input['found'])
                 ? $input['found']
-                : (is_array($input['original']) ? count($input['original']) : 0)
+                : (is_array($input[$index]) ? count($input[$index]) : 0)
         );
 
         // Construct and return Indi_Db_Table_Rowset object
@@ -877,8 +845,7 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function rowClass()
-    {
+    public function rowClass() {
         return $this->_rowClass;
     }
 
@@ -887,8 +854,7 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function rowsetClass()
-    {
+    public function rowsetClass() {
         return $this->_rowsetClass;
     }
 
@@ -926,8 +892,7 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function treeColumn()
-    {
+    public function treeColumn() {
         return $this->_treeColumn;
     }
 
@@ -936,8 +901,7 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function id()
-    {
+    public function id() {
         return $this->_id;
     }
 
