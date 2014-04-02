@@ -35,6 +35,25 @@ define('I_NO', 'No');
 
 define('I_LOGOUT', 'Logout');
 
+define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
+define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Value "%s" of field "%s" should not be greater than a 11-digit decimal');
+define('I_ROWSAVE_ERROR_VALUE_IS_NOT_ALLOWED', 'Value "%s" of field "%s" is not within the list of allowed values');
+define('I_ROWSAVE_ERROR_VALUE_CONTAINS_UNALLOWED_ITEMS', 'Field "%s" contains unallowed values: "%s"');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_LIST_OF_NON_ZERO_DECIMALS', 'Value "%s" of field "%s" contains at least one item that is not an non-zero decimal');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_BOOLEAN', 'Value "%s" of field "%s" should be "1" or "0"');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_COLOR', 'Value "%s" of field "%s" should be a color in formats #rrggbb or hue#rrggbb');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DATE', 'Value "%s" of field "%s" is not a date');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_DATE', 'Value "%s" of field "%s" is an invalid date');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_TIME', 'Value "%s" of field "%s" should be a time in format HH:MM:SS');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_TIME', 'Value "%s" of field "%s" is not a valid time');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE', 'Value "%s", mentioned in field "%s" as a date - is not a date');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE', 'Date "%s", mentioned in field "%s"  - is not a valid date');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Value "%s", mentioned in field "%s" as a time - should be a time in format HH:MM:SS');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Time "%s", mentioned in field "%s" - is not a valid time');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 5 or less digits in integer part, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Value "%s" of field "%s" should be a year in format YYYY');
+
 define('I_MENU', 'Menu');
 define('ACTION_CREATE', 'Create');
 define('GRID_WARNING_SELECTROW_MSG', 'Select a row');

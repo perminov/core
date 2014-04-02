@@ -797,9 +797,16 @@ class Indi_Db_Table
         // If $constructData['original'] is an empty array, we setup it according to model structure
         if (count($constructData['original']) == 0) {
             $constructData['original']['id'] = null;
-            foreach ($this->fields() as $fieldR)
-                if ($fieldR->columnTypeId)
+            foreach ($this->fields() as $fieldR) {
+                if ($fieldR->columnTypeId) {
                     $constructData['original'][$fieldR->alias] = $fieldR->defaultValue;
+                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
+                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
+                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
+                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
+                    }
+                }
+            }
         }
 
         // Get row class name
@@ -930,14 +937,14 @@ class Indi_Db_Table
 
                 // If current field alias is one of keys within data to be inserted,
                 // and if data's value for that field alias is not null
-                if (!is_null($data[$fieldR->alias])) {
+                if (array_key_exists($fieldR->alias, $data)) {
 
                     // We append value with related field alias to $set array
                     $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
 
-                    // Else if column type is TEXT, we use field's default value as value for insertion
+                // Else if column type is TEXT, we use field's default value as value for insertion
                 } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $fieldR->defaultValue) .'"';
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $fieldR->compiled('defaultValue')) .'"';
 
             }
         }

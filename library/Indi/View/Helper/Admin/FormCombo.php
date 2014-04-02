@@ -31,7 +31,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @return mixed
      */
     public function getDefaultValue() {
-        return $this->field->defaultValue;
+        return $this->field->compiled('defaultValue');
     }
 
     /**
@@ -59,6 +59,18 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         }
     }
 
+    public function getSelected() {
+
+        // If current row does not exist, combo will use field's default value as selected value
+        if ($this->getRow()->id) {
+            $selected = $this->getRow()->{$this->name};
+        } else {
+            $selected = $this->getDefaultValue();
+        }
+
+        return $selected;
+    }
+
     /**
      * Builds the combo
      *
@@ -82,12 +94,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // Get title column
         $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';
 
-        // If current row does not exist, combo will use field's default value as selected value
-        if ($this->getRow()->$name) {
-            $selected = $this->getRow()->$name;
-        } else {
-            $selected = $this->getDefaultValue();
-        }
+        $selected = $this->getSelected();
 
         // Get initial set of combo options
         $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
@@ -170,9 +177,15 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
         if ($this->field->storeRelationAbility == 'one') {
+
             // Setup a key
-            if (($this->getRow()->$name && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
-                $key = $this->getRow()->$name;
+            if (($this->getRow()->id && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
+
+                if (preg_match('/Sibling/', get_class($this))) {
+                    $key = $this->getRow()->id;
+                } else {
+                    $key = $this->getRow()->$name;
+                }
             } else if ($comboDataRs->enumset && $this->type == 'form') {
                 $key = key($options);
             } else {

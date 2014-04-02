@@ -1836,6 +1836,9 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
                 else Indi::trail($this->_routeA)->authLevel3($this);
             }
         }
+
+        // If current request had a only aim to check access - report that all is ok
+        if (Indi::get('check')) die('ok');
     }
 
     /**
@@ -1950,6 +1953,7 @@ class Indi_Controller_Admin_Beautiful extends Indi_Controller{
             $location = Indi::trail()->section->href  . '/' .
                 ($id ? 'index/id/' . $id . '/' : ($scope ? 'index/' : '')) .
                 ($scope['upperHash'] ? 'ph/' . $scope['upperHash'] . '/aix/' . $scope['upperAix'] . '/' : '');
+
         }
 
         // Redirect

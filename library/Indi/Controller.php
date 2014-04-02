@@ -154,9 +154,6 @@ class Indi_Controller{
     {
         return $where;
     }
-	public function _redirect($location){
-		die('<script>window.parent.Indi.load("' . $location . '");</script>');
-	}
 
 	public function dispatch() {
         header('Content-Type: text/html; charset=utf-8');
