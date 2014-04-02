@@ -137,7 +137,7 @@
 		//config.skin = 'v1';
 		config.uiColor = '#dfe8f6';
 		// Check if CKFinder should be used in read-only mode
-		$.post(window.opener.location.pathname.replace('form', 'save') + '?check', function(access){
+		$.post(window.opener.location.pathname.replace('form', 'save') + '?check=1', function(access){
 			if (access != 'ok') {
 				config.readOnly = true;
 			}

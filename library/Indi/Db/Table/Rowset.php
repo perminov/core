@@ -401,13 +401,27 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
     /**
      * Force rowset to contain only rows, that have keys, mentioned in $keys argument
+     * If $clone argument is set to true (this is it's default value), a clone of current rowset
+     * will be filtered and returned. Otherwise - method will operate with current rowset instead of it's clone
      *
      * @param $keys
      * @param string $type
+     * @param bool $clone
      * @return Indi_Db_Table_Rowset Fluent interface
      */
-    public function select($keys, $type = 'id') {
-        return $this->exclude($keys, $type, true);
+    public function select($keys, $type = 'id', $clone = true) {
+
+        // If $clone argument is set to true
+        if ($clone) {
+
+            // Clone current rowset
+            $clone = clone $this;
+
+            // Make a selection (inverted exclusion)
+            return $clone->exclude($keys, $type, true);
+
+        // Else of a selection on current rowset
+        } else return $this->exclude($keys, $type, true);
     }
 
     /**
@@ -933,7 +947,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 }
 
                 // Finish building WHERE clause
-                $where[] = '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')';
+                $where[] = count($distinctA[$entityId])
+                    ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
+                    : 'FALSE';
 
                 // Fetch foreign data
                 $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
@@ -1070,5 +1086,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
         // Return column data
         return $valueA;
+    }
+
+    /**
+     * Get the $this->_rows array
+     *
+     * @return array
+     */
+    public function rows() {
+        return $this->_rows;
     }
 }

@@ -35,6 +35,26 @@ define('I_NO', 'Нет');
 
 define('I_LOGOUT', 'Выход');
 
+define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Значением поля "%s" не может быть объект');
+define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Значением поля "%s" не может быть массив');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Значение "%s" поля "%s" должно быть целым числом, имеющим не более 11 разрядов');
+define('I_ROWSAVE_ERROR_VALUE_IS_NOT_ALLOWED', 'Значение "%s" поля "%s" отсутствует в списке допустимых значений');
+define('I_ROWSAVE_ERROR_VALUE_CONTAINS_UNALLOWED_ITEMS', 'В поле "%s" присутствуют недопустимые значения: "%s"');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_LIST_OF_NON_ZERO_DECIMALS', 'Значение "%s" поля "%s" содержит как минимум один элемент не являющийся ненулевым целым числом');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_BOOLEAN', 'Значение "%s" поля "%s" должно быть "1" или "0"');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_COLOR', 'Значение "%s" поля "%s" не является цветом в форматах #rrggbb или hue#rrggbb');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DATE', 'Значение "%s" поля "%s" не является датой');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_DATE', 'Значение "%s" поля "%s" не является корректной датой');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_TIME', 'Значение "%s" поля "%s" не является временем в формате ЧЧ:ММ:СС');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_TIME', 'Время "%s" поля "%s" не является корректным временем');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE', 'Значение "%s", указанное в поле "%s" в качестве даты - не является датой');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE', 'Дата "%s", указанная в поле "%s" - должна быть корректной');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Значение "%s", указанное в поле "%s" в качестве времени - не является временем');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Время "%s", указанное в поле "%s" - должно быть корректным');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Значение "%s" поля "%s" должно быть числом имеющим не более 5 разрядов в целочисленной части, и не более 2-х - в дробной');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Значение "%s" поля "%s" не является годом в формате ГГГГ');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Текущая запись не может быть указана как родительская для самой себя в поле "%"');
+
 define('I_MENU', 'Меню');
 define('ACTION_CREATE', 'Создать');
 define('GRID_WARNING_SELECTROW_MSG', 'Выберите строку');

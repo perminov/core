@@ -1,26 +1,48 @@
 <?php
 class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
 {
+    /**
+     * Setup row object for combo
+     *
+     * @return Indi_Db_Table_Row
+     */
+    public function getRow(){
+        return $this->view->row;
+    }
+
+    /**
+     * Default value determining is extracted from raw code to seperate function for inherited classes
+     * being able to setup a different logic for dealing with default values
+     *
+     * @return mixed
+     */
+    public function getDefaultValue() {
+        return $this->field->compiled('defaultValue');
+    }
+
     public function formMulticheck($name, $cols = 1, $attribs = array())
     {
-        $multi = $this->view->row->getComboData($name);
+        $this->field = $field = Indi::trail()->model->fields($name);
+
+        // If current row does not exist, multicheck will use field's default value as selected value
+        if ($this->getRow()->id) {
+            $selected = $this->getRow()->$name;
+        } else {
+            $selected = $this->getDefaultValue();
+        }
+
+        $key = $this->field->foreign('relation')->table == 'enumset' ? 'alias' : 'id';
+        $multi = $this->view->row->getComboData($name, null, $selected);
+        $checked = $multi->selected->column($key);
         $multi = $multi ? $multi : array();
-                
         $data = array();
-		$field = Indi::trail()->model->fields($name);
-		$params = $field->getParams();
+		$params = $this->field->params;
 		if ($params['cols']) $cols = $params['cols'];
-		if(!$this->view->row->id) {
-			$value = $field->defaultValue;
-		} else {
-			$value = $this->view->row->$name;
-		}
-		$checked = explode(',', $value);
         foreach ($multi as $multiI) {
             $item = new stdClass();
-            $item->value = $multiI->id;
+            $item->value = $multiI->$key;
             $item->text = $multiI->title;
-            if (is_array($checked) && in_array($multiI->id, $checked)) $item->checked = true;
+            if (is_array($checked) && in_array($multiI->$key, $checked)) $item->checked = true;
             $data[] = $item;
         }
         $rowsHeightLimit = 10;

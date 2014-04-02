@@ -18,10 +18,32 @@ class Field_Row extends Indi_Db_Table_Row
         $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
-        if (strlen($this->_original['defaultValue']) && preg_match('/<\?/', $this->_original['defaultValue'])) {
-            Indi::$cmpTpl = $this->_original[$this->_original['defaultValue']]; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::$cmpOut;
+        if (strlen($this->_original['defaultValue'])) {
+            if (preg_match(Indi::rex('php'), $this->_original['defaultValue'])) {
+                Indi::$cmpTpl = $this->_original['defaultValue']; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::$cmpOut;
+            } else {
+                $this->_compiled['defaultValue'] = $this->_original['defaultValue'];
+            }
         }
     }
+
+    /**
+     * Set row field value, by creating an item of $this->_modified array, in case if
+     * value is different from value of $this->_original at same key ($columnName)
+     *
+     * @param  string $columnName The column key.
+     * @param  mixed  $value      The value for the property.
+     * @return void
+     */
+    public function __set($columnName, $value) {
+        // Check if value is a color in #RRGGBB format and prepend it with hue number
+        if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
+            $value = Misc::rgbPrependHue($value);
+        }
+        parent::__set($columnName, $value);
+    }
+
+
 
     public function delete(){
 		// delete uploaded images or files as they were uploaded as values

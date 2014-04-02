@@ -16,6 +16,18 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         return ob_get_clean();
     }
 
+    public function getSelected() {
+
+        // If current row does not exist, combo will use field's default value as selected value
+        if ($this->getRow()->id) {
+            $selected = $this->getRow()->id;
+        }
+
+        return $selected;
+    }
+
+
+
     public function getField($name, $tableName) {
         $pseudoFieldR = Indi::model('Field')->createRow();
         $pseudoFieldR->entityId = Indi::trail()->section->entityId;
@@ -23,7 +35,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->storeRelationAbility = 'one';
         $pseudoFieldR->elementId = 23;
         $pseudoFieldR->columnTypeId = 3;
-        $pseudoFieldR->defaultValue = Indi::trail()->row->id;
+        //$pseudoFieldR->defaultValue = Indi::trail()->row->id;
         $pseudoFieldR->relation = Indi::trail()->section->entityId;
         $pseudoFieldR->dependency = 'u';
         $pseudoFieldR->satellite = 0;
@@ -48,7 +60,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
     }
 
     public function getRow(){
-        return Indi::trail()->row;//Indi::model('Section')->createRow();
+        return Indi::trail()->row;
     }
 
     /**

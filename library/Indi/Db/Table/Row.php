@@ -59,6 +59,13 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_table = '';
 
     /**
+     * Store info about errors, fired while a try to save current row
+     *
+     * @var array
+     */
+    protected $_mismatch = array();
+
+    /**
      * Count of options that will be fetched. It's 300 by default - hundred-rounded number of countries in the world
      *
      * @var int
@@ -96,6 +103,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function save() {
 
+        // Check conformance to all requirements
+        if (count($this->mismatch(true))) return false;
+
         // Setup $orderAutoSet flag if need
         if (!$this->_original['id'] && array_key_exists('move', $this->_original) && !$this->move) $orderAutoSet = true;
 
@@ -108,8 +118,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Merge $this->_original and $this->_modified arrays into $this->_original array
                 $this->_original = (array) array_merge($this->_original, $this->_modified);
 
-                // Empty $this->_modified array
-                $this->_modified = array();
+                // Empty $this->_modified and $this->_mismatch arrays
+                $this->_modified = $this->_mismatch = array();
             }
 
             // Setup $return variable as a number of affected rows, e.g 1 or 0
@@ -124,8 +134,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Merge $this->_original and $this->_modified arrays into $this->_original array
             $this->_original = (array) array_merge($this->_original, $this->_modified);
 
-            // Empty $this->_modified array
-            $this->_modified = array();
+            // Empty $this->_modified and $this->_mismatch arrays
+            $this->_modified = $this->_mismatch = array();
 
             // Setup $return variable as id of current (a moment ago inserted) row
             $return = $this->_original['id'];
@@ -183,6 +193,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Find
             if ($changeRow = $this->model()->fetchRow($where, $order)) {
+
                 // Backup `move` of current row
                 $backup = $this->move;
 
@@ -214,6 +225,22 @@ class Indi_Db_Table_Row implements ArrayAccess
         return $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
     }
 
+    /**
+     * Get the data for use in all control element, that deal with foreign keys
+     *
+     * @param $field
+     * @param null $page
+     * @param null $selected
+     * @param bool $selectedTypeIsKeyword
+     * @param null $satellite
+     * @param null $where
+     * @param bool $noSatellite
+     * @param null $fieldR
+     * @param null $order
+     * @param string $dir
+     * @param null $offset
+     * @return Indi_Db_Table_Rowset|mixed
+     */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
                                  $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
                                  $order = null, $dir = 'ASC', $offset = null) {
@@ -247,33 +274,20 @@ class Indi_Db_Table_Row implements ArrayAccess
             // because values of property `alias` should be used as options keys, instead of values of property `id`
             $dataRs->enumset = true;
 
-            if ($fieldR->storeRelationAbility == 'many') {
-                if ($selected) {
-                    // Convert list of selected ids into array
-                    $selected = explode(',', $selected);
+            // If current field store relation ability is 'many' - we setup selected as rowset object
+            if ($fieldR->storeRelationAbility == 'many')
+                $dataRs->selected = $dataRs->select($selected, 'alias');
 
-                    // Declare and fill array of selected rows
-                    $data = array();
-                    foreach ($dataRs as $dataR)
-                        if (in_array($dataR->alias, $selected))
-                            $data[] = $dataR->toArray();
-
-                    // Create rowset of selected rows
-                    $dataRs->selected = $relatedM->createRowset(array('original' => $data));
-                } else {
-                    $dataRs->selected = $relatedM->createRowset(array('original' => array()));
-                }
-            }
-
+            // Return combo data
             return $dataRs;
 
-            // Else if current field column type is BOOLEAN - combo is used as an alternative for checkbox control
+        // Else if current field column type is BOOLEAN - combo is used as an alternative for checkbox control
         } else if ($fieldColumnTypeR->type == 'BOOLEAN') {
 
             // Prepare the data
             $dataRs = Indi::model('Enumset')->createRowset(
                 array(
-                    'original' => array(
+                    'data' => array(
                         array('alias' => '0', 'title' => 'Нет'),
                         array('alias' => '1', 'title' => 'Да')
                     )
@@ -639,19 +653,19 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if (count($selectedThatArePresentedInCurrentDataRs))
                     foreach ($dataRs as $dataR)
                         if (in_array($dataR->id, $selectedThatArePresentedInCurrentDataRs))
-                            $data[] = $dataR->toArray();
+                            $data[] = $dataR;
 
                 // If some of selected rows are not presented in $dataRs, we do additional fetch to retrieve
                 // them from database and append these rows to $data array
                 if(count($selectedThatShouldBeAdditionallyFetched = array_diff($selected, $allFetchedIds))) {
                     $data = array_merge($data, $relatedM->fetchAll('
                         FIND_IN_SET(`id`, "' . implode(',', $selectedThatShouldBeAdditionallyFetched) . '")
-                    ')->toArray());
+                    ')->rows());
                 }
 
-                $dataRs->selected = $relatedM->createRowset(array('original' => $data));
+                $dataRs->selected = $relatedM->createRowset(array('rows' => $data));
             } else {
-                $dataRs->selected = $relatedM->createRowset(array('original' => array()));
+                $dataRs->selected = $relatedM->createRowset(array('rows' => array()));
             }
         }
 
@@ -1183,19 +1197,845 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return void
      */
     public function __set($columnName, $value) {
-        // Check if value is a color in #RRGGBB format and prepend it with hue number
-        if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
-            $value = Misc::rgbPrependHue($value);
+
+        // If $columnName is exists as one of keys within $this->_original array
+        if (array_key_exists($columnName, $this->_original)) {
+
+            // If this value is not equal to value, already existing in $this->_original array under same
+            // key ($columnName), we put this value in a $this->_modified array
+            if ($this->_original[$columnName] !== $value)
+                $this->_modified[$columnName] = $value;
+
+            // Else we unset value, stored in $this->_modified array under $columnName key, because the fact
+            // that we are here mean value is now the exact same as it was originally, so we need to unset
+            // info about it's modification, as it is actually no more modified
+            else unset($this->_modified[$columnName]);
+
+            // Else we put this value in $this->_temporary array
+        } else $this->_temporary[$columnName] = $value;
+    }
+
+    /**
+     * Strips all tags from $html argument, except tags mentioned in $tags argument as a comma-separated list,
+     * then strip event attributes from these tags, and after that return result
+     *
+     * @static
+     * @param $html
+     * @param string $tags
+     * @return string
+     */
+    public static function safeHtml($html, $tags = 'font,span') {
+
+        // Strip all tags, except tags, mentioned in $tags argument
+        $html = strip_tags($html, '<' . preg_replace('/,/', '><', $tags) . '>');
+
+        // Strip event attributes, and return the result
+        return self::safeAttrs($html);
+    }
+
+    /**
+     * Strip event attributes from tags, that are exist in $html argument, and return the result
+     *
+     * @static
+     * @param $html
+     * @return mixed
+     */
+    public static function safeAttrs($html) {
+
+        // Declare a callback function for usage within preg_replace_callback() php function
+        if (!function_exists('safeAttrsCallback')) {
+            function safeAttrsCallback($m) {
+                $m[2] = preg_replace('/\s+on[a-zA-Z0-9]+\s*=\s*"[^">]+"/', '', $m[2]);
+                $m[2] = preg_replace("/\s+on[a-zA-Z0-9]+\s*=\s*'[^'>]+'/", '', $m[2]);
+                return $m[1] . $m[2] . $m[5];
+            }
         }
 
-        // We setup a value in a $this->_modified array only if this value is not equal to value, already
-        // existing in $this->_original array under same key ($columnName), and only if $columnName is
-        // exists as one of keys within $this->_original array
-        if ($this->_original[$columnName] !== $value && array_key_exists($columnName, $this->_original))
-            $this->_modified[$columnName] = $value;
+        // Replace double and single quotes that are prepended with a backslash, with their special charachers
+        $html = preg_replace('/\\\\"/', '&quot;', $html); $html = preg_replace("/\\\\'/", '&#039;', $html);
 
-        // Otherwise we assign this key => value pair into a $this->_temporary array
-        else $this->_temporary[$columnName] = $value;
+        // Strip event attributes, using a callback function
+        $html = preg_replace_callback('/(<[a-zA-Z0-9]+)((\s+[a-zA-Z0-9]+\s*=\s*("|\')[^\4>]+\4)*)\s*(\/?>)/', 'safeAttrsCallback', $html);
+
+        // Restore double and single quotes that were prepended with a backslash
+        $html = preg_replace('/&quot;/', '\"', $html); $html = preg_replace('/&#039;/', "\'", $html);
+
+        // Return result
+        return $html;
+    }
+
+    /**
+     * If $check argument is set to false or not given - return the stack of errors,
+     * appeared while try to save current row. Otherwise, if $check argument is set to true,
+     * do a check for $this->_modifed values conformance to all possible requirements, e.g.
+     * control element requirements, mysql column type requirements and additional/user-defined requirements
+     *
+     * @param bool $check
+     * @return array
+     */
+    public function mismatch($check = false) {
+
+        // If $check argument is set to false, return $this->_mismatch stack, else reset $this->_mismatch array
+        if ($check == false) return $this->_mismatch; else $this->_mismatch = array();
+
+        // Declare an array, containing aliases of control elements, that can deal with array values
+        $arrayAllowed = array('multicheck', 'time', 'datetime');
+
+        // For each $modified field
+        foreach ($this->_modified as $column => $value) {
+
+            // Get the field
+            $fieldR = $this->model()->fields($column);
+
+            // Get the control element
+            $elementR = $fieldR->foreign('elementId');
+
+            // Get the control element
+            $entityR = $fieldR->foreign('relation');
+
+            // If $value is an object - push a message to $this->_mismatch stack,
+            // stop dealing with the current column's value and continue with the next
+            if (is_object($value)) {
+
+                // Push a error to errors stack
+                $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT, $fieldR->title);
+
+                // Jump to checking the next column's value
+                continue;
+            }
+
+            // If $value is an array, but current field's control element do not deal with arrays
+            // - push a message to $this->_mismatch stack, stop dealing with the current column's
+            // value and continue with the next
+            if (is_array($value) && !in_array($elementR->alias, $arrayAllowed)) {
+
+                // Push a error to errors stack
+                $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY, $fieldR->title);
+
+                // Jump to checking the next column's value
+                continue;
+            }
+
+            // If element is 'string' or 'text'
+            if (preg_match('/^string|textarea$/', $elementR->alias)) {
+
+                // If field is in list of eval fields, and current field's value contains php expressions
+                if (in_array($fieldR->alias, $this->model()->getEvalFields()) && preg_match(Indi::rex('phpsplit'), $value)) {
+
+                    // Split value by php expressions
+                    $chunk = preg_split(Indi::rex('phpsplit'), $value, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+                    // Declare a variable for filtered value
+                    $value = '';
+
+                    // For each chunk
+                    for ($i = 0; $i < count($chunk); $i++) {
+
+                        // If chunk is a part of php expression - append that php expression to filtered value
+                        if ($chunk[$i] == '<?') {
+                            $php = $chunk[$i] . $chunk[$i+1] . $chunk[$i+2];
+                            $value .= $php;
+                            $i += 2;
+
+                        // Else if chunk is not a php expression - make it safe and append to filtered value
+                        } else  $value .= self::safeHtml($chunk[$i]);
+                    }
+
+                    // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
+                    // and by stripping event attributes from allowed tags
+                } else $value = self::safeHtml($value);
+
+            // If element is 'move'
+            } else if ($elementR->alias == 'move') {
+
+                // If $value is not a decimal
+                if (!preg_match(Indi::rex('int11'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+            // If element is 'radio', or element is 'combo' and field store relation ability is 'one'
+            } else if ($elementR->alias == 'radio' || ($elementR->alias == 'combo' && $fieldR->storeRelationAbility == 'one')) {
+
+                // If field deals with values from 'enumset' table
+                if ($entityR->table == 'enumset') {
+
+                    // Get the possible field values
+                    $possible = $fieldR->nested('enumset')->column('alias');
+
+                    // If $value is not a one of possible values
+                    if (!in_array($value, $possible)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_IS_NOT_ALLOWED, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // Else if field deals with foreign keys of other tables
+                } else {
+
+                    // If $value is not a decimal
+                    if (!preg_match(Indi::rex('int11'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+                }
+
+            // If element is 'multicheck' or element is 'combo' and field relation ability is 'many'
+            } else if ($elementR->alias == 'multicheck' || ($elementR->alias == 'combo' && $fieldR->storeRelationAbility == 'many')) {
+
+                // Implode the values list by comma
+                if (is_array($value)) $value = implode(',', $value);
+
+                // Trim the ',' from value
+                $value = trim($value, ',');
+
+                // If value is not empty
+                if (strlen($value)) {
+
+                    // Get the values array
+                    $valueA = explode(',', $value);
+
+                    // If field deals with values from 'enumset' table
+                    if ($entityR->table == 'enumset') {
+
+                        // Get the possible field values
+                        $possible = $fieldR->nested('enumset')->column('alias');
+
+                        // If at least one of values is not one of possible values
+                        if (count($impossible = array_diff($valueA, $possible))) {
+
+                            // Push a error to errors stack
+                            $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_CONTAINS_UNALLOWED_ITEMS,
+                                $fieldR->title, implode('","', $impossible)
+                            );
+
+                            // Jump to checking the next column's value
+                            continue;
+                        }
+
+                    // Else if field deals with foreign keys of other tables
+                    } else {
+
+                        // If $value is not a list of non-zero decimals
+                        if (!preg_match(Indi::rex('int11list'), $value)) {
+
+                            // Push a error to errors stack
+                            $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_LIST_OF_NON_ZERO_DECIMALS,
+                                $value, $fieldR->title);
+
+                            // Jump to checking the next column's value
+                            continue;
+                        }
+                    }
+                }
+
+            // If element is 'check'
+            } else if ($elementR->alias == 'check') {
+
+                // If $value is not '1' or '0'
+                if (!preg_match(Indi::rex('bool'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_BOOLEAN, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+            // If element is 'color'
+            } else if ($elementR->alias == 'color') {
+
+                // If $value is not a color in format #rrggbb or in format hue#rrggbb
+                if (!preg_match(Indi::rex('rgb'), $value) && !preg_match(Indi::rex('hrgb'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_COLOR, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+
+                    // Else if $value is a color in format #rrggbb, e.g without hue
+                } else if (preg_match(Indi::rex('rgb'), $value)) {
+
+                    // Prepend color with it's hue number
+                    $value = Misc::rgbPrependHue($value);
+                }
+
+            // If element is 'calendar'
+            } else if ($elementR->alias == 'calendar') {
+
+                // If $value is not a date in format YYYY-MM-DD
+                if (!preg_match(Indi::rex('date'), $value)) {
+
+                    // Set $mismatch flag to true
+                    $mismatch = true;
+
+                    // If $value is a zero-date, e.g '0000-00-00', '00/00/0000', etc
+                    if (preg_match(Indi::rex('zerodate'), $value)) {
+
+                        // Set $mismatch flag to false and set value as '0000-00-00'
+                        $mismatch = false; $value = '0000-00-00';
+
+                    // Else if $value is a non-zero date, and field has a 'displayFormat' param
+                    } else if ($fieldR->params['displayFormat']) {
+
+                        // Try to get a unix-timestamp of a date stored in $value variable
+                        $utime = strtotime($value);
+
+                        // If date, builded from $utime and formatted according to 'displayFormat' param
+                        // is equal to initial value of $value variable - this will mean that date, stored
+                        // in $value is a valid date, so we
+                        if (date($fieldR->params['displayFormat'], $utime) == $value) {
+
+                            // Set $mismatch flag to false
+                            $mismatch = false;
+
+                            // And setup $value as date got from $utime timestamp and formatted by 'Y-m-d' format
+                            $value = date('Y-m-d', $utime);
+                        }
+                    }
+
+                    // If $mismatch flag is set to true
+                    if ($mismatch) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DATE, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+                }
+
+                // If $value is not '0000-00-00'
+                if ($value != '0000-00-00') {
+
+                    // Extract year, month and day from value
+                    list($year, $month, $day) = explode('-', $value);
+
+                    // If date is not a valid date
+                    if (!checkdate($month, $day, $year)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_DATE, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+                }
+
+            // If element is 'html' - no checks
+            } else if ($elementR->alias == 'html') {
+
+            // If element is 'upload' - no checks
+            } else if ($elementR->alias == 'upload') {
+
+            // If element is 'time'
+            } else if ($elementR->alias == 'time') {
+
+                // If $value is not an array, we convert it to array, containing hours, minutes and seconds
+                // values under corresponding keys, by splitting $value by ':' sign
+                if (!is_array($value)) {
+
+                    // Make a copy of $value and redefine $value as array
+                    $time = $value; $value = array();
+
+                    // Extract hours, minutes and seconds
+                    list($value['hours'], $value['minutes'], $value['seconds']) = explode(':', $time);
+                }
+
+                // If $value is an array - get the imploded value, assuming that array version of values contains
+                // hours, minutes and seconds under corresponding keys within that array
+                $time = implode(':', array(
+                    str_pad($value['hours'], 2, '0', STR_PAD_LEFT),
+                    str_pad($value['minutes'], 2, '0', STR_PAD_LEFT),
+                    str_pad($value['seconds'], 2, '0', STR_PAD_LEFT)
+                ));
+
+                // If $value is not a time in format HH:MM:SS
+                if (!preg_match(Indi::rex('time'), $time)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_TIME, $time, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+                // If any of hours, minutes or seconds values exceeds their possible
+                if ($value['hours'] > 23 || $value['minutes'] > 59 || $value['seconds'] > 59) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_TIME, $time, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+                // Assign a value
+                $value = $time;
+
+            // If element is 'number'
+            } else if ($elementR->alias == 'number') {
+
+                // If $value is not a decimal
+                if (!preg_match(Indi::rex('int11'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+            // If element is 'datetime'
+            } else if ($elementR->alias == 'datetime') {
+
+                // If $value is not an array, we convert it to array, containing date, time, year, month, day,
+                // hours, minutes and seconds values under corresponding keys in $value array,
+                if (!is_array($value)) {
+
+                    // Make a copy of $value and redefine $value as array
+                    $datetime = $value; $value = array();
+
+                    list($value['date'], $value['time']) = explode(' ', $datetime);
+                    list($value['year'], $value['month'], $value['day']) = explode('-', $value['date']);
+                    list($value['hours'], $value['minutes'], $value['seconds']) = explode(':', $value['time']);
+
+                // Else if $value is already an array, we assume that it already have 'date', 'hours', 'minutes'
+                // and 'seconds' keys, so we only explode value under 'date' key to setup values for keys 'year',
+                // 'month' and 'day' separately
+                } else {
+
+                    // Extract year, month and day from date
+                    list($value['year'], $value['month'], $value['day']) = explode('-', $value['date']);
+                }
+
+                // If $value is not a date in format YYYY-MM-DD
+                if (!preg_match(Indi::rex('date'), $value['date'])) {
+
+                    // Set $mismatch flag to true
+                    $mismatch = true;
+
+                    // If $value is a zero-date, e.g '0000-00-00', '00/00/0000', etc
+                    if (preg_match(Indi::rex('zerodate'), $value['date'])) {
+
+                        // Set $mismatch flag to false and set value as '0000-00-00'
+                        $mismatch = false; $value['date'] = '0000-00-00';
+
+                        // Else if $value is a non-zero date, and field has a 'displayFormat' param
+                    } else if ($fieldR->params['displayDateFormat']) {
+
+                        // Try to get a unix-timestamp of a date stored in $value variable
+                        $utime = strtotime($value['date']);
+
+                        // If date, builded from $utime and formatted according to 'displayFormat' param
+                        // is equal to initial value of $value variable - this will mean that date, stored
+                        // in $value is a valid date, so we
+                        if (date($fieldR->params['displayDateFormat'], $utime) == $value['date']) {
+
+                            // Set $mismatch flag to false
+                            $mismatch = false;
+
+                            // And setup $value as date got from $utime timestamp and formatted by 'Y-m-d' format
+                            $value['date'] = date('Y-m-d', $utime);
+                        }
+                    }
+
+                    // If $mismatch flag is set to true
+                    if ($mismatch) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE, $value['date'], $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+                }
+
+                // If $value['date'] is not '0000-00-00'
+                if ($value['date'] != '0000-00-00') {
+
+                    // If date is not a valid date
+                    if (!checkdate($value['month'], $value['day'], $value['year'])) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE,
+                            $value['date'], $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+                }
+
+                // If $value is an array - get the imploded value, assuming that array version of values contains
+                // hours, minutes and seconds under corresponding keys within that array
+                $time = implode(':', array(
+                    str_pad($value['hours'], 2, '0', STR_PAD_LEFT),
+                    str_pad($value['minutes'], 2, '0', STR_PAD_LEFT),
+                    str_pad($value['seconds'], 2, '0', STR_PAD_LEFT)
+                ));
+
+                // If $value is not a time in format HH:MM:SS
+                if (!preg_match(Indi::rex('time'), $time)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME, $time, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+                // If any of hours, minutes or seconds values exceeds their possible
+                if ($value['hours'] > 23 || $value['minutes'] > 59 || $value['seconds'] > 59) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME, $time, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+                // Assign a value
+                $value = $value['date'] . ' ' . $time;
+
+            // If element is 'hidden'
+            } else if ($elementR->alias == 'hidden') {
+
+                // Get the column type
+                $columnTypeR = $fieldR->foreign('columnTypeId');
+
+                // If column type is 'VARCHAR(255)'
+                if ($columnTypeR->type == 'VARCHAR(255)') {
+
+                    // Make the value safer
+                    $value = self::safeHtml($value);
+
+                // If column type is 'INT(11)'
+                } else if ($columnTypeR->type == 'INT(11)') {
+
+                    // If $value is not a decimal, or more than 11-digit decimal
+                    if (!preg_match(Indi::rex('int11'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'TEXT' - no checks
+                } else if ($columnTypeR->type == 'TEXT') {
+
+
+                // If column type is 'DOUBLE(7,2)'
+                } else if ($columnTypeR->type == 'DOUBLE(7,2)') {
+
+                    // If $value is not a DOUBLE(7,2)
+                    if (!preg_match(Indi::rex('double72'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'DATE'
+                } else if ($columnTypeR->type == 'DATE') {
+
+                    // If $value is not a date in format YYYY-MM-DD
+                    if (!preg_match(Indi::rex('date'), $value)) {
+
+                        // Set $mismatch flag to true
+                        $mismatch = true;
+
+                        // If $value is a zero-date, e.g '0000-00-00', '00/00/0000', etc
+                        if (preg_match(Indi::rex('zerodate'), $value)) {
+
+                            // Set $mismatch flag to false and set value as '0000-00-00'
+                            $mismatch = false; $value = '0000-00-00';
+                        }
+
+                        // If $mismatch flag is set to true
+                        if ($mismatch) {
+
+                            // Push a error to errors stack
+                            $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DATE, $value, $fieldR->title);
+
+                            // Jump to checking the next column's value
+                            continue;
+                        }
+                    }
+
+                    // Extract year, month and day from date
+                    list($year, $month, $day) = explode('-', $value);
+
+                    // If $value is not a valid date
+                    if ($value != '0000-00-00' && !checkdate($month, $day, $year)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_DATE, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'YEAR'
+                } else if ($columnTypeR->type == 'YEAR') {
+
+                    // If $value is not a YEAR
+                    if (!preg_match(Indi::rex('year'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'TIME'
+                } else if ($columnTypeR->type == 'TIME') {
+
+                    // If $value is not an array, we convert it to array, containing hours, minutes and seconds
+                    // values under corresponding keys, by splitting $value by ':' sign
+                    if (!is_array($value)) {
+
+                        // Make a copy of $value and redefine $value as array
+                        $time = $value; $value = array();
+
+                        // Extract hours, minutes and seconds
+                        list($value['hours'], $value['minutes'], $value['seconds']) = explode(':', $time);
+                    }
+
+                    // If $value is an array - get the imploded value, assuming that array version of values contains
+                    // hours, minutes and seconds under corresponding keys within that array
+                    $time = implode(':', array(
+                        str_pad($value['hours'], 2, '0', STR_PAD_LEFT),
+                        str_pad($value['minutes'], 2, '0', STR_PAD_LEFT),
+                        str_pad($value['seconds'], 2, '0', STR_PAD_LEFT)
+                    ));
+
+                    // If $value is not a time in format HH:MM:SS
+                    if (!preg_match(Indi::rex('time'), $time)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_TIME, $time, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                    // If any of hours, minutes or seconds values exceeds their possible
+                    if ($value['hours'] > 23 || $value['minutes'] > 59 || $value['seconds'] > 59) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_VALID_TIME, $time, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                    // Assign the value
+                    $value = $time;
+
+                // If column type is 'DATETIME'
+                } else if ($columnTypeR->type == 'DATETIME') {
+
+                    // Make a copy of $value and redefine $value as array
+                    $datetime = $value; $value = array();
+
+                    // Convert $value to array, containing date, time, year, month, day,
+                    // hours, minutes and seconds values under corresponding keys in $value array,
+                    list($value['date'], $value['time']) = explode(' ', $datetime);
+                    list($value['year'], $value['month'], $value['day']) = explode('-', $value['date']);
+                    list($value['hours'], $value['minutes'], $value['seconds']) = explode(':', $value['time']);
+
+                    // If $value is not a date in format YYYY-MM-DD
+                    if (!preg_match(Indi::rex('date'), $value['date'])) {
+
+                        // Set $mismatch flag to true
+                        $mismatch = true;
+
+                        // If $value is a zero-date, e.g '0000-00-00', '00/00/0000', etc
+                        if (preg_match(Indi::rex('zerodate'), $value['date'])) {
+
+                            // Set $mismatch flag to false and set value as '0000-00-00'
+                            $mismatch = false; $value['date'] = '0000-00-00';
+                        }
+
+                        // If $mismatch flag is set to true
+                        if ($mismatch) {
+
+                            // Push a error to errors stack
+                            $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE,
+                                $value['date'], $fieldR->title);
+
+                            // Jump to checking the next column's value
+                            continue;
+                        }
+                    }
+
+                    // If $value['date'] is not '0000-00-00'
+                    if ($value['date'] != '0000-00-00') {
+
+                        // If date is not a valid date
+                        if (!checkdate($value['month'], $value['day'], $value['year'])) {
+
+                            // Push a error to errors stack
+                            $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE,
+                                $value['date'], $fieldR->title);
+
+                            // Jump to checking the next column's value
+                            continue;
+                        }
+                    }
+
+                    // If $value is an array - get the imploded value, assuming that array version of values contains
+                    // hours, minutes and seconds under corresponding keys within that array
+                    $time = implode(':', array(
+                        str_pad($value['hours'], 2, '0', STR_PAD_LEFT),
+                        str_pad($value['minutes'], 2, '0', STR_PAD_LEFT),
+                        str_pad($value['seconds'], 2, '0', STR_PAD_LEFT)
+                    ));
+
+                    // If $value is not a time in format HH:MM:SS
+                    if (!preg_match(Indi::rex('time'), $time)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME, $time, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                    // If any of hours, minutes or seconds values exceeds their possible
+                    if ($value['hours'] > 23 || $value['minutes'] > 59 || $value['seconds'] > 59) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME, $time, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                    // Assign a value
+                    $value = $value['date'] . ' ' . $time;
+
+                // If column type is 'ENUM'
+                } else if ($columnTypeR->type == 'ENUM') {
+
+                    // Get the possible field values
+                    $possible = $fieldR->nested('enumset')->column('alias');
+
+                    // If $value is not a one of possible values
+                    if (!in_array($value, $possible)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_IS_NOT_ALLOWED, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'SET'
+                } else if ($columnTypeR->type == 'SET') {
+
+                    // Trim the ',' from value
+                    $value = trim($value, ',');
+
+                    // If value is not empty
+                    if (strlen($value)) {
+
+                        // Get the values array
+                        $valueA = explode(',', $value);
+
+                        // If field deals with values from 'enumset' table
+                        if ($entityR->table == 'enumset') {
+
+                            // Get the possible field values
+                            $possible = $fieldR->nested('enumset')->column('alias');
+
+                            // If at least one of values is not one of possible values
+                            if (count($impossible = array_diff($valueA, $possible))) {
+
+                                // Push a error to errors stack
+                                $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_CONTAINS_UNALLOWED_ITEMS,
+                                    $fieldR->title, implode('","', $impossible)
+                                );
+
+                                // Jump to checking the next column's value
+                                continue;
+                            }
+                        }
+                    }
+
+                // If column type is 'BOOLEAN'
+                } else if ($columnTypeR->type == 'BOOLEAN') {
+
+                    // If $value is not '1' or '0'
+                    if (!preg_match(Indi::rex('bool'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_BOOLEAN, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'VARCHAR(10)'
+                } else if ($columnTypeR->type == 'VARCHAR(10)') {
+
+                    // If $value is not a color in format #rrggbb or in format hue#rrggbb
+                    if (!preg_match(Indi::rex('rgb'), $value) && !preg_match(Indi::rex('hrgb'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_COLOR, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+
+                    // Else if $value is a color in format #rrggbb, e.g without hue
+                    } else if (preg_match(Indi::rex('rgb'), $value)) {
+
+                        // Prepend color with it's hue number
+                        $value = Misc::rgbPrependHue($value);
+                    }
+                }
+            }
+
+            // Re-assign the value to column
+            $this->$column = $value;
+        }
+
+        // If current model has a tree-column, and current row is not an existing new row, and tree column value was
+        // modified, and it is going to be same as current row id
+        if ($this->model()->treeColumn() && $this->id && $this->_modified[$this->model()->treeColumn()] == $this->id) {
+
+            // Define a shortcut for tree column field alias
+            $treeColumn = $this->model()->treeColumn();
+
+            // Get the tree column field
+            $fieldR = $this->model()->fields($treeColumn);
+
+            // Push a error to errors stack
+            $this->_mismatch[$treeColumn] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID, $fieldR->title);
+
+        }
+//        i($this);
+
+        // Return array of errors
+        return $this->_mismatch;
     }
 
     /**
