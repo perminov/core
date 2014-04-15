@@ -54,6 +54,19 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Время "%s", ук
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Значение "%s" поля "%s" должно быть числом имеющим не более 5 разрядов в целочисленной части, и не более 2-х - в дробной');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Значение "%s" поля "%s" не является годом в формате ГГГГ');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Текущая запись не может быть указана как родительская для самой себя в поле "%"');
+define('I_ROWFILE_ERROR_MKDIR', 'Создание директории "%s" в папке "%s" не удалось, несмотря на то что папка доступна для записи');
+define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Создание директории "%s" в папке "%s" не удалось, так как эта папка недоступна для записи');
+define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Директория "%s", необходимая для загрузки, - существует, но недоступна для записи');
+define('I_ROWFILE_ERROR_NONEXISTENT_ROW', 'Нельзя работать с файлами, относящимися к несуществующим записям');
+
+define('I_UPLOAD_ERR_INI_SIZE', 'Размер файла, выбранного для загрузки в поле "%s", превысил максимально допустимый размер, заданный директивой upload_max_filesize конфигурационного файла php.ini');
+define('I_UPLOAD_ERR_FORM_SIZE', 'Размер файла, выбанного для загрузки в поле "%s" превысил значение MAX_FILE_SIZE, указанное в HTML-форме');
+define('I_UPLOAD_ERR_PARTIAL', 'Файл, выбранный для загрузки в поле "%s" был получен только частично');
+define('I_UPLOAD_ERR_NO_FILE', 'Файл, выбранный в поле "%s" -  не был загружен');
+define('I_UPLOAD_ERR_NO_TMP_DIR', 'На сервере отсутствует временная папка для загрузки файла из поля "%s"');
+define('I_UPLOAD_ERR_CANT_WRITE', 'Файл, выбранный для загрузки в поле "%s", не удалось записать на жесткий диск сервера');
+define('I_UPLOAD_ERR_EXTENSION', 'Одно из PHP-расширений, работающих на сервере, остановило загрузку файла из поля "%s"');
+define('I_UPLOAD_ERR_UNKNOWN', 'Загрузка файла в поле "%s" не удалась из-за неизвестной ошибки');
 
 define('I_MENU', 'Меню');
 define('ACTION_CREATE', 'Создать');

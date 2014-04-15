@@ -2032,7 +2032,6 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->_mismatch[$treeColumn] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID, $fieldR->title);
 
         }
-//        i($this);
 
         // Return array of errors
         return $this->_mismatch;
@@ -2145,5 +2144,207 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function offsetUnset($offset) {
         return $this->__unset($offset);
+    }
+
+    public function files($fields = array()) {
+
+        // If there is no file upload fields that should be taken into attention - exit
+        if (!count($fields)) return;
+
+        // Build the target directory
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+
+        // Check if target directory exists, and if no
+        if (!is_dir($dir)) {
+
+            // Foreach directories tree branches from the desired and up to the project root
+            do {
+
+                // Get the upper directory
+                $level = preg_replace(':[^/]+/$:', '', isset($level) ? $level : $dir);
+
+                // If upper directory exists
+                if (is_dir($level)) {
+
+                    // If upper directory is writable
+                    if (is_writable($level)){
+
+                        // If for some reason attempt to recursively create target directory,
+                        // starting from current level - was unsuccessful
+                        if (!@mkdir($dir, 0777, true)) {
+
+                            // Get the target directory part, that is relative to current level
+                            $rel = str_replace($level, '', $dir);
+
+                            // Assign an error
+                            $this->_mismatch['#model'] = sprintf(I_ROWFILE_ERROR_MKDIR, $rel, $level);
+
+                            // Exit
+                            return;
+                        }
+
+                    // Else if upper directory is not writable
+                    } else {
+
+                        // Get the target directory part, that is relative to current level
+                        $rel = str_replace($level, '', $dir);
+
+                        // Assign an error
+                        $this->_mismatch['#model'] = sprintf(I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE, $rel, $level);
+
+                        // Exit
+                        return;
+                    }
+
+                    // Break the loop
+                    break;
+                }
+            } while ($level != DOC . STD . '/');
+
+        // Else if target directory exists, but is not writable
+        } else if (!is_writable($dir)) {
+
+            // Assign an error
+            $this->_mismatch['#model'] = sprintf(I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE, $dir);
+
+            // Exit
+            return;
+        }
+
+        // If current row does not have an id
+        if (!$this->id) {
+
+            // Assign an error
+            $this->_mismatch['#row'] = I_ROWFILE_ERROR_NONEXISTENT_ROW;
+
+            // Exit
+            return;
+        }
+
+        // For each file upload field alias within $fields list
+        foreach ($fields as $field) {
+
+            // If there was a file uploaded a moment ago, we should move it to certain place
+            if (Indi::post($field) == 'm') {
+
+                // Get the meta information
+                $meta = Indi::files($field);
+
+                // If meta information contains a error
+                if ($meta['error']) {
+
+                    // Setup an appropriate error message
+                    if ($meta['error'] === UPLOAD_ERR_INI_SIZE) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_INI_SIZE, $field);
+                    else if ($meta['error'] === UPLOAD_ERR_FORM_SIZE) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_FORM_SIZE, $field);
+                    else if ($meta['error'] === UPLOAD_ERR_PARTIAL) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_PARTIAL, $field);
+                    else if ($meta['error'] === UPLOAD_ERR_NO_FILE) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_NO_FILE, $field);
+                    else if ($meta['error'] === UPLOAD_ERR_NO_TMP_DIR) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_NO_TMP_DIR, $field);
+                    else if ($meta['error'] === UPLOAD_ERR_CANT_WRITE) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_CANT_WRITE, $field);
+                    else if ($meta['error'] === UPLOAD_ERR_EXTENSION) $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_EXTENSION, $field);
+                    else $this->_mismatch[$field] = sprintf(I_UPLOAD_ERR_UNKNOWN, $field);
+
+                    // Stop current iteration and goto next, if current was not the last
+                    continue;
+                }
+
+                // Get the extension of the uploaded file
+                $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $meta['name']);
+
+                // Get all of the possible files, uploaded using that field, and all their versions
+                $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
+
+                // Delete them
+                foreach ($fileA as $fileI) @unlink($fileI);
+
+                // Build the full filename into $dst variable
+                $dst = $dir . $this->id . '_' . $field . '.' . $ext;
+
+                // Move uploaded file to $dst destination, or copy, if move_uploaded_file() call failed
+                if (!move_uploaded_file($meta['tmp_name'], $dst)) copy($meta['tmp_name'], $dst);
+
+                // If uploaded file is an image in formats gif, jpg or png
+                if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
+
+                    // Check if there should be copies created for that image
+                    $resizeRs = Indi::model('Resize')->fetchAll('`fieldId` = "' . $this->model()->fields($field)->id . '"');
+
+                    // If should
+                    foreach ($resizeRs as $resizeR) {
+
+                        // Get the copy absolute file name
+                        $copy = preg_replace('~(\.' . $ext . ')$~', ',' .$resizeR->alias . '$1', $dst);
+
+                        // If copy's proportions setting is 'o' - e.g. 'original'
+                        if ($resizeR->proportions == 'o') {
+
+                            // We just make a copy of the image and do no size adjustments
+                            copy($dst, $copy);
+
+                        // Else
+                        } else {
+
+                            // Create a new Imagick object
+                            $imagick = new Imagick($dst);
+
+                            // Pick the dimension values
+                            if ($resizeR->masterDimensionAlias == 'width') {
+                                $width = $resizeR->masterDimensionValue;
+                                $height = $resizeR->slaveDimensionValue;
+                            } else {
+                                $height = $resizeR->masterDimensionValue;
+                                $width = $resizeR->slaveDimensionValue;
+                            }
+
+                            // If copy's proportions setting is 'c' - e.g. 'crop'
+                            if ($resizeR->proportions == 'c') {
+
+                                // This is a specialization of the cropImage method. At a high level, this method will
+                                // create a thumbnail of a given image, with the thumbnail sized at ($width, $height).
+                                // If the thumbnail does not match the aspect ratio of the source image, this is the
+                                // method to use. The thumbnail will capture the entire image on the shorter edge of
+                                // the source image (ie, vertical size on a landscape image). Then the thumbnail will
+                                // be scaled down to meet your target height, while preserving the aspect ratio.
+                                // Extra horizontal space that does not fit within the target $width will be cropped
+                                // off evenly left and right. As a result, the thumbnail is usually a good representation
+                                // of the source image.
+                                $imagick->cropThumbnailImage($width, $height);
+
+
+                            // Else create a non-cropped thumbnail
+                            } else {
+
+                                // If slave dimension should not be limited
+                                if (!$resizeR->slaveDimensionLimitation) {
+
+                                    // Set it as 0
+                                    if ($resizeR->masterDimensionAlias == 'width') $height = 0; else $width = 0;
+                                }
+
+                                // Create a thumbnail
+                                $imagick->thumbnailImage($width, $height, $resizeR->slaveDimensionLimitation);
+                            }
+
+                            // Remove the canvas
+                            if ($ext == 'gif') $imagick->setImagePage(0, 0, 0, 0);
+
+                            // Save the copy
+                            $imagick->writeImage($copy);
+
+                            // Free memory
+                            $imagick->destroy();
+                        }
+                    }
+                }
+
+            // If file, uploaded using $field field, should be deleted
+            } else if (Indi::post($field) == 'd') {
+
+                // Get the file, and all it's versions
+                $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
+
+                // Delete them
+                foreach ($fileA as $fileI) @unlink($fileI);
+            }
+        }
     }
 }

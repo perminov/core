@@ -6,8 +6,7 @@ abstract class Indi_Image
      *
      * @return string
      */
-    public function getUploadPath()
-    {
+    public function getUploadPath() {
         return trim(Indi::ini()->upload->path, '\\/');
     }
     
@@ -18,8 +17,7 @@ abstract class Indi_Image
      * @param int $id
      * @throws Exception
      */
-    public function deleteEntityImagesIfChecked($entity = null, $id = null)
-    {
+    public function deleteEntityImagesIfChecked($entity = null, $id = null) {
 		// entity and identfier by default set up as values, got from
         // current controller
         $entity = $entity ? $entity : Indi::trail()->model->name();
@@ -63,8 +61,7 @@ abstract class Indi_Image
      * @uses self::getUploadPath()
      * @param int $id
      */
-    public function uploadEntityImagesIfBrowsed($entity = null, $id = null, $requirements = array())
-    {
+    public function uploadEntityImagesIfBrowsed($entity = null, $id = null, $requirements = array()) {
         // entity and identfier by default set up as values, got from
         // current controller
         $entity = $entity ? $entity : Indi::trail()->model->name();
@@ -131,6 +128,8 @@ abstract class Indi_Image
 			        if(!move_uploaded_file($tmp, $dst)) copy($tmp, $dst);
 					$entityId = Indi::trail(true) ? Indi::trail()->fields[0]->entityId : Indi::trail()->section->entityId;
 					$entityId = Indi::model('Entity')->fetchRow('`table` = "' . $entity . '"')->id;
+
+
 					$copies = Indi::model('Resize')->fetchAll('`fieldId` = (SELECT `id` FROM `field` WHERE `alias`="' . $name . '" AND `entityId`="' . $entityId . '")')->toArray();
 					for ($i = 0; $i < count($copies); $i++) {
 						switch($copies[$i]['proportions']){
@@ -169,16 +168,13 @@ abstract class Indi_Image
      * @param string $dir
      * @throws Exception
      */
-    public function createEntityImagesDir($dir)
-    {    
+    public function createEntityImagesDir($dir) {
         if (!mkdir($dir, 0777)) {
 			die('Cannot create dir ' . $dir);
             throw new Exception($e->__toString());
         }
     }
-
-    public function deletePreviousEntityImage($name)
-    {
+    public function deletePreviousEntityImage($name) {
         // entity and identfier by default set up as values, got from
         // current controller
         $entity = $entity ? $entity : Indi::trail()->model->name();
@@ -208,9 +204,7 @@ abstract class Indi_Image
             }
         }
     }
-
-    public function rgb2hsl($rgb)
-    {
+    public function rgb2hsl($rgb) {
         $varR = $rgb[0] / 255; //Where RGB values = 0 ? 255
         $varG = $rgb[1] / 255;
         $varB = $rgb[2] / 255;
@@ -251,8 +245,7 @@ abstract class Indi_Image
         }
         return array($h, $s, $l);
     }
-    public function hsl2rgb($hsl)
-    {
+    public function hsl2rgb($hsl) {
         $h = $hsl[0];
         $s = $hsl[1];
         $l = $hsl[2];
@@ -275,8 +268,7 @@ abstract class Indi_Image
         }
         return  array($r, $g, $b);
     }
-    public function hue2rgb($v1, $v2, $vH)
-    {
+    public function hue2rgb($v1, $v2, $vH) {
         if ($vH < 0) {
             $vH++;
         }
@@ -295,14 +287,11 @@ abstract class Indi_Image
         }
         return ($v1);
     }
-    public function rgb2gray($rgb)
-    {
+    public function rgb2gray($rgb) {
         $val = round((0.299 * $rgb[0]) + (0.587 * $rgb[1]) + (0.114 * $rgb[2]));
         return array($val, $val, $val);
     }
-    
-    public function setColor($oldFile, $color = '#CCCCCC', $newFile = null)
-    {
+    public function setColor($oldFile, $color = '#CCCCCC', $newFile = null) {
         list ($r, $g, $b) = self::hex2decRGB($color);
         
         $oldImage =imagecreatefrompng($oldFile);
@@ -366,9 +355,7 @@ abstract class Indi_Image
             imagepng($newImage, null);
         }
     }
-
-    public function createImageFromText($imageIndex, $text = 'No title', $size = 13, $textColor = null, $bgColor = null, $font = 'comicbd.ttf')
-    {
+    public function createImageFromText($imageIndex, $text = 'No title', $size = 13, $textColor = null, $bgColor = null, $font = 'comicbd.ttf') {
         // text box info determinig for new pic
         $textBoxInfo = imagettfbbox($size, 0, $font, $text);
 
@@ -415,10 +402,7 @@ abstract class Indi_Image
 
         imagepng($im, $file);
     }
-
-    
-    function getNewImageFileName($imageName = '', $id = null, $extension = 'png')
-    {
+    function getNewImageFileName($imageName = '', $id = null, $extension = 'png') {
         // entity and identfier by default set up as values, got from
         // current controller
         $entity = $entity ? $entity : Indi::trail()->model->name();
@@ -444,14 +428,11 @@ abstract class Indi_Image
         
         return $fileName;
     }
-
-    public function hex2decRGB($color)
-    {
+    public function hex2decRGB($color) {
         $color = str_replace(array('\\','#'), array('', ''), $color);
         return array(hexdec(substr($color, 0, 2)), hexdec(substr($color, 2, 2)), hexdec(substr($color, 4, 2)));
     }
-    public function image($entity, $id, $key = null, $copy = null, $silence = true, $width = null, $height = null)
-    {
+    public function image($entity, $id, $key = null, $copy = null, $silence = true, $width = null, $height = null) {
         if ($id) {
             $uploadPath = Indi::ini()->upload->path;
             
@@ -512,8 +493,7 @@ abstract class Indi_Image
      * @param int $quality
      * @return bool
      */
-    function resize($image, $postfix = '', $size = '', $quality = 100)
-    {
+    function resize($image, $postfix = '', $size = '', $quality = 100) {
         $type = explode('/', Indi_Image::m_content_type($image));
         if ($type[0] != 'image') return false ;
         $types = array('jpeg' => 'jpeg', 'pjpeg' => 'jpeg', 'jpg' => 'jpeg', 'gif' => 'gif', 'png' => 'png',
@@ -572,9 +552,6 @@ abstract class Indi_Image
 			$newim_w = ceil($newim_h * $prop);
 		}
     
-//		echo $prop . '<br>';
-//		echo $postfix . '-'. $size . ':' . $newim_w . 'x' . $newim_h . '<br>';
-
         $newim = imagecreatetruecolor($newim_w, $newim_h);
 
         if(in_array($types[$type[1]], array('png', 'gif'))){
@@ -617,15 +594,13 @@ abstract class Indi_Image
      * @param string $file
      * @return string
      */
-    function m_content_type($file)
-    {
+    function m_content_type($file) {
         $info=pathinfo($file);
         $info['extension'] = strtolower($info['extension']);
         $types=array('jpeg'=>'jpeg','pjpeg'=>'jpeg','jpg'=>'jpeg','gif'=>'gif','png'=>'png','x-png'=>'png');
         return in_array($info['extension'],array_keys($types))?'image/'.$info['extension']:'';
     }
-    public function flash($entity, $id, $key = null, $silence = true, $width = null, $height = null)
-    {
+    public function flash($entity, $id, $key = null, $silence = true, $width = null, $height = null) {
         if ($id) {
             $uploadPath = Indi::ini()->upload->path;
             
@@ -665,8 +640,7 @@ abstract class Indi_Image
             return $xhtml;
         }
     }
-    public function getEntityImageByUrl($url, $entity, $id, $name, $requirements = array())
-    {
+    public function getEntityImageByUrl($url, $entity, $id, $name, $requirements = array()) {
         // get upload path from config
         $uploadPath = self::getUploadPath();
         
@@ -741,8 +715,7 @@ abstract class Indi_Image
 	 * @param    String    $sImagePath
 	 * @return     Integer Bytes required
 	 */
-	function insufficientMemory($sImagePath)
-	{
+	function insufficientMemory($sImagePath) {
 		$aImageInfo = getimagesize($sImagePath);
 		$mbRequired = ceil(round((($aImageInfo[0] * $aImageInfo[1] * $aImageInfo['bits'] * $aImageInfo['channels'] / 8 + Pow(2, 16)) * 1.65))/1024/1024);
 		$mbLimit = (int) rtrim(ini_get('memory_limit'), 'M') - 2;

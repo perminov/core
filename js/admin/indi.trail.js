@@ -92,7 +92,7 @@ var Indi = (function (indi) {
 
                 // If source of a scope of additional info is provided
                 if (hero) {
-                    console.log(hero.section);
+
                     // We determine an action
                     href += (hero.row && hero.section.alias == section) ? 'form' : 'index';
 

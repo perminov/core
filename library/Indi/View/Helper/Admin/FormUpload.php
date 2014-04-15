@@ -63,7 +63,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 
 			$xhtml .= '<span class="upload' . (!in_array($type, array('image', 'video', 'flash'))?' no-file-yet':'') . '"  field="' . $name . '">';
 			$xhtml .= $type == 'file' ? $uploaded : '';
-			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
+			$xhtml .= '<input type="hidden" name="' . $name . '" value="r" id="' . $name .'"/>';
 			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_REMAIN . '</label>&nbsp;</span>';
 			$xhtml .= '<span class="radio" val="d" id="file-action-' . $name . '-d"><label id="file-action-' . $name . '-d-label">' . FORM_UPLOAD_DELETE . '</label>&nbsp;</span>';
 			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_REPLACE . '</a></label>&nbsp;';
@@ -72,7 +72,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
             $xhtml .= '<script>
 				$("span.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
-					$(this).parent().find("input[name^=file-action]").val($(this).attr("val"));
+					$(this).parent().find("#' . $name . '").val($(this).attr("val"));
 					$(this).addClass("checked");
 					if($(this).attr("val") == "m" && $(this).parents("span.upload").find("input[id^=upload]").val() == "") {
 						$(this).parents("span.upload").find("input[id^=upload]").click();
@@ -81,21 +81,21 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 				$("span.upload[field='.$name.'] a.browse").click(function(){
 					$(this).parents("span.upload").find("input[id^=upload]").click();
 					$(this).parents("span.upload").find("span.radio").removeClass("checked");
-					$(this).parents("span.upload").find("input[name^=file-action]").val("m");
+					$(this).parents("span.upload").find("#' . $name . '").val("m");
 					$(this).parents("span.upload").find("span.radio[val=m]").addClass("checked");
 					return false;
 				});
 			</script>';
 		} else {
 			$xhtml .= '<span class="upload no-file-yet" field="' . $name . '">';
-			$xhtml .= '<input type="hidden" name="file-action[' . $name . ']" value="r"/>';
+			$xhtml .= '<input type="hidden" name="' . $name . '" value="r" id="' . $name . '"/>';
 			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_NO . '</label>&nbsp;</span>';
 			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_BROWSE . '</a></label>&nbsp;';
 			$xhtml .= '<span id="selected' . $name . '" class="selected-fname"></span>';
 			$xhtml .= '<script>
 				$("span.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
-					$(this).parent().find("input[name^=file-action]").val($(this).attr("val"));
+					$(this).parent().find("#' . $name . '").val($(this).attr("val"));
 					$(this).addClass("checked");
 					if($(this).attr("val") == "m" && $(this).parents("span.upload").find("input[id^=upload]").val() == "") {
 						$(this).parents("span.upload").find("input[id^=upload]").click();
@@ -104,13 +104,13 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 				$("span.upload[field='.$name.'] a.browse").click(function(){
 					$(this).parents("span.upload").find("input[id^=upload]").click();
 					$(this).parents("span.upload").find("span.radio").removeClass("checked");
-					$(this).parents("span.upload").find("input[name^=file-action]").val("m");
+					$(this).parents("span.upload").find("#' . $name . '").val("m");
 					$(this).parents("span.upload").find("span.radio[val=m]").addClass("checked");
 					return false;
 				});
 			</script>';
 		}
-		$xhtml .= '<input type="file" name="image[' . $name .']" id="upload' . $name . '" onchange="
+		$xhtml .= '<input type="file" name="' . $name .'" id="upload' . $name . '" onchange="
 			if ($(this).parent().hasClass(\'no-file-yet\')) {
 				$(this).parent().find(\'span[class^=selected]\').show();
 			} else {

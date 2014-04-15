@@ -16,7 +16,6 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract {
             else $excluded[$disabledField->fieldId] = true;
         }
 
-
         // Assign an Element_Row objects for each field's `elementId` property
         Indi::trail()->fields->foreign('elementId');
 
