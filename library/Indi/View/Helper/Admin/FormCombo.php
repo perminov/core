@@ -62,7 +62,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
     public function getSelected() {
 
         // If current row does not exist, combo will use field's default value as selected value
-        if ($this->getRow()->id) {
+        if ($this->getRow()->id || strlen($this->getRow()->{$this->name})) {
             $selected = $this->getRow()->{$this->name};
         } else {
             $selected = $this->getDefaultValue();

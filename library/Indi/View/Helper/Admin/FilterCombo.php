@@ -12,19 +12,30 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @param Search_Row $filter
      * @return string
      */
-    public function filterCombo($filter){
+    public function filterCombo($filter) {
         // Here we create a shared *_Row object, that will be used by all filters, that are presented in current grid.
         // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
         // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
         // there dependent combo can get that value.
         if (!$this->view->filtersSharedRow) $this->view->filtersSharedRow = Indi::trail()->model->createRow();
-
         $this->filter = $filter;
+
+        $this->getRow()->{$this->getField()->alias} = null;
+
         $this->where = $this->filter->filter;
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
         ob_start(); echo parent::formCombo($filter->foreign['fieldId']->alias); return ob_get_clean();
     }
 
+    public function getSelected() {
+
+        // If current row does not exist, combo will use field's default value as selected value
+        if (strlen($this->getRow()->{$this->name})) {
+            $selected = $this->getRow()->{$this->name};
+        }
+
+        return $selected;
+    }
 
     public function getField() {
         return $this->filter->foreign['fieldId'];
@@ -61,8 +72,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         $gotFromScope = $this->view->getScope('filters', $this->field->alias);
 
         if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
-            if ($this->field->storeRelationAbility == 'many')
-                $gotFromScope = implode(',', $gotFromScope);
+            if ($this->field->storeRelationAbility == 'many') $gotFromScope = implode(',', $gotFromScope);
             $this->filter->defaultValue = $this->view->filtersSharedRow->{$this->field->alias} = $gotFromScope;
             return $gotFromScope;
         }

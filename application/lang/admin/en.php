@@ -53,6 +53,20 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Value "%s", mentioned in fi
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Time "%s", mentioned in field "%s" - is not a valid time');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 5 or less digits in integer part, and 2 or less/none digits in fractional part');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Value "%s" of field "%s" should be a year in format YYYY');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Current row cannot be set as parent for itself in field "%"');
+define('I_ROWFILE_ERROR_MKDIR', 'Recursive creation of directory "%s" within path "%s" is failed, despite on that path is writable');
+define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Recursive creation of directory "%s" within path "%s" is failed, because that path is not writable');
+define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Target directory "%s" exists, but is not writable');
+define('I_ROWFILE_ERROR_NONEXISTENT_ROW', 'There is no possibility to deal with files of nonexistent row');
+
+define('I_UPLOAD_ERR_INI_SIZE', 'The uploaded file in field "%s" exceeds the upload_max_filesize directive in php.ini');
+define('I_UPLOAD_ERR_FORM_SIZE', 'The uploaded file in field "%s" exceeds the MAX_FILE_SIZE directive that was specified ');
+define('I_UPLOAD_ERR_PARTIAL', 'The uploaded file in field "%s" was only partially uploaded');
+define('I_UPLOAD_ERR_NO_FILE', 'No file was uploaded in field "%s"');
+define('I_UPLOAD_ERR_NO_TMP_DIR', 'Missing a temporary folder on server for storing file, uploaded in field "%s"');
+define('I_UPLOAD_ERR_CANT_WRITE', 'Failed to write file, uploaded in field "%s", to server\'s hard drive');
+define('I_UPLOAD_ERR_EXTENSION', 'File upload in field "%s" stopped by one of the php extensions, running on server');
+define('I_UPLOAD_ERR_UNKNOWN', 'File upload in field "%s" failed due to unknown error');
 
 define('I_MENU', 'Menu');
 define('ACTION_CREATE', 'Create');
