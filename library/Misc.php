@@ -370,10 +370,50 @@ class Misc
         $r = hexdec(substr($rgb, 0, 2));
         $g = hexdec(substr($rgb, 2, 2));
         $b = hexdec(substr($rgb, 4, 2));
-        list($hue) = Indi_Image::rgb2hsl(array($r, $g, $b));
+        list($hue) = self::rgb2hsl(array($r, $g, $b));
         return str_pad(round($hue*360), 3, '0', STR_PAD_LEFT) . '#' . $rgb;
     }
+    public function rgb2hsl($rgb) {
+        $varR = $rgb[0] / 255; //Where RGB values = 0 ? 255
+        $varG = $rgb[1] / 255;
+        $varB = $rgb[2] / 255;
 
+        $varMin = min($varR, $varG, $varB );    //Min. value of RGB
+        $varMax = max($varR, $varG, $varB );    //Max. value of RGB
+        $delMax = $varMax - $varMin;             //Delta RGB value
+
+        $l = ($varMax + $varMin) / 2;
+
+        if ($delMax == 0) {    //This is a gray, no chroma...
+            $H = 0;         //HSL results = 0 ? 1
+            $S = 0;
+        } else {            //Chromatic data...
+            if ($l < 0.5 ) {
+                $s = $delMax / ($varMax + $varMin);
+            } else {
+                $s = $delMax / (2 - $varMax - $varMin);
+            }
+
+            $delR = ((($varMax - $varR) / 6) + ($delMax / 2)) / $delMax;
+            $delG = ((($varMax - $varG) / 6) + ($delMax / 2)) / $delMax;
+            $delB = ((($varMax - $varB) / 6) + ($delMax / 2)) / $delMax;
+
+            if ($varR == $varMax){
+                $h = $delB - $delG;
+            } else if ($varG == $varMax) {
+                $h = (1 / 3) + $delR - $delB;
+            } else if ($varB == $varMax) {
+                $h = (2 / 3) + $delG - $delR;
+            }
+            if ($h < 0) {
+                $h++;
+            }
+            if ($h > 1) {
+                $h--;
+            }
+        }
+        return array($h, $s, $l);
+    }
 }
 function ie8() {
 	return preg_match('/MSIE 8/', $_SERVER['HTTP_USER_AGENT']);

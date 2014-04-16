@@ -1,106 +1,112 @@
 <?php
-class Resize_Row extends Indi_Db_Table_Row
-{
-	public function delete($branchId = null){
-		// delete copies of images, that have name equal to $this->alias
-		$this->deleteUploadedImageCopiesByCopyName($this->alias);
+class Resize_Row extends Indi_Db_Table_Row {
 
-		// standart Db_Table_Row deletion
-		parent::delete($branchId);
+    /**
+     * Standard deletion, prepended with deletion of all resized copies
+     *
+     * @return int Number of deleted rows (1|0)
+     */
+    public function delete() {
+
+		// Delete copies of images, that have copy-name equal to $this->alias
+		$this->deleteCopies();
+
+		// Standard Db_Table_Row deletion
+		return parent::delete();
 	}
 
-	public function deleteUploadedImageCopiesByCopyName($copyname){
-		// get folder name where files of entity are stored
-		$entity = Indi::model('Entity')->fetchRow('`id` = (SELECT `entityId` FROM `field` WHERE `id` = "' . $this->fieldId . '")')->table;
-		$image = $this->foreign('fieldId')->alias;
+    /**
+     * Delete all images copies, that were created in respect to current row
+     */
+    public function deleteCopies() {
 
-		// get upload path from config
-        $uploadPath = Indi_Image::getUploadPath();
-        
-        // absolute upload path  in filesystem
-        $absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . '/' . $uploadPath . '/' . $entity . '/';
-        
-		// array for filenames that should be deleted
-		$files = array();
+        // Build the target directory
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->foreign('fieldId')->foreign('entityId')->table . '/';
 
-		// all copies  with specified name are to be deleted too
-		$files = glob($absolute . '*'.($image ? '_' . $image . '*' : '') .',' . $copyname . '.*');
-		if (!$image) {
-			$filtered = array();
-			for($i = 0; $i < count($files); $i++) {
-				$info = pathinfo($files[$i]);
-				$info = explode(',', $info['filename']);
-				if (is_numeric($info[0])) $filtered[] = $files[$i];
-			}
-			$files = $filtered;
-		}
-		for ($j = 0; $j < count($files); $j++) {
-            try {
-                unlink($files[$j]);
-            } catch (Exception $e) {
-//                throw new Exception($e->__toString());
-            }
-        }
+        // Get all copies ( of all images, that were uploaded using current field), created in respect of current row
+        $fileA = glob($dir . '*_' . $this->foreign('fieldId')->alias . ','  . $this->alias . '.*');
+
+        // Delete them
+        foreach ($fileA as $fileI) @unlink($fileI);
 	}
 
+    /**
+     * Do all required operations of creation/altering copies of images, accordingly to related settings, stored in
+     * current row
+     *
+     * @return int
+     */
     public function save() {
-        if ($this->id) {
-            $was = $this->_original;
-            $became = $this->toArray();
-            if ($was != $became) {
-                // Get files of copies to be resized
-                $field = $this->foreign('fieldId');
-                $entity = Indi::model($field->entityId)->name();
-                $uploadPath = Indi_Image::getUploadPath();
-                $relative = '/' . trim($uploadPath, '\\/') . '/' . $entity . '/';
-                $absolute = $_SERVER['DOCUMENT_ROOT'] . STD . $relative;
-                $key = $field->alias;
-                $copy = $was['alias'];
 
-                if ($was['alias'] == $became['alias']) {
+        // Get db table name, and field alias
+        $table = $this->foreign('fieldId')->foreign('entityId')->table;
+        $field = $this->foreign('fieldId')->alias;
 
-                    $name = ($key !== null && !empty($key) ? '_' . $key : '') . '.';
-                    $pat = $absolute . '*' . $name . '*';
+        // If this is a new row
+        if (!$this->id) {
 
-                    foreach (glob($pat) as $existing) {
-                        // Get resize expression
-                        switch($became['proportions']){
-                            case 'o': // original
-                                $size = getimagesize($existing);
-                                $size = $size[0] . 'x' . $size[1];
-                                break;
-                            case 'c':
-                                $size = $became['masterDimensionValue'] . 'x' . $became['slaveDimensionValue'];
-                                break;
-                            case 'p':
-                                $size = array($became['masterDimensionValue'], $became['slaveDimensionValue']);
-                                if ($became['masterDimensionAlias'] == 'height'){
-                                    $size = array_reverse($size);
-                                }
-                                if($became['slaveDimensionLimitation']) $size[1] .= 'M';
-                                $size = implode('x', $size);
-                                break;
-                            default:
-                                $size = '';
-                                break;
-                        }
+            // Get all rows within entity, that current row's field is in structure of
+            $rs = Indi::model($table)->fetchAll();
 
-                        Indi_Image::resize($existing, $copy, $size);
-                    }
+            // Create a new resized copy of an image, uploaded using $field, for all rows
+            foreach ($rs as $r) $r->resize($field, $this);
 
-                } else {
-                    $key = ($key !== null && !empty($key) ? '_' . $key : '');
-                    $copy = ($copy != null ? ',' . $copy : '');
-                    $name = $key . $copy;
-                    $pat = $absolute . '*' . $name . '*';
-                    if ($became['alias']) $became['alias'] = ',' . $became['alias'];
-                    foreach (glob($pat) as $existing) {
-                        $renameTo = preg_replace('~(' . $absolute . '[0-9]+' . $key . ')' . $copy . '(\.[a-z]{2,4})~', '$1' . $became['alias'] . '$2', $existing);
-                        rename($existing, $renameTo);
-                    }
+        // Else
+        } else if (count($this->_modified)) {
+
+            // If `alias` property is the only modified - we just rename copies
+            if (count($this->_modified) == 1 && isset($this->_modified['alias'])) {
+
+                // Get the directory name
+                $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $table . '/';
+
+                // If directory does not exist - return
+                if (!is_dir($dir)) return;
+
+                // Get the array of images certain copies
+                $copyA = glob($dir . '*_' . $field . ',' . $this->_original['alias'] . '.{gif,jpeg,jpg,png}', GLOB_BRACE);
+
+                // Foreach copy
+                foreach ($copyA as $copyI) {
+
+                    // Get the new filename, by replacing original copy alias with modified copy alias
+                    $renameTo = preg_replace(
+                        '~(/[0-9]+_' . $field . ',)' . $this->_original['alias'] . '\.(gif|jpe?g|png)$~',
+                        '$1' . $this->_modified['alias'] . '.$2', $copyI
+                    );
+
+                    // Rename
+                    rename($copyI, $renameTo);
                 }
+
+            // Else there were more changes
+            } else {
+
+                // If these changes include change of 'alias'
+                if (isset($this->_modified['alias'])) {
+
+                    // Get the directory name
+                    $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $table . '/';
+
+                    // If directory does not exist - return
+                    if (!is_dir($dir)) return;
+
+                    // Get the array of images certain copies
+                    $copyA = glob($dir . '*_' . $field . ',' . $this->_original['alias'] . '.{gif,jpeg,jpg,png}', GLOB_BRACE);
+
+                    // Unlink original-named copies
+                    foreach ($copyA as $copyI) @unlink($copyI);
+                }
+
+                // Get all rows within entity, that current row's field is in structure of
+                $rs = Indi::model($table)->fetchAll();
+
+                // Create a new resized copies
+                foreach ($rs as $r) $r->resize($field, $this);
             }
         }
+
+        // Standard save
         return parent::save();
     }
 }

@@ -1,5 +1,5 @@
 <?php
-class Indi{
+class Indi {
 
     /**
      * An internal static variable, will be used to store data, that should be accessible anywhere
@@ -809,5 +809,110 @@ class Indi{
      */
     public static function cache(){
         Indi_Cache::load();
+    }
+
+    /**
+     * Build and return an image (represented by 'img' tag), related to certain row of certain entity,
+     * or the certain copy of that image, if $copy argument is given.
+     *
+     * @static
+     * @param string $entity
+     * @param int $id
+     * @param string $field
+     * @param string $copy
+     * @param array $attr
+     * @return string
+     */
+    public static function img($entity, $id, $field, $copy = '', $attr = array()) {
+
+        // If $copy argument is an array, we assume that it is used as $attr argument.
+        // Such implementation is bit more short-handy, because expression
+        // Indi::img('myentity', 123, 'imagefield', array('height' => 200)) is more friendly than
+        // Indi::img('myentity', 123, 'imagefield', null, array('height' => 200))
+        if (is_array($copy)) {
+            $attr = $copy;
+            $copy = '';
+        }
+
+        // Get the directory name
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $entity . '/';
+
+        // If directory does not exist - return
+        if (!is_dir($dir)) return;
+
+        // Get the image full filename
+        list($abs) = glob($dir . $id . '_' . $field . ($copy ? ',' . $copy : '') . '.{gif,jpeg,jpg,png}', GLOB_BRACE);
+
+        // If no image found - return
+        if (!$abs) return;
+
+        // Setup 'src' attribute
+        $attr['src'] = substr($abs, strlen(DOC)) . '?' . substr(filemtime($abs), -3);
+
+        // Setup empty alt attribute
+        if (!isset($attr['alt'])) $attr['alt'] = '';
+
+        // Build attributes string
+        $attrA = array(); foreach ($attr as $a => $v) $attrA[] = $a . '="' . str_replace('"', '\"', $v) . '"';
+
+        // Build and return img tag
+        return '<img ' . implode(' ', $attrA) . '/>';
+    }
+
+    /**
+     * Build and return a shockwave flash object (represented by 'embed' tag), related to certain row of certain entity
+     *
+     * @static
+     * @param string $entity
+     * @param int $id
+     * @param string $field
+     * @param array $attr
+     * @return string
+     */
+    public static function swf($entity, $id, $field, $attr = array()) {
+
+        // Get the directory name
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $entity . '/';
+
+        // If directory does not exist - return
+        if (!is_dir($dir)) return;
+
+        // Get the image full filename
+        list($abs) = glob($dir . $id . '_' . $field . '.swf');
+
+        // If no image found - return
+        if (!$abs) return;
+
+        // Setup 'src' attribute
+        $attr['src'] = substr($abs, strlen(DOC)) . '?' . substr(filemtime($abs), -3);
+
+        // Setup specific attributes
+        $attr['type'] = 'application/x-shockwave-flash';
+        $attr['pluginspace'] = 'http://www.macromedia.com/go/getflashplayer';
+        $attr['play'] = 'true';
+        $attr['loop'] = 'true';
+        $attr['menu'] = 'true';
+
+        // If 'width' attribute is not set or 'height' attribute is not set
+        if (!$attr['width'] || !$attr['height']) {
+
+            // Get the real size of flash object
+            list($real['width'], $real['height']) = getflashsize($abs);
+
+            // If both 'width' and 'height' attributes are not set - set them same as real width and height
+            if (!$attr['width'] && !$attr['height']) $attr = array_merge($attr, $real);
+
+            // Else if 'width' attribute was set - calculate and setup 'height' attribute
+            else if ($attr['width']) $attr['height'] = ceil($real['height']/$real['width']*$attr['width']);
+
+            // Else if 'height' attribute was set - calculate and setup 'width' attribute
+            else if ($attr['height']) $attr['width'] = ceil($real['width']/$real['height']*$attr['height']);
+        }
+
+        // Build attributes string
+        $attrA = array(); foreach ($attr as $a => $v) $attrA[] = $a . '="' . str_replace('"', '\"', $v) . '"';
+
+        // Build and return img tag
+        return '<embed ' . implode(' ', $attrA) . '/>';
     }
 }

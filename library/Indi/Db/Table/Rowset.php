@@ -68,6 +68,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Setup properties from $config argument
         if (isset($config['table'])) $this->_table = $config['table'];
 
+        // Setup row class, and the count of rows within current rowset
+        $this->_rowClass = isset($config['rowClass']) ? $config['rowClass'] : $this->model()->rowClass();
+
         // If 'data' key exists within $config array
         if (isset($config['data'])) {
 
@@ -98,8 +101,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         if (isset($config['page'])) $this->_page = $config['page'];
         if (isset($config['found'])) $this->_found = $config['found'];
 
-        // Setup row class, and the count of rows within current rowset
-        $this->_rowClass = isset($config['rowClass']) ? $config['rowClass'] : $this->model()->rowClass();
         $this->_count = count($this->_rows);
     }
 

@@ -2146,6 +2146,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         return $this->__unset($offset);
     }
 
+    /**
+     * Do all meintenance, related to file-uploads, e.g upload/replace/delete files and make copies if need
+     *
+     * @param array $fields
+     * @return mixed
+     */
     public function files($fields = array()) {
 
         // If there is no file upload fields that should be taken into attention - exit
@@ -2268,72 +2274,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // Check if there should be copies created for that image
                     $resizeRs = Indi::model('Resize')->fetchAll('`fieldId` = "' . $this->model()->fields($field)->id . '"');
 
-                    // If should
-                    foreach ($resizeRs as $resizeR) {
-
-                        // Get the copy absolute file name
-                        $copy = preg_replace('~(\.' . $ext . ')$~', ',' .$resizeR->alias . '$1', $dst);
-
-                        // If copy's proportions setting is 'o' - e.g. 'original'
-                        if ($resizeR->proportions == 'o') {
-
-                            // We just make a copy of the image and do no size adjustments
-                            copy($dst, $copy);
-
-                        // Else
-                        } else {
-
-                            // Create a new Imagick object
-                            $imagick = new Imagick($dst);
-
-                            // Pick the dimension values
-                            if ($resizeR->masterDimensionAlias == 'width') {
-                                $width = $resizeR->masterDimensionValue;
-                                $height = $resizeR->slaveDimensionValue;
-                            } else {
-                                $height = $resizeR->masterDimensionValue;
-                                $width = $resizeR->slaveDimensionValue;
-                            }
-
-                            // If copy's proportions setting is 'c' - e.g. 'crop'
-                            if ($resizeR->proportions == 'c') {
-
-                                // This is a specialization of the cropImage method. At a high level, this method will
-                                // create a thumbnail of a given image, with the thumbnail sized at ($width, $height).
-                                // If the thumbnail does not match the aspect ratio of the source image, this is the
-                                // method to use. The thumbnail will capture the entire image on the shorter edge of
-                                // the source image (ie, vertical size on a landscape image). Then the thumbnail will
-                                // be scaled down to meet your target height, while preserving the aspect ratio.
-                                // Extra horizontal space that does not fit within the target $width will be cropped
-                                // off evenly left and right. As a result, the thumbnail is usually a good representation
-                                // of the source image.
-                                $imagick->cropThumbnailImage($width, $height);
-
-
-                            // Else create a non-cropped thumbnail
-                            } else {
-
-                                // If slave dimension should not be limited
-                                if (!$resizeR->slaveDimensionLimitation) {
-
-                                    // Set it as 0
-                                    if ($resizeR->masterDimensionAlias == 'width') $height = 0; else $width = 0;
-                                }
-
-                                // Create a thumbnail
-                                $imagick->thumbnailImage($width, $height, $resizeR->slaveDimensionLimitation);
-                            }
-
-                            // Remove the canvas
-                            if ($ext == 'gif') $imagick->setImagePage(0, 0, 0, 0);
-
-                            // Save the copy
-                            $imagick->writeImage($copy);
-
-                            // Free memory
-                            $imagick->destroy();
-                        }
-                    }
+                    // If should - create thmem
+                    foreach ($resizeRs as $resizeR) $this->resize($field, $resizeR, $dst);
                 }
 
             // If file, uploaded using $field field, should be deleted
@@ -2345,6 +2287,102 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Delete them
                 foreach ($fileA as $fileI) @unlink($fileI);
             }
+        }
+    }
+
+    /**
+     * Create the resized copy of an image, uploaded using $field field, according to info stored in $resizeR argument
+     *
+     * @param string $field Alias of field, that image was uploaded using by
+     * @param Resize_Row $resizeR
+     * @param null $src Original image full path. If this argument is not set - it will be calculated.
+     * @return mixed
+     */
+    public function resize($field, Resize_Row $resizeR, $src = null) {
+
+        // If no $src argument given
+        if (!$src) {
+
+            // Get the directory name
+            $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+
+            // If directory does not exist - return
+            if (!is_dir($dir)) return;
+
+            // Get the original uploaded file full filename
+            list($src) = glob($dir . $this->id . '_' . $field . '.*');
+
+            // If filename was not found - return
+            if (!$src) return;
+        }
+
+        // Get the extension of the original uploaded file
+        $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $src);
+
+        // If original uploaded file is not an image in format gif, jpeg or png - return
+        if (!preg_match('/^gif|jpe?g|png$/i', $ext)) return;
+
+        // Get the absolute filename of image's copy
+        $dst = preg_replace('~(\.' . $ext . ')$~', ',' .$resizeR->alias . '$1', $src);
+
+        // If copy's proportions setting is 'o' - e.g. 'original'
+        if ($resizeR->proportions == 'o') {
+
+            // We just make a copy of the image and do no size adjustments
+            copy($src, $dst);
+
+        // Else
+        } else {
+
+            // Create a new Imagick object
+            $imagick = new Imagick($src);
+
+            // Pick the dimension values
+            if ($resizeR->masterDimensionAlias == 'width') {
+                $width = $resizeR->masterDimensionValue;
+                $height = $resizeR->slaveDimensionValue;
+            } else {
+                $height = $resizeR->masterDimensionValue;
+                $width = $resizeR->slaveDimensionValue;
+            }
+
+            // If copy's proportions setting is 'c' - e.g. 'crop'
+            if ($resizeR->proportions == 'c') {
+
+                // This is a specialization of the cropImage method. At a high level, this method will
+                // create a thumbnail of a given image, with the thumbnail sized at ($width, $height).
+                // If the thumbnail does not match the aspect ratio of the source image, this is the
+                // method to use. The thumbnail will capture the entire image on the shorter edge of
+                // the source image (ie, vertical size on a landscape image). Then the thumbnail will
+                // be scaled down to meet your target height, while preserving the aspect ratio.
+                // Extra horizontal space that does not fit within the target $width will be cropped
+                // off evenly left and right. As a result, the thumbnail is usually a good representation
+                // of the source image.
+                $imagick->cropThumbnailImage($width, $height);
+
+
+            // Else create a non-cropped thumbnail
+            } else {
+
+                // If slave dimension should not be limited
+                if (!$resizeR->slaveDimensionLimitation) {
+
+                    // Set it as 0
+                    if ($resizeR->masterDimensionAlias == 'width') $height = 0; else $width = 0;
+                }
+
+                // Create a thumbnail
+                $imagick->thumbnailImage($width, $height, $resizeR->slaveDimensionLimitation);
+            }
+
+            // Remove the canvas
+            if ($ext == 'gif') $imagick->setImagePage(0, 0, 0, 0);
+
+            // Save the copy
+            $imagick->writeImage($dst);
+
+            // Free memory
+            $imagick->destroy();
         }
     }
 }
