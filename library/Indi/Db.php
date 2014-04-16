@@ -175,6 +175,7 @@ class Indi_Db {
                 // Create an item within self::$_entityA array, containing some basic info
                 self::$_entityA[ucfirst($entityI['table'])] = array(
                     'id' => $entityI['id'],
+                    'title' => $entityI['title'],
                     'extends' => $entityI['extends'],
                     'useCache' => $entityI['useCache'],
                     'fields' => new Field_Rowset_Base(array(

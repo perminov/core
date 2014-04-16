@@ -106,6 +106,8 @@ class Resize_Row extends Indi_Db_Table_Row {
             }
         }
 
+        i(Indi::post());
+
         // Standard save
         return parent::save();
     }

@@ -30,6 +30,14 @@ define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'One of parent sections f
 define('I_ACCESS_ERROR_ROW_ADDING_DISABLED', 'Row adding is restricted in this section');
 define('I_ACCESS_ERROR_ROW_DOESNT_EXIST', 'Row with such an id does not exist in this section');
 
+define('I_DOWNLOAD_ERROR_NO_ID', 'Row identifier either is not specified, or is not a number');
+define('I_DOWNLOAD_ERROR_NO_FIELD', 'Field identifier either is not specified, or is not a number');
+define('I_DOWNLOAD_ERROR_NO_SUCH_FIELD', 'No field with such identifier');
+define('I_DOWNLOAD_ERROR_FIELD_DOESNT_DEAL_WITH_FILES', 'This field does not deal with files');
+define('I_DOWNLOAD_ERROR_NO_SUCH_ROW', 'No row with such identifier');
+define('I_DOWNLOAD_ERROR_NO_FILE', 'There is no file, uploaded in this field for this row');
+define('I_DOWNLOAD_ERROR_FILEINFO_FAILED', 'Getting file information failed');
+
 define('I_YES', 'Yes');
 define('I_NO', 'No');
 
