@@ -16,6 +16,13 @@ class Indi_Db_Table
     protected $_name = '';
 
     /**
+     * Store the title of current model
+     *
+     * @var string
+     */
+    protected $_title = '';
+
+    /**
      * Flag, that figures out whether or not cache is used for that model
      *
      * @var boolean
@@ -73,6 +80,9 @@ class Indi_Db_Table
 
         // Set fields
         $this->_fields = $config['fields'];
+
+        // Set title
+        $this->_title = $config['title'];
 
         // Detect tree column name
         $this->_treeColumn = $config['fields']->field($this->_name . 'Id') ? $this->_name . 'Id' : '';
@@ -1018,5 +1028,14 @@ class Indi_Db_Table
      */
     public function useCache() {
         return $this->_useCache;
+    }
+
+    /**
+     * Return title of current model
+     *
+     * @return string
+     */
+    public function title() {
+        return $this->_title;
     }
 }

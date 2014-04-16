@@ -30,6 +30,14 @@ define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'Один из вышес
 define('I_ACCESS_ERROR_ROW_ADDING_DISABLED', 'Право на создание записей недоступно в этом разделе');
 define('I_ACCESS_ERROR_ROW_DOESNT_EXIST', 'Нет записи с таким id в этом разделе');
 
+define('I_DOWNLOAD_ERROR_NO_ID', 'Идентификатор объекта или не указан, или не является числом');
+define('I_DOWNLOAD_ERROR_NO_FIELD', 'Идентификатор поля или не указан, или не является числом');
+define('I_DOWNLOAD_ERROR_NO_SUCH_FIELD', 'Нет поля с таким идентификатором');
+define('I_DOWNLOAD_ERROR_FIELD_DOESNT_DEAL_WITH_FILES', 'Поле с этим идентификатором не работает с файлами');
+define('I_DOWNLOAD_ERROR_NO_SUCH_ROW', 'Нет объекта с таким идентификатором');
+define('I_DOWNLOAD_ERROR_NO_FILE', 'Файл, загруженный в указанное поле для указанного объекта - не существует');
+define('I_DOWNLOAD_ERROR_FILEINFO_FAILED', 'Не удалось получить сведения о файле');
+
 define('I_YES', 'Да');
 define('I_NO', 'Нет');
 

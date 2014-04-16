@@ -20,7 +20,8 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
         '/js/admin/indi.js',
         '/js/admin/indi.trail.js',
         '/js/admin/indi.combo.form.js',
-        '/js/admin/indi.action.form.js'
+        '/js/admin/indi.action.form.js',
+        '/js/admin/colorpicker/colorPicker_src.js'
     ), 'form');
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',

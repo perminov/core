@@ -1,6 +1,63 @@
 <?php
-class Indi_Trail_Frontend extends Indi_Trail
+class Indi_Trail_Frontend
 {
+    /**
+     * Store array of Indi_Trail_Item objects
+     *
+     * @var array
+     */
+    public $items = array();
+
+    /**
+     * Store request params
+     *
+     * @var array
+     */
+    public $request = array();
+
+    /**
+     * Get item from $this->items array, that have index
+     * calculated as maximum index decremented by $stepsUp argument
+     *
+     * @return Indi_Trail_Item object
+     */
+    public function getItem($stepsUp = null)
+    {
+
+        $index = $this->count() - 1 - ($stepsUp ? (int) $stepsUp : 0);
+        if ($index >= 0 && $index < $this->count()) {
+            return $this->items[$index];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Return count of elements in $this->items
+     *
+     * @return int
+     */
+    public function count()
+    {
+        return count($this->items);
+    }
+
+    /**
+     * Get an array version of trail
+     *
+     * @uses Indi_Trail_Item::toArray()
+     * @return array
+     */
+    public function toArray()
+    {
+        $array = array();
+        foreach($this->items as $item) {
+            $array[] = $item->toArray();
+        }
+        end($this->items);
+        return $array;
+    }
+
     /**
      * Instantiate a new Trail object and set up
      * call path (trail) in $this->items variable as array of
