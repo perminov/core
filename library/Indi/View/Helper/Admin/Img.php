@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_Img extends Indi_View_Helper_Abstract
             }
         }
 
-        $xhtml = Indi_Image::image($entity, $id, $name, $copy, $silence, $width, $height);
+        $xhtml = Indi::img($entity, $id, $name, $copy, array('width' => $width, 'height' => $height));
         
         return $xhtml;
     }

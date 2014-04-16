@@ -28,13 +28,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
     }
 
     public function getSelected() {
-
-        // If current row does not exist, combo will use field's default value as selected value
-        if (strlen($this->getRow()->{$this->name})) {
-            $selected = $this->getRow()->{$this->name};
-        }
-
-        return $selected;
+        return $this->getDefaultValue();
     }
 
     public function getField() {

@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_Swf extends Indi_View_Helper_Abstract
             }
         }
 
-        $xhtml = Indi_Image::flash($entity, $id, $name, $silence, $width, $height);
+        $xhtml = Indi::swf($entity, $id, $name, array('width' => $width, 'height' => $height));
         
         return $xhtml;
     }

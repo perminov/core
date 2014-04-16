@@ -1,6 +1,6 @@
 <?php
-class Field_Row extends Indi_Db_Table_Row
-{
+class Field_Row extends Indi_Db_Table_Row {
+
     /**
      * Constructor
      *
@@ -48,8 +48,8 @@ class Field_Row extends Indi_Db_Table_Row
     public function delete(){
 		// delete uploaded images or files as they were uploaded as values
 		// of this field if they were uploaded
-		$this->deleteUploadedFilesIfTheyWere();
-
+		$this->deleteUploadedFiles();
+        die('ss');
         // standart Db_Table_Row deletion
         $GLOBALS['enumsetForceDelete'] = true;
         parent::delete();
@@ -67,40 +67,28 @@ class Field_Row extends Indi_Db_Table_Row
 		}
 	}
 
-	public function deleteUploadedFilesIfTheyWere(){
+    /**
+     * Delete all files, that were created by current field usage
+     */
+    public function deleteUploadedFiles(){
+
+        // If current field has no column type
 		if (!$this->columnTypeId) {
-			// get folder name where files of entity are stored
-			$entity = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"')->table;
-			$image = $this->alias;
 
-			// get upload path from config
-			$uploadPath = Indi_Image::getUploadPath();
-			
-			// absolute upload path  in filesystem
-			$absolute = trim($_SERVER['DOCUMENT_ROOT'], '\\/') . STD . '/' . $uploadPath . '/' . $entity . '/';
-			
-			// array for filenames that should be deleted
-			$files = array();
+            // Get the table
+            $table = $this->foreign('entityId')->table;
 
-			// all copies  with specified name are to be deleted too
-			$files = glob($absolute . '*'.($image ? '_' . $image . '*' : '') .'*');
-			if (!$image) {
-				$filtered = array();
-				for($i = 0; $i < count($files); $i++) {
-					$info = pathinfo($files[$i]);
-					$info = explode(',', $info['filename']);
-					if (is_numeric($info[0])) $filtered[] = $files[$i];
-				}
-				$files = $filtered;
-			}
-			for ($j = 0; $j < count($files); $j++) {
-				try {
-					unlink($files[$j]);
-				} catch (Exception $e) {
-	//                throw new Exception($e->__toString());
-				}
-			}
-			
+            // Get the directory name
+            $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $table . '/';
+
+            // If directory does not exist - return
+            if (!is_dir($dir)) return;
+
+            // Get the array of uploaded files and their copies (if some of them are images)
+            $fileA = glob($dir . '[0-9]*_' . $this->alias . '[,.]*');
+
+            // Delete files
+            foreach ($fileA as $fileI) @unlink($fileI);
 		}
 	}
 
