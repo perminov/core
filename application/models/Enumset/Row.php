@@ -1,134 +1,153 @@
 <?php
-class Enumset_Row extends Indi_Db_Table_Row_Noeval{
-    public function save($parentSave = false) {
-        // Simple save
-        if ($parentSave) return parent::save();
+class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
-        // Get Field row
+    /**
+     * Save possible value
+     *
+     * @return int
+     */
+    public function save() {
+
+        // If `alias` property was not modified - do a standard save
+        if (!array_key_exists('alias', $this->_modified)) return parent::save();
+
+        // Get the field row
         $fieldR = $this->foreign('fieldId');
 
-        // Get ColumnType row
-        $columnTypeR = $fieldR->foreign('columnTypeId');
+        // Get the existing possible values
+        $enumsetA = $fieldR->nested('enumset', array('order' => 'move'))->column('alias');
 
-        // Check that $columnTypeR->type is ENUM or SET
-        if (in_array($columnTypeR->type, array('ENUM', 'SET'))) {
+        // Get the database table name
+        $table = $fieldR->foreign('entityId')->table;
 
-            if (preg_match('/^#([0-9a-fA-F]{6})$/', $this->_modified['alias'])) {
-                $this->alias = Misc::rgbPrependHue($this->alias);
-            }
-            parent::save();
+        // Get the current default value
+        $defaultValue = Indi::db()->query('SHOW COLUMNS FROM `' . $table . '` LIKE "' . $fieldR->alias . '"')
+            ->fetch(PDO::FETCH_OBJ)->Default;
 
-            // Get existing values
-            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', '`move`')->toArray();
-            for ($i = 0; $i < count($values); $i++) {
+        // If this is an existing enumset row
+        if ($this->id) {
 
-                // Set up viewValues. Difference between viewValues and rawValues is that if viewValues
-                // are #RRGGBB colors with prepended hue number, hue number will be stripped from viewValues
-                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $values[$i]['alias'], $matches)) {
-                    $viewValues[] = '#' . $matches[1];
-                } else {
-                    $viewValues[] = $values[$i]['alias'];
-                }
+            // If modified version of value is already exists within list of possible value - throw an error message
+            if (in_array($this->alias, $enumsetA)) die(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
 
-                // Set up rawValues
-                $rawValues[] = $values[$i]['alias'];
-            }
+            // Convert $defaultValue to an array, for handling case if column type is SET
+            $defaultValue = explode(',', $defaultValue);
 
-            if ($columnTypeR->type == 'ENUM') {
-                // Check if default value is a rgb color with a prepended hue number
-                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $fieldR->defaultValue, $matches)) {
-                    $viewDefaultValue = '#' . $matches[1];
-                } else {
-                    $viewDefaultValue = $fieldR->defaultValue;
-                }
-                // If field default value is not presented (for some reasons) in $viewValues array, we create corresponding value
-                if (!in_array($viewDefaultValue, $viewValues) && ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $fieldR->defaultValue != ''))) {
-                    $rawValues[] = $fieldR->defaultValue;
-                    $new = $this->model()->createRow();
-                    $new->fieldId = $fieldR->id;
-                    $new->alias = $fieldR->defaultValue;
-                    $new->title = 'Укажите наименование для значения по умолчанию - "' . $viewDefaultValue . '"';
-                    $new->save(true);
-                }
-            } else if ($columnTypeR->type == 'SET') {
-                $defaultValues = explode(',', $fieldR->defaultValue);
-                for ($i = 0; $i < count($defaultValues); $i++) {
-                    // Check if any of default value items is a rgb colors with a prepended hue number
-                    if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $defaultValues[$i], $matches)) {
-                        $viewDefaultValue = '#' . $matches[1];
-                    } else {
-                        $viewDefaultValue = $defaultValues[$i];
-                    }
-                    // If field default value is not presented (for some reasons) in $viewValues array, we create corresponding value
-                    if (!in_array($viewDefaultValue, $viewValues) && ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $defaultValues[$i] != ''))) {
-                        $rawValues[] = $defaultValues[$i];
-                        $new = $this->model()->createRow();
-                        $new->fieldId = $fieldR->id;
-                        $new->alias = $defaultValues[$i];
-                        $new->title = 'Укажите наименование для значения по умолчанию - "' . $viewDefaultValue . '"';
-                        $new->save(true);
-                    }
-                }
+            // If original version of value - is a default value
+            if (in_array($this->_original['alias'], $defaultValue)) {
+
+                // Setup sql default value as modified version of value
+                $defaultValue[array_search($this->_original['alias'], $defaultValue)] = $this->alias;
+
+                // If field's default value does not contain php expressions, setup $updateFieldDefaultValue flag
+                // to true, because in this case we need to update field default value bit later, too
+                if (!preg_match(Indi::rex('php'), $fieldR->defaultValue)) $updateFieldDefaultValue = true;
             }
 
-            // Construction and execution of ALTER sql query
-            $query  = 'ALTER TABLE `' . Indi::model('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"')->table . '` ';
-            $query .= 'CHANGE `' . $fieldR->alias . '` `' . $fieldR->alias . '` ';
-            $query .=  $columnTypeR->type . '(' . "'" . implode("','", $rawValues) . "'" . ')';
-            $query .= ' CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ';
-            $query .= 'DEFAULT ' . "'" . $fieldR->defaultValue . "'";
-            // different default setup for SET ??
-            Indi::db()->query($query);
+            // Convert $defaultValue back from array to string
+            $defaultValue = implode(',', $defaultValue);
+
+            // Replace original value with modified value within list of possible values
+            $enumsetA[array_search($this->_original['alias'], $enumsetA)] = $this->alias;
+
+        // Else if it is a new enumset row
+        } else {
+
+            // If value that is going to be appended - is already exists within list of possible value - throw an error message
+            if (in_array($this->alias, $enumsetA)) die(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
+
+            // Append a new value to the list of allowed values
+            $enumsetA[] = $this->alias;
         }
+
+        // Build the ALTER query
+        $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $fieldR->alias . '` `' . $fieldR->alias . '`';
+        $sql[] = $fieldR->foreign('columnTypeId')->type . '("' . implode('","', $enumsetA) . '")';
+        $sql[] = 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL';
+        $sql[] = 'DEFAULT "' . $defaultValue . '"';
+
+        // Run that query
+        Indi::db()->query(implode(' ', $sql));
+
+        // If $updateFieldDefaultValue flag is set to true
+        if ($updateFieldDefaultValue)
+            Indi::db()->query('
+                UPDATE `field`
+                SET `defaultValue` = "' . $defaultValue . '"
+                WHERE `id` = "' . $fieldR->id . '"
+                LIMIT 1
+            ');
+
+        // Standard save
+        return parent::save();
     }
 
     /**
-     * Check if value to be deleted is last value or default value, and displays correcponding error messages.
-     * Otherwise, will construct and execute an ALTER sql query to adjust field structure, and after that
-     * perform standard deletion
+     * Delete
      *
-     * @return int|void
+     * @return int
      */
-    public function delete($parentDelete = false) {
-        // Force deletion, used in case if there is a need to just remove rows from `enumset` table without
-        // executing any ALTER queries
-        if ($parentDelete || $GLOBALS['enumsetForceDelete']) return parent::delete();
+    public function delete() {
 
-        // Get Field row
+        // Get the field row
         $fieldR = $this->foreign('fieldId');
 
-        // Get ColumnType row
-        $columnTypeR = $fieldR->foreign('columnTypeId');
+        // Get the existing possible values
+        $enumsetA = $fieldR->nested('enumset', array('order' => 'move'))->column('alias');
 
-        // Check that $columnTypeR->type is ENUM or SET
-        if (in_array($columnTypeR->type, array('ENUM', 'SET'))) {
+        // Get the database table name
+        $table = $fieldR->foreign('entityId')->table;
 
-            // Get values
-            $values = $this->model()->fetchAll('`fieldId` = "' . $fieldR->id . '"', '`move`')->toArray();
-            $rawValues = array(); for ($i = 0; $i < count($values); $i++) $rawValues[] = $values[$i]['alias'];
+        // Get the current default value
+        $defaultValue = Indi::db()->query('SHOW COLUMNS FROM `' . $table . '` LIKE "' . $fieldR->alias . '"')
+            ->fetch(PDO::FETCH_OBJ)->Default;
 
-            // Checks if deletion is not allowed
-            if (count($rawValues) == 1) {
-                die(ENUMSET_DELETE_DENIED_LASTVALUE);
-            } else if (count($rawValues) > 1) {
-                if ($fieldR->defaultValue == $this->alias) {
-                    if ($columnTypeR->type == 'ENUM' || ($columnTypeR->type == 'SET' && $fieldR->defaultValue != '')) {
-                        die(ENUMSET_DELETE_DENIED_DEFAULTVALUE);
-                    }
-                }
-            }
+        // If current row is the last enumset row, related to current field - throw an error message
+        if (count($enumsetA) == 1) die(sprintf(I_ENUMSET_ERROR_VALUE_LAST, $this->alias));
 
-            // Unset value that will be deleted for the correct construction of ALTER query
-            unset($rawValues[array_search($this->alias, $rawValues)]);
+        // Remove current item from the list of possible values
+        unset($enumsetA[array_search($this->alias, $enumsetA)]);
 
-            // Construction and execution of ALTER sql query
-            $query  = 'ALTER TABLE `' . Indi::model('Entity')->fetchRow('`id` = "' . $fieldR->entityId . '"')->table . '` ';
-            $query .= 'CHANGE `' . $fieldR->alias . '` `' . $fieldR->alias . '` ';
-            $query .= $columnTypeR->type . "('" . implode("','", $rawValues) . "') ";
-            $query .= 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL ';
-            $query .= 'DEFAULT ' . "'" . $fieldR->defaultValue . "'";
-            Indi::db()->query($query);
+        // Convert $defaultValue to an array, for handling case if column type is SET
+        $defaultValue = explode(',', $defaultValue);
+
+        // If original version of value - is a default value
+        if (in_array($this->alias, $defaultValue)) {
+
+            // Unset current item from the list of default values
+            unset($defaultValue[array_search($this->alias, $defaultValue)]);
+
+            // If field's default value does not contain php expressions, setup $updateFieldDefaultValue flag
+            // to true, because in this case we need to update field default value bit later, too
+            if (!preg_match(Indi::rex('php'), $fieldR->defaultValue)) $updateFieldDefaultValue = true;
+
+            // If after unset there is no more sql default values left, we should set at least one, so we pick first
+            // item from $enumsetA and set it as $defaultValue
+            if (count($defaultValue) == 0) $defaultValue = array(current($enumsetA));
         }
+
+        // Convert $defaultValue back from array to string
+        $defaultValue = implode(',', $defaultValue);
+
+        // Build the ALTER query
+        $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $fieldR->alias . '` `' . $fieldR->alias . '`';
+        $sql[] = $fieldR->foreign('columnTypeId')->type . '("' . implode('","', $enumsetA) . '")';
+        $sql[] = 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL';
+        $sql[] = 'DEFAULT "' . $defaultValue . '"';
+
+        // Run that query
+        Indi::db()->query(implode(' ', $sql));
+
+        // If $updateFieldDefaultValue flag is set to true
+        if ($updateFieldDefaultValue)
+            Indi::db()->query('
+                UPDATE `field`
+                SET `defaultValue` = "' . $defaultValue . '"
+                WHERE `id` = "' . $fieldR->id . '"
+                LIMIT 1
+            ');
+
+        // Standard save
         return parent::delete();
     }
 

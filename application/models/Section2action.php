@@ -1,6 +1,6 @@
 <?php
-class Section2action extends Indi_Db_Table
-{
+class Section2action extends Indi_Db_Table {
+
     /**
      * Classname for row
      *

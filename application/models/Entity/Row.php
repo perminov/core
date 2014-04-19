@@ -1,6 +1,6 @@
 <?php
-class Entity_Row extends Indi_Db_Table_Row
-{
+class Entity_Row extends Indi_Db_Table_Row {
+
     /**
      * Delete current entity
      *

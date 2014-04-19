@@ -1,5 +1,5 @@
 <?php
-class Field_Rowset_Base extends Indi_Db_Table_Rowset{
+class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
     /**
      * Contains an array with fields aliases as keys, and their indexes within $this->_rows array as values.
@@ -10,12 +10,12 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
     protected $_indexes = array();
 
     /**
-     * Constructor.
+     * Constructor
      *
      * @param array $config
      */
-    public function __construct(array $config)
-    {
+    public function __construct(array $config) {
+
         // Call parent constructor
         parent::__construct($config);
 
@@ -60,7 +60,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
      * @return array
      */
     public function column($column) {
-        return $column == 'alias' ? array_keys($this->_indexes) : parent::column($column) ;
+        return $column == 'alias' ? array_keys($this->_indexes) : parent::column($column);
     }
 
     /**
@@ -73,7 +73,6 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
         return $this->_rows[$this->_indexes[$alias]];
     }
 
-
     /**
      * Exclude items from current rowset, that have keys, mentioned in $keys argument.
      * If $inverse argument is set to true, then function will return only rows,
@@ -85,7 +84,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
      * @param boolean $inverse
      * @return Indi_Db_Table_Rowset Fluent interface
      */
-    public function exclude($keys, $type = 'id', $inverse = false){
+    public function exclude($keys, $type = 'id', $inverse = false) {
 
         // If $ids argument is not an array, we convert it to it by exploding by comma
         if (!is_array($keys)) $keys = explode(',', $keys);
@@ -99,6 +98,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset{
             // If item id is in exclusion/selection list
             if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
 
+                // Unset row and it's alias
                 unset($this->_indexes[$this->_rows[$index]->alias]);
                 unset($this->_rows[$index]);
 

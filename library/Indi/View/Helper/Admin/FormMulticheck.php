@@ -113,7 +113,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
 					$satellite = $satelliteRow->alias;
 					$xhtml .= "<script>\$('#". $satellite ."').change(function(){\$.post('./json/1/', { field: '" . $name . "', satellite: \$('#". $satellite ."').attr('value') },   function(data) {     \$('#". $name ."').html(data);" . str_replace(array('"', "\n", "\r"), array('\"',"",""), $satelliteRow->javascript) . "},'html');}); \$('#". $satellite ."').change();</script>";
 				}
-				if (!$field->isSatellite() && $field->javascript){
+				if (!Indi::model('Field')->fetchRow('`satellite` = "' . $field->id . '"') && $field->javascript){
 					$xhtml .= "<script>\$('#". $field->alias ."').change(function(){". str_replace(array('"', "\n", "\r"), array('\"',"",""), $field->javascript) . "}); \$('#". $field->alias ."').change();</script>";
 				}
 			} else $xhtml = $data;

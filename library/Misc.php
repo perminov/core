@@ -365,7 +365,7 @@ class Misc
         // Package and away we go!
         return $uppercase ? strtoupper($out) : $out;
     }
-    function rgbPrependHue($rgb = ''){
+    public static function rgbPrependHue($rgb = ''){
         $rgb = preg_replace('/^#/', '', $rgb);
         $r = hexdec(substr($rgb, 0, 2));
         $g = hexdec(substr($rgb, 2, 2));

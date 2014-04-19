@@ -1,5 +1,6 @@
 <?php
-class Grid extends Indi_Db_Table{
+class Grid extends Indi_Db_Table {
+
     /**
      * Classname for row
      *

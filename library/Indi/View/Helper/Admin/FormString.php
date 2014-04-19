@@ -4,7 +4,6 @@ class Indi_View_Helper_Admin_FormString extends Indi_View_Helper_FormElement
     public function formString($name, $value = null, $attribs = null)
     {
         $field = Indi::trail()->model->fields($name);
-        $params = $field->getParams();
 
         if ($value === null) {
             $value = $this->view->row->$name;
@@ -26,8 +25,8 @@ class Indi_View_Helper_Admin_FormString extends Indi_View_Helper_FormElement
                    . ' id="' . $this->view->escape($id) . '"'
                    . ' value="' . $this->view->escape($value) . '"'
                    . ($attribs['oninput'] ? '' : ' oninput="' . Indi::trail()->model->fields($name)->javascript . '"')
-                   . ($params['readonly'] == 'true' ? ' readonly="readonly"':'')
-                   . ($params['maxlength'] ? 'style="width: ' . ($params['maxlength']*10) . 'px;" maxlength="' . $params['maxlength'] . '"' : '')
+                   . ($field->params['readonly'] == 'true' ? ' readonly="readonly"':'')
+                   . ($field->params['maxlength'] ? 'style="width: ' . ($field->params['maxlength']*10) . 'px;" maxlength="' . $field->params['maxlength'] . '"' : '')
                    . $this->_htmlAttribs($attribs)
                    . ' style="width: 100%;"/>';
         }

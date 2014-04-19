@@ -178,11 +178,8 @@ class Indi_Controller_Admin extends Indi_Controller{
             // Options array
             $options = array();
 
-            // Get params
-            $params = $field->getParams();
-
             // Get title column
-            $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';
+            $titleColumn = $field->params['titleColumn'] ? $field->params['titleColumn'] : 'title';
 
             // If 'optgroup' param is used
             if ($comboDataRs->optgroup) {
@@ -200,8 +197,8 @@ class Indi_Controller_Admin extends Indi_Controller{
                 $options[$o->$keyProperty] = array('title' => Misc::usubstr($o->$titleColumn, 50), 'system' => $system);
 
                 // Deal with optionTemplate param, if specified
-                if ($params['optionTemplate']) {
-                    Indi::$cmpTpl = $params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::$cmpOut;
+                if ($field->params['optionTemplate']) {
+                    Indi::$cmpTpl = $field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::$cmpOut;
                 }
 
                 // Deal with optionAttrs, if specified.
@@ -1032,8 +1029,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     // Get the format
                     foreach (Indi::trail()->fields as $fieldR) {
                         if ($fieldR->alias == $alias) {
-                            $paramA = $fieldR->getParams();
-                            $format = $paramA['display' . ($fieldR->elementId == 12 ? '' : 'Date') . 'Format'];
+                            $format = $fieldR->params['display' . ($fieldR->elementId == 12 ? '' : 'Date') . 'Format'];
                         }
                     }
 

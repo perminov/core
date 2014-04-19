@@ -38,6 +38,10 @@ define('I_DOWNLOAD_ERROR_NO_SUCH_ROW', 'Нет объекта с таким ид
 define('I_DOWNLOAD_ERROR_NO_FILE', 'Файл, загруженный в указанное поле для указанного объекта - не существует');
 define('I_DOWNLOAD_ERROR_FILEINFO_FAILED', 'Не удалось получить сведения о файле');
 
+define('I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE', 'Заголовок для значения по умолчанию \'%s\'');
+define('I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS', 'Значение "%s" уже присутствует в списке возможных значений');
+define('I_ENUMSET_ERROR_VALUE_LAST', 'Значение "%s" - последнее оставшееся значение в списке возможных, и поэтому не может быть удалено');
+
 define('I_YES', 'Да');
 define('I_NO', 'Нет');
 

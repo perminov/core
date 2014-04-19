@@ -1,5 +1,6 @@
 <?php
 class Section extends Indi_Db_Table {
+
     /**
      * Classname for row
      *
