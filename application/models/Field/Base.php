@@ -1,5 +1,6 @@
 <?php
-class Field_Base extends Indi_Db_Table{
+class Field_Base extends Indi_Db_Table {
+
     /**
      * Classname for row
      *
@@ -13,4 +14,10 @@ class Field_Base extends Indi_Db_Table{
      * @var string
      */
     protected $_rowsetClass = 'Field_Rowset';
+
+    /**
+     * Array of fields, which contents will be evaluated with php's eval() function
+     * @var array
+     */
+    protected $_evalFields = array('defaultValue');
 }

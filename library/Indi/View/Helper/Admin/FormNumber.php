@@ -4,7 +4,7 @@ class Indi_View_Helper_Admin_FormNumber extends Indi_View_Helper_FormElement
     public function formNumber($name, $value = null, $attribs = null)
     {
 		$field = Indi::trail()->model->fields($name);
-		$params = $field->getParams();
+
         if ($value === null) {
 			if(!$this->view->row->id) {
 				$value = $field->defaultValue;
@@ -28,7 +28,7 @@ class Indi_View_Helper_Admin_FormNumber extends Indi_View_Helper_FormElement
                    . ' id="' . $this->view->escape($id) . '"'
                    . ' value="' . $this->view->escape($value) . '"'
                    . $this->_htmlAttribs($attribs)
-                   . ' style="width: ' . ($params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $params['maxlength'] . '" ' . ($params['readonly'] == 'true' ? ' readonly' : ' oninput="this.value=number(this.value);' . $field->javascript . '"  onkeydown="if(event.keyCode==38||event.keyCode==40){if(event.keyCode==38)this.value=parseInt(this.value)+1;else if(event.keyCode==40)this.value=parseInt(this.value)-1;' . $field->javascript . '}"') . ' autocomplete="off"/> ' . $params['measure'];
+                   . ' style="width: ' . ($field->params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $field->params['maxlength'] . '" ' . ($field->params['readonly'] == 'true' ? ' readonly' : ' oninput="this.value=number(this.value);' . $field->javascript . '"  onkeydown="if(event.keyCode==38||event.keyCode==40){if(event.keyCode==38)this.value=parseInt(this.value)+1;else if(event.keyCode==40)this.value=parseInt(this.value)-1;' . $field->javascript . '}"') . ' autocomplete="off"/> ' . $field->params['measure'];
         }
         
         return $xhtml;

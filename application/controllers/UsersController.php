@@ -25,7 +25,7 @@ class UsersController extends Indi_Controller_Front{
 		die();
 	}
 	public function unsubscribeAction(){
-		d($this->getRequest()->getParams());
+		d(Indi::uri());
 		die('asd');
 	}
 	public function registrationAction(){

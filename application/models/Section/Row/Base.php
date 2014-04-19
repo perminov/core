@@ -1,11 +1,23 @@
 <?php
-class Section_Row_Base extends Indi_Db_Table_Row
-{
+class Section_Row_Base extends Indi_Db_Table_Row {
+
+    /**
+     * Function is redeclared to provide an ability for `href` pseudo property to be got
+     *
+     * @param string $property
+     * @return string
+     */
     public function __get($property) {
         return $property == 'href' ? PRE . '/' . $this->alias : parent::__get($property);
     }
 
-    public function save(){
+    /**
+     * Setup grid
+     *
+     * @return int
+     */
+    public function save() {
+
         // If entity was changed
         if (isset($this->_modified['entityId'])) {
 
@@ -63,7 +75,7 @@ class Section_Row_Base extends Indi_Db_Table_Row
                     // a process of grid columns creation
                     parent::save();
 
-                    // create grid, stripping exclusions from final grid column list
+                    // Create grid, stripping exclusions from final grid column list
                     $lastPosition = $gridM->getNextMove();
                     $j = 0;
                     for ($i = 0; $i < count($fields); $i++) {

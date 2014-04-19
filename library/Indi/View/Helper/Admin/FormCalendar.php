@@ -28,12 +28,11 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
         // if current value earlier than minimal date, minimal date is to be set
         // equal to value
         $minimal = $minimal > $value ? $value : $minimal;
-        $params = $field->getParams();
-        if ($params['displayFormat']) {
-            if ($value == '0000-00-00' && $params['displayFormat'] == 'd.m.Y') {
+        if ($field->params['displayFormat']) {
+            if ($value == '0000-00-00' && $field->params['displayFormat'] == 'd.m.Y') {
                 $value = '00.00.0000';
             } else if ($value != '0000-00-00'){
-                $value = date($params['displayFormat'], strtotime($value));
+                $value = date($field->params['displayFormat'], strtotime($value));
                 if ($value == '30.11.-0001') $value = '00.00.0000';
             }
         }
@@ -51,12 +50,12 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
 						renderTo: '<?=$name?>CalendarRender',
                         id: '<?=$name?>Calendar',
 						width: 185,
-                        ariaTitleDateFormat: '<?=$params['displayFormat']?>',
-                        longDayFormat: '<?=$params['displayFormat']?>',
-                        format: '<?=$params['displayFormat']?>',
-                        value: Ext.Date.parse('<?=$value?>', '<?=$params['displayFormat']?>'),
+                        ariaTitleDateFormat: '<?=$field->params['displayFormat']?>',
+                        longDayFormat: '<?=$field->params['displayFormat']?>',
+                        format: '<?=$field->params['displayFormat']?>',
+                        value: Ext.Date.parse('<?=$value?>', '<?=$field->params['displayFormat']?>'),
 						handler: function(picker, date) {
-                            var selectedDate = Ext.Date.format(date, '<?=$params['displayFormat']?>');
+                            var selectedDate = Ext.Date.format(date, '<?=$field->params['displayFormat']?>');
                             $('#<?=$name?>').val(selectedDate);
 							$('#<?=$name?>CalendarRender').toggle();
                             $('#<?=$name?>').change();

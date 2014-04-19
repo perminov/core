@@ -30,16 +30,15 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         $xhtml  = '<div class="i-element-datetime-wrapper">';
 		$parts = explode(' ', $value);
 
-        $params = $field->getParams();
-        if ($params['displayDateFormat']) {
+        if ($field->params['displayDateFormat']) {
             if ($parts[0] == '0000-00-00') {
-                if ($params['displayDateFormat'] == 'd.m.Y') {
+                if ($field->params['displayDateFormat'] == 'd.m.Y') {
                     $parts[0] = '00.00.0000';
-                } else if (!$params['displayDateFormat'] || $params['displayDateFormat'] == 'Y-m-d'){
+                } else if (!$field->params['displayDateFormat'] || $field->params['displayDateFormat'] == 'Y-m-d'){
                     $parts[0] = '0000-00-00';
                 }
             } else {
-                $parts[0] = date($params['displayDateFormat'], strtotime($parts[0]));
+                $parts[0] = date($field->params['displayDateFormat'], strtotime($parts[0]));
             }
         }
 
@@ -75,12 +74,12 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 						renderTo: '<?=$name?>CalendarRender',
                         id: '<?=$name?>Calendar',
                         width: 185,
-						ariaTitleDateFormat: '<?=$params['displayDateFormat']?>',
-						longDayFormat: '<?=$params['displayDateFormat']?>',
-                        format: '<?=$params['displayDateFormat']?>',
-                        value: Ext.Date.parse('<?=$parts[0]?>', '<?=$params['displayDateFormat']?>'),
+						ariaTitleDateFormat: '<?=$field->params['displayDateFormat']?>',
+						longDayFormat: '<?=$field->params['displayDateFormat']?>',
+                        format: '<?=$field->params['displayDateFormat']?>',
+                        value: Ext.Date.parse('<?=$parts[0]?>', '<?=$field->params['displayDateFormat']?>'),
 						handler: function(picker, date) {
-                            var selectedDate = Ext.Date.format(date, '<?=$params['displayDateFormat']?>');
+                            var selectedDate = Ext.Date.format(date, '<?=$field->params['displayDateFormat']?>');
                             $('#<?=$name?>Input').val(selectedDate);
 							$('#<?=$name?>CalendarRender').toggle();
 						},

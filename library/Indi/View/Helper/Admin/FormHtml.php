@@ -9,34 +9,33 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
         }
 
 		$field = Indi::trail()->model->fields($name);
-		$params = $field->getParams();
 
         $customParams = array('width','height','bodyClass','style','script','sourceStripper');
         foreach($customParams as $customParam) {
             if ($this->view->row->{$name . ucfirst($customParam)}) {
-                $params[$customParam] = $this->view->row->{$name . ucfirst($customParam)};
+                $field->params[$customParam] = $this->view->row->{$name . ucfirst($customParam)};
             }
         }
 
         // Set up styles configuration for editor contents
-        if ($params['style']) $CKconfig['style'] = $params['style'];
+        if ($field->params['style']) $CKconfig['style'] = $field->params['style'];
         $CKconfig['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';
-        if ($params['contentsCss']) $CKconfig['contentsCss'] = preg_match('/^\[/', $params['contentsCss']) ? json_decode($params['contentsCss']) : $params['contentsCss'];
+        if ($field->params['contentsCss']) $CKconfig['contentsCss'] = preg_match('/^\[/', $field->params['contentsCss']) ? json_decode($field->params['contentsCss']) : $field->params['contentsCss'];
         if (is_array($CKconfig['contentsCss'])) {
             $CKconfig['contentsCss'] = array_merge($CKconfig['contentsCss'], array($CKconfig['style'] . ' body{max-width: auto;min-width: auto;width: auto;}'));
         } else {
             $CKconfig['contentsCss'] = array($CKconfig['contentsCss'], $CKconfig['style'] . ' body{max-width: auto;min-width: auto;width: auto;}');
         }
-        if ($params['bodyClass']) $CKconfig['bodyClass'] = $params['bodyClass'];
+        if ($field->params['bodyClass']) $CKconfig['bodyClass'] = $field->params['bodyClass'];
         $CKconfig['uiColor'] = '#B8D1F7';
 
         // Set up editor size
-        if ($params['width']) $CKconfig['width'] = $params['width'] + 52;
-        if ($params['height']) $CKconfig['height'] = $params['height'];
+        if ($field->params['width']) $CKconfig['width'] = $field->params['width'] + 52;
+        if ($field->params['height']) $CKconfig['height'] = $field->params['height'];
 
         // Set up editor javascript
-        if ($params['script']) $CKconfig['script'] = $params['script'];
-        if ($params['contentsJs']) $CKconfig['contentsJs'] = preg_match('/^\[/', $params['contentsJs']) ? json_decode($params['contentsJs']) : $params['contentsJs'];
+        if ($field->params['script']) $CKconfig['script'] = $field->params['script'];
+        if ($field->params['contentsJs']) $CKconfig['contentsJs'] = preg_match('/^\[/', $field->params['contentsJs']) ? json_decode($field->params['contentsJs']) : $field->params['contentsJs'];
         if (is_array($CKconfig['contentsJs'])) {
             $CKconfig['contentsJs'] = array_merge($CKconfig['contentsJs'], array($CKconfig['script']));
         } else {
@@ -44,7 +43,7 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
         }
 
         // Set up stripping some elements from html-code if Source button is toggled
-        if ($params['sourceStripper']) $CKconfig['sourceStripper'] = $params['sourceStripper'];
+        if ($field->params['sourceStripper']) $CKconfig['sourceStripper'] = $field->params['sourceStripper'];
 
         // take in attention of STD
         if (is_array($CKconfig['contentsCss'])) {

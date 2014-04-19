@@ -89,7 +89,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         $options = array();
 
         // Get params
-        $params = $this->field->getParams();
+        $params = $this->field->params;
 
         // Get title column
         $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';

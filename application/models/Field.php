@@ -1,2 +1,4 @@
 <?php
-class Field extends Field_Base{}
+class Field extends Field_Base {
+
+}

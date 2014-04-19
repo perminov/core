@@ -1,6 +1,6 @@
 <?php
-class Fsection2faction extends Indi_Db_Table
-{
+class Fsection2faction extends Indi_Db_Table {
+
     /**
      * Classname for row
      *

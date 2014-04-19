@@ -38,6 +38,10 @@ define('I_DOWNLOAD_ERROR_NO_SUCH_ROW', 'No row with such identifier');
 define('I_DOWNLOAD_ERROR_NO_FILE', 'There is no file, uploaded in this field for this row');
 define('I_DOWNLOAD_ERROR_FILEINFO_FAILED', 'Getting file information failed');
 
+define('I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE', 'Blank title for default value \'%s\'');
+define('I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS', 'Value "%s" is already exists within the list of allowed values');
+define('I_ENUMSET_ERROR_VALUE_LAST', 'Value "%s" is the last remaining possible value, and cannot be deleted');
+
 define('I_YES', 'Yes');
 define('I_NO', 'No');
 

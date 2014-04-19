@@ -1,5 +1,6 @@
 <?php
-class MetaExclusion extends Indi_Db_Table{
+class MetaExclusion extends Indi_Db_Table {
+
     /**
      * Classname for row
      *

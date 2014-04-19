@@ -214,12 +214,12 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function delete() {
 
         // Delete all files (images, etc) that have been attached to row
-        $this->deleteUploadedFiles();
+        $this->deleteFiles();
 
         // Delete other rows of entities, that have fields, related to entity of current row
         // This function also covers other situations, such as if entity of current row has a tree structure,
         // or row has dependent rowsets
-        $this->deleteForeignKeysUsages();
+        $this->deleteUsages();
 
         // Standard deletion
         return $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
@@ -249,10 +249,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         $entityM = Indi::model('Entity');
         $fieldM = Indi::model('Field');
         $entityR = $entityM->fetchRow('`table` = "' . $this->_table . '"');
-        $fieldR = $fieldR ? $fieldR : $fieldM->fetchRow('`entityId` = "' . $entityR->id . '" AND `alias` = "' . $field . '"');
+        $fieldR = $fieldR ? $fieldR : Indi::model($this->_table)->fields($field);
         $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
         $relatedM = Indi::model($fieldR->relation);
-        $params = $fieldR->getParams();
 
         // Array for WHERE clauses
         $where = $where ? (is_array($where) ? $where : array($where)): array();
@@ -390,7 +389,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!$relatedM) return new Indi_Db_Table_Rowset(array());
 
         // Get title column
-        $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : $relatedM->titleColumn();
+        $titleColumn = $fieldR->params['titleColumn'] ? $fieldR->params['titleColumn'] : $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
         if (is_null($order)) {
@@ -590,18 +589,18 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // If results should be grouped (similar way as <optgroup></optgroup> do)
-        if ($params['groupBy']) {
+        if ($fieldR->params['groupBy']) {
 
             // Get distinct values
             $distinctGroupByFieldValues = array();
             foreach ($dataRs as $dataR)
-                if (!$distinctGroupByFieldValues[$dataR->{$params['groupBy']}])
-                    $distinctGroupByFieldValues[$dataR->{$params['groupBy']}] = true;
+                if (!$distinctGroupByFieldValues[$dataR->{$fieldR->params['groupBy']}])
+                    $distinctGroupByFieldValues[$dataR->{$fieldR->params['groupBy']}] = true;
 
             // Get group field
             $groupByFieldR = $fieldM->fetchRow('
                         `entityId` = "' . $entityM->fetchRow('`id` = "' . $fieldR->relation . '"')->id . '" AND
-                        `alias` = "' . $params['groupBy'] . '"
+                        `alias` = "' . $fieldR->params['groupBy'] . '"
                     ');
 
             // Get group field related entity model
@@ -626,8 +625,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // If additional params should be passed as each option attributes, setup list of such params
-        if ($params['optionAttrs']) {
-            $dataRs->optionAttrs = explode(',', $params['optionAttrs']);
+        if ($fieldR->params['optionAttrs']) {
+            $dataRs->optionAttrs = explode(',', $fieldR->params['optionAttrs']);
         }
 
         // Set `enumset` property as false, because without definition it will have null value while passing
@@ -834,7 +833,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Delete all usages of current row
      */
-    public function deleteForeignKeysUsages() {
+    public function deleteUsages() {
 
         // Declare entities array
         $entities = array();
@@ -892,7 +891,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *                     process of filename construction for uploaded files to saved under)
      * @throws Exception
      */
-    public function deleteUploadedFiles($name = '') {
+    public function deleteFiles($name = '') {
 
         // Absolute upload path in filesystem
         $abs = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';

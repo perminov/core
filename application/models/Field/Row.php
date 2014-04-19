@@ -36,47 +36,60 @@ class Field_Row extends Indi_Db_Table_Row {
      * @return void
      */
     public function __set($columnName, $value) {
+
         // Check if value is a color in #RRGGBB format and prepend it with hue number
         if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
             $value = Misc::rgbPrependHue($value);
         }
+
+        // Standard __set()
         parent::__set($columnName, $value);
     }
 
+    /**
+     * Delete field
+     *
+     * @return int|void
+     */
+    public function delete() {
 
-
-    public function delete(){
-		// delete uploaded images or files as they were uploaded as values
+		// Delete uploaded images or files as they were uploaded as values
 		// of this field if they were uploaded
-		$this->deleteUploadedFiles();
-        die('ss');
-        // standart Db_Table_Row deletion
-        $GLOBALS['enumsetForceDelete'] = true;
-        parent::delete();
-        unset($GLOBALS['enumsetForceDelete']);
+		$this->deleteFiles();
 
-        // delete db table assotiated column
-        $this->deleteDbTableColumnIfFieldIsAssotiatedWithOne();
+        // Delete related enumset rows
+        Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
+
+        // Standard deletion
+        parent::delete();
+
+        // Delete db table associated column
+        $this->deleteColumn();
     }
 
-	public function deleteDbTableColumnIfFieldIsAssotiatedWithOne(){
-		if ($this->columnTypeId) {
-			$tableName = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"')->table;
-			$query = 'ALTER TABLE `' . $tableName . '` DROP `' . $this->alias . '`';
-			Indi::db()->query($query, true);
-		}
+    /**
+     * Drop the database table column, that current field is representing
+     */
+    public function deleteColumn() {
+
+        // If current field does have a column
+		if ($this->columnTypeId)
+
+            // Drop that column
+			Indi::db()->query('ALTER TABLE `' . $this->foreign('entityId')->table . '` DROP `' . $this->alias . '`');
 	}
 
     /**
-     * Delete all files, that were created by current field usage
+     * Delete all files, that were created by usage of current field
      */
-    public function deleteUploadedFiles(){
+    public function deleteFiles() {
 
-        // If current field has no column type
-		if (!$this->columnTypeId) {
+        // If current field has no column type, and field's control element is 'upload'
+		if (!$this->columnTypeId && Indi::model($this->_original['entityId'])
+            ->fields($this->_original['alias'])->foreign('elementId')->alias == 'upload') {
 
             // Get the table
-            $table = $this->foreign('entityId')->table;
+            $table = Indi::model($this->_original['entityId'])->name();
 
             // Get the directory name
             $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $table . '/';
@@ -85,486 +98,475 @@ class Field_Row extends Indi_Db_Table_Row {
             if (!is_dir($dir)) return;
 
             // Get the array of uploaded files and their copies (if some of them are images)
-            $fileA = glob($dir . '[0-9]*_' . $this->alias . '[,.]*');
+            $fileA = glob($dir . '[0-9]*_' . $this->_original['alias'] . '[,.]*');
 
             // Delete files
             foreach ($fileA as $fileI) @unlink($fileI);
 		}
 	}
 
-	public function isSatellite(){
-		if ($satelliteForField = $this->model()->fetchRow('`satellite` = "' . $this->id . '"')){
-			return $satelliteForField;
-		} else {
-			return false;
-		}
-	}
-	
-	public function getParams(){
-		$possibleParams = Indi::model('PossibleElementParam')->fetchAll('`elementId` = "' . $this->elementId . '"')->toArray();
-		$redefinedParams = Indi::model('Param')->fetchAll('`fieldId` = "' . $this->id . '"')->toArray();
-		$redefine = array();
-		for ($i = 0; $i < count ($redefinedParams); $i++) {
-			$redefine[$redefinedParams[$i]['possibleParamId']] = $redefinedParams[$i]['value'];
-		}
-		$params = array();
-		for ($i = 0; $i < count($possibleParams); $i++) {
-			$params[$possibleParams[$i]['alias']] = in_array($possibleParams[$i]['id'], array_keys($redefine)) ? $redefine[$possibleParams[$i]['id']] : $possibleParams[$i]['defaultValue'];
-		}
-		return $params;
-	}
+    /**
+     * Rename uploaded files for case if current field's `alias` property
+     * was changed, so this change should affect uploaded files names
+     *
+     * @return mixed
+     */
+    protected function _renameUploadedFiles() {
 
-    public function save1() {
-        // Here we check if there were a field structure changes that should result
-        // an adjustments of related db table column SQL declaration
-        $lookAt = array('alias', 'columnTypeId', 'defaultValue', 'storeRelationAbility');
-        foreach ($lookAt as $property) if (array_key_exists($property, $this->_modified)) $modified[$property] = $this->_modified[$property];
+        // If `alias` property was not changed - return
+        if (!$this->_modified['alias']) return;
 
-        // If there were no such changes we just do parent::save();
-        if (!is_array($modified)) {
-            return parent::save();
+        // Get the table
+        $table = $this->foreign('entityId')->table;
 
-        // Otherwise we do some number of additional things
-        } else {
-            $original = $this->_original;
-            $return = parent::save();
-        }
+        // Get the directory name
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $table . '/';
 
-        // Load columnType model
-        $columnTypeM = Indi::model('ColumnType');
+        // If directory does not exist - return
+        if (!is_dir($dir)) return;
 
-        // Load enumset model
-        $enumsetM = Indi::model('Enumset');
+        // Get the array of uploaded files and their copies (if some of them are images)
+        $fileA = glob($dir . '[1-9]*_' . $this->_original['alias'] . '[,.]*');
 
-        // Get current entity
-        $entityR = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"');
+        // Delete files
+        foreach ($fileA as $fileI) {
 
-        // Get previous column type row
-        $oldColumnTypeR = $columnTypeM->fetchRow('`id` = "' . $original['columnTypeId'] . '"');
+            // Determine a new name
+            $new = preg_replace('~(/[1-9][0-9]*_)' . $this->_original['alias'] . '([,\.])~', '$1' . $this->alias . '$2', $fileI);
 
-        // Get current column type row
-        $columnTypeR = $columnTypeM->fetchRow('`id` = "' . $this->columnTypeId . '"');
-
-        // Delete rows from 'enumset' table which became unused when column type changed from ENUM or SET to any other type of column
-        // note that if column type was 'enum' and now it changed to 'set' or 'set' to 'enum' - the old values in 'enumset' table will
-        // also be removed
-        if ($original['id']) {
-            if (in_array($oldColumnTypeR->type, array('ENUM', 'SET')) && $oldColumnTypeR->type != $columnTypeR->type) {
-                $enumsetM->fetchAll('`fieldId` = "' . $original['id'] . '"')->delete(true);
-            }
-        }
-
-        // If entity field was previously linked to db table column, but now it is not, we remove db table column
-        if (array_key_exists('columnTypeId', $modified) && !$modified['columnTypeId']) {
-            $query = 'ALTER TABLE  `' . $entityR->table . '` DROP `' . $original['alias'] . '`';
-            Indi::db()->query($query);
-        }
-
-        // If current column type is ENUM or SET we:
-        // 1.Check if relation is set correctly
-        // 2.Construct "ENUM(....)" or "SET(...)" part of ALTER sql query
-        // 3.Create on or more needed rows in `enumset` table
-        if (preg_match('/ENUM|SET/', $columnTypeR->type)) {
-
-            // Check if correct relation for ENUM and SET column type was set -  must be set to 6 (-id of 'enumset' entity)
-            if ($this->relation != 6) {
-                $this->relation = 6;
-                parent::save();
-            }
-
-            // Before first value adding, we check if these values are not already exist in 'enumset' table for that field
-            $enumsetA = $enumsetM->fetchAll('`fieldId` = "' . $this->id . '"')->toArray();
-            $existingValues = array();
-            for ($i = 0; $i < count($enumsetA); $i++) {
-                $existingValues[] = $enumsetA[$i]['alias'];
-            }
-
-            // Set up at least one value (-got from $this->defaultValue) for ENUM and SET
-            // column types, because DB columns of these types cannot be created with no values at all
-            $toInsert = array();
-            if($columnTypeR->type != $oldColumnTypeR->type) {
-                $toInsert[] = $this->defaultValue;
-                $sqlType = $columnTypeR->type . '("' . $toInsert[0] . '") ';
-            } else if ($modified['defaultValue'] || $modified['alias']) {
-                $enumsetValues = $existingValues;
-                if ($columnTypeR->type == 'ENUM') {
-                    if  (!in_array($this->defaultValue, $enumsetValues) || !count($enumsetValues)) {
-                        $toInsert[] = $this->defaultValue;
-                        $enumsetValues[] = $toInsert[0];
-                    }
-                    $sqlType = $columnTypeR->type . '("' . implode('","', $enumsetValues) . '") ';
-                } else if ($columnTypeR->type == 'SET') {
-                    $defaultValues = explode(',', $this->defaultValue);
-                    for($i = 0; $i < count($defaultValues); $i++) {
-                        if (!in_array($defaultValues[$i], $enumsetValues)){
-                            $enumsetValues[] = $defaultValues[$i];
-                            $toInsert[] = $defaultValues[$i];
-                        }
-                    }
-                    $sqlType = $columnTypeR->type . '("' . implode('","', $enumsetValues) . '") ';
-                }
-            }
-
-            // adding new values if their aliases are not already exists
-            for ($i = 0; $i < count($toInsert); $i++) {
-                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $toInsert[$i], $matches)) $toInsertTitle[$i] = '#' . $matches[1];
-                $enumsetInsertQuery = 'INSERT INTO `enumset` SET
-                    `fieldId` = "' . $this->identifier .'",
-                    `title` = "Укажите наименование для ' . ((is_array($defaultValues) ? !in_array($toInsert[$i], $defaultValues) : $toInsert[$i] != $this->post['defaultValue']) ? 'псевдонима' : (($this->post['defaultValue'] || preg_match('/ENUM/', $columnTypeR->type)) ? 'значения по умолчанию' : 'минимум одного возможного значения')) .' \'' . str_replace('"', '\"', $toInsertTitle[$i]) . '\'",
-                    `alias` = "' . str_replace('"', '\"', $toInsert[$i]) . '",
-                    `javascript` = "";
-                ';
-                if ($modified['columnTypeId'] || $modified['defaultValue']) {
-                    if ($this->defaultValue == '' && count($enumsetValues) && preg_match('/SET/', $columnTypeR->type)) {
-
-                    } else {
-                        $this->db->query($enumsetInsertQuery);
-                    }
-                }
-            }
-
-        }
-
-        $query = 'ALTER TABLE `' . $entityR->table . '` ';
-
-        // different query behaviour depends on adding new or changing an existing column
-        if ($original['id']) {
-            $query .= 'CHANGE `' . $original['alias'] . '` `' . $this->alias . '` ' . $sqlType . ' ';
-        } else {
-            $query .= 'ADD `' . $this->alias . '` ' . $sqlType . ' ';
-        }
-
-        //////////////////////// ////////////////////
-        // Dealing with MySQL collation for column //
-        /////////////////////////////////////////////
-
-        $noNeedCollationColumnTypes = array('INT','DATE','DECIMAL','FLOAT','DOUBLE','REAL','BIT','BOOLEAN','SERIAL','TIME','YEAR','BINARY','BLOB');
-        $sqlCollation = ' CHARACTER SET utf8 COLLATE utf8_general_ci';
-        for ($i = 0; $i < count($noNeedCollationColumnTypes); $i++) if (preg_match('/' . $noNeedCollationColumnTypes[$i] . '/', $columnTypeR->type)) $sqlCollation = '';
-        $query .= $sqlCollation . ' NOT NULL ';
-
-        //////////////////////// ////////////////////////
-        // Dealing with MySQL default value for column //
-        /////////////////////////////////////////////////
-
-        if (!in_array($columnTypeR->type, array('BLOB','TEXT'))) {
-            $this->defaultValue = str_replace('"','&quot;',trim($this->defaultValue));
-            $valid = true;
-
-            if (preg_match('/INT/', $columnTypeR->type)) {
-                $valid = is_numeric($this->defaultValue);
-                if (!$valid) $this->defaultValue = '0';
-
-            } else if ($columnTypeR->type == 'BOOLEAN') {
-                $valid = preg_match('/^1|0$/', $this->defaultValue);
-                if (!$valid) $this->defaultValue = '0';
-
-            } else if ($columnTypeR->type == 'DATE') {
-                $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/', $this->defaultValue, $parts);
-                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[1]), preg_replace('/^0/', '', $parts[2]), $parts[0]);
-                if (!$valid) $this->defaultValue = '0000-00-00';
-
-            } else if ($columnTypeR->type == 'TIME') {
-                $valid = preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->defaultValue, $parts);
-                if ($valid) {
-                    $h = (int) preg_replace('/^0/', '', $parts[1]);
-                    $m = (int) preg_replace('/^0/', '', $parts[2]);
-                    $s = (int) preg_replace('/^0/', '', $parts[3]);
-                    if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
-                }
-                if (!$valid) $this->defaultValue = '00:00:00';
-
-            } else if ($columnTypeR->type == 'YEAR') {
-                $valid = preg_match('/^[0-9]{4}$/', $this->defaultValue);
-                if (!$valid) $this->defaultValue = '0000';
-
-            } else if ($columnTypeR->type == 'DATETIME') {
-                // check datetime format
-                $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->defaultValue, $parts);
-                // check date existence
-                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[1]), preg_replace('/^0/', '', $parts[2]), $parts[0]);
-                // check time existence
-                if ($valid) {
-                    $h = (int) preg_replace('/^0/', '', $parts[4]);
-                    $m = (int) preg_replace('/^0/', '', $parts[5]);
-                    $s = (int) preg_replace('/^0/', '', $parts[6]);
-                    if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
-                }
-                if (!$valid) $this->defaultValue = '0000-00-00 00:00:00';
-
-            } else if (preg_match('/ENUM|SET|VARCHAR/', $columnTypeR->type)) {
-
-            } else if (preg_match('/^DOUBLE\(([0-9]+),([0-9]+)\)$/', $columnTypeR->type, $digits)) {
-                $valid = preg_match('/^[0-9]{1,' . ($digits[1] - $digits[2]) . '}\.[0-9]{1,' . $digits[2] . '}$/', $this->defaultValue);
-                if (!$valid) $this->defaultValue = '0.' . str_repeat('0', $digits[2]);
-            }
-            $query .= 'DEFAULT  "' . $this->defaultValue . '"';
-            if (!$valid) $this->db->query('UPDATE `field` SET `defaultValue` = "' . $this->defaultValue . '" WHERE `id` = "' . $this->id . '"');
-        }
-
-        $this->db->query($query);
-
-
-        // If current column became 'move' column we automatically setup it's values
-        if ($modified['alias'] && $this->alias == 'move') {
-            $this->db->query('UPDATE `' . $entityR->table . '` SET `move` = `id`');
-        }
-
-        ////////////////////////////
-        // Managing MySQL indexes //
-        ////////////////////////////
-
-        // check if where was a relation, but now there is not, so we should remove an INDEX index
-        $remove = $original['id'] && Indi::trail()->row->storeRelationAbility != 'none' && $this->post['storeRelationAbility'] == 'none';
-        if ($remove) {
-            $indexes = $this->db->query('SHOW INDEXES FROM `' . Indi::trail(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
-            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
-        }
-        // check if where was no relation, but now it exist, so we should add an INDEX index
-        $appear = (!Indi::trail()->row || Indi::trail()->row->storeRelationAbility == 'none') && $this->post['storeRelationAbility'] != 'none';
-        if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeR->type) && $appear) {
-            $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` ADD INDEX (`' . $this->post['alias'] . '`)');
-        }
-
-        // check if where was a TEXT column, but now there is not, so we should remove a FULLTEXT index
-        $remove = Indi::trail()->row && Indi::trail()->row->columnTypeId == 4 && $this->post['columnTypeId'] != 4;
-        if ($remove) {
-            $indexes = $this->db->query('SHOW INDEXES FROM `' . Indi::trail(1)->row->table .'` WHERE `Column_name` = "' . $this->post['alias'] . '"')->fetchAll();
-            foreach ($indexes as $index) $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` DROP INDEX `' . $index['Key_name'] . '`');
-        }
-        // check if where was no TEXT column, but now it exist, so we should add a FULLTEXT index
-        $appear = (!Indi::trail()->row || Indi::trail()->row->columnTypeId != 4) && $this->post['columnTypeId'] == 4;
-        if (preg_match('/TEXT/', $columnTypeR->type) && $appear) {
-            $this->db->query('ALTER TABLE  `' . Indi::trail(1)->row->table .'` ADD FULLTEXT (`' . $this->post['alias'] . '`)');
+            // Rename
+            rename($fileI, $new);
         }
     }
 
-    public function save($parentSave = false) {
-        if ($parentSave) return parent::save();
-        $original = $this->_original;
-        $modified = $this->_modified;
-        $return = parent::save();
-        if (preg_match('/^#([0-9a-fA-F]{6})$/', $this->defaultValue)) {
-            $this->defaultValue = Misc::rgbPrependHue($this->defaultValue);
-            $this->save(true);
-        }
-        // Load columnType model
-        $columnType = Indi::model('ColumnType');
+    /**
+     * Save field
+     *
+     * @return int
+     */
+    public function save() {
 
-        // Get current entity
-        $entityR = Indi::model('Entity')->fetchRow('`id` = "' . $this->entityId . '"');
+        // Declare the array of properties, who's modification leads to necessity of sql ALTER query to be executed
+        $affect = array('entityId', 'alias', 'columnTypeId', 'defaultValue', 'storeRelationAbility');
 
-        // first part of ALTER query
-        $query = 'ALTER TABLE  `' . $entityR->table . '` ';
+        // If field's control element was 'upload', but now it is not - set $deleteUploadedFiles to true
+        $uploadElementId = Indi::model('Element')->fetchRow('`alias` = "upload"')->id;
+        if ($this->_original['elementId'] == $uploadElementId && array_key_exists('elementId', $this->_modified))
+            $deleteUploadedFiles = true;
 
-        // if entity field was previously linked to db table column, but now it is not, we remove db table column
-        if ($original['columnTypeId'] && !$this->columnTypeId) {
-            $query .= 'DROP `' . $original['alias'] . '`';
-            Indi::db()->query($query);
+        // Detect if any of modified properties is/are within $affect array, and if no
+        if (!array_intersect($affect, array_keys($this->_modified))) {
 
-            $oldColumnTypeRow = $columnType->fetchRow('`id`="' . $original['columnTypeId'] . '"');
-            if (preg_match('/ENUM/', $oldColumnTypeRow->type) || preg_match('/SET/', $oldColumnTypeRow->type)) {
-                Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
-            }
+            // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles() method
+            if ($deleteUploadedFiles) $this->deleteUploadedFiles();
+
+            // Standard save
+            return parent::save();
         }
 
-        if (!$this->columnTypeId) return $return;
+        // If `entityId` property was modified, and current field is an existing field
+        if ($this->id && $this->_modified['entityId']) {
 
-        $columnTypeRow = $columnType->fetchRow('`id` = "' . $this->columnTypeId . '"');
+            // Get names of tables, related to both original and modified entityIds
+            list($wasTable, $table) = Indi::model('Entity')->fetchAll(
+                '`id` IN (' . $this->_original['entityId'] . ',' . $this->_modified['entityId'] . ')',
+                'FIND_IN_SET(`id`, "' . $this->_original['entityId'] . ',' . $this->_modified['entityId'] . '")'
+            )->column('table');
 
-        // delete rows from 'enumset' table which became unused when column type changed from ENUM or SET to any other type of column
-        // note that if column type was 'enum' and now it changed to 'set' or 'set' to 'enum' - the old values in 'enuset' table will
-        // also be removed
-        if ($original['id']) {
-            $oldColumnTypeRow = $columnType->fetchRow('`id`="' . $original['columnTypeId'] . '"');
-            if ((preg_match('/ENUM/', $oldColumnTypeRow->type) && !preg_match('/ENUM/', $columnTypeRow->type)) || (preg_match('/SET/', $oldColumnTypeRow->type) && !preg_match('/SET/', $columnTypeRow->type))) {
-                Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
-            }
-        }
+            // Drop column from old table, if that column exists
+            if ($this->_original['columnTypeId'])
+                Indi::db()->query('ALTER TABLE `' . $wasTable . '` DROP COLUMN `' . $this->_original['alias'] .'`');
 
-        if (preg_match('/ENUM|SET/', $columnTypeRow->type)) {
-            // check if correct relation for ENUM and SET column type was set -  must be set to 6 (-id of 'enumset' entity)
-            Indi::db()->query('UPDATE `field` SET `relation`="6" WHERE `id` = "' . $this->id . '"');
+            // If field's control element was and still is 'upload' - set $deleteUploadedFiles flag to true.
+            if ($this->elementId == $uploadElementId && $this->_original['elementId'] == $uploadElementId)
+                $deleteUploadedFiles = true;
 
-            // before adding we check if these values are not already exist in 'enumset' table for that field
-            $enumset = Indi::model('Enumset');
-            $enumsetArray = $enumset->fetchAll('`fieldId` = "' . $this->id . '"')->toArray();
-            $existingValues = array();
-            for ($i = 0; $i < count($enumsetArray); $i++) {
-                $existingValues[] = $enumsetArray[$i]['alias'];
-            }
-
-            // set up at least one value (-got from $this->post['defaultValue']) for ENUM and SET
-            // column types, because DB columns of these types cannot be created with no values at all
-            $this->defaultValue = str_replace('"','\"', $this->defaultValue);
-            $toInsert = array();
-            if((preg_match('/ENUM/', $oldColumnTypeRow->type) && !preg_match('/ENUM/', $columnTypeRow->type)) || (preg_match('/SET/', $oldColumnTypeRow->type) && !preg_match('/SET/', $columnTypeRow->type))) {
-                $toInsert[] = $this->defaultValue;
-                $columnTypeRow->type = $columnTypeRow->type . '("' . $toInsert[0] . '") ';
-            } else if ($original['defaultValue'] != $this->defaultValue || $original['alias'] != $this->alias) {
-                $enumsetValues = $existingValues;
-                if (preg_match('/ENUM/', $columnTypeRow->type)) {
-                    if  (!in_array($this->defaultValue, $enumsetValues) || !count($enumsetValues)) {
-                        $toInsert[] = $this->defaultValue;
-                        $enumsetValues[] = $toInsert[0];
-                    }
-                    $columnTypeRow->type = $columnTypeRow->type . '("' . implode('","', $enumsetValues) . '") ';
-                } else if (preg_match('/SET/', $columnTypeRow->type)) {
-                    $defaultValues = explode(',', $this->defaultValue);
-                    for($i = 0; $i < count($defaultValues); $i++) {
-                        if (!in_array($defaultValues[$i], $enumsetValues)){
-                            $enumsetValues[] = $defaultValues[$i];
-                            $toInsert[] = $defaultValues[$i];
-                        }
-                    }
-                    $columnTypeRow->type = $columnTypeRow->type . '("' . implode('","', $enumsetValues) . '") ';
-                }
-            }
-
-            // adding new values if their aliases are not already exists
-            for ($i = 0; $i < count($toInsert); $i++) {
-                if (preg_match('/^[0-9]{3}#([0-9a-fA-F]{6})$/', $toInsert[$i], $matches)) {
-                    $toInsertTitle[$i] = '#' . $matches[1];
-                } else {
-                    $toInsertTitle[$i] = $toInsert[$i];
-                }
-                $enumsetInsertQuery = 'INSERT INTO `enumset` SET
-                    `fieldId` = "' . $this->id .'",
-                    `title` = "Укажите наименование для ' . ((is_array($defaultValues) ? !in_array($toInsert[$i], $defaultValues) : $toInsert[$i] != $this->defaultValue) ? 'псевдонима' : (($this->defaultValue || preg_match('/ENUM/', $columnTypeRow->type)) ? 'значения по умолчанию' : 'минимум одного возможного значения')) .' \'' . str_replace('"', '\"', $toInsertTitle[$i]) . '\'",
-                    `alias` = "' . str_replace('"', '\"', $toInsert[$i]) . '",
-                    `javascript` = "";
-                ';
-                if ((preg_match('/ENUM/', $oldColumnTypeRow->type) && !preg_match('/ENUM/', $columnTypeRow->type)) || (preg_match('/SET/', $oldColumnTypeRow->type) && !preg_match('/SET/', $columnTypeRow->type)) || ($this->defaultValue != $original['defaultValue'])) {
-                    if ($this->defaultValue == '' && count($enumsetValues) && preg_match('/SET/', $columnTypeRow->type)) {
-
-                    } else {
-                        Indi::db()->query($enumsetInsertQuery);
-                    }
-                }
-            }
-
-            // delete values that shouldn't be allowed. This situation can cause when we change column type of field from ENUM('value1','value2','value3')
-            // (custom values, titles for which are stored in 'enumset'  table to ENUM('y','n')
-            if ((preg_match('/ENUM/', $oldColumnTypeRow->type) && !preg_match('/ENUM/', $columnTypeRow->type)) || (preg_match('/SET/', $oldColumnTypeRow->type) && !preg_match('/SET/', $columnTypeRow->type))) {
-                $delete= 'DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '" AND `alias` NOT IN ("' . implode('","', $toInsert) . '")';
-                Indi::db()->query($delete);
-            }
-        }
-
-        // different query behaviour depends on adding new or changing an existing column
-        if ($original['id']) {
-            $query .= 'CHANGE  `' . $original['alias'] . '`  `' . $this->alias . '` ' . $columnTypeRow->type . ' ';
+        // Else if `entityId` property was not modified
         } else {
-            $query .= 'ADD  `' . $this->alias . '` ' . $columnTypeRow->type . ' ';
+
+            // Get name of the table, related to `entityId` property
+            $table = Indi::model($this->entityId)->name();
         }
 
-        //////////////////////// ////////////////////
-        // Dealing with MySQL collation for column //
-        /////////////////////////////////////////////
+        // We should add a new column in database table in 3 cases:
+        // 1. Field was moved from one entity to another, and field now has non-zero
+        //    columnTypeId property, and does not matter whether is had it before or not
+        // 2. Field is new, and columnTypeId property is non-zero
+        // 3. Field had no column, e.g columnTypeId property has zero-value, but now it is non-zero
+        if ($this->columnTypeId && ($this->_modified['entityId'] || !$this->id || !$this->_original['columnTypeId'])) {
 
-        $noNeedCollationColumnTypes = array('INT','DATE','DECIMAL','FLOAT','DOUBLE','REAL','BIT','BOOLEAN','SERIAL','TIME','YEAR','BINARY','BLOB');
-        $sqlCollation = ' CHARACTER SET utf8 COLLATE utf8_general_ci';
-        for ($i = 0; $i < count($noNeedCollationColumnTypes); $i++) if (preg_match('/' . $noNeedCollationColumnTypes[$i] . '/', $columnTypeRow->type)) $sqlCollation = '';
-        $query .= $sqlCollation . ' NOT NULL ';
+            // Start building an ADD COLUMN query
+            $sql[] = 'ALTER TABLE `' . $table . '` ADD COLUMN `' . $this->alias . '`';
 
-        //////////////////////// ////////////////////////
-        // Dealing with MySQL default value for column //
-        /////////////////////////////////////////////////
+        // Else if we are certainly not dealing with field throw from one
+        // entity to another, and field had non-zero columnTypeId originally
+        } else if (!array_key_exists('entityId', $this->_modified) && $this->_original['columnTypeId']) {
 
-        if (!in_array($columnTypeRow->type, array('BLOB','TEXT'))) {
-            $this->defaultValue = str_replace('"','&quot;',trim($this->defaultValue));
-            $valid = true;
+            // If columnTypeId was non-zero, but now it is
+            if (array_key_exists('columnTypeId', $this->_modified) && !$this->_modified['columnTypeId']) {
 
-            if (preg_match('/INT/', $columnTypeRow->type)) {
-                $valid = is_numeric($this->defaultValue);
-                if (!$valid) $this->defaultValueSql = '0';
+                // Run a DROP COLUMN query
+                Indi::db()->query('ALTER TABLE `' . $table . '` DROP COLUMN `' . $this->_original['alias'] . '`');
 
-            } else if ($columnTypeRow->type == 'BOOLEAN') {
-                $valid = preg_match('/^1|0$/', $this->defaultValue);
-                if (!$valid) $this->defaultValue = '0';
+                // Delete rows from `enumset` table, that are related to current field
+                $this->clearEnumset();
 
-            } else if ($columnTypeRow->type == 'DATE') {
-                $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/', $this->defaultValue, $parts);
-                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[2]), preg_replace('/^0/', '', $parts[3]), $parts[1]);
-                if (!$valid) $this->defaultValueSql = '0000-00-00';
+                // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles() method
+                if ($deleteUploadedFiles) $this->deleteUploadedFiles();
 
-            } else if ($columnTypeRow->type == 'TIME') {
-                $valid = preg_match('/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->defaultValue, $parts);
-                if ($valid) {
-                    $h = (int) preg_replace('/^0/', '', $parts[1]);
-                    $m = (int) preg_replace('/^0/', '', $parts[2]);
-                    $s = (int) preg_replace('/^0/', '', $parts[3]);
-                    if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
+                // Standard save
+                return parent::save();
+
+            // Else if columnType was non-zero, and now it is either not changed, or changed but to also non-zero value
+            } else
+
+                // Start building a CHANGE COLUMN query
+                $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $this->_original['alias'] . '` `' . $this->alias . '`';
+        }
+
+        // If no query builded - do a standard save
+        if (!$sql) {
+
+            // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles() method
+            if ($deleteUploadedFiles) $this->deleteUploadedFiles();
+
+            // Else if `alias` property is modified, and current field's control element was and still is 'upload'
+            else if ($this->_modified['alias'] && $this->elementId == $uploadElementId && $this->_original['elementId'] == $uploadElementId)
+
+                // Rename uploaded files, for their names to be affected by change of current field's `alias` property
+                $this->_renameUploadedFiles();
+
+            // Standard save
+            return parent::save();
+        }
+
+        // Get the column type row
+        $columnTypeR = $this->foreign('columnTypeId');
+
+        // Add the primary type definition to a query
+        $sql[] = $columnTypeR->type;
+
+        // If column type is SET or ENUM - add the secondary type definition
+        if (preg_match('/^ENUM|SET$/', $columnTypeR->type)) {
+
+            // Get the existing enumset values
+            $enumsetA = $this->id ? $this->nested('enumset')->column('alias'): array();
+
+            // Get the array of default values
+            $defaultValueA = preg_match(Indi::rex('php'), $this->defaultValue)
+                ? array('')
+                : explode(',', $this->defaultValue);
+
+            // Get the values, that should be added to the list of possible values
+            $enumsetAppendA = array_diff($defaultValueA, $enumsetA);
+
+            // Get the final list of possible values
+            $enumsetA = array_merge($enumsetA, $enumsetAppendA);
+
+            // Append the list of possible values to sql column type definition
+            $sql[] = '("' . implode('","', $enumsetA) . '")';
+
+            // Force `relation` property to be '6' - id of enumset `entity`
+            $this->relation = 6;
+        }
+
+        // Add the collation definition, if column type supports it
+        $collatedColumnTypeA = array('CHAR', 'VARCHAR', 'TEXT', 'ENUM', 'SET');
+        foreach ($collatedColumnTypeA as $collatedColumnTypeI)
+            if (preg_match('/^' . $collatedColumnTypeI . '/', $columnTypeR->type))
+                $sql[] = 'CHARACTER SET utf8 COLLATE utf8_general_ci';
+
+        // Add the 'NOT NULL' expression
+        $sql[] = 'NOT NULL';
+
+        // Add the DEFAULT definition for column, but only if it's type is not
+        // BLOB or TEXT, as these types do not support default value definition
+        if (!preg_match('/^BLOB|TEXT$/', $columnTypeR->type)) {
+
+            // Trim the whitespaces and replace double quotes from `defaultValue` property,
+            // for proper check of defaultValue compability to mysql column type
+            $this->defaultValue = trim(str_replace('"', '&quot;', $this->defaultValue));
+
+            // Check if default value contains php expressions
+            $php = preg_match(Indi::rex('php'), $this->defaultValue);
+
+            // Initial setup the default value for use in sql query
+            $defaultValue = $this->defaultValue;
+
+            // If column type is VARCHAR(255)
+            if ($columnTypeR->type == 'VARCHAR(255)') {
+
+                // If $php is true - set $defaultValue as empty string
+                if ($php) $defaultValue = '';
+
+            // Else if column type is INT(11)
+            } else if ($columnTypeR->type == 'INT(11)') {
+
+                // If $php is true, or $defaultValue is not a positive integer
+                if ($php || !preg_match(Indi::rex('int11'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a positive integer - we set field's `defaultValue` as '0'
+                    if (!$php) $this->defaultValue = '0';
+
+                    // Set $defaultValue as '0'
+                    $defaultValue = '0';
                 }
-                if (!$valid) $this->defaultValue = '00:00:00';
 
-            } else if ($columnTypeRow->type == 'YEAR') {
-                $valid = preg_match('/^[0-9]{4}$/', $this->defaultValue);
-                if (!$valid) $this->defaultValue = '0000';
+            // Else if column type is DOUBLE(7,2)
+            } else if ($columnTypeR->type == 'DOUBLE(7,2)') {
 
-            } else if ($columnTypeRow->type == 'DATETIME') {
-                // check datetime format
-                $valid = preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})$/', $this->defaultValue, $parts);
-                // check date existence
-                if ($valid) $valid = checkdate(preg_replace('/^0/', '', $parts[2]), preg_replace('/^0/', '', $parts[3]), $parts[1]);
-                // check time existence
-                if ($valid) {
-                    $h = (int) preg_replace('/^0/', '', $parts[4]);
-                    $m = (int) preg_replace('/^0/', '', $parts[5]);
-                    $s = (int) preg_replace('/^0/', '', $parts[6]);
-                    if ($valid) $valid = $h >=0 && $h < 24 && $m >= 0 && $m < 60 && $s >= 0 && $s < 60;
+                // If $php is true, or default value does not match the column type signature
+                if ($php || !preg_match(Indi::rex('double72'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a positive integer - we set field's `defaultValue` as '0'
+                    if (!$php) $this->defaultValue = '0';
+
+                    // Set $defaultValue as '0'
+                    $defaultValue = '0';
                 }
-                if (!$valid) $this->defaultValueSql = '0000-00-00 00:00:00';
 
-            } else if (preg_match('/ENUM|SET|VARCHAR/', $columnTypeRow->type)) {
+            // Else if column type is DATE
+            } else if ($columnTypeR->type == 'DATE') {
 
-            } else if (preg_match('/^DOUBLE\(([0-9]+),([0-9]+)\)$/', $columnTypeRow->type, $digits)) {
-                $valid = preg_match('/^[0-9]{1,' . ($digits[1] - $digits[2]) . '}\.[0-9]{1,' . $digits[2] . '}$/', $this->defaultValue);
-                if (!$valid) $this->defaultValue = '0.' . str_repeat('0', $digits[2]);
+                // If $php is true or default value is not a date in format YYYY-MM-DD
+                if ($php || !preg_match(Indi::rex('date'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a date - we set field's `defaultValue` as '0000-00-00'
+                    if (!$php) $this->defaultValue = '0000-00-00';
+
+                    // Set $defaultValue as '0000-00-00'
+                    $defaultValue = '0000-00-00';
+
+                // Else if $default value is not '0000-00-00'
+                } else if ($defaultValue != '0000-00-00') {
+
+                    // Extract year, month and day from date
+                    list($year, $month, $day) = explode('-', $defaultValue);
+
+                    // If $defaultValue is not a valid date - set it and field's `defaultValue `as '0000-00-00'
+                    if (!checkdate($month, $day, $year)) $this->defaultValue = $defaultValue = '0000-00-00';
+                }
+
+            // Else if column type is YEAR
+            } else if ($columnTypeR->type == 'YEAR') {
+
+                // If $php is true or default value does not match the YEAR column type format - set it as '0000'
+                if ($php || !preg_match(Indi::rex('year'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a year - we set field's `defaultValue` as '0000'
+                    if (!$php) $this->defaultValue = '0000';
+
+                    // Set $defaultValue as '0000'
+                    $defaultValue = '0000';
+                }
+
+            // Else if column type is TIME
+            } else if ($columnTypeR->type == 'TIME') {
+
+                // If $php is true or default value is not a time in format HH:MM:SS - set it as '00:00:00'. Otherwise
+                if ($php || !preg_match(Indi::rex('time'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a time - we set field's `defaultValue` as '00:00:00'
+                    if (!$php) $this->defaultValue = '00:00:00';
+
+                    // Set $defaultValue as '00:00:00'
+                    $defaultValue = '00:00:00';
+
+                } else {
+
+                    // Extract hours, minutes and seconds from $defaultValue
+                    list($time['hour'], $time['minute'], $time['second']) = explode(':', $defaultValue);
+
+                    // If any of hours, minutes or seconds values exceeds
+                    // their possible values - set $defaultValue and field's `defaultValue` as '00:00:00'
+                    if ($time['hour'] > 23 || $time['minute'] > 59 || $time['second'] > 59)
+                        $this->defaultValue = $defaultValue = '00:00:00';
+                }
+
+            // Else if column type is DATETIME
+            } else if ($columnTypeR->type == 'DATETIME') {
+
+                // If $php is true or $defaultValue is not a datetime in format YYYY-MM-DD HH:MM:SS - set it as '0000-00-00 00:00:00'
+                if ($php || !preg_match(Indi::rex('datetime'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a datetime - we set field's `defaultValue` as '0000-00-00 00:00:00'
+                    if (!$php) $this->defaultValue = '0000-00-00 00:00:00';
+
+                    // Set $defaultValue as '0000-00-00 00:00:00'
+                    $defaultValue = '0000-00-00 00:00:00';
+
+                // Else if $defaultValue is not '0000-00-00 00:00:00'
+                } else if ($defaultValue != '0000-00-00 00:00:00') {
+
+                    // Extract date and time from $defaultValue
+                    list($date, $time) = explode(' ', $defaultValue);
+
+                    // Extract year, month and day from $defaultValue's date
+                    list($year, $month, $day) = explode('-', $date);
+
+                    // If $defaultValue's date is not a valid date - set $defaultValue as '0000-00-00 00:00:00'. Else
+                    if (!checkdate($month, $day, $year)) $this->defaultValue = $defaultValue = '0000-00-00 00:00:00'; else {
+
+                        // Extract hour, minute and second from $defaultValue's time
+                        list($hour, $minute, $second) = explode(':', $time);
+
+                        // If any of hour, minute or second values exceeds their
+                        // possible - set $defaultValue and field's `defaultValue` as '0000-00-00 00:00:00'
+                        if ($hour > 23 || $minute > 59 || $second > 59)
+                            $this->defaultValue = $defaultValue = '0000-00-00 00:00:00';
+                    }
+                }
+
+            // Else if column type is ENUM
+            } else if ($columnTypeR->type == 'ENUM') {
+
+                // If $php is true, set $defaultValue as empty string
+                if ($php) $defaultValue = '';
+
+            // Else if column type is SET
+            } else if ($columnTypeR->type == 'SET') {
+
+                // If $php is true, set $defaultValue as empty string
+                if ($php) $defaultValue = '';
+
+            // Else if column type is BOOLEAN
+            } else if ($columnTypeR->type == 'BOOLEAN') {
+
+                // If $php is true or $devaultValue is not 0 or 1 - set it as 0
+                if ($php || !preg_match(Indi::rex('bool'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a boolean - we set field's `defaultValue` as '0'
+                    if (!$php) $this->defaultValue = '0';
+
+                    // Set $defaultValue as '0'
+                    $defaultValue = '0';
+                }
+
+            // Else if column type is VARCHAR(10) we assume that it should be a color in format 'hue#rrggbb'
+            } else if ($columnTypeR->type == 'VARCHAR(10)') {
+
+                // If $php is true, or $defaultValue is not a color in format either '#rrggbb' or 'hue#rrggbb'
+                if ($php || (!preg_match(Indi::rex('rgb'), $defaultValue) && !preg_match(Indi::rex('hrgb'), $defaultValue))) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a color in format either '#rrggbb' or 'hue#rrggbb'
+                    // - set field's `defaultValue` as empty string
+                    if (!$php) $this->defaultValue = '';
+
+                    // Set $defaultValue as empty string
+                    $defaultValue = '';
+
+                // Else if $defaultValue is a color in format '#rrggbb'
+                } else if (preg_match(Indi::rex('rgb'), $defaultValue))
+
+                    // We prepend it with hue number
+                    $defaultValue = Misc::rgbPrependHue($defaultValue);
             }
-            $query .= 'DEFAULT  "' . (strlen($this->defaultValueSql) ? $this->defaultValueSql : $this->defaultValue) . '"';
-            if (!$valid) Indi::db()->query('UPDATE `field` SET `defaultValue` = "' . $this->defaultValue . '" WHERE `id` = "' . $this->id . '"');
+
+            // Append sql DEFAULT expression to query
+            $sql[] = 'DEFAULT "' . $defaultValue . '"';
         }
 
-        // If field changes affect db column properties we exec an ALTER sql query
-        if ($original['columnTypeId'] != $this->columnTypeId ||
-            $original['defaultValue'] != $this->defaultValue ||
-            $original['alias'] != $this->alias) {
-            Indi::db()->query($query);
+        // Implode the parts of sql query
+        $sql = implode(' ', $sql);
+
+        // Run the query
+        Indi::db()->query($sql);
+
+        // If field column type was ENUM or SET, but now it is not -
+        // we should delete rows, related to current field, from `enumset` table
+        if (!preg_match('/^ENUM|SET$/', $columnTypeR->type)
+            && preg_match('/^ENUM|SET$/', Indi::model('ColumnType')
+                ->fetchRow('`id` = "' . $this->_original['columnTypeId'] . '"')->type))
+                    $this->clearEnumset();
+
+        // Remember original data before call parent::save(), as this data
+        // will be used bit later for proper column indexes adjustments
+        $original = $this->_original;
+
+        // If there was a relation, but now there is no - we perform a number of 'reset' adjustments, that aim to
+        // void values of all properties, that are certainly not used now, as field does not store foreign keys no more
+        if (array_key_exists('storeRelationAbility', $this->_modified) && $this->_modified['storeRelationAbility'] == 'none') {
+
+            // If control element was radio or multicheck - set it as string
+            if (preg_match('/^radio|multickeck$/', $this->foreign('elementId')->alias))
+                $this->elementId = Indi::model('Element')->fetchRow('`alias` = "string"')->id;
+
+            // Else if control element was combo, and column type is not BOOLEAN - set control element as string
+            else if ($this->foreign('elementId')->alias == 'combo' && $columnTypeR->type != 'BOOLEAN')
+                $this->elementId = Indi::model('Element')->fetchRow('`alias` = "string"')->id;
+
+            // If column type was ENUM or SET - set it as VARCHAR(255)
+            if (preg_match('/^ENUM|SET$/', $columnTypeR->type))
+                $this->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "VARCHAR(255)"')->id;
+
+            // Setup `relation` as 0
+            $this->relation = 0;
+
+            // Setup `filter` as an empty string
+            $this->filter = '';
         }
 
-        // If current column became 'move' column we automatically setup it's values
-        if ($original['alias'] != $this->alias && $this->alias == 'move') {
-            Indi::db()->query('UPDATE `' . $entityR->table . '` SET `move` = `id`');
-        }
+        // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles()
+        if ($deleteUploadedFiles) $this->deleteUploadedFiles();
 
-        ////////////////////////////
-        // Managing MySQL indexes //
-        ////////////////////////////
+        // Standard save
+        $return = parent::save();
 
-        // check if where was a relation, but now there is not, so we should remove an INDEX index
-        $remove = $original['id'] && $original['storeRelationAbility'] != 'none' && $this->storeRelationAbility == 'none';
-        if ($remove) {
-            $indexes = Indi::db()->query('SHOW INDEXES FROM `' . $entityR->table .'` WHERE `Column_name` = "' . $this->alias . '"')->fetchAll();
-            foreach ($indexes as $index) Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` DROP INDEX `' . $index['Key_name'] . '`');
-        }
-        // check if where was no relation, but now it exist, so we should add an INDEX index
-        $appear = (!$original['id'] || $original['storeRelationAbility'] == 'none') && $this->storeRelationAbility != 'none';
-        if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeRow->type) && $appear) {
-            Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` ADD INDEX (`' . $this->alias . '`)');
-        }
+        // If earlier we detected some values, that should be inserted to `enumset` table - insert them
+        if ($enumsetAppendA)
+            foreach ($enumsetAppendA as $enumsetAppendI)
+                Indi::db()->query('
+                    INSERT INTO `enumset` SET
+                    `fieldId` = "' . $this->id . '",
+                    `title` = "' . sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI) . '",
+                    `alias` = "' . $enumsetAppendI. '",
+                    `javascript` = "",
+                    `move` = "' . Indi::db()->query('SHOW TABLE STATUS LIKE "enumset"')->fetch(PDO::FETCH_OBJ)->Auto_increment . '"
+                ');
 
-        // check if where was a TEXT column, but now there is not, so we should remove a FULLTEXT index
-        $remove = $original['id'] && $original['columnTypeId'] == 4 && $this->columnTypeId != 4;
-        if ($remove) {
-            $indexes = Indi::db()->query('SHOW INDEXES FROM `' . $entityR->table .'` WHERE `Column_name` = "' . $this->alias . '"')->fetchAll();
-            foreach ($indexes as $index) Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` DROP INDEX `' . $index['Key_name'] . '`');
-        }
-        // check if where was no TEXT column, but now it exist, so we should add a FULLTEXT index
-        $appear = (!$original['id'] || $original['columnTypeId'] != 4) && $this->columnTypeId == 4;
-        if (preg_match('/TEXT/', $columnTypeRow->type) && $appear) {
-            Indi::db()->query('ALTER TABLE  `' . $entityR->table .'` ADD FULLTEXT (`' . $this->alias . '`)');
-        }
+        // Check if where was no relation and index, but now relation is exist, - we add an INDEX index
+        if (preg_match('/INT|SET|ENUM|VARCHAR/', $columnTypeR->type))
+            if (!Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"')
+                ->fetch(PDO::FETCH_OBJ)->Key_name)
+                    if ($original['storeRelationAbility'] == 'none' && $this->storeRelationAbility != 'none')
+                        Indi::db()->query('ALTER TABLE  `' . $table .'` ADD INDEX (`' . $this->alias . '`)');
+
+        // Check if where was a relation, and these was an index, but now there is no relation, - we remove an INDEX index
+        if ($original['storeRelationAbility'] != 'none' && $this->storeRelationAbility == 'none')
+            if ($index = Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"')
+                ->fetch(PDO::FETCH_OBJ)->Key_name)
+                    Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
+
+        // Check if is was not a TEXT column, and it had no FULLTEXT index, but now it is a TEXT column, - we add a FULLTEXT index
+        if (Indi::model('ColumnType')->fetchRow('`id` = "' . $original['columnTypeId'] . '"')->type != 'TEXT')
+            if (!Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"
+                AND `Index_type` = "FULLTEXT"')->fetch())
+                    if ($columnTypeR->type == 'TEXT')
+                        Indi::db()->query('ALTER TABLE  `' . $table .'` ADD FULLTEXT (`' . $this->alias . '`)');
+
+        // Check if is was a TEXT column, and it had a FULLTEXT index, but now it is not a TEXT column, - we remove a FULLTEXT index
+        if (Indi::model('ColumnType')->fetchRow('`id` = "' . $original['columnTypeId'] . '"')->type == 'TEXT')
+            if ($index = Indi::db()->query('SHOW INDEXES FROM `' . $table .'` WHERE `Column_name` = "' . $this->alias . '"
+                AND `Index_type` = "FULLTEXT"')->fetch(PDO::FETCH_OBJ)->Key_name)
+                    if ($columnTypeR->type != 'TEXT')
+                        Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
+
+        // Return
         return $return;
+    }
+
+    /**
+     * Deletes rows from `enumset` table, that are nested to current field
+     */
+    public function clearEnumset() {
+        if ($this->id) Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
     }
 }
