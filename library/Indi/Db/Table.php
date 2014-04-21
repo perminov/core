@@ -226,7 +226,7 @@ class Indi_Db_Table
                     $tree[$currentId][2] = $foundA[$currentId] ? 1 : 2;
 
                     // Remember indents
-                    $indents[$currentId] = Misc::indent($tree[$currentId][1]);
+                    $indents[$currentId] = indent($tree[$currentId][1]);
                 } while ($currentId = $tree[$currentId][0]);
             }
 
@@ -339,14 +339,14 @@ class Indi_Db_Table
                                 $start--;
                                 $prevId = $idsHistory[$start];
                                 $ids[] = $prevId;
-                                $indents[$prevId] = Misc::indent($tree[$prevId][1]);
+                                $indents[$prevId] = indent($tree[$prevId][1]);
                             } while ($disabledA[$prevId]);
                             $ids = array_reverse($ids);
                         }
 
                         // Normal appending
                         $ids[] = $id;
-                        $indents[$id] = Misc::indent($tree[$id][1]);
+                        $indents[$id] = indent($tree[$id][1]);
 
                         // We shift end point because disabled items should be ignored
                         if ($disabledA[$id] && (is_null($page) || $page > 0)) $end++;

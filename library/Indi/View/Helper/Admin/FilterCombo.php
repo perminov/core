@@ -141,7 +141,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
                 foreach($this->comboDataRs->selected as $selectedR) {
                     $item = $this->detectColor(array('title' => $selectedR->title));
                     ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style']?>><?
-                        ?><?=Misc::usubstr($item['title'], 50)?><?
+                        ?><?=usubstr($item['title'], 50)?><?
                         ?><span class="i-combo-selected-item-delete"></span><?
                         ?></span><?
                 }

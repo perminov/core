@@ -15,7 +15,7 @@ class Menu extends Indi_Db_Table{
                 $dec++;
                 continue;
             };
-			$row['indent'] = Misc::indent($level);
+			$row['indent'] = indent($level);
 			if ($recursive) {
 				$row['children'] = $this->init($uri, $row['id'], $onlyToggledOn, $recursive, $level+1, $order, $condition);
 			}

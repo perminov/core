@@ -32,8 +32,8 @@ foreach($dirs as $d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include
 function autoloader($class){if (preg_match('/Admin_[a-zA-z]*Controller$/',$class)) $class = lcfirst($class);$classFile = str_replace('_','/',$class).'.php';if(!@include_once ($classFile)) if (strpos($class, 'admin') === false) echo "";}
 spl_autoload_register('autoloader');
 
-// Load misc features
-require('Misc.php');
+// Load misc functions
+require('func.php');
 
 // Performance detection. 'mt' mean 'microtime'
 $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();

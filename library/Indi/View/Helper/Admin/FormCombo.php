@@ -134,12 +134,12 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
 
             // Here we are trying to detect, does $o->title have tag with color definition, for example
             // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
-            // We should do that because such tags existance may cause a dom errors while performing Misc::usubstr()
+            // We should do that because such tags existance may cause a dom errors while performing usubstr()
             $info = $this->detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
 
             if ($info['box']) $system['boxColor'] = $info['color'];
 
-            $options[$o->$keyProperty] = array('title' => Misc::usubstr($info['title'], 50), 'system' => $system);
+            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
             // If color was detected, and it has box-type, we remember this fact
             if ($info['box']) $this->hasColorBox = true;
@@ -331,7 +331,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
             foreach($this->comboDataRs->selected as $selectedR) {
                 $item = $this->detectColor(array('title' => $selectedR->title));
                 ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style']?>><?
-                    ?><?=Misc::usubstr($item['title'], 50)?><?
+                    ?><?=usubstr($item['title'], 50)?><?
                     ?><span class="i-combo-selected-item-delete"></span><?
                 ?></span><?
             }

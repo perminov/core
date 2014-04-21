@@ -613,12 +613,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                             `fieldId` = "' . $groupByFieldR->id . '" AND
                             FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")
                         ');
-                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->alias] = Misc::usubstr($groupByR->title, 50);
+                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->alias] = usubstr($groupByR->title, 50);
             } else {
                 $groupByRs = $groupByFieldEntityM->fetchAll(
                     'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 );
-                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->id] = Misc::usubstr($groupByR->title, 50);
+                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->id] = usubstr($groupByR->title, 50);
             }
 
             $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);
@@ -1468,7 +1468,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 } else if (preg_match(Indi::rex('rgb'), $value)) {
 
                     // Prepend color with it's hue number
-                    $value = Misc::rgbPrependHue($value);
+                    $value = hrgb($value);
                 }
 
             // If element is 'calendar'
@@ -2008,7 +2008,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     } else if (preg_match(Indi::rex('rgb'), $value)) {
 
                         // Prepend color with it's hue number
-                        $value = Misc::rgbPrependHue($value);
+                        $value = hrgb($value);
                     }
                 }
             }
