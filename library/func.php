@@ -1,0 +1,312 @@
+<?php
+/**
+ * Displays formatted view of a given value
+ *
+ * @param mixed $value
+ * @return null
+ */
+function d($value) {
+
+    // Wrap the $value with the '<pre>' tag, and write it to the output
+    echo '<pre>'; print_r($value); echo '</pre>';
+}
+
+/**
+ * Write the contents of $value to a file - 'debug.txt' by default, located in the 'www' folder of the document root
+ *
+ * @param $value
+ * @param string $type
+ * @param string $file
+ */
+function i($value, $type = 'w', $file = 'debug.txt') {
+
+    // Get the document root, with trimmed right trailing slash
+    $doc = rtrim($_SERVER['DOCUMENT_ROOT'], '\\/');
+
+    // Get the array of directory branches, from current directory and up to the document root (non-inclusive)
+    $dir = explode('/', substr(str_replace('\\', '/', __DIR__), strlen($doc)));
+
+    // Get the STD path, if project run not from the document root, but from some-level subdirectory of document root
+    $std = implode('/', array_slice($dir, 0, count($dir) -2));
+
+    // Get the absolute path of a file, that will be used for writing data to
+    $abs = $doc . $std. '/www/' . $file;
+
+    // Write the data
+    $fp = fopen($abs, $type); ob_start(); print_r($value); echo "\n"; fwrite($fp, ob_get_clean()); fclose($fp);
+}
+
+/**
+ * Gets indent as '&nbsp;' multiplied on $count and on current $level
+ *
+ * @param $level
+ * @param int $count
+ * @param string $char
+ * @return string
+ */
+function indent($level, $count = 5, $char = '&nbsp;') {
+
+    // Init $single and $indent variables with empty values
+    $indent = '';
+
+    // Build the indent
+    for ($i = 0; $i < $count; $i++) for ($j = 0; $j < $level; $j++) $indent .= $char;
+
+    // Return the indent
+    return $indent;
+}
+
+/**
+ * Trim the given string by the $length characters, assuming that string is in utf8 encoding, and append dots '..'
+ * as an indicator of that string was trimmed
+ *
+ * @param $string
+ * @param $length
+ * @param bool $dots
+ * @return string
+ */
+function usubstr($string, $length, $dots = true) {
+
+    // If $dots argument is true, and length of $string argument
+    // is greater that the value of $length argument set $dots as '..'
+    $dots = mb_strlen($string, 'utf-8') > $length && $dots ? '..' : '';
+
+    // Trim the $string by the $length characters, add dots, if need, and return the result string
+    return mb_substr($string, 0, $length, 'utf-8') . $dots;
+}
+
+/**
+ * Get the string representation of the period, started at a moment, given by $datetime argument and current moment
+ *
+ * @param $datetime
+ * @param string $postfix
+ * @return string
+ */
+function ago($datetime, $postfix = 'назад') {
+
+    // Get the current moment as timestamp
+    $curr = time();
+
+    // Get the moment in the past as timestamp
+    $past = strtotime($datetime);
+
+    // Get the difference between them in seconds
+    $duration = $curr - $past;
+
+    // Build an array of difference levels and their values
+    $levelA = array(
+        'Y' => date('Y', $duration) - 1970,
+        'n' => date('n', $duration) - 1,
+        'j' => date('j', $duration) - 1,
+        'G' => date('G', $duration) - 4,
+        'i' => trim(date('i', $duration), '0'),
+        's' => trim(date('s', $duration), '0')
+    );
+
+    // Build an array of difference levels quantity spelling, depends on their values
+    $spellA = array(
+        'Y' => array('0,5-9,11-19' => 'лет', '1' => 'год', '2-4' => 'года'),
+        'n' => array('0,5-9,11-19' => 'месяцев', '1' => 'месяц', '2-4'     => 'месяца'),
+        'j' => array('0,5-9,11-19' => 'дней', '1' => 'день', '2-4' => 'дня'),
+        'G' => array('0,5-9,11-19' => 'часов', '1' => 'час', '2-4' => 'часа'),
+        'i' => array('0,5-9,11-19' => 'минут', '1' => 'минута', '2-4' => 'минуты'),
+        's' => array('0,5-9,11-19' => 'секунд','1' => 'секунда', '2-4' => 'секунды')
+    );
+
+    // Foreach difference level
+    foreach ($levelA as $levelK => $levelV) {
+
+        // If level value is non-zero
+        if ($levelV) {
+
+            // Set $part variable as level value
+            $part = $levelV;
+
+            // Get the array of spell rules for current level key
+            $format = $spellA[$levelK];
+
+            // Foreach spell rule
+            foreach ($format as $digits => $lang) {
+
+                // Get the spans array for the current spell rule
+                $spanA = explode(',', $digits);
+
+                // Foreach span
+                for ($k = 0; $k < count($spanA); $k ++)
+
+                    // If current span is not a true span, e.g is a single digit
+                    if (strpos($spanA[$k], '-') === false) {
+
+                        // If difference value ends with a digit, that is the same as current span
+                        if (preg_match('/' . $spanA[$k] . '$/', $part))
+
+                            // Return difference value, with appended spell format and postfix
+                            return $part . ' ' . $format[$digits] . ' ' . $postfix;
+
+                    // Else if current span isa true span, e.g is not a single digit
+                    } else {
+
+                        // Get the span start and end digits, e.g interval
+                        $interval = explode('-', $spanA[$k]);
+
+                        // Foreach digit within that interval
+                        for ($m = $interval[0]; $m <= $interval[1]; $m++)
+
+                            // If difference level value ends with current digit within current interval
+                            if (preg_match('/' . $m . '$/', $part))
+
+                                // Return difference value, with appended spell format and postfix
+                                return $part . ' ' . $format[$digits] . ' ' . $postfix;
+                    }
+            }
+
+            // Break
+            break;
+        }
+    }
+
+    // Return
+    return 'только что';
+}
+
+/**
+ * Add the measure version to a given quantity $q
+ *
+ * @param int $q
+ * @param string $versions
+ * @param bool $showNumber
+ * @return string
+ */
+function tbq($q = 2, $versions = '', $showNumber = true) {
+
+    // Distribute quantity measure spell versions
+    list($formatA['0,11-19,5-9'], $formatA['1'], $formatA['2-4']) = explode(',', $versions);
+
+    // Foreach format
+    foreach ($formatA as $formatK => $formatV) {
+
+        // Extract the intervals from format key
+        $spanA = explode(',', $formatK);
+
+        // Foreach interval
+        for ($k = 0; $k < count($spanA); $k++) {
+
+            // If current interval is actually not interval, e.g it constits from only one digit
+            if (strpos($spanA[$k], '-') === false) {
+
+                // If quantity count ends with that digit
+                if (preg_match('/' . $spanA[$k] . '$/', $q))
+
+                    // Return the quantity (if $showNumber argument is true), with appended spell version
+                    return ($showNumber ? $q . ' ' : '') . $formatV;
+
+            // Else current interval really is an inteval
+            } else {
+
+                // Get the start and end digits of that interval
+                $interval = explode('-', $spanA[$k]);
+
+                // Foreach digit within start and end interval digits
+                for ($m = $interval[0]; $m <= $interval[1]; $m ++) {
+
+                    // If quantity count ends with that digit
+                    if (preg_match('/' . $m . '$/', $q))
+
+                        // Return the quantity (if $showNumber argument is true), with appended spell version
+                        return ($showNumber ? $q . ' ' : '') . $formatV;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Does the exact same as getimagesize one, but for flash files
+ *
+ * @param $path
+ * @return array|bool|int|string
+ */
+function getflashsize($path) {
+
+    // Special class for use as flash stream wrapper. This code was got somethere on the internet,
+    // so i feel too lazy to write a proper comments
+    class blob_data_as_file_stream {private static $blob_data_position=0;public static $blob_data_stream='';public
+    static function stream_open($path,$mode,$options,&$opened_path){self::$blob_data_position=0;return true;}public
+    static function stream_seek($seek_offset,$seek_whence){$blob_data_length=strlen(self::$blob_data_stream);switch
+    ($seek_whence){case SEEK_SET:$new_blob_data_position=$seek_offset;break;case SEEK_CUR:$new_blob_data_position=
+    self::$blob_data_position+$seek_offset;break;case SEEK_END:$new_blob_data_position=$blob_data_length+$seek_offset;
+    break;default:return false;}if(($new_blob_data_position>=0)AND($new_blob_data_position <= $blob_data_length)){
+    self::$blob_data_position=$new_blob_data_position;return true;}else{return false;}}public static function
+    stream_tell(){return self::$blob_data_position;}public static function stream_read($read_buffer_size){$read_data=
+    substr(self::$blob_data_stream,self::$blob_data_position,$read_buffer_size);self::$blob_data_position+=strlen(
+    $read_data);return $read_data;}public static function stream_write($write_data){$write_data_length=strlen($write_data);
+    self::$blob_data_stream=substr(self::$blob_data_stream,0,self::$blob_data_position).$write_data.substr(
+    self::$blob_data_stream,self::$blob_data_position+=$write_data_length);return $write_data_length;}public static
+    function stream_eof(){return self::$blob_data_position >= strlen(self::$blob_data_stream);}}
+
+    // Register stream wrapper
+    stream_wrapper_register('FlashStream', 'blob_data_as_file_stream');
+
+    // Store file contents to the data stream
+    blob_data_as_file_stream::$blob_data_stream = file_get_contents($path);
+
+    //Run getimagesize() on the data stream
+    return @getimagesize('FlashStream://');
+}
+
+/**
+ * Detect if user agent is <user agent key>. Currently supported keys are 'ie8' and 'ipad' only.
+ *
+ * @param $uaK
+ * @return bool
+ */
+function ua($uaK) {
+
+    // Get the user agent string from environment
+    $ua = $_SERVER['HTTP_USER_AGENT'];
+
+    // Declare the array of keys and their identifiers
+    $uaA = array('ie8' => 'MSIE 8', 'ipad' => 'iPad');
+
+    // Detect
+    return preg_match('/' . $uaA[$uaK] . '/', $ua) ? true : false;
+}
+
+/**
+ * Convert color from 'rgb' format to 'hsl' format, and return converted as array
+ *
+ * @param $rgb
+ * @return array
+ */
+function rgb2hsl($rgb) {
+
+    // This code was got somethere on the internet, so i feel too lazy to write a proper comments
+    $varR=$rgb[0]/255;$varG=$rgb[1]/255;$varB=$rgb[2]/255;$varMin=min($varR,$varG,$varB);$varMax=max($varR,$varG,$varB);
+    $delMax=$varMax-$varMin;$l=($varMax+$varMin)/2;if($delMax==0){$H=0;$S = 0;}else{if($l<0.5){$s=$delMax/($varMax+$varMin);
+    }else{$s=$delMax/(2-$varMax-$varMin);}$delR=((($varMax-$varR)/6)+($delMax/2))/$delMax;$delG=((($varMax-$varG)/6)+($delMax
+    /2))/$delMax;$delB=((($varMax-$varB)/6)+($delMax/2))/$delMax;if($varR==$varMax){$h=$delB-$delG;}else if($varG==$varMax)
+    {$h=(1/3)+$delR-$delB;}else if($varB==$varMax){$h=(2/3)+$delG-$delR;}if($h<0){$h++;}if($h>1){$h--;}}return array($h,$s,$l);
+}
+
+/**
+ * Append a hue number to a $rgb color in format 'rrggbb', so the result color will look like 'hue#rrggbb'
+ *
+ * @param string $rgb
+ * @return string
+ */
+function hrgb($rgb = '') {
+
+    // Strip the '#' sign from the beginning of $rgb agrument
+    $rgb = preg_replace('/^#/', '', $rgb);
+
+    // Convert red, green and blue values from hex to decimals
+    $r = hexdec(substr($rgb, 0, 2));
+    $g = hexdec(substr($rgb, 2, 2));
+    $b = hexdec(substr($rgb, 4, 2));
+
+    // Get the hue value
+    list($hue) = rgb2hsl(array($r, $g, $b));
+
+    // Append the hue value to a color and return it
+    return str_pad(round($hue*360), 3, '0', STR_PAD_LEFT) . '#' . $rgb;
+}

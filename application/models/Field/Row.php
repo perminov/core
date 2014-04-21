@@ -38,9 +38,7 @@ class Field_Row extends Indi_Db_Table_Row {
     public function __set($columnName, $value) {
 
         // Check if value is a color in #RRGGBB format and prepend it with hue number
-        if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
-            $value = Misc::rgbPrependHue($value);
-        }
+        if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) $value = hrgb($value);
 
         // Standard __set()
         parent::__set($columnName, $value);
@@ -467,7 +465,7 @@ class Field_Row extends Indi_Db_Table_Row {
                 } else if (preg_match(Indi::rex('rgb'), $defaultValue))
 
                     // We prepend it with hue number
-                    $defaultValue = Misc::rgbPrependHue($defaultValue);
+                    $defaultValue = hrgb($defaultValue);
             }
 
             // Append sql DEFAULT expression to query

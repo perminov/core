@@ -8,9 +8,6 @@ class Indi_Controller_Front extends Indi_Controller{
 		// Для XHR
 		header('Access-Control-Allow-Origin: *');
 
-		// Фильтруем POST
-		$this->post = filter($this->post);
-		
 		// Определяем текущий раздел, ищем его в базе
 		$this->section = Indi::model('Fsection')->fetchRow('`alias` = "' . Indi::uri()->section . '"');
 		$this->view->section = $this->section;
@@ -241,7 +238,7 @@ class Indi_Controller_Front extends Indi_Controller{
 	public function getRowsetParams(){
 		if (isset($this->post['indexPage'])) {
 			$previousPage = $_SESSION['indexParams'][$this->section->alias]['page'];
-			$_SESSION['indexParams'][$this->section->alias]['page'] = Misc::number($this->post['indexPage']);
+			$_SESSION['indexParams'][$this->section->alias]['page'] = (int) $this->post['indexPage'];
 			
 		}
 		if (isset($this->post['indexLimit'])) {
@@ -249,7 +246,7 @@ class Indi_Controller_Front extends Indi_Controller{
 				$_SESSION['indexParams'][$this->section->alias]['page'] = 1;
 				$noDirChange = true;
 			}
-			$_SESSION['indexParams'][$this->section->alias]['limit'] = Misc::number($this->post['indexLimit']);
+			$_SESSION['indexParams'][$this->section->alias]['limit'] = (int) $this->post['indexLimit'];
 		}
 		if ($this->rowsetFilter && is_array($this->rowsetFilter)){
 			foreach ($this->rowsetFilter as $index => $value) {
@@ -296,7 +293,7 @@ class Indi_Controller_Front extends Indi_Controller{
 					$_SESSION['indexParams'][$this->section->alias]['dir'] = $_SESSION['indexParams'][$this->section->alias]['dir'] == 'ASC' ? ($noDirChange ? 'ASC' : 'DESC') : ($noDirChange ? 'DESC' : 'ASC');
 				}
 			}
-			$_SESSION['indexParams'][$this->section->alias]['order'] = Misc::number($this->post['indexOrder']);
+			$_SESSION['indexParams'][$this->section->alias]['order'] = (int) $this->post['indexOrder'];
 		} else {
 			if ($this->section->orderBy == 'c') {
 				$_SESSION['indexParams'][$this->section->alias]['order'] = Indi::model('OrderBy')->fetchRow('`fsectionId` = "' . $this->section->id . '" AND `fieldId` = "' . $this->section->orderColumn . '"')->id;
@@ -324,7 +321,7 @@ class Indi_Controller_Front extends Indi_Controller{
 		$where = null;
 		if (is_array($_SESSION['indexParams'][$this->section->alias]['where'])) {
 			foreach ($_SESSION['indexParams'][$this->section->alias]['where'] as $filterParam => $requiredValue) {
-				if (Misc::number($filterParam) == $filterParam) {
+				if ((int)$filterParam == $filterParam) {
 					$where[] = $requiredValue;
 				} else {
 					if (strpos($filterParam, 'From') && $this->section->getFilter(str_replace('From', '', $filterParam))->type == 'b'){
@@ -386,7 +383,7 @@ class Indi_Controller_Front extends Indi_Controller{
 //			} else if ($this->model && $this->identifier) {
 			} else if ($this->action->maintenance == 'r') {
 				//get row
-				if (Misc::number($this->identifier) == (int) $this->identifier) {
+				if ($this->identifier == (int) $this->identifier) {
 					$where = '`id` = "' . (int) $this->identifier . '"';
 				} else {
 					$where = $this->identifier;
