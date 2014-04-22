@@ -1,1 +1,0 @@
-<div id="regForm"><?=$_SESSION['userId'] ? 'Вы уже зарегистрированы' : $this->userRegister()?></div>
