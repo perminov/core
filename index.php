@@ -20,17 +20,22 @@ define('PRE', STD . (COM ? '' : '/admin'));
 // Setup DOC constant, representing $_SERVER['DOCUMENT_ROOT'] environment variable, with no right-side slash
 define('DOC', rtrim($_SERVER['DOCUMENT_ROOT'], '/'));
 
+// Setup URI constant, representing $_SERVER['REQUEST_URI'] environment variable, for short-hand accessibility
+define('URI', rtrim($_SERVER['REQUEST_URI'], '/'));
+
 // Set up error reporting
 error_reporting(E_ALL^E_NOTICE);
 ini_set('display_errors', 'On');
 
 // Set include path
-$dirs = array('../www/', '../core/'); $subs = array('library', 'application/controllers', 'application/models'); $p = PATH_SEPARATOR;
-foreach($dirs as $d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include_path(); set_include_path(implode($p, $inc));
+$dirs = array('../www/', (COM || preg_match('~^/admin\b~', URI) ? '' : '../coref/'), '../core/');
+$subs = array('library', 'application/controllers', 'application/models'); $p = PATH_SEPARATOR;
+foreach($dirs as $d) if ($d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include_path();
+set_include_path(implode($p, $inc));
 
 // Set autoloading
-function autoloader($class){if (preg_match('/Admin_[a-zA-z]*Controller$/',$class)) $class = lcfirst($class);$classFile = str_replace('_','/',$class).'.php';if(!@include_once ($classFile)) if (strpos($class, 'admin') === false) echo "";}
-spl_autoload_register('autoloader');
+function autoloader($cn){if(preg_match('/Admin_[a-zA-z]*Controller$/',$cn))$cn=lcfirst($cn);$cf=str_replace('_','/',
+$cn).'.php';if(!@include_once($cf))if(strpos($cn,'admin')===false)echo'';}spl_autoload_register('autoloader');
 
 // Load misc functions
 require('func.php');

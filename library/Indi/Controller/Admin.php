@@ -40,7 +40,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
 
                     // Get final ORDER clause, built regarding column name and sorting direction
-                    $finalORDER = $this->finalORDER($finalWHERE, $this->get['sort']);
+                    $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
                     // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
                     // constructed with usage of $this->get('limit') and $this->get('page') params
@@ -53,8 +53,8 @@ class Indi_Controller_Admin extends Indi_Controller{
                     // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
                     // able to restore the state of panel, that is representing the rowset at cms interface.
                     // State of the panel includes: filtering and search params, sorting params
-                    $this->setScope($primaryWHERE, $this->get['search'], Indi::uri()->keyword, $this->get['sort'],
-                        $this->get['page'], $this->rowset->found(), $finalWHERE, $finalORDER);
+                    $this->setScope($primaryWHERE, Indi::get()->search, Indi::uri()->keyword, Indi::get()->sort,
+                        Indi::get()->page, $this->rowset->found(), $finalWHERE, $finalORDER);
                 }
 
             // Else if where is some another action
@@ -140,11 +140,11 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                 // Create pseudo field for sibling combo
                 $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
-                    $this->post['field'],
+                    Indi::post()->field,
                     Indi::trail()->section->entityId,
                     $this->view->getScope('WHERE', null, Indi::uri()->section, Indi::uri()->ph)
                 );
-                $this->row->{$this->post['field']} = Indi::uri()->id;
+                $this->row->{Indi::post()->field} = Indi::uri()->id;
 
                 $order = $this->view->getScope('ORDER');
                 $dir = array_pop(explode(' ', $order));
@@ -152,7 +152,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                 if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
             } else {
-                $field = Indi::trail()->model->fields($this->post['field']);
+                $field = Indi::trail()->model->fields(Indi::post()->field);
             }
 
             if (Indi::uri()->filter) {
@@ -165,12 +165,12 @@ class Indi_Controller_Admin extends Indi_Controller{
             }
 
             // Get options
-            if ($this->post['keyword']) {
-                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'], $this->post['keyword'],
-                    true, $this->post['satellite'], $where, false, $field, $order, $dir);
+            if (Indi::post()->keyword) {
+                $comboDataRs = $this->row->getComboData(Indi::post()->field, Indi::post()->page, Indi::post()->keyword,
+                    true, Indi::post()->satellite, $where, false, $field, $order, $dir);
             } else {
-                $comboDataRs = $this->row->getComboData($this->post['field'], $this->post['page'],
-                    $this->row->{$this->post['field']}, false, $this->post['satellite'], $where, false, $field, $order,
+                $comboDataRs = $this->row->getComboData(Indi::post()->field, Indi::post()->page,
+                    $this->row->{Indi::post()->field}, false, Indi::post()->satellite, $where, false, $field, $order,
                     $dir, $offset);
             }
 
@@ -451,8 +451,8 @@ class Indi_Controller_Admin extends Indi_Controller{
         // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
         // not both at the same time
         $exclude = array();
-        if ($this->get['search']) {
-            $search = json_decode($this->get['search'], true);
+        if (Indi::get()->search) {
+            $search = json_decode(Indi::get()->search, true);
             foreach ($search as $searchOnField) $exclude[] = key($searchOnField);
         }
 
@@ -559,13 +559,13 @@ class Indi_Controller_Admin extends Indi_Controller{
             $primaryWHERE = $scope['primary'] ? array($scope['primary']) : array();
 
             // Prepare search data for $this->filtersWHERE()
-            $this->get['search'] = $scope['filters'];
+            Indi::get()->search = $scope['filters'];
 
             // Prepare search data for $this->keywordWHERE()
             Indi::uri()->keyword = urlencode($scope['keyword']);
 
             // Prepare sort params for $this->finalORDER()
-            $this->get['sort'] = $scope['order'];
+            Indi::get()->sort = $scope['order'];
         }
 
         // Final WHERE stack
@@ -602,10 +602,10 @@ class Indi_Controller_Admin extends Indi_Controller{
         $where = array();
 
         // If we have no 'search' param in query string, there is nothing to do here
-        if ($this->get['search']) {
+        if (Indi::get()->search) {
 
             // Decode 'search' param from json to an associative array
-            $search = json_decode($this->get['search'], true);
+            $search = json_decode(Indi::get()->search, true);
 
             // Foreach passed filter pair (alias => value)
             foreach ($search as $searchOnField) {
@@ -864,7 +864,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $R = Indi::trail()->model->fetchRow($where);
 
             // Get the offest, if needed
-            if ($this->post['forceOffsetDetection'] && $R) {
+            if (Indi::post()->forceOffsetDetection && $R) {
                 return Indi::trail()->model->detectOffset($scope['WHERE'], $scope['ORDER'], $R->id);
 
                 // Or just return the id, as an ensurement, that such row exists
@@ -902,7 +902,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         $objPHPExcel->setActiveSheetIndex(0);
 
         // Get the columns, that need to be presented in a spreadsheet
-        $columnA = json_decode($this->get['columns'], true);
+        $columnA = json_decode(Indi::get()->columns, true);
 
         // Setup a row index, which is data rows starting from
         $currentRowIndex = 1;
@@ -1292,7 +1292,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         }
 
         // Get the order column alias
-        $orderColumnAlias = @array_shift(json_decode($this->get['sort']))->property;
+        $orderColumnAlias = @array_shift(json_decode(Indi::get()->sort))->property;
 
         // For each column
         foreach ($columnA as $n => $columnI) {
