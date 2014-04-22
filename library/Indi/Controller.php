@@ -1,47 +1,13 @@
 <?php
-class Indi_Controller{
-    /**
-     * Store $_POST variables got from Indi_Registry
-     *
-     * @var array
-     */
-    public $post;
+class Indi_Controller {
 
-    /**
-     * Store $_GET variables got from Indi_Registry
-     *
-     * @var array
-     */    
-    public $get;
-
-    /**
-     * Store $_FILES
-     *
-     * @var array
-     */
-    public $files;
-    
-    /**
-     * Store System configuration
-     *
-     * @var array
-     */
-    public $config;
-    
-    /**
-     * Store info about call path
-     *
-     * @var Indi_Trail object
-     */
-    public $trail;
-    
     /**
      * Store current section as object
      *
      * @var Section_Row object
      */
     public $section;
-    
+
     /**
      * Store row found by identifier
      *
