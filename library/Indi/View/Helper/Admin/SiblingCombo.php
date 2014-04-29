@@ -4,7 +4,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
     public $context = 'top.window';
     public function siblingCombo(){
 
-        $order = $this->view->getScope('ORDER');
+        $order = Indi::view()->getScope('ORDER');
         $this->comboDataOrderDirection = array_pop(explode(' ', $order));
         $this->comboDataOrderColumn = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
         if (preg_match('/\(/', $order)) $this->comboDataOffset = Indi::uri('aix') - 1;
@@ -39,7 +39,7 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->relation = Indi::trail()->section->entityId;
         $pseudoFieldR->dependency = 'u';
         $pseudoFieldR->satellite = 0;
-        $pseudoFieldR->filter = $this->view->getScope('WHERE');
+        $pseudoFieldR->filter = Indi::view()->getScope('WHERE');
 
         return $pseudoFieldR;//Indi::model('Field')->fetchRow('`id` = "19"');
     }

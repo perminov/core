@@ -21,7 +21,7 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
      * @return Indi_Db_Table_Row
      */
     public function getRow(){
-        return $this->view->row;
+        return Indi::view()->row;
     }
 
     /**

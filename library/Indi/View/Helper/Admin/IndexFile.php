@@ -8,7 +8,7 @@ class Indi_View_Helper_Admin_IndexFile extends Indi_View_Helper_Abstract
         $xhtml = '';
         
         $entity = $entity ? $entity : Indi::trail()->model->name();
-        $id = $id ? $id : $this->view->row->id;
+        $id = $id ? $id : Indi::view()->row->id;
 
         if ($name === null) {
             if ($index !== null) {
@@ -29,10 +29,10 @@ class Indi_View_Helper_Admin_IndexFile extends Indi_View_Helper_Abstract
 			foreach ($types as $type => $extensions) if (in_array($info['extension'], explode(',', $extensions))) break;
 			switch ($type) {
 				case 'image':
-					$xhtml = $this->view->img($entity, $id, $name, $copy, $silence) . '<br>';
+					$xhtml = Indi::view()->img($entity, $id, $name, $copy, $silence) . '<br>';
 					break;
 				case 'flash':
-					$xhtml = $this->view->swf($entity, $id, $name, $silence) . '<br>';
+					$xhtml = Indi::view()->swf($entity, $id, $name, $silence) . '<br>';
 					break;
 				case 'video':
 					$xhtml = 'Video in format ' . $info['extension'] . ' - <a href="' . $relative . $info['basename'] . '" target="_blank">Download</a> ,';

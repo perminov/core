@@ -3,8 +3,8 @@ class Indi_View_Helper_Admin_FormColor extends Indi_View_Helper_Abstract
 {
     public function formColor($name = 'color', $value = null)
     {
-		if ($this->view->row->id) {
-	        $value = $value ? $value : $this->view->row->$name;
+		if (Indi::view()->row->id) {
+	        $value = $value ? $value : Indi::view()->row->$name;
 		} else {
 			$value = Indi::trail()->model->fields($name)->defaultValue;
 		}

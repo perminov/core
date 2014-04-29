@@ -1,5 +1,6 @@
 <?php
-class Indi_Trail_Admin{
+class Indi_Trail_Admin {
+
     /**
      * Array of Indi_Trail_Admin_Item items
      *

@@ -64,9 +64,6 @@ class Indi_Controller_Admin extends Indi_Controller{
                 Indi::trail()->section->primaryHash = Indi::uri()->ph;
                 Indi::trail()->section->rowIndex = Indi::uri()->aix;
 
-                // Setup current row
-                $this->row = &Indi::trail()->row;
-
                 // If we are here for just check of row availability, do it
                 if (Indi::uri()->check) die($this->checkRowIsInScope());
             }
@@ -142,11 +139,11 @@ class Indi_Controller_Admin extends Indi_Controller{
                 $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                     Indi::post()->field,
                     Indi::trail()->section->entityId,
-                    $this->view->getScope('WHERE', null, Indi::uri()->section, Indi::uri()->ph)
+                    Indi::view()->getScope('WHERE', null, Indi::uri()->section, Indi::uri()->ph)
                 );
                 $this->row->{Indi::post()->field} = Indi::uri()->id;
 
-                $order = $this->view->getScope('ORDER');
+                $order = Indi::view()->getScope('ORDER');
                 $dir = array_pop(explode(' ', $order));
                 $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
                 if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
@@ -391,37 +388,6 @@ class Indi_Controller_Admin extends Indi_Controller{
     }
 
     /**
-     * Function return a sql-string containing a WHERE clause, that do especially provide an ability to deal with
-     * childs-by-parent logic, mean that if current section have parent section, we should fetch only records,
-     * related to parent row, for example if we want to see cities, we must define in WHAT country these cities
-     * are located
-     *
-     * @return string|null
-     */
-    public function parentWHERE() {
-
-        // We check if a non-standard parent connector field name should be used to fetch childs
-        // For example, if we have 'Countries' section (displayed rows a fetched from 'country' db table)
-        // and 'Cities' section (displayed rows a fetched from 'city' db table) and 'city' table have a column
-        // where country identifier of each city is specified, but this column is not named (for some reason)
-        // as 'countryId', and we need it to have some another name - so in that cases we use parentSectionConnector
-        // logic.
-        $connectorAlias = Indi::trail()->section->parentSectionConnector
-            ? Indi::trail()->section->foreign('parentSectionConnector')->alias
-            : Indi::trail(1)->model->name() . 'Id';
-
-        // Get the connector value
-        $connectorValue = Indi::uri('action') == 'index'
-            ? Indi::uri('id')
-            : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id];
-
-        // Return clause
-        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
-            ? 'FIND_IN_SET("' . $connectorValue . '" IN `' . $connectorAlias . '`)'
-            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
-    }
-
-    /**
      * Builds a SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
      * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
      * not contain seach clauses for columns, that are involved in building of set of another kind of WHERE clauses -
@@ -553,7 +519,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
 
             // Get the scope
-            $scope = $this->view->getScope(null, null, Indi::uri()->section, $primaryWHERE);
+            $scope = Indi::view()->getScope(null, null, Indi::uri()->section, $primaryWHERE);
 
             // Prepare $primaryWHERE
             $primaryWHERE = $scope['primary'] ? array($scope['primary']) : array();
@@ -747,109 +713,9 @@ class Indi_Controller_Admin extends Indi_Controller{
         return $where;
     }
 
-    /**
-     * Builds the ORDER clause
-     *
-     * todo: Сделать для variable entity и storeRelationАbility=many
-     *
-     * @param $finalWHERE
-     * @param string $json
-     * @return null|string
-     */
-    public function finalORDER($finalWHERE, $json = '') {
-        // If no sorting params provided - ORDER clause won't be built
-        if (!$json) return null;
-
-        // Extract column name and direction from json param
-        list($column, $direction) = array_values(current(json_decode($json, 1)));
-
-        // If no sorting is needed - return null
-        if (!$column) return null;
-
-        // Find a field, that column is linked to
-        foreach (Indi::trail()->gridFields as $fieldR) if ($fieldR->alias == $column) break;
-
-        // If there is no grid field with such a name, return null
-        if ($fieldR->alias !== $column) return null;
-
-        // If no direction - set as ASC by default
-        if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
-
-        // Setup a foreign rows for $fieldR's foreign keys
-        $fieldR->foreign('columnTypeId');
-
-        // If this is a simple column
-        if ($fieldR->storeRelationAbility == 'none') {
-
-            // If sorting column type is BOOLEAN (use for Checkbox control element only)
-            if ($fieldR->foreign['columnTypeId']->type == 'BOOLEAN') {
-
-                // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
-                // values, depending on current language
-                if (Indi::ini('view')->lang == 'en')
-                    return 'IF(`' . $column . '`, "' . GRID_FILTER_CHECKBOX_YES .'", "' . GRID_FILTER_CHECKBOX_NO . '") '
-                        . $direction;
-                else
-                    return 'IF(`' . $column . '`, "' . GRID_FILTER_CHECKBOX_NO .'", "' . GRID_FILTER_CHECKBOX_YES . '") '
-                        . $direction;
-
-                // Else build the simplest ORDER clause
-            } else {
-                return '`' . $column . '` ' . $direction;
-            }
-
-            // Else if column is storing single foreign keys
-        } else if ($fieldR->storeRelationAbility == 'one') {
-
-            // If column is of type ENUM
-            if ($fieldR->foreign['columnTypeId']->type == 'ENUM') {
-
-                // Get a list of comma-imploded aliases, ordered by their titles
-                $set = $this->db->query($sql = '
-
-                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
-                    FROM `enumset`
-                    WHERE `fieldId` = "' . $fieldR->id . '"
-
-                ')->fetchColumn(0);
-
-                // Build the order clause, using FIND_IN_SET function
-                return 'FIND_IN_SET(`' . $column . '`, "' . $set . '") ' . $direction;
-
-                // If column is of type (BIG|SMALL|MEDIUM|)INT
-            } else if (preg_match('/INT/', $fieldR->foreign['columnTypeId']->type)) {
-
-                // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
-                if (!$fieldR->satellite || $fieldR->dependency != 'e') {
-
-                    // Get the possible foreign keys
-                    $setA = $this->db->query('
-                        SELECT DISTINCT `' . $column . '` AS `id`
-                        FROM `' . Indi::trail()->model->name() . '`
-                        ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
-                    ')->fetchAll(PDO::FETCH_COLUMN);
-
-                    // If at least one key was found
-                    if (count($setA)) {
-
-                        // Setup a proper order of elements in $setA array, depending on their titles
-                        $setA = Indi::order($fieldR->relation, $setA);
-
-                        // Build the order clause, using FIND_IN_SET function
-                        return 'FIND_IN_SET(`' . $column . '`, "' . implode(',', $setA) . '") ' . $direction;
-
-                        // Otherwise there will be no ORDER clause
-                    } else {
-                        return null;
-                    }
-                }
-            }
-        }
-    }
-
     public function checkRowIsInScope(){
         // Get scope params
-        $scope = $this->view->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
+        $scope = Indi::view()->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
 
         if (Indi::uri()->aix && !Indi::uri()->id) {
             $R = Indi::trail()->model->fetchRow($scope['WHERE'], $scope['ORDER'], Indi::uri()->aix - 1);
@@ -1623,7 +1489,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         $data = $this->_findSigninUserData($username, $password, 'admin', null, $level1ToggledOnSectionIdA);
 
         // If not found
-        if (!$data) {
+        if (!$data['id']) {
 
             // Get the list of other possible places, there user with given credentials can be found
             $profile2tableA = Indi::db()->query('
@@ -1635,8 +1501,8 @@ class Indi_Controller_Admin extends Indi_Controller{
 
             // Foreach possible place - try to find
             foreach ($profile2tableA as $profile2tableI)
-                if ($data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
-                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA))
+                if (current($data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
+                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA)))
                     break;
 
             // If found - assign some additional info to found data
@@ -1740,7 +1606,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     $error = I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF;
                     break;
 
-                    // Else push new item in $this->_routeA stack
+                // Else push new item in $this->_routeA stack
                 } else if ($parent['sectionId']) $this->_routeA[] = $parent['sectionId'];
 
                 // Else stop loop, as $parent['sectionId'] = 0, so there is no sense to find a section with such an `id`
@@ -1781,15 +1647,15 @@ class Indi_Controller_Admin extends Indi_Controller{
                 die(json_encode(array('ok' => '1')));
             }
 
-            // If user was thrown out from the system, assing a throwOutMsg to $this->view object, for this message
+            // If user was thrown out from the system, assing a throwOutMsg to Indi::view() object, for this message
             // to be available for picking up and usage as Ext.MessageBox message, as a reason of throw out
             if ($_SESSION['indi']['throwOutMsg']) {
-                $this->view->throwOutMsg = $_SESSION['indi']['throwOutMsg'];
+                Indi::view()->throwOutMsg = $_SESSION['indi']['throwOutMsg'];
                 unset($_SESSION['indi']['throwOutMsg']);
             }
 
             // Render login page
-            $out = $this->view->render('login.php');
+            $out = Indi::view()->render('login.php');
 
             // Do paths replacements, if current project runs within webroot subdirectory
             if (STD) {
@@ -1801,7 +1667,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             // Flush the login page
             die($out);
 
-            // Else if user is already signed in, and is trying to perform some action in some section
+        // Else if user is already signed in, and is trying to perform some action in some section
         } else {
 
             // Do the first level access check
@@ -1898,22 +1764,22 @@ class Indi_Controller_Admin extends Indi_Controller{
         if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
 
             // Setup the left menu
-            $this->view->menu = Section::menu();
+            Indi::view()->menu = Section::menu();
 
             // Setup info about current logged in cms user
-            $this->view->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
+            Indi::view()->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
 
             // Render the layout
-            $out = $this->view->render('index.php');
+            $out = Indi::view()->render('index.php');
 
             // Else, if we are doing something in a certain section
         } else {
 
             // Setup a row object to be available within view engine
-            if (Indi::trail()->row) $this->view->row = Indi::trail()->row;
+            if (Indi::trail()->row) Indi::view()->row = Indi::trail()->row;
 
             // Render the contents
-            $out = $this->view->renderContent();
+            $out = Indi::view()->renderContent();
         }
 
         // Strip '/admin' from $out, if cms-only mode is enabled
@@ -2083,5 +1949,36 @@ class Indi_Controller_Admin extends Indi_Controller{
 
         // Redirect
         if ($redirect) $this->redirect($location);
+    }
+
+    /**
+     * Function return a sql-string containing a WHERE clause, that do especially provide an ability to deal with
+     * childs-by-parent logic, mean that if current section have parent section, we should fetch only records,
+     * related to parent row, for example if we want to see cities, we must define in WHAT country these cities
+     * are located
+     *
+     * @return string|null
+     */
+    public function parentWHERE() {
+
+        // We check if a non-standard parent connector field name should be used to fetch childs
+        // For example, if we have 'Countries' section (displayed rows a fetched from 'country' db table)
+        // and 'Cities' section (displayed rows a fetched from 'city' db table) and 'city' table have a column
+        // where country identifier of each city is specified, but this column is not named (for some reason)
+        // as 'countryId', and we need it to have some another name - so in that cases we use parentSectionConnector
+        // logic.
+        $connectorAlias = Indi::trail()->section->parentSectionConnector
+            ? Indi::trail()->section->foreign('parentSectionConnector')->alias
+            : Indi::trail(1)->model->name() . 'Id';
+
+        // Get the connector value
+        $connectorValue = Indi::uri('action') == 'index'
+            ? Indi::uri('id')
+            : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id];
+
+        // Return clause
+        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+            ? 'FIND_IN_SET("' . $connectorValue . '" IN `' . $connectorAlias . '`)'
+            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
 }

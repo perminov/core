@@ -720,6 +720,29 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function foreign($key = '', $refresh = false) {
 
+        // If $key argument is an array, it mean that key argument contains info about not only multiple foreign rows
+        // to be fetched, but also info about sub-nested rowsets and sub-foreign rows that should be fetched too
+        if (is_array($key)) {
+
+            // Create a rowset with current row as a single row within that rowset
+            $rowset = Indi::trail()->model->createRowset(array('rows' => array($this)));
+
+            // Fetch all required data using rowset's foreign() method instead of row's foreign() method
+            $rowset->foreign($key);
+
+            // Pick the one existing row from rowset and unset rowset to release RAM
+            $row = $rowset->rewind()->current(); unset($rowset);
+
+            // Get the _foreign property of picked row and use it as value for $this's _foreign property
+            $this->_foreign = $row->foreign();
+
+            // Unset picked row to release RAM
+            unset($row);
+
+            // Return current row itself, but now with properly updated _foreign property
+            return $this;
+        }
+
         // If $key argument contains more than one key name - we setup rows for all keys
         if (preg_match('/,/',$key)) {
             $keyA = explode(',', $key);
@@ -1274,8 +1297,14 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function mismatch($check = false) {
 
-        // If $check argument is set to false, return $this->_mismatch stack, else reset $this->_mismatch array
-        if ($check == false) return $this->_mismatch; else $this->_mismatch = array();
+        // If $check argument is boolean
+        if (is_bool($check)) {
+
+            // If $check argument is set to false, return $this->_mismatch stack, else reset $this->_mismatch array
+            if ($check == false) return $this->_mismatch; else $this->_mismatch = array();
+
+        // Else we assume that $check argument is field name, so the mismatch for especially that field will be returned
+        } else return $this->_mismatch[$check];
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
@@ -2153,6 +2182,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function files($fields = array()) {
 
+        // If $fields argument is a string - convert it to array by exploding by comma
+        if (is_string($fields)) $fields = explode(',', $fields);
+
         // If there is no file upload fields that should be taken into attention - exit
         if (!count($fields)) return;
 
@@ -2333,8 +2365,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Else
         } else {
 
-            // Create a new Imagick object
-            $imagick = new Imagick($src);
+            // Try to create a new Imagick object, and stop function execution, if imagick object creation failed
+            try { $imagick = new Imagick($src); } catch (Exception $e) {return;}
 
             // Pick the dimension values
             if ($resizeR->masterDimensionAlias == 'width') {

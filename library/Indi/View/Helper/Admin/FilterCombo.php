@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
         // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
         // there dependent combo can get that value.
-        if (!$this->view->filtersSharedRow) $this->view->filtersSharedRow = Indi::trail()->model->createRow();
+        if (!Indi::view()->filtersSharedRow) Indi::view()->filtersSharedRow = Indi::trail()->model->createRow();
         $this->filter = $filter;
 
         $this->getRow()->{$this->getField()->alias} = null;
@@ -54,7 +54,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return Indi_Db_Table_Row
      */
     public function getRow(){
-        return $this->view->filtersSharedRow;
+        return Indi::view()->filtersSharedRow;
     }
 
     /**
@@ -63,16 +63,16 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return string
      */
     public function getDefaultValue() {
-        $gotFromScope = $this->view->getScope('filters', $this->field->alias);
+        $gotFromScope = Indi::view()->getScope('filters', $this->field->alias);
 
         if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
             if ($this->field->storeRelationAbility == 'many') $gotFromScope = implode(',', $gotFromScope);
-            $this->filter->defaultValue = $this->view->filtersSharedRow->{$this->field->alias} = $gotFromScope;
+            $this->filter->defaultValue = Indi::view()->filtersSharedRow->{$this->field->alias} = $gotFromScope;
             return $gotFromScope;
         }
         if ($this->filter->defaultValue || ($this->field->columnTypeId == 12 && $this->filter->defaultValue != '')) {
             Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::$cmpOut;
-            $this->view->filtersSharedRow->{$this->field->alias} = $this->filter->defaultValue;
+            Indi::view()->filtersSharedRow->{$this->field->alias} = $this->filter->defaultValue;
             return $this->filter->defaultValue;
         } else {
             return '';

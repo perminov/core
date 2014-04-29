@@ -561,7 +561,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                     $data[$pointer][$columnI] = $r->$columnI == '0000-00-00'
                         ? ''
-                        : date($typeA['date'][$columnI]['displayFormat'], strtotime($data[$pointer][$columnI]));
+                        : date($typeA['date'][$columnI]['displayFormat'], strtotime($r->$columnI));
 
                 // If field column type is datetime, we adjust it's format if need. If datetime is '0000-00-00 00:00:00'
                 // we set it to empty string
@@ -984,7 +984,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                                     $foreignRs[$entityId]->nested($table, array(
                                             'where' => $args['where'], 'order' => $args['order'],
                                             'count' => $args['count'], 'page' => $args['page'],
-                                            'offset' => $args['offset'],
+                                            'offset' => $args['offset'], 'foreign' => $args['foreign'],
+                                            'nested' => $args['nested']
                                         ), $args['alias'], $args['field'], $args['fresh']
                                     );
                             }
@@ -1074,10 +1075,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Get value of a single column within curent rowset, as array
      *
-     * @param $column
+     * @param string $column
+     * @param bool $imploded
      * @return array
      */
-    public function column($column) {
+    public function column($column, $imploded = false) {
 
         // Declare array for single column
         $valueA = array();
@@ -1086,7 +1088,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         foreach ($this as $r) $valueA[] = $r->$column;
 
         // Return column data
-        return $valueA;
+        return $imploded ? implode(',', $valueA) : $valueA;
     }
 
     /**

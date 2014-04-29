@@ -17,12 +17,12 @@ class Indi_View_Helper_Admin_RenderContent extends Indi_View_Helper_Abstract{
             $helper = 'render' . ucfirst(Indi::trail()->action->alias);
 
             // If template with such filename exists, render the template
-            if ($this->view->exists($script))
-                return $this->view->render($script);
+            if (Indi::view()->exists($script))
+                return Indi::view()->render($script);
 
             // Else if helper for current action exists
-            else if ($this->view->getHelper($helper, false))
-                return $this->view->$helper();
+            else if (Indi::view()->getHelper($helper, false))
+                return Indi::view()->$helper();
         }
     }
 

@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
         $name = $name ? $name : 'toggle';
         
         // current value by default is got from current row
-        $value = $value ? $value : $this->view->row->$name;
+        $value = $value ? $value : Indi::view()->row->$name;
         // texts passed to helper should be comma separated
         // if texts are not set default values are 'y,n'
         $texts = $texts ? explode(',', $texts) : array ('Yes','No');

@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
      * @return Indi_Db_Table_Row
      */
     public function getRow(){
-        return $this->view->row;
+        return Indi::view()->row;
     }
 
     /**
@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
         }
 
         $key = $this->field->foreign('relation')->table == 'enumset' ? 'alias' : 'id';
-        $multi = $this->view->row->getComboData($name, null, $selected);
+        $multi = Indi::view()->row->getComboData($name, null, $selected);
         $checked = $multi->selected->column($key);
         $multi = $multi ? $multi : array();
         $data = array();

@@ -6,7 +6,7 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract {
         ob_start();
 
         // Echo form's header (<form>, <table>, misc)
-        echo $this->view->formHeader();
+        echo Indi::view()->formHeader();
 
         // Declare arrays that will store info about what fields should be excluded
         // from form, and what included, but disabled in form
@@ -22,10 +22,10 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract {
         // Echo a <tr> for each form's field, but only if field's control element's 'hidden' checkbox is not checked
         foreach (Indi::trail()->fields as $fieldR)
             if (!$excluded[$fieldR->id] && $fieldR->foreign['elementId']->hidden != 1)
-                echo $this->view->formField($fieldR, $disabled[$fieldR->id]);
+                echo Indi::view()->formField($fieldR, $disabled[$fieldR->id]);
 
         // Echo form's footer
-        echo $this->view->formFooter();
+        echo Indi::view()->formFooter();
 
         // Return buffered output
         return ob_get_clean();

@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
+class Indi_View_Helper_Admin_FormUpload
 {
     public function formUpload($name = null, $copy = null, $silence = true, $entity = null, $id = null)
     {
@@ -8,7 +8,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
         $xhtml = '';
         
         $entity = $entity ? $entity : Indi::trail()->model->name();
-        $id = $id ? $id : $this->view->row->id;
+        $id = $id ? $id : Indi::view()->row->id;
 
         if ($name === null) {
             if ($index !== null) {
@@ -30,7 +30,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 			$xhtml = '<div>';
 			switch ($type) {
 				case 'image':
-					$uploaded = $this->view->img($entity, $id, $name, $copy, $silence) . '<br>';
+					$uploaded = Indi::view()->img($entity, $id, $name, $copy, $silence) . '<br>';
 					preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));
 					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getimagesize($abs);
@@ -40,7 +40,7 @@ class Indi_View_Helper_Admin_FormUpload extends Indi_View_Helper_FormElement
 					}
                     break;
 				case 'flash':
-					$uploaded = $this->view->swf($entity, $id, $name, $silence) . '<br>';
+					$uploaded = Indi::view()->swf($entity, $id, $name, $silence) . '<br>';
                     preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));$src = $matches[1];
                     $abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getflashsize($abs);

@@ -1,36 +1,26 @@
 <?php
-class Indi_View_Helper_Admin_FormNumber extends Indi_View_Helper_FormElement
+class Indi_View_Helper_Admin_FormNumber
 {
     public function formNumber($name, $value = null, $attribs = null)
     {
 		$field = Indi::trail()->model->fields($name);
 
         if ($value === null) {
-			if(!$this->view->row->id) {
+			if(!Indi::view()->row->id) {
 				$value = $field->defaultValue;
 			} else {
-	            $value = $this->view->row->$name;
+	            $value = Indi::view()->row->$name;
 				if (!$value) $value = '0';
 			}
 		}
-        $info = $this->_getInfo($name, $value, $attribs);
-        extract($info); // name, value, attribs, options, listsep, disable
-        
-        // build the element
-        if ($disable) {
-            // disabled
-            $xhtml = $this->_hidden($name, $value)
-                   . $this->view->escape($value);
-        } else {
-            // enabled
-			$xhtml = '<input type="text"'
-                   . ' name="' . $this->view->escape($name) . '"'
-                   . ' id="' . $this->view->escape($id) . '"'
-                   . ' value="' . $this->view->escape($value) . '"'
-                   . $this->_htmlAttribs($attribs)
-                   . ' style="width: ' . ($field->params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $field->params['maxlength'] . '" ' . ($field->params['readonly'] == 'true' ? ' readonly' : ' oninput="this.value=number(this.value);' . $field->javascript . '"  onkeydown="if(event.keyCode==38||event.keyCode==40){if(event.keyCode==38)this.value=parseInt(this.value)+1;else if(event.keyCode==40)this.value=parseInt(this.value)-1;' . $field->javascript . '}"') . ' autocomplete="off"/> ' . $field->params['measure'];
-        }
-        
+
+        // enabled
+        $xhtml = '<input type="text"'
+               . ' name="' . Indi::view()->escape($name) . '"'
+               . ' id="' . Indi::view()->escape($name) . '"'
+               . ' value="' . Indi::view()->escape($value) . '"'
+               . ' style="width: ' . ($field->params['maxlength']*10) . 'px; text-align: right;" maxlength="' . $field->params['maxlength'] . '" ' . ($field->params['readonly'] == 'true' ? ' readonly' : ' oninput="this.value=number(this.value);' . $field->javascript . '"  onkeydown="if(event.keyCode==38||event.keyCode==40){if(event.keyCode==38)this.value=parseInt(this.value)+1;else if(event.keyCode==40)this.value=parseInt(this.value)-1;' . $field->javascript . '}"') . ' autocomplete="off"/> ' . $field->params['measure'];
+
         return $xhtml;
     }    
 }

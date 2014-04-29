@@ -13,8 +13,8 @@ class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
 
         $field = Indi::trail()->model->fields($name);
         //by default, value is got from row object's value of $name field
-		if ($this->view->row->$name != '0000-00-00') {
-			$value = $value != '0000-00-00' ? $value : $this->view->row->$name;
+		if (Indi::view()->row->$name != '0000-00-00') {
+			$value = $value != '0000-00-00' ? $value : Indi::view()->row->$name;
 		} else {
 			$value = $field->defaultValue;
             Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;

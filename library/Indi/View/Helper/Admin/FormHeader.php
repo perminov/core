@@ -37,7 +37,7 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
     <!-- STD dependent styles -->
-    <?=$this->view->styleStd()?>
+    <?=Indi::view()->styleStd()?>
 </head>
 <body class="i-action-form">
 <script>
@@ -47,12 +47,12 @@ Indi = $.extend(Indi, {
     pre: '<?=STD?><?=COM ? '' : '/admin'?>',
     lang: <?=Indi::constants('user', true)?>,
     trail: <?=json_encode(Indi::trail(true)->toArray())?>,
-    scope: <?=json_encode($this->view->getScope())?>
+    scope: <?=json_encode(Indi::view()->getScope())?>
 });
 top.Indi.scope = Indi.scope;
 </script>
-<?=$this->view->siblingCombo()?>
-<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=$this->view->row->id ? '/id/' . $this->view->row->id : ''?>/" name="<?=Indi::trail()->model->name()?>" method="post" enctype="multipart/form-data" row-id="<?=$this->view->row->id?>">
+<?=Indi::view()->siblingCombo()?>
+<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?>/" name="<?=Indi::trail()->model->name()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
     <table cellspacing="1" border="0" width="100%" class="i-form-table">
         <tr class="i-form-subheader"><td colspan="2"><?=$title?></td></tr>
         <col width="50%"/><col width="50%"/>

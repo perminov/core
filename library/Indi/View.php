@@ -1,6 +1,5 @@
 <?php
-class Indi_View
-{
+class Indi_View {
     /**
      * Path stack for script , helper, and filter directories.
      *
@@ -104,6 +103,16 @@ class Indi_View
     }
 
     /**
+     * Getter
+     *
+     * @param string $property
+     * @return mixed
+     */
+    public function __get($property) {
+        if (preg_match('/^row(set|)$/i', $property)) return Indi::trail()->$property;
+    }
+
+    /**
      * Allows testing with empty() and isset() to work inside
      * templates.
      *
@@ -112,6 +121,8 @@ class Indi_View
      */
     public function __isset($key)
     {
+        if (preg_match('/^row(set|)$/i', $key)) return isset(Indi::trail()->$key);
+
         if ('_' != substr($key, 0, 1)) {
             return isset($this->$key);
         }
@@ -134,6 +145,11 @@ class Indi_View
      */
     public function __set($key, $val)
     {
+        if (preg_match('/^row(set|)$/i', $key)) {
+            Indi::trail()->$key = $val;
+            return;
+        }
+
         if ('_' != substr($key, 0, 1)) {
             $this->$key = $val;
             return;
