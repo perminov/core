@@ -3,8 +3,8 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
 {
     public function formRadio($name = 'toggle', $texts = 'Да,Нет', $values = 'y,n', $value = 'y', $meta = false, $attrib = '', $add = null)
     {
-		if (isset($this->view->row->$name)){
-			$value = $this->view->row->$name;
+		if (isset(Indi::view()->row->$name)){
+			$value = Indi::view()->row->$name;
 			$field = Indi::trail()->model->fields($name);
 			if(empty($value)) {
 				$value = $field->defaultValue;
@@ -22,7 +22,7 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
 				$texts = implode(',' , $texts);
 				$values = implode(',' , $values);
 			} else {
-			    $data  = $this->view->row->getComboData($name);
+			    $data  = Indi::view()->row->getComboData($name);
                 $texts = array();
                 $values = array();
                 $key = $data->enumset ? 'alias' : 'id';
@@ -36,7 +36,7 @@ class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
 		}
 		$rowsHeightLimit = 10;
 		if (count($data) > $rowsHeightLimit) $xhtml .= '<div style="overflow-y: scroll; height: ' . (17 * $rowsHeightLimit) . 'px;">';
-		$xhtml .= $this->view->formRadios($name, $texts, $values, $value, $meta, $attrib, $add);
+		$xhtml .= Indi::view()->formRadios($name, $texts, $values, $value, $meta, $attrib, $add);
 		if (count($data) > $rowsHeightLimit) $xhtml .= '</div>';
 		return $xhtml;
     }

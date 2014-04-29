@@ -6,7 +6,7 @@ class Indi_View_Helper_Admin_Img extends Indi_View_Helper_Abstract
         static $index = null;
 
         $entity = $entity ? $entity : Indi::trail()->model->name();
-        $id = $id ? $id : $this->view->row->id;
+        $id = $id ? $id : Indi::view()->row->id;
 
         if ($name === null) {
             if ($index !== null) {

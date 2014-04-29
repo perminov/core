@@ -5,8 +5,8 @@ class Indi_View_Helper_Admin_FormCheck extends Indi_View_Helper_Abstract
     {
 		$field = Indi::trail()->model->fields($name);
 
-		$value = $this->view->row->$name;
-		if (!$this->view->row->id) {
+		$value = Indi::view()->row->$name;
+		if (!Indi::view()->row->id) {
 			$value = $field->defaultValue;
 		}
 

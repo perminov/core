@@ -5,15 +5,15 @@ class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
     {
         $toolbar = $toolbar ? $toolbar : 'Default';
         if ($value === null) {
-            $value = $this->view->row->$name;
+            $value = Indi::view()->row->$name;
         }
 
 		$field = Indi::trail()->model->fields($name);
 
         $customParams = array('width','height','bodyClass','style','script','sourceStripper');
         foreach($customParams as $customParam) {
-            if ($this->view->row->{$name . ucfirst($customParam)}) {
-                $field->params[$customParam] = $this->view->row->{$name . ucfirst($customParam)};
+            if (Indi::view()->row->{$name . ucfirst($customParam)}) {
+                $field->params[$customParam] = Indi::view()->row->{$name . ucfirst($customParam)};
             }
         }
 

@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
+class Indi_View_Helper_Admin_FormDatetime
 {
     public function formDatetime($name = 'datetime', $minimal = null, $value = null, $attribs = '')
     {
@@ -13,8 +13,8 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
         
         //by default, value is got from row object's value of $name field
         $field = Indi::trail()->model->fields($name);
-		if($this->view->row->id) {
-			$value = $value != '0000-00-00 00:00:00' ? $value : $this->view->row->$name;
+		if(Indi::view()->row->id) {
+			$value = $value != '0000-00-00 00:00:00' ? $value : Indi::view()->row->$name;
 		} else {
 			$value = $field->defaultValue;
             Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
@@ -47,24 +47,21 @@ class Indi_View_Helper_Admin_FormDatetime extends Indi_View_Helper_FormElement
 		$time = explode(':', $parts[1]);
 		for ($i = 0; $i <= 2; $i++)	$time[$i] = strlen($time[$i]) == 1 ? $time[$i] . '0' : (strlen($time[$i]) == 0 ? '00' : $time[$i]);
 		$xhtml .= '&nbsp; &nbsp;<input type="text"'
-				. ' name="' . $this->view->escape($name) . '[hours]"'
-				. ' id="' . $this->view->escape($id) . '"'
-				. ' value="' . $this->view->escape($time[0]) . '"'
-				. $this->_htmlAttribs($attribs)
+				. ' name="' . Indi::view()->escape($name) . '[hours]"'
+				. ' id="' . Indi::view()->escape($id) . '"'
+				. ' value="' . Indi::view()->escape($time[0]) . '"'
 				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=number(this.value)" /> ' . FORM_DATETIME_HOURS . ' ';
 
 		$xhtml .= '<input type="text"'
-				. ' name="' . $this->view->escape($name) . '[minutes]"'
-				. ' id="' . $this->view->escape($id) . '"'
-				. ' value="' . $this->view->escape($time[1]) . '"'
-				. $this->_htmlAttribs($attribs)
+				. ' name="' . Indi::view()->escape($name) . '[minutes]"'
+				. ' id="' . Indi::view()->escape($id) . '"'
+				. ' value="' . Indi::view()->escape($time[1]) . '"'
 				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . FORM_DATETIME_MINUTES . ' ';
 
 		$xhtml .= '<span style="display: none;"><input type="text"'
-				. ' name="' . $this->view->escape($name) . '[seconds]"'
-				. ' id="' . $this->view->escape($id) . '"'
-				. ' value="' . $this->view->escape($time[2]) . '"'
-				. $this->_htmlAttribs($attribs)
+				. ' name="' . Indi::view()->escape($name) . '[seconds]"'
+				. ' id="' . Indi::view()->escape($id) . '"'
+				. ' value="' . Indi::view()->escape($time[2]) . '"'
 				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . FORM_DATETIME_SECONDS . '</span>';
 		ob_start();?>
 		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px; z-index: <?=(100 - $zIndex)?>;">

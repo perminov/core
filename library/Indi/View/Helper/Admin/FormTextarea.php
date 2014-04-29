@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormTextarea extends Indi_View_Helper_FormElement
+class Indi_View_Helper_Admin_FormTextarea
 {
     /**
      * Generates a 'textarea' element.
@@ -19,41 +19,26 @@ class Indi_View_Helper_Admin_FormTextarea extends Indi_View_Helper_FormElement
     public function formTextarea($name, $value = null, $attribs = null)
     {
         if ($value === null) {
-            $value = $this->view->row->$name;
+            $value = Indi::view()->row->$name;
 			if ($name == 'title' && $value == 'No title') $value = '';
         }        
-        $info = $this->_getInfo($name, $value, $attribs);
-        extract($info); // name, value, attribs, options, listsep, disable
-        
-        // build the element
-        if ($disable) {
-        
-            // disabled.
-            $xhtml = $this->_hidden($name, $value)
-                   . nl2br($this->view->escape($value));
-            
-        } else {
-        
-            // enabled.
-            
-            // first, make sure that there are 'rows' and 'cols' values
-            // as required by the spec.  noted by Orjan Persson.
-            if (empty($attribs['rows'])) {
-                $attribs['rows'] = (int) $this->rows;
-            }
-            
-            if (empty($attribs['cols'])) {
-                $attribs['cols'] = (int) $this->cols;
-            }
-            
-            // now build the element.
-            $xhtml = '<textarea name="' . $this->view->escape($name) . '"'
-                   . ' id="' . $this->view->escape($id) . '"'
-                   . $this->_htmlAttribs($attribs) . ' style="width: 100%; height: 60px;">'
-                   . $this->view->escape($value) . '</textarea>';
-            
+
+        // first, make sure that there are 'rows' and 'cols' values
+        // as required by the spec.  noted by Orjan Persson.
+        if (empty($attribs['rows'])) {
+            $attribs['rows'] = (int) $this->rows;
         }
-        
+
+        if (empty($attribs['cols'])) {
+            $attribs['cols'] = (int) $this->cols;
+        }
+
+        // now build the element.
+        $xhtml = '<textarea name="' . Indi::view()->escape($name) . '"'
+               . ' id="' . Indi::view()->escape($name) . '"'
+               . ' style="width: 100%; height: 60px;">'
+               . Indi::view()->escape($value) . '</textarea>';
+
         return $xhtml;
     }
 }

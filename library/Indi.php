@@ -51,6 +51,7 @@ class Indi {
         'time' => '/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'double72' => '/^([1-9][0-9]{0,6}|0)(\.[0-9]{1,2})?$/',
         'datetime' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
+        'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/'
     );
 
     /**
@@ -349,59 +350,23 @@ class Indi {
         // If there is no value for 'uri' key in registry yet, we setup it
         if (is_null(Indi::store('uri'))) {
 
-            // If project located in some subfolder of $_SERVER['DOCUMENT_ROOT'] instead of directly in it
-            // we strip mention of that subfolder from $_SERVER['REQUEST_URI']
-            if (STD) $_SERVER['REQUEST_URI'] = preg_replace('!^' . STD . '!', '', $_SERVER['REQUEST_URI']);
+            // Create an *_Uri object
+            $obj = class_exists('Project_Uri') ? new Project_Uri() : new Indi_Uri();
 
-            // If 'cms-only' mode is turned on, we prepend $_SERVER['REQUEST_URI'] with '/admin'
-            if (COM) $_SERVER['REQUEST_URI'] = '/admin' . $_SERVER['REQUEST_URI'];
-
-            // Build the full url by prepending protocol and hostname, and parse it by parse_url() function
-            $uri = parse_url('http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-
-            // Trim '/' from 'path' item, got by parse_url() usage, and explode it by '/'
-            $uri = explode('/', trim($uri['path'], '/'));
-
-            // Set default params
-            $params['module'] = 'front';
-            $params['section'] = 'index';
-            $params['action'] = 'index';
-
-            // If first chunk of $uri is 'admin', we set 'module' param as 'admin' and drop that chunk from $uri
-            if ($uri[0] == 'admin') {
-                $params['module'] = $uri[0];
-                array_shift($uri);
-            }
-
-            // Setup all other params
-            for ($i = 0; $i < count($uri); $i++) {
-                if ($i == 0 && $uri[$i]) {
-                    $params['section'] = $uri[$i];
-                } else if ($i == 1) {
-                    $params['action'] = $uri[$i];
-                } else if (count($uri) > $i) {
-                    if ($uri[$i]) {
-                        $params[$uri[$i]] = $uri[$i + 1];
-                        $i++;
-                    }
-                }
-            }
-
-            // Push $key array in registry under 'uri' key
-            Indi::store('uri', $params);
+            // Push $obj object in registry under 'uri' key
+            Indi::store('uri', $obj);
         }
 
-        // If $param argument is null or not given, return value, stored under 'uri' key in registry
+        // If $key argument is null or not given, return value, stored under 'uri' key in registry
         if (is_null($key)) return Indi::store('uri');
 
-        // Else if $param argument is not null, we assume it is a key within data, stored under 'uri' key in registry
-        // and return value of $key key
+        // Else if $key argument is not null and it is the single argument passed
         if (func_num_args() == 1)
-            if (is_array($key) || is_object($key)) {
-                return Indi::store('uri', $key);
-            } else {
-                return Indi::registry('uri')->$key;
-            }
+
+            // If $key argument is an array or is an object - return value, stored under 'uri' key in registry,
+            // Else we assume it is a property name within object, stored under 'uri' key in registry, so we
+            // return value of $key key
+            return is_array($key) || is_object($key) ? Indi::store('uri') : Indi::registry('uri')->$key;
 
         // Else if $value argument is given, we assign it to $key key within data, stored under 'uri' key in registry
         if (func_num_args() == 2) return Indi::registry('uri')->$key = $value;
@@ -522,6 +487,16 @@ class Indi {
 
         // Return modification time for 'mtime' file
         return filemtime($mtime);
+    }
+
+    /**
+     * Shortcut for easier access to an instance of Indi_View object, stored in registry
+     *
+     * @static
+     * @return Indi_View|null
+     */
+    public static function view() {
+        return Indi::store('view');
     }
 
     /**
@@ -747,9 +722,17 @@ class Indi {
             // Parse ini file
             $ini = parse_ini_file($arg, true);
 
-            // Convert sections from type 'array' to type 'ArrayObject'
-            foreach ($ini as $sectionName => $sectionParamA)
+            // Foreach section
+            foreach ($ini as $sectionName => $sectionParamA) {
+
+                // Trim trailing slashes from values of all params, which names end with 'Path'
+                foreach ($sectionParamA as $sectionParamK => $sectionParamV)
+                    if (preg_match('/Path$/i', $sectionParamK) && is_string($sectionParamV))
+                        $sectionParamA[$sectionParamK] = trim($sectionParamV, '/');
+
+                // Convert sections from type 'array' to type 'ArrayObject'
                 $ini[$sectionName] = new ArrayObject($sectionParamA, ArrayObject::ARRAY_AS_PROPS);
+            }
 
             // Save into the registry
             return Indi::registry('ini', $ini);

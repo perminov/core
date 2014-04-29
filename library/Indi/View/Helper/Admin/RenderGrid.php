@@ -5,10 +5,10 @@ class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
         $comboFilters = array();
         foreach (Indi::trail()->filters as $filter) {
             if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12)
-                $comboFilters[] = $this->view->filterCombo($filter);
+                $comboFilters[] = Indi::view()->filterCombo($filter);
         }
         ob_start();?><script>
-            Indi.scope = top.Indi.scope = <?=json_encode($this->view->getScope())?>;
+            Indi.scope = top.Indi.scope = <?=json_encode(Indi::view()->getScope())?>;
             Indi.trail.apply(<?=json_encode(Indi::trail(true)->toArray())?>);
         </script><?
         if (count($comboFilters)){

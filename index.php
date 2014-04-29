@@ -58,4 +58,4 @@ Indi::files($_FILES);
 unset($_POST, $_GET, $_FILES);
 
 // Dispatch uri request
-$uri = new Indi_Uri(); $uri->dispatch();
+Indi::uri()->dispatch();
