@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormHtml extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormHtml {
     public function formHtml($name, $value = null, $height = 300, $toolbar = 'Custom')
     {
         $toolbar = $toolbar ? $toolbar : 'Default';

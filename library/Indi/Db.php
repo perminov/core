@@ -51,27 +51,43 @@ class Indi_Db {
      * @param array $config
      * @return null|Indi_Db
      */
-    public static function factory($config = array())
+    public static function factory($arg = array())
     {
-        // If singleton instance is not yet created
-        if (null === self::$_instance) {
+        // If singleton instance is not yet created or 'reload' key exists within $config array argument
+        if (null === self::$_instance || is_int($arg)) {
 
-            // Create it
-            self::$_instance = new self();
+            // If singleton instance is not yet created
+            if (null === self::$_instance) {
 
-            // Setup a PDO object
-            self::$_pdo = new PDO($config->adapter . ':dbname=' . $config->dbname . ';host=' . $config->host,
-                $config->username, $config->password);
+                // Create it
+                self::$_instance = new self();
 
-            // Setup encoding
-            self::$_instance->query('SET NAMES utf8');
-            self::$_instance->query('SET CHARACTER SET utf8');
+                // Setup a PDO object
+                self::$_pdo = new PDO($arg->adapter . ':dbname=' . $arg->dbname . ';host=' . $arg->host,
+                    $arg->username, $arg->password);
 
-            // Get info about existing entities
-            $entityA = self::$_instance->query('SELECT * FROM `entity`')->fetchAll();
+                // Setup encoding
+                self::$_instance->query('SET NAMES utf8');
+                self::$_instance->query('SET CHARACTER SET utf8');
 
-            // Get info about existing entities
-            $fieldA = self::$_instance->query('SELECT * FROM `field` ORDER BY `move`')->fetchAll();
+            // Else if singleton instance was already created, but $arg agument is an entity id - setup $entityId variable
+            } else if (is_int($arg)) {
+
+                $entityId = $arg;
+            }
+
+            // Get info about existing entities, or one certain entity, identified by id,
+            // passed within value of 'model' key of $config argument
+            $entityA = self::$_instance->query(
+                'SELECT * FROM `entity`' . ($entityId ? ' WHERE `id` = "' . $entityId . '"' : '')
+            )->fetchAll();
+
+            // Get info about fields, existing within all entities, or one certain entity
+            $fieldA = self::$_instance->query(
+                'SELECT * FROM `field`'  .
+                ($entityId ? ' WHERE `entityId` = "' . $entityId . '" ' : '') .
+                'ORDER BY `move`'
+            )->fetchAll();
 
             // Get info about existing control elements
             $elementA = self::$_instance->query('SELECT * FROM `element`')->fetchAll();
@@ -91,8 +107,23 @@ class Indi_Db {
                 ));
             unset($columnTypeA);
 
+            // If certain model should be reloaded, collect ids of it's fields, for use them as a part of WHERE clause
+            // in fetch from `enumset`
+            if ($entityId) {
+
+                // Declare array ofor collecting fields ids
+                $fieldIdA = array();
+
+                // Fulfil that array
+                foreach ($fieldA as $fieldI) $fieldIdA[] = $fieldI['id'];
+            }
+
             // Get info about existing enumset values
-            $enumsetA = self::$_instance->query('SELECT * FROM `enumset` ORDER BY `move`')->fetchAll();
+            $enumsetA = self::$_instance->query(
+                'SELECT * FROM `enumset`' . (is_array($fieldIdA) ? ' WHERE FIND_IN_SET(`fieldId`, "' .
+                implode(',', $fieldIdA) . '") ' : '') . 'ORDER BY `move`'
+            )->fetchAll();
+
             $fEnumsetA = array(); foreach ($enumsetA as $enumsetI)
                 $fEnumsetA[$enumsetI['fieldId']][] = new Indi_Db_Table_Row_Noeval(array(
                     'table' => 'enumset',
@@ -120,7 +151,8 @@ class Indi_Db {
             unset($possibleElementParamA);
 
             // 4. Get info about existing field parameters
-            $paramA = self::$_instance->query('SELECT * FROM `param`')->fetchAll();
+            $paramA = self::$_instance->query('SELECT * FROM `param`' . (is_array($fieldIdA)
+                ? ' WHERE FIND_IN_SET(`fieldId`, "' . implode(',', $fieldIdA) . '") ' : ''))->fetchAll();
             $fParamA = array(); foreach ($paramA as $paramI) $fParamA[$paramI['fieldId']]
             [$possibleElementParamAliasA[$paramI['possibleParamId']]] = $paramI['value']; unset($paramA);
             unset($paramA);
@@ -169,6 +201,16 @@ class Indi_Db {
             // Release memory
             unset($fieldA, $iElementA, $iColumnTypeA, $fEnumsetA, $ePossibleElementParamA, $fParamA);
 
+            // If we are here for model reload - drop all metadata for that model
+            if ($entityId) {
+
+                // Get the model class name, as the class name is the key
+                $class = get_class(Indi::model($entityId));
+
+                // Unset metadata storage under that key
+                unset(self::$_entityA[$class], self::$_modelA[$class]);
+            }
+
             // Foreach existing entity
             foreach ($entityA as $entityI) {
 
@@ -178,6 +220,7 @@ class Indi_Db {
                     'title' => $entityI['title'],
                     'extends' => $entityI['extends'],
                     'useCache' => $entityI['useCache'],
+                    'titleFieldId' => $entityI['titleFieldId'],
                     'fields' => new Field_Rowset_Base(array(
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],

@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_RenderGrid extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_RenderGrid {
     public function renderGrid() {
         $comboFilters = array();
         foreach (Indi::trail()->filters as $filter) {

@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_RenderIndex extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_RenderIndex {
     public function renderIndex()
     {
 		$gridFields = Indi::trail()->gridFields->toArray();

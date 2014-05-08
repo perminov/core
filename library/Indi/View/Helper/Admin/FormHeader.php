@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormHeader {
     public function formHeader($title = null)
     {
         $title = $title ? $title : Indi::trail()->section->foreign('entityId')->title;
@@ -16,7 +15,7 @@ class Indi_View_Helper_Admin_FormHeader extends Indi_View_Helper_Abstract
         '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
-        '/library/extjs4/ext-lang-' . Indi::ini('view')->lang . '.js',
+        '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
         '/js/admin/indi.js',
         '/js/admin/indi.trail.js',
         '/js/admin/indi.combo.form.js',
@@ -52,7 +51,7 @@ Indi = $.extend(Indi, {
 top.Indi.scope = Indi.scope;
 </script>
 <?=Indi::view()->siblingCombo()?>
-<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?>/" name="<?=Indi::trail()->model->name()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
+<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?>/" name="<?=Indi::trail()->model->table()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
     <table cellspacing="1" border="0" width="100%" class="i-form-table">
         <tr class="i-form-subheader"><td colspan="2"><?=$title?></td></tr>
         <col width="50%"/><col width="50%"/>

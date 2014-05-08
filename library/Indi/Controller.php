@@ -48,6 +48,10 @@ class Indi_Controller {
         // Setup the Content-Type header
         header('Content-Type: text/html; charset=utf-8');
 
+        // Set current language
+        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
+        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
+
         // Do the pre-dispatch maintenance
         $this->preDispatch();
 
@@ -191,7 +195,7 @@ class Indi_Controller {
                     // Get the possible foreign keys
                     $setA = Indi::db()->query('
                         SELECT DISTINCT `' . $column . '` AS `id`
-                        FROM `' . Indi::trail()->model->name() . '`
+                        FROM `' . Indi::trail()->model->table() . '`
                         ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
                     ')->fetchAll(PDO::FETCH_COLUMN);
 

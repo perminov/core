@@ -180,7 +180,7 @@ function ago($datetime, $postfix = 'назад') {
 function tbq($q = 2, $versions = '', $showNumber = true) {
 
     // Distribute quantity measure spell versions
-    list($formatA['0,11-19,5-9'], $formatA['1'], $formatA['2-4']) = explode(',', $versions);
+    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(explode(',', $versions));
 
     // Foreach format
     foreach ($formatA as $formatK => $formatV) {
@@ -309,4 +309,49 @@ function hrgb($rgb = '') {
 
     // Append the hue value to a color and return it
     return str_pad(round($hue*360), 3, '0', STR_PAD_LEFT) . '#' . $rgb;
+}
+
+/**
+ * Generate a sequence, consisting of random characters
+ *
+ * @param int $length
+ * @param bool $useSpecialChars
+ * @return string
+ */
+function grs($length = 15, $useSpecialChars = false) {
+
+    // Initial set of characters
+    $chars = array(
+        'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l',
+        'm', 'n', 'o', 'p', 'r', 's',
+        't', 'u', 'v', 'x', 'y', 'z',
+        'A', 'B', 'C', 'D', 'E', 'F',
+        'G', 'H', 'I', 'J', 'K', 'L',
+        'M', 'N', 'O', 'P', 'R', 'S',
+        'T', 'U', 'V', 'X', 'Y', 'Z',
+        '1', '2', '3', '4', '5', '6',
+        '7', '8', '9', '0'
+    );
+
+    // If $useSpecialChars argument is boolean true
+    if ($useSpecialChars)
+
+        // Append set of special characters to initial set of characters
+        $chars = array_merge($chars, array(
+            '.', ',', '(', ')', '[', ']',
+            '!', '?', '&', '^', '%', '@',
+            '*', '$', '<', '>', '/', '|',
+            '+', '-', '{', '}', '`', '~'
+        ));
+
+    // Generate
+    $s = ''; for ($i = 0; $i < $length; $i++) $s .= $chars[rand(0, count($chars) - 1)];
+
+    // Return sequence
+    return $s;
+}
+
+function ldate($format, $date) {
+    return iconv('windows-1251', 'utf-8', strftime($format, strtotime($date)));
 }

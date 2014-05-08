@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormSpan extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormSpan {
     public function formSpan($alias)
     {
         ob_start();?>

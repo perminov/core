@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_Buttons extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_Buttons {
     public function buttons( $title = null, $action = null, $post = null)
     {
         // set up parents of 1 and 2 levels up

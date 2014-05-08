@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormCheck extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormCheck {
     public function formCheck($name = null, $texts = null, $values = null, $value = null, $attribs = null)
     {
 		$field = Indi::trail()->model->fields($name);

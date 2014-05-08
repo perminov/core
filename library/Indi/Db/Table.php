@@ -13,7 +13,7 @@ class Indi_Db_Table
      *
      * @var string
      */
-    protected $_name = '';
+    protected $_table = '';
 
     /**
      * Store the title of current model
@@ -28,6 +28,13 @@ class Indi_Db_Table
      * @var boolean
      */
     protected $_useCache = false;
+
+    /**
+     * Id of field, that is used as title-field
+     *
+     * @var boolean
+     */
+    protected $_titleFieldId = 0;
 
     /**
      * Store array of fields, that current model consists from
@@ -76,7 +83,7 @@ class Indi_Db_Table
         $this->_id = $config['id'];
 
         // Set db table name and db adapter
-        $this->_name = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
+        $this->_table = strtolower(substr(get_class($this),0,1)) . substr(get_class($this),1);
 
         // Set fields
         $this->_fields = $config['fields'];
@@ -85,7 +92,10 @@ class Indi_Db_Table
         $this->_title = $config['title'];
 
         // Detect tree column name
-        $this->_treeColumn = $config['fields']->field($this->_name . 'Id') ? $this->_name . 'Id' : '';
+        $this->_treeColumn = $config['fields']->field($this->_table . 'Id') ? $this->_table . 'Id' : '';
+
+        // Setup title field id
+        $this->_titleFieldId = $config['titleFieldId'] ? $config['titleFieldId'] : 0;
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
@@ -122,7 +132,7 @@ class Indi_Db_Table
         }
 
         // Build the query
-        $sql = 'SELECT ' . ($limit ? $calcFoundRows : '') . '* FROM `' . $this->_name . '`'
+        $sql = 'SELECT ' . ($limit ? $calcFoundRows : '') . '* FROM `' . $this->_table . '`'
             . ($where ? ' WHERE ' . $where : '')
             . ($order ? ' ORDER BY ' . $order : '')
             . ($limit ? ' LIMIT ' . $limit : '');
@@ -132,7 +142,7 @@ class Indi_Db_Table
 
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
-            'table'   => $this->_name,
+            'table'   => $this->_table,
             'data' => $data,
             'rowClass' => $this->_rowClass,
             'found'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($data),
@@ -403,7 +413,7 @@ class Indi_Db_Table
 
         // Setup rowset info
         $data = array (
-            'table' => $this->_name,
+            'table' => $this->_table,
             'data' => array_values($data),
             'rowClass' => $this->_rowClass,
             'found' => $found,
@@ -427,10 +437,10 @@ class Indi_Db_Table
         if (is_array($order) && count($order)) $order = implode(', ', $order);
 
         // Get tree column name
-        $tc = $this->_name . 'Id';
+        $tc = $this->_table . 'Id';
 
         // Construct sql query
-        $query = 'SELECT `id`, `' . $tc . '` FROM `' . $this->_name . '`';
+        $query = 'SELECT `id`, `' . $tc . '` FROM `' . $this->_table . '`';
         $query .= ($order ? ' ORDER BY ' . $order : '');
 
         // Get general tree data for whole table, but only `id` and `treeColumn` columns
@@ -466,7 +476,7 @@ class Indi_Db_Table
             // First we should find primary results
             $primary = array();
             if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-            $foundA = Indi::db()->query('SELECT `id` FROM `' . $this->_name . '` WHERE ' . $where)->fetchAll();
+            $foundA = Indi::db()->query('SELECT `id` FROM `' . $this->_table . '` WHERE ' . $where)->fetchAll();
             foreach ($foundA as $foundI) {
                 $primary[$foundI['id']] = true;
                 unset($foundI);
@@ -531,32 +541,30 @@ class Indi_Db_Table
     }
 
     /**
-     * Create a `title` column in database table, if it does not exist.
+     * Determine a database table column name, that should be used
+     * as a title-column for usage in all combos and all other places there proper title is used
      *
-     * @return 'title'. Always.
+     * @return string
      */
     public function titleColumn() {
 
-        // Get array of existing columns
-        $existing = $this->fields(null, 'aliases');
+        // If current entity has a non-zero `titleFieldId` property
+        if ($titleFieldR = $this->titleField()) {
 
-        // Check if `title` column already exists
-        if (in_array('title', $existing)) {
-            $this->titleColumn = 'title';
+            // If title-field doesn't store foreign keys - set value of $column
+            // variable as alias of title-field, else set it as 'title', as current title concept assumes
+            // that if entity has a non-zero titleFieldId, and field, that titleFieldId is pointing to - is
+            // foreign key - it mean that there was a physical `title` field and column created within that
+            // entity
+            return $titleFieldR->storeRelationAbility == 'none' ? $titleFieldR->alias : 'title';
 
-        // Else create it
+        // Else if current entity has no non-zero value for `titleFieldId` property
         } else {
-            $fieldR = Indi::model('Field')->createRow();
-            $fieldR->entityId = Indi::model('Entity')->fetchRow('`table` = "' . $this->_name . '"')->id;
-            $fieldR->title = 'Auto title';
-            $fieldR->alias = 'title';
-            $fieldR->storeRelationAbility = 'none';
-            $fieldR->columnTypeId = 1;
-            $fieldR->elementId = 1;
-            $fieldR->save();
-            $this->titleColumn = 'title';
+
+            // If current entity have field with alias 'title' - set 'title' as
+            // the value of $column variable, else set value of $column as 'id'
+            return $this->fields('title') ? 'title' : 'id';
         }
-        return $this->titleColumn;
     }
 
     /**
@@ -583,7 +591,7 @@ class Indi_Db_Table
         Indi::db()->query($sql = '
             CREATE TEMPORARY TABLE `' . $tmpTableName . '`
             SELECT @o:=@o+1 AS `offset`, `id`="' . $id . '" AS `found`
-            FROM `' . $this->_name .'`'
+            FROM `' . $this->_table .'`'
                 . ($where ? ' WHERE ' . $where : '')
                 . ($order ? ' ORDER BY ' . $order : '')
         );
@@ -684,7 +692,7 @@ class Indi_Db_Table
      * @return array
      */
     public function toArray() {
-        $array['tableName'] = $this->_name;
+        $array['tableName'] = $this->_table;
         return $array;
     }
 
@@ -719,7 +727,7 @@ class Indi_Db_Table
         }
 
         // Build the query
-        $sql = 'SELECT `' . $column . '` FROM `' . $this->_name . '`'
+        $sql = 'SELECT `' . $column . '` FROM `' . $this->_table . '`'
             . ($where ? ' WHERE ' . $where : '')
             . ($order ? ' ORDER BY ' . $order : '')
             . ($limit ? ' LIMIT ' . $limit : '');
@@ -733,8 +741,8 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function name() {
-        return $this->_name;
+    public function table() {
+        return $this->_table;
     }
 
     /**
@@ -753,7 +761,7 @@ class Indi_Db_Table
 
         // Build query, fetch row and return it as an Indi_Db_Table_Row object
         if ($data = Indi::db()->query($sql =
-            'SELECT * FROM `' . $this->_name . '`' .
+            'SELECT * FROM `' . $this->_table . '`' .
                 (strlen($where) ? ' WHERE ' . $where : '') .
                 ($order ? ' ORDER BY ' . $order : '') .
                 ($offset ? ' LIMIT ' . $offset . ',1' : '')
@@ -764,7 +772,7 @@ class Indi_Db_Table
 
             // Prepare data for Indi_Db_Table_Row object construction
             $constructData = array(
-                'table'    => $this->_name,
+                'table'    => $this->_table,
                 'original' => $data,
             );
 
@@ -795,7 +803,7 @@ class Indi_Db_Table
 
         // Prepare data for construction
         $constructData = array(
-            'table'   => $this->_name,
+            'table'   => $this->_table,
             'original'     => is_array($input['original']) ? $input['original'] : array(),
             'modified' => is_array($input['modified']) ? $input['modified'] : array(),
             'system' => is_array($input['system']) ? $input['system'] : array(),
@@ -845,7 +853,7 @@ class Indi_Db_Table
 
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
-            'table'   => $this->_name,
+            'table'   => $this->_table,
             $index     => is_array($input[$index]) ? $input[$index] : array(),
             'rowClass' => $this->_rowClass,
             'found'=> isset($input['found'])
@@ -884,7 +892,7 @@ class Indi_Db_Table
      */
     public function delete($where) {
         // Basic SQL expression
-        $sql = 'DELETE FROM `' . $this->_name . '`';
+        $sql = 'DELETE FROM `' . $this->_table . '`';
 
         // If $where argument is specified, append it as string to basic SQL expression
         if ($where) {
@@ -934,7 +942,7 @@ class Indi_Db_Table
         $fieldRs = $this->fields();
 
         // Build the first part of sql expression
-        $sql = 'INSERT INTO `' . $this->_name . '` SET ';
+        $sql = 'INSERT INTO `' . $this->_table . '` SET ';
 
         // Declare array for sql SET statements
         $setA = array();
@@ -986,7 +994,7 @@ class Indi_Db_Table
             $fieldRs = $this->fields();
 
             // Build the first part of sql expression
-            $sql = 'UPDATE `' . $this->_name . '` SET ';
+            $sql = 'UPDATE `' . $this->_table . '` SET ';
 
             // Declare array for sql SET statements
             $setA = array();
@@ -1037,5 +1045,127 @@ class Indi_Db_Table
      */
     public function title() {
         return $this->_title;
+    }
+
+    /**
+     * Return Field_Row object of a field, that is used as title-field
+     *
+     * @return Field_Row
+     */
+    public function titleField() {
+        return $this->_fields->select($this->_titleFieldId)->rewind()->current();
+    }
+
+    /**
+     * Apply new values to some of properties of current model
+     *
+     * @param array $modified
+     * @return Indi_Db_Table Fluent interface
+     */
+    public function apply(array $modified) {
+
+        // Declare array of properties, that are allowed for change
+        $allowedPropertyA = array('title', 'titleFieldId');
+
+        // Apply new values for these properties
+        foreach ($modified as $property => $value)
+            if (in_array($property, $allowedPropertyA))
+                $this->{'_' . $property} = $value;
+
+        // Return model itself
+        return $this;
+    }
+
+    /**
+     * Determine the upload directory name for current model. If $mode argument is not 'name' or 'exists', method will
+     * try to create that upload directory, in case if it does not exist, and will return error message, if tries of
+     * creation were failed. If $mode argument is 'name' - only directory name will be returned, without any checks
+     * about is it exists or writable, and without any error messages. If $mode argument is 'writable' method will
+     * perform the full scope of operations, and return error, if error will be met, or directory name, if directory
+     * is exists and writable
+     *
+     * @param string $mode
+     * @return string
+     */
+    public function dir($mode = '') {
+
+        // Build the target directory name
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+
+        // If $only argument is true
+        if ($mode == 'name') return $dir;
+
+        // Check if target directory exists, and if no
+        if (!is_dir($dir)) {
+
+            // If $mode argument is 'exists', it mean that directory is not exist, so we return boolean false
+            if ($mode == 'exists') return false;
+
+            // Foreach directories tree branches from the desired and up to the project root
+            do {
+
+                // Get the upper directory
+                $level = preg_replace(':[^/]+/$:', '', isset($level) ? $level : $dir);
+
+                // If upper directory exists
+                if (is_dir($level)) {
+
+                    // If upper directory is writable
+                    if (is_writable($level)){
+
+                        // If for some reason attempt to recursively create target directory,
+                        // starting from current level - was unsuccessful
+                        if (!@mkdir($dir, 0777, true)) {
+
+                            // Get the target directory part, that is relative to current level
+                            $rel = str_replace($level, '', $dir);
+
+                            // Return an error
+                            return sprintf(I_ROWFILE_ERROR_MKDIR, $rel, $level);
+                        }
+
+                        // Else if upper directory is not writable
+                    } else {
+
+                        // Get the target directory part, that is relative to current level
+                        $rel = str_replace($level, '', $dir);
+
+                        // Return an error
+                        return sprintf(I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE, $rel, $level);
+                    }
+
+                    // Break the loop
+                    break;
+                }
+            } while ($level != DOC . STD . '/');
+
+        // Else if target directory exists, but is not writable - return an error
+        } else if (!is_writable($dir)) return sprintf(I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE, $dir);
+
+        // If all is ok - return directory name, as a proof
+        return $dir;
+    }
+
+    /**
+     * Return instance of Entity_Row, that represents current model
+     *
+     * @return Indi_Db_Table_Row|null
+     */
+    public function entity() {
+        return Indi::model('Entity')->fetchRow('`id` = "' . $this->_id . '"');
+    }
+
+    /**
+     * Full model reload, mean same batch of operations that were done within Indi_Db::factory() call,
+     * but, at this time, for current model only. Currently this function is used each time some system data changes,
+     * for example new field added/changed/deleted within some entity, some field's params package changed, etc.
+     */
+    public function reload() {
+
+        // Full model reload
+        Indi::db((int) $this->_id);
+
+        // Return reloaded model
+        return Indi::model($this->_id);
     }
 }

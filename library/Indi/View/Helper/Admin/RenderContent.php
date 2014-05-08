@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_RenderContent extends Indi_View_Helper_Abstract{
+class Indi_View_Helper_Admin_RenderContent {
 
     /**
      * Render central cms page content

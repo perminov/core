@@ -132,7 +132,7 @@ class Indi_Trail_Admin_Item
                     // mean parentSectionConnector logic won't be used for that
                     $connector = $i == 1 && Indi::trail($i-1)->section->parentSectionConnector
                         ? Indi::trail($i-1)->section->foreign('parentSectionConnector')->alias
-                        : Indi::trail($i)->model->name() . 'Id';
+                        : Indi::trail($i)->model->table() . 'Id';
 
                     // Get the connector value from session special place
                     if ($this->model->fields($connector))
@@ -150,7 +150,7 @@ class Indi_Trail_Admin_Item
             // Determine the connector field
             $connector = Indi::trail($index-1)->section->parentSectionConnector
                 ? Indi::trail($index-1)->section->foreign('parentSectionConnector')->alias
-                : Indi::trail($index)->model->name() . 'Id';
+                : Indi::trail($index)->model->table() . 'Id';
 
             // Get the id
             $id = Indi::uri('action') == 'index'
@@ -192,7 +192,10 @@ class Indi_Trail_Admin_Item
         if ($this->sections) $array['sections'] = $this->sections->toArray();
         if ($this->action) $array['action'] = $this->action->toArray();
         if ($this->actions) $array['actions'] = $this->actions->toArray();
-        if ($this->row) $array['row'] = $this->row->toArray();
+        if ($this->row) {
+            $array['row'] = $this->row->toArray();
+            $array['row']['title'] = $this->row->title();
+        }
         if ($this->model) $array['model'] = $this->model->toArray();
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();

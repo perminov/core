@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_Button extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_Button {
     public function button($title = 'Назад', $action = 'window.parent.locationHistoryBack()')
     {
 		ob_start();

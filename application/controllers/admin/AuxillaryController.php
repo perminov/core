@@ -37,7 +37,7 @@ class Admin_AuxillaryController extends Indi_Controller {
         if (!$r) die(I_DOWNLOAD_ERROR_NO_SUCH_ROW);
 
         // Get the directory name
-        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . Indi::model($fieldR->entityId)->name() . '/';
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . Indi::model($fieldR->entityId)->table() . '/';
 
         // Get the file
         list($abs) = glob($dir . $r->id . '_' . $fieldR->alias . '.*');

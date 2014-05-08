@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
+class Indi_View_Helper_Admin_FormCombo {
     /**
      * This var is used for html elements css class names building
      * @var string
@@ -91,15 +91,15 @@ class Indi_View_Helper_Admin_FormCombo extends Indi_View_Helper_Abstract{
         // Get params
         $params = $this->field->params;
 
-        // Get title column
-        $titleColumn = $params['titleColumn'] ? $params['titleColumn'] : 'title';
-
         $selected = $this->getSelected();
 
         // Get initial set of combo options
         $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
             $this->where, $this->noSatellite(), $this->field, $this->comboDataOrderColumn,
             $this->comboDataOrderDirection, $this->comboDataOffset);
+
+        // Get title column
+        $titleColumn = $comboDataRs->titleColumn;
 
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
