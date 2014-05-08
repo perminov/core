@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_FormUpload
 
         $xhtml = '';
         
-        $entity = $entity ? $entity : Indi::trail()->model->name();
+        $entity = $entity ? $entity : Indi::trail()->model->table();
         $id = $id ? $id : Indi::view()->row->id;
 
         if ($name === null) {
@@ -30,7 +30,7 @@ class Indi_View_Helper_Admin_FormUpload
 			$xhtml = '<div>';
 			switch ($type) {
 				case 'image':
-					$uploaded = Indi::view()->img($entity, $id, $name, $copy, $silence) . '<br>';
+					$uploaded = Indi::view()->row->img($name) . '<br>';
 					preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));
 					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
                     $info = getimagesize($abs);

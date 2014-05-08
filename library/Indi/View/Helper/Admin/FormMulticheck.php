@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormMulticheck extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormMulticheck {
     /**
      * Setup row object for combo
      *

@@ -179,10 +179,12 @@ var Indi = (function (indi) {
                 var keyword = Ext.getCmp(keywordCmpId).disabled == false && Ext.getCmp(keywordCmpId).getValue() ?
                     Ext.getCmp(keywordCmpId).getValue() : '';
 
+                if (keyword) instance.store.getProxy().extraParams.keyword = keyword;
+
                 // Adjust an 'url' property of  instance.store.proxy object, to apply keyword search usage
                 instance.store.getProxy().url = indi.pre + '/' + indi.trail.item().section.alias + '/index/' +
-                    (indi.trail.item(1).row ? 'id/' + indi.trail.item(1).row.id + '/' : '') + 'json/1/' +
-                    (keyword ? 'keyword/' + keyword + '/' : '');
+                    (indi.trail.item(1).row ? 'id/' + indi.trail.item(1).row.id + '/' : '') + 'json/1/'/* +
+                    (keyword ? 'keyword/' + keyword + '/' : '')*/;
 
                 // Disable keyword component, if all available properties are already involved in search by
                 // corresponding filters usage
@@ -831,6 +833,10 @@ var Indi = (function (indi) {
                 if (instance.store.getProxy().extraParams.search)
                     get.push('search=' + encodeURIComponent(instance.store.getProxy().extraParams.search));
 
+                // If keyword was used during last store request, we retrieve info about, encode and append it to 'get'
+                if (instance.store.getProxy().extraParams.keyword)
+                    get.push('keyword=' + encodeURIComponent(instance.store.getProxy().extraParams.keyword));
+
                 // If sorters were used during last store request, we retrieve info about, encode and append it to 'get'
                 if (instance.store.getSorters().length)
                     get.push('sort=' + encodeURIComponent(JSON.stringify(instance.store.getSorters())));
@@ -1298,6 +1304,7 @@ var Indi = (function (indi) {
                     text: '',
                     iconCls: 'i-btn-icon-xls',
                     handler: function(){
+
                         // Start preparing request string
                         var request = instance.lastRequest().replace('json/1/', 'excel/1/');
 

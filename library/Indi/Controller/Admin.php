@@ -8,14 +8,12 @@ class Indi_Controller_Admin extends Indi_Controller{
      */
     private $_routeA = array();
 
+    protected $excelA = array();
+
     /**
      * Init all general cms features
      */
     public function preDispatch() {
-
-        // Set current language
-        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('view')->lang . '.php');
-        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('view')->lang . '.php');
 
         // Perform authentication
         $this->auth();
@@ -53,7 +51,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
                     // able to restore the state of panel, that is representing the rowset at cms interface.
                     // State of the panel includes: filtering and search params, sorting params
-                    $this->setScope($primaryWHERE, Indi::get()->search, Indi::uri()->keyword, Indi::get()->sort,
+                    $this->setScope($primaryWHERE, Indi::get()->search, Indi::get()->keyword, Indi::get()->sort,
                         Indi::get()->page, $this->rowset->found(), $finalWHERE, $finalORDER);
                 }
 
@@ -398,8 +396,8 @@ class Indi_Controller_Admin extends Indi_Controller{
      */
     public function keywordWHERE($keyword = '') {
 
-        // If $keyword param is not passed we pick Indi::uri()->keyword as $keyword
-        if (strlen($keyword) == 0) $keyword = Indi::uri()->keyword;
+        // If $keyword param is not passed we pick Indi::get()->keyword as $keyword
+        if (strlen($keyword) == 0) $keyword = Indi::get()->keyword;
 
         // If keyword is empty, nothing to do here
         if (strlen($keyword) == 0) return;
@@ -528,14 +526,18 @@ class Indi_Controller_Admin extends Indi_Controller{
             Indi::get()->search = $scope['filters'];
 
             // Prepare search data for $this->keywordWHERE()
-            Indi::uri()->keyword = urlencode($scope['keyword']);
+            Indi::get()->keyword = urlencode($scope['keyword']);
 
             // Prepare sort params for $this->finalORDER()
             Indi::get()->sort = $scope['order'];
         }
 
         // Final WHERE stack
-        $finalWHERE = $primaryWHERE;
+        $finalWHERE = is_array($primaryWHERE)
+            ? $primaryWHERE
+            : (strlen($primaryWHERE)
+                ? array($primaryWHERE)
+                : array());
 
         // Get a WHERE stack of clauses, related to filters search and merge it with $primaryWHERE
         if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE = array_merge($finalWHERE, $filtersWHERE);
@@ -593,8 +595,14 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $found = $fieldR;
 
                 // Pick the current filter field title to $excelA
-                if (array_key_exists($found->alias, $excelA) == false)
-                    $excelA[$found->alias] = array('title' => $found->title);
+                if (array_key_exists($found->alias, $excelA) == false) {
+
+                    // Get filter `alt` property
+                    $alt = Indi::trail()->filters->select($found->id, 'fieldId')->current()->alt;
+
+                    // Set excel filter mention title
+                    $excelA[$found->alias] = array('title' => $alt ? $alt : $found->title);
+                }
 
                 // If field is not storing foreign keys
                 if ($found->storeRelationAbility == 'none') {
@@ -778,14 +786,14 @@ class Indi_Controller_Admin extends Indi_Controller{
             1 /* bread crumbs row*/ +
                 1 /* row with total number of results found */ +
                 (is_array($this->excelA) && count($this->excelA) ? count($this->excelA) + 1 : 0) /* filters count */ +
-                (bool) (Indi::uri()->keyword || (is_array($this->excelA) && count($this->excelA) > 1)) +
+                (bool) (Indi::get()->keyword || (is_array($this->excelA) && count($this->excelA) > 1)) +
                 1 /* data header row */+
                 count($data);
 
         // Set default row height
         $objPHPExcel->getActiveSheet()->getDefaultRowDimension()->setRowHeight(15.75);
 
-        // Apply general styles for all spreadsheet
+        // Apply general styles for the whole spreadsheet
         foreach ($columnA as $n => $columnI) {
 
             // Get column letter
@@ -1008,7 +1016,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     $objDrawing->setHeight(11)->setWidth(183)->setOffsetY(4)->setOffsetX($excelI['offset'] + 5);
                     $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
-                    // If filter type is combo, with foreign table relation
+                // If filter type is combo, with foreign table relation
                 } else if ($excelI['table']) {
 
                     // Prepare the array of keys
@@ -1116,7 +1124,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         }
 
         // Append row with keyword, if keyword search was used
-        if (Indi::uri()->keyword) {
+        if (Indi::get()->keyword) {
 
             // Setup new rich text object for keyword search usage mention
             $objRichText = new PHPExcel_RichText();
@@ -1132,7 +1140,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
             // Write used keyword
-            $objSelfStyled = $objRichText->createTextRun(urldecode(Indi::uri()->keyword));
+            $objSelfStyled = $objRichText->createTextRun(urldecode(Indi::get()->keyword));
             $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
             $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
 
@@ -1774,9 +1782,8 @@ class Indi_Controller_Admin extends Indi_Controller{
 
             // Else, if we are doing something in a certain section
         } else {
-
             // Setup a row object to be available within view engine
-            if (Indi::trail()->row) Indi::view()->row = Indi::trail()->row;
+            //if (Indi::trail()->row) Indi::view()->row = Indi::trail()->row;
 
             // Render the contents
             $out = Indi::view()->renderContent();
@@ -1969,7 +1976,7 @@ class Indi_Controller_Admin extends Indi_Controller{
         // logic.
         $connectorAlias = Indi::trail()->section->parentSectionConnector
             ? Indi::trail()->section->foreign('parentSectionConnector')->alias
-            : Indi::trail(1)->model->name() . 'Id';
+            : Indi::trail(1)->model->table() . 'Id';
 
         // Get the connector value
         $connectorValue = Indi::uri('action') == 'index'

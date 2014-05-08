@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract {
+class Indi_View_Helper_Admin_RenderForm {
     public function renderForm() {
 
         // Start output buffering
@@ -16,12 +16,9 @@ class Indi_View_Helper_Admin_RenderForm extends Indi_View_Helper_Abstract {
             else $excluded[$disabledField->fieldId] = true;
         }
 
-        // Assign an Element_Row objects for each field's `elementId` property
-        Indi::trail()->fields->foreign('elementId');
-
         // Echo a <tr> for each form's field, but only if field's control element's 'hidden' checkbox is not checked
         foreach (Indi::trail()->fields as $fieldR)
-            if (!$excluded[$fieldR->id] && $fieldR->foreign['elementId']->hidden != 1)
+            if (!$excluded[$fieldR->id] && $fieldR->foreign('elementId')->hidden != 1)
                 echo Indi::view()->formField($fieldR, $disabled[$fieldR->id]);
 
         // Echo form's footer

@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormRadios extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormRadios {
     public function formRadios($name = null, $texts = null, $values = null, $value = null, $meta = true, $attrib = '', $add = null)
     {
         // if name not set name will be set to 'toggle'

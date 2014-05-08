@@ -1,5 +1,6 @@
 [general]
 domain = empty
+seoUri = false
 
 [db]
 adapter = mysql
@@ -8,10 +9,12 @@ username = empty
 password = empty
 dbname   = empty
 
+[lang]
+front = ru
+admin = ru
+
 [view]
-encoding = utf-8
 scriptPath = application/views
-lang = ru
 
 [upload]
 path = core/data/upload

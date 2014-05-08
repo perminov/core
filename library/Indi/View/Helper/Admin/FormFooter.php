@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormFooter extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormFooter {
     public function formFooter()
     {
         $xhtml  = '</table>';

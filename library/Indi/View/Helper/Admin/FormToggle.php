@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormToggle extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormToggle {
     public function formToggle($name = 'toggle', $texts = 'Да,Нет', $values = 'y,n', $value = 'y', $meta = false, $attrib = '', $add = null)
     {
 		if (isset($this->view->row->$name)){

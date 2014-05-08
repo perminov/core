@@ -58,11 +58,23 @@ class Field_Row extends Indi_Db_Table_Row {
         // Delete related enumset rows
         Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
 
+        // If current field is used as a title-field for entity, it's relating too
+        if ($this->id == $this->foreign('entityId')->titleFieldId) {
+
+            // Set titleFieldId to 0 and save the entity, to prevent full
+            // entity deletion in the process of usages deletion
+            $this->foreign('entityId')->titleFieldId = 0;
+            $this->foreign('entityId')->save();
+        }
+
         // Standard deletion
         parent::delete();
 
         // Delete db table associated column
         $this->deleteColumn();
+
+        // Delete current field from model's fields
+        Indi::model($this->entityId)->fields()->exclude($this->id);
     }
 
     /**
@@ -87,7 +99,7 @@ class Field_Row extends Indi_Db_Table_Row {
             ->fields($this->_original['alias'])->foreign('elementId')->alias == 'upload') {
 
             // Get the table
-            $table = Indi::model($this->_original['entityId'])->name();
+            $table = Indi::model($this->_original['entityId'])->table();
 
             // Get the directory name
             $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $table . '/';
@@ -158,8 +170,21 @@ class Field_Row extends Indi_Db_Table_Row {
             // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles() method
             if ($deleteUploadedFiles) $this->deleteUploadedFiles();
 
+            // Backup original data
+            $original = $this->_original;
+
             // Standard save
-            return parent::save();
+            $return = parent::save();
+
+            // Reload the model, because field was deleted
+            Indi::model($this->entityId)->reload();
+
+            // Check if saving of current field should affect current entity's
+            // `titleFieldId` property and affect all involved titles
+            $this->_titleFieldUpdate($original);
+
+            // Return
+            return $return;
         }
 
         // If `entityId` property was modified, and current field is an existing field
@@ -179,11 +204,25 @@ class Field_Row extends Indi_Db_Table_Row {
             if ($this->elementId == $uploadElementId && $this->_original['elementId'] == $uploadElementId)
                 $deleteUploadedFiles = true;
 
+            // Reload the model, because field was deleted
+            Indi::model($this->_original['entityId'])->fields()->exclude($this->id);
+
+            // Get original entity row
+            $entityR = Indi::model('Entity')->fetchRow('`id` = "' . $this->_original['entityId'] . '"');
+
+            // If current field was used as title-field within original entity
+            if ($entityR->titleFieldId == $this->id) {
+
+                // Reset `titleFieldId` property of original entity and save that entity
+                $entityR->titleFieldId = 0;
+                $entityR->save();
+            }
+
         // Else if `entityId` property was not modified
         } else {
 
             // Get name of the table, related to `entityId` property
-            $table = Indi::model($this->entityId)->name();
+            $table = Indi::model($this->entityId)->table();
         }
 
         // We should add a new column in database table in 3 cases:
@@ -212,8 +251,21 @@ class Field_Row extends Indi_Db_Table_Row {
                 // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles() method
                 if ($deleteUploadedFiles) $this->deleteUploadedFiles();
 
+                // Backup original data
+                $original = $this->_original;
+
                 // Standard save
-                return parent::save();
+                $return = parent::save();
+
+                // Reload the model, because field was deleted
+                Indi::model($this->entityId)->reload();
+
+                // Check if saving of current field should affect current entity's
+                // `titleFieldId` property and affect all involved titles
+                $this->_titleFieldUpdate($original);
+
+                // Return
+                return $return;
 
             // Else if columnType was non-zero, and now it is either not changed, or changed but to also non-zero value
             } else
@@ -234,8 +286,21 @@ class Field_Row extends Indi_Db_Table_Row {
                 // Rename uploaded files, for their names to be affected by change of current field's `alias` property
                 $this->_renameUploadedFiles();
 
+            // Backup original data
+            $original = $this->_original;
+
             // Standard save
-            return parent::save();
+            $return = parent::save();
+
+            // Reload the model, because field info was changed
+            Indi::model($this->entityId)->reload();
+
+            // Check if saving of current field should affect current entity's
+            // `titleFieldId` property and affect all involved titles
+            $this->_titleFieldUpdate($original);
+
+            // Return
+            return $return;
         }
 
         // Get the column type row
@@ -557,8 +622,51 @@ class Field_Row extends Indi_Db_Table_Row {
                     if ($columnTypeR->type != 'TEXT')
                         Indi::db()->query('ALTER TABLE  `' . $table .'` DROP INDEX `' . $index . '`');
 
+
+        // Reload the model, because field info was changed
+        Indi::model($this->entityId)->reload();
+
+        // Check if saving of current field should affect current entity's
+        // `titleFieldId` property and affect all involved titles
+        $this->_titleFieldUpdate($original);
+
         // Return
         return $return;
+    }
+
+    /**
+     * Check if saving of current field should affect current entity's `titleFieldId` property
+     * and affect all involved titles
+     *
+     * @param array $original
+     */
+    protected function _titleFieldUpdate(array $original) {
+
+        // If current field's alias is 'title' and current entity's titleFieldId is not set
+        // and this was a new field, or existing field, but it's alias was changed to 'title'
+        if ($this->alias == 'title' && !$this->foreign('entityId')->titleFieldId
+            && (!$original['id'] || $original['alias'] != 'title') && $this->columnTypeId) {
+
+            // Set entity's titleFieldId property to $this->id and save the entity
+            $this->foreign('entityId')->titleFieldId = $this->id;
+            $this->foreign('entityId')->save();
+
+        // Else if field was already existing, and it's used as title field for current entity
+        } else if ($original['id'] && $this->foreign('entityId')->titleFieldId == $this->id) {
+
+            // We need to know whether or not all involved titles should be updated.
+            // If field's `storeRelationAbility` property was changed, or `relation`
+            // property was changed - we certainly should update all involved titles
+            if ($original['storeRelationAbility'] != $this->storeRelationAbility
+                || $original['relation'] != $this->relation || $original['columnTypeId'] != $this->columnTypeId) {
+
+                // We force `titleFieldId` property to be in the list of modified fields,
+                // despite on actually it's value is not modified. We do that to ensure
+                // that all operations for all involved titles update will be executed
+                $this->foreign('entityId')->modified('titleFieldId', $this->id);
+                $this->foreign('entityId')->save();
+            }
+        }
     }
 
     /**

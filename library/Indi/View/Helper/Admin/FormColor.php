@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormColor extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormColor {
     public function formColor($name = 'color', $value = null)
     {
 		if (Indi::view()->row->id) {

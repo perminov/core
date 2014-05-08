@@ -110,6 +110,7 @@ class Indi_View {
      */
     public function __get($property) {
         if (preg_match('/^row(set|)$/i', $property)) return Indi::trail()->$property;
+        else if (preg_match('/^user$/', $property)) return Indi::user();
     }
 
     /**

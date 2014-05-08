@@ -54,7 +54,10 @@ class Indi_Trail_Admin {
 
         // Get accessible nested sections for each section within the trail
         $sectionRs->nested('section', array(
-            'where' => '`sectionId` IN (' . implode(',', $accessibleSectionIdA) . ')',
+            'where' => array(
+                '`sectionId` IN (' . implode(',', $accessibleSectionIdA) . ')',
+                '`toggle` = "y"'
+            ),
             'order' => 'move'
         ));
 
@@ -184,16 +187,16 @@ class Indi_Trail_Admin {
     public function toString($imploded = true) {
 
          // Declare crumbs array and push the first item - section group
-        $crumbA = array($this->items[0]->section->title);
+        $crumbA = array(self::$items[0]->section->title());
 
         // For each remaining trail items
-        for ($i = 1; $i < count($this->items); $i++) {
+        for ($i = 1; $i < count(self::$items); $i++) {
 
             // Define a shortcut for current trail item
-            $item = $this->items[$i];
+            $item = self::$items[$i];
 
             // Append a current item section title
-            $crumbA[] = $item->section->title;
+            $crumbA[] = $item->section->title();
 
             // If current trail item has a row
             if ($item->row) {
@@ -202,7 +205,7 @@ class Indi_Trail_Admin {
                 if ($item->row->id) {
 
                     // At first, we strip newline characters, html '<br>' tags
-                    $title = preg_replace('<br(|\/)>', '', preg_replace('/[\n\r]/' , '', $item->row->title));
+                    $title = preg_replace('<br(|\/)>', '', preg_replace('/[\n\r]/' , '', $item->row->title()));
 
                     // Detect color
                     preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $title, $color);
@@ -214,7 +217,7 @@ class Indi_Trail_Admin {
                     $crumbA[] = '<i' . ($color ? ' style="color: ' . $color[1] . ';"' : '') . '>' . $title . '</i>';
 
                     // If current trail item is a last item, append current trail item action title
-                    if ($i == count($this->items) - 1) $crumbA[] = $item->action->title;
+                    if ($i == count($this->items) - 1) $crumbA[] = $item->action->title();
 
                 // Else if current trail item row does not have and id, and current action alias is 'form'
                 } else if ($item->action->alias == 'form') {

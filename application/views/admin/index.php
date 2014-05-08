@@ -9,7 +9,7 @@
         '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
-        '/library/extjs4/ext-lang-' . Indi::ini('view')->lang . '.js',
+        '/library/extjs4/ext-lang-' . Indi::ini('lang')->admin . '.js',
         '/js/admin/indi.js',
         '/js/admin/indi.layout.js',
         '/js/admin/indi.trail.js',

@@ -1,5 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_StyleStd extends Indi_View_Helper_Abstract{
+class Indi_View_Helper_Admin_StyleStd {
     public function styleStd(){
         ob_start();?>
 <style>

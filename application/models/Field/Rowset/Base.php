@@ -57,10 +57,22 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      * Otherwise column() method of a parent class will be called
      *
      * @param $column
+     * @param bool|string $imploded
      * @return array
      */
-    public function column($column) {
-        return $column == 'alias' ? array_keys($this->_indexes) : parent::column($column);
+    public function column($column, $imploded = false) {
+
+        // If $column argument is 'alias'
+        if ($column == 'alias') {
+
+            // Get the values array
+            $valueA = array_keys($this->_indexes);
+
+            // Return column data
+            return $imploded ? implode(is_string($imploded) ? $imploded : ',', $valueA) : $valueA;
+
+        // Else call ordinary function
+        } else return parent::column($column, $imploded);
     }
 
     /**

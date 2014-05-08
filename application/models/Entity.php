@@ -6,5 +6,5 @@ class Entity extends Indi_Db_Table {
      *
      * @var string
      */
-    protected $_rowClass = 'Entity_Row'; 
+    protected $_rowClass = 'Entity_Row';
 }

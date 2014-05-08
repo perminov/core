@@ -95,6 +95,61 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Get the title of current row
+     *
+     * @return string
+     */
+    public function title() {
+
+        return $this->{$this->model()->titleColumn()};
+    }
+
+    /**
+     * Update current row title in case if title is dependent from some foreign key data.
+     * After that, function also updates all titles, that are dependent on current row title
+     *
+     * @param Field_Row $titleFieldR
+     */
+    public function titleUpdate(Field_Row $titleFieldR) {
+
+        // If field, used as title field - is storing single foreign key
+        if ($titleFieldR->storeRelationAbility == 'one') {
+
+            // If foreign row can be successfully got by that foreign key
+            if ($this->foreign($titleFieldR->alias))
+
+                // Set current row's title as value, got by title() call on foreign row
+                $this->title = $this->foreign($titleFieldR->alias)->title();
+
+        // Else if field, that is used as title field - is storing multiple foreign keys
+        } else if ($titleFieldR->storeRelationAbility == 'many') {
+
+            // Declare $titleA array
+            $titleA = array();
+
+            // Foreach foreign row within foreign rowset, got by multiple foreign keys
+            foreach ($this->foreign($titleFieldR->alias) as $foreignR)
+
+                // Append the result of title() method call in foreign row to $titleA array
+                $titleA[] = $foreignR->title();
+
+            // Setup current row's title as values of $titleA array, imploded by comma
+            $this->title = implode(', ', $titleA);
+        }
+
+        // Update title
+        if (preg_match('/^one|many$/', $titleFieldR->storeRelationAbility)) {
+            $this->model()->update(
+                array('title' => mb_substr($this->title, 0, 255, 'utf-8')),
+                '`id` = "' . $this->id . '"'
+            );
+        }
+
+        // Update dependent titles
+        $this->titleUsagesUpdate();
+    }
+
+    /**
      * Saves row into database table. But.
      * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
      * (but is going to be inserted), and if so - autoset value for `move` column after row save
@@ -106,10 +161,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Check conformance to all requirements
         if (count($this->mismatch(true))) return false;
 
+        // Backup original and modified data
+        $original = $this->_original; $modified = $this->_modified;
+
         // Setup $orderAutoSet flag if need
         if (!$this->_original['id'] && array_key_exists('move', $this->_original) && !$this->move) $orderAutoSet = true;
 
-        // If curren row is an existin row
+        // If current row is an existing row
         if ($this->_original['id']) {
 
             // Update it
@@ -153,11 +211,67 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->_modified = array();
         }
 
+        // If current entity has a non-zero `titleFieldId` property
+        if ($titleFieldR = $this->model()->titleField()) {
+
+            // If value of field, that is used as title-field - was modified
+            if (in_array($titleFieldR->alias, array_keys($modified))) {
+
+                // Update title
+                $this->titleUpdate($titleFieldR);
+            }
+
+        // Else if current entity has an empty/zero `titleFieldId` property, but current row was an already existing row
+        // and entity's database table column, that is however used as a title-column - was modified
+        } else if ($original['id'] && in_array($this->model()->titleColumn(), array_keys($modified))) {
+
+            // Search and update usages
+            $this->titleUsagesUpdate();
+        }
+
         // Update cache if need
-        if ($this->model()->useCache()) Indi_Cache::update($this->model()->name());
+        if ($this->model()->useCache()) Indi_Cache::update($this->model()->table());
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
+    }
+
+    /**
+     * Update titles of all rows, that use current row for building title
+     */
+    public function titleUsagesUpdate() {
+
+        // Get the model-usages info as entityId and titleFieldAlias
+        $usageA = Indi::db()->query('
+            SELECT `e`.`id` AS `entityId`, `e`.`table`, `f`.`alias` AS `titleFieldAlias`
+            FROM `entity` `e`, `field` `f`
+            WHERE `f`.`relation` = "' . $this->model()->id() . '" AND `e`.`titleFieldId` = `f`.`id`
+        ')->fetchAll();
+
+        // Foreach model usage
+        foreach ($usageA as $usageI) {
+
+            // Get the model
+            $model = Indi::model($usageI['entityId']);
+
+            // Get the field
+            $titleFieldR = $model->fields($usageI['titleFieldAlias']);
+
+            // Build WHERE clause
+            $where = $titleFieldR->storeRelationAbility == 'one'
+                ? '`' . $titleFieldR->alias .'` = "' . $this->id . '"'
+                : 'FIND_IN_SET("' . $this->id . '", `' . $titleFieldR->alias . '`)';
+
+            // Get the rows, that use current row for building their titles
+            $rs = $model->fetchAll($where);
+
+            // Setup foreign data, for it to be fetched within a single request
+            // to database server, instead of multiple request for each row within rowset
+            $rs->foreign($titleFieldR->alias);
+
+            // Foreach row -  update it's title
+            foreach ($rs as $r) $r->titleUpdate($titleFieldR);
+        }
     }
 
     /**
@@ -384,9 +498,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
-        // If we havу no related model - this happen if we have 'varibale entity' satellite dependency type
-        // and current satelite value is not defined - we return empty rowset
-        if (!$relatedM) return new Indi_Db_Table_Rowset(array());
+        // If we have no related model - this happen if we have 'varibale entity' satellite dependency type
+        // and current satellite value is not defined - we return empty rowset
+        if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title'));
 
         // Get title column
         $titleColumn = $fieldR->params['titleColumn'] ? $fieldR->params['titleColumn'] : $relatedM->titleColumn();
@@ -511,7 +625,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Get number of total found rows
                 $found = Indi::db()->query(
-                    'SELECT COUNT(`id`) FROM `' . $relatedM->name() . '`' . $foundRowsWhere
+                    'SELECT COUNT(`id`) FROM `' . $relatedM->table() . '`' . $foundRowsWhere
                 )->fetchColumn(0);
 
                 // If results should be started from selected value but total found rows number if not too great
@@ -608,7 +722,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Get titles for optgroups
             $groupByOptions = array();
-            if ($groupByFieldEntityM->name() == 'enumset') {
+            if ($groupByFieldEntityM->table() == 'enumset') {
                 $groupByRs = $groupByFieldEntityM->fetchAll('
                             `fieldId` = "' . $groupByFieldR->id . '" AND
                             FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")
@@ -668,6 +782,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
+        // Setup combo data rowset title column
+        $dataRs->titleColumn = $titleColumn;
+
+        // Return combo data rowset
         return $dataRs;
     }
 
@@ -772,13 +890,13 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e')) {
                     throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
-                    // Else if field is able to store single key, or able to store multiple, but current key's value isn't empty
+                // Else if field is able to store single key, or able to store multiple, but current key's value isn't empty
                 } else if ($fieldR->storeRelationAbility == 'one' || strlen($this->$key)) {
 
                     // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
                     // then model is a value of satellite field. Otherwise model is field's `relation` property
                     $model = $fieldR->dependency == 'e'
-                        ? $this->{$this->foreign('satellite')->alias}
+                        ? $this->{$fieldR->foreign('satellite')->alias}
                         : $fieldR->relation;
 
                     // Determine a fetch method
@@ -790,7 +908,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // If field is related to enumset entity, we should append an additional WHERE clause,
                     // that will outline the `fieldId` value, because in this case current row store aliases
                     // of rows from `enumset` table instead of ids, and aliases are not unique within that table.
-                    if (Indi::model($fieldR->relation)->name() == 'enumset') {
+                    if (Indi::model($model)->table() == 'enumset') {
                         $where[] = '`fieldId` = "' . $fieldR->id . '"';
                         $col = 'alias';
                     } else {
@@ -904,44 +1022,39 @@ class Indi_Db_Table_Row implements ArrayAccess
      * are constructed by the following pattern
      * <upload path>/<entity|table|model name>/<row id>_<file upload field alias>.<file extension>
      * or
-     * <general upload path>/<entity|table|model name>/<row id>_<file upload field alias>,<resized copy name>.<file extension>
+     * <upload path>/<entity|table|model name>/<row id>_<file upload field alias>,<resized copy name>.<file extension>
      *  (in case if uploaded file is an image, and resized copy autocreation was set up)
      *
      * This function get all parts of the pattern, build it, and finds all files that match this pattern
      * with glob() php function usage, so uploaded files names and/or paths and/or extensions are not stored in db,
      *
-     * @param string $name The alias of field, that is File Upload field (Aliases of such fields are used in the
+     * @param string $field The alias of field, that is File Upload field (Aliases of such fields are used in the
      *                     process of filename construction for uploaded files to saved under)
      * @throws Exception
      */
-    public function deleteFiles($name = '') {
+    public function deleteFiles($field = '') {
 
-        // Absolute upload path in filesystem
-        $abs = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+        // If upload dir does not exist - return
+        if (($dir = $this->model()->dir('exists')) === false) return;
 
-        // Array for filenames that should be deleted
-        $files = array();
+        // If $field argument is not given
+        if (!$field)
 
-        // We delete all files in case if there is no aim to delete only specified image copies
-        if (!$name){
-            $nonamed = glob($abs . $this->id . '.*');
-            $named = glob($abs . $this->id . ',*');
-            if (is_array($nonamed)) $files = array_merge($nonamed, $files);
-            if (is_array($named)) $files = array_merge($named, $files);
-        }
+            // We assume that all files, uploaded using all (not certain) file upload fields should be deleted,
+            // so we get the array of aliases of file upload fields within entity, that current row is related to
+            if ($field = $this->model()->fields()->select('upload', 'alias')->column('alias'))
 
-        // All resized copies are to be deleted too
-        $resized = glob($abs . $this->id . '_' . $name . '*.*');
-        if (is_array($resized)) $files = array_merge($resized, $files);
+                // Use that file upload fields aliases list to build a part of a pattern for use in php glob() function
+                $field = '{' . $field . '}';
 
-        // Foreach file - delete it from server
-        for ($j = 0; $j < count($files); $j++) {
-            try {
-                unlink($files[$j]);
-            } catch (Exception $e) {
-                throw new Exception();
-            }
-        }
+        // If value of $field variable is still empty - return
+        if (!$field) return;
+
+        // Get all of the possible files, uploaded using that field, and all their versions
+        $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
+
+        // Delete them
+        foreach ($fileA as $fileI) @unlink($fileI);
     }
 
     /**
@@ -1314,6 +1427,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Get the field
             $fieldR = $this->model()->fields($column);
+
+//            if (!$fie)
 
             // Get the control element
             $elementR = $fieldR->foreign('elementId');
@@ -2188,61 +2303,11 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If there is no file upload fields that should be taken into attention - exit
         if (!count($fields)) return;
 
-        // Build the target directory
-        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+        // If value, got by $this->model()->dir() call, is not a directory name
+        if (!preg_match(':^/.*/$:', $dir = $this->model()->dir())) {
 
-        // Check if target directory exists, and if no
-        if (!is_dir($dir)) {
-
-            // Foreach directories tree branches from the desired and up to the project root
-            do {
-
-                // Get the upper directory
-                $level = preg_replace(':[^/]+/$:', '', isset($level) ? $level : $dir);
-
-                // If upper directory exists
-                if (is_dir($level)) {
-
-                    // If upper directory is writable
-                    if (is_writable($level)){
-
-                        // If for some reason attempt to recursively create target directory,
-                        // starting from current level - was unsuccessful
-                        if (!@mkdir($dir, 0777, true)) {
-
-                            // Get the target directory part, that is relative to current level
-                            $rel = str_replace($level, '', $dir);
-
-                            // Assign an error
-                            $this->_mismatch['#model'] = sprintf(I_ROWFILE_ERROR_MKDIR, $rel, $level);
-
-                            // Exit
-                            return;
-                        }
-
-                    // Else if upper directory is not writable
-                    } else {
-
-                        // Get the target directory part, that is relative to current level
-                        $rel = str_replace($level, '', $dir);
-
-                        // Assign an error
-                        $this->_mismatch['#model'] = sprintf(I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE, $rel, $level);
-
-                        // Exit
-                        return;
-                    }
-
-                    // Break the loop
-                    break;
-                }
-            } while ($level != DOC . STD . '/');
-
-        // Else if target directory exists, but is not writable
-        } else if (!is_writable($dir)) {
-
-            // Assign an error
-            $this->_mismatch['#model'] = sprintf(I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE, $dir);
+            // Assume it is a error message, and put it under '#model' key within $this->_mismatch property
+            $this->_mismatch['#model'] = $dir;
 
             // Exit
             return;
@@ -2287,11 +2352,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Get the extension of the uploaded file
                 $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $meta['name']);
 
-                // Get all of the possible files, uploaded using that field, and all their versions
-                $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
-
-                // Delete them
-                foreach ($fileA as $fileI) @unlink($fileI);
+                // Delete all of the possible files, uploaded using that field, and all their versions
+                $this->deleteFiles($field);
 
                 // Build the full filename into $dst variable
                 $dst = $dir . $this->id . '_' . $field . '.' . $ext;
@@ -2415,5 +2477,80 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Free memory
             $imagick->destroy();
         }
+    }
+
+    /**
+     * Get a remote file by it's url, and assign it to a certain $field field within current row,
+     * as if it was manually uploaded by user. If any error occured - return boolean false, or boolean true otherwise
+     *
+     * @param $url
+     * @param $field
+     * @return mixed
+     */
+    public function wget($url, $field) {
+
+        // If value, got by $this->model()->dir() call, is not a directory name
+        if (!preg_match(':^([A-Z]\:)?/.*/$:', $dir = $this->model()->dir())) {
+
+            // Assume it is a error message, and put it under $field key within $this->_mismatch property
+            $this->_mismatch[$field] = $dir;
+
+            // Exit
+            return false;
+        }
+
+        // Delete all of the possible files, previously uploaded using that field, and all their versions
+        $this->deleteFiles($field);
+
+        // Get the extension of the uploaded file
+        preg_match('/.*\.([a-zA-Z0-9+]+)$/', $url, $m); $ext = $m[1];
+
+        // If no extension was got from the given url
+        if (!$ext) {
+
+            // Get the contents from url, and if some error occured then
+            ob_start(); $raw = file_get_contents($url); if ($error = ob_get_clean()) {
+
+                // Save that error to $this->_mismatch array, under $field key
+                $this->_mismatch[$field] = $error;
+
+                // Exit
+                return false;
+            }
+
+            // Create the temporary file, and place the url contents to it
+            $tmp = tempnam(sys_get_temp_dir(), "indi-wget");
+            $fp = fopen($tmp, 'wb'); fwrite($fp, $raw); fclose($fp);
+
+            // Get the mime type
+            $fi = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($fi, $tmp);
+            finfo_close($fi);
+
+            // Get the extension
+            $ext = Indi::ext($mime);
+        }
+
+        // Build the full filename into $dst variable
+        $dst = $dir . $this->id . '_' . $field . '.' . $ext;
+
+        // Copy the remote file
+        copy($tmp ? $tmp : $url, $dst);
+
+        // Delete the temporary file
+        if ($tmp) @unlink($tmp);
+
+        // If uploaded file is an image in formats gif, jpg or png
+        if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
+
+            // Check if there should be copies created for that image
+            $resizeRs = Indi::model('Resize')->fetchAll('`fieldId` = "' . $this->model()->fields($field)->id . '"');
+
+            // If should - create thmem
+            foreach ($resizeRs as $resizeR) $this->resize($field, $resizeR, $dst);
+        }
+
+        // Return boolean true
+        return true;
     }
 }

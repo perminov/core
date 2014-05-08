@@ -1,11 +1,10 @@
 <?php
-class Indi_View_Helper_Admin_Swf extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_Swf {
     public function swf($entity = null, $id = null, $name = null, $silence = true, $width = null, $height = null)
     {
         static $index = null;
 
-        $entity = $entity ? $entity : Indi::trail()->model->name();
+        $entity = $entity ? $entity : Indi::trail()->model->table();
         $id = $id ? $id : Indi::view()->row->id;
 
         if ($name === null) {

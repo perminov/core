@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_RenderTile extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_RenderTile {
     public function renderTile()
     {
 		ob_start();

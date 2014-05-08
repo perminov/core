@@ -63,13 +63,16 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @param array $config
      */
-    public function __construct(array $config)
-    {
+    public function __construct(array $config) {
+
         // Setup properties from $config argument
         if (isset($config['table'])) $this->_table = $config['table'];
 
         // Setup row class, and the count of rows within current rowset
         $this->_rowClass = isset($config['rowClass']) ? $config['rowClass'] : $this->model()->rowClass();
+
+        // Setup title column
+        $this->titleColumn = isset($config['titleColumn']) ? $config['titleColumn'] : 'title';
 
         // If 'data' key exists within $config array
         if (isset($config['data'])) {
@@ -930,7 +933,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 // If current $entityId is id of enumset entity, we should append an additional WHERE clause,
                 // that will outline the `fieldId` value, because in this case rows in current rowset store
                 // aliases of rows from `enumset` table instead of ids, and aliases are not unique within that table.
-                if (Indi::model($fieldR->relation)->name() == 'enumset') {
+                if (Indi::model($entityId)->table() == 'enumset') {
 
                     // Set the first part of WHERE clause
                     $where[] = '`fieldId` = "' . $fieldR->id . '"';
@@ -1026,11 +1029,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         }
                     }
 
-                    // Else if current foreign key field is able to store more that one key
+                // Else if current foreign key field is able to store more that one key
                 } else if ($fieldR->storeRelationAbility == 'many') {
 
-                    // Declare the array that will be later used for rowset construction
-                    $original = array();
+                    // Declare/reset array of rows, related to multiple-foreign-key, for current row within current rowset
+                    $rows = array();
 
                     // Setup an array, containing keys, that will be used to find match in
                     $set = explode(',', $r->$key);
@@ -1053,7 +1056,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     $r->foreign($key, Indi::model($foreignKeyEntityId)->createRowset(array('rows' => $rows)));
 
                     // Release the memory
-                    unset($original, $set);
+                    unset($rows, $set);
                 }
             }
 
@@ -1076,7 +1079,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * Get value of a single column within curent rowset, as array
      *
      * @param string $column
-     * @param bool $imploded
+     * @param bool|string $imploded
      * @return array
      */
     public function column($column, $imploded = false) {
@@ -1088,7 +1091,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         foreach ($this as $r) $valueA[] = $r->$column;
 
         // Return column data
-        return $imploded ? implode(',', $valueA) : $valueA;
+        return $imploded ? implode(is_string($imploded) ? $imploded : ',', $valueA) : $valueA;
     }
 
     /**
@@ -1098,5 +1101,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function rows() {
         return $this->_rows;
+    }
+
+    /**
+     * Update usages of all rows's titles within current rowset
+     */
+    public function titleUsagesUpdate() {
+        foreach ($this as $row) $row->titleUsagesUpdate();
     }
 }

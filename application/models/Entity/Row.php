@@ -79,11 +79,67 @@ class Entity_Row extends Indi_Db_Table_Row {
             }
         }
 
+        // Backup modified data, because it will be emptied after call parent::save()
+        $modified = $this->_modified; $original = $this->_original;
+
+        // Standard save
+        $return = parent::save();
+
+        // Reload the model, that current entity row is representing
+        if (count($modified)) {
+
+            // If it was an existing entity - do a full model reload, else
+            if ($original['id']) $model = Indi::model($this->id)->reload(); else {
+
+                // Append new model metadata into the Indi_Db's registry
+                Indi::db((int) $this->id);
+
+                // Load that new model
+                $model = Indi::model($this->id);
+            }
+        }
+
+        // If `titleFieldId` property was modified
+        if (array_key_exists('titleFieldId', $modified)) {
+
+            // If, after modification, value `titleFieldId` property is pointing to a valid field
+            if ($titleFieldR = $model->titleField()) {
+
+                // If that field is a foreign key
+                if ($titleFieldR->storeRelationAbility != 'none') {
+
+                    // If current entity has no `title` field
+                    if (!Indi::model($this->id)->fields('title')) {
+
+                        // Create it
+                        $fieldR = Indi::model('Field')->createRow();
+                        $fieldR->entityId = $this->id;
+                        $fieldR->title = 'Auto title';
+                        $fieldR->alias = 'title';
+                        $fieldR->storeRelationAbility = 'none';
+                        $fieldR->columnTypeId = 1;
+                        $fieldR->elementId = 1;
+                        $fieldR->save();
+                    }
+
+                    // Fetch all rows
+                    $rs = $model->fetchAll();
+
+                    // Setup foreign data, as it will be need in the process of rows titles updating
+                    $rs->foreign($titleFieldR->alias);
+
+                    // Update titles
+                    foreach ($rs as $r) $r->titleUpdate($titleFieldR);
+
+                } else $model->fetchAll()->titleUsagesUpdate();
+            } else $model->fetchAll()->titleUsagesUpdate();
+        }
+
         // If useCache property was changed
-        if (isset($this->_modified['useCache'])) {
+        if (isset($modified['useCache'])) {
 
             // If it was switched on
-            if ($this->_modified['useCache']) {
+            if ($modified['useCache']) {
 
                 // Refresh the cache file
                 Indi_Cache::update($this->table);
@@ -96,7 +152,6 @@ class Entity_Row extends Indi_Db_Table_Row {
             }
         }
 
-        // Standard save
-        return parent::save();
+        return $return;
     }
 }

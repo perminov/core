@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormCalendar extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormCalendar {
     public function formCalendar($name = 'date', $minimal = null, $value = null, $attribs = '')
     {
         $p = '/i/admin/';

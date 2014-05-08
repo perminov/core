@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormField extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormField {
     public function formField($field, $disabled = false)
     {
         $elementRow = $field->foreign('elementId');

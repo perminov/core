@@ -1,6 +1,5 @@
 <?php
-class Indi_View_Helper_Admin_FormRadio extends Indi_View_Helper_Abstract
-{
+class Indi_View_Helper_Admin_FormRadio {
     public function formRadio($name = 'toggle', $texts = 'Да,Нет', $values = 'y,n', $value = 'y', $meta = false, $attrib = '', $add = null)
     {
 		if (isset(Indi::view()->row->$name)){
