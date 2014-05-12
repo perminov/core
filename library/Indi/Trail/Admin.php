@@ -126,7 +126,11 @@ class Indi_Trail_Admin {
         if ((Indi::uri('action') == 'form' || Indi::uri('action') == 'save') &&
             !Indi::uri('id') && $this->item()->section->disableAdd) {
             $error = I_ACCESS_ERROR_ROW_ADDING_DISABLED;
-        }
+
+        // Else if 'id' param is mentioned in uri, but it's value either not specified,
+        // or does not match allowed format - setup an error
+        } else if (array_key_exists('id', (array) Indi::uri()) && !preg_match('/^[1-9][0-9]*$/', Indi::uri()->id))
+            $error = I_URI_ERROR_ID_FORMAT;
 
         // Setup row for each trail item, or setup an access error
         else
@@ -145,7 +149,7 @@ class Indi_Trail_Admin {
      * @return mixed
      */
     public function item($stepsUp = 0) {
-        return self::$items[count(self::$items) - 1 - $stepsUp];
+        return self::$items[count(self::$items) - 1 - (int) $stepsUp];
     }
 
     /**

@@ -17,7 +17,7 @@ class Indi_View_Helper_Admin_FormDatetime
 			$value = $value != '0000-00-00 00:00:00' ? $value : Indi::view()->row->$name;
 		} else {
 			$value = $field->defaultValue;
-            Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
+            Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::cmpOut();
             //if ($value == '0000-00-00 00:00:00') $value = date('Y-m-d H:i:s');
 		}
         $value = $value ? $value : date('Y-m-d H:i:s');

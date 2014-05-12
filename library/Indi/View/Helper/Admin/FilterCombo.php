@@ -24,7 +24,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
 
         $this->where = $this->filter->filter;
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
-        ob_start(); echo parent::formCombo($filter->foreign['fieldId']->alias); return ob_get_clean();
+        ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias); return ob_get_clean();
     }
 
     public function getSelected() {
@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
     }
 
     public function getField() {
-        return $this->filter->foreign['fieldId'];
+        return $this->filter->foreign('fieldId');
     }
 
     public function noSatellite() {
@@ -71,7 +71,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             return $gotFromScope;
         }
         if ($this->filter->defaultValue || ($this->field->columnTypeId == 12 && $this->filter->defaultValue != '')) {
-            Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::$cmpOut;
+            Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::cmpOut();
             Indi::view()->filtersSharedRow->{$this->field->alias} = $this->filter->defaultValue;
             return $this->filter->defaultValue;
         } else {

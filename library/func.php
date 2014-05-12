@@ -1,5 +1,46 @@
 <?php
 /**
+ * Autoloader function. Here we provide an ability for classes to be loaded from 'coref', if they are used in admin module,
+ * so all classes located in coref/application/controller/admin, and coref/Indi/Controller/Admin will be loaded if need
+ *
+ * @param $class
+ */
+function autoloader($class) {
+
+    // If $class - is a controller name, convert the first letter to lowercase
+    if (preg_match('/Admin_([a-zA-z]*Controller)$/', $class, $c)) $cn = lcfirst($class);
+
+    // Get the filename, by replacing '_' to '/' in $class, and appending '.php'
+    $cf = str_replace('_', '/', $class) . '.php';
+
+    // If file inclusion failed
+    if (!@include_once($cf)) {
+
+        // Check if we are in 'admin' module
+        if (COM || preg_match('~^/admin\b~', URI)) {
+
+            // If $class is a library class for admin module controllers
+            if (preg_match('/^Indi_Controller_Admin_([a-zA-Z]*)$/', $class, $l))
+
+                // Prepend an appropriate dir to filename
+                $cf = '../coref/library/Indi/Controller/Admin/' . str_replace('_', '/', $l[1]) . '.php';
+
+            // Else if $class is an admin module controller
+            else if (is_array($c) && count($c)) {
+
+                // Prepend an appropriate dir to filename
+                $cf = '../coref/application/controllers/admin/' . str_replace('_', '/', $c[1]) . '.php';
+
+            // Else if $class is some other class, we assume it's a model class
+            } else $cf = '../coref/application/models/' . $cf;
+
+            // Include class file
+            @include_once($cf);
+        }
+    }
+}
+
+/**
  * Displays formatted view of a given value
  *
  * @param mixed $value

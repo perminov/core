@@ -27,18 +27,18 @@ define('URI', rtrim($_SERVER['REQUEST_URI'], '/'));
 error_reporting(E_ALL^E_NOTICE);
 ini_set('display_errors', 'On');
 
-// Set include path
+// Set include path. Here we add more include paths, in case if some stuff is related to front module only,
+// but required to be available in admin module.
 $dirs = array('../www/', (COM || preg_match('~^/admin\b~', URI) ? '' : '../coref/'), '../core/');
 $subs = array('library', 'application/controllers', 'application/models'); $p = PATH_SEPARATOR;
 foreach($dirs as $d) if ($d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include_path();
 set_include_path(implode($p, $inc));
 
-// Set autoloading
-function autoloader($cn){if(preg_match('/Admin_[a-zA-z]*Controller$/',$cn))$cn=lcfirst($cn);$cf=str_replace('_','/',
-$cn).'.php';if(!@include_once($cf))if(strpos($cn,'admin')===false)echo'';}spl_autoload_register('autoloader');
-
 // Load misc functions
 require('func.php');
+
+// Register autoloader
+spl_autoload_register('autoloader');
 
 // Performance detection. 'mt' mean 'microtime'
 $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();

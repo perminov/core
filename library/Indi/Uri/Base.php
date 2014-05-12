@@ -71,6 +71,9 @@ class Indi_Uri_Base {
         // Redirect to uri, that ends with trailing slash, if current uri end with no slash
         $this->trailingSlash();
 
+        // If section name is not valid - throw an error message
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', Indi::uri('section'))) die(I_URI_ERROR_SECTION_FORMAT);
+
         // Build the controller class name
         $controllerClass = 'Admin_' . ucfirst(Indi::uri()->section) . 'Controller';
 
@@ -111,6 +114,10 @@ class Indi_Uri_Base {
 
         // Start session
         session_start();
+
+        // Set current language
+        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
+        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
     }
 
     /**

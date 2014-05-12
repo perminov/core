@@ -34,6 +34,9 @@ class Indi_Trail_Admin_Item
         foreach ($dataTypeA as $dataTypeI) $config[$dataTypeI] = $sectionR->$dataTypeI();
         $this->section = Indi::model('Section')->createRow($config);
 
+        // Setup section href
+        $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
+
         // Setup $this->actions
         foreach ($sectionR->nested('section2action') as $section2actionR)
             $actionA[] = $section2actionR->foreign('actionId');
@@ -153,7 +156,7 @@ class Indi_Trail_Admin_Item
                 : Indi::trail($index)->model->table() . 'Id';
 
             // Get the id
-            $id = Indi::uri('action') == 'index'
+            $id = Indi::uri('action') == 'index' && $index == 1
                 ? Indi::uri('id')
                 : Indi::trail($index-1)->row->$connector;
 
@@ -167,7 +170,6 @@ class Indi_Trail_Admin_Item
             // Owner control
             if ($alternateWHERE = Indi_Trail_Admin::$controller->alternateWHERE()) $where[] =  $alternateWHERE;
 
-            //d($where);
             // Try to find a row by given id, that, hovewer, also match all requirements,
             // mentioned in all other WHERE clause parts
             if (!($this->row = $this->model->fetchRow($where)))

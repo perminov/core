@@ -90,7 +90,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
-            Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::$cmpOut;
+            Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
         }
     }
 
@@ -279,33 +279,27 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param string $direction (up|down)
      * @param string $within
-     * @param string $condition
      */
-    public function move($direction = 'up', $within = '', $condition = null) {
+    public function move($direction = 'up', $within = '') {
 
         // Check direction validity
         if (in_array($direction, array('up', 'down'))) {
 
-            // Array of WHERE clause items
-            $where = array();
+            // Setup initial WHERE clause, for being able to detect the scope of rows, that order should be changed within
+            $where = is_array($within) ? $within : (strlen($within) ? array($within): array());
 
-            // Adding conditions required to match the needed scope, there changeRow should be searched
-            if (!is_array($within) && $within) $within = explode(',', $within);
+            // Apend additional part to WHERE clause, in case if current entity - is a tree-like entity
+            if ($this->model()->treeColumn())
+                $where[] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
 
-            // Append tree-column to $within array, if such column exists
-            if (array_key_exists($this->_table . 'Id', $this->_original)) $within[] = $this->_table . 'Id';
-
-            for ($i = 0; $i < count($within); $i++) $where[] = '`' . trim($within[$i]) . '` = "' . $this->{trim($within[$i])} . '"';
-
-            // Adding custom condition
-            if (is_array($condition) && count($condition)) $where = array_merge($where, $condition);
-            else if ($condition) $where[] = $condition;
-
-            // Nearest neighbour clauses
+            // Append nearest-neighbour WHERE clause part, for finding the row,
+            // that current row should exchange value of `move` property with
             $where[] = '`move` ' . ($direction == 'up' ? '<' : '>') . ' "' . $this->move . '"';
+
+            // Setup ORDER clause
             $order = 'move ' . ($direction == 'up' ? 'DE' : 'A') . 'SC';
 
-            // Find
+            // Find row, that will be used for `move` property value exchange
             if ($changeRow = $this->model()->fetchRow($where, $order)) {
 
                 // Backup `move` of current row
@@ -313,9 +307,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // We exchange values of `move` fields
                 $this->move = $changeRow->move;
-                $this->save(true);
+                $this->save();
                 $changeRow->move = $backup;
-                $changeRow->save(true);
+                $changeRow->save();
             }
         }
     }
@@ -375,7 +369,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Compile filters if they contain php-expressions
         for($i = 0; $i < count($where); $i++) {
-            Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::$cmpOut;
+            Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::cmpOut();
         }
 
         // If current field column type is ENUM or SET
@@ -1308,12 +1302,6 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return string             The corresponding column value.
      */
     public function __get($columnName) {
-        if ($columnName == 'title' && !$this->__isset($columnName)) {
-            return $this->__isset('_title') ? $this->_title : 'No title';
-
-        } else if ($columnName == 'foreign') {
-            return $this->foreign();
-        }
 
         // We trying to find the key's ($columnName) value at first in $this->_modified array,
         // then in $this->_original array, and then in $this->_temporary array, and return
@@ -1427,8 +1415,6 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Get the field
             $fieldR = $this->model()->fields($column);
-
-//            if (!$fie)
 
             // Get the control element
             $elementR = $fieldR->foreign('elementId');
