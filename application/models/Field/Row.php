@@ -20,7 +20,7 @@ class Field_Row extends Indi_Db_Table_Row {
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         if (strlen($this->_original['defaultValue'])) {
             if (preg_match(Indi::rex('php'), $this->_original['defaultValue'])) {
-                Indi::$cmpTpl = $this->_original['defaultValue']; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::$cmpOut;
+                Indi::$cmpTpl = $this->_original['defaultValue']; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::cmpOut();
             } else {
                 $this->_compiled['defaultValue'] = $this->_original['defaultValue'];
             }
@@ -84,6 +84,17 @@ class Field_Row extends Indi_Db_Table_Row {
 
         // If current field does have a column
 		if ($this->columnTypeId)
+
+            // If that column is still exist within table structure. Here we do this check, because that column might
+            // have already been deleted, for example in case if we were deleting the whole entity, and one field was
+            // a satellite for another field within that entity, so the satellited-field will be deleted in the process
+            // of deleting satellite-field usages, as satellited-field is using satellite-field, so satellited-field
+            // will be deleted BEFORE satellite-field deletion. And here we do this chech because in that case (whole
+            // entity) deletion system will try to delete satellited-field twice - first at the stage of other field's
+            // usage deletion, and second at the stage of ordinary deletion.
+            if (Indi::db()->query(
+                'SHOW COLUMNS FROM `' . $this->foreign('entityId')->table. '` LIKE "' . $this->alias . '"'
+            )->fetchColumn())
 
             // Drop that column
 			Indi::db()->query('ALTER TABLE `' . $this->foreign('entityId')->table . '` DROP `' . $this->alias . '`');

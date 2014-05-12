@@ -162,7 +162,7 @@ class Indi_View_Helper_Admin_FormCombo {
             // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
             // in *_FilterCombo is set to false
             if ($params['optionTemplate'] && !$this->ignoreTemplate) {
-                Indi::$cmpTpl = $params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::$cmpOut;
+                Indi::$cmpTpl = $params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
             }
 
             // Deal with optionAttrs, if specified.

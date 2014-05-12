@@ -48,10 +48,6 @@ class Indi_Controller {
         // Setup the Content-Type header
         header('Content-Type: text/html; charset=utf-8');
 
-        // Set current language
-        @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
-        @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
-
         // Do the pre-dispatch maintenance
         $this->preDispatch();
 
@@ -152,7 +148,7 @@ class Indi_Controller {
         if ($fieldR->storeRelationAbility == 'none') {
 
             // If sorting column type is BOOLEAN (use for Checkbox control element only)
-            if ($fieldR->foreign['columnTypeId']->type == 'BOOLEAN') {
+            if ($fieldR->foreign('columnTypeId')->type == 'BOOLEAN') {
 
                 // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
                 // values, depending on current language

@@ -99,14 +99,10 @@ class Indi_Controller_Admin extends Indi_Controller{
     public function move($direction, $where = null) {
 
         // Get the scope of rows to move within
-        if (Indi::trail(1)->section->parentSectionConnector) {
-            $within = Indi::trail(1)->section->foreign('parentSectionConnector')->alias;
-        } else if (Indi::trail(1)->row){
-            $within = Indi::trail(1)->section->foreign('entityId')->table . 'Id';
-        }
+        $within = $this->primaryWHERE();
 
         // Move
-        $this->row->move($direction, $within, Indi::trail(1)->section->filter);
+        $this->row->move($direction, $within);
 
         // Redirect
         $this->redirect();
@@ -193,7 +189,7 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                 // Deal with optionTemplate param, if specified
                 if ($field->params['optionTemplate']) {
-                    Indi::$cmpTpl = $field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::$cmpOut;
+                    Indi::$cmpTpl = $field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
                 }
 
                 // Deal with optionAttrs, if specified.
@@ -241,7 +237,7 @@ class Indi_Controller_Admin extends Indi_Controller{
             ));
             foreach ($disabledFieldRs as $disabledFieldR) {
                 if (strlen($disabledFieldR->defaultValue)) {
-                    Indi::$cmpTpl = $disabledFieldR->defaultValue; eval(Indi::$cmpRun); $disabledFieldR->defaultValue = Indi::$cmpOut;
+                    Indi::$cmpTpl = $disabledFieldR->defaultValue; eval(Indi::$cmpRun); $disabledFieldR->defaultValue = Indi::cmpOut();
                     $this->row->{$fieldIdA[$disabledFieldR->fieldId]} = $disabledFieldR->defaultValue;
                 }
             }
@@ -430,7 +426,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                 if ($fieldR->relation == 0) {
 
                     // If column store boolean values
-                    if (preg_match('/BOOLEAN/', $fieldR->foreign['columnTypeId']['type'])) {
+                    if (preg_match('/BOOLEAN/', $fieldR->foreign('columnTypeId')->type)) {
                         $where[] = 'IF(`' . $fieldR->alias . '`, "' . GRID_FILTER_CHECKBOX_YES . '", "' .
                             GRID_FILTER_CHECKBOX_NO . '") LIKE "%' . $keyword . '%"';
 
@@ -450,7 +446,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                         // type DATE - it will cause a mysql collation error
                         if (preg_match(
                             '/(' . implode('|', array_keys($reg)) . ')/',
-                            $fieldR->foreign['columnTypeId']['type'], $matches
+                            $fieldR->foreign('columnTypeId')->type, $matches
                         )) {
                             if (preg_match('/^' . $reg[$matches[1]] . '$/', $keyword)) {
                                 $where[] = '`' . $fieldR->alias . '` LIKE "%' . $keyword . '%"';
@@ -1555,6 +1551,11 @@ class Indi_Controller_Admin extends Indi_Controller{
      * @return array|mixed|string
      */
     private function _authLevel2($section, $action) {
+
+        // If action name is not valid - return an error message
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', $action)) return I_URI_ERROR_ACTION_FORMAT;
+
+        // Try to find use data
         $data = Indi::db()->query('
             SELECT
                 `s`.`id`,
@@ -1699,7 +1700,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                 else if (!Indi::uri()->json) die('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else die(json_encode(array('trowOutMsg' => $data)));
 
-                // Else if current section is 'index', e.g we are in the root of interface
+            // Else if current section is 'index', e.g we are in the root of interface
             } else if (Indi::uri()->section != 'index') {
 
                 // Do the second level access check

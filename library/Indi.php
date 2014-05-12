@@ -51,7 +51,8 @@ class Indi {
         'time' => '/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'double72' => '/^([1-9][0-9]{0,6}|0)(\.[0-9]{1,2})?$/',
         'datetime' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
-        'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/'
+        'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
+        'urichunk' => ''
     );
 
     protected static $_mime = array(
@@ -640,22 +641,22 @@ class Indi {
      * // 2. Call eval() within a scope, where $user object was defined. After eval() is finished, Indi::$cmpTpl is set to ''
      * eval(Indi::$cmpRun);
      * // 3. Get a compilation result
-     * $compilationResult = Indi::$cmpOut;
+     * $compilationResult = Indi::cmpOut();
      *
      * @var string
      */
     public static $cmpRun = '
+        $iterator = \'i\' . md5(microtime() . rand(0, 100000000));
         if (preg_match(\'/<\?|\?>/\', Indi::$cmpTpl)) {
-            $iterator = \'i\' . md5(microtime());
             $php = preg_split(\'/(<\?|\?>)/\', Indi::$cmpTpl, -1, PREG_SPLIT_DELIM_CAPTURE);
-            Indi::$cmpOut = \'\';
+            Indi::$cmpOut[$iterator] = \'\';
             for ($$iterator = 0; $$iterator < count($php); $$iterator++) {
                 if ($php[$$iterator] == \'<?\') {
                     $php[$$iterator+1] = preg_replace(\'/^=/\', \' echo \', $php[$$iterator+1]) . \';\';
-                    ob_start(); eval($php[$$iterator+1]); Indi::$cmpOut .= ob_get_clean();
+                    ob_start(); eval($php[$$iterator+1]); Indi::$cmpOut[$iterator] .= ob_get_clean();
                     $$iterator += 2;
                 } else {
-                    Indi::$cmpOut .= $php[$$iterator];
+                    Indi::$cmpOut[$iterator] .= $php[$$iterator];
                 }
             }
         } else if (preg_match(\'/(\$|::)/\', Indi::$cmpTpl)) {
@@ -663,15 +664,26 @@ class Indi {
                 Indi::$cmpTpl = ltrim(Indi::$cmpTpl, "\' ");
                 if (preg_match(\'/\\\'$/\', trim(Indi::$cmpTpl)))
                     Indi::$cmpTpl = rtrim(Indi::$cmpTpl, "\' ");
-                eval(\'Indi::$cmpOut = \\\'\' . Indi::$cmpTpl . \'\\\';\');
+                eval(\'Indi::$cmpOut[$iterator] = \\\'\' . Indi::$cmpTpl . \'\\\';\');
             } else {
-                eval(\'Indi::$cmpOut = \\\'\' . Indi::$cmpTpl . \'\\\';\');
+                eval(\'Indi::$cmpOut[$iterator] = \\\'\' . Indi::$cmpTpl . \'\\\';\');
             }
         } else {
-            Indi::$cmpOut = Indi::$cmpTpl;
+            Indi::$cmpOut[$iterator] = Indi::$cmpTpl;
         }
         Indi::$cmpTpl = \'\';
         ';
+
+    /**
+     * Pick the last item (containing last compiled value) from self::$cmpOut array, and reduce that array,
+     * so it act like a stack
+     *
+     * @static
+     * @return mixed
+     */
+    public static function cmpOut() {
+        return array_pop(self::$cmpOut);
+    }
 
     /**
      * Compiles a given template. This function should be called only in case if there is no context variables mentioned
@@ -1250,8 +1262,9 @@ class Indi {
         // Else if $arg argument is not set, we return current trail item object
         else if ($arg == null) {/*d(debug_print_backtrace());*/return Indi::registry('trail')->item();}
 
-        // Else if $arg argument is integer, we return item, that is at index, shifted from the last index by $arg number
-        else if (is_int($arg)) return Indi::registry('trail')->item($arg);
+        // Else we return item, that is at index, shifted from the last index by $arg number. The $arg argument will
+        // be casted as integer by '(int)' expression in 'item()' method call
+        else return Indi::registry('trail')->item($arg);
     }
 
 

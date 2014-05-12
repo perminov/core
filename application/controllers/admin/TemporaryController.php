@@ -81,4 +81,17 @@ class Admin_TemporaryController extends Indi_Controller {
 
         die('ok');
     }
+
+    public function deprecatedAction(){
+
+        if ($rppIdFieldR = Indi::model('Fsection')->fields('rppId')) $rppIdFieldR->delete();
+        $tableA = array(
+            'joinFk', 'joinFkForDependentRowset', 'joinFkForIndependentRowset', 'dependentCount',
+            'dependentCountForDependentRowset', 'dependentRowset', 'metaExclusion', 'rpp', 'seoDescription', 'seoTitle',
+            'seoKeyword', 'fconfig', 'independentRowset', 'config', 'orderBy', 'subdomain', 'filter');
+        $entityRs = Indi::model('Entity')->fetchAll('FIND_IN_SET(`table`, "' . implode(',', $tableA) . '")');
+        foreach ($entityRs as $entityR) $entityR->delete();
+
+        die('ok');
+    }
 }

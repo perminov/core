@@ -204,11 +204,18 @@ class Indi_Db {
             // If we are here for model reload - drop all metadata for that model
             if ($entityId) {
 
-                // Get the model class name, as the class name is the key
-                $class = get_class(Indi::model($entityId));
+                // Try to find the model class name, as the class name is the key
+                foreach (self::$_entityA as $className => $entityI)
+                    if ($entityI['id'] == $entityId) {
+                        $class = $className;
+                        break;
+                    }
 
-                // Unset metadata storage under that key
-                unset(self::$_entityA[$class], self::$_modelA[$class]);
+                // If $entityId was found, so it mean that we are reloading existing model
+                if ($class)
+
+                    // Unset metadata storage under that key from self::$_entityA and self::$_modelA
+                    unset(self::$_entityA[$class], self::$_modelA[$class]);
             }
 
             // Foreach existing entity

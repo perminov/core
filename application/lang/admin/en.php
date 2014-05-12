@@ -1,4 +1,8 @@
 <?php
+define('I_URI_ERROR_SECTION_FORMAT', 'Section name is in wrong format');
+define('I_URI_ERROR_ACTION_FORMAT', 'Action name is in wrong format');
+define('I_URI_ERROR_ID_FORMAT', 'Uri param \'id\' should have a positive integer value');
+
 define('I_LOGIN_BOX_USERNAME', 'Username');
 define('I_LOGIN_BOX_PASSWORD', 'Password');
 define('I_LOGIN_BOX_ENTER', 'Enter');

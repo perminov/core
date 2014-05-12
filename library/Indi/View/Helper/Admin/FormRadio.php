@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_FormRadio {
 			$field = Indi::trail()->model->fields($name);
 			if(empty($value)) {
 				$value = $field->defaultValue;
-                Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::$cmpOut;
+                Indi::$cmpTpl = $value; eval(Indi::$cmpRun); $value = Indi::cmpOut();
             }
 			if ($field->relation == 6) {
 				$enumset = Indi::model('Enumset');
