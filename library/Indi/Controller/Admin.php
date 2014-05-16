@@ -155,6 +155,9 @@ class Indi_Controller_Admin extends Indi_Controller{
                 }
             }
 
+            // Options array
+            $options = array();
+
             // Get options
             if (Indi::post()->keyword) {
                 $comboDataRs = $this->row->getComboData(Indi::post()->field, Indi::post()->page, Indi::post()->keyword,
@@ -165,30 +168,72 @@ class Indi_Controller_Admin extends Indi_Controller{
                     $dir, $offset);
             }
 
-
-            // Options array
-            $options = array();
-
             // Get title column
-            $titleColumn = $field->params['titleColumn'] ? $field->params['titleColumn'] : 'title';
+            $titleColumn = $comboDataRs->titleColumn;
+
+            // Get satellite
+            // if ($this->field->satellite) $satellite = $field->foreign('satellite');
 
             // If 'optgroup' param is used
-            if ($comboDataRs->optgroup) {
-                $by = $comboDataRs->optgroup['by'];
-            }
+            if ($comboDataRs->optgroup) $by = $comboDataRs->optgroup['by'];
 
             // Detect key property for options
             $keyProperty = $comboDataRs->enumset ? 'alias' : 'id';
 
+            // Option title maxlength
             $titleMaxLength = 0;
 
-            foreach ($comboDataRs as $o) {
-                $system = $o->system();
-                if ($by) $system = array_merge($system, array('group' => $o->$by));
-                $options[$o->$keyProperty] = array('title' => usubstr($o->$titleColumn, 50), 'system' => $system);
+            // Option title maxlength
+            $titleMaxIndent = 0;
 
-                // Deal with optionTemplate param, if specified
-                if ($field->params['optionTemplate']) {
+            // Setup primary data for options. Here we use '$o' name instead of '$comboDataR', because
+            // it is much more convenient to use such name to deal with option row object while creating
+            // a template in $params['template'] contents, if it is set, because php expressions are executed
+            // in current context
+            foreach ($comboDataRs as $o) {
+
+                // Get initial array of system properties of an option
+                $system = $o->system();
+
+                // Set group identifier for an option
+                if ($by) $system = array_merge($system, array('group' => $o->$by));
+
+                // Set javascript handler on option select event, if needed
+                if($comboDataRs->enumset && $o->javascript)
+                    $system = array_merge($system, array('js' => $o->javascript));
+
+                // Here we are trying to detect, does $o->title have tag with color definition, for example
+                // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
+                // We should do that because such tags existance may cause a dom errors while performing usubstr()
+                $info = Indi_View_Helper_Admin_FormCombo::detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
+
+                // If color was detected as a box, append $system['boxColor'] property
+                if ($info['box']) $system['boxColor'] = $info['color'];
+
+                // Setup primary option data
+                $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+
+                // If color was detected, and it has box-type, we remember this fact
+                if ($info['box']) $this->hasColorBox = true;
+
+                // Update maximum option title length, if it exceeds previous maximum
+                $noHtmlSpecialChars = preg_replace('/&[a-z]*;/', ' ',$options[$o->$keyProperty]['title']);
+                if (mb_strlen($noHtmlSpecialChars, 'utf-8') > $titleMaxLength)
+                    $titleMaxLength = mb_strlen($noHtmlSpecialChars, 'utf-8');
+
+                // Update maximum option title indent, if it exceeds previous maximum
+                if ($comboDataRs->model()->treeColumn()) {
+                    $indent = mb_strlen(preg_replace('/&nbsp;/', ' ', $options[$o->$keyProperty]['system']['indent']), 'utf-8');
+                    if ($indent > $titleMaxIndent) $titleMaxIndent = $indent;
+                }
+
+                // If color was found, we remember it for that option
+                if ($info['style']) $options[$o->$keyProperty]['system']['color'] = $info['color'];
+
+                // Current context does not have a $this->ignoreTemplate member, but inherited class *_FilterCombo does.
+                // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
+                // in *_FilterCombo is set to false
+                if ($field->params['optionTemplate'] && !$this->ignoreTemplate) {
                     Indi::$cmpTpl = $field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
                 }
 
@@ -198,11 +243,6 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $options[$o->$keyProperty]['attrs'][$comboDataRs->optionAttrs[$i]] = $o->{$comboDataRs->optionAttrs[$i]};
                     }
                 }
-
-                // Update maximum option title length, if it exceeds previous maximum
-                $noHtmlSpecialChars = preg_replace('/&[a-z]*;/', ' ',$options[$o->$keyProperty]['title']);
-                if (mb_strlen($noHtmlSpecialChars, 'utf-8') > $titleMaxLength)
-                    $titleMaxLength = mb_strlen($noHtmlSpecialChars, 'utf-8');
 
             }
             $options = array('ids' => array_keys($options), 'data' => array_values($options));
@@ -342,8 +382,8 @@ class Indi_Controller_Admin extends Indi_Controller{
         $where = array();
 
         // Append a childs-by-parent clause to primaryWHERE stack
-        if (Indi::uri('action') == 'index' && Indi::trail(1)->section->sectionId
-            && $parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
+        if (/*Indi::uri('action') == 'index' && Indi::trail(1)->section->sectionId
+            && */$parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
 
         // If a special section's primary filter was defined, add it to primary WHERE clauses stack
         if (strlen(Indi::trail()->section->compiled('filter'))) {
@@ -1968,6 +2008,9 @@ class Indi_Controller_Admin extends Indi_Controller{
      * @return string|null
      */
     public function parentWHERE() {
+
+        // If current section does not have a parent section, or have, but is a root section - return
+        if (!Indi::trail(1)->section->sectionId) return;
 
         // We check if a non-standard parent connector field name should be used to fetch childs
         // For example, if we have 'Countries' section (displayed rows a fetched from 'country' db table)

@@ -1,144 +1,94 @@
-.i-combo{
-    width: 100%;
-    position: relative;
-    line-height: 15px;
-}
-.i-combo div.i-combo-trigger{
-    visibility: hidden;
-    position: absolute;
-    border-left: 1px solid #b5b8c8;
-    width: 18px;
-    margin-right: 10px !important;
-}
-.i-combo div.i-combo-trigger.x-form-trigger-over{
-    border-left: 1px solid #99BCE8;
-}
-.i-combo.i-combo-filter div.i-combo-trigger, .i-combo.i-combo-sibling div.i-combo-trigger{
-    margin-top: -1px;
-}
-.i-combo.i-combo-filter{
-    overflow: hidden;
-    display: inline-block;
-}
-.i-combo img.i-combo-trigger{
-    position: absolute;
-    margin-top: 1px;
-    margin-right: 0;
-    margin-bottom: 0;
-    display: none;
-}
-.i-combo.i-combo-form .i-combo-single, .i-combo.i-combo-filter-single, .i-combo.i-combo-sibling-single{
+.i-combo {width: 100%; position: relative; line-height: 15px; border: none;}
+.i-combo .i-combo-single, .i-combo .i-combo-multiple {border: 1px solid #b5b8c8;}
+.i-combo .x-form-text {font-size: 11px; padding: 0;}
+.i-combo.i-combo-focus .i-combo-single, .i-combo.i-combo-focus .i-combo-multiple {border: 1px solid #99BCE8;}
+.i-combo .i-combo-multiple {height: auto;}
+.i-combo.i-combo-filter {overflow: hidden; display: inline-block;}
+.i-combo.i-combo-filter .i-combo-multiple{overflow: hidden; height: 19px;}
+.i-combo .i-combo-single {
     -webkit-border-top-right-radius: 3px;
     -moz-border-radius-topright: 3px;
     border-top-right-radius: 3px;
 }
-.i-combo .i-combo-keyword {
-    border: 0px solid !important; width: 30px; height: 15px !important; margin-top: 1px; font-size: 11px;
+
+/* Combo table */
+.i-combo .i-combo-multiple .i-combo-table {margin-bottom: -3px;}
+.i-combo .i-combo-single .i-combo-table {width: 100%;}
+.i-combo.i-combo-form .i-combo-multiple .i-combo-table-wrapper {height: 17px; float: right;}
+
+/* Combo color box */
+.i-combo .i-combo-single .i-combo-color-box-cell {width: 1px;}
+.i-combo .i-combo-color-box {width: 14px; height: 9px; display: inline-block;}
+.i-combo .i-combo-single .i-combo-color-box-cell .i-combo-color-box{margin: 0px 1px 0 3px;}
+
+/* Combo multiple selected items*/
+.i-combo .i-combo-multiple .i-combo-selected-item {
+    margin-left: 1px; background-color: #DFE8F6; padding: 0 2px 0px 2px;
+    margin-top: 1px; display: inline-block; font-size: 11px; line-height: 15px; float: left;
 }
-.i-combo .i-combo-single .i-combo-keyword {
-    padding-left: 2px;
+.i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
+    background-repeat: no-repeat; background-position: 0 0; width: 8px; height: 8px; display: inline-block;
+    margin-left: 2px; cursor: pointer;
 }
-.i-combo .i-combo-keyword[disabled] {
-    background: inherit;
-}
-.i-combo.i-combo-filter .i-combo-keyword{
-    background: transparent;
-}
-.i-combo.i-combo-filter.x-form-text, .i-combo.i-combo-sibling.x-form-text{
-    padding: 0 !important;
-}
-.i-combo.i-combo-filter .i-combo-single, .i-combo.i-combo-filter .i-combo-multiple, .i-combo.i-combo-sibling .i-combo-single{
-    border: 0;
-    margin-top: 0;
+.i-combo.i-combo-filter .i-combo-multiple .i-combo-selected-item {
+    border-top: 1px solid white; border-left: 1px solid white; margin-top: 0px; margin-left: 0px;
 }
 
+/* Combo keyword */
+.i-combo .i-combo-keyword {border: 0px; width: 100%; height: 15px; padding-left: 1px; background: transparent;}
+.i-combo .i-combo-keyword.i-combo-keyword-no-results {color: red;}
+.i-combo .i-combo-multiple .i-combo-keyword {margin-left: 1px;}
+.i-combo.i-combo-form .i-combo-keyword {height: 16px;}
 
-.i-combo .i-combo-keyword.i-combo-keyword-no-results{
-    color: red;
-}
-.i-combo .i-combo-keyword.i-combo-keyword-no-results-within{
-    color: #aaaaaa;
-}
-.i-combo .i-combo-info{
-    position: absolute;
-    margin-top: -14px;
-    font-size: 10px;
-    visibility: hidden;
-    display: none;
-}
-.i-combo.i-combo-form .i-combo-info{
-    margin-top: -15px;
-}
-.i-combo .i-combo-info .i-combo-count{
-    width: 20px;
-    display: inline-block;
-    text-align: right;
-}
-.i-combo .i-combo-info .i-combo-found{
-    padding-right: 1px;
-    padding-left: 1px;
-    border: 1px solid rgba(255, 255, 255, 0);
-}
-.i-combo.i-combo-form .i-combo-info.i-combo-info-fetched-all .i-combo-found {
-    padding-bottom: 1px;
-}
-.i-combo .i-combo-info .i-combo-loader{
-    position: relative;
-    top: -1px;
-    right: 2px;
-}
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-loader{
-    right: -10px;
-}
-
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found{
-    background-color: #C2FCC2;
-    border: 1px solid #1BBB0D;
-}
-
+/* Combo info */
+.i-combo .i-combo-info-cell {width: 1px;}
+.i-combo .i-combo-info-div {height: 18px; padding-top: 2px; padding-right: 1px;}
+.i-combo.i-combo-form .i-combo-info-div {height: 17px; padding-top: 1px;}
+.i-combo .i-combo-info {visibility: hidden; display: none; font-size: 10px;}
+.i-combo .i-combo-info .i-combo-of{margin-left: 3px;}
+.i-combo .i-combo-info .i-combo-count {width: 20px; display: inline-block; text-align: right;}
+.i-combo .i-combo-info .i-combo-found {padding-right: 1px; padding-left: 1px; border: 1px solid rgba(255, 255, 255, 0);}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found {padding-bottom: 1px;}
+.i-combo .i-combo-info .i-combo-loader {position: relative; top: 1px; right: 2px;}
+.i-combo.i-combo-form .i-combo-info .i-combo-loader {top: -1px;}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-loader {right: -10px;}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found {background-color: #C2FCC2; border: 1px solid #1BBB0D;}
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count,
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-of{
-    visibility: hidden;
-}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-of {visibility: hidden;}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible {visibility: visible;}
+.i-combo.i-combo-form .i-combo-multiple .i-combo-info-div {height: 17px; display: block;}
 
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible{
-    visibility: visible;
-}
+/* Combo trigger*/
+.i-combo .i-combo-multiple .i-combo-trigger-cell{width: 16px; display: none;}
+.i-combo .i-combo-single .i-combo-trigger-cell{width: 17px;}
 
-.i-combo-data{
-    display: none;
-    position: absolute;
-    background-color: white;
-    border: 1px solid #99BCE8;
-    margin-top: -1px;
-    z-index: 1;
-    line-height: 13px;
-    font-size: 8pt;
+.i-combo .i-combo-trigger.x-form-trigger {background-position: 0px -1px; height: 17px; width: 17px;
+    border-left: 1px solid #b5b8c8; border-top: none; border-bottom: none; border-right: none;
 }
-.i-combo-data ul {
-    padding: 0px;
-    margin: 0px;
+.i-combo.i-combo-focus .i-combo-trigger.x-form-trigger,
+.i-combo .i-combo-trigger.x-form-trigger.x-form-trigger-over {background-position: -17px -1px; border-left: 1px solid #99BCE8;}
+.i-combo.i-combo-focus .i-combo-trigger.x-form-trigger.x-form-trigger-over {background-position: -68px -1px;}
+.i-combo.i-combo-focus .i-combo-trigger.x-form-trigger.x-form-trigger-click,
+.i-combo .i-combo-trigger.x-form-trigger.x-form-trigger-click {background-position: -34px -1px;}
+
+/* Combo options data */
+.i-combo-data {
+    position: absolute; display: none; background-color: white; border: 1px solid #99BCE8; margin-top: 1px;
+    z-index: 1; line-height: 13px; font-size: 8pt; overflow-y: hidden;
 }
+.i-combo-data ul {padding: 0px;margin: 0px;}
 .i-combo-data ul li {
-    list-style-type: none;
-    list-style-position: outside;
-    cursor: default;
-    padding-left: 2px;
-    border-right: 0;
-    border-left: 0;
-    border-top: 0;
-    border-bottom: 1px solid #dfffdf;
-    word-break: break-all;
+    list-style-type: none; list-style-position: outside; cursor: default; padding-left: 2px; border-right: 0;
+    border-left: 0; border-top: 0; border-bottom: 1px solid #dfffdf; word-break: break-all;
 }
-.i-combo-data ul.i-combo-data-tall li {
-    border-bottom: 1px solid #99BCE8;
-}
-.i-combo-data ul li:last-child{
-    border-bottom: none;
-}
-.i-combo-data ul li.selected {
-    background-color: #ecffeb;
-}
+.i-combo-data ul li .i-combo-color-box {width: 14px; display: inline-block; height: 9px;}
+.i-combo-data ul li.selected {background-color: #ecffeb;}
+.i-combo-data ul li:last-child {border-bottom: none;}
+.i-combo-data ul.i-combo-data-tall li {border-bottom: 1px solid #99BCE8;}
+.i-combo.i-combo-form .i-combo-data {width: 100%; margin-top: -1px;}
+
+/* Disabled styling*/
+.i-combo .i-combo-keyword[disabled] {background: inherit;}
 .i-combo-data ul li.disabled, ul li.disabled *{
     color: #cccccc;
 }
@@ -151,128 +101,37 @@
 .i-combo-data ul li.disabled[group] *{
     color: inherit;
 }
-.i-combo .i-combo-multiple .i-combo-selected-item{
-    margin-left: 1px;
-    background-color: #DFE8F6;
-    padding: 0 2px 0px 2px;
-    margin-top: 1px;
-    display: inline-block;
-    font-size: 11px;
-    line-height: 15px;
-}
-.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item{
+.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item {
     background-color: #ECECEC;
     color: rgba(4, 64, 140, 0.5);
-}
-.i-combo .i-combo-multiple, .i-combo .i-combo-single{
-    border: 1px solid #99BCE8;
-    padding-left: 0px;
-    padding-right: 2px;
-    height: auto;
-    margin-top: 1px;
-    margin-bottom: 1px;
-    padding-bottom: 1px;
-}
-.i-combo.i-combo-filter .i-combo-multiple .i-combo-selected-item{
-    border-top: 1px solid white;
-    border-left: 1px solid white;
-    margin-top: -1px;
-    margin-left: 0px;
-}
-.i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete{
-    background-repeat: no-repeat;
-    background-position: 0 0;
-    width: 8px;
-    height: 8px;
-    display: inline-block;
-    margin-left: 2px;
-    cursor: pointer;
 }
 .i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     background-position: 0 -8px;
     cursor: default;
 }
-.i-combo .i-combo-multiple .i-combo-keyword{
-    margin-left: 1px;
-    padding-left: 0;
-}
-.i-combo.i-combo-filter .i-combo-multiple .i-combo-keyword{
-    padding-left: 1px;
-}
-.i-combo .x-form-text {
-    font-size: 11px !important;
-    height: 19px !important;
-    line-height: 14px !important;
-    color: #04408C;
-}
-.i-combo .x-form-trigger {
-    height: 19px !important;
-}
-.i-combo-data ul li .i-combo-color-box{
-    width: 14px;
-    display: inline-block;
-    height: 9px;
-}
-.i-combo .i-combo-single > .i-combo-color-box{
-    margin-right: 1px;
-}
-.i-combo .i-combo-multiple .i-combo-selected-item .i-combo-color-box{
-    width: 14px;
-    display: inline-block;
-    height: 9px;
-}
-.i-combo .i-combo-single > .i-combo-color-box{
-    width: 14px;
-    height: 9px;
-    display: inline-block;
-    margin-left: 3px;
-}
 .i-combo.i-combo-disabled .i-combo-single{
     border-color: #DFDFDF !important;
     background: #F7F7F7;
 }
-.i-combo-of{
-    margin-left: 3px;
+.i-combo.i-combo-disabled .i-combo-single .i-combo-color-box-div,
+.i-combo.i-combo-disabled .i-combo-single .i-combo-keyword-div,
+.i-combo.i-combo-disabled .i-combo-single .i-combo-info-div{
+    border-color: #DFDFDF !important;
 }
 .i-combo.i-combo-disabled .i-combo-multiple{
     border-color: #DFDFDF !important;
     background: #F7F7F7;
 }
+
 /* Browser fixes */
-.x-gecko .i-combo-info *{
-    position: relative;
+.x-gecko .i-combo-info * {position: relative;top: -1px; font-size: 9px;}
+.x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-left: 1px;}
+.x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px;}
+.x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 1px;}
+.x-ie9 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 0px;}
+.x-ie8 .i-combo.i-combo-sibling .i-combo-info,.x-ie8 .i-combo.i-combo-filter .i-combo-info {margin-top: -15px;}
+.x-ie8 .i-combo.i-combo-form .i-combo-info {margin-top: -16px;}
+.x-ie9 .i-combo.i-combo-sibling .i-combo-info .i-combo-found, .x-ie9 .i-combo.i-combo-filter .i-combo-info .i-combo-found {
+    line-height: 12px; padding-bottom: 0px; height: 14px; display: inline-block; overflow: hidden; position: relative;
     top: -1px;
-    font-size: 9px;
-}
-.x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword{
-    padding-left: 1px;
-}
-.x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {
-    padding-left: 0px;
-}
-.x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {
-    padding-top: 1px;
-}
-.x-ie9 .i-combo .i-combo-single input[type=text].i-combo-keyword {
-    padding-top: 0px;
-}
-.x-ie8 .i-combo.i-combo-sibling .i-combo-info,
-.x-ie8 .i-combo.i-combo-filter .i-combo-info{
-    margin-top: -15px;
-}
-.x-ie8 .i-combo.i-combo-form .i-combo-info{
-    margin-top: -16px;
-}
-.x-ie9 .i-combo.i-combo-sibling .i-combo-info .i-combo-found,
-.x-ie9 .i-combo.i-combo-filter .i-combo-info .i-combo-found{
-    line-height: 12px;
-    padding-bottom: 0px;
-    height: 14px;
-    display: inline-block;
-    overflow: hidden;
-    position: relative;
-    top: -1px;
-}
-.x-gecko .i-combo .i-combo-single .i-combo-keyword {
-    padding-left: 1px;
 }

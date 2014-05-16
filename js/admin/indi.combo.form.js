@@ -75,37 +75,6 @@ var Indi = (function (indi) {
             this.colorReg = new RegExp('^[0-9]{3}(#[0-9a-fA-F]{6})$', 'i');
 
             /**
-             * Ajdust left margin for '.combo-info' elements
-             *
-             * @param name
-             */
-            this.adjustComboInfoLeftMargin = function(name, forceAdjust) {
-                var input = $('.i-combo-keyword[lookup="'+name+'"]');
-                var width = input.parent().find('.i-combo-info').width();
-
-                // We set margin only once, or if forceAdjust agrument is passed.
-                // forceAdjust argument is passed when response json has 'found' property
-                if (!parseInt(input.parent().find('.i-combo-info').css('margin-left')) || forceAdjust) {
-                    if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
-                        input.parent().find('.i-combo-info').css('margin-left', (input.parent().width() - width - 3) + 'px');
-                    } else {
-                        input.parent().find('.i-combo-info').css('margin-left', (input.parent().width() - width - 16) + 'px');
-                    }
-                }
-            }
-
-            /**
-             * Ajdust left margin for '.i-combo-trigger' elements
-             *
-             * @param name
-             */
-            this.adjustComboTriggerLeftMargin = function(name) {
-                var input = $('.i-combo-keyword[lookup="'+name+'"]');
-                input.parents('.i-combo').find('.i-combo-trigger').css('margin-left', (input.parents('.i-combo').width() - 18) + 'px');
-                input.parents('.i-combo').find('.i-combo-trigger').css('visibility', 'visible');
-            }
-
-            /**
              * Adjust height of div, containing ul with options
              * @param name
              */
@@ -124,7 +93,9 @@ var Indi = (function (indi) {
              *
              * @param name
              */
-            this.adjustComboOptionsDivPosition = function(name) {}
+            this.adjustComboOptionsDivPosition = function(name) {
+
+            }
 
             /**
              * Adjust keyword input field after each append new selected item to list of selected items or delete it from list
@@ -133,20 +104,20 @@ var Indi = (function (indi) {
              * @param name
              */
             this.adjustKeywordFieldWidth = function(name) {
-                var width, decrease;
-                if ($('#'+name+'-keyword').parents('.i-combo-multiple').length) {
-                    decrease = 10;
+                // We do not explicilty setup width for single-value combos
+                if ($('#'+name+'-keyword').parents('.i-combo-single').length) return;
+
+                var width, decrease = 0;
+
+                if ($('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').length) {
+                    decrease += $('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').last().position().left;
+                    decrease += $('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').last().outerWidth(true);
+                    decrease += parseInt($('#'+name+'-keyword').parents('.i-combo-multiple').css('border-width'));
                 } else {
-                    decrease = 10;
-                }
-                if ($('#'+name+'-keyword').parent().find('.i-combo-selected-item').length) {
-                    decrease += $('#'+name+'-keyword').parent().find('.i-combo-selected-item').last().position().left;
-                    decrease += $('#'+name+'-keyword').parent().find('.i-combo-selected-item').last().width() + 10;
-                } else if ($('#'+name+'-keyword').parent().find('> .i-combo-color-box').length) {
-                    decrease += $('#'+name+'-keyword').parent().find(' > .i-combo-color-box').width() + 14;
+                    decrease += parseInt($('#'+name+'-keyword').parents('.i-combo-multiple').css('border-width')) * 2;
                 }
                 width = $('#'+name+'-keyword').parents('.i-combo').width() - decrease;
-                $('#'+name+'-keyword').width(width);
+                $('#'+name+'-keyword').parents('.i-combo-table').width(width);
             }
 
             /**
@@ -190,6 +161,7 @@ var Indi = (function (indi) {
 
                 // Rebuild options list
                 var html = instance.suggestions(instance.store[name], name);
+
                 $('#'+name+'-suggestions').html(html);
 
                 // Set scrolling if number of options more than instance.visibleCount
@@ -199,9 +171,6 @@ var Indi = (function (indi) {
                 instance.adjustComboOptionsDivHeight(name);
                 // If at least one result was found
                 if (responseData['found']) {
-
-                    // Adjust left margin for '.i-combo-info' because width of info could be changed
-                    instance.adjustComboInfoLeftMargin(name, true);
 
                     // We get json['found'] value only in case if we are running 'keyword' fetch mode,
                     // and in json is stored first portion of results and this mean that paging up shoud be disabled
@@ -660,13 +629,24 @@ var Indi = (function (indi) {
 
                 // Creates .i-combo-color-box element with if it doesn't yet exists, or updates it's background color
                 info.apply = function(name) {
-                    if ($('#'+name+'-keyword').parent().find('> .i-combo-color-box').length) {
-                        $('#'+name+'-keyword').parent().find('> .i-combo-color-box').css('background', info.color);
+                    if ($('#'+name+'-keyword').parents('.i-combo-single').length) {
+                        if ($('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-span').length) {
+                            $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-span').css('background', info.color);
+                        } else {
+                            $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-div').html(info.box);
+                            $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-div').click(function(){
+                                $('#'+name+'-keyword').click();
+                            });
+                        }
                     } else {
-                        $(info.box).insertBefore('#'+name+'-keyword');
-                        $('#'+name+'-keyword').parent().find('> .i-combo-color-box').click(function(){
-                            $('#'+name+'-keyword').click();
-                        });
+                        if ($('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').length) {
+                            $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').css('background', info.color);
+                        } else {
+                            $(info.box).insertBefore('#'+name+'-keyword');
+                            $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').click(function(){
+                                $('#'+name+'-keyword').click();
+                            });
+                        }
                     }
                 }
 
@@ -728,8 +708,8 @@ var Indi = (function (indi) {
                             color.title +
                             '<span class="i-combo-selected-item-delete"></span>' +
                             '</span>')
-                        .css(css).insertBefore('#'+name+'-keyword');
-                        instance.bindDelete($('#'+name+'-info').parent().find('.i-combo-selected-item').last().find('.i-combo-selected-item-delete'));
+                        .css(css).insertBefore('#'+name+'-table-wrapper');
+                        instance.bindDelete($('#'+name+'-info').parents('.i-combo-multiple').find('.i-combo-selected-item').last().find('.i-combo-selected-item-delete'));
 
                         // Determine way of how to deal with .i-combo-data (rebuild|rebuild-and-show|no-rebuild)
                         var mode = $('#'+name+'-keyword').val() ? 'selected-but-found-with-lookup' : '';
@@ -761,7 +741,7 @@ var Indi = (function (indi) {
 
                         // Indicate that option can't be once more selected because it's already selected
                     } else {
-                        var existing = $('#'+name+'-info').parent().find('.i-combo-selected-item[selected-id="'+li.attr(name)+'"] .i-combo-selected-item-delete');
+                        var existing = $('#'+name+'-info').parents('.i-combo-multiple').find('.i-combo-selected-item[selected-id="'+li.attr(name)+'"] .i-combo-selected-item-delete');
                         existing.fadeTo('fast', 0.2);
                         existing.fadeTo(0, 1);
                     }
@@ -1185,7 +1165,7 @@ var Indi = (function (indi) {
                 input.css({color: ''});
 
                 // Remove color-box
-                input.parent().find('> .i-combo-color-box').remove();
+                input.parents('.i-combo-table').find('.i-combo-color-box').remove();
 
                 // We need to fire 'change' event only if combo is running in single-value mode.
                 // In that mode no keyword = no value. But in multiple-value mode combo may have a
@@ -1275,8 +1255,10 @@ var Indi = (function (indi) {
                         // Else show existing sugestions list
                         } else {
                             $('#'+name+'-suggestions').show();
-                            $('#'+name+'-info').show();
+                            if ($('#'+name+'-info').css('visibility') != 'hidden') $('#'+name+'-info').show();
                         }
+                        instance.adjustKeywordFieldWidth(name, true);
+
                     } else {
                         // Get items count for calculations
                         var size = $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size();
@@ -1373,8 +1355,11 @@ var Indi = (function (indi) {
                                 css.color = instance.store[name].data[index].system['color'];
                             $('#'+name+'-keyword').css(css);
 
-                            // Adjust keyword filed width
+                            // Adjust keyword field width
                             instance.adjustKeywordFieldWidth(name);
+
+                            // Adjust combo options div position
+                            instance.adjustComboOptionsDivPosition(name);
 
                             // Set keyword text
                             $('#'+name+'-keyword').val(color.title);
@@ -1399,7 +1384,7 @@ var Indi = (function (indi) {
                         // value from list of selected values. We will do it by firing 'click' event on .i-combo-selected-item-delete
                         // because this element has a handler for that event, and that handler will perform all necessary operations
                         if ((code == '8' || code == '46') && !$('#'+name+'-keyword').val()) {
-                            $('#'+name).parent().find('.i-combo-selected-item').last().find('.i-combo-selected-item-delete').click();
+                            $('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').last().find('.i-combo-selected-item-delete').click();
 
                             if (instance.hideOptionsAfterKeywordErased) instance.hideSuggestions(name);
 
@@ -1439,7 +1424,7 @@ var Indi = (function (indi) {
             this.clearCombo = function(name) {
 
                 // Remove color-box
-                $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
+                $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').remove();
 
                 // Remove color
                 $('#'+name+'-keyword').css({color: ''});
@@ -1449,8 +1434,8 @@ var Indi = (function (indi) {
 
                 // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
                 // value will be cleared automatically
-                if ($('#'+name).parent().find('.i-combo-info').hasClass('i-combo-info-multiple')) {
-                    $('#'+name).parent().find('.i-combo-selected-item-delete').click();
+                if ($('#'+name).parents('.i-combo-table').find('.i-combo-info').hasClass('i-combo-info-multiple')) {
+                    $('#'+name).parents('.i-combo-table').find('.i-combo-selected-item-delete').click();
 
                 // Else combo is single, we set it's value to 0, if it's not boolean, or '' otherwise
                 } else {
@@ -1768,27 +1753,63 @@ var Indi = (function (indi) {
              * Set trigger button icon (pressed or unpressed)
              */
             this.bindTrigger = function(){
-                $(instance.componentNameClass() + ' .i-combo-trigger').mousedown(function(){
-                    if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false)
-                        $(this).addClass('x-form-arrow-trigger-click').addClass('x-form-trigger-click');
-                });
+
+                // Get the keyword selector
+                var s = instance.keywordSelector();
+
+                // Bind css class modifications on trigger mouseover event
                 $(instance.componentNameClass() + ' .i-combo-trigger').mouseover(function(){
-                    if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false)
-                        $(this).parent().addClass('x-form-trigger-wrap-focus');
+
+                    // Setup shortcut for combo element
+                    var c = $(this).parents('.i-combo');
+
+                    // If combo is disabled or have no lookup results - return
+                    if (c.hasClass('i-combo-disabled') || c.find(s).hasClass('i-combo-keyword-no-results')) return;
+
+                    // Add focus css class
+                    $(this).addClass('x-form-trigger-over');
                 });
-                $(instance.componentNameClass() + ' .i-combo-trigger').mouseleave(function(){
-                    if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false)
-                        $(this).parent().removeClass('x-form-trigger-wrap-focus');
+
+                // Bind css class modifications on trigger mouseover event
+                $(instance.componentNameClass() + ' .i-combo-trigger').mouseout(function(){
+
+                    // Setup shortcut for combo element
+                    var c = $(this).parents('.i-combo');
+
+                    // If combo is disabled or have no lookup results - return
+                    if (c.hasClass('i-combo-disabled') || c.find(s).hasClass('i-combo-keyword-no-results')) return;
+
+                    // Remove focus css class
+                    $(this).removeClass('x-form-trigger-over');
                 });
+
+                // Bind css class modifications on trigger mousedown event
+                $(instance.componentNameClass() + ' .i-combo-trigger').mousedown(function(){
+
+                    // Setup shortcut for combo element
+                    var c = $(this).parents('.i-combo');
+
+                    // If combo is disabled or have no lookup results - return
+                    if (c.hasClass('i-combo-disabled') || c.find(s).hasClass('i-combo-keyword-no-results')) return;
+
+                    // Setup clicked style
+                    $(this).addClass('x-form-trigger-click');
+                });
+
+                // Bind css class modifications on trigger mouseup event
                 $(instance.componentNameClass() + ' .i-combo-trigger').mouseup(function(){
-                    if ($(this).parents('.i-combo').hasClass('i-combo-disabled') ==  false &&
-                        $(this).parents('.i-combo').find(instance.keywordSelector()).hasClass('i-combo-keyword-no-results') ==  false) {
-                        $(this).parents('.i-combo').find('.i-combo-keyword').click();
-                        $(this).removeClass('x-form-arrow-trigger-click').removeClass('x-form-trigger-click');
-                    }
+
+                    // Setup shortcut for combo element
+                    var c = $(this).parents('.i-combo');
+
+                    // If combo is disabled or have no lookup results - return
+                    if (c.hasClass('i-combo-disabled') || c.find(s).hasClass('i-combo-keyword-no-results')) return;
+
+                    // Remove clicked style
+                    $(this).removeClass('x-form-trigger-click');
+
+                    // Show the options list
+                    $(this).parents('.i-combo').find('.i-combo-keyword').click();
                 });
             }
 
@@ -1847,7 +1868,7 @@ var Indi = (function (indi) {
              * @return {*}
              */
             this.getComboDataAppendToEl = function(name) {
-                return $('#'+name+'-keyword').parent();
+                return $('#'+name+'-keyword').parents('.i-combo');
             }
 
 
@@ -1883,7 +1904,7 @@ var Indi = (function (indi) {
 
                     // Also we remove a .i-combo-color-box element, related to previously selected option
                     if ($('#'+name+'-keyword').val() == '#' || $('#'+name+'-keyword').val() == '')
-                        $('#'+name+'-keyword').parent().find('> .i-combo-color-box').remove();
+                        $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').remove();
                 }
                 // If current combo is a satelite for one or more other combos, we should refres data in that other combos
                 $('.i-combo-info[satellite="'+name+'"]').each(function(){
@@ -1999,6 +2020,7 @@ var Indi = (function (indi) {
 
                     $(this).click(function(){
                         var name = $(this).attr('lookup');
+
                         // Check if combo is disabled
                         if ($(this).parents('.i-combo').hasClass('i-combo-disabled') || $(this).hasClass('i-combo-keyword-no-results')) return;
 
@@ -2012,34 +2034,34 @@ var Indi = (function (indi) {
 
                         // Toggle options and info
                         $('#'+name+'-suggestions').toggle();
-                        if ($(this).parent().find('.i-combo-info').css('display') == 'none') {
-                            $(this).parent().find('.i-combo-info').css('display', 'block');
-                        } else {
-                            $(this).parent().find('.i-combo-info').css('display', 'none');
+                        if ($('#'+name+'-info').css('visibility') != 'hidden') {
+                            if ($(this).parents('.i-combo-table').find('.i-combo-info').css('display') == 'none') {
+                                $(this).parents('.i-combo-table').find('.i-combo-info').css('display', 'block');
+                            } else {
+                                $(this).parents('.i-combo-table').find('.i-combo-info').css('display', 'none');
+                            }
                         }
-                        instance.adjustComboInfoLeftMargin(name);
                     });
 
-                    $(this).parent().find('> .i-combo-color-box').click(function(){
+                    $(this).parents('.i-combo-table').find('.i-combo-color-box').click(function(){
                         $('#'+name+'-keyword').click();
                     });
 
-                    instance.adjustComboTriggerLeftMargin(name);
                     instance.adjustKeywordFieldWidth(name);
 
                     $('#'+name).change(instance.changeHandler);
 
                     $('#'+name+'-trigger').click(function(){
-                        $(this).parent().find(instance.keywordSelector()).click();
-                        $(this).parent().find(instance.keywordSelector()).focus();
+                        $(this).parents('.i-combo-table').find(instance.keywordSelector()).click();
+                        $(this).parents('.i-combo-table').find(instance.keywordSelector()).focus();
                     });
 
-                    instance.getComboDataAppendToEl(name).append('<div id="'+name+'-suggestions" class="i-combo-data" style="z-index: 1000' + index + '; width: ' + $(this).parents('.i-combo').width() + 'px; margin-top: 1px; overflow-y: hidden;" hover="false"/>');
-
+                    var width = instance.componentName != 'combo.form' ? 'width: ' + $(this).parents('.i-combo').width() + 'px;' : '';
+                    instance.getComboDataAppendToEl(name).append('<div id="'+name+'-suggestions" class="i-combo-data" style="' + width +'z-index: 100' + index + ';" hover="false"/>');
                     $('#'+name+'-suggestions').scroll(function(){
                         $('#'+name+'-keyword').focus();
                     });
-                    $(this).parent().find('.i-combo-info').click(function(){
+                    $(this).parents('.i-combo-table').find('.i-combo-info').click(function(){
                         $('#'+name+'-keyword').focus();
                     });
                     $('#'+name+'-suggestions').hover(function(){

@@ -1,5 +1,6 @@
 <?php
 class Indi_View_Helper_Admin_FormCombo {
+
     /**
      * This var is used for html elements css class names building
      * @var string
@@ -13,7 +14,19 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public $where = null;
 
+    /**
+     * Context of combo initialization javascript execution
+     *
+     * @var string
+     */
     public $context = 'window';
+
+    /**
+     * Whether or not at least one option have color box. This property is used in *_FilterCombo helper
+     *
+     * @var bool
+     */
+    public $hasColorBox = false;
 
     /**
      * Setup row object for combo
@@ -51,7 +64,7 @@ class Indi_View_Helper_Admin_FormCombo {
      *
      * @return bool
      */
-    public function noSatellite(){
+    public function noSatellite() {
         if ($satelliteFieldId = $this->field->satellite) {
             return false;
         } else {
@@ -78,20 +91,22 @@ class Indi_View_Helper_Admin_FormCombo {
      * @param null $tableName
      * @return string
      */
-    public function formCombo($name, $tableName = null){
+    public function formCombo($name, $tableName = null) {
+
         // Set name
         $this->name = $name;
 
         // Get field
         $this->field = $this->getField($name, $tableName);
 
-        // Declare $options array
-        $options = array();
-
         // Get params
         $params = $this->field->params;
 
+        // Get selected
         $selected = $this->getSelected();
+
+        // Declare $options array
+        $options = array();
 
         // Get initial set of combo options
         $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
@@ -135,10 +150,12 @@ class Indi_View_Helper_Admin_FormCombo {
             // Here we are trying to detect, does $o->title have tag with color definition, for example
             // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
             // We should do that because such tags existance may cause a dom errors while performing usubstr()
-            $info = $this->detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
+            $info = self::detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
 
+            // If color was detected as a box, append $system['boxColor'] property
             if ($info['box']) $system['boxColor'] = $info['color'];
 
+            // Setup primary option data
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
             // If color was detected, and it has box-type, we remember this fact
@@ -161,8 +178,8 @@ class Indi_View_Helper_Admin_FormCombo {
             // Current context does not have a $this->ignoreTemplate member, but inherited class *_FilterCombo does.
             // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
             // in *_FilterCombo is set to false
-            if ($params['optionTemplate'] && !$this->ignoreTemplate) {
-                Indi::$cmpTpl = $params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
+            if ($this->field->params['optionTemplate'] && !$this->ignoreTemplate) {
+                Indi::$cmpTpl = $this->field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
             }
 
             // Deal with optionAttrs, if specified.
@@ -304,17 +321,33 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public function formComboSingle(){
 		ob_start();
-        ?><div class="i-combo i-combo-<?=$this->type?>"><?
-        ?><div class="i-combo-trigger x-form-trigger x-form-trigger-over" id="<?=$this->name?>-trigger"></div><?
-        ?><div class="i-combo-single"><?
-            $this->selected = $this->detectColor($this->selected); echo $this->selected['box'];
-            ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>" placeholder="<?=$this->params['placeholder']?>"/><?
-            ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-            ?><span class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><?
-                ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?
-                ?><span class="i-combo-of"><?=COMBO_OF?></span><?
-                ?><span class="i-combo-found" id="<?=$this->name?>-found"></span><?
-                ?></span><?
+        ?><div class="i-combo i-combo-<?=$this->type?> i-combo-focus"><?
+            ?><div class="i-combo-single"><?
+                ?><table class="i-combo-table"><tr><?
+                    ?><td class="i-combo-color-box-cell"><?
+                        ?><div class="i-combo-color-box-div"><?
+                        $this->selected = self::detectColor($this->selected); echo $this->selected['box'];
+                        ?></div><?
+                    ?></td><?
+                    ?><td class="i-combo-keyword-cell"><?
+                        ?><div class="i-combo-keyword-div"><?
+                            ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>" placeholder="<?=$this->params['placeholder']?>"/><?
+                            ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
+                        ?></div><?
+                    ?></td><?
+                    ?><td class="i-combo-info-cell"><?
+                        ?><div class="i-combo-info-div"><?
+                            ?><table class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><tr><?
+                                ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
+                                ?><td><span class="i-combo-of"><?=COMBO_OF?></span></td><?
+                                ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
+                            ?></tr></table><?
+                        ?></div><?
+                    ?></td><?
+                    ?><td class="i-combo-trigger-cell"><?
+                        ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
+                    ?></td><?
+                ?></tr></table><?
             ?></div><?
         ?></div><?
         return ob_get_clean();
@@ -325,23 +358,36 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public function formComboMultiple() {
         ob_start();
-        ?><div class="i-combo i-combo-form"><?
-        ?><img class="i-combo-trigger" id="<?=$this->name?>-trigger" src="/i/admin/trigger-system.png"/><?
-        ?><div class="i-combo-multiple"><?
+        ?><div class="i-combo i-combo-<?=$this->type?> i-combo-focus"><?
+            ?><div class="i-combo-multiple"><?
             foreach($this->comboDataRs->selected as $selectedR) {
-                $item = $this->detectColor(array('title' => $selectedR->title));
-                ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style']?>><?
-                    ?><?=usubstr($item['title'], 50)?><?
+                $item = self::detectColor(array('title' => $selectedR->title));
+                ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style'] ? $item['style'] : ($item['font'] ? ' style="' . $item['font'] . '"' : '')?>><?
+                    ?><?=$item['box'] . usubstr($item['title'], 50)?><?
                     ?><span class="i-combo-selected-item-delete"></span><?
                 ?></span><?
             }
-            ?><input class="i-combo-keyword" type="text" id="<?=$this->name?>-keyword" lookup="<?=$this->name?>" value="" no-lookup="<?=$this->params['noLookup']?>"/><?
-            ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-            ?><span class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><?
-                ?><span class="i-combo-count" id="<?=$this->name?>-count"></span><?
-                ?><span class="i-combo-of"><?=COMBO_OF?></span><?
-                ?><span class="i-combo-found" id="<?=$this->name?>-found"></span><?
-                ?></span><?
+                ?><span class="i-combo-table-wrapper" id="<?=$this->name?>-table-wrapper"><table class="i-combo-table"><tr><?
+                    ?><td class="i-combo-keyword-cell"><?
+                        ?><div class="i-combo-keyword-div"><?
+                            ?><input class="i-combo-keyword" type="text" id="<?=$this->name?>-keyword" lookup="<?=$this->name?>" value="" no-lookup="<?=$this->params['noLookup']?>"/><?
+                            ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
+                        ?></div><?
+                    ?></td><?
+                    ?><td class="i-combo-info-cell"><?
+                        ?><div class="i-combo-info-div"><?
+                            ?><table class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><tr><?
+                                ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
+                                ?><td><span class="i-combo-of"><?=COMBO_OF?></span></td><?
+                                ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
+                            ?></tr></table><?
+                        ?></div><?
+                    ?></td><?
+                    ?><td class="i-combo-trigger-cell"><?
+                        ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
+                    ?></td><?
+                ?></tr></table></span><?
+                ?><div style="clear: both;"></div><?
             ?></div><?
         ?></div><?
         return ob_get_clean();
@@ -351,28 +397,52 @@ class Indi_View_Helper_Admin_FormCombo {
      * Check if option contain a color definition, and if so, extract that color, build color box (in some cases) and
      * prepare some auxillary data
      *
-     * @param $selected
+     * @param $option
      * @return array
      */
-    public function detectColor($selected) {
+    public static function detectColor($option) {
 
-        ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $selected['value'], $color)) ||
-        ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $selected['title'], $color)) ||
-        ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $selected['title'], $color)) ||
-        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $selected['title'], $color));
+        // Color detection in different places within one certain option
+        ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['value'], $color)) ||
+        ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['title'], $color)) ||
+        ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $option['title'], $color)) ||
+        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color));
 
-        if ($v || $t || $s || $b || $selected['boxColor']) {
-            $selected['color'] = $color[1] ? $color[1] : $selected['boxColor'];
-            if ($s || $b) $selected['title'] = strip_tags($selected['title']);
+        // If color was detected somewhere
+        if ($v || $t || $s || $b || $option['boxColor']) {
+
+            // Setup color
+            $option['color'] = $color[1] ? $color[1] : $option['boxColor'];
+
+            // If color was detected in 'title' property, and found as 'color' or 'background' css property
+            // - strip tags from title
+            if ($s || $b) $option['title'] = strip_tags($option['title']);
+
+            // If color was detected in 'title' property as 'color' css property
             if ($s) {
-                if (!$selected['style'])
-                    $selected['style'] = ' style="color: ' . $selected['color'] . '"';
+
+                // If there is no 'style' property within $option variable -
+                // set it as 'color' and 'font' css properties specification
+                if (!$option['style']) $option['style'] = ' style="color: ' . $option['color'] . '; ' . $option['font'] . '"';
+
+            // Else if color was not detected in 'title' property as 'color' css property - we assume that color should
+            // be represented as a color-box
             } else {
-                if ($t) $selected['input'] = $selected['color'];
-                $selected['box'] = '<span class="i-combo-color-box" style="background: ' . $selected['color'] . '"></span>';
+
+                // If color was detected in 'value' property of $option variable - set 'input' property as a purified color
+                if ($t) $option['input'] = $option['color'];
+
+                // Setup color box
+                $option['box'] = '<span class="i-combo-color-box" style="background: ' . $option['color'] . '; margin-right: 3px;"></span>';
             }
         }
 
-        return $selected;
+        // Append font specification, as there might be case when fonts specifications, mentioned in css files - do not
+        // applied at the moment of indi.combo.js maintenance, because indi.combo.js may run earlier than css files
+        // loaded and this may cause wrong calculation of widths of selected options in multiple-combos, as by default
+        // options's text is in 'Times New Roman' font, which have letter widths, differerent from other fonts
+        $option['font'] = ' font-family: tahoma, arial, verdana, sans-serif;';
+
+        return $option;
     }
 }
