@@ -11,6 +11,12 @@ class Indi_View_Helper_Admin_FormHeader {
     <title>Indi Engine</title>
     <?
     Indi::implode(array(
+        '/library/extjs4/resources/css/ext-all.css',
+        '/css/admin/indi.layout.css',
+        '/css/admin/indi.combo.css',
+        '/css/admin/indi.action.form.css'
+    ), 'form');
+    Indi::implode(array(
         '/js/jquery-1.9.1.min.js',
         '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
@@ -21,12 +27,6 @@ class Indi_View_Helper_Admin_FormHeader {
         '/js/admin/indi.combo.form.js',
         '/js/admin/indi.action.form.js',
         '/js/admin/colorpicker/colorPicker_src.js'
-    ), 'form');
-    Indi::implode(array(
-        '/library/extjs4/resources/css/ext-all.css',
-        '/css/admin/indi.layout.css',
-        '/css/admin/indi.combo.css',
-        '/css/admin/indi.action.form.css'
     ), 'form');
     ?>
     <!-- Imploded and gzipped scripts and styles -->

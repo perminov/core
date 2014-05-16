@@ -10,23 +10,28 @@
 }
 .i-action-form .i-form .i-form-subheader td{
     text-align: center;
-}
-.i-action-form .i-form .i-form-table tr {
-    border-bottom: 1px solid #C7D4FF;
     height: 21px;
 }
-.i-action-form .i-form .i-form-table tr td input,
-.i-action-form .i-form .i-form-table tr td textarea{
+.i-action-form .i-form .i-form-table > tr, .i-action-form .i-form .i-form-table > tbody > tr {
+    border-bottom: 1px solid #C7D4FF;
+    min-height: 21px;
+}
+.i-action-form .i-form .i-form-table > tr > td > input,
+.i-action-form .i-form .i-form-table > tbody > tr > td > input,
+.i-action-form .i-form .i-form-table > tr > td > textarea,
+.i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
     padding: 0 2px 0 2px;
     border: 1px solid #99BCE8;
 }
-.i-action-form .i-form .i-form-table tr td input{
+.i-action-form .i-form .i-form-table > tbody > tr > td > input,
+.i-action-form .i-form .i-form-table > tr > td > input{
     height: 18px;
 }
 .i-action-form .i-form .i-form-table tr td textarea{
     margin-top: 1px;
 }
-.i-action-form .i-form .i-form-table tr td:first-child {
+.i-action-form .i-form .i-form-table > tr > td:first-child,
+.i-action-form .i-form .i-form-table > tbody > tr > td:first-child {
     padding-left: 2px;
 }
 .i-action-form .i-form .i-form-table tr.i-tr-disabled td input{
@@ -97,6 +102,10 @@
     top: -1px;
     display: none;
 }
+.i-action-form .i-form .i-form-table .i-form-table-field-control-cell{
+    padding: 1px 0 1px 0;
+}
+
 /* Browser fixes */
 .x-gecko.i-action-form .i-form table tr td textarea, 
 .x-ie9.i-action-form .i-form table tr td textarea,

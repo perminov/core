@@ -15,10 +15,10 @@ class Indi_View_Helper_Admin_FormField {
             $xhtml .= '</tr>';
         } else {
             $xhtml = '<tr class="info' . ($disabled ? ' i-tr-disabled"' : '') . '" id="tr-' . $field->alias . '">';
-            $xhtml .= '<td width="50%" id="td-left-' . $field->alias . '">';
+            $xhtml .= '<td width="50%" id="td-left-' . $field->alias . '" class="i-form-table-field-label-cell">';
             $xhtml .= $field->title . ':';
             $xhtml .= '</td>';
-            $xhtml .= '<td width="50%" id="td-right-' . $field->alias . '">';
+            $xhtml .= '<td width="50%" id="td-right-' . $field->alias . '" class="i-form-table-field-control-cell">';
             $xhtml .= Indi::view()->{'form' . ucfirst($elementRow->alias)}($field->alias);
             $xhtml .= '</td>';
             $xhtml .= '</tr>';
