@@ -50,6 +50,11 @@ define('I_YES', 'Yes');
 define('I_NO', 'No');
 
 define('I_LOGOUT', 'Logout');
+define('I_MENU', 'Menu');
+define('I_CREATE', 'Create');
+define('I_BACK', 'Back');
+define('I_SAVE', 'Save');
+define('I_TOTAL', 'Total');
 
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');
@@ -84,46 +89,17 @@ define('I_UPLOAD_ERR_CANT_WRITE', 'Failed to write file, uploaded in field "%s",
 define('I_UPLOAD_ERR_EXTENSION', 'File upload in field "%s" stopped by one of the php extensions, running on server');
 define('I_UPLOAD_ERR_UNKNOWN', 'File upload in field "%s" failed due to unknown error');
 
-define('I_MENU', 'Menu');
-define('ACTION_CREATE', 'Create');
-define('GRID_WARNING_SELECTROW_MSG', 'Select a row');
-define('GRID_WARNING_SELECTROW_TITLE', 'Message');
-define('GRID_SUBSECTIONS_LABEL', 'Subsections');
-define('GRID_SUBSECTIONS_EMPTY_OPTION', '--Select--');
-define('GRID_SUBSECTIONS_SEARCH_LABEL', 'Search');
-define('BUTTON_BACK', 'Back');
-define('BUTTON_SAVE', 'Save');
-
-define('FORM_UPLOAD_REMAIN', 'No change');
-define('FORM_UPLOAD_DELETE', 'Delete');
-define('FORM_UPLOAD_REPLACE', 'Replace');
-define('FORM_UPLOAD_REPLACE_WITH', 'with');
-define('FORM_UPLOAD_NO', 'No');
-define('FORM_UPLOAD_BROWSE', 'Browse');
-define('FORM_UPLOAD_ORIGINAL', 'Original');
-
-define('FORM_DATETIME_HOURS', 'hours');
-define('FORM_DATETIME_MINUTES', 'minutes');
-define('FORM_DATETIME_SECONDS', 'seconds');
-
-define('COMBO_OF', 'of');
-
-define('FORM_SELECT_EMPTY_OPTION', 'Select');
-
-define('ENUMSET_DELETE_DENIED_LASTVALUE', 'Deleting of last existing item from the set is not allowed');
-define('ENUMSET_DELETE_DENIED_DEFAULTVALUE', 'Deleting of default value is not allowed');
-
-define('GRID_FILTER', 'Options');
-define('GRID_FILTER_CHECKBOX_YES', 'Yes');
-define('GRID_FILTER_CHECKBOX_NO', 'No');
-define('GRID_FILTER_OPTION_DEFAULT', 'Any');
-define('GRID_FILTER_DATE_FROM', 'from');
-define('GRID_FILTER_DATE_UNTIL', 'until');
-define('GRID_FILTER_NUMBER_FROM', 'between');
-define('GRID_FILTER_NUMBER_TO', 'and');
-
-define('MSGBOX_CONFIRM_TITLE', 'Confirm');
-define('MSGBOX_CONFIRM_MESSAGE', 'Are you sure?');
+define('I_FORM_UPLOAD_NOCHANGE', 'No change');
+define('I_FORM_UPLOAD_DELETE', 'Delete');
+define('I_FORM_UPLOAD_REPLACE', 'Replace');
+define('I_FORM_UPLOAD_REPLACE_WITH', 'with');
+define('I_FORM_UPLOAD_NOFILE', 'No');
+define('I_FORM_UPLOAD_BROWSE', 'Browse');
+define('I_FORM_UPLOAD_ORIGINAL', 'Original');
+define('I_FORM_DATETIME_HOURS', 'hours');
+define('I_FORM_DATETIME_MINUTES', 'minutes');
+define('I_FORM_DATETIME_SECONDS', 'seconds');
+define('I_COMBO_OF', 'of');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'The current section\'s scope of available rows');
@@ -155,8 +131,5 @@ define('I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO', 'No');
 define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE', 'Nothing to be emptied');
 define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Options are already empty or not used at all');
 
-
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Confirm');
 define('I_ACTION_DELETE_CONFIRM_MSG', 'Are you sure?');
-
-define('I_TOTAL', 'Total');

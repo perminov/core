@@ -42,27 +42,27 @@ class Indi_View_Helper_Admin_FormDatetime
             }
         }
 
-        $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 62px; margin-top: 1px;" id="' . $name . 'Input"> ';
-		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
+        $xhtml .= '<input type="text" name="' . $name . '[date]" value="' . $parts[0] . '" style="width: 62px;" id="' . $name . 'Input"> ';
+		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-left: -2px;"></a>';
 		$time = explode(':', $parts[1]);
 		for ($i = 0; $i <= 2; $i++)	$time[$i] = strlen($time[$i]) == 1 ? $time[$i] . '0' : (strlen($time[$i]) == 0 ? '00' : $time[$i]);
 		$xhtml .= '&nbsp; &nbsp;<input type="text"'
 				. ' name="' . Indi::view()->escape($name) . '[hours]"'
 				. ' id="' . Indi::view()->escape($id) . '"'
 				. ' value="' . Indi::view()->escape($time[0]) . '"'
-				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=number(this.value)" /> ' . FORM_DATETIME_HOURS . ' ';
+				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=number(this.value)" /> ' . I_FORM_DATETIME_HOURS . ' ';
 
 		$xhtml .= '<input type="text"'
 				. ' name="' . Indi::view()->escape($name) . '[minutes]"'
 				. ' id="' . Indi::view()->escape($id) . '"'
 				. ' value="' . Indi::view()->escape($time[1]) . '"'
-				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . FORM_DATETIME_MINUTES . ' ';
+				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . I_FORM_DATETIME_MINUTES . ' ';
 
 		$xhtml .= '<span style="display: none;"><input type="text"'
 				. ' name="' . Indi::view()->escape($name) . '[seconds]"'
 				. ' id="' . Indi::view()->escape($id) . '"'
 				. ' value="' . Indi::view()->escape($time[2]) . '"'
-				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . FORM_DATETIME_SECONDS . '</span>';
+				. ' style="width: 18px; text-align: right;" maxlength="2" onchange="this.value=decimal(number(this.value));"/> ' . I_FORM_DATETIME_SECONDS . '</span>';
 		ob_start();?>
 		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px; z-index: <?=(100 - $zIndex)?>;">
 			<script>

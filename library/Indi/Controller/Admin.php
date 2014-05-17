@@ -64,6 +64,9 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                 // If we are here for just check of row availability, do it
                 if (Indi::uri()->check) die($this->checkRowIsInScope());
+
+                // Set last accessed row
+                $this->setScopeRow();
             }
 
             // Set scope hashes for each item within trail, starting from item, related to current section, and up to the top
@@ -101,8 +104,15 @@ class Indi_Controller_Admin extends Indi_Controller{
         // Get the scope of rows to move within
         $within = $this->primaryWHERE();
 
-        // Move
-        $this->row->move($direction, $within);
+        // If row move was successful
+        if ($this->row->move($direction, $within)) {
+
+            // Setup new index
+            Indi::uri()->aix += $direction == 'up' ? -1 : 1;
+
+            // Apply new index
+            $this->setScopeRow();
+        }
 
         // Redirect
         $this->redirect();
@@ -112,9 +122,23 @@ class Indi_Controller_Admin extends Indi_Controller{
      * Provide delete action
      */
     public function deleteAction($redirect = true) {
+
+        // Do pre delete maintenance
         $this->preDelete();
+
+        // Delete row
         $this->row->delete();
+
+        // Decrement row index
+        Indi::uri()->aix -= 1;
+
+        // Apply new index
+        $this->setScopeRow();
+
+        // Do post delete maintenance
         $this->postDelete();
+
+        // Redirect
         if ($redirect) $this->redirect();
     }
 
@@ -334,10 +358,52 @@ class Indi_Controller_Admin extends Indi_Controller{
             'ORDER' => $ORDER,
             'hash' => $primaryHash,
             'upperHash' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperHash'],
-            'upperAix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix']
+            'upperAix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix'],
+            'aix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['aix']
         );
 
         //i($_SESSION['indi']['admin'][Indi::uri()->section]);
+    }
+
+    /**
+     * Set scope last accessed row
+     *
+     * @param bool $upper
+     * @return null
+     */
+    public function setScopeRow($upper = false) {
+
+        // If no primary hash param passed within the uri - return
+        if (!Indi::uri()->ph) return;
+
+        // Get the current state of scope
+        $original = $_SESSION['indi']['admin'][Indi::trail((int) $upper)->section->alias][Indi::uri()->ph];
+
+        // If there is no current state yet - return
+        if (!is_array($original)) return;
+
+        // If current action deals with row, that is not yet exists in database - return
+        if (!$this->row->id) return;
+
+        $modified = array('aix' => Indi::uri()->aix);
+
+        // Start index
+        $start = ($original['page'] - 1) * Indi::trail((int) $upper)->section->rowsOnPage + 1;
+        $end = ($original['page']) * Indi::trail((int) $upper)->section->rowsOnPage;
+
+        // If last accessed row index is out of latest fetched rowset page bounds
+        if ($modified['aix'] < $start || $modified['aix'] > $end) {
+
+            // Calculate new page number, so when user will return to grid panel - an appropriate page
+            // will be displayed, and last accessed row will be within it
+            $modified['page'] = ceil($modified['aix']/Indi::trail((int) $upper)->section->rowsOnPage);
+        }
+
+        // Remember all scope params in $_SESSION under a hash
+        $_SESSION['indi']['admin'][Indi::trail((int) $upper)->section->alias][Indi::uri()->ph]
+            = array_merge($original, $modified);
+
+        //if (!$upper) i($modified['page'], 'a');
     }
 
     public function setScopeUpper($primary) {
@@ -358,6 +424,9 @@ class Indi_Controller_Admin extends Indi_Controller{
 
         if (Indi::uri()->aix)
             $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix'] = Indi::uri()->aix;
+
+        // Set upper section's last accessed row
+        $this->setScopeRow(true);
     }
 
     /**
@@ -467,8 +536,8 @@ class Indi_Controller_Admin extends Indi_Controller{
 
                     // If column store boolean values
                     if (preg_match('/BOOLEAN/', $fieldR->foreign('columnTypeId')->type)) {
-                        $where[] = 'IF(`' . $fieldR->alias . '`, "' . GRID_FILTER_CHECKBOX_YES . '", "' .
-                            GRID_FILTER_CHECKBOX_NO . '") LIKE "%' . $keyword . '%"';
+                        $where[] = 'IF(`' . $fieldR->alias . '`, "' . I_YES . '", "' .
+                            I_NO . '") LIKE "%' . $keyword . '%"';
 
                         // Otherwise handle keyword search on other non-relation column types
                     } else {
@@ -1963,11 +2032,40 @@ class Indi_Controller_Admin extends Indi_Controller{
             if ($fieldR->foreign('elementId')->alias == 'upload' && !in_array($fieldR->id, $disabledA)
                 && preg_match('/^m|d$/', Indi::post($fieldR->alias))) $filefields[] = $fieldR->alias;
 
+        // If we're going to save new row - setup $updateAix flag
+        if (!$this->row->id) $updateAix = true;
+
         // Perform the whole set of file upload maintenance
         $this->row->files($filefields);
 
         // Save the row
         $this->row->save();
+
+        // If current row has been just successfully created
+        if ($updateAix && $this->row->id) {
+i('asd');
+            // Get scope params
+            $scope = Indi::view()->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
+
+            // If $scope's WHERE clause is not empty
+            if ($scope['WHERE']) {
+
+                // Prepare WHERE clause to ensure that newly created row does match all the requirements, that are
+                // used for fetching rows that are suitable for displaying in rowset (grid, calendar, etc) panel
+                $where = '`id` = "' . $this->row->id . '" AND ' . $scope['WHERE'];
+
+                // Do the check
+                $R = Indi::trail()->model->fetchRow($where);
+
+            // Else we assume that there are no requirements for current row to be displayed in rowset panel
+            } else $R = $this->row;
+
+            // Setup new index
+            Indi::uri()->aix = Indi::trail()->model->detectOffset($scope['WHERE'], $scope['ORDER'], $R->id);
+
+            // Apply new index
+            $this->setScopeRow();
+        }
 
         // Do post-save operations
         $this->postSave();

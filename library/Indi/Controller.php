@@ -152,12 +152,9 @@ class Indi_Controller {
 
                 // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
                 // values, depending on current language
-                if (Indi::ini('view')->lang == 'en')
-                    return 'IF(`' . $column . '`, "' . GRID_FILTER_CHECKBOX_YES .'", "' . GRID_FILTER_CHECKBOX_NO . '") '
-                        . $direction;
-                else
-                    return 'IF(`' . $column . '`, "' . GRID_FILTER_CHECKBOX_NO .'", "' . GRID_FILTER_CHECKBOX_YES . '") '
-                        . $direction;
+                return (Indi::ini('view')->lang == 'en'
+                    ? 'IF(`' . $column . '`, "' . I_YES .'", "' . I_NO . '") '
+                    : 'IF(`' . $column . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
 
                 // Else build the simplest ORDER clause
             } else {

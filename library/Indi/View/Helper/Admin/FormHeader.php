@@ -51,7 +51,7 @@ Indi = $.extend(Indi, {
 top.Indi.scope = Indi.scope;
 </script>
 <?=Indi::view()->siblingCombo()?>
-<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?>/" name="<?=Indi::trail()->model->table()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
+<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?><?=Indi::uri()->ph ? '/ph/' . Indi::uri()->ph : ''?>/" name="<?=Indi::trail()->model->table()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
     <table cellspacing="1" border="0" width="100%" class="i-form-table">
         <tr class="i-form-subheader"><td colspan="2"><?=$title?></td></tr>
         <col width="50%"/><col width="50%"/>

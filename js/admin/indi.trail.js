@@ -223,7 +223,7 @@ var Indi = (function (indi) {
 
                             // We append 'form' action title, but it' version for case then new row is going to be
                             // created, hovewer, got from localization object, instead of actual action title
-                            crumbA.push('<span>' + indi.lang.ACTION_CREATE + '</span>');
+                            crumbA.push('<span>' + indi.lang.I_CREATE + '</span>');
                         }
                     }
                 }
