@@ -132,7 +132,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
                     ?><div class="i-combo-info-div"><?
                         ?><table class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><tr><?
                             ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
-                            ?><td><span class="i-combo-of"><?=COMBO_OF?></span></td><?
+                            ?><td><span class="i-combo-of"><?=I_COMBO_OF?></span></td><?
                             ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
                         ?></tr></table><?
                     ?></div><?
@@ -171,7 +171,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
                         ?><div class="i-combo-info-div"><?
                             ?><table class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><tr><?
                                 ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
-                                ?><td><span class="i-combo-of"><?=COMBO_OF?></span></td><?
+                                ?><td><span class="i-combo-of"><?=I_COMBO_OF?></span></td><?
                                 ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
                             ?></tr></table><?
                         ?></div><?

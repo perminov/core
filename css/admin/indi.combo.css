@@ -110,7 +110,7 @@
     cursor: default;
 }
 .i-combo.i-combo-disabled .i-combo-single{
-    border-color: #DFDFDF !important;
+    border-color: #c5c5c5 !important;
     background: #F7F7F7;
 }
 .i-combo.i-combo-disabled .i-combo-single .i-combo-color-box-div,

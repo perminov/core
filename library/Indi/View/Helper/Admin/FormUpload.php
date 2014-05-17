@@ -64,11 +64,11 @@ class Indi_View_Helper_Admin_FormUpload
 			$xhtml .= '<span class="upload' . (!in_array($type, array('image', 'video', 'flash'))?' no-file-yet':'') . '"  field="' . $name . '">';
 			$xhtml .= $type == 'file' ? $uploaded : '';
 			$xhtml .= '<input type="hidden" name="' . $name . '" value="r" id="' . $name .'"/>';
-			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_REMAIN . '</label>&nbsp;</span>';
-			$xhtml .= '<span class="radio" val="d" id="file-action-' . $name . '-d"><label id="file-action-' . $name . '-d-label">' . FORM_UPLOAD_DELETE . '</label>&nbsp;</span>';
-			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_REPLACE . '</a></label>&nbsp;';
-			$xhtml .= '<span class="selected" id="replace-by-'.$name.'">' . FORM_UPLOAD_REPLACE_WITH . '</span> <span id="selected' . $name . '" class="selected-fname"></span>';
-            $xhtml .= '<a href="' . $src . '" target="_blank" class="original">' . FORM_UPLOAD_ORIGINAL . '</a>';
+			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . I_FORM_UPLOAD_NOCHANGE . '</label>&nbsp;</span>';
+			$xhtml .= '<span class="radio" val="d" id="file-action-' . $name . '-d"><label id="file-action-' . $name . '-d-label">' . I_FORM_UPLOAD_DELETE . '</label>&nbsp;</span>';
+			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . I_FORM_UPLOAD_REPLACE . '</a></label>&nbsp;';
+			$xhtml .= '<span class="selected" id="replace-by-'.$name.'">' . I_FORM_UPLOAD_REPLACE_WITH . '</span> <span id="selected' . $name . '" class="selected-fname"></span>';
+            $xhtml .= '<a href="' . $src . '" target="_blank" class="original">' . I_FORM_UPLOAD_ORIGINAL . '</a>';
             $xhtml .= '<script>
 				$("span.upload[field='.$name.'] span.radio").click(function(){
 					$(this).parent().find("span.radio").removeClass("checked");
@@ -89,8 +89,8 @@ class Indi_View_Helper_Admin_FormUpload
 		} else {
 			$xhtml .= '<span class="upload no-file-yet" field="' . $name . '">';
 			$xhtml .= '<input type="hidden" name="' . $name . '" value="r" id="' . $name . '"/>';
-			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . FORM_UPLOAD_NO . '</label>&nbsp;</span>';
-			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . FORM_UPLOAD_BROWSE . '</a></label>&nbsp;';
+			$xhtml .= '<span class="radio checked" val="r" id="file-action-' . $name . '-r"><label id="file-action-' . $name . '-r-label">' . I_FORM_UPLOAD_NOFILE . '</label>&nbsp;</span>';
+			$xhtml .= '<span class="radio" val="m" id="file-action-' . $name . '-m"></span><label id="file-action-' . $name . '-m-label"><a href="#" class="browse">' . I_FORM_UPLOAD_BROWSE . '</a></label>&nbsp;';
 			$xhtml .= '<span id="selected' . $name . '" class="selected-fname"></span>';
 			$xhtml .= '<script>
 				$("span.upload[field='.$name.'] span.radio").click(function(){

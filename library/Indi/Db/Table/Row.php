@@ -310,6 +310,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $this->save();
                 $changeRow->move = $backup;
                 $changeRow->save();
+
+                // If `move` property of current row an $changeRow row was successfully exchanged -
+                // return boolean true as an indicator of success
+                if (!$this->mismatch() && !$changeRow->mismatch()) return true;
             }
         }
     }

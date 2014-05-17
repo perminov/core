@@ -233,7 +233,7 @@ var Indi = (function (indi) {
                 // 'Save' button
                 dockedItems.push({
                     xtype: 'splitbutton',
-                    text: indi.lang.BUTTON_SAVE,
+                    text: indi.lang.I_SAVE,
                     handler: function(){
 
                         top.window.Ext.getCmp('iframe-mask').show();

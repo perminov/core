@@ -228,7 +228,7 @@ class Indi_Trail_Admin {
 
                     // We append 'form' action title, but it' version for case then new row is going to be
                     // created, hovewer, got from localization object, instead of actual action title
-                    $crumbA[] = ACTION_CREATE;
+                    $crumbA[] = I_CREATE;
                 }
             }
         }

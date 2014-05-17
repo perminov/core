@@ -17,18 +17,18 @@
     min-height: 21px;
 }
 .i-action-form .i-form .i-form-table > tr > td > input,
+.i-action-form .i-form .i-form-table > tr > td > div > input,
 .i-action-form .i-form .i-form-table > tbody > tr > td > input,
+.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
 .i-action-form .i-form .i-form-table > tr > td > textarea,
 .i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
     padding: 0 2px 0 2px;
     border: 1px solid #99BCE8;
 }
 .i-action-form .i-form .i-form-table > tbody > tr > td > input,
+.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
 .i-action-form .i-form .i-form-table > tr > td > input{
     height: 18px;
-}
-.i-action-form .i-form .i-form-table tr td textarea{
-    margin-top: 1px;
 }
 .i-action-form .i-form .i-form-table > tr > td:first-child,
 .i-action-form .i-form .i-form-table > tbody > tr > td:first-child {
@@ -60,8 +60,9 @@
 }
 .i-action-form .i-form .i-form-table tr td:first-child  + td span.upload.no-file-yet {
     position: relative !important;
-    top: 1px !important;
-    padding: 0 !important;
+    padding: 3px 0 0 0;
+    display: inline-block;
+    margin-bottom: -1px;
 }
 .i-action-form .i-form .i-form-table tr td:first-child  + td span.upload span.radio {
     display: inline;
@@ -114,7 +115,7 @@
 }
 .x-chrome.i-action-form .i-form table tr td textarea, 
 .x-safari.i-action-form .i-form table tr td textarea{
-    margin-bottom: -1px;
+    margin-bottom: -2px;
 }
 .x-safari.i-action-form .i-form table tr td input[type=text]{
     padding-top: 4px;

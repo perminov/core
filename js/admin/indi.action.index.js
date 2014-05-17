@@ -165,6 +165,7 @@ var Indi = (function (indi) {
                                 // We remember that, by pushing curren filter field alias to the
                                 // usedFilterAliasesThatHasGridColumnRepresentedByA array
                                 usedFilterAliasesThatHasGridColumnRepresentedByA.push(alias.replace(/-(g|l)te$/, ''));
+
                     }
                 }
 
@@ -710,7 +711,7 @@ var Indi = (function (indi) {
                                     else var hidden = $(me.el.dom).find('input[type="hidden"]');
 
                                     // If combo is single-value
-                                    if (hidden.parent().hasClass('i-combo-single')) {
+                                    if (hidden.parents('i-combo-single')) {
 
                                         // If combo value is 0, and combo is not used to represent BOOLEAN database
                                         // column - the '' (empty string) will be returned, or actial combo value otherwise
@@ -718,7 +719,7 @@ var Indi = (function (indi) {
 
                                     // Else if combo is mltiple-value, an array of values (got by splitting combo value,
                                     // by ',') will be returned
-                                    } else if (hidden.parent().hasClass('i-combo-multiple')) {
+                                    } else if (hidden.parents('i-combo-multiple')) {
                                         return hidden.val().split(',');
                                     }
                                 },
@@ -868,7 +869,7 @@ var Indi = (function (indi) {
 
                     items.push({
                         id: 'i-section-' +indi.trail.item().section.alias + '-action-index-button-add',
-                        text: indi.lang.ACTION_CREATE,
+                        text: indi.lang.I_CREATE,
                         iconCls: 'add',
                         actionAlias: 'form',
                         handler: function(){
@@ -1202,9 +1203,44 @@ var Indi = (function (indi) {
             /**
              * Callback for store load, will be fired if current section type = 'grid'
              */
-            this.storeLoadCallbackGrid = function(){
+            this.storeLoadCallbackGrid = function() {
+
+                // Get the grid panel object
+                var grid = Ext.getCmp('i-section-' + indi.trail.item().section.alias +
+                    '-action-' + indi.trail.item().action.alias + '-' + indi.trail.item().section.type);
+
+                // Set the focus on grid, to automatically provide an ability to use keyboard
+                // cursor to navigate through rows
+                grid.getView().focus();
+
+                // Setup last row autoselection, if need
+                if (Indi.scope.aix) {
+
+                    // Calculate row index value, relative to current page
+                    var index = parseInt(indi.scope.aix) - 1 - (parseInt(indi.scope.page) - 1) *
+                        parseInt(indi.trail.item().section.rowsOnPage);
+
+                    // If such row (row at that index) exists in grid - selectit
+                    if (grid.store.getAt(index)) grid.selModel.select(index, true);
+                }
+
+                // Add keyboard event handelers
+                grid.getEl().addKeyMap({
+                    eventName: "keyup",
+                    binding: [{
+                        key: Ext.EventObject.ENTER,
+                        fn:  function(){
+                            if (Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-button-form'))
+                                Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-button-form')
+                                    .handler();
+                        }
+                    }]
+                });
+
+                // Run custom callback function
                 instance.options.grid.storeLoadCallback();
-                instance.highlightGridFilteredColumns();
+
+                // Adjust grid column widths
                 instance.adjustGridColumnsWidths();
             }
 
@@ -1270,7 +1306,7 @@ var Indi = (function (indi) {
                                         selectionModel.deselect(row, true);
                                 });
                         },
-                        itemdblclick: function(){
+                        itemdblclick: function() {
                             if (Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-button-form'))
                                 Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-button-form')
                                     .handler();
