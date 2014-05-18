@@ -1894,10 +1894,8 @@ class Indi_Controller_Admin extends Indi_Controller{
             // Render the layout
             $out = Indi::view()->render('index.php');
 
-            // Else, if we are doing something in a certain section
+        // Else, if we are doing something in a certain section
         } else {
-            // Setup a row object to be available within view engine
-            //if (Indi::trail()->row) Indi::view()->row = Indi::trail()->row;
 
             // Render the contents
             $out = Indi::view()->renderContent();
