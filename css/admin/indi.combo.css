@@ -28,7 +28,7 @@
 }
 .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     background-repeat: no-repeat; background-position: 0 0; width: 8px; height: 8px; display: inline-block;
-    margin-left: 2px; cursor: pointer;
+    margin-left: 2px; cursor: pointer;background-image: url(/i/admin/combo-multiple-selected-item-delete.png);
 }
 .i-combo.i-combo-filter .i-combo-multiple .i-combo-selected-item {
     border-top: 1px solid white; border-left: 1px solid white; margin-top: 0px; margin-left: 0px;
@@ -49,9 +49,9 @@
 .i-combo .i-combo-info .i-combo-count {width: 20px; display: inline-block; text-align: right;}
 .i-combo .i-combo-info .i-combo-found {padding-right: 1px; padding-left: 1px; border: 1px solid rgba(255, 255, 255, 0);}
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found {padding-bottom: 1px;}
-.i-combo .i-combo-info .i-combo-loader {position: relative; top: 1px; right: 2px;}
-.i-combo.i-combo-form .i-combo-info .i-combo-loader {top: -1px;}
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-loader {right: -10px;}
+.i-combo .i-combo-info .i-combo-data-loading {position: relative; top: 1px; right: 2px; width: 15px;}
+.i-combo.i-combo-form .i-combo-info .i-combo-data-loading {top: -1px;}
+.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-data-loading {right: -10px;}
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found {background-color: #C2FCC2; border: 1px solid #1BBB0D;}
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count,
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-of {visibility: hidden;}

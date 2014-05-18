@@ -29,7 +29,7 @@ ini_set('display_errors', 'On');
 
 // Set include path. Here we add more include paths, in case if some stuff is related to front module only,
 // but required to be available in admin module.
-$dirs = array('../www/', (COM || preg_match('~^/admin\b~', URI) ? '' : '../coref/'), '../core/');
+$dirs = array('../www/', (COM || preg_match('~^' . preg_quote(STD, '~') . '/admin\b~', URI) ? '' : '../coref/'), '../core/');
 $subs = array('library', 'application/controllers', 'application/models'); $p = PATH_SEPARATOR;
 foreach($dirs as $d) if ($d) foreach($subs as $s) $inc[] = $d . $s; $inc[] = get_include_path();
 set_include_path(implode($p, $inc));

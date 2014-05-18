@@ -28,8 +28,6 @@
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.index.gz.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.index.gz.css"/>
-    <!-- STD dependent styles -->
-    <?=$this->styleStd()?>
 </head>
 <body>
 <script>

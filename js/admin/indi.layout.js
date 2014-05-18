@@ -38,7 +38,7 @@ var Indi = (function (indi) {
                 width: 200,
                 height: 45,
                 border: 0,
-                html: '<img src="' + indi.std + '/i/admin/logo-slogan.png"/>'
+                html: '<img src="' + indi.std + '/i/admin/logo.png"/>'
             };
 
             this.options = {

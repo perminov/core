@@ -269,6 +269,17 @@ var Indi = function(indi) {
     }, 1000);
 
     /**
+     * Quotes string that later will be used in regular expression.
+     *
+     * @param str
+     * @param delimiter
+     * @return {String}
+     */
+    indi.pregQuote = function(str, delimiter) {
+        return (str + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-]', 'g'), '\\$&');
+    }
+
+    /**
      * Append indexOf() method definition in Array.prototype if need, because IE<9 doest not have it
      */
     if (!Array.prototype.indexOf) {

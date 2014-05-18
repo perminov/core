@@ -1096,7 +1096,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($abs = $this->abs($alias, $copy))
 
             // Else return path to first found file, relative to document root
-            return str_replace(DOC, '', $abs);
+            return str_replace(DOC . STD, '', $abs);
     }
 
     /**
@@ -1138,7 +1138,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $img = '<img';
 
             // Get image filename, relative to $_SERVER['DOCUMENT_ROOT']
-            $src = str_replace(DOC, '', $abs);
+            $src = str_replace(DOC . STD, '', $abs);
 
             // If $noCache argument is true, we append file modification time to 'src' attribute
             if ($noCache) $src .= '?' . filemtime($abs);
@@ -2294,7 +2294,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!count($fields)) return;
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!preg_match(':^/.*/$:', $dir = $this->model()->dir())) {
+        if (!preg_match(':^([A-Z][\:])?/.*/$:', $dir = $this->model()->dir())) {
 
             // Assume it is a error message, and put it under '#model' key within $this->_mismatch property
             $this->_mismatch['#model'] = $dir;

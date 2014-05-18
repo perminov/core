@@ -94,4 +94,8 @@ class Admin_TemporaryController extends Indi_Controller {
 
         die('ok');
     }
+
+	public function emptyAction(){
+		die('empty');
+	}
 }

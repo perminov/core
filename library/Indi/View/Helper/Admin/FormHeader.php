@@ -35,8 +35,6 @@ class Indi_View_Helper_Admin_FormHeader {
     <!-- CK editor and finder scripts -->
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
-    <!-- STD dependent styles -->
-    <?=Indi::view()->styleStd()?>
 </head>
 <body class="i-action-form">
 <script>
@@ -51,7 +49,7 @@ Indi = $.extend(Indi, {
 top.Indi.scope = Indi.scope;
 </script>
 <?=Indi::view()->siblingCombo()?>
-<form class="i-form" action="<?=Indi::trail()->section->href?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?><?=Indi::uri()->ph ? '/ph/' . Indi::uri()->ph : ''?>/" name="<?=Indi::trail()->model->table()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
+<form class="i-form" action="<?=(COM ? '' : '/admin') . '/' . Indi::trail()->section->alias?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?><?=Indi::uri()->ph ? '/ph/' . Indi::uri()->ph : ''?>/" name="<?=Indi::trail()->model->table()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">
     <table cellspacing="1" border="0" width="100%" class="i-form-table">
         <tr class="i-form-subheader"><td colspan="2"><?=$title?></td></tr>
         <col width="50%"/><col width="50%"/>
