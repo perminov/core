@@ -66,7 +66,9 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         $gotFromScope = Indi::view()->getScope('filters', $this->field->alias);
 
         if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
-            if ($this->field->storeRelationAbility == 'many') $gotFromScope = implode(',', $gotFromScope);
+            if ($this->field->storeRelationAbility == 'many')
+                if(is_array($gotFromScope))
+                    $gotFromScope = implode(',', $gotFromScope);
             $this->filter->defaultValue = Indi::view()->filtersSharedRow->{$this->field->alias} = $gotFromScope;
             return $gotFromScope;
         }
@@ -155,8 +157,8 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             ?><div class="i-combo-multiple x-form-text"><?
                 foreach($this->comboDataRs->selected as $selectedR) {
                     $item = Indi_View_Helper_Admin_FormCombo::detectColor(array('title' => $selectedR->title));
-                    ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style']?>><?
-                        ?><?=usubstr($item['title'], 50)?><?
+                    ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style'] ? $item['style'] : ($item['font'] ? ' style="' . $item['font'] . '"' : '')?>><?
+                        ?><?=$item['box'] . usubstr($item['title'], 50)?><?
                         ?><span class="i-combo-selected-item-delete"></span><?
                         ?></span><?
                 }

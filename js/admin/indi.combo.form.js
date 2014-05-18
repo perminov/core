@@ -121,17 +121,6 @@ var Indi = (function (indi) {
             }
 
             /**
-             * Quotes string that later will be used in regular expression.
-             *
-             * @param str
-             * @param delimiter
-             * @return {String}
-             */
-            this.pregQuote = function(str, delimiter) {
-                return (str + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-]', 'g'), '\\$&');
-            }
-
-            /**
              * Function for hiding options list
              *
              * @param name
@@ -275,10 +264,6 @@ var Indi = (function (indi) {
                         }
                     }
 
-                    // Restore trigger pic because previously it could have disabled-style of appearance
-                    if ($('#'+name+'-keyword').parents('.i-combo').hasClass('simple-disabled') == false)
-                        $('#'+name+'-trigger').attr('src', indi.std+'/i/admin/trigger-system.png');
-
                 // Else if results set is empty (no non-disabled options), we hide options, and set red
                 // color for keyword, as there was no related results found
                 } else {
@@ -294,7 +279,6 @@ var Indi = (function (indi) {
                     // Else if reason of no results was not in satellite, we add special css class for that case
                     } else {
                         $('#'+name+'-keyword').addClass('i-combo-keyword-no-results');
-                        $('#'+name+'-trigger').attr('src', indi.std+'/i/admin/trigger-system-disabled.png');
                     }
                 }
             }
@@ -328,7 +312,7 @@ var Indi = (function (indi) {
 
                 // Show loading pic
                 $('#'+name+'-count')
-                    .html('<img src="' + indi.std + '/i/admin/combo-loading-pic.gif" class="i-combo-loader" width="15">')
+                    .html('<img src="' + indi.std + '/i/admin/combo-data-loading.gif" class="i-combo-data-loading">')
                     .addClass('i-combo-count-visible');
 
                 // Appendix
@@ -461,10 +445,10 @@ var Indi = (function (indi) {
                 instance.store[name].ids = [];
 
                 // Prepare regular expression for keyword search
-                var keywordReg = new RegExp('^'+instance.pregQuote(data.keyword, '/'), 'i');
+                var keywordReg = new RegExp('^'+indi.pregQuote(data.keyword, '/'), 'i');
 
                 // Prepare regular expression for keyword, if it was typed in wrong keyboard layout
-                var keywordRegWKL = new RegExp('^'+instance.pregQuote(instance.convertWKL(data.keyword), '/'), 'i');
+                var keywordRegWKL = new RegExp('^'+indi.pregQuote(instance.convertWKL(data.keyword), '/'), 'i');
 
                 // This variable will contain a title, which will be tested against a keyword
                 var against;
@@ -1460,7 +1444,6 @@ var Indi = (function (indi) {
                     if (sv == 0 || force == true) {
                         $('#'+name+'-keyword').attr('disabled', 'disabled');
                         $('#'+name+'-keyword').parents('.i-combo').addClass('i-combo-disabled x-item-disabled');
-                        $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system-disabled.png');
                         $('#'+name+'-keyword').val('');
 
                         // We set hidden field value as 0 (or '', if multiple), and fire 'change event' because there can be
@@ -1497,7 +1480,6 @@ var Indi = (function (indi) {
                     } else {
                         $('#'+name+'-keyword').removeAttr('disabled');
                         $('#'+name+'-keyword').parents('.i-combo').removeClass('i-combo-disabled x-item-disabled');
-                        $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system.png');
                     }
                 }
 
@@ -1519,9 +1501,7 @@ var Indi = (function (indi) {
             this.toggle = function(name, disable){
                 if (disable) {
                     $('#'+name+'-keyword').attr('disabled', 'disabled');
-                    $('#'+name+'-keyword').parents('.i-combo').addClass('simple-disabled');
                     $('#'+name+'-keyword').parents('.i-combo').addClass('i-combo-disabled x-item-disabled');
-                    $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system-disabled.png');
                     $('#'+name+'-keyword').val('');
                     // We set hidden field value as 0, and fire 'change event' because there can be
                     // satellited combos for current combo, so if we have, for example 5 cascading combos,
@@ -1534,8 +1514,6 @@ var Indi = (function (indi) {
                 } else {
                     $('#'+name+'-keyword').removeAttr('disabled');
                     $('#'+name+'-keyword').parents('.i-combo').removeClass('i-combo-disabled x-item-disabled');
-                    $('#'+name+'-keyword').parents('.i-combo').removeClass('simple-disabled');
-                    $('#'+name+'-keyword').parents('.i-combo').find('.i-combo-trigger').attr('src', indi.std+'/i/admin/trigger-system.png');
                 }
             }
 

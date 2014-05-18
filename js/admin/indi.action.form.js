@@ -255,7 +255,7 @@ var Indi = (function (indi) {
 
                     },
                     disabled: indi.trail.item().disableSave,
-                    iconCls: 'save',
+                    iconCls: 'i-btn-icon-save',
                     id: 'i-action-form-topbar-button-save',
                     pressed: indi.scope.toggledSave,
                     arrowHandler: function(button, event){
@@ -409,7 +409,7 @@ var Indi = (function (indi) {
 
                 // Add a separator
                 dockedItems.push({
-                    iconCls: 'add',
+                    iconCls: 'i-btn-icon-create',
                     disabled: parseInt(indi.trail.item().section.disableAdd) || indi.trail.item().disableSave ? true : false,
                     id: 'i-action-form-topbar-button-add',
                     handler: function(){

@@ -17,6 +17,9 @@ class Indi_Uri_Base {
      */
     public function parse($uri = '') {
 
+        // Clear all current uri params
+        $this->clear();
+
         // If $uri argument is given, setup $_SERVER['REQUEST_URI'] as $uri argument
         if ($uri) $_SERVER['REQUEST_URI'] = $uri;
 
@@ -199,5 +202,12 @@ class Indi_Uri_Base {
 
         // Append trailing slash
         $_SERVER['REQUEST_URI'] .= '/';
+    }
+
+    /**
+     * Clear all current uri params
+     */
+    public function clear() {
+        foreach ($this as $prop => $value) unset($this->$prop);
     }
 }

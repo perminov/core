@@ -802,6 +802,10 @@ class Indi_Controller_Admin extends Indi_Controller{
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();
 
+                    // If $filterSearchFieldValue is a non-empty string, convert it to array
+                    if (is_string($filterSearchFieldValue) && strlen($filterSearchFieldValue))
+                        $filterSearchFieldValue = explode(',', $filterSearchFieldValue);
+
                     // Fill that array
                     foreach ($filterSearchFieldValue as $filterSearchFieldValueItem) {
                         $fisA[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';

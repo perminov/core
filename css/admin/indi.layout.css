@@ -224,12 +224,34 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-multislider-color-label{
     margin-top: -1px;
 }
+.i-multislider-color .x-slider-horz .x-slider-inner {
+    background: url(/i/admin/i-color-slider-bg.png) no-repeat 0px 3px;
+}
+.i-multislider-color .x-slider-horz .x-slider-inner .x-slider-thumb:first-child {
+    background-image: url(/i/admin/i-color-slider-thumb-first.png);
+}
+.i-multislider-color .x-slider-horz .x-slider-inner .x-slider-thumb:last-child {
+    background-image: url(/i/admin/i-color-slider-thumb-last.png);
+}
+
 
 /*Form topbar styles - here (mean not in indi.action.form.css), because topbar styles are not affected by iframe styles*/
 .i-action-form-topbar-nav-to-row-number-of .x-form-item-label{
     padding: 0;
     margin-top: -1px;
 }
+
+/* Buttons background */
+.i-btn-icon-create{background-image: url('/i/admin/btn-icon-create.gif');}
+.i-btn-icon-form{background-image: url('/i/admin/btn-icon-form.gif');}
+.i-btn-icon-delete{background-image: url('/i/admin/btn-icon-delete.gif');}
+.i-btn-icon-back{background-image: url('/i/admin/btn-icon-back.png');}
+.i-btn-icon-save{background-image: url('/i/admin/btn-icon-save.png');}
+.i-btn-icon-toggle{background-image: url('/i/admin/btn-icon-toggle.png');}
+.i-btn-icon-up{background-image: url('/i/admin/btn-icon-up.png');}
+.i-btn-icon-down{background-image: url('/i/admin/btn-icon-down.png');}
+.i-btn-icon-xls{background-image: url('/i/admin/btn-icon-xls.png');}
+
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
     padding-top: 0px !important;

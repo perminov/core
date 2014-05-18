@@ -113,7 +113,7 @@ class Indi_Cache {
      * @return string
      */
     public static function file($table) {
-		return DOC . '/www/application/cache/' . $table . '.php';
+		return DOC . STD . '/www/application/cache/' . $table . '.php';
 	}
 
 
@@ -134,7 +134,7 @@ class Indi_Cache {
      */
     public static function load() {
         if (Indi::ini()->db->cache)
-            foreach (glob(DOC . '/www/application/cache/*.php') as $cacheI)
+            foreach (glob(DOC . STD . '/www/application/cache/*.php') as $cacheI)
                 require_once($cacheI);
     }
 }

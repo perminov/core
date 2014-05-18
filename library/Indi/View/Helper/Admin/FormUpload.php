@@ -32,7 +32,7 @@ class Indi_View_Helper_Admin_FormUpload
 				case 'image':
 					$uploaded = Indi::view()->row->img($name) . '<br>';
 					preg_match('/src="([^"]+)"/', $uploaded, $matches); $src = substr($matches[1], 0, strpos($matches[1], '?'));
-					$abs = $_SERVER['DOCUMENT_ROOT'] . $src;
+					$abs = Indi::view()->row->abs($name);
                     $info = getimagesize($abs);
                     if (STD) $uploaded = preg_replace('~src="' . preg_quote(STD) . '~', 'src="', $uploaded);
                     if ($info[0] > Indi::get('width') + 8) {

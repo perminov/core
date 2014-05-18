@@ -925,9 +925,9 @@ class Indi {
             // If we currently deal with 'css' files
             if ($ext == 'css') {
 
-                // Replace extjs relative paths to paths, relative to web root, instead of relative to folder, where
-                // extjs is located
-                $txt = preg_replace('!url\(\'\.\./\.\./resources!', 'url(\'/library/extjs4/resources', $txt);
+                // Convert relative paths, mentioned in css files to paths, relative to web root
+                $txt = preg_replace('!url\((\'|)/!', 'url($1' . STD . '/', $txt);
+                $txt = preg_replace('!url\(\'\.\./\.\./resources!', 'url(\'' . STD . '/library/extjs4/resources', $txt);
 
                 // Remove comments from css
                 $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);

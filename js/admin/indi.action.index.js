@@ -870,7 +870,7 @@ var Indi = (function (indi) {
                     items.push({
                         id: 'i-section-' +indi.trail.item().section.alias + '-action-index-button-add',
                         text: indi.lang.I_CREATE,
-                        iconCls: 'add',
+                        iconCls: 'i-btn-icon-create',
                         actionAlias: 'form',
                         handler: function(){
                             indi.load(
@@ -929,7 +929,7 @@ var Indi = (function (indi) {
 
                         // Setup iconCls property, if need
                         if(iconA.indexOf(indi.trail.item().actions[i].alias) != -1)
-                            item.iconCls = indi.trail.item().actions[i].alias;
+                            item.iconCls = 'i-btn-icon-' + indi.trail.item().actions[i].alias;
 
                         // Put to the actions stack
                         items.push(item);

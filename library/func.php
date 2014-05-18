@@ -8,7 +8,7 @@
 function autoloader($class) {
 
     // If $class - is a controller name, convert the first letter to lowercase
-    if (preg_match('/Admin_([a-zA-z]*Controller)$/', $class, $c)) $cn = lcfirst($class);
+    if (preg_match('/Admin_([a-zA-z]*Controller)$/', $class, $c)) $class = lcfirst($class);
 
     // Get the filename, by replacing '_' to '/' in $class, and appending '.php'
     $cf = str_replace('_', '/', $class) . '.php';
@@ -17,7 +17,7 @@ function autoloader($class) {
     if (!@include_once($cf)) {
 
         // Check if we are in 'admin' module
-        if (COM || preg_match('~^/admin\b~', URI)) {
+        if (COM || preg_match('~^' . preg_quote(STD, '~') . '/admin\b~', URI)) {
 
             // If $class is a library class for admin module controllers
             if (preg_match('/^Indi_Controller_Admin_([a-zA-Z]*)$/', $class, $l))
@@ -393,6 +393,13 @@ function grs($length = 15, $useSpecialChars = false) {
     return $s;
 }
 
+/**
+ * Build a localized date
+ *
+ * @param $format
+ * @param $date
+ * @return string
+ */
 function ldate($format, $date) {
     return iconv('windows-1251', 'utf-8', strftime($format, strtotime($date)));
 }
