@@ -1,5 +1,5 @@
 <?php
-class Indi_Controller_Admin extends Indi_Controller{
+class Indi_Controller_Admin extends Indi_Controller {
 
     /**
      * Array of section ids, starting from current section and up to the top.
@@ -8,7 +8,13 @@ class Indi_Controller_Admin extends Indi_Controller{
      */
     private $_routeA = array();
 
-    protected $excelA = array();
+    /**
+     * If the purpose of current request is to build an excel spreadsheet - this variable will be used
+     * for collecting filters usage information, and retrieving in the process of building spreadsheet
+     *
+     * @var array
+     */
+    protected $_excelA = array();
 
     /**
      * Init all general cms features
@@ -129,7 +135,8 @@ class Indi_Controller_Admin extends Indi_Controller{
         // Delete row
         $this->row->delete();
 
-        // Decrement row index
+        // Decrement row index. This line, and one line below - are required to provide an ability to shift
+        // the selection within rowset (grid, tile, etc) panel, after current row deletion
         Indi::uri()->aix -= 1;
 
         // Apply new index
@@ -179,10 +186,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                 }
             }
 
-            // Options array
-            $options = array();
-
-            // Get options
+            // Get combo data rowset
             if (Indi::post()->keyword) {
                 $comboDataRs = $this->row->getComboData(Indi::post()->field, Indi::post()->page, Indi::post()->keyword,
                     true, Indi::post()->satellite, $where, false, $field, $order, $dir);
@@ -192,83 +196,12 @@ class Indi_Controller_Admin extends Indi_Controller{
                     $dir, $offset);
             }
 
-            // Get title column
-            $titleColumn = $comboDataRs->titleColumn;
+            // Prepare combo options data
+            $comboDataA = $comboDataRs->toComboData($field->params);
 
-            // Get satellite
-            // if ($this->field->satellite) $satellite = $field->foreign('satellite');
+            $options = $comboDataA['options'];
+            $titleMaxLength = $comboDataA['titleMaxLength'];
 
-            // If 'optgroup' param is used
-            if ($comboDataRs->optgroup) $by = $comboDataRs->optgroup['by'];
-
-            // Detect key property for options
-            $keyProperty = $comboDataRs->enumset ? 'alias' : 'id';
-
-            // Option title maxlength
-            $titleMaxLength = 0;
-
-            // Option title maxlength
-            $titleMaxIndent = 0;
-
-            // Setup primary data for options. Here we use '$o' name instead of '$comboDataR', because
-            // it is much more convenient to use such name to deal with option row object while creating
-            // a template in $params['template'] contents, if it is set, because php expressions are executed
-            // in current context
-            foreach ($comboDataRs as $o) {
-
-                // Get initial array of system properties of an option
-                $system = $o->system();
-
-                // Set group identifier for an option
-                if ($by) $system = array_merge($system, array('group' => $o->$by));
-
-                // Set javascript handler on option select event, if needed
-                if($comboDataRs->enumset && $o->javascript)
-                    $system = array_merge($system, array('js' => $o->javascript));
-
-                // Here we are trying to detect, does $o->title have tag with color definition, for example
-                // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
-                // We should do that because such tags existance may cause a dom errors while performing usubstr()
-                $info = Indi_View_Helper_Admin_FormCombo::detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
-
-                // If color was detected as a box, append $system['boxColor'] property
-                if ($info['box']) $system['boxColor'] = $info['color'];
-
-                // Setup primary option data
-                $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
-
-                // If color was detected, and it has box-type, we remember this fact
-                if ($info['box']) $this->hasColorBox = true;
-
-                // Update maximum option title length, if it exceeds previous maximum
-                $noHtmlSpecialChars = preg_replace('/&[a-z]*;/', ' ',$options[$o->$keyProperty]['title']);
-                if (mb_strlen($noHtmlSpecialChars, 'utf-8') > $titleMaxLength)
-                    $titleMaxLength = mb_strlen($noHtmlSpecialChars, 'utf-8');
-
-                // Update maximum option title indent, if it exceeds previous maximum
-                if ($comboDataRs->model()->treeColumn()) {
-                    $indent = mb_strlen(preg_replace('/&nbsp;/', ' ', $options[$o->$keyProperty]['system']['indent']), 'utf-8');
-                    if ($indent > $titleMaxIndent) $titleMaxIndent = $indent;
-                }
-
-                // If color was found, we remember it for that option
-                if ($info['style']) $options[$o->$keyProperty]['system']['color'] = $info['color'];
-
-                // Current context does not have a $this->ignoreTemplate member, but inherited class *_FilterCombo does.
-                // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
-                // in *_FilterCombo is set to false
-                if ($field->params['optionTemplate'] && !$this->ignoreTemplate) {
-                    Indi::$cmpTpl = $field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
-                }
-
-                // Deal with optionAttrs, if specified.
-                if ($comboDataRs->optionAttrs) {
-                    for ($i = 0; $i < count($comboDataRs->optionAttrs); $i++) {
-                        $options[$o->$keyProperty]['attrs'][$comboDataRs->optionAttrs[$i]] = $o->{$comboDataRs->optionAttrs[$i]};
-                    }
-                }
-
-            }
             $options = array('ids' => array_keys($options), 'data' => array_values($options));
 
             // Setup number of found rows
@@ -337,6 +270,9 @@ class Indi_Controller_Admin extends Indi_Controller{
      * @param $keyword urlencoded string
      * @param $order JSON
      * @param $page int
+     * @param $found int
+     * @param $WHERE string
+     * @param $ORDER string
      */
     public function setScope($primary, $filters, $keyword, $order, $page, $found, $WHERE, $ORDER) {
 
@@ -361,8 +297,6 @@ class Indi_Controller_Admin extends Indi_Controller{
             'upperAix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix'],
             'aix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['aix']
         );
-
-        //i($_SESSION['indi']['admin'][Indi::uri()->section]);
     }
 
     /**
@@ -385,9 +319,14 @@ class Indi_Controller_Admin extends Indi_Controller{
         // If current action deals with row, that is not yet exists in database - return
         if (!$this->row->id) return;
 
+        // Setup $modified array with 'aix' param as first item in. This array may be additionally fulfilled with
+        // 'page' param, if passed 'aix' value is too large or too small to match initial results page number (this
+        // mean that page number should be recalculated, so 'page' param will store recalculated page number). After
+        // all necessary operations will be done - valued from this ($modified) array will replace existing values
+        // in scope
         $modified = array('aix' => Indi::uri()->aix);
 
-        // Start index
+        // Start and end indexes. We calculate them, because we should know, whether page number should be changed or no
         $start = ($original['page'] - 1) * Indi::trail((int) $upper)->section->rowsOnPage + 1;
         $end = ($original['page']) * Indi::trail((int) $upper)->section->rowsOnPage;
 
@@ -402,10 +341,14 @@ class Indi_Controller_Admin extends Indi_Controller{
         // Remember all scope params in $_SESSION under a hash
         $_SESSION['indi']['admin'][Indi::trail((int) $upper)->section->alias][Indi::uri()->ph]
             = array_merge($original, $modified);
-
-        //if (!$upper) i($modified['page'], 'a');
     }
 
+    /**
+     * Set parent scope primary hash and aix within current scope, to provide an ability for getting scope data,
+     * related to parent trail items
+     *
+     * @param $primary WHERE clause, that will be used for calculation of current scope primary hash
+     */
     public function setScopeUpper($primary) {
 
         // Get $primary as string
@@ -451,13 +394,10 @@ class Indi_Controller_Admin extends Indi_Controller{
         $where = array();
 
         // Append a childs-by-parent clause to primaryWHERE stack
-        if (/*Indi::uri('action') == 'index' && Indi::trail(1)->section->sectionId
-            && */$parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
+        if ($parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
 
         // If a special section's primary filter was defined, add it to primary WHERE clauses stack
-        if (strlen(Indi::trail()->section->compiled('filter'))) {
-            $where[] = Indi::trail()->section->compiled('filter');
-        }
+        if (strlen(Indi::trail()->section->compiled('filter'))) $where[] = Indi::trail()->section->compiled('filter');
 
         // Owner control. There can be a situation when some cms users are not stored in 'admin' db table - these users
         // called 'alternates'. Example: we have 'Experts' cms section (rows are fetched from 'expert' db table) and
@@ -485,6 +425,12 @@ class Indi_Controller_Admin extends Indi_Controller{
         return $where;
     }
 
+    /**
+     * Get part of WHERE clause, that provide owner control access restriction
+     *
+     * @param int $trailStepsUp
+     * @return string
+     */
     public function alternateWHERE($trailStepsUp = 0) {
         if ($_SESSION['admin']['alternate'] && Indi::trail($trailStepsUp)->model->fields($_SESSION['admin']['alternate'] . 'Id'))
             return '`' . $_SESSION['admin']['alternate'] . 'Id` = "' . $_SESSION['admin']['id'] . '"';
@@ -539,7 +485,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $where[] = 'IF(`' . $fieldR->alias . '`, "' . I_YES . '", "' .
                             I_NO . '") LIKE "%' . $keyword . '%"';
 
-                        // Otherwise handle keyword search on other non-relation column types
+                    // Otherwise handle keyword search on other non-relation column types
                     } else {
 
                         // Setup an array with several column types and possible characters sets for each type.
@@ -567,7 +513,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                         }
                     }
 
-                    // If column store foreign keys from `enumset` table
+                // If column store foreign keys from `enumset` table
                 } else if ($fieldR->relation == 6) {
 
                     // Find `enumset` keys (mean `alias`-es), that have `title`-s, that match keyword
@@ -580,7 +526,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                     if (count($idA))
                         $where[] = 'FIND_IN_SET(`' . $fieldR->alias . '`, "' . implode(',', $idA) . '")';
 
-                    // If column store foreign keys, but not from `enumset` table
+                // If column store foreign keys, but not from `enumset` table
                 } else {
 
                     // If column does not have a satellite (dependency='u'), or have but dependency type is set to 'c'
@@ -596,7 +542,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                         if (count($idA))
                             $where[] = 'FIND_IN_SET(`' . $fieldR->alias . '`, "' . implode(',', $idA) . '")';
 
-                        // Else if dependency=e - mean 'Variable entity'. Will be implemented later
+                    // Else if dependency=e - mean 'Variable entity'. Will be implemented later
                     } else {
 
                     }
@@ -613,7 +559,8 @@ class Indi_Controller_Admin extends Indi_Controller{
      * rowset. Function use a $primaryWHERE, merge it with $this->filtersWHERE() and append to it $this->keywordWHERE()
      * if return values of these function are not null
      *
-     * @param $primaryWHERE
+     * @param string|array $primaryWHERE
+     * @param string|array $customWHERE
      * @return null|string
      */
     public function finalWHERE($primaryWHERE, $customWHERE = null) {
@@ -734,21 +681,21 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $excelA[$found->alias]['value'] = array($hueFrom, $hueTo);
                         $excelA[$found->alias]['offset'] = $searchOnField['_xlsLabelWidth'];
 
-                        // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
+                    // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
                     } else if ($found->elementId == 9 || $found->elementId == 23) {
                         $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue ? I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES : I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO;
 
-                        // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
+                    // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
                     } else if ($found->elementId == 1) {
                         $where[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
 
-                        // Else if $found field's control element are 'Number', 'Date' or  'Datetime'
+                    // Else if $found field's control element are 'Number', 'Date' or  'Datetime'
                     } else if (preg_match('/^18|12|19$/', $found->elementId)) {
 
                         // Detect the type of filter value - bottom or top, in 'range' terms mean
@@ -773,8 +720,9 @@ class Indi_Controller_Admin extends Indi_Controller{
                         // Use a '>=' or '<=' clause, according to specified range border's type
                         $where[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
 
-                        // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
+                    // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
+
                         // Use 'MATCH AGAINST' clause
                         $where[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
                             '*" IN BOOLEAN MODE)';
@@ -783,7 +731,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
                     }
 
-                    // Else if $found field is able to store only one foreign key, use '=' clause
+                // Else if $found field is able to store only one foreign key, use '=' clause
                 } else if ($found->storeRelationAbility == 'one') {
                     $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
@@ -796,7 +744,7 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $excelA[$found->alias]['table'] = $found->relation;
                     }
 
-                    // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
+                // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
                 } else if ($found->storeRelationAbility == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
@@ -807,9 +755,8 @@ class Indi_Controller_Admin extends Indi_Controller{
                         $filterSearchFieldValue = explode(',', $filterSearchFieldValue);
 
                     // Fill that array
-                    foreach ($filterSearchFieldValue as $filterSearchFieldValueItem) {
+                    foreach ($filterSearchFieldValue as $filterSearchFieldValueItem)
                         $fisA[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
-                    }
 
                     // Implode array of FIND_IN_SET clauses with AND, and enclose by round brackets
                     $where[] = '(' . implode(' AND ', $fisA) . ')';
@@ -824,13 +771,21 @@ class Indi_Controller_Admin extends Indi_Controller{
                     }
                 }
             }
-//            i($where);
         }
-        if (Indi::uri()->excel) $this->excelA = $excelA;
+
+        // If the purpose of current request is to build an excel spreadsheet -
+        // setup filters usage information in $this->_excelA property
+        if (Indi::uri()->excel) $this->_excelA = $excelA;
+
+        // Return WHERE clause
         return $where;
     }
 
+    /**
+     * @return null
+     */
     public function checkRowIsInScope(){
+
         // Get scope params
         $scope = Indi::view()->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
 
@@ -894,8 +849,8 @@ class Indi_Controller_Admin extends Indi_Controller{
         $lastRowIndex =
             1 /* bread crumbs row*/ +
                 1 /* row with total number of results found */ +
-                (is_array($this->excelA) && count($this->excelA) ? count($this->excelA) + 1 : 0) /* filters count */ +
-                (bool) (Indi::get()->keyword || (is_array($this->excelA) && count($this->excelA) > 1)) +
+                (is_array($this->_excelA) && count($this->_excelA) ? count($this->_excelA) + 1 : 0) /* filters count */ +
+                (bool) (Indi::get()->keyword || (is_array($this->_excelA) && count($this->_excelA) > 1)) +
                 1 /* data header row */+
                 count($data);
 
@@ -987,14 +942,14 @@ class Indi_Controller_Admin extends Indi_Controller{
         $currentRowIndex++;
 
         // If filters were used
-        if (is_array($this->excelA) && count($this->excelA)) {
+        if (is_array($this->_excelA) && count($this->_excelA)) {
 
             // We shift current row index to provide a empty row for visual separation bread crubms row and filters rows
             $currentRowIndex++;
 
             // Info about filters was prepared to $this->filtersWHERE() method, as an array of used filters
             // For each used filter:
-            foreach ($this->excelA as $alias => $excelI) {
+            foreach ($this->_excelA as $alias => $excelI) {
 
                 // Create rich text object
                 $objRichText = new PHPExcel_RichText();
@@ -1263,9 +1218,9 @@ class Indi_Controller_Admin extends Indi_Controller{
             $currentRowIndex++;
 
 
-            // If no keyword search was used, but number of filters, involved in search is more than 1
-            // we provide an empty row, as a separator between filters mentions and found data
-        } else if (is_array($this->excelA) && count($this->excelA) > 1) {
+        // If no keyword search was used, but number of filters, involved in search is more than 1
+        // we provide an empty row, as a separator between filters mentions and found data
+        } else if (is_array($this->_excelA) && count($this->_excelA) > 1) {
 
             // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
             $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
@@ -1293,7 +1248,6 @@ class Indi_Controller_Admin extends Indi_Controller{
             $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $columnI['title']);
 
             if ($columnI['dataIndex'] == $orderColumnAlias) {
-                // /library/extjs4/resources/themes/images/default/grid/sort_asc.gif
 
                 // Create the GD canvas image for hue background and thumbs to be placed there
                 $canvasIm = imagecreatetruecolor(13, 5);

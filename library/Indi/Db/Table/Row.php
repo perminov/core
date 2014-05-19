@@ -351,7 +351,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param null $order
      * @param string $dir
      * @param null $offset
-     * @return Indi_Db_Table_Rowset|mixed
+     * @return Indi_Db_Table_Rowset_Combo
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
                                  $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
@@ -360,7 +360,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Basic info
         $entityM = Indi::model('Entity');
         $fieldM = Indi::model('Field');
-        $entityR = $entityM->fetchRow('`table` = "' . $this->_table . '"');
         $fieldR = $fieldR ? $fieldR : Indi::model($this->_table)->fields($field);
         $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
         $relatedM = Indi::model($fieldR->relation);
@@ -710,10 +709,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $distinctGroupByFieldValues[$dataR->{$fieldR->params['groupBy']}] = true;
 
             // Get group field
-            $groupByFieldR = $fieldM->fetchRow('
-                        `entityId` = "' . $entityM->fetchRow('`id` = "' . $fieldR->relation . '"')->id . '" AND
-                        `alias` = "' . $fieldR->params['groupBy'] . '"
-                    ');
+            $groupByFieldR = $fieldM->fetchRow(array(
+                '`entityId` = "' . $fieldR->relation . '"',
+                '`alias` = "' . $fieldR->params['groupBy'] . '"'
+            ));
 
             // Get group field related entity model
             $groupByFieldEntityM = Indi::model($groupByFieldR->relation);
@@ -721,16 +720,44 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Get titles for optgroups
             $groupByOptions = array();
             if ($groupByFieldEntityM->table() == 'enumset') {
-                $groupByRs = $groupByFieldEntityM->fetchAll('
-                            `fieldId` = "' . $groupByFieldR->id . '" AND
-                            FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")
-                        ');
-                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->alias] = usubstr($groupByR->title, 50);
+
+                $groupByRs = $groupByFieldEntityM->fetchAll(array(
+                    '`fieldId` = "' . $groupByFieldR->id . '"',
+                    'FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
+                ));
+
+                $keyProperty = 'alias';
             } else {
+
                 $groupByRs = $groupByFieldEntityM->fetchAll(
                     'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 );
-                foreach ($groupByRs as $groupByR) $groupByOptions[$groupByR->id] = usubstr($groupByR->title, 50);
+                $keyProperty = 'id';
+            }
+
+            $titleColumn = $groupByFieldEntityM->titleColumn();
+
+            foreach ($groupByRs as $groupByR) {
+
+                // Here we are trying to detect, does $o->title have tag with color definition, for example
+                // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
+                // We should do that because such tags existance may cause a dom errors while performing usubstr()
+                $info = Indi_View_Helper_Admin_FormCombo::detectColor(array(
+                    'title' => $groupByR->$titleColumn,
+                    'value' => $groupByR->$keyProperty
+                ));
+
+                // Reset $system array
+                $system = array();
+
+                // If color was detected as a box, append $system['boxColor'] property
+                if ($info['box']) $system['boxColor'] = $info['color'];
+
+                // If non-box color was detected - setup a 'color' property
+                if ($info['style']) $system['color'] = $info['color'];
+
+                // Setup primary option data
+                $groupByOptions[$groupByR->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
             }
 
             $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);

@@ -803,13 +803,31 @@ var Indi = (function (indi) {
              */
             this.suggestions = function(json, name){
                 var items = [];
-                var groups = json.optgroup ? json.optgroup.groups : {none: 'none'};
+                var groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}};
                 var groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '';
                 var disabledCount = 0;
+                var color = {};
 
                 for (var j in groups) {
                     if (j != 'none') {
-                        items.push('<li class="disabled" group>' + groups[j] + '</li>');
+
+                        // Open <li>
+                        var item = '<li class="disabled" group="true"';
+
+                        // Apply css color, if it was passed within store. Currently this feature is used for
+                        // cases then item title got from database was something like
+                        // <span style="color: red">Some title</span>. At such cases, php code which is preparing
+                        // combo data, strips that html from option, but detect defined color and
+                        // store it in ...['data'][i].system['color'] property
+                        if (groups[j].system && groups[j].system['color'] && typeof groups[j].system['color'] == 'string')
+                            item += ' style="color: ' + groups[j].system['color'] + ';"';
+
+                        item += '>';
+
+                        // Detect color
+                        color = instance.color(groups[j], j);
+                        item += color.box + color.title + '</li>';
+                        items.push(item);
                     }
                     for (var i = 0; i < json['ids'].length; i++) {
                         if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {

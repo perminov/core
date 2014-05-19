@@ -29,6 +29,22 @@ class Indi_View_Helper_Admin_FormCombo {
     public $hasColorBox = false;
 
     /**
+     * Number of characters, that longest option title consists from. Value of this property will be set while
+     * iteration over combo data rowset
+     *
+     * @var int
+     */
+    public $titleMaxLength = 0;
+
+    /**
+     * Maximun level level of depth, within combo data rowset, of course in case if combo data rowset was fetched from
+     * tree-like entity
+     *
+     * @var int
+     */
+    public $titleMaxIndent = 0;
+
+    /**
      * Setup row object for combo
      *
      * @return Indi_Db_Table_Row
@@ -105,19 +121,25 @@ class Indi_View_Helper_Admin_FormCombo {
         // Get selected
         $selected = $this->getSelected();
 
-        // Declare $options array
-        $options = array();
-
-        // Get initial set of combo options
+        // Get initial combo options rowset
         $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
             $this->where, $this->noSatellite(), $this->field, $this->comboDataOrderColumn,
             $this->comboDataOrderDirection, $this->comboDataOffset);
 
-        // Get title column
-        $titleColumn = $comboDataRs->titleColumn;
+        // Prepare combo options data
+        $comboDataA = $comboDataRs->toComboData($params, $this->ignoreTemplate);
+
+        $options = $comboDataA['options'];
+        $this->titleMaxLength = $comboDataA['titleMaxLength'];
+        $this->titleMaxIndent = $comboDataA['titleMaxIndent'];
+        $this->hasColorBox = $comboDataA['hasColorBox'];
+        $keyProperty = $comboDataA['keyProperty'];
 
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
+
+        /*// Get title column
+        $titleColumn = $comboDataRs->titleColumn;
 
         // If 'optgroup' param is used
         if ($comboDataRs->optgroup) $by = $comboDataRs->optgroup['by'];
@@ -125,10 +147,10 @@ class Indi_View_Helper_Admin_FormCombo {
         // Detect key property for options
         $keyProperty = $comboDataRs->enumset ? 'alias' : 'id';
 
-        // Option title maxlength
+        // Option title maximum length
         $this->titleMaxLength = 0;
 
-        // Option title maxlength
+        // Option title maximum indent
         $this->titleMaxIndent = 0;
 
         // Setup primary data for options. Here we use '$o' name instead of '$comboDataR', because
@@ -158,7 +180,7 @@ class Indi_View_Helper_Admin_FormCombo {
             // Setup primary option data
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
-            // If color was detected, and it has box-type, we remember this fact
+            // If color box was detected, and it has box-type, we remember this fact
             if ($info['box']) $this->hasColorBox = true;
 
             // Update maximum option title length, if it exceeds previous maximum
@@ -188,7 +210,7 @@ class Indi_View_Helper_Admin_FormCombo {
                     $options[$o->$keyProperty]['attrs'][$comboDataRs->optionAttrs[$i]] = $o->{$comboDataRs->optionAttrs[$i]};
                 }
             }
-        }
+        }*/
 
         // If current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
