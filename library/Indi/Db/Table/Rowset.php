@@ -1109,4 +1109,99 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     public function titleUsagesUpdate() {
         foreach ($this as $row) $row->titleUsagesUpdate();
     }
+
+    /**
+     * Convert current rowset to combo data array
+     *
+     * @param array $params
+     * @param bool $ignoreTemplate
+     * @return array
+     */
+    public function toComboData($params = array(), $ignoreTemplate = false) {
+
+        // Declare $options array
+        $options = array();
+
+        // If 'optgroup' param is used - set $by variable's value as 'by' property of $this->optgroup property
+        if ($this->optgroup) $by = $this->optgroup['by'];
+
+        // Detect key property for options
+        $keyProperty = $this->enumset ? 'alias' : 'id';
+
+        // Option title maximum length
+        $titleMaxLength = 0;
+
+        // Option title maximum indent
+        $titleMaxIndent = 0;
+
+        // Setup primary data for options. Here we use '$o' name instead of '$comboDataR', because
+        // it is much more convenient to use such name to deal with option row object while creating
+        // a template in $params['template'] contents, if it is set, because php expressions are executed
+        // in current context
+        foreach ($this as $o) {
+
+            // Get initial array of system properties of an option
+            $system = $o->system();
+
+            // Set group identifier for an option
+            if ($by) $system = array_merge($system, array('group' => $o->$by));
+
+            // Set javascript handler on option select event, if needed
+            if ($this->enumset && $o->javascript)
+                $system = array_merge($system, array('js' => $o->javascript));
+
+            // Here we are trying to detect, does $o->title have tag with color definition, for example
+            // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
+            // We should do that because such tags existance may cause a dom errors while performing usubstr()
+            $info = Indi_View_Helper_Admin_FormCombo::detectColor(array(
+                'title' => $o->{$this->titleColumn}, 'value' => $o->$keyProperty
+            ));
+
+            // If color was detected as a box, append $system['boxColor'] property
+            if ($info['box']) $system['boxColor'] = $info['color'];
+
+            // Setup primary option data
+            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+
+            // If color box was detected, and it has box-type, we remember this fact
+            if ($info['box']) $hasColorBox = true;
+
+            // Update maximum option title length, if it exceeds previous maximum
+            $noHtmlSpecialChars = preg_replace('/&[a-z]*;/', ' ',$options[$o->$keyProperty]['title']);
+            if (mb_strlen($noHtmlSpecialChars, 'utf-8') > $titleMaxLength)
+                $titleMaxLength = mb_strlen($noHtmlSpecialChars, 'utf-8');
+
+            // Update maximum option title indent, if it exceeds previous maximum
+            if ($this->model()->treeColumn()) {
+                $indent = mb_strlen(preg_replace('/&nbsp;/', ' ', $options[$o->$keyProperty]['system']['indent']), 'utf-8');
+                if ($indent > $titleMaxIndent) $titleMaxIndent = $indent;
+            }
+
+            // If color was found, we remember it for that option
+            if ($info['style']) $options[$o->$keyProperty]['system']['color'] = $info['color'];
+
+            // If 'optionTemplate' is not empty, and $ignoreTemplate argument is not boolean true
+            if ($params['optionTemplate'] && !$ignoreTemplate)
+
+                // Compile the template and put the result of the compilation into the 'option'
+                // property within array of current option properties
+                Indi::$cmpTpl = $params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
+
+            // Deal with optionAttrs, if specified.
+            if ($this->optionAttrs) {
+                for ($i = 0; $i < count($this->optionAttrs); $i++) {
+                    $options[$o->$keyProperty]['attrs'][$this->optionAttrs[$i]] = $o->{$this->optionAttrs[$i]};
+                }
+            }
+        }
+
+        // Return combo data
+        return array(
+            'options' => $options,
+            'titleMaxLength' => $titleMaxLength,
+            'titleMaxIndent' => $titleMaxIndent,
+            'hasColorBox' => $hasColorBox,
+            'keyProperty' => $keyProperty
+        );
+    }
 }
