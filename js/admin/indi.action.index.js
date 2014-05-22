@@ -286,13 +286,13 @@ var Indi = (function (indi) {
             this.getScopeFilter = function(alias){
 
                 // If there is no filters used at all - return
-                if (indi.scope.filters == null) return;
+                if (indi.trail.item().scope.filters == null) return;
 
                 var value = undefined;
 
-                // Filter values are stored in indi.scope as a stringified json array, so we need to convert it back,
+                // Filter values are stored in indi.trail.item().scope as a stringified json array, so we need to convert it back,
                 // to be able to find something there
-                var values = eval(indi.scope.filters);
+                var values = eval(indi.trail.item().scope.filters);
 
                 // Find a filter value
                 for (var i = 0; i < values.length; i++)
@@ -306,7 +306,7 @@ var Indi = (function (indi) {
 
             /**
              * Assign values to filters, before store load, for store to be loaded with respect to filter params.
-             * These values will be got from indi.scope.filters, and if there is no value for some filter there - then
+             * These values will be got from indi.trail.item().scope.filters, and if there is no value for some filter there - then
              * we'll try to get that in indi.trail.item().filters[i].defaultValue. If there will no value too - then
              * filter will be empty.
              */
@@ -946,7 +946,7 @@ var Indi = (function (indi) {
                     labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
                     labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
                     labelSeparator: '',
-                    value: indi.scope.keyword ? indi.urldecode(indi.scope.keyword) : '',
+                    value: indi.trail.item().scope.keyword ? indi.urldecode(indi.trail.item().scope.keyword) : '',
                     width: 100 + indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
                     height: 19,
                     cls: 'i-form-text',
@@ -1012,7 +1012,7 @@ var Indi = (function (indi) {
                                         indi.pre + '/' +
                                         combo.getValue() + '/index/id/' +
                                         selection[0].data.id + '/' +
-                                        'ph/'+Indi.scope.hash+'/aix/' +
+                                        'ph/'+Indi.trail.item().scope.hash+'/aix/' +
                                         (selection[0].index + 1)+'/'
                                     );
                                 }
@@ -1159,8 +1159,8 @@ var Indi = (function (indi) {
             this.storeSorters = function(){
 
                 // If we have sorting params, stored in scope - we use them
-                if (indi.scope.order)
-                    return eval(indi.scope.order);
+                if (indi.trail.item().scope.order)
+                    return eval(indi.trail.item().scope.order);
 
                 // Else we use current section's default sorting params, if specified
                 else if (indi.trail.item().section.defaultSortField)
@@ -1174,14 +1174,14 @@ var Indi = (function (indi) {
             }
 
             /**
-             * Determines instance.store's current page. At first it will try to get it from indi.scope, at it it fails
+             * Determines instance.store's current page. At first it will try to get it from indi.trail.item().scope, at it it fails
              *  - return 1
              *
              * @return {*}
              */
             this.storeCurrentPage = function(){
-                if (indi.scope.page)
-                    return indi.scope.page;
+                if (indi.trail.item().scope.page)
+                    return indi.trail.item().scope.page;
 
                 return 1;
             }
@@ -1214,10 +1214,10 @@ var Indi = (function (indi) {
                 grid.getView().focus();
 
                 // Setup last row autoselection, if need
-                if (Indi.scope.aix) {
+                if (Indi.trail.item().scope.aix) {
 
                     // Calculate row index value, relative to current page
-                    var index = parseInt(indi.scope.aix) - 1 - (parseInt(indi.scope.page) - 1) *
+                    var index = parseInt(indi.trail.item().scope.aix) - 1 - (parseInt(indi.trail.item().scope.page) - 1) *
                         parseInt(indi.trail.item().section.rowsOnPage);
 
                     // If such row (row at that index) exists in grid - selectit
@@ -1269,9 +1269,10 @@ var Indi = (function (indi) {
                     beforeload: function(){
                         instance.filterChange({noReload: true});
                     },
-                    load: function(){
+                    load: function(store){
                         var type = indi.trail.item().section.type;
                         instance['storeLoadCallback'+type.charAt(0).toUpperCase() + type.slice(1)]();
+                        indi.trail.item().scope = store.proxy.reader.rawData.scope;
                     }
                 }
             });

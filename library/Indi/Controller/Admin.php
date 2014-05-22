@@ -10,7 +10,8 @@ class Indi_Controller_Admin extends Indi_Controller {
 
     /**
      * If the purpose of current request is to build an excel spreadsheet - this variable will be used
-     * for collecting filters usage information, and retrieving in the process of building spreadsheet
+     * for collecting filters usage information, and retrieving that information in the process of building
+     * spreadsheet
      *
      * @var array
      */
@@ -33,9 +34,12 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Get the primary WHERE clause
                 $primaryWHERE = $this->primaryWHERE();
 
-                // Set info (about primary hash and row index), related to parent section, if these params are
-                // passed within the uri
-                $this->setScopeUpper($primaryWHERE);
+                // Set 'hash' scope param at least. Additionally, set scope info about primary hash and row index,
+                // related to parent section, if these params are passed within the uri.
+                $applyA = array('hash' => Indi::trail()->section->primaryHash);
+                if (Indi::uri()->ph) $applyA['upperHash'] = Indi::uri()->ph;
+                if (Indi::uri()->aix) $applyA['upperAix'] = Indi::uri()->aix;
+                Indi::trail()->scope->apply($applyA);
 
                 // If a rowset should be fetched
                 if (Indi::uri()->json || Indi::uri()->excel) {
@@ -54,19 +58,39 @@ class Indi_Controller_Admin extends Indi_Controller {
                         Indi::uri()->excel ? null : (int) Indi::get('limit'),
                         Indi::uri()->excel ? null : (int) Indi::get('page'));
 
-                    // Save rowset properties, to be able to use them later in Sibling-navigation feature, and be
-                    // able to restore the state of panel, that is representing the rowset at cms interface.
-                    // State of the panel includes: filtering and search params, sorting params
-                    $this->setScope($primaryWHERE, Indi::get()->search, Indi::get()->keyword, Indi::get()->sort,
-                        Indi::get()->page, $this->rowset->found(), $finalWHERE, $finalORDER);
+                    /**
+                     * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
+                     *
+                     * 1. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page.
+                     *    After that we went to another section, and then decide to return to the first. So, by this function, system will be
+                     *    able to retrieve first section's params from $_SESSION, and display the grid in the exact same way as it was when
+                     *    we had left it.
+                     * 2. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page and
+                     *    clicked 'Details' on some row on that page, so the details form was displayed. So, this function is one of providing
+                     *    an ability to navigate/jump to current row's siblings - go to prev/next rows. Foк example if we have a States section,
+                     *    and we go to it, and types 'Ala' in fast-keyword-search field, so the corresponding results were displayed. Then, if we
+                     *    go to 'Alabama' form screen, there will be buttons titled "Prev" and "Next". For example, by clicking Next, the Alaska's
+                     *    editing form will be displayed instead of Alabama's. But there will be certainly no 'Ohio'.
+                     *
+                     * Actually, the only one param is stored as SQL-string - $primary param. This params includes all parts of WHERE clause, that
+                     * was used to retrieve a current rowset, but except parts, related to filters/keyword search usage. There parts are
+                     * stored as JSON-string, because it is much more easier to get last used filters's values from JSON rather than SQL.
+                     *
+                     * Function creates a hash-key (md5 from $primary param) to place the array of scope params under this key in $_SESSION
+                     *
+                     * $order param is stored in JSON format too, because it will be passed to Ext.grid
+                     */
+                    Indi::trail()->scope->apply(array(
+                        'primary' => $primaryWHERE, 'filters' => Indi::get()->search, 'keyword' => Indi::get()->keyword,
+                        'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
+                        'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
+                    ));
                 }
 
             // Else if where is some another action
             } else {
 
-                // Setup a primary hash and row index for current trail item
-                Indi::trail()->section->primaryHash = Indi::uri()->ph;
-                Indi::trail()->section->rowIndex = Indi::uri()->aix;
+                Indi::trail()->scope->apply(array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix));
 
                 // If we are here for just check of row availability, do it
                 if (Indi::uri()->check) die($this->checkRowIsInScope());
@@ -74,9 +98,6 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Set last accessed row
                 $this->setScopeRow();
             }
-
-            // Set scope hashes for each item within trail, starting from item, related to current section, and up to the top
-            Indi::trail(true)->setItemScopeHashes(Indi::uri()->ph, Indi::uri()->aix, Indi::uri()->action == 'index');
         }
     }
 
@@ -164,11 +185,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                     Indi::post()->field,
                     Indi::trail()->section->entityId,
-                    Indi::view()->getScope('WHERE', null, Indi::uri()->section, Indi::uri()->ph)
+                    Indi::trail()->scope->WHERE
                 );
                 $this->row->{Indi::post()->field} = Indi::uri()->id;
 
-                $order = Indi::view()->getScope('ORDER');
+                $order = Indi::trail()->scope->ORDER;
                 $dir = array_pop(explode(' ', $order));
                 $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
                 if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
@@ -242,64 +263,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
-     *
-     * 1. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page.
-     *    After that we went to another section, and then decide to return to the first. So, by this function, system will be
-     *    able to retrieve first section's params from $_SESSION, and display the grid in the exact same way as it was when
-     *    we had left it.
-     * 2. We were in one section, made some search by filters and/or keyword, did sorting by some column, went to some page and
-     *    clicked 'Details' on some row on that page, so the details form was displayed. So, this function is one of providing
-     *    an ability to navigate/jump to current row's siblings - go to prev/next rows. Foк example if we have a States section,
-     *    and we go to it, and types 'Ala' in fast-keyword-search field, so the corresponding results were displayed. Then, if we
-     *    go to 'Alabama' form screen, there will be buttons titled "Prev" and "Next". For example, by clicking Next, the Alaska's
-     *    editing form will be displayed instead of Alabama's. But there will be certainly no 'Ohio'.
-     *
-     * Actually, the only one param is stored as SQL-string - $primary param. This params includes all parts of WHERE clause, that
-     * was used to retrieve a current rowset, but except parts, related to filters/keyword search usage. There parts are
-     * stored as JSON-string, because it is much more easier to get last used filters's values from JSON rather than SQL.
-     *
-     * Function creates a hash-key (md5 from $primary param) to place the array of scope params under this key in $_SESSION
-     *
-     * $order param is stored in JSON format too, because it will be passed to Ext.grid
-     *
-     * P.S. getScope() function is defined in Indi_View class
-     *
-     * @param $primary array
-     * @param $filters JSON
-     * @param $keyword urlencoded string
-     * @param $order JSON
-     * @param $page int
-     * @param $found int
-     * @param $WHERE string
-     * @param $ORDER string
-     */
-    public function setScope($primary, $filters, $keyword, $order, $page, $found, $WHERE, $ORDER) {
-
-        // Get $primary as string
-        $primary = count($primary) ? implode(' AND ', $primary) : null;
-
-        // Get a scope hash
-        $primaryHash = substr(md5($primary), 0, 10);
-
-        // Remember all scope params in $_SESSION under a hash
-        $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash] = array(
-            'primary' => $primary,
-            'filters' => $filters,
-            'keyword' => $keyword,
-            'order' => $order,
-            'page' => $page,
-            'found' => $found,
-            'WHERE' => $WHERE,
-            'ORDER' => $ORDER,
-            'hash' => $primaryHash,
-            'upperHash' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperHash'],
-            'upperAix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix'],
-            'aix' => $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['aix']
-        );
-    }
-
-    /**
      * Set scope last accessed row
      *
      * @param bool $upper
@@ -341,35 +304,6 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Remember all scope params in $_SESSION under a hash
         $_SESSION['indi']['admin'][Indi::trail((int) $upper)->section->alias][Indi::uri()->ph]
             = array_merge($original, $modified);
-    }
-
-    /**
-     * Set parent scope primary hash and aix within current scope, to provide an ability for getting scope data,
-     * related to parent trail items
-     *
-     * @param $primary WHERE clause, that will be used for calculation of current scope primary hash
-     */
-    public function setScopeUpper($primary) {
-
-        // Get $primary as string
-        $primary = count($primary) ? implode(' AND ', $primary) : null;
-
-        // Get a scope hash
-        $primaryHash = substr(md5($primary), 0, 10);
-
-        // Set the hash to be available at the stage then grid (or section's other panel) is rendered, but it's
-        // store is not yet loaded
-        $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['hash'] = $primaryHash;
-
-        // Remember hash of upper scope same place in $_SESSION where local scope params will be set
-        if (Indi::uri()->ph)
-            $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperHash'] = Indi::uri()->ph;
-
-        if (Indi::uri()->aix)
-            $_SESSION['indi']['admin'][Indi::uri()->section][$primaryHash]['upperAix'] = Indi::uri()->aix;
-
-        // Set upper section's last accessed row
-        $this->setScopeRow(true);
     }
 
     /**
@@ -568,20 +502,17 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If there was a primaryHash passed instead of $primaryWHERE param - then we extract all scope params from
         if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
 
-            // Get the scope
-            $scope = Indi::view()->getScope(null, null, Indi::uri()->section, $primaryWHERE);
-
             // Prepare $primaryWHERE
-            $primaryWHERE = $scope['primary'] ? array($scope['primary']) : array();
+            $primaryWHERE = Indi::trail()->scope->primary ? array(Indi::trail()->scope->primary) : array();
 
             // Prepare search data for $this->filtersWHERE()
-            Indi::get()->search = $scope['filters'];
+            Indi::get()->search = Indi::trail()->scope->filters;
 
             // Prepare search data for $this->keywordWHERE()
-            Indi::get()->keyword = urlencode($scope['keyword']);
+            Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
 
             // Prepare sort params for $this->finalORDER()
-            Indi::get()->sort = $scope['order'];
+            Indi::get()->sort = Indi::trail()->scope->order;
         }
 
         // Final WHERE stack
@@ -786,26 +717,26 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function checkRowIsInScope(){
 
-        // Get scope params
-        $scope = Indi::view()->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
+        if (Indi::uri()->aix && !Indi::uri()->id)
 
-        if (Indi::uri()->aix && !Indi::uri()->id) {
-            $R = Indi::trail()->model->fetchRow($scope['WHERE'], $scope['ORDER'], Indi::uri()->aix - 1);
-            return $R ? $R->id : null;
+            return Indi::trail()->model->fetchRow(
+                Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, Indi::uri()->aix - 1
+            )->id;
 
-        } else if (Indi::uri()->id){
+        else if (Indi::uri()->id) {
+
             // Prepare WHERE clause
             $where  = '`id` = "' . Indi::uri()->id . '"';
-            if ($scope['WHERE'])  $where .= ' AND ' . $scope['WHERE'];
+            if (Indi::trail()->scope->WHERE)  $where .= ' AND ' . Indi::trail()->scope->WHERE;
 
             // Check that row exists
             $R = Indi::trail()->model->fetchRow($where);
 
             // Get the offest, if needed
             if (Indi::post()->forceOffsetDetection && $R) {
-                return Indi::trail()->model->detectOffset($scope['WHERE'], $scope['ORDER'], $R->id);
+                return Indi::trail()->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
 
-                // Or just return the id, as an ensurement, that such row exists
+            // Or just return the id, as an ensurement, that such row exists
             } else {
                 return $R ? $R->id : null;
             }
@@ -1803,7 +1734,11 @@ class Indi_Controller_Admin extends Indi_Controller {
             $this->adjustGridData($data);
 
             // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
-            if (Indi::uri('json')) die(json_encode(array('totalCount' => $this->rowset->found(), 'blocks' => $data)));
+            if (Indi::uri('json')) die(json_encode(array(
+                'totalCount' => $this->rowset->found(),
+                'blocks' => $data,
+                'scope' => Indi::trail()->scope->toArray()
+            )));
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (Indi::uri('excel')) $this->excel($data);
@@ -1999,16 +1934,13 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If current row has been just successfully created
         if ($updateAix && $this->row->id) {
-i('asd');
-            // Get scope params
-            $scope = Indi::view()->getScope(null, null, Indi::uri()->section, Indi::uri()->ph);
 
             // If $scope's WHERE clause is not empty
-            if ($scope['WHERE']) {
+            if (Indi::trail()->scope->WHERE) {
 
                 // Prepare WHERE clause to ensure that newly created row does match all the requirements, that are
                 // used for fetching rows that are suitable for displaying in rowset (grid, calendar, etc) panel
-                $where = '`id` = "' . $this->row->id . '" AND ' . $scope['WHERE'];
+                $where = '`id` = "' . $this->row->id . '" AND ' . Indi::trail()->scope->WHERE;
 
                 // Do the check
                 $R = Indi::trail()->model->fetchRow($where);
@@ -2017,7 +1949,7 @@ i('asd');
             } else $R = $this->row;
 
             // Setup new index
-            Indi::uri()->aix = Indi::trail()->model->detectOffset($scope['WHERE'], $scope['ORDER'], $R->id);
+            Indi::uri()->aix = Indi::trail()->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
 
             // Apply new index
             $this->setScopeRow();

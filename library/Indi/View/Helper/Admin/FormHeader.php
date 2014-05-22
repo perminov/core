@@ -43,10 +43,8 @@ Indi = $.extend(Indi, {
     com: '<?=COM ? '' : '/admin'?>',
     pre: '<?=STD?><?=COM ? '' : '/admin'?>',
     lang: <?=Indi::constants('user', true)?>,
-    trail: <?=json_encode(Indi::trail(true)->toArray())?>,
-    scope: <?=json_encode(Indi::view()->getScope())?>
+    trail: <?=json_encode(Indi::trail(true)->toArray())?>
 });
-top.Indi.scope = Indi.scope;
 </script>
 <?=Indi::view()->siblingCombo()?>
 <form class="i-form" action="<?=(COM ? '' : '/admin') . '/' . Indi::trail()->section->alias?>/save<?=Indi::view()->row->id ? '/id/' . Indi::view()->row->id : ''?><?=Indi::uri()->ph ? '/ph/' . Indi::uri()->ph : ''?>/" name="<?=Indi::trail()->model->table()?>" method="post" enctype="multipart/form-data" row-id="<?=Indi::view()->row->id?>">

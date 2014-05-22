@@ -124,7 +124,8 @@ class Indi_Trail_Admin {
 
         // If user is trying to create row, despite on it's restricted - raise up an error
         if (((Indi::uri('action') == 'form' && !(Indi::uri('combo') || Indi::uri('filter')))
-            || Indi::uri('action') == 'save') && !Indi::uri('id') && $this->item()->section->disableAdd) {
+            || Indi::uri('action') == 'save') && !Indi::uri('id') && !Indi::uri('aix')
+            && !Indi::uri('check') && $this->item()->section->disableAdd) {
             $error = I_ACCESS_ERROR_ROW_ADDING_DISABLED;
 
         // Else if 'id' param is mentioned in uri, but it's value either not specified,
@@ -140,6 +141,11 @@ class Indi_Trail_Admin {
 
         // Flush an error in json format, if error was met
         if ($error) die(json_encode(array('error' => $error)));
+
+        // Setup blank scope object for each trail item
+        for ($i = 0; $i < count(self::$items) - 1; $i++)
+            if (Indi::trail($i)->section->sectionId)
+                Indi::trail($i)->scope = new Indi_Trail_Admin_Item_Scope($i);
     }
 
     /**
@@ -150,35 +156,6 @@ class Indi_Trail_Admin {
      */
     public function item($stepsUp = 0) {
         return self::$items[count(self::$items) - 1 - (int) $stepsUp];
-    }
-
-    /**
-     * Set scope hashes for each item within trail, starting from item, related to current section, and up to the top
-     *
-     * @param $hash
-     * @param $aix
-     * @param $index
-     */
-    public function setItemScopeHashes($hash, $aix, $index) {
-        $i = -1 + ($index ? 1 : 0);
-        do {
-            $i++;
-            self::$items[count(self::$items) - 1 - $i]->section->primaryHash = $hash;
-            self::$items[count(self::$items) - 1 - $i]->section->rowIndex = $aix;
-        } while (($hash = $_SESSION
-            ['indi']
-            ['admin']
-            [self::$items[count(self::$items) - 1 - $i]->section->alias]
-            [self::$items[count(self::$items) - 1 - $i]->section->primaryHash]
-            ['upperHash'])
-            &&
-            (($aix = $_SESSION
-            ['indi']
-            ['admin']
-            [self::$items[count(self::$items) - 1 - $i]->section->alias]
-            [self::$items[count(self::$items) - 1 - $i]->section->primaryHash]
-            ['upperAix']) || true)
-        );
     }
 
     /**
