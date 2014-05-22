@@ -1,6 +1,6 @@
 <?php
-class Indi_Trail_Admin_Item
-{
+class Indi_Trail_Admin_Item {
+
 	/**
 	 * Store number of fields that associated with a ExtJs grid, in case if
 	 * there is an entity attached to section, and the current action is 'index'
@@ -8,6 +8,13 @@ class Indi_Trail_Admin_Item
 	 * @var Indi_Db_Table_Rowset
 	 */
 	public $gridFields = null;
+
+    /**
+     * Store Indi_Trail_Admin_Item_Scope object, related to current trail item
+     *
+     * @var Indi_Trail_Admin_Item_Scope
+     */
+    public $scope = null;
 
     /**
      * Getter. Currently declared only for getting 'model' property
@@ -26,8 +33,7 @@ class Indi_Trail_Admin_Item
      *
      * @param Indi_Db_Table_Row $sectionR
      */
-    public function __construct($sectionR)
-    {
+    public function __construct($sectionR) {
         // Setup $this->section
         $config = array();
         $dataTypeA = array('original', 'temporary', 'compiled', 'foreign');
@@ -49,7 +55,7 @@ class Indi_Trail_Admin_Item
         if (count(Indi_Trail_Admin::$items) == 0) {
 
             // Setup a primary hash for current section
-            $this->section->temporary('primaryHash', Indi::uri('ph'));
+            //$this->section->temporary('primaryHash', Indi::uri('ph') ? Indi::uri('ph') : 'd41d8cd98f');
 
             // Setup filters
             $this->filters = $sectionR->nested('search');
@@ -180,12 +186,20 @@ class Indi_Trail_Admin_Item
     }
 
     /**
+     * Setup scope properties for trail item at $index index within Indi_Trail_Admin::$items
+     *
+     * @param $index
+     */
+    public function scope($index) {
+        $this->scope = new Indi_Trail_Admin_Item_Scope($index);
+    }
+
+    /**
      * Get array version of internal variables
      *
      * @return array
      */
-    public function toArray()
-    {
+    public function toArray() {
         $array = array();
         if ($this->section) {
             $array['section'] = $this->section->toArray();
@@ -202,6 +216,7 @@ class Indi_Trail_Admin_Item
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray();
+        if ($this->scope) $array['scope'] = $this->scope->toArray();
         return $array;
     }
 }

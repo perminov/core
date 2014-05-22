@@ -79,7 +79,7 @@ var Indi = (function (indi) {
                     RN: function(row) {
                         var labelWidth = indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
                             triggerWidth = 20, inputWidth;
-                        inputWidth = (indi.scope.found.toString().length + 1) * 7 + 2;
+                        inputWidth = (indi.trail.item().scope.found.toString().length + 1) * 7 + 2;
                         inputWidth = inputWidth > 30 ? inputWidth : 30;
                         return labelWidth + inputWidth + triggerWidth;
                     }
@@ -112,8 +112,8 @@ var Indi = (function (indi) {
                                 '/' + (indi.trail.item(1).row
                                       ?
                                       'index/id/' + indi.trail.item(1).row.id + '/' +
-                                      (indi.scope.upperHash ? 'ph/'+indi.scope.upperHash+'/' : '') +
-                                      (indi.scope.upperAix ? 'aix/'+indi.scope.upperAix+'/' : '')
+                                      (indi.trail.item().scope.upperHash ? 'ph/'+indi.trail.item().scope.upperHash+'/' : '') +
+                                      (indi.trail.item().scope.upperAix ? 'aix/'+indi.trail.item().scope.upperAix+'/' : '')
                                       :
                                       '')
                         )
@@ -137,7 +137,7 @@ var Indi = (function (indi) {
                     width: instance.widths.topbar.ID(indi.trail.item().row),
                     lastValidValue: (indi.trail.item().row ? indi.trail.item().row.id : ''),
                     margin: '0 3 0 3',
-                    disabled: parseInt(indi.scope.found) ? false : true,
+                    disabled: parseInt(indi.trail.item().scope.found) ? false : true,
                     cls: 'i-form-text',
                     errorMsgCls: '',
                     minValue: 1,
@@ -196,7 +196,7 @@ var Indi = (function (indi) {
 
                                             // If user was using filters or keyword for browsing the scope of rows,
                                             // the warning message will contain an indication about that
-                                            if (indi.scope.filters != '[]' || (indi.scope.keyword && indi.scope.keyword.length))
+                                            if (indi.trail.item().scope.filters != '[]' || (indi.trail.item().scope.keyword && indi.trail.item().scope.keyword.length))
                                                 spm = indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_SPM;
 
                                             // Display an Ext message box
@@ -243,8 +243,8 @@ var Indi = (function (indi) {
                             '/' + (indi.trail.item(1).row
                             ?
                             'index/id/' + indi.trail.item(1).row.id + '/' +
-                                (indi.scope.upperHash ? 'ph/'+indi.scope.upperHash+'/' : '') +
-                                (indi.scope.upperAix ? 'aix/'+indi.scope.upperAix+'/' : '')
+                                (indi.trail.item().scope.upperHash ? 'ph/'+indi.trail.item().scope.upperHash+'/' : '') +
+                                (indi.trail.item().scope.upperAix ? 'aix/'+indi.trail.item().scope.upperAix+'/' : '')
                             :
                             '');
 
@@ -257,7 +257,7 @@ var Indi = (function (indi) {
                     disabled: indi.trail.item().disableSave,
                     iconCls: 'i-btn-icon-save',
                     id: 'i-action-form-topbar-button-save',
-                    pressed: indi.scope.toggledSave,
+                    pressed: indi.trail.item().scope.toggledSave,
                     arrowHandler: function(button, event){
                         button.toggle();
                         if (indi.trail.item().sections.length && !indi.trail.item().row.id) {
@@ -277,7 +277,7 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     text: '&nbsp;&nbsp;',
                     id: 'i-action-form-topbar-nav-to-sibling-prev',
-                    disabled: parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) > 1 ? false : true,
+                    disabled: parseInt(indi.trail.item().scope.found) && parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) > 1 ? false : true,
                     handler: function(btn){
                         top.window.Ext.getCmp('iframe-mask').show();
                         if (typeof indi.trail.item().row.title != 'undefined') {
@@ -287,7 +287,7 @@ var Indi = (function (indi) {
                             top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').spinDown();
                         }
 
-                        if(parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) - 1 > 1) {
+                        if(parseInt(indi.trail.item().scope.found) && parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) - 1 > 1) {
                             btn.enable();
                         } else {
                             btn.disable();
@@ -337,7 +337,7 @@ var Indi = (function (indi) {
                                     top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').lastValidValue = selected.value;
                                     top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').setValue(selected.value);
 
-                                    if (selected.index == indi.scope.found) {
+                                    if (selected.index == indi.trail.item().scope.found) {
                                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').disable();
                                     } else {
                                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
@@ -380,10 +380,10 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     text: '&nbsp;&nbsp;',
                     id: 'i-action-form-topbar-nav-to-sibling-next',
-                    disabled: parseInt(indi.scope.found) && ((parseInt(indi.scope.aix) && parseInt(indi.scope.aix) < parseInt(indi.scope.found)) || !parseInt(indi.scope.aix)) ? false : true,
+                    disabled: parseInt(indi.trail.item().scope.found) && ((parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) < parseInt(indi.trail.item().scope.found)) || !parseInt(indi.trail.item().scope.aix)) ? false : true,
                     handler: function(btn){
                         top.window.Ext.getCmp('iframe-mask').show();
-                        if(parseInt(indi.scope.found) && parseInt(indi.scope.aix) && parseInt(indi.scope.aix) + 1 < parseInt(indi.scope.found)) {
+                        if(parseInt(indi.trail.item().scope.found) && parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) + 1 < parseInt(indi.trail.item().scope.found)) {
                             btn.enable();
                         } else {
                             btn.disable();
@@ -426,7 +426,7 @@ var Indi = (function (indi) {
 						if (typeof indi.trail.item().row.title != 'undefined') 
 							top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling').setKeywordValue('');
 							
-                        if (parseInt(indi.scope.found)) top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
+                        if (parseInt(indi.trail.item().scope.found)) top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').setValue('');
 
                         // If save button is toggled
@@ -451,15 +451,15 @@ var Indi = (function (indi) {
                     labelSeparator: '',
                     labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
                     xtype: 'numberfield',
-                    value: (indi.trail.item().row.id ? indi.scope.aix : ''),
+                    value: (indi.trail.item().row.id ? indi.trail.item().scope.aix : ''),
                     width: instance.widths.topbar.RN(),
-                    disabled: parseInt(indi.scope.found) ? false : true,
+                    disabled: parseInt(indi.trail.item().scope.found) ? false : true,
                     margin: '0 5 0 3',
                     cls: 'i-form-text',
                     minValue: 1,
-                    maxValue: indi.scope.found,
+                    maxValue: indi.trail.item().scope.found,
                     validateOnChange: false,
-                    lastValidValue: (indi.scope.aix ? indi.scope.aix : ''),
+                    lastValidValue: (indi.trail.item().scope.aix ? indi.trail.item().scope.aix : ''),
                     id: 'i-action-form-topbar-nav-to-row-number',
                     listeners: {
 
@@ -526,7 +526,7 @@ var Indi = (function (indi) {
 
                                             // If user was using filters or keyword for browsing the scope of rows,
                                             // the warning message will contain an indication about that
-                                            if (indi.scope.filters != '[]' || (indi.scope.keyword && indi.scope.keyword.length))
+                                            if (indi.trail.item().scope.filters != '[]' || (indi.trail.item().scope.keyword && indi.trail.item().scope.keyword.length))
                                                 spm = indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_SPM;
 
                                             // Display an Ext message box
@@ -550,10 +550,10 @@ var Indi = (function (indi) {
                     }
                 }, {
                     xtype: 'textfield',
-                    disabled: parseInt(indi.scope.found) ? false : true,
-                    fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.scope.found),
+                    disabled: parseInt(indi.trail.item().scope.found) ? false : true,
+                    fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.trail.item().scope.found),
                     width: indi.metrics.getWidth(
-                            indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.scope.found)
+                            indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.trail.item().scope.found)
                     ),
                     labelSeparator: '',
                     inputType: 'hidden',
@@ -609,7 +609,7 @@ var Indi = (function (indi) {
                         change: function(combo){
 
                             var url = indi.pre + '/' + combo.getValue() + '/index/id/'+ indi.trail.item().row.id
-                                +'/ph/'+indi.scope.hash
+                                +'/ph/'+indi.trail.item().scope.hash
                                 +'/aix/'+top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').getValue()+'/';
 
                             // If save button is toggled

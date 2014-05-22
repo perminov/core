@@ -60,10 +60,10 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
     /**
      * Filter combos have different behaviour, related to deal with default values
      *
-     * @return string
+     * @return mixed|string
      */
     public function getDefaultValue() {
-        $gotFromScope = Indi::view()->getScope('filters', $this->field->alias);
+        $gotFromScope = Indi::trail()->scope->filter($this->field->alias);
 
         if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
             if ($this->field->storeRelationAbility == 'many')

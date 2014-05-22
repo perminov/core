@@ -46,8 +46,8 @@ var Indi = (function (indi) {
             this.fetchRelativePath = function() {
                 return indi.pre + '/' + indi.trail.item().section.alias + '/form/'+
                     (indi.trail.item().row.id ? 'id/' + indi.trail.item().row.id + '/' : '') +
-                    (indi.scope.aix ? 'aix/' + indi.scope.aix + '/' : '') +
-                    'ph/'+ indi.scope.hash;
+                    (indi.trail.item().scope.aix ? 'aix/' + indi.trail.item().scope.aix + '/' : '') +
+                    'ph/'+ indi.trail.item().scope.hash;
             }
 
             /**
@@ -68,7 +68,7 @@ var Indi = (function (indi) {
 
                 var index;
                 if (instance.particularList(valueFieldId)) {
-                    index = (indi.scope.aix ? parseInt(indi.scope.aix) : 1)
+                    index = (indi.trail.item().scope.aix ? parseInt(indi.trail.item().scope.aix) : 1)
                         - 1
                         + parseInt($('input[lookup='+valueFieldId+']').attr('selectedIndex'))
                         - instance.store[valueFieldId].fetchedByPageUps;
