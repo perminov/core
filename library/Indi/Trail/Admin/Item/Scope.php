@@ -96,23 +96,10 @@ class Indi_Trail_Admin_Item_Scope {
     /**
      * Constructor
      *
-     * @param $index
+     * @param $level
      */
     public function __construct($level) {
-
         $this->_level = $level;
-
-        // Get the section alias, as it is an first-dimension key for getting scope data from $_SESSION
-        /*$section = Indi::trail($index)->section->alias;
-
-        // Get the primary hash, as it is an second-dimension key for getting scope data from $_SESSION
-        $hash = $index == 0 ? Indi::trail($index)->section->primaryHash : Indi::trail($index-1)->scope->upperHash;
-
-        // If scope data exists within $_SESSION - assing each property as a value of a same
-        // property of current *_Scope object
-        if (is_array($_SESSION['indi']['admin'][$section][$hash]))
-            foreach ($_SESSION['indi']['admin'][$section][$hash] as $prop => $value)
-                $this->$prop = $value;*/
     }
 
     /**

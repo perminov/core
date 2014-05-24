@@ -311,7 +311,7 @@ var Indi = (function (indi) {
                                 '</div>' +
                                 '<div id="i-center-north-trail"></div>'+
                             '</div>',
-                        height: 36,
+                        minHeight: 36,
                         border: 0,
                         listeners: {
                             afterrender: function(){
