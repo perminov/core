@@ -869,7 +869,7 @@ var Indi = (function (indi) {
 
                     items.push({
                         id: 'i-section-' +indi.trail.item().section.alias + '-action-index-button-add',
-                        text: indi.lang.I_CREATE,
+                        text: '',//indi.lang.I_CREATE,
                         iconCls: 'i-btn-icon-create',
                         actionAlias: 'form',
                         handler: function(){
@@ -928,12 +928,205 @@ var Indi = (function (indi) {
                         };
 
                         // Setup iconCls property, if need
-                        if(iconA.indexOf(indi.trail.item().actions[i].alias) != -1)
+                        if(iconA.indexOf(indi.trail.item().actions[i].alias) != -1) {
                             item.iconCls = 'i-btn-icon-' + indi.trail.item().actions[i].alias;
+                            item.text = '';
+                        }
 
                         // Put to the actions stack
                         items.push(item);
                     }
+                }
+
+                var SubsectionList = Ext.extend(Ext.Panel, {
+                    data: indi.trail.item().sections,
+                    height: 19,
+                    cls: 'i-subsections-wrapper',
+                    id: 'i-section-' + indi.trail.item().section.alias + '-action-' + indi.trail.item().action.alias + '-subsections',
+                    margin: '1 0 0 0',
+                    lastTimeHover: null,
+                    prop: {
+                        border: 2,
+                        paddingRight: 1,
+                        item: {
+                            dots: 8,
+                            padding: 6,
+                            marginLeft: 1,
+                            firstChar: 7
+                        }
+                    },
+                    getMinItemWidth: function(){
+                        return this.prop.item.dots + this.prop.item.padding + this.prop.item.marginLeft
+                            + this.prop.item.firstChar;
+                    },
+                    getMinWidth: function() {
+                        return this.prop.border + this.prop.paddingRight + this.getMinItemWidth() * this.data.length;
+                    },
+                    getRequiredWidth: function() {
+                        var requiredWidth = this.prop.border + this.prop.paddingRight;
+                        for (var i = 0; i < this.data.length; i++)
+                            requiredWidth += indi.metrics.getWidth(this.data[i].title)
+                                + this.prop.item.marginLeft + this.prop.item.padding;
+                        return requiredWidth;
+                    },
+                    getAvailableWidth: function() {
+                        var i, busyWidth = 0, keywordToolbar = Ext.getCmp('i-section-'
+                            + indi.trail.item().section.alias + '-action-' + indi.trail.item().action.alias + '-toolbar-keyword');
+
+                        for (i = 0; i < keywordToolbar.items.items.length; i++)
+
+                            if (keywordToolbar.items.items[i].id != this.id && !keywordToolbar.items.items[i].id.toString().match(/^tbfill/)) {
+                                busyWidth += keywordToolbar.items.items[i].getWidth();
+                                if (keywordToolbar.items.items[i].id.toString().match(/-button-[a-z]+$/)) {
+                                    busyWidth += 2;
+                                } else if (keywordToolbar.items.items[i].id.toString().match(/^tbseparator-/)) {
+                                    busyWidth += 4 + 1;
+                                } else if (keywordToolbar.items.items[i].id.toString().match(/-keyword$/)) {
+                                    busyWidth += 4;
+                                }
+                            }
+                        return Ext.getCmp('i-center-center-wrapper').getWidth() - busyWidth - 5;
+                    },
+                    adjustWidth: function(ignore){
+                        var easing = arguments.length > 0 ? true : false;
+                        var me = this;
+                        var availableWidth = this.getAvailableWidth(), requiredWidth = this.getRequiredWidth(), currentWidth = this.getWidth();
+                        if (requiredWidth <= availableWidth) {
+                            this.noloop = true;
+                            this.setWidth(requiredWidth);
+                            this.noloop = false;
+                            this.getEl().select('.i-subsections-item').each(function(el, c, index){
+                                el.setStyle('width', 'auto');
+                                el.first('.i-subsections-item-dots').setStyle('display', 'none');
+                                el.first('.i-subsections-item-title').setStyle('width', 'auto');
+                            });
+                        } else if (availableWidth > this.minWidth) {
+                            var totalItemsWidth = 0;
+
+                            var constant = this.prop.border + this.prop.paddingRight
+                                + (this.prop.item.marginLeft + this.prop.item.padding) * this.data.length;
+
+                            if (ignore != undefined) {
+                                this.getEl().select('.i-subsections-item').each(function(el, c, index) {
+                                    if (index == ignore)
+                                        constant += Ext.get(el).first('.i-subsections-item-title').getTextWidth();
+                                });
+                            }
+
+                            this.getEl().select('.i-subsections-item').each(function(el, c, index) {
+
+                                if (index == ignore) {
+                                    var itemTitleWidth = el.first('.i-subsections-item-title').getTextWidth();
+                                    var itemWidth = itemTitleWidth + me.prop.item.padding;
+
+                                    el.first('.i-subsections-item-dots').setStyle('display', 'none');
+                                    el.first('.i-subsections-item-title').setWidth(itemTitleWidth, easing);
+                                    el.setWidth(itemWidth, easing);
+
+                                } else {
+                                    var percent = (availableWidth - constant) / (requiredWidth - constant);
+                                    var itemTitleRequiredWidth = el.first('.i-subsections-item-title').getTextWidth();
+                                    var itemTitleWidth = Math.floor(itemTitleRequiredWidth * percent) - me.prop.item.dots;
+
+                                    if (itemTitleWidth < me.prop.item.firstChar) {
+                                        availableWidth -= me.prop.item.firstChar - itemTitleWidth;
+                                        itemTitleWidth = me.prop.item.firstChar;
+                                    }
+                                    el.first('.i-subsections-item-dots').setStyle('display', 'inline-block');
+                                    el.first('.i-subsections-item-title').setWidth(itemTitleWidth, easing);
+                                    var itemWidth = itemTitleWidth + me.prop.item.dots + me.prop.item.padding;
+                                    el.setWidth(itemWidth, easing);
+                                }
+                                totalItemsWidth += itemWidth + me.prop.item.marginLeft;
+                            });
+                            //console.log(totalItemsWidth);
+
+                            if (ignore == undefined) {
+                                this.noloop = true;
+                                this.setWidth(totalItemsWidth + this.prop.border + this.prop.paddingRight, easing);
+                                this.noloop = false;
+                            }
+                        } else {
+                            this.getEl().select('.i-subsections-item').each(function(el, c, index){
+                                el.setWidth(me.prop.item.dots+me.prop.item.padding+me.prop.item.firstChar);
+                                el.first('.i-subsections-item-dots').setStyle('display', 'inline-block');
+                                el.first('.i-subsections-item-title').setWidth(me.prop.item.firstChar);
+                            });
+                            this.noloop = true;
+                            this.setWidth(this.minWidth);
+                            this.noloop = false;
+                        }
+                    },
+                    availableWidthDecreaser: 0,
+                    listeners: {
+                        afterlayout: function(){
+                            if (!this.noloop) this.adjustWidth();
+                        }
+                    },
+                    afterRender: function() {
+                        for (var i = 0; i < this.data.length; i++) {
+                            this.data[i].title = this.data[i].title.replace(' ', '&nbsp;');
+                        }
+                        this.tpl = new Ext.XTemplate(
+                            '<div class="i-subsections">' +
+                            '<tpl for=".">' +
+                                '<span class="i-subsections-item" alias="{alias}">' +
+                                    '<span class="i-subsections-item-title">{title}</span>' +
+                                    '<span class="i-subsections-item-dots">..</span>' +
+                                '</span>' +
+                            '</tpl>' +
+                            '</div>'
+                        );
+                        this.tpl.overwrite(this.el, this.data);
+                        this.minWidth = this.getMinWidth();
+                        var me = this;
+                        this.getEl().select('.i-subsections-item').on('click', function(event, target){
+                            me.itemclick(event, Ext.get(target).hasCls('i-subsections-item') ? el : Ext.get(target).parent());
+                        });
+                        this.getEl().select('.i-subsections-item').on('mouseenter', function(event, target){
+                            me.itemover(event, target);
+                        });
+                        this.getEl().on('mouseleave', function(event, target){
+                            me.adjustWidth(null);
+                        });
+                        SubsectionList.superclass.afterRender.apply(this, arguments);
+                    },
+                    itemover: function(event, target){
+                        var me = this;
+                        Ext.get(target).parent().select('.i-subsections-item').each(function(el, c, index){
+                            if (el.getAttribute('alias') == target.getAttribute('alias')) {
+                                me.adjustWidth(index);
+                            }
+                        });
+                    },
+                    itemclick: function(event, el) {
+                        var selection = Ext.getCmp('i-center-center-wrapper').getComponent(0).getSelectionModel().getSelection();
+                        if (selection.length) {
+                            if (el.getAttribute('alias')) {
+                                indi.load(
+                                    indi.pre + '/' +
+                                        el.getAttribute('alias') + '/index/id/' +
+                                        selection[0].data.id + '/' +
+                                        'ph/'+Indi.trail.item().scope.hash+'/aix/' +
+                                        (selection[0].index + 1)+'/'
+                                );
+                            }
+                        } else {
+                            Ext.MessageBox.show({
+                                title: indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
+                                msg: indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.WARNING
+                            });
+                        }
+                    }
+                });
+
+                // We figure that other items should be right-aligned at the keyword toolbar
+                items.push('-');
+
+                if (indi.trail.item().sections.length) {
+                    items.push(new SubsectionList());
                 }
 
                 // We figure that other items should be right-aligned at the keyword toolbar
@@ -942,15 +1135,19 @@ var Indi = (function (indi) {
                 // Append fast search keyword field component to the items stack
                 items.push({
                     xtype: 'textfield',
-                    fieldLabel: indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
-                    labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
-                    labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
-                    labelSeparator: '',
+                    //fieldLabel: indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
+                    emptyText: indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
+                    hideEmptyLabel: true,
+                    //labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+                    //labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
+                    //labelSeparator: '',
                     value: indi.trail.item().scope.keyword ? indi.urldecode(indi.trail.item().scope.keyword) : '',
-                    width: 100 + indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+                    //maxWidth: 100,// + indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+                    //minWidth: 50,// + indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+                    width: 100,
                     height: 19,
                     cls: 'i-form-text',
-                    margin: '0 0 0 5',
+                    margin: '0 0 0 0',
                     id: 'i-section-' + indi.trail.item().section.alias + '-action-index-keyword',
                     listeners: {
                         change: function(){
@@ -963,7 +1160,7 @@ var Indi = (function (indi) {
                 });
 
                 // Add a subsections combo
-                if (indi.trail.item().sections.length) items.push({
+                /*if (indi.trail.item().sections.length) items.push({
                     xtype: 'combo',
                     store: Ext.create('Ext.data.Store',{
                         fields: ['alias', 'title'],
@@ -1027,7 +1224,7 @@ var Indi = (function (indi) {
                             }
                         }
                     }
-                });
+                });*/
 
                 return items;
             };
