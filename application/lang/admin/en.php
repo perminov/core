@@ -51,10 +51,18 @@ define('I_NO', 'No');
 
 define('I_LOGOUT', 'Logout');
 define('I_MENU', 'Menu');
-define('I_CREATE', 'Create');
+define('I_CREATE', 'Create new item');
 define('I_BACK', 'Back');
 define('I_SAVE', 'Save');
 define('I_TOTAL', 'Total');
+define('I_EXPORT_EXCEL', 'Export as an Excel spreadsheet');
+define('I_NAVTO_ID', 'Goto row by ID');
+define('I_AUTOSAVE', 'Autosave before goto');
+define('I_NAVTO_PREV', 'Goto previous row');
+define('I_NAVTO_NEXT', 'Goto next row');
+define('I_NAVTO_CREATE', 'Goto new row creation');
+define('I_NAVTO_NESTED', 'Goto nested objects');
+define('I_NAVTO_ROWINDEX', 'Goto row by #');
 
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');

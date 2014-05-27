@@ -22,6 +22,7 @@ class Indi_View_Helper_Admin_FormHeader {
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
+        '/js/admin/ext.override.js',
         '/js/admin/indi.js',
         '/js/admin/indi.trail.js',
         '/js/admin/indi.combo.form.js',
