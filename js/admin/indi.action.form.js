@@ -67,21 +67,29 @@ var Indi = (function (indi) {
             this.widths = {
                 topbar : {
                     // Navigate-by-ID field
-                    ID: function(row) {
+                    ID: function(row, mode) {
                         var labelWidth = 20, inputWidth = 30;
                         if (row.id) {
                             inputWidth = row.id.toString().length * 9;
                             inputWidth = inputWidth > 30 ? inputWidth : 30;
                         }
+
+                        if (mode == 'tooltipOffset') {
+                            return labelWidth + inputWidth/2 - (labelWidth + inputWidth)/2;
+                        }
                         return labelWidth + inputWidth;
                     },
                     // Navigate-by-row-number field
-                    RN: function(row) {
+                    RN: function(mode) {
                         var labelWidth = indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
                             triggerWidth = 20, inputWidth;
                         inputWidth = (indi.trail.item().scope.found.toString().length + 1) * 7 + 2;
                         inputWidth = inputWidth > 30 ? inputWidth : 30;
-                        return labelWidth + inputWidth + triggerWidth;
+
+                        if (mode == 'tooltipOffset')
+                            return labelWidth + 5 + inputWidth/2 - (labelWidth + 5 + inputWidth + triggerWidth)/2;
+
+                        else return labelWidth + inputWidth + triggerWidth;
                     }
                 }
             }
@@ -119,7 +127,8 @@ var Indi = (function (indi) {
                         )
                     },
                     iconCls: 'i-btn-icon-back',
-                    id: 'i-action-form-topbar-button-back'
+                    id: 'i-action-form-topbar-button-back',
+                    tooltip: 'Вернуться к списку'
                 });
 
                 // Add a separator
@@ -133,6 +142,10 @@ var Indi = (function (indi) {
                     labelWidth: 15,
                     xtype: 'numberfield',
                     hideTrigger: true,
+                    tooltip: {
+                        html: indi.lang.I_NAVTO_ID,
+                        staticOffset: [instance.widths.topbar.ID(indi.trail.item().row, 'tooltipOffset'), 0]
+                    },
                     value: (indi.trail.item().row ? indi.trail.item().row.id : ''),
                     width: instance.widths.topbar.ID(indi.trail.item().row),
                     lastValidValue: (indi.trail.item().row ? indi.trail.item().row.id : ''),
@@ -233,6 +246,7 @@ var Indi = (function (indi) {
                 // 'Save' button
                 dockedItems.push({
                     xtype: 'splitbutton',
+                    arrowTooltip: indi.lang.I_AUTOSAVE,
                     text: indi.lang.I_SAVE,
                     handler: function(){
 
@@ -278,6 +292,7 @@ var Indi = (function (indi) {
                     text: '&nbsp;&nbsp;',
                     id: 'i-action-form-topbar-nav-to-sibling-prev',
                     disabled: parseInt(indi.trail.item().scope.found) && parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) > 1 ? false : true,
+                    tooltip: indi.lang.I_NAVTO_PREV,
                     handler: function(btn){
                         top.window.Ext.getCmp('iframe-mask').show();
                         if (typeof indi.trail.item().row.title != 'undefined') {
@@ -381,6 +396,7 @@ var Indi = (function (indi) {
                     text: '&nbsp;&nbsp;',
                     id: 'i-action-form-topbar-nav-to-sibling-next',
                     disabled: parseInt(indi.trail.item().scope.found) && ((parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) < parseInt(indi.trail.item().scope.found)) || !parseInt(indi.trail.item().scope.aix)) ? false : true,
+                    tooltip: indi.lang.I_NAVTO_NEXT,
                     handler: function(btn){
                         top.window.Ext.getCmp('iframe-mask').show();
                         if(parseInt(indi.trail.item().scope.found) && parseInt(indi.trail.item().scope.aix) && parseInt(indi.trail.item().scope.aix) + 1 < parseInt(indi.trail.item().scope.found)) {
@@ -412,6 +428,7 @@ var Indi = (function (indi) {
                     iconCls: 'i-btn-icon-create',
                     disabled: parseInt(indi.trail.item().section.disableAdd) || indi.trail.item().disableSave ? true : false,
                     id: 'i-action-form-topbar-button-add',
+                    tooltip: indi.lang.I_NAVTO_CREATE,
                     handler: function(){
 
                         top.window.Ext.getCmp('iframe-mask').show();
@@ -445,12 +462,53 @@ var Indi = (function (indi) {
                 // Add a separator
                 dockedItems.push('-');
 
+                // Append subsections list
+                if (indi.trail.item().sections.length) dockedItems.push(new top.window.Indi.layout.ux.Subsections({
+                    toolbarId: 'i-action-form-topbar',
+                    widthAmend: 60,
+                    tooltip: {
+                        html: indi.lang.I_NAVTO_NESTED,
+                        hideDelay: 0,
+                        showDelay: 1000,
+                        dismissDelay: 2000
+                    },
+                    id: 'i-action-form-topbar-nav-to-subsection',
+                    itemClick: function(item){
+                        var url = indi.pre + '/' + item.getAttribute('alias') + '/index/id/'+ indi.trail.item().row.id
+                            +'/ph/'+indi.trail.item().scope.hash
+                            +'/aix/'+top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').getValue()+'/';
+
+                        // If save button is toggled
+                        if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed) {
+                            // We save current row but remeber the redirect url
+                            $('form[name='+indi.trail.item().model.tableName+']')
+                                .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                                .submit();
+
+                            // Else we just update iframe's src
+                        } else top.window.Indi.load(url);
+                    },
+                    initiallyDisabled: function(){
+                        return !indi.trail.item().row.id && top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed != true;
+                    }
+                }));
+
+                // Add a right-side shifter
+                dockedItems.push('->');
+
+                // We figure that other items should be right-aligned at the keyword toolbar
+                dockedItems.push('-');
+
                 // Add a separator
                 dockedItems.push({
                     fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE,
                     labelSeparator: '',
                     labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
                     xtype: 'numberfield',
+                    tooltip: {
+                        html: indi.lang.I_NAVTO_ROWINDEX,
+                        staticOffset: [instance.widths.topbar.RN('tooltipOffset'), 0]
+                    },
                     value: (indi.trail.item().row.id ? indi.trail.item().scope.aix : ''),
                     width: instance.widths.topbar.RN(),
                     disabled: parseInt(indi.trail.item().scope.found) ? false : true,
@@ -518,7 +576,7 @@ var Indi = (function (indi) {
                                             // Else we just update iframe's src
                                             else instance.getIframe().attr('src', url);
 
-                                        // Otherwise we build an warning message, and display Ext.MessageBox
+                                            // Otherwise we build an warning message, and display Ext.MessageBox
                                         } else {
 
                                             // Declare `smp` variable. SMP - mean Search Params Mention
@@ -553,7 +611,7 @@ var Indi = (function (indi) {
                     disabled: parseInt(indi.trail.item().scope.found) ? false : true,
                     fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.trail.item().scope.found),
                     width: indi.metrics.getWidth(
-                            indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.trail.item().scope.found)
+                        indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF + indi.numberFormat(indi.trail.item().scope.found)
                     ),
                     labelSeparator: '',
                     inputType: 'hidden',
@@ -564,14 +622,8 @@ var Indi = (function (indi) {
                     }
                 });
 
-                // Add a separator
-                dockedItems.push('-');
-
-                // Add a right-side shifter
-                dockedItems.push('->');
-
                 // Add a subsections combo
-                dockedItems.push(top.window.Ext.create('Ext.form.ComboBox', {
+                /*dockedItems.push(top.window.Ext.create('Ext.form.ComboBox', {
                     store: top.window.Ext.create('Ext.data.Store',{
                         fields: ['alias', 'title'],
                         data: indi.trail.item().sections
@@ -630,7 +682,7 @@ var Indi = (function (indi) {
 								}
                         }
                     }
-                }));
+                }));*/
 
                 // Add a docked panel to main panel, with all needed items
                 instance.getPanel().addDocked({

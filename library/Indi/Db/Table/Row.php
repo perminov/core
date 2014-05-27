@@ -362,7 +362,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $fieldM = Indi::model('Field');
         $fieldR = $fieldR ? $fieldR : Indi::model($this->_table)->fields($field);
         $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
-        $relatedM = Indi::model($fieldR->relation);
+        if ($fieldR->relation) $relatedM = Indi::model($fieldR->relation);
 
         // Array for WHERE clauses
         $where = $where ? (is_array($where) ? $where : array($where)): array();
@@ -489,7 +489,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
                 }
 
-                // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
+            // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
             } else if ($fieldR->dependency == 'e' && $satellite) {
                 $relatedM = Indi::model($satellite);
             }

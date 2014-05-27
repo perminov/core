@@ -51,10 +51,18 @@ define('I_NO', 'Нет');
 
 define('I_LOGOUT', 'Выход');
 define('I_MENU', 'Меню');
-define('I_CREATE', 'Создать');
+define('I_CREATE', 'Создать новую запись');
 define('I_BACK', 'Вернуться');
 define('I_SAVE', 'Сохранить');
 define('I_TOTAL', 'Всего');
+define('I_EXPORT_EXCEL', 'Экспортировать в Excel');
+define('I_NAVTO_ID', 'Перейти к записи по ID');
+define('I_AUTOSAVE', 'Автосохранять перед переходами');
+define('I_NAVTO_PREV', 'Перейти к предыдущей записи');
+define('I_NAVTO_NEXT', 'Перейти к следующей записи');
+define('I_NAVTO_CREATE', 'Перейти к созданию новой записи');
+define('I_NAVTO_NESTED', 'Перейти к списку вложенных записей');
+define('I_NAVTO_ROWINDEX', 'Перейти к записи #');
 
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Значением поля "%s" не может быть объект');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Значением поля "%s" не может быть массив');
