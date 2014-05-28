@@ -5,6 +5,8 @@
 Ext.override(Ext.tip.ToolTip, {
     statics: {
         lastFade: null,
+        lastFadeTimeout: null,
+        lastTip: null,
         isFast: 350
     }
 });
@@ -83,25 +85,27 @@ Ext.override(Ext.button.Split, {
                         if (this.target.hasCls('x-item-disabled')) return false;
                     },
 
-                    // Use fading instead of just showing
+                    // Provide fading in as per Gmail style
                     show: function(){
                         this.noFadeOut = false;
-                        if (Ext.ToolTip.lastFade && new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
-                            this.getEl().setStyle({opacity: 1});
+                        if (Ext.ToolTip.lastTip && Ext.ToolTip.lastTip.id != this.id) {
+                            if (new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
+                                this.getEl().setStyle({opacity: 1});
+                            } else {
+                                this.getEl().fadeIn();
+                            }
+                            Ext.ToolTip.lastTip.noFadeOut = true;
+                            Ext.ToolTip.lastTip.hide();
                         } else {
                             this.getEl().fadeIn();
                         }
                         Ext.ToolTip.lastFade = new Date().getTime();
                     },
 
-                    // Restore tooltip opacity back to 0
+                    // Provide fading out as per Gmail style
                     beforehide: function(){
                         var me = this;
-                        if (Ext.ToolTip.lastFade && new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
-                            Ext.ToolTip.lastFade = new Date().getTime();
-                            return true;
-                        }
-                        Ext.ToolTip.lastFade = new Date().getTime();
+                        Ext.ToolTip.lastTip = me;
                         if (!me.noFadeOut) {
                             me.getEl().fadeOut({callback: function(){
                                 me.noFadeOut = true;
@@ -109,6 +113,7 @@ Ext.override(Ext.button.Split, {
                             }});
                             return false;
                         }
+                        Ext.ToolTip.lastFade = new Date().getTime();
                     }
                 }
             };
@@ -176,25 +181,27 @@ Ext.override(Ext.Component, {
                         if (this.target.hasCls('x-item-disabled')) return false;
                     },
 
-                    // Use fading instead of just showing
+                    // Provide fading in as per Gmail style
                     show: function(){
                         this.noFadeOut = false;
-                        if (Ext.ToolTip.lastFade && new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
-                            this.getEl().setStyle({opacity: 1});
+                        if (Ext.ToolTip.lastTip && Ext.ToolTip.lastTip.id != this.id) {
+                            if (new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
+                                this.getEl().setStyle({opacity: 1});
+                            } else {
+                                this.getEl().fadeIn();
+                            }
+                            Ext.ToolTip.lastTip.noFadeOut = true;
+                            Ext.ToolTip.lastTip.hide();
                         } else {
                             this.getEl().fadeIn();
                         }
                         Ext.ToolTip.lastFade = new Date().getTime();
                     },
 
-                    // Restore tooltip opacity back to 0
+                    // Provide fading out as per Gmail style
                     beforehide: function(){
                         var me = this;
-                        if (new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
-                            Ext.ToolTip.lastFade = new Date().getTime();
-                            me.noFadeOut = true;
-                            return true;
-                        }
+                        Ext.ToolTip.lastTip = me;
                         if (!me.noFadeOut) {
                             me.getEl().fadeOut({callback: function(){
                                 me.noFadeOut = true;
@@ -207,7 +214,7 @@ Ext.override(Ext.Component, {
                 }
             };
 
-            // If 'arrowTooltip' property is an object
+            // If 'tooltip' property is an object
             if (typeof me.tooltip == 'object') tooltipCfg =  Ext.Object.merge(tooltipCfg, me.tooltip);
 
             // Else we assume it is just a tooltip string
