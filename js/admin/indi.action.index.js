@@ -1133,7 +1133,7 @@ var Indi = (function (indi) {
             this.storeSorters = function(){
 
                 // If we have sorting params, stored in scope - we use them
-                if (indi.trail.item().scope.order)
+                if (indi.trail.item().scope.order && eval(indi.trail.item().scope.order).length)
                     return eval(indi.trail.item().scope.order);
 
                 // Else we use current section's default sorting params, if specified
