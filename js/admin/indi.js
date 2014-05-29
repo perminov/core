@@ -220,10 +220,7 @@ var Indi = function(indi) {
 
 
     indi.clearCenter = function() {
-        Ext.ComponentManager.unregister(Ext.getCmp('i-center-center-wrapper'));
-        indi.getCenter().remove('i-center-center-wrapper');
-        $('#i-center-center-body').html('');
-        indi.layout.viewport.doComponentLayout();
+        if (Ext.getCmp('i-center-center-wrapper')) Ext.getCmp('i-center-center-wrapper').destroy();
     };
 
     /**

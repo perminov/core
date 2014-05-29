@@ -21,11 +21,17 @@ Ext.override(Ext.Component, {
     afterRender: function() {
         var me = this;
 
+        // Define tooltip getter
+        me.getToolTip = function() {
+            return Ext.getCmp(me.id + '-tooltip');
+        }
+
         // If 'tooltip' property was defined
         if (me.tooltip) {
 
             // Setup initial arrow tooltip config
             var tooltipCfg = {
+                id: this.id + '-tooltip',
                 hideDelay: 0,
                 showDelay: 0,
                 dismissDelay: 0,
@@ -35,7 +41,6 @@ Ext.override(Ext.Component, {
                 target: this.id,
                 isFast: Ext.ToolTip.isFast,
                 listeners: {
-
                     // Setup tooltip positioning
                     afterlayout: function(){
                         var offsetX = (this.getWidth() - this.target.getWidth())/2;
@@ -93,7 +98,7 @@ Ext.override(Ext.Component, {
             // Else we assume it is just a tooltip string
             else tooltipCfg.html = me.tooltip;
 
-            // Create arrow tooltip
+            // Create tooltip
             new Ext.tip.ToolTip(tooltipCfg);
         }
 
@@ -104,5 +109,22 @@ Ext.override(Ext.Component, {
         if (!(me.x && me.y) && (me.pageX || me.pageY)) {
             me.setPagePosition(me.pageX, me.pageY);
         }
+    },
+
+    /**
+     * Allows addition of behavior to the destroy operation.
+     * After calling the superclass’s onDestroy, the Component will be destroyed.
+     *
+     * @template
+     * @protected
+     */
+    onDestroy: function() {
+        var me = this;
+
+        // Destroy the tooltip, if exists
+        if (me.tooltip && me.getToolTip()) me.getToolTip().destroy();
+
+        // Call parent
+        me.callParent();
     }
 });

@@ -51,7 +51,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
                     // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
-                    // constructed with usage of $this->get('limit') and $this->get('page') params
+                    // constructed with usage of Indi::get('limit') and Indi::get('page') params
                     $this->rowset = Indi::trail()->model->{
                     'fetch'. (Indi::trail()->model->treeColumn() ? 'Tree' : 'All')
                     }($finalWHERE, $finalORDER,
