@@ -319,6 +319,8 @@ var Indi = (function (indi) {
 
                     // Handler for a subsection click
                     itemclick: function(item){
+
+                        // Call item click handler
                         this.itemClick(item);
                     },
 
