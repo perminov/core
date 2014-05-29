@@ -245,7 +245,7 @@ var Indi = (function (indi) {
 
                 // 'Save' button
                 dockedItems.push({
-                    xtype: 'splitbutton',
+                    xtype: 'button',
                     arrowTooltip: indi.lang.I_AUTOSAVE,
                     text: indi.lang.I_SAVE,
                     handler: function(){
@@ -270,6 +270,7 @@ var Indi = (function (indi) {
                     },
                     disabled: indi.trail.item().disableSave,
                     iconCls: 'i-btn-icon-save',
+                    cls: 'i-action-form-topbar-button-save',
                     id: 'i-action-form-topbar-button-save',
                     pressed: indi.trail.item().scope.toggledSave,
                     arrowHandler: function(button, event){
@@ -280,6 +281,41 @@ var Indi = (function (indi) {
                             } else {
                                 top.window.Ext.getCmp('i-action-form-topbar-nav-to-subsection').disable();
                             }
+                        }
+                    }
+                });
+
+                // 'Save' button
+                dockedItems.push({
+                    xtype: 'checkbox',
+                    tooltip: indi.lang.I_AUTOSAVE,
+                    text: indi.lang.I_SAVE,
+                    disabled: indi.trail.item().disableSave,
+                    iconCls: 'i-btn-icon-save',
+                    cls: 'i-action-form-topbar-checkbox-autosave',
+                    id: 'i-action-form-topbar-checkbox-autosave',
+                    checked: indi.trail.item().scope.toggledSave,
+                    margin: '0 6 0 3',
+                    handler: function(button, event){
+                        var button = top.window.Ext.getCmp('i-action-form-topbar-button-save');
+                        button.toggle();
+                        if (indi.trail.item().sections.length && !indi.trail.item().row.id) {
+                            if (button.pressed) {
+                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-subsection').enable();
+                            } else {
+                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-subsection').disable();
+                            }
+                        }
+                    },
+                    listeners: {
+                        afterrender: function(){
+                            var button = top.window.Ext.getCmp('i-action-form-topbar-button-save');
+                            this.getEl().on('mouseover', function(){
+                                button.getEl().addCls('x-btn-default-toolbar-small-over');
+                            })
+                            this.getEl().on('mouseout', function(){
+                                button.getEl().removeCls('x-btn-default-toolbar-small-over');
+                            })
                         }
                     }
                 });
