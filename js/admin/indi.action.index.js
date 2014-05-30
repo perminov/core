@@ -960,7 +960,6 @@ var Indi = (function (indi) {
 
                         // If no selection - show a message box
                         if (selection.length == 0) {
-                            console.log('ss');
                             Ext.MessageBox.show({
                                 title: indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
                                 msg: indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
