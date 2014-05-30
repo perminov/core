@@ -590,9 +590,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // of LIKE, and prepare a special regular expression
                     if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
                         $rlike = '^[0-9]{3}' . $keyword . '[0-9a-fA-F]{' . (7 - mb_strlen($keyword, 'utf-8')) . '}$';
-                        $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
+                        $where['lookup'] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
                     } else {
-                        $where[] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+                        $where['lookup'] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
                     }
 
                     // We should get results started from selected value only if we have no $satellite argument passed
@@ -601,7 +601,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // If $order is a name of a column, and not an SQL expression, we setup results start point as
                     // current row's column's value
                     if (!preg_match('/\(/', $order)) {
-                        $where[] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . $keyword . '"';
+                        $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . $keyword . '"';
                     }
 
                     // We set this flag to true, because the fact that we are in the body of current 'else if' operator
@@ -630,7 +630,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // that PgUp or PgDn should be pressed to view all available options in combo, instead of being
                 // available all initially
                 if ($resultsShouldBeStartedFromSelectedValue && $found <= self::$comboOptionsVisibleCount) {
-                    array_pop($where);
+                    unset($where['lookup']);
                 }
 
                 // Get results
