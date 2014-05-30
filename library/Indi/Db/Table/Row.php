@@ -2373,7 +2373,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $this->deleteFiles($field);
 
                 // Build the full filename into $dst variable
-                $dst = $dir . $this->id . '_' . $field . '.' . $ext;
+                $dst = $dir . $this->id . '_' . $field . '.' . strtolower($ext);
 
                 // Move uploaded file to $dst destination, or copy, if move_uploaded_file() call failed
                 if (!move_uploaded_file($meta['tmp_name'], $dst)) copy($meta['tmp_name'], $dst);
