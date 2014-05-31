@@ -109,10 +109,13 @@ var Indi = (function (indi) {
             /**
              * Build the breadcrumbs
              */
-            this.breadCrumbs = function(){
+            this.breadCrumbs = function(prepend){
 
                 // Define an array for crumbs items
                 var crumbA = [];
+
+                // Prepend trail bread crumbs with a given value, if given
+                if (prepend) crumbA.push(prepend);
 
                 // Push the first item - section group
                 crumbA.push('<span class="i-trail-section-group">' + instance.store[0].section.title + '</span>');
@@ -279,7 +282,14 @@ var Indi = (function (indi) {
 
                 // Run
                 indi.action = indi.action || {};
-                (indi.action.index = new indi.proto.action[indi.trail.item().action.alias]()).run();
+
+                // Loader
+                var actionLoader = setInterval(function(){
+                    if (typeof indi.proto.action[indi.trail.item().action.alias] != undefined) {
+                        clearInterval(actionLoader);
+                        (indi.action[indi.trail.item().action.alias] = new indi.proto.action[indi.trail.item().action.alias]()).run();
+                    }
+                }, 25);
 
                 // Build trail bread crumbs
                 instance.breadCrumbs();
