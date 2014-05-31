@@ -2066,11 +2066,20 @@ var Indi = (function (indi) {
                         $(this).attr('hover','false');
                     });
 
-                    // Execute javascript code, if it was assigned to default selected option
+                    // Execute javascript code, if it was assigned to default selected option/options
                     if (instance.store[name].enumset) {
-                        var index = instance.store[name]['ids'].indexOf($('#'+name).val());
-                        if (index != -1 && instance.store[name]['data'][index].system.js) {
-                            eval(instance.store[name]['data'][index].system.js);
+                        if ($('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').length) {
+                            $('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').each(function(){
+                                var index = instance.store[name]['ids'].indexOf($(this).attr('selected-id'));
+                                if (index != -1 && instance.store[name]['data'][index].system.js) {
+                                    eval(instance.store[name]['data'][index].system.js);
+                                }
+                            });
+                        } else {
+                            var index = instance.store[name]['ids'].indexOf($('#'+name).val());
+                            if (index != -1 && instance.store[name]['data'][index].system.js) {
+                                eval(instance.store[name]['data'][index].system.js);
+                            }
                         }
                     }
                 });

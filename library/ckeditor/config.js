@@ -7,7 +7,7 @@ CKEDITOR.editorConfig = function( config ) {
 	// Define changes to default configuration here. For example:
 	// config.language = 'fr';
 	// config.uiColor = '#AADC6E';
-	$.post(window.location.pathname.replace('form', 'save') + '?check=1', function(access){
+	$.post(window.location.pathname.replace('/form/', '/save/') + '?check', function(access){
 		if (access != 'ok') {
 			config.removeDialogTabs = 'link:upload;image:Upload;flash:Upload'
 		}
