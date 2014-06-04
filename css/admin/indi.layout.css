@@ -57,7 +57,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 #i-center > .x-panel-body-default{
     border: none;
 }
-
+#i-section-index-action-index-content{
+    padding: 10px;
+}
 /* North subregion of center region */
 #i-center-north{
     height: auto !important;

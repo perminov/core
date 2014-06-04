@@ -16,7 +16,7 @@ class Indi_View_Helper_Admin_Buttons {
             foreach ($accessableActions as $accessableAction) {
                 if ($accessableAction['alias'] == 'save') {
                     $title[] = I_SAVE;
-                    $action[] = "top.window.Ext.getCmp('i-action-form-topbar-button-save').handler();";
+                    $action[] = "Indi.action.form.saveHandler();";
                     break;
                 }
             }

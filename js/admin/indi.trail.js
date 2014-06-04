@@ -22,6 +22,17 @@ var Indi = (function (indi) {
              */
             this.componentName = 'trail';
 
+            /**
+             * Configuration
+             *
+             * @type {Object}
+             */
+            this.options = {
+                crumbs: {
+                    pop: 0,
+                    home: false
+                }
+            }
 
             /**
              * The data object, that indi.trail will be operating with.
@@ -29,7 +40,7 @@ var Indi = (function (indi) {
              *
              * @type {Object}
              */
-            this.store = store;
+            this.store = store || [];
 
             /**
              * Prepare trail item row title for use at a part of bread crumbs
@@ -109,13 +120,24 @@ var Indi = (function (indi) {
             /**
              * Build the breadcrumbs
              */
-            this.breadCrumbs = function(prepend){
+            this.breadCrumbs = function(){
 
                 // Define an array for crumbs items
                 var crumbA = [];
 
-                // Prepend trail bread crumbs with a given value, if given
-                if (prepend) crumbA.push(prepend);
+                // Prepend trail bread crumbs with 'Home' link, if needed
+                if (instance.options.crumbs.home)
+                    crumbA.push('<a href="' + indi.pre + '/"><img src="/i/admin/trl-icon-home.gif"/></a>');
+
+                // If no trail items exist yet
+                if (instance.store.length == 0) {
+
+                    // Replace the current contents of #i-center-north-trail DOM node with 'Home' link
+                    top.window.$('#i-center-north-trail').html(crumbA[0]);
+
+                    // Return
+                    return;
+                }
 
                 // Push the first item - section group
                 crumbA.push('<span class="i-trail-section-group">' + instance.store[0].section.title + '</span>');
@@ -231,13 +253,20 @@ var Indi = (function (indi) {
                     }
                 }
 
+                // If instance.options.crumbs.pop is a positive integer - we pop N items from the crumbA array
+                if (instance.options.crumbs.pop)
+                    for (var i = 0; i < instance.options.crumbs.pop; i++)
+                        crumbA.pop();
+
                 // Replace the current contents of #i-center-north-trail DOM node with imploded crumbA array
                 top.window.$('#i-center-north-trail').html(crumbA.join('<span> &raquo; </span>'));
 
                 // Bind a click event listener to all 'a' items within imploded crumbs
                 top.window.$('#i-center-north-trail a').click(function(){
-                    top.window.Indi.load($(this).attr('page-href'));
-                    return false;
+                    if ($(this).attr('page-href')) {
+                        top.window.Indi.load($(this).attr('page-href'));
+                        return false;
+                    }
                 });
 
                 // Provide and ability for .i-trail-item-section nodes to be shown and hidden then they need to be
@@ -266,6 +295,7 @@ var Indi = (function (indi) {
              * @param store
              */
             this.apply = function(store){
+
                 // Update trail data
                 this.store = store;
 
@@ -299,10 +329,27 @@ var Indi = (function (indi) {
                 if (typeof stepsUp == 'undefined') stepsUp = 0;
                 return this.store[this.store.length - 1 - stepsUp];
             }
+
+            /**
+             * The enter point.
+             */
+            this.run = function() {
+
+                // Call the callbacks
+                if (indi.callbacks && indi.callbacks[instance.componentName] && indi.callbacks[instance.componentName].length) {
+                    for (var i = 0; i < indi.callbacks[instance.componentName].length; i++) {
+                        indi.callbacks[instance.componentName][i]();
+                    }
+                }
+
+                // Build the interface
+                instance.breadCrumbs();
+            }
         }
 
         indi.trail = new indi.proto.trail(indi.trail);
         top.Indi.trail.store = eval(JSON.stringify(indi.trail.store));
+        indi.trail.run();
 
         indi.proto.row = indi.proto.row || {};
         indi.proto.row.filter = function(row) {
@@ -315,7 +362,6 @@ var Indi = (function (indi) {
 
             }
         }
-
     };
 
     /**

@@ -940,8 +940,8 @@ var Indi = (function (indi) {
                     }
                 }
 
-                // Append separator
-                items.push('-');
+                // Append separator, if at least one action button item is alredy exist within 'items' array
+                if (items.length) items.push('-');
 
                 // Append subsections list
                 if (indi.trail.item().sections.length) items.push(new indi.layout.ux.Subsections({
