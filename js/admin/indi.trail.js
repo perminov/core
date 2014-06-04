@@ -258,6 +258,9 @@ var Indi = (function (indi) {
                     for (var i = 0; i < instance.options.crumbs.pop; i++)
                         crumbA.pop();
 
+                // Reset instance.options.crumbs.pop to '0'
+                instance.options.crumbs.pop = 0;
+
                 // Replace the current contents of #i-center-north-trail DOM node with imploded crumbA array
                 top.window.$('#i-center-north-trail').html(crumbA.join('<span> &raquo; </span>'));
 
