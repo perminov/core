@@ -843,13 +843,23 @@ class Indi {
         // If there is no value for 'uri' key in registry yet, we setup it
         if (is_null(Indi::store('admin'))) {
 
+            // Get the database table name, where current cms user was found in
+            $table = $_SESSION['admin']['alternate'] ? $_SESSION['admin']['alternate'] : 'admin';
+
             // Get the current user row
-            $userR = (int) $_SESSION['admin']['id']
-                ? Indi::model('Admin')->fetchRow('`id` = "' . (int) $_SESSION['admin']['id'] . '"')
+            $adminR = (int) $_SESSION['admin']['id']
+                ? Indi::model($table)->fetchRow('`id` = "' . (int) $_SESSION['admin']['id'] . '"')
                 : false;
 
+            // If current cms user was found not in 'admin' database table,  we explicilty setup foreign
+            // data for 'profileId' foreign key, despite on in that other table may be not such a foreign key
+            if ($table != 'admin')
+                $adminR->foreign('profileId', Indi::model('Profile')->fetchRow(
+                    '`entityId` = "' . Indi::model($table)->id() . '"'
+                ));
+
             // Push $obj object in registry under 'uri' key
-            Indi::store('admin', $userR);
+            Indi::store('admin', $adminR);
         }
 
         // Return current user object
