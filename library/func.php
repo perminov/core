@@ -403,3 +403,13 @@ function grs($length = 15, $useSpecialChars = false) {
 function ldate($format, $date) {
     return iconv('windows-1251', 'utf-8', strftime($format, strtotime($date)));
 }
+
+/**
+ * 
+ *
+ */
+if (!function_exists('lcfirst')) {
+	function lcfirst($string) {
+		return strtolower(substr($string, 0, 1)) . substr($string, 1);
+	}
+}
