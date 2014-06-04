@@ -688,10 +688,14 @@ var Indi = (function (indi) {
                     }
                 }
 
-                if (!instance.options.noTopbar) instance.applyTopToolbar();
-
+                // Pick trail options from the parent window trail object
                 indi.trail.options = window.parent.Indi.trail.options;
+
+                // Build trail bread crumbs
                 indi.trail.breadCrumbs();
+
+                // Apply top toolbar if needed
+                if (!instance.options.noTopbar) instance.applyTopToolbar();
 
                 $(document).ready(function(){
                     $('.i-tr-disabled input').attr('disabled', 'disabled');

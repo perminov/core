@@ -194,7 +194,8 @@ class Indi_Trail_Admin_Item {
                 $where[] = Indi::trail($index)->section->compiled('filter');
 
             // Owner control
-            if ($alternateWHERE = Indi_Trail_Admin::$controller->alternateWHERE()) $where[] =  $alternateWHERE;
+            if ($alternateWHERE = Indi_Trail_Admin::$controller->alternateWHERE($index))
+                $where[] =  $alternateWHERE;
 
             // Try to find a row by given id, that, hovewer, also match all requirements,
             // mentioned in all other WHERE clause parts

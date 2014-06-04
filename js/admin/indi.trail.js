@@ -323,9 +323,6 @@ var Indi = (function (indi) {
                         (indi.action[indi.trail.item().action.alias] = new indi.proto.action[indi.trail.item().action.alias]()).run();
                     }
                 }, 25);
-
-                // Build trail bread crumbs
-                instance.breadCrumbs();
             }
 
             this.item = function(stepsUp) {
