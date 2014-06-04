@@ -26,10 +26,6 @@ Ext.override(Ext.Component, {
             return Ext.getCmp(me.id + '-tooltip');
         }
 
-        me.getEl().on('click', function(){
-            if (me.getToolTip()) me.getToolTip().stopAnimation();
-        });
-
         // If 'tooltip' property was defined
         if (me.tooltip) {
 
@@ -126,7 +122,11 @@ Ext.override(Ext.Component, {
         var me = this;
 
         // Destroy the tooltip, if exists
-        if (me.tooltip && me.getToolTip()) me.getToolTip().destroy();
+        if (me.tooltip && me.getToolTip()) {
+            if (me.getToolTip().getEl() && me.getToolTip().getEl().getActiveAnimation())
+                me.getToolTip().getEl().getActiveAnimation().end();
+            me.getToolTip().destroy();
+        }
 
         // Call parent
         me.callParent();

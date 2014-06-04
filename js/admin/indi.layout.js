@@ -64,6 +64,7 @@ var Indi = (function (indi) {
                         firstChar: 7
                     }
                 },
+                disabled: true,
                 itemClick: function(){},
                 initiallyDisabled: function(){return false},
                 initComponent: function() {
@@ -81,10 +82,10 @@ var Indi = (function (indi) {
                     );
                     this.superclass.initComponent.apply(this, arguments);
                     this.minWidth = this.getMinWidth();
-                    this.disabled = this.initiallyDisabled();
                 },
                 afterRender: function(){
                     var me = this;
+                    if (this.initiallyDisabled()) this.disable(); else this.enable();
                     this.tpl.overwrite(this.el, this.store);
                     this.superclass.afterRender.apply(this, arguments);
                     this.getEl().select('.i-subsections-item').on('click', function(){
@@ -401,7 +402,7 @@ var Indi = (function (indi) {
              *
              * @type {String}
              */
-            this.dateUpdaterFormat = '<b>l</b>, d.m.Y [H:i]';
+            this.dateUpdaterFormat = '<b>l</b>, d.m.Y [H:i] \\G\\M\\TP';
 
             /**
              * Date updater, updates the top right date
@@ -626,7 +627,8 @@ var Indi = (function (indi) {
                     }, {
                         region: 'center',
                         id: 'i-center-center',
-                        border: 1
+                        border: 1,
+                        contentEl: 'i-section-index-action-index-content'
                     }]
                 };
 

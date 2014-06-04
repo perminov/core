@@ -34,7 +34,8 @@ var Indi = (function (indi) {
              * @type {Object}
              */
             this.options = {
-                hideTopbar: false
+                hideTopbar: false,
+                noTopBar: false
             }
 
             this.getPanel = function() {
@@ -92,6 +93,30 @@ var Indi = (function (indi) {
                         else return labelWidth + inputWidth + triggerWidth;
                     }
                 }
+            }
+
+            /**
+             * Default handler for 'Save' button
+             */
+            this.saveHandler = function(){
+
+                top.window.Ext.getCmp('iframe-mask').show();
+
+                var url = Indi.pre +
+                    '/' + indi.trail.item().section.alias +
+                    '/' + (indi.trail.item(1).row
+                    ?
+                    'index/id/' + indi.trail.item(1).row.id + '/' +
+                        (indi.trail.item().scope.upperHash ? 'ph/'+indi.trail.item().scope.upperHash+'/' : '') +
+                        (indi.trail.item().scope.upperAix ? 'aix/'+indi.trail.item().scope.upperAix+'/' : '')
+                    :
+                    '');
+
+                // We save current row but remeber the redirect url
+                $('form[name='+indi.trail.item().model.tableName+']')
+                    .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
+                    .submit();
+
             }
 
             /**
@@ -246,28 +271,8 @@ var Indi = (function (indi) {
                 // 'Save' button
                 dockedItems.push({
                     xtype: 'button',
-                    arrowTooltip: indi.lang.I_AUTOSAVE,
                     text: indi.lang.I_SAVE,
-                    handler: function(){
-
-                        top.window.Ext.getCmp('iframe-mask').show();
-
-                        var url = Indi.pre +
-                            '/' + indi.trail.item().section.alias +
-                            '/' + (indi.trail.item(1).row
-                            ?
-                            'index/id/' + indi.trail.item(1).row.id + '/' +
-                                (indi.trail.item().scope.upperHash ? 'ph/'+indi.trail.item().scope.upperHash+'/' : '') +
-                                (indi.trail.item().scope.upperAix ? 'aix/'+indi.trail.item().scope.upperAix+'/' : '')
-                            :
-                            '');
-
-                        // We save current row but remeber the redirect url
-                        $('form[name='+indi.trail.item().model.tableName+']')
-                            .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
-                            .submit();
-
-                    },
+                    handler: instance.saveHandler,
                     disabled: indi.trail.item().disableSave,
                     iconCls: 'i-btn-icon-save',
                     cls: 'i-action-form-topbar-button-save',
@@ -658,75 +663,12 @@ var Indi = (function (indi) {
                     }
                 });
 
-                // Add a subsections combo
-                /*dockedItems.push(top.window.Ext.create('Ext.form.ComboBox', {
-                    store: top.window.Ext.create('Ext.data.Store',{
-                        fields: ['alias', 'title'],
-                        data: indi.trail.item().sections
-                    }),
-                    fieldLabel: indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL,
-                    labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL),
-                    labelSeparator: '',
-                    valueField: 'alias',
-                    hiddenName: 'alias',
-                    displayField: 'title',
-                    typeAhead: false,
-                    width: function (){
-                        var triggerWidth = 17, maxTitleWidth = 0, maxTitle='', labelWidth =
-                                indi.metrics.getWidth(indi.lang.I_ACTION_INDEX_SUBSECTIONS_LABEL),
-                            paddingsWidth = 6, labelPad = 5, maxTitleWidth = indi.metrics.getWidth(
-                                indi.lang['I_ACTION_INDEX_SUBSECTIONS_' + (indi.trail.item().sections.length ? 'VALUE' : 'NO')]
-                            )
-                        for (var i = 0; i < indi.trail.item().sections.length; i++) {
-                            var titleWidth = indi.metrics.getWidth(indi.trail.item().sections[i].title);
-                            if (titleWidth > maxTitleWidth) {
-                                maxTitleWidth = titleWidth;
-                                maxTitle = indi.trail.item().sections[i].title;
-                            }
-                        }
-                        return labelWidth + labelPad + maxTitleWidth + paddingsWidth + triggerWidth;
-                    }(),
-                    style: 'font-size: 10px',
-                    disabled: indi.trail.item().sections.length ? false : true,
-                    cls: 'i-form-combo',
-                    id: 'i-action-form-topbar-nav-to-subsection',
-                    editable: false,
-                    margin: '0 3 2 0',
-                    value: indi.trail.item().sections.length ? indi.lang.I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT : indi.lang.I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS,
-                    listeners: {
-                        change: function(combo){
-
-                            var url = indi.pre + '/' + combo.getValue() + '/index/id/'+ indi.trail.item().row.id
-                                +'/ph/'+indi.trail.item().scope.hash
-                                +'/aix/'+top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').getValue()+'/';
-
-                            // If save button is toggled
-                            if (top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed) {
-                                // We save current row but remeber the redirect url
-                                $('form[name='+indi.trail.item().model.tableName+']')
-                                    .append('<input type="hidden" name="redirect-url" value="'+url+'"/>')
-                                    .submit();
-
-                            // Else we just update iframe's src
-                            } else top.window.Indi.load(url);
-
-                        },
-                        render: function(combo){
-                            if (!indi.trail.item().row.id &&
-                                top.window.Ext.getCmp('i-action-form-topbar-button-save').pressed != true) {
-									top.window.Ext.getCmp('i-action-form-topbar-nav-to-subsection').disable();
-								}
-                        }
-                    }
-                }));*/
-
                 // Add a docked panel to main panel, with all needed items
                 instance.getPanel().addDocked({
                     xtype: 'toolbar',
                     id: 'i-action-form-topbar',
                     cls: 'i-action-form-topbar',
-                    items: dockedItems,
-                    hidden: instance.options.hideTopbar
+                    items: dockedItems
                 });
 
             }
@@ -746,8 +688,9 @@ var Indi = (function (indi) {
                     }
                 }
 
-                instance.applyTopToolbar();
+                if (!instance.options.noTopbar) instance.applyTopToolbar();
 
+                indi.trail.options = window.parent.Indi.trail.options;
                 indi.trail.breadCrumbs();
 
                 $(document).ready(function(){

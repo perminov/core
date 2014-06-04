@@ -70,7 +70,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 20;
+    public static $comboOptionsVisibleCount = 300;
 
     /**
      * Constructor
@@ -230,7 +230,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Update cache if need
-        if ($this->model()->useCache()) Indi_Cache::update($this->model()->table());
+        if (Indi::ini('db')->cache && $this->model()->useCache()) Indi_Cache::update($this->model()->table());
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
@@ -398,8 +398,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             $dataRs = Indi::model('Enumset')->createRowset(
                 array(
                     'data' => array(
-                        array('alias' => '0', 'title' => 'Нет'),
-                        array('alias' => '1', 'title' => 'Да')
+                        array('alias' => '0', 'title' => I_NO),
+                        array('alias' => '1', 'title' => I_YES)
                     )
                 )
             );

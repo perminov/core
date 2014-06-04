@@ -124,9 +124,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      * This was created just for use in in $controller->downAction() and $controller->upAction()
      *
      * @param $direction
-     * @param null $where
      */
-    public function move($direction, $where = null) {
+    public function move($direction) {
 
         // Get the scope of rows to move within
         $within = $this->primaryWHERE();

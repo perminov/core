@@ -832,6 +832,29 @@ class Indi {
         return Indi::store('user');
     }
 
+    /**
+     * Short-hand access for current cms user (admin) object
+     *
+     * @static
+     * @return mixed|null
+     */
+    public static function admin(){
+
+        // If there is no value for 'uri' key in registry yet, we setup it
+        if (is_null(Indi::store('admin'))) {
+
+            // Get the current user row
+            $userR = (int) $_SESSION['admin']['id']
+                ? Indi::model('Admin')->fetchRow('`id` = "' . (int) $_SESSION['admin']['id'] . '"')
+                : false;
+
+            // Push $obj object in registry under 'uri' key
+            Indi::store('admin', $userR);
+        }
+
+        // Return current user object
+        return Indi::store('admin');
+    }
 
     /**
      * Implode and compress files, mentioned in $files argument, under filename, constructed with usage of $alias

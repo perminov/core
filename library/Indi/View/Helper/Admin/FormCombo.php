@@ -138,80 +138,6 @@ class Indi_View_Helper_Admin_FormCombo {
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
 
-        /*// Get title column
-        $titleColumn = $comboDataRs->titleColumn;
-
-        // If 'optgroup' param is used
-        if ($comboDataRs->optgroup) $by = $comboDataRs->optgroup['by'];
-
-        // Detect key property for options
-        $keyProperty = $comboDataRs->enumset ? 'alias' : 'id';
-
-        // Option title maximum length
-        $this->titleMaxLength = 0;
-
-        // Option title maximum indent
-        $this->titleMaxIndent = 0;
-
-        // Setup primary data for options. Here we use '$o' name instead of '$comboDataR', because
-        // it is much more convenient to use such name to deal with option row object while creating
-        // a template in $params['template'] contents, if it is set, because php expressions are executed
-        // in current context
-        foreach ($comboDataRs as $o) {
-
-            // Get initial array of system properties of an option
-            $system = $o->system();
-
-            // Set group identifier for an option
-            if ($by) $system = array_merge($system, array('group' => $o->$by));
-
-            // Set javascript handler on option select event, if needed
-            if($comboDataRs->enumset && $o->javascript)
-                $system = array_merge($system, array('js' => $o->javascript));
-
-            // Here we are trying to detect, does $o->title have tag with color definition, for example
-            // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
-            // We should do that because such tags existance may cause a dom errors while performing usubstr()
-            $info = self::detectColor(array('title' => $o->$titleColumn, 'value' => $o->$keyProperty));
-
-            // If color was detected as a box, append $system['boxColor'] property
-            if ($info['box']) $system['boxColor'] = $info['color'];
-
-            // Setup primary option data
-            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
-
-            // If color box was detected, and it has box-type, we remember this fact
-            if ($info['box']) $this->hasColorBox = true;
-
-            // Update maximum option title length, if it exceeds previous maximum
-            $noHtmlSpecialChars = preg_replace('/&[a-z]*;/', ' ',$options[$o->$keyProperty]['title']);
-            if (mb_strlen($noHtmlSpecialChars, 'utf-8') > $this->titleMaxLength)
-                $this->titleMaxLength = mb_strlen($noHtmlSpecialChars, 'utf-8');
-
-            // Update maximum option title indent, if it exceeds previous maximum
-            if ($comboDataRs->model()->treeColumn()) {
-                $indent = mb_strlen(preg_replace('/&nbsp;/', ' ', $options[$o->$keyProperty]['system']['indent']), 'utf-8');
-                if ($indent > $this->titleMaxIndent) $this->titleMaxIndent = $indent;
-            }
-
-            // If color was found, we remember it for that option
-            if ($info['style']) $options[$o->$keyProperty]['system']['color'] = $info['color'];
-
-            // Current context does not have a $this->ignoreTemplate member, but inherited class *_FilterCombo does.
-            // so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
-            // in *_FilterCombo is set to false
-            if ($this->field->params['optionTemplate'] && !$this->ignoreTemplate) {
-                Indi::$cmpTpl = $this->field->params['optionTemplate']; eval(Indi::$cmpRun); $options[$o->$keyProperty]['option'] = Indi::cmpOut();
-            }
-
-            // Deal with optionAttrs, if specified.
-            if ($comboDataRs->optionAttrs) {
-                for ($i = 0; $i < count($comboDataRs->optionAttrs); $i++) {
-                    $options[$o->$keyProperty]['attrs'][$comboDataRs->optionAttrs[$i]] = $o->{$comboDataRs->optionAttrs[$i]};
-                }
-            }
-        }*/
-
         // If current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
@@ -389,7 +315,7 @@ class Indi_View_Helper_Admin_FormCombo {
                     ?><span class="i-combo-selected-item-delete"></span><?
                 ?></span><?
             }
-                ?><span class="i-combo-table-wrapper" id="<?=$this->name?>-table-wrapper"><table class="i-combo-table"><tr><?
+                ?><div class="i-combo-table-wrapper" id="<?=$this->name?>-table-wrapper"><table class="i-combo-table"><tr><?
                     ?><td class="i-combo-keyword-cell"><?
                         ?><div class="i-combo-keyword-div"><?
                             ?><input class="i-combo-keyword" type="text" id="<?=$this->name?>-keyword" lookup="<?=$this->name?>" value="" no-lookup="<?=$this->params['noLookup']?>"/><?
@@ -408,8 +334,8 @@ class Indi_View_Helper_Admin_FormCombo {
                     ?><td class="i-combo-trigger-cell"><?
                         ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
                     ?></td><?
-                ?></tr></table></span><?
-                ?><div style="clear: both;"></div><?
+                ?></tr></table></div><?
+                ?><div class="i-combo-clear" style="clear: both;"></div><?
             ?></div><?
         ?></div><?
         return ob_get_clean();

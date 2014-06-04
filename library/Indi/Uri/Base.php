@@ -6,6 +6,10 @@ class Indi_Uri_Base {
      */
     public function __construct() {
 
+        // Set current language
+        @include_once(DOC . STD . '/coref/application/lang/' . Indi::ini('lang')->front . '.php');
+        @include_once(DOC . STD . '/www/application/lang/' . Indi::ini('lang')->front . '.php');
+
         // Parse the existing $_SERVER['REQUEST_URI']
         $this->parse();
     }

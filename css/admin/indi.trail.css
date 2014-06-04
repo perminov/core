@@ -1,3 +1,9 @@
+#i-center-north-trail a img{
+    vertical-align: text-top;
+    position: relative;
+    top: 1px;
+    left: -1px;
+}
 #i-center-north-trail span{
     cursor: default;
 }

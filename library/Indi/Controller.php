@@ -7,7 +7,7 @@ class Indi_Controller {
     public function __construct() {
 
         // Create an Indi_View instance
-		$view = new Indi_View();
+		$view = class_exists('Project_View') ? new Project_View : new Indi_View();
 
         // Get the script path
         $spath = Indi::ini('view')->scriptPath;

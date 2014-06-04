@@ -54,9 +54,6 @@ class Indi_Trail_Admin_Item {
         // If current trail item will be a first item
         if (count(Indi_Trail_Admin::$items) == 0) {
 
-            // Setup a primary hash for current section
-            //$this->section->temporary('primaryHash', Indi::uri('ph') ? Indi::uri('ph') : 'd41d8cd98f');
-
             // Setup filters
             $this->filters = $sectionR->nested('search');
 
@@ -120,6 +117,29 @@ class Indi_Trail_Admin_Item {
 
                         // If row was not found, return an error
                         return I_ACCESS_ERROR_ROW_DOESNT_EXIST;
+
+                    // Else
+                    else
+
+                        // Setup several temporary properties within the existing row, as these may be involved in the
+                        // process of parent trail items rows retrieving
+                        for ($i = 1; $i < count(Indi_Trail_Admin::$items) - 1; $i++) {
+
+                            // Determine the connector field between, for example 'country' and 'city'. Usually it is
+                            // '<parent-table-name>Id' but in some custom cases, this may differ. We do custom connector
+                            // field autosetup only if it was set and only in case of one-level-up parent section. This
+                            // mean that if we have 'Continents' as upper level, and we are creating city, city's property
+                            // name will be determined as `continentId` mean parentSectionConnector logic won't be used for that
+                            $connector = $i == 1 && Indi::trail($i-1)->section->parentSectionConnector
+                                ? Indi::trail($i-1)->section->foreign('parentSectionConnector')->alias
+                                : Indi::trail($i)->model->table() . 'Id';
+
+                            // Get the connector value from session special place and assign it to current row, but only
+                            // in case if that connector is not a one of existing fields
+                            if (!$this->model->fields($connector))
+                                $this->row->$connector = $_SESSION['indi']['admin']['trail']['parentId']
+                                [Indi::trail($i)->section->id];
+                        }
                 }
 
             // Else there was no id passed within uri, and action is 'form' or 'save', so we assume that
@@ -144,7 +164,7 @@ class Indi_Trail_Admin_Item {
                         : Indi::trail($i)->model->table() . 'Id';
 
                     // Get the connector value from session special place
-                    if ($this->model->fields($connector))
+                    //if ($this->model->fields($connector))
                         $this->row->$connector = $_SESSION['indi']['admin']['trail']['parentId']
                         [Indi::trail($i)->section->id];
                 }
