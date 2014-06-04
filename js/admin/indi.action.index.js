@@ -1421,6 +1421,9 @@ var Indi = (function (indi) {
                     }
                 }
 
+                // Build trail bread crumbs
+                indi.trail.breadCrumbs();
+
                 // View type. Later also 'tile' and 'calendar' will be available
                 indi.trail.item().section.type = 'grid';
 
