@@ -79,29 +79,6 @@ var Indi = (function (indi) {
             }
 
             /**
-             * Adjust keyword input field after each append new selected item to list of selected items or delete it from list
-             * Function is used only if combo is running in multiple mode
-             *
-             * @param name
-             */
-            this.adjustKeywordFieldWidth = function(name) {
-                // We do not explicilty setup width for single-value combos
-                if ($('#'+name+'-keyword').parents('.i-combo-single').length) return;
-
-                var width, decrease = 0;
-
-                if ($('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').length) {
-                    decrease += $('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').last().position().left;
-                    decrease += $('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').last().outerWidth();
-                    decrease += parseInt($('#'+name+'-keyword').parents('.i-combo-multiple').css('border-width'));
-                } else {
-                    decrease += parseInt($('#'+name+'-keyword').parents('.i-combo-multiple').css('border-width')) * 2;
-                }
-                width = $('#'+name+'-keyword').parents('.i-combo').width() - decrease;
-                $('#'+name+'-keyword').parents('.i-combo-table').width(width);
-            }
-
-            /**
              * Here we do not exec options-specific javascript (as it would be done at indi.proto.combo.form) but here we do
              * things, that are especially related to filters
              */
@@ -156,7 +133,8 @@ var Indi = (function (indi) {
                 if (!$('#'+name).attr('change-by-refresh-children')) {
 
                     // We fire indi.action.index.filterChange only if noReload flag if turned off
-                    if (!Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-filter-' + name).noReload) {
+                    if (Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-filter-' + name)
+                        && !Ext.getCmp('i-section-' + indi.trail.item().section.alias + '-action-index-filter-' + name).noReload) {
 
                         // Provide a delay befre for multiple-combo value change handler will run
                         if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
@@ -190,6 +168,10 @@ var Indi = (function (indi) {
 
                 // Get the keyword selector
                 var s = instance.keywordSelector();
+
+                // Apply right border for '.i-combo' element, if is has '.i-combo-multiple' child
+                $(instance.componentNameClass() + ' .i-combo-multiple').parent().css('border-right',
+                    $(instance.componentNameClass() + ' .i-combo-multiple').css('border'));
 
                 // Bind css class modifications on trigger mouseover event
                 $(instance.componentNameClass() + ' .i-combo-trigger').mouseover(function(){
@@ -228,6 +210,10 @@ var Indi = (function (indi) {
 
                     // Setup clicked style
                     $(this).addClass('x-form-trigger-click');
+
+                    // Apply right border for '.i-combo' element, if is has '.i-combo-multiple' child
+                    $(instance.componentNameClass() + ' .i-combo-multiple').parent().css('border-right',
+                        $(instance.componentNameClass() + ' .i-combo-multiple').css('border'));
                 });
 
                 // Bind css class modifications on trigger mouseup event
@@ -257,6 +243,10 @@ var Indi = (function (indi) {
 
                     // Remove focus class
                     c.removeClass('i-combo-focus');
+
+                    // Apply right border for '.i-combo' element, if is has '.i-combo-multiple' child
+                    $(instance.componentNameClass() + ' .i-combo-multiple').parent().css('border-right',
+                        $(instance.componentNameClass() + ' .i-combo-multiple').css('border'));
                 });
 
                 // Bind css class modifications on keyword input focus event
@@ -270,6 +260,10 @@ var Indi = (function (indi) {
 
                     // Remove focus class
                     c.addClass('i-combo-focus');
+
+                    // Apply right border for '.i-combo' element, if is has '.i-combo-multiple' child
+                    $(instance.componentNameClass() + ' .i-combo-multiple').parent().css('border-right',
+                        $(instance.componentNameClass() + ' .i-combo-multiple').css('border'));
                 });
             }
         }

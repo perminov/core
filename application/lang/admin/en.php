@@ -49,6 +49,7 @@ define('I_ENUMSET_ERROR_VALUE_LAST', 'Value "%s" is the last remaining possible 
 define('I_YES', 'Yes');
 define('I_NO', 'No');
 
+define('I_HOME', 'Home');
 define('I_LOGOUT', 'Logout');
 define('I_MENU', 'Menu');
 define('I_CREATE', 'Create new item');

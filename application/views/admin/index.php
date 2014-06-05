@@ -41,9 +41,13 @@ Indi = $.extend(Indi, {
     time: <?=time()?>
 });
 Indi.ready(function(){
+    Indi.trail.options.crumbs.home = <?=Indi::admin()->foreign('profileId')->home ? 'true' : 'false'?>;
+}, 'trail');
+Indi.ready(function(){
     Indi.layout.menu.data = <?=json_encode($this->menu)?>;
     Indi.layout.adminInfo = '<?=$this->admin?>';
 }, 'layout');
 </script>
+<div style="display: none;"><div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div></div>
 </body>
 </html>

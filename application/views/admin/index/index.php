@@ -1,1 +1,1 @@
-Admin OK
+<?=Indi::admin()->foreign('profileId')->home?>
