@@ -2020,6 +2020,12 @@ var Indi = (function (indi) {
                         // Check if combo is disabled
                         if ($(this).parents('.i-combo').hasClass('i-combo-disabled') || $(this).hasClass('i-combo-keyword-no-results')) return;
 
+                        if ($(this).parents('.i-combo').hasClass('i-combo-filter')
+                            && arguments.length && arguments[0].ctrlKey) {
+                            instance.clearCombo(name);
+                            return;
+                        }
+
                         if ($('#'+name+'-suggestions').css('display') == 'none') {
                             instance.rebuildComboData(name);
                         }
