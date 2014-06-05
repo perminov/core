@@ -104,20 +104,29 @@ var Indi = (function (indi) {
              * @param name
              */
             this.adjustKeywordFieldWidth = function(name) {
-                // We do not explicilty setup width for single-value combos
+
+                // We do not setup widths for single-value combos
                 if ($('#'+name+'-keyword').parents('.i-combo-single').length) return;
 
-                var width, decrease = 0;
+                // Define auxillary variables
+                var comboEl, comboMultipleEl, decrease = 0;
 
-                if ($('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').length) {
-                    decrease += $('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').last().position().left;
-                    decrease += $('#'+name+'-keyword').parents('.i-combo-multiple').find('.i-combo-selected-item').last().outerWidth(true);
-                    decrease += parseInt($('#'+name+'-keyword').parents('.i-combo-multiple').css('border-width'));
-                } else {
-                    decrease += parseInt($('#'+name+'-keyword').parents('.i-combo-multiple').css('border-width')) * 2;
-                }
-                width = $('#'+name+'-keyword').parents('.i-combo').width() - decrease;
-                $('#'+name+'-keyword').parents('.i-combo-table').width(width);
+                // Here we do width adjust using a setTimeout, because there is some strange thing happens with the
+                // results of comboEl.width() call. For some reason, outside the setTimeout body it gives result, that
+                // differs from the same one, got inside. I guess it is caused by some browser rendering particularity
+                setTimeout(function(){
+                    comboEl = $('#'+name+'-keyword').parents('.i-combo');
+                    comboMultipleEl = comboEl.find('.i-combo-multiple');
+                    decrease += parseInt(comboEl.css('padding-right')) + parseInt(comboEl.css('padding-left'));
+                    decrease += parseInt(comboMultipleEl.css('margin-right')) + parseInt(comboMultipleEl.css('margin-left'));
+                    decrease += parseInt(comboMultipleEl.css('padding-right')) + parseInt(comboMultipleEl.css('padding-left'));
+                    if (comboMultipleEl.find('.i-combo-selected-item').length) {
+                        var last = comboMultipleEl.find('.i-combo-selected-item').last();
+                        decrease += last.position().left;
+                        decrease += last.outerWidth();
+                    }
+                    $('#'+name+'-keyword').parents('.i-combo-table').width(comboMultipleEl.width() - decrease);
+                }, 0);
             }
 
             /**
@@ -2072,11 +2081,20 @@ var Indi = (function (indi) {
                         $(this).attr('hover','false');
                     });
 
-                    // Execute javascript code, if it was assigned to default selected option
+                    // Execute javascript code, if it was assigned to default selected option/options
                     if (instance.store[name].enumset) {
-                        var index = instance.store[name]['ids'].indexOf($('#'+name).val());
-                        if (index != -1 && instance.store[name]['data'][index].system.js) {
-                            eval(instance.store[name]['data'][index].system.js);
+                        if ($('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').length) {
+                            $('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').each(function(){
+                                var index = instance.store[name]['ids'].indexOf($(this).attr('selected-id'));
+                                if (index != -1 && instance.store[name]['data'][index].system.js) {
+                                    eval(instance.store[name]['data'][index].system.js);
+                                }
+                            });
+                        } else {
+                            var index = instance.store[name]['ids'].indexOf($('#'+name).val());
+                            if (index != -1 && instance.store[name]['data'][index].system.js) {
+                                eval(instance.store[name]['data'][index].system.js);
+                            }
                         }
                     }
                 });

@@ -31,7 +31,7 @@ class Admin_TemporaryController extends Indi_Controller {
             'search' => 'fieldId'
         );
 
-        $project = 'picneon';
+        $project = 'ota';
 
         $projectTitleFieldAliasA = array(
             'picneon' => array(
@@ -40,6 +40,21 @@ class Admin_TemporaryController extends Indi_Controller {
                 'lessonPractice' => 'taskId',
                 'recommended' => 'recommended',
                 'courseLesson' => 'lessonId'
+            ),
+            'ota' => array(
+                'autorespondMessage' => 'autorespondEventId',
+                'bannerShow' => 'datetime',
+                'capturedDataGridColumn' => 'capturedDataFieldId',
+                'capturedDataGridFilter' => 'capturedDataFieldId',
+                'capturedDataLog' => 'datetime',
+                'capturedDataUser' => 'userId',
+                'courseClick' => 'datetime',
+                'courseUser' => 'userId',
+                'micrositeClick' => 'datetime',
+                'newsletterDelivery' => 'date',
+                'pollAnswerVote' => 'datetime',
+                'userReward' => 'datetime',
+                'rewardedActionReward' => 'reward'
             )
         );
 

@@ -2,9 +2,9 @@
 .i-combo .i-combo-single, .i-combo .i-combo-multiple {border: 1px solid #b5b8c8;}
 .i-combo .x-form-text {font-size: 11px; padding: 0;}
 .i-combo.i-combo-focus .i-combo-single, .i-combo.i-combo-focus .i-combo-multiple {border: 1px solid #99BCE8;}
-.i-combo .i-combo-multiple {height: auto;}
+.i-combo .i-combo-multiple {height: auto; padding-bottom: 1px;}
 .i-combo.i-combo-filter {overflow: hidden; display: inline-block;}
-.i-combo.i-combo-filter .i-combo-multiple{overflow: hidden; height: 19px;}
+.i-combo.i-combo-filter .i-combo-multiple{overflow: hidden; height: 19px; width: 200%;}
 .i-combo .i-combo-single {
     -webkit-border-top-right-radius: 3px;
     -moz-border-radius-topright: 3px;
@@ -14,7 +14,7 @@
 /* Combo table */
 .i-combo .i-combo-multiple .i-combo-table {margin-bottom: -3px;}
 .i-combo .i-combo-single .i-combo-table {width: 100%;}
-.i-combo.i-combo-form .i-combo-multiple .i-combo-table-wrapper {height: 17px; float: right;}
+.i-combo.i-combo-form .i-combo-multiple .i-combo-table-wrapper {height: 17px; float: right; margin-bottom: -1px;}
 
 /* Combo color box */
 .i-combo .i-combo-single .i-combo-color-box-cell {width: 1px;}
