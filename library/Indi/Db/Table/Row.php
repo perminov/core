@@ -1751,7 +1751,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             } else if ($elementR->alias == 'number') {
 
                 // If $value is not a decimal
-                if (!preg_match(Indi::rex('int11'), $value)) {
+                if (!preg_match(Indi::rex('int11lz'), $value)) {
 
                     // Push a error to errors stack
                     $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, $fieldR->title);
