@@ -127,7 +127,7 @@ var Indi = (function (indi) {
 
                 // Prepend trail bread crumbs with 'Home' link, if needed
                 if (instance.options.crumbs.home)
-                    crumbA.push('<a href="' + indi.pre + '/"><img src="' + indi.pre + '/i/admin/trl-icon-home.gif"/></a>');
+                    crumbA.push('<a href="' + indi.pre + '/"><img src="' + indi.std + '/i/admin/trl-icon-home.gif"/></a>');
 
                 // If no trail items exist yet
                 if (instance.store.length == 0) {
