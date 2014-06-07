@@ -31,7 +31,7 @@ class Admin_TemporaryController extends Indi_Controller {
             'search' => 'fieldId'
         );
 
-        $project = 'vkenguru';
+        $project = 'uptrend';
 
         $projectTitleFieldAliasA = array(
             'picneon' => array(
