@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Indi Engine</title>
+    <title><?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?></title>
     <?
     Indi::implode(array(
         '/js/jquery-1.9.1.min.js',
@@ -10,6 +10,7 @@
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
+        '/js/admin/ext.override.js',
         '/js/admin/indi.js',
         '/js/admin/indi.layout.js'
     ) ,'login');
@@ -27,6 +28,7 @@
         com: '<?=COM ? '' : '/admin'?>',
         pre: '<?=STD?><?=COM ? '' : '/admin'?>',
         lang: <?=Indi::constants('user', true)?>,
+        title: '<?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?>',
         throwOutMsg: '<?=$this->throwOutMsg?>'
     });
     </script>

@@ -90,7 +90,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
-            Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
+            if (strlen($this->_original[$evalField])) {
+                Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
+            }
         }
     }
 
@@ -1008,7 +1010,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $fieldRs = Indi::model('Field')->fetchAll('`relation` = "' . $this->model()->id() . '"');
         foreach ($fieldRs as $fieldR) $entities[$fieldR->entityId]['fields'][] = $fieldR;
 
-        // Get auxillary deletion info within each entity
+        // Get auxiliary deletion info within each entity
         foreach ($entities as $eid => $data) {
 
             // Load model
@@ -1809,6 +1811,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                             // And setup $value as date got from $utime timestamp and formatted by 'Y-m-d' format
                             $value['date'] = date('Y-m-d', $utime);
+
+                            // Renew year, month and day values
+                            list($value['year'], $value['month'], $value['day']) = explode('-', $value['date']);
                         }
                     }
 

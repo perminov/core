@@ -31,7 +31,7 @@ class Admin_TemporaryController extends Indi_Controller {
             'search' => 'fieldId'
         );
 
-        $project = 'ota';
+        $project = 'vkenguru';
 
         $projectTitleFieldAliasA = array(
             'picneon' => array(
@@ -55,6 +55,10 @@ class Admin_TemporaryController extends Indi_Controller {
                 'pollAnswerVote' => 'datetime',
                 'userReward' => 'datetime',
                 'rewardedActionReward' => 'reward'
+            ),
+            'vkenguru' => array(
+                'eventAnimator' => 'animatorId',
+                'adjustment' => 'datetime'
             )
         );
 
@@ -76,7 +80,7 @@ class Admin_TemporaryController extends Indi_Controller {
                 }
 
             // Если сущность проектная
-            } else {
+            } else if ($entityR->system == 'n') {
 
                 // Если для нее есть hardcoded заголовочное поле - назначаем его
                 if ($projectTitleFieldAliasA[$project][$entityR->table]) {

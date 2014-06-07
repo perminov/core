@@ -42,7 +42,7 @@ var Indi = (function (indi) {
             };
 
             this.options = {
-                loginPanelTitle: 'Indi Engine'
+                loginPanelTitle: indi.title
             };
 
             this.ux = {
@@ -129,7 +129,7 @@ var Indi = (function (indi) {
                 // currently is hovered, so it should have full width, by decresing widths of other items
                 adjustWidth: function(hover){
 
-                    // Setup auxillary variables
+                    // Setup auxiliary variables
                     var me = this, easing = arguments.length > 0 ? true : false, exclusive = undefined, totalItemsWidth = 0,
                         availableWidth = this.getAvailableWidth(), requiredWidth = this.getRequiredWidth(),
                         constant = 0, ignoreA = [], avgItemWidth = 0, itemTitleRequiredWidth, lost, itemWidth,
@@ -447,7 +447,12 @@ var Indi = (function (indi) {
                             id: 'i-login-box-remember',
                             checked: Ext.util.Cookies.get('i-remember') !== null,
                             margin: '0 0 2 8',
-                            cls: 'i-inline-block'
+                            cls: 'i-inline-block',
+                            tooltip: {
+                                html: 'Запомнить',
+                                anchor: 'left',
+                                staticOffset: [0, -3]
+                            }
                         },{
                             xtype: 'button',
                             id: 'i-login-box-submit',

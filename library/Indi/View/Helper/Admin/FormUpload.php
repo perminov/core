@@ -21,7 +21,7 @@ class Indi_View_Helper_Admin_FormUpload
 		// pattern and paths
 		$pattern  = $id . ($name ? '_' . $name : '') . ($copy ? ',' . $copy : '') . '.*';
 		$relative = '/' . trim(Indi::ini()->upload->path, '/') . '/' . $entity  . '/';
-		$absolute = rtrim($_SERVER['DOCUMENT_ROOT'] . STD, '\\/') . $relative;
+		$absolute = rtrim(DOC . STD, '\\/') . $relative;
 		$file = glob($absolute . $pattern); $file = $file[0];
 		if ($file) {
 			$types = array('image' => 'gif,png,jpg,jpeg', 'flash' => 'swf', 'video' => 'avi,mpg,mp4,3gp', 'file' => '');
@@ -57,7 +57,7 @@ class Indi_View_Helper_Admin_FormUpload
 					$uploaded = '<a href="' . $relative . $info['basename'] . '" target="_blank" title="Скачать">Видео</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
 					break;
 				default:
-					$uploaded = '<a href="/admin/auxillary/download/id/'.$id . '/field/' . Indi::trail()->model->fields($name)->id . '/" title="Скачать">Файл</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
+					$uploaded = '<a href="/admin/auxiliary/download/id/'.$id . '/field/' . Indi::trail()->model->fields($name)->id . '/" title="Скачать">Файл</a> <a>в формате ' . $info['extension'] . '</a> &nbsp;';
 					break;
 			}
 

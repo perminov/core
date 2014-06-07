@@ -1647,7 +1647,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // If $data is not an array, e.g some error there, output it as json with that error
                 if (!is_array($data)) die(json_encode(array('error' => $data)));
 
-                // Else start a session for user and report that singin was ok
+                // Else start a session for user and report that sing-in was ok
                 $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
                 foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
                 die(json_encode(array('ok' => '1')));
@@ -1795,6 +1795,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Make a src|href replacements, if project is running in a subfolder of document root
         if (STD) {
             $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+            $out = preg_replace('/(<a[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
             $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
             $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
             $out = preg_replace('/(<form[^>]+)(action)=("|\')\//', '$1$2=$3' . STD . '/', $out);
@@ -1947,11 +1948,17 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Else we assume that there are no requirements for current row to be displayed in rowset panel
             } else $R = $this->row;
 
-            // Setup new index
-            Indi::uri()->aix = Indi::trail()->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
+            // Here we should do check for row existence, because there can be situation when we have just created
+            // a row, but values of some of it's properties do not match the requirements of current scope, and in that
+            // case current scope 'aix' and/or 'page' params should not be adjusted
+            if ($R) {
 
-            // Apply new index
-            $this->setScopeRow();
+                // Setup new index
+                Indi::uri()->aix = Indi::trail()->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
+
+                // Apply new index
+                $this->setScopeRow();
+            }
         }
 
         // Do post-save operations

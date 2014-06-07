@@ -343,7 +343,7 @@ class Indi_View_Helper_Admin_FormCombo {
 
     /**
      * Check if option contain a color definition, and if so, extract that color, build color box (in some cases) and
-     * prepare some auxillary data
+     * prepare some auxiliary data
      *
      * @param $option
      * @return array
@@ -381,7 +381,7 @@ class Indi_View_Helper_Admin_FormCombo {
                 if ($t) $option['input'] = $option['color'];
 
                 // Setup color box
-                $option['box'] = '<span class="i-combo-color-box" style="background: ' . $option['color'] . '; margin-right: 3px;"></span>';
+                $option['box'] = '<span class="i-combo-color-box" style="background: ' . $option['color'] . ';"></span>';
             }
         }
 
