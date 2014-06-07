@@ -123,6 +123,7 @@
 .x-gecko .i-combo-info * {font-size: 9px;}
 .x-gecko .i-combo-table td > *{position: relative;top: -1px;}
 .x-gecko .i-combo-table td .i-combo-info-div{position: relative;top: 0px;}
+.x-gecko .i-combo.i-combo-form .i-combo-keyword{padding-top: 1px;}
 .x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-left: 1px;}
 .x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px;}
 .x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 1px;}
