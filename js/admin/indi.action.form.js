@@ -509,7 +509,7 @@ var Indi = (function (indi) {
                 // Append subsections list
                 if (indi.trail.item().sections.length) dockedItems.push(new top.window.Indi.layout.ux.Subsections({
                     toolbarId: 'i-action-form-topbar',
-                    widthAmend: 60,
+                    widthAmend: 50,
                     tooltip: {
                         html: indi.lang.I_NAVTO_NESTED,
                         hideDelay: 0,

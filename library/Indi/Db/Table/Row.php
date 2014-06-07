@@ -2263,9 +2263,42 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return mixed
      */
     public function compiled() {
+
+        // If no arguments passed - the whole array, containing compiled values will be returned
         if (func_num_args() == 0) return $this->_compiled;
-        else if (func_num_args() == 1) return $this->_compiled[func_get_arg(0)];
-        else return $this->_compiled[func_get_arg(0)] = func_get_arg(1);
+
+        // Else if one argument is given
+        else if (func_num_args() == 1) {
+
+            // Assume it is a alias of a field, that is having value that should be compiled
+            $evalField = func_get_arg(0);
+
+            // If there is already exist a value for that field within $this->_compiled array
+            if (array_key_exists($evalField, $this->_compiled)) {
+
+                // Return that compiled value
+                return $this->_compiled[$evalField];
+
+            // Else if field original value is not empty, and field is within
+            // list of fields that are allowed for being compiled
+            } else if (strlen($this->_original[$evalField]) && $this->model()->getEvalFields($evalField)) {
+
+                // Check if field original value contains php expressions, and if so
+                if (preg_match(Indi::rex('php'), $this->_original[$evalField])) {
+
+                    // Compile that value
+                    Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun);
+
+                    // Save compilation result under $evalField key within $this->_compiled array, and return that result
+                    return $this->_compiled[$evalField] = Indi::cmpOut();
+
+                // Else return already existing value
+                } else return $this->_compiled[$evalField] = $this->_original[$evalField];
+            }
+
+        // Else if two arguments passed, we assume they are key and value, and there
+        // should be explicit setup performed, so we do it
+        } else return $this->_compiled[func_get_arg(0)] = func_get_arg(1);
     }
 
     /**
