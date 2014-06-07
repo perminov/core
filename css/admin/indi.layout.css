@@ -379,6 +379,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-tip .x-tip-body{color: white;}
 .i-tip .x-tip-anchor.x-tip-anchor-bottom{border-top-color: inherit;}
 .i-tip .x-tip-anchor.x-tip-anchor-top{border-bottom-color: inherit;}
+.i-tip .x-tip-anchor.x-tip-anchor-right{border-left-color: inherit;}
+.i-tip .x-tip-anchor.x-tip-anchor-left{border-right-color: inherit;}
 .i-tip .x-tip-anchor{ display: inherit !important;}
 .i-action-form-topbar-checkbox-autosave .x-form-cb-wrap{
     padding-top: 0px;

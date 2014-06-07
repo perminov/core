@@ -1,8 +1,8 @@
 <?php
 /**
- * Controller for auxillary abilities
+ * Controller for auxiliary abilities
  */
-class Admin_AuxillaryController extends Indi_Controller {
+class Indi_Controller_Auxiliary extends Indi_Controller {
 
     /**
      * Provide a file download ability
@@ -83,5 +83,5 @@ class Admin_AuxillaryController extends Indi_Controller {
         header('Content-Disposition: attachment; filename="' . $title . '";');
         readfile($abs);
         die();
-	}
+    }
 }

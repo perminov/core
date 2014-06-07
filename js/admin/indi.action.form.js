@@ -169,7 +169,7 @@ var Indi = (function (indi) {
                     hideTrigger: true,
                     tooltip: {
                         html: indi.lang.I_NAVTO_ID,
-                        staticOffset: [instance.widths.topbar.ID(indi.trail.item().row, 'tooltipOffset'), 0]
+                        staticOffset: [instance.widths.topbar.ID(indi.trail.item().row, 'tooltipOffset'), 1]
                     },
                     value: (indi.trail.item().row ? indi.trail.item().row.id : ''),
                     width: instance.widths.topbar.ID(indi.trail.item().row),
@@ -293,7 +293,10 @@ var Indi = (function (indi) {
                 // 'Save' button
                 dockedItems.push({
                     xtype: 'checkbox',
-                    tooltip: indi.lang.I_AUTOSAVE,
+                    tooltip: {
+                        html: indi.lang.I_AUTOSAVE,
+                        staticOffset: [0, 4]
+                    },
                     text: indi.lang.I_SAVE,
                     disabled: indi.trail.item().disableSave,
                     iconCls: 'i-btn-icon-save',
@@ -475,7 +478,7 @@ var Indi = (function (indi) {
                         top.window.Ext.getCmp('iframe-mask').show();
 
                         // Build the request uri
-                        var url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias + '/' + '/ph/'+
+                        var url = indi.pre+'/' + indi.trail.item().section.alias + '/' + indi.trail.item().action.alias + '/ph/'+
                             indi.trail.item().section.primaryHash+'/';
 
                         top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').setValue('');
@@ -511,7 +514,8 @@ var Indi = (function (indi) {
                         html: indi.lang.I_NAVTO_NESTED,
                         hideDelay: 0,
                         showDelay: 1000,
-                        dismissDelay: 2000
+                        dismissDelay: 2000,
+                        staticOffset: [0, 1]
                     },
                     id: 'i-action-form-topbar-nav-to-subsection',
                     itemClick: function(item){

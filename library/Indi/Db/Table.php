@@ -247,11 +247,11 @@ class Indi_Db_Table
             foreach ($tree as $id => $info) {
                 if ($info[2]) {
 
-                    // Collect all (primary and auxillary) results rows ids
+                    // Collect all (primary and auxiliary) results rows ids
                     $ids[] = $id;
                     $i++;
 
-                    // Remember id of rows that should be disabled (auxillary results)
+                    // Remember id of rows that should be disabled (auxiliary results)
                     if ($info[2] == 2) $disabledA[] = $id;
 
                     // Break loop if known count of ids is already got

@@ -951,7 +951,8 @@ var Indi = (function (indi) {
                         html: indi.lang.I_NAVTO_NESTED,
                         hideDelay: 0,
                         showDelay: 1000,
-                        dismissDelay: 2000
+                        dismissDelay: 2000,
+                        staticOffset: [0, 1]
                     },
                     itemClick: function(item){
 

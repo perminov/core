@@ -108,7 +108,7 @@ var Indi = (function (indi) {
                 // We do not setup widths for single-value combos
                 if ($('#'+name+'-keyword').parents('.i-combo-single').length) return;
 
-                // Define auxillary variables
+                // Define auxiliary variables
                 var comboEl, comboMultipleEl, decrease = 0;
 
                 // Here we do width adjust using a setTimeout, because there is some strange thing happens with the
@@ -1510,7 +1510,7 @@ var Indi = (function (indi) {
                     }
                 }
 
-                // Restore default values for auxillary attributes
+                // Restore default values for auxiliary attributes
                 $('#'+name+'-info').attr('fetch-mode', 'no-keyword');
                 $('#'+name+'-info').attr('page-top-reached', 'false');
                 $('#'+name+'-info').attr('page-btm-reached', 'false');
@@ -1890,7 +1890,7 @@ var Indi = (function (indi) {
             }
 
             /**
-             * Function that will be called after combo value change. Contain auxillary operations such as
+             * Function that will be called after combo value change. Contain auxiliary operations such as
              * dependent-combos reloading, javascript execution and others
              */
             this.changeHandler = function() {

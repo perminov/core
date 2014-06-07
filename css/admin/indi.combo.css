@@ -19,7 +19,7 @@
 /* Combo color box */
 .i-combo .i-combo-single .i-combo-color-box-cell {width: 1px;}
 .i-combo .i-combo-color-box {width: 14px; height: 9px; display: inline-block;}
-.i-combo .i-combo-single .i-combo-color-box-cell .i-combo-color-box{margin: 0px 1px 0 3px;}
+.i-combo .i-combo-single .i-combo-color-box-cell .i-combo-color-box{margin: 0px 2px 0 3px;}
 
 /* Combo multiple selected items*/
 .i-combo .i-combo-multiple .i-combo-selected-item {

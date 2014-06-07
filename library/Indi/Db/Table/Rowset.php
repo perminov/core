@@ -583,16 +583,18 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // If there the color-value in format 'hue#rrgbb' can probably be found in field value
                 // we do a try, and if found - inject a '.i-color-box' element
-                if ((isset($typeA['other'][$columnI]) || isset($typeA['foreign']['single'][$columnI]) ||
-                    isset($typeA['foreign']['multiple'][$columnI])) && preg_match(Indi::rex('hrgb'),
-                    $data[$pointer][$columnI], $color))
-                    $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
-                        . $color[1] . ';"></span>#'. $color[1];
+                if (   isset($typeA['other'][$columnI])
+                    || isset($typeA['foreign']['single'][$columnI])
+                    || isset($typeA['foreign']['multiple'][$columnI])) {
 
-                /*} else if (preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $data[$pointer][$columnI], $color)) {
-                    $data[$pointer][$columnI] = '<span class="i-color-box" style="background: ' . $color[1] . ';"></span>'. strip_tags($data[$pointer][$columnI]);
-                }*/
-
+                    if (preg_match(Indi::rex('hrgb'), $data[$pointer][$columnI], $color)) {
+                        $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
+                            . $color[1] . ';"></span>#'. $color[1];
+                    } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
+                        $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
+                            . $color[1] . ';"></span>'. $data[$pointer][$columnI];
+                    }
+                }
             }
 
             // Append system data

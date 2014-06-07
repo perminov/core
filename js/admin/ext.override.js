@@ -43,14 +43,18 @@ Ext.override(Ext.Component, {
                 listeners: {
                     // Setup tooltip positioning
                     afterlayout: function(){
-                        var offsetX = (this.getWidth() - this.target.getWidth())/2;
-                        this.mouseOffset = [-offsetX + this.staticOffset[0], 0];
-                        this.anchorOffset = -20;
-                        this.anchorOffset += this.getWidth()/2;
+                        if (this.anchor == 'top' || this.anchor == 'bottom') {
+                            var offsetX = (this.getWidth() - this.target.getWidth())/2;
+                            this.mouseOffset = [-offsetX + this.staticOffset[0], this.staticOffset[1]];
+                            this.anchorOffset = -20;
+                            this.anchorOffset += this.getWidth()/2;
 
-                        if (this.target.lastBox.x < offsetX) {
-                            this.mouseOffset = [-this.target.lastBox.x + this.staticOffset[0], 0];
-                            this.anchorOffset -= offsetX - this.target.lastBox.x;
+                            if (this.target.lastBox.x < offsetX) {
+                                this.mouseOffset = [-this.target.lastBox.x + this.staticOffset[0], this.staticOffset[1]];
+                                this.anchorOffset -= offsetX - this.target.lastBox.x;
+                            }
+                        } else {
+                            this.mouseOffset = [this.staticOffset[0], this.staticOffset[1]];
                         }
                     },
 
