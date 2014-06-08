@@ -548,14 +548,14 @@ var Indi = (function (indi) {
                 dockedItems.push({
                     fieldLabel: indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE,
                     labelSeparator: '',
-                    labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE),
+                    labelWidth: indi.metrics.getWidth(indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE) + 1,
                     xtype: 'numberfield',
                     tooltip: {
                         html: indi.lang.I_NAVTO_ROWINDEX,
                         staticOffset: [instance.widths.topbar.RN('tooltipOffset'), 0]
                     },
                     value: (indi.trail.item().row.id ? indi.trail.item().scope.aix : ''),
-                    width: instance.widths.topbar.RN(),
+                    width: instance.widths.topbar.RN() + 1,
                     disabled: parseInt(indi.trail.item().scope.found) ? false : true,
                     margin: '0 5 0 3',
                     cls: 'i-form-text',

@@ -128,9 +128,31 @@
 .x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px;}
 .x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 1px;}
 .x-ie9 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 0px;}
-.x-ie8 .i-combo.i-combo-sibling .i-combo-info,.x-ie8 .i-combo.i-combo-filter .i-combo-info {margin-top: -15px;}
+.x-ie8 .i-combo.i-combo-sibling .i-combo-info,.x-ie8 .i-combo.i-combo-filter .i-combo-info {margin-top: 2px;}
 .x-ie8 .i-combo.i-combo-form .i-combo-info {margin-top: -16px;}
-.x-ie9 .i-combo.i-combo-sibling .i-combo-info .i-combo-found, .x-ie9 .i-combo.i-combo-filter .i-combo-info .i-combo-found {
+.x-ie9 .i-combo.i-combo-sibling .i-combo-info .i-combo-found,
+.x-ie9 .i-combo.i-combo-filter .i-combo-info .i-combo-found {
     line-height: 12px; padding-bottom: 0px; height: 14px; display: inline-block; overflow: hidden; position: relative;
     top: -1px;
 }
+.x-gecko.x-nlg .i-combo-table td > *{position: relative;top: 0px;}
+.x-gecko.x-nlg .i-combo-table td.i-combo-trigger-cell > *{position: relative;top: -1px;}
+.x-gecko.x-nlg .i-combo-form .i-combo-table td.i-combo-trigger-cell > *{position: relative;top: 0px;}
+.x-gecko.x-nlg .i-combo.i-combo-form .i-combo-keyword{padding-top: 2px;}
+.x-gecko.x-nlg .i-combo .i-combo-info-fetched-all.i-combo-info .i-combo-found {padding-top: 1px;}
+
+.x-ie9p .i-combo .i-combo-table td.i-combo-trigger-cell > *{position: relative;top: -1px;}
+.x-ie9p .i-combo.i-combo-form .i-combo-table td.i-combo-trigger-cell > *{position: relative;top: 0px;}
+.x-ie9p .i-combo .i-combo-info * {font-size: 9px;}
+.x-ie9p .i-combo .i-combo-info-fetched-all.i-combo-info .i-combo-found {padding-top: 1px;}
+.x-ie9p.x-ie9 .i-combo-sibling.i-combo .i-combo-info .i-combo-found,
+.x-ie9p.x-ie9 .i-combo-filter.i-combo .i-combo-info .i-combo-found{
+    padding-top: 0px; height: 15px;
+}
+.x-ie9p.x-ie9 .i-combo.i-combo-form .i-combo-table td.i-combo-trigger-cell > *{position: relative;top: 0px;}
+
+.x-ie8 .i-combo-table td > *{position: relative;top: -1px;}
+.x-ie8 .i-combo-form .i-combo-table td > *{position: relative;top: 0px;}
+.x-ie8 .i-combo-table .i-combo-info {font-size: 9px;}
+.x-ie8 .i-combo .i-combo-info-fetched-all.i-combo-info .i-combo-found {padding-top: 1px;}
+.x-ie8 .i-combo.i-combo-form .i-combo-single .i-combo-keyword-div .i-combo-keyword{padding-top: 2px;}

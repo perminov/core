@@ -31,7 +31,7 @@ class Admin_TemporaryController extends Indi_Controller {
             'search' => 'fieldId'
         );
 
-        $project = 'profpole';
+        $project = 'empty';
 
         $projectTitleFieldAliasA = array(
             'picneon' => array(

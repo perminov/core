@@ -258,11 +258,14 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-ie .x-fieldset .x-fieldset-body {
     padding-top: 0px !important;
 }
+.x-ie.x-ie8 .x-fieldset .x-fieldset-body {
+    padding-top: 1px !important;
+}
 .x-gecko .x-btn-inner{
     margin-top: -1px;
 }
 .x-gecko .x-form-trigger-wrap.x-unselectable .x-form-text{
-    padding-left: 1px;
+    padding-left: 2px;
 }
 .x-gecko #i-menu .i-menu-leaf-item .x-grid-cell-inner{
     padding-left: 3px;
@@ -288,11 +291,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 .x-safari input[type=text],
 .x-safari input[type=password],
-.x-gecko input[type=text],
 .x-gecko input[type=text].x-form-text,
-.x-gecko input[type=password],
 .x-gecko input[type=password].x-form-text{
-    padding-left: 1px;
+    padding-left: 2px;
 }
 .x-ie8.i-login .x-form-checkbox{
     margin-top: 1px;
@@ -364,17 +365,21 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     padding: 1px 2px 2px 2px;
     border-width: 1px;
     border-style: solid;
-    background-image: -webkit-gradient(linear,50% 0,50% 100%,color-stop(0%,#ebf3fd),color-stop(39%,#ebf3fd),color-stop(40%,#d9e8fb),color-stop(100%,#d9e8fb));
-    background-image: -webkit-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
-    background-image: -moz-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
-    background-image: -o-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
-    background-image: -ms-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
-    background-image: linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
     background-image: none;
-    background-color: #ebf3fd;
     background-color: blue;
     border-color: blue;
     opacity: 0;
+}
+.x-nlg .x-tip-mc {
+    background-color: blue;
+    background-image: none;
+}
+.x-nbr .x-tip-tl, .x-nbr .x-tip-tc, .x-nbr .x-tip-tr, .x-nbr .x-tip-ml, .x-nbr .x-tip-mr, .x-nbr .x-tip-bl, .x-nbr .x-tip-bc, .x-nbr .x-tip-br{
+    background-color: blue;
+    background-image: none;
+}
+.x-ie-shadow{
+    background: none;
 }
 .i-tip .x-tip-body{color: white;}
 .i-tip .x-tip-anchor.x-tip-anchor-bottom{border-top-color: inherit;}

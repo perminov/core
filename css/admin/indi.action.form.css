@@ -149,3 +149,19 @@ span.upload{background: url(/i/admin/transparentBg.png);}
 .x-ie8.i-action-form .i-form .i-form-table tr td:first-child{
     margin-top: -1px;
 }
+.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tr > td > input,
+.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tr > td > div > input,
+.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tbody > tr > td > input,
+.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
+.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tr > td > textarea,
+.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
+    padding: 1px 2px 0 2px;
+}
+.x-ie9p.i-action-form .i-form .i-form-table > tr > td > input,
+.x-ie9p.i-action-form .i-form .i-form-table > tr > td > div > input,
+.x-ie9p.i-action-form .i-form .i-form-table > tbody > tr > td > input,
+.x-ie9p.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
+.x-ie9p.i-action-form .i-form .i-form-table > tr > td > textarea,
+.x-ie9p.i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
+    padding: 1px 2px 0 2px;
+}
