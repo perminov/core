@@ -273,7 +273,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-ie9 #i-center-north-admin, 
 .x-ie8 #i-center-north-admin ,
 .x-safari #i-center-north-admin{
-    height: 16px;
+    min-height: 16px;
     margin-top: 1px;
 }
 .x-ie9 #i-center-north-trail, 

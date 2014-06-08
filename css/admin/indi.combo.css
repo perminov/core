@@ -124,8 +124,11 @@
 .x-gecko .i-combo-table td > *{position: relative;top: -1px;}
 .x-gecko .i-combo-table td .i-combo-info-div{position: relative;top: 0px;}
 .x-gecko .i-combo.i-combo-form .i-combo-keyword{padding-top: 1px;}
-.x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-left: 1px;}
-.x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px;}
+.x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-left: 0px; margin-top: 0px;}
+.x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px; margin-top: 1px;}
+.x-safari .i-combo-form .i-combo-single input[type=text].i-combo-keyword {padding-left: 0px; margin-top: 1px;}
+.x-safari .i-combo-form .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px; margin-top: 1px;}
+.x-safari input[type=text].x-form-text {padding-left: 1px;}
 .x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 1px;}
 .x-ie9 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 0px;}
 .x-ie8 .i-combo.i-combo-sibling .i-combo-info,.x-ie8 .i-combo.i-combo-filter .i-combo-info {margin-top: 2px;}
