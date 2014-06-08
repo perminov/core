@@ -1,6 +1,7 @@
 [general]
 domain = empty
 seoUri = false
+title = false
 
 [db]
 adapter = mysql
