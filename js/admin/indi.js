@@ -1,12 +1,21 @@
-var Indi = function(indi) {
-    "use strict";
-    var process = function() {
+Ext.define('Indi', {
+
+    /**
+     * Setup inheritance
+     */
+    extend: 'Ext.app.Application',
+
+    /**
+     * Static properties and methods
+     */
+    statics: {
+
         /**
          * Prototypes store
          *
          * @type {Object}
          */
-        indi.proto = {};
+        proto: {},
 
         /**
          * Equivalent for php's strip_tags function. Source code got from http://phpjs.org/functions/strip_tags/
@@ -15,7 +24,7 @@ var Indi = function(indi) {
          * @param allowed
          * @return {*}
          */
-        indi.stripTags = function(input, allowed) {
+        stripTags: function(input, allowed) {
             // Making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
             allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join('');
 
@@ -26,7 +35,7 @@ var Indi = function(indi) {
             return input.replace(commentsAndPhpTags, '').replace(tags, function ($0, $1) {
                 return allowed.indexOf('<' + $1.toLowerCase() + '>') > -1 ? $0 : '';
             });
-        }
+        },
 
         /**
          * Formats a given number to a format, specified by passed params.
@@ -39,7 +48,7 @@ var Indi = function(indi) {
          * @param thousandsSep
          * @return {*}
          */
-        indi.numberFormat = function(number, decimals, decPoint, thousandsSeparator) {
+        numberFormat: function(number, decimals, decPoint, thousandsSeparator) {
             var number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
             var n = !isFinite(+number) ? 0 : +number,
                 prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
@@ -60,7 +69,7 @@ var Indi = function(indi) {
                 s[1] += new Array(prec - s[1].length + 1).join('0');
             }
             return s.join(dec);
-        }
+        },
 
         /**
          * Creates a deep copy of a passed object and return that copy
@@ -68,7 +77,7 @@ var Indi = function(indi) {
          * @param obj An object to be copied
          * @return {Object}
          */
-        indi.copy = function(obj) {
+        copy: function(obj) {
             var ret = {};
             if (typeof(obj) == 'object') {
                 if (obj && typeof(obj.length) != 'undefined') var ret = [];
@@ -85,269 +94,302 @@ var Indi = function(indi) {
                 }
             }
             return ret;
-        }
-       
+        },
+
         // Setup text metrics, for text width detection
-        indi.metrics = (window.parent.Indi ? window.parent.Indi.metrics : new Ext.util.TextMetrics()) || new Ext.util.TextMetrics();
+        //metrics: (window.parent.Indi ? window.parent.Indi.metrics : new Ext.util.TextMetrics()) || new Ext.util.TextMetrics(),
 
-        indi.urldecode = function(str){
+        urldecode: function(str){
             return decodeURIComponent((str + '').replace(/\+/g, '%20'));
-        }
-    };
+        },
 
+        /**
+         * Callbacks store
+         *
+         * @type {Object}
+         */
+        callbacks: {},
 
-    indi.story = [];
+        /**
+         * Collect callbacks, for further execution
+         *
+         * @param callback Callback function
+         * @param component Component name, which initialization should fire all stored callbacks
+         */
+        ready: function(callback, component, context) {
+            if (typeof context == 'undefined') context = window;
+            context.Indi.callbacks = Indi.callbacks || {};
+            context.Indi.callbacks[component] = Indi.callbacks[component] || [];
+            context.Indi.callbacks[component].push(callback);
+        },
 
-    /**
-     * Callbacks store
-     *
-     * @type {Object}
-     */
-    indi.callbacks = {};
+        /**
+         * A list of function names, that are declared within Indi object, but should be accessible within global scope
+         * @type {Array}
+         */
+        share: ['alias', 'hide', 'show', 'number'],
 
-    /**
-     * Collect callbacks, for further execution
-     *
-     * @param callback Callback function
-     * @param component Component name, which initialization should fire all stored callbacks
-     */
-    indi.ready = function(callback, component, context) {
-        if (typeof context == 'undefined') context = window;
-        context.Indi.callbacks = Indi.callbacks || {};
-        context.Indi.callbacks[component] = Indi.callbacks[component] || [];
-        context.Indi.callbacks[component].push(callback);
-    };
+        /**
+         * Converts passed string to it's url equivalent
+         *
+         * @param title
+         * @return {String}
+         */
+        alias: function(title){
 
-    /**
-     * A list of function names, that are declared within Indi object, but should be accessible within global scope
-     * @type {Array}
-     */
-    indi.share = ['alias', 'hide', 'show', 'number'];
+            // Symbols
+            var s = ['а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
+                'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+                't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
+                'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&'];
 
+            // Replacements
+            var r = ['a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
+                '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+                't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
+                'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-'];
 
-    /**
-     * Converts passed string to it's url equivalent
-     *
-     * @param title
-     * @return {String}
-     */
-    indi.alias = function(title){
-        // Symbols
-        var s = ['а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
-            'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
-            't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
-            'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&'];
+            // Declare variable for alias
+            var alias = '';
 
-        // Replacements
-        var r = ['a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
-            '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
-            't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
-            'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-'];
+            // Convert passed title to loweк case and trim whitespaces
+            title = title.toLowerCase().trim();
 
-        // Declare variable for alias
-        var alias = '';
-
-        // Convert passed title to loweк case and trim whitespaces
-        title = title.toLowerCase().trim();
-
-        // Find a replacement for each char of title and append it to alias
-        for (var i = 0; i < title.length; i++) {
-            var c = title.substr(i, 1);
-            if (s.indexOf(c) != -1) alias += r[s.indexOf(c)];
-        }
-
-        // Strip '-' symbols from alias beginning, ending and replace multiple '-' symbol occurence with single occurence
-        alias = alias.replace(/^\-+/, '');
-        alias = alias.replace(/\-+$/, '');
-        alias = alias.replace(/\-{2,}/g, '-');
-
-        // Got as we need
-        return alias;
-    };
-
-    /**
-     * Hide all dom elements, that have ids, passed in comma-separated `ids` param
-     * @param ids
-     */
-    indi.hide = function(ids){
-        $('#'+ids.split(',').join(', #')).hide();
-    };
-
-    /**
-     * Show all dom elements, that have ids, passed in comma-separated `ids` param
-     * @param ids
-     */
-    indi.show = function(ids){
-        $('#'+ids.split(',').join(', #')).show();
-    };
-
-    /**
-     * Removes all non-numeric symbols from `str` param
-     *
-     * @param str
-     * @return {String}
-     */
-    indi.number = function(str) {
-        var number = '';
-        for (var i = 0; i < str.length; i++) {
-            var code = str.charCodeAt(i);
-            if (code >= 48 && code <= 57) {
-                number += str.charAt(i);
+            // Find a replacement for each char of title and append it to alias
+            for (var i = 0; i < title.length; i++) {
+                var c = title.substr(i, 1);
+                if (s.indexOf(c) != -1) alias += r[s.indexOf(c)];
             }
-        }
-        return number;
-    };
 
-    /**
-     * Share all functions/objects/variables, that have names, existing in indi.share array  -  to global scope.
-     */
-    indi.shareWith = function(context){
-        for (var i = 0; i < indi.share.length; i++) {
-            eval('context.' + indi.share[i] + '= indi.'+ indi.share[i] +';');
-        }
-    };
-    indi.shareWith(window);
+            // Strip '-' symbols from alias beginning, ending and replace multiple '-' symbol occurence with single occurence
+            alias = alias.replace(/^\-+/, '');
+            alias = alias.replace(/\-+$/, '');
+            alias = alias.replace(/\-{2,}/g, '-');
 
+            // Got as we need
+            return alias;
+        },
 
-    /**
-     * Returns the Ext center region component
-     *
-     * @return {*}
-     */
-    indi.getCenter = function() {
-        return Ext.getCmp('i-center');
-    };
+        /**
+         * Hide all dom elements, that have ids, passed in comma-separated `ids` param
+         * @param ids
+         */
+        hide: function(ids){
+            $('#'+ids.split(',').join(', #')).hide();
+        },
 
+        /**
+         * Show all dom elements, that have ids, passed in comma-separated `ids` param
+         * @param ids
+         */
+        show: function(ids){
+            $('#'+ids.split(',').join(', #')).show();
+        },
 
-    indi.clearCenter = function() {
-        if (Ext.getCmp('i-center-center-wrapper')) Ext.getCmp('i-center-center-wrapper').destroy();
-    };
-
-    /**
-     * Load the contents got from `url` param
-     *
-     * @param url
-     * @param iframe  bool
-     */
-    indi.load = function(url, iframe) {
-
-        // Push the given url to a story stack
-        indi.story.push(url);
-
-
-        if (url.match(/\/form\//) || iframe) {
-
-            Indi.clearCenter();
-            Ext.create('Ext.Panel', {
-                border: 0,
-                align: 'stretch',
-                html: '<div id="iframe-wrapper" style="height: 100%;"><iframe src="' + url + '?width=' + Math.floor(($('#i-center-center-body').width()-36)/2) +
-                    '" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe></div>',
-                id: 'i-center-center-wrapper',
-                iframed: true,
-                height: '100%',
-                renderTo: 'i-center-center-body'
-            });
-            new Ext.LoadMask(top.window.$('#iframe-wrapper')[0], {id: 'iframe-mask'});
-            Ext.getCmp('iframe-mask').show();
-        } else {
-            $.post(url, function(response){
-                Indi.clearCenter();
-                $('#i-center-center-body').html(response);
-            });
-        }
-    };
-
-    /**
-     * Clock
-     */
-    indi.timer = setInterval(function(){
-        indi.time++;
-    }, 1000);
-
-    /**
-     * Quotes string that later will be used in regular expression.
-     *
-     * @param str
-     * @param delimiter
-     * @return {String}
-     */
-    indi.pregQuote = function(str, delimiter) {
-        return (str + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-]', 'g'), '\\$&');
-    }
-
-    /**
-     * Append indexOf() method definition in Array.prototype if need, because IE<9 doest not have it
-     */
-    if (!Array.prototype.indexOf) {
-        Array.prototype.indexOf = function(elt) {
-            var len = this.length >>> 0;
-
-            var from = Number(arguments[1]) || 0;
-            from = (from < 0) ? Math.ceil(from) : Math.floor(from);
-            if (from < 0) from += len;
-
-            for (; from < len; from++) {
-                if (from in this && this[from] === elt) 
-                    return from;
-            }
-            return -1;
-        };
-    }
-
-    /**
-     * Append getOwnPropertynames() method definition in Object if need, because IE<9 doest not have it
-     */
-    if (typeof Object.getOwnPropertyNames !== "function") {
-        Object.getOwnPropertyNames = function (obj) {
-            var keys = [];
-
-            // Only iterate the keys if we were given an object, and
-            // a special check for null, as typeof null == "object"
-            if (typeof obj === "object" && obj !== null) {    
-                // Use a standard for in loop
-                for (var x in obj) {
-                    // A for in will iterate over members on the prototype
-                    // chain as well, but Object.getOwnPropertyNames returns
-                    // only those directly on the object, so use hasOwnProperty.
-                    if (obj.hasOwnProperty(x)) {
-                        keys.push(x);
-                    }
+        /**
+         * Removes all non-numeric symbols from `str` param
+         *
+         * @param str
+         * @return {String}
+         */
+        number: function(str) {
+            var number = '';
+            for (var i = 0; i < str.length; i++) {
+                var code = str.charCodeAt(i);
+                if (code >= 48 && code <= 57) {
+                    number += str.charAt(i);
                 }
             }
+            return number;
+        },
 
-            return keys;
-        }
-    }
+        /**
+         * Share all functions/objects/variables, that have names, existing in indi.share array  -  to global scope.
+         */
+        shareWith: function(context){
+            for (var i = 0; i < Indi.share.length; i++) {
+                eval('context.' + Indi.share[i] + '= Indi.'+ Indi.share[i] +';');
+            }
+        },
 
-    /**
-     * Append trim() method definition in String.prototype if need, because IE<9 doest not have it
-     */
-    if (typeof String.prototype.trim !== 'function') {
-        String.prototype.trim = function() {
-            return this.replace(/^\s+|\s+$/g, ''); 
-        }
-    }
+        /**
+         * Returns the Ext center region component
+         *
+         * @return {*}
+         */
+        getCenter: function() {
+            return Ext.getCmp('i-center');
+        },
 
-    /**
-     * Define a global JSON object if need, because IE<8 doest not have it
-     */
-    if (typeof window.JSON!=="object"){window.JSON={}}(function(){"use strict";function f(e){return e<10?"0"+e:e}function quote(e){escapable.lastIndex=0;return escapable.test(e)?'"'+e.replace(escapable,function(e){var t=meta[e];return typeof t==="string"?t:"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+e+'"'}function str(e,t){var n,r,i,s,o=gap,u,a=t[e];if(a&&typeof a==="object"&&typeof a.toJSON==="function"){a=a.toJSON(e)}if(typeof rep==="function"){a=rep.call(t,e,a)}switch(typeof a){case"string":return quote(a);case"number":return isFinite(a)?String(a):"null";case"boolean":case"null":return String(a);case"object":if(!a){return"null"}gap+=indent;u=[];if(Object.prototype.toString.apply(a)==="[object Array]"){s=a.length;for(n=0;n<s;n+=1){u[n]=str(n,a)||"null"}i=u.length===0?"[]":gap?"[\n"+gap+u.join(",\n"+gap)+"\n"+o+"]":"["+u.join(",")+"]";gap=o;return i}if(rep&&typeof rep==="object"){s=rep.length;for(n=0;n<s;n+=1){if(typeof rep[n]==="string"){r=rep[n];i=str(r,a);if(i){u.push(quote(r)+(gap?": ":":")+i)}}}}else{for(r in a){if(Object.prototype.hasOwnProperty.call(a,r)){i=str(r,a);if(i){u.push(quote(r)+(gap?": ":":")+i)}}}}i=u.length===0?"{}":gap?"{\n"+gap+u.join(",\n"+gap)+"\n"+o+"}":"{"+u.join(",")+"}";gap=o;return i}}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null};String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(){return this.valueOf()}}var cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,escapable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta={"\b":"\\b","	":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},rep;if(typeof window.JSON.stringify!=="function"){window.JSON.stringify=function(e,t,n){var r;gap="";indent="";if(typeof n==="number"){for(r=0;r<n;r+=1){indent+=" "}}else if(typeof n==="string"){indent=n}rep=t;if(t&&typeof t!=="function"&&(typeof t!=="object"||typeof t.length!=="number")){throw new Error("JSON.stringify")}return str("",{"":e})}}if(typeof window.JSON.parse!=="function"){window.JSON.parse=function(text,reviver){function walk(e,t){var n,r,i=e[t];if(i&&typeof i==="object"){for(n in i){if(Object.prototype.hasOwnProperty.call(i,n)){r=walk(i,n);if(r!==undefined){i[n]=r}else{delete i[n]}}}}return reviver.call(e,t,i)}var j;text=String(text);cx.lastIndex=0;if(cx.test(text)){text=text.replace(cx,function(e){return"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})}if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){j=eval("("+text+")");return typeof reviver==="function"?walk({"":j},""):j}throw new SyntaxError("JSON.parse")}}})();
+        /**
+         * Destroy the contents of center panel, and all objects related to it
+         */
+        clearCenter: function() {
+            if (Ext.getCmp('i-center-center-wrapper')) Ext.getCmp('i-center-center-wrapper').destroy();
+        },
 
-    /**
-     * Wait until jQuery and Ext are ready, and then start all operations
-     */
-    (function () {
-        var checkRequirementsId = setInterval(function () {
-            if (typeof jQuery !== 'undefined' &&
-                typeof Ext !== 'undefined') {
-                clearInterval(checkRequirementsId);
-                $(document).ready(function(){
-                    process();
+        /**
+         * A JavaScript equivalent of PHP’s ucfirst
+         *
+         * @param str
+         * @return {String}
+         */
+        ucfirst: function(str) {
+            return str.charAt(0).toUpperCase() + str.substr(1);
+        },
+
+        /**
+         * Uri history
+         */
+        story: [],
+
+        /**
+         * Load the contents got from `url` param
+         *
+         * @param url
+         * @param iframe  bool
+         */
+        load: function(url, iframe) {
+
+            // Push the given url to a story stack
+            Indi.story.push(url);
+
+
+            if (url.match(/\/form\//) || iframe) {
+
+                Indi.clearCenter();
+                Ext.create('Ext.Panel', {
+                    border: 0,
+                    align: 'stretch',
+                    html: '<div id="iframe-wrapper" style="height: 100%;"><iframe src="' + url + '?width=' + Math.floor(($('#i-center-center-body').width()-36)/2) +
+                        '" width="100%" height="100%" scrolling="auto" frameborder="0" id="form-frame" name="form-frame"></iframe></div>',
+                    id: 'i-center-center-wrapper',
+                    iframed: true,
+                    height: '100%',
+                    renderTo: 'i-center-center-body'
+                });
+                new Ext.LoadMask(top.window.$('#iframe-wrapper')[0], {id: 'iframe-mask'});
+                Ext.getCmp('iframe-mask').show();
+            } else {
+                $.post(url, function(response){
+                    Indi.clearCenter();
+                    $('#i-center-center-body').html(response);
                 });
             }
-        }, 25);
-    }());
+        },
 
-    return indi;
-}(Indi || {});
+        /**
+         * Clock
+         */
+        timer: setInterval(function(){
+            Indi.time++;
+        }, 1000),
+
+        /**
+         * Quotes string that later will be used in regular expression.
+         *
+         * @param str
+         * @param delimiter
+         * @return {String}
+         */
+        pregQuote: function(str, delimiter) {
+            return (str + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-]', 'g'), '\\$&');
+        },
+
+        /**
+         * Apply system object's additional prototype functions, because some browsers do not have it as built-in
+         */
+        modernizer: {
+
+            /**
+             * Append indexOf() method definition in Array.prototype if need, because IE<9 doest not have it
+             */
+            'Array.prototype.indexOf': function() {
+
+                if (!Array.prototype.indexOf) {
+                    Array.prototype.indexOf = function(elt) {
+                        var len = this.length >>> 0;
+
+                        var from = Number(arguments[1]) || 0;
+                        from = (from < 0) ? Math.ceil(from) : Math.floor(from);
+                        if (from < 0) from += len;
+
+                        for (; from < len; from++) {
+                            if (from in this && this[from] === elt)
+                                return from;
+                        }
+                        return -1;
+                    };
+                }
+            },
+
+            /**
+             * Append getOwnPropertynames() method definition in Object if need, because IE<9 doest not have it
+             */
+            'Object.getOwnPropertyNames': function() {
+                if (typeof Object.getOwnPropertyNames !== "function") {
+                    Object.getOwnPropertyNames = function (obj) {
+                        var keys = [];
+
+                        // Only iterate the keys if we were given an object, and
+                        // a special check for null, as typeof null == "object"
+                        if (typeof obj === "object" && obj !== null) {
+                            // Use a standard for in loop
+                            for (var x in obj) {
+                                // A for in will iterate over members on the prototype
+                                // chain as well, but Object.getOwnPropertyNames returns
+                                // only those directly on the object, so use hasOwnProperty.
+                                if (obj.hasOwnProperty(x)) {
+                                    keys.push(x);
+                                }
+                            }
+                        }
+
+                        return keys;
+                    }
+                }
+            },
+
+            /**
+             * Append trim() method definition in String.prototype if need, because IE<9 doest not have it
+             */
+            'String.prototype.trim': function() {
+                if (typeof String.prototype.trim !== 'function') {
+                    String.prototype.trim = function() {
+                        return this.replace(/^\s+|\s+$/g, '');
+                    }
+                }
+            },
+
+            /**
+             * Define a global JSON object if need, because IE<8 doest not have it
+             */
+            'window.JSON': function() {
+                if (typeof window.JSON!=="object"){window.JSON={}}(function(){"use strict";function f(e){return e<10?"0"+e:e}function quote(e){escapable.lastIndex=0;return escapable.test(e)?'"'+e.replace(escapable,function(e){var t=meta[e];return typeof t==="string"?t:"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+e+'"'}function str(e,t){var n,r,i,s,o=gap,u,a=t[e];if(a&&typeof a==="object"&&typeof a.toJSON==="function"){a=a.toJSON(e)}if(typeof rep==="function"){a=rep.call(t,e,a)}switch(typeof a){case"string":return quote(a);case"number":return isFinite(a)?String(a):"null";case"boolean":case"null":return String(a);case"object":if(!a){return"null"}gap+=indent;u=[];if(Object.prototype.toString.apply(a)==="[object Array]"){s=a.length;for(n=0;n<s;n+=1){u[n]=str(n,a)||"null"}i=u.length===0?"[]":gap?"[\n"+gap+u.join(",\n"+gap)+"\n"+o+"]":"["+u.join(",")+"]";gap=o;return i}if(rep&&typeof rep==="object"){s=rep.length;for(n=0;n<s;n+=1){if(typeof rep[n]==="string"){r=rep[n];i=str(r,a);if(i){u.push(quote(r)+(gap?": ":":")+i)}}}}else{for(r in a){if(Object.prototype.hasOwnProperty.call(a,r)){i=str(r,a);if(i){u.push(quote(r)+(gap?": ":":")+i)}}}}i=u.length===0?"{}":gap?"{\n"+gap+u.join(",\n"+gap)+"\n"+o+"}":"{"+u.join(",")+"}";gap=o;return i}}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null};String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(){return this.valueOf()}}var cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,escapable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta={"\b":"\\b","	":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},rep;if(typeof window.JSON.stringify!=="function"){window.JSON.stringify=function(e,t,n){var r;gap="";indent="";if(typeof n==="number"){for(r=0;r<n;r+=1){indent+=" "}}else if(typeof n==="string"){indent=n}rep=t;if(t&&typeof t!=="function"&&(typeof t!=="object"||typeof t.length!=="number")){throw new Error("JSON.stringify")}return str("",{"":e})}}if(typeof window.JSON.parse!=="function"){window.JSON.parse=function(text,reviver){function walk(e,t){var n,r,i=e[t];if(i&&typeof i==="object"){for(n in i){if(Object.prototype.hasOwnProperty.call(i,n)){r=walk(i,n);if(r!==undefined){i[n]=r}else{delete i[n]}}}}return reviver.call(e,t,i)}var j;text=String(text);cx.lastIndex=0;if(cx.test(text)){text=text.replace(cx,function(e){return"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})}if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){j=eval("("+text+")");return typeof reviver==="function"?walk({"":j},""):j}throw new SyntaxError("JSON.parse")}}})();
+            }
+        }
+    },
+
+    /**
+     * Launch callback
+     */
+    launch: function() {
+
+        // Merge static properties, passed within construction, with prototype's static properties
+        this.self = Ext.merge(this.self, this.statics);
+
+        if (Ext.get('i-login-box')) {
+            Ext.create('Indi.Login', {title: Indi.title});
+        } else {
+            Indi.viewport = Ext.create('Indi.Viewport');
+        }
+        // Create viewport
+    }
+}, function() {
+
+    // Apply system object's additional prototype functions, because some browsers do not have it as built-in
+    for (var i in this.modernizer) this.modernizer[i]();
+
+    // Share some Indi's functions with window object
+    this.shareWith(window);
+});
