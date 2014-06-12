@@ -214,4 +214,13 @@ class Indi_Uri_Base {
     public function clear() {
         foreach ($this as $prop => $value) unset($this->$prop);
     }
+
+    /**
+     * Get an associative array, containing all uri params
+     *
+     * @return array
+     */
+    public function toArray() {
+        return (array) $this;
+    }
 }

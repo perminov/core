@@ -6,18 +6,19 @@
     <?
     Indi::implode(array(
         '/js/jquery-1.9.1.min.js',
-        '/js/jquery-migrate-1.1.1.min.js',
         '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
-        '/library/extjs4/ext-lang-' . Indi::ini('lang')->admin . '.js',
+        '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
         '/js/admin/ext.override.js',
         '/js/admin/indi.js',
-        '/js/admin/indi.layout.js',
+        '/js/admin/indi.lang.' . Indi::ini()->lang->admin . '.js',
+        '/js/admin/indi.viewport.js',
         '/js/admin/indi.trail.js',
-        '/js/admin/indi.combo.form.js',
+        '/js/admin/indi.controller.action.js',
+        /*'/js/admin/indi.combo.form.js',
         '/js/admin/indi.combo.filter.js',
         '/js/admin/indi.combo.sibling.js',
-        '/js/admin/indi.action.index.js'
+        '/js/admin/indi.action.index.js'*/
     ) ,'index');
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',
@@ -30,23 +31,21 @@
     <script type="text/javascript" src="/js/admin/indi.all.index.gz.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.index.gz.css"/>
 </head>
-<body>
+<body id="body">
 <script>
 Ext.require(['*']);
-Indi = $.extend(Indi, {
-    std: '<?=STD?>',
-    com: '<?=COM ? '' : '/admin'?>',
-    pre: '<?=STD?><?=COM ? '' : '/admin'?>',
-    lang: <?=Indi::constants('user', true)?>,
-    time: <?=time()?>
+Ext.create('Indi', {
+    statics: {
+        std: '<?=STD?>',
+        com: '<?=COM ? '' : '/admin'?>',
+        pre: '<?=STD?><?=COM ? '' : '/admin'?>',
+        uri: <?=json_encode(Indi::uri()->toArray())?>,
+        time: <?=time()?>,
+        menu: <?=json_encode($this->menu)?>,
+        user: '<?=$this->admin?>',
+        home: <?=Indi::admin()->foreign('profileId')->home ? 'true' : 'false'?>
+    }
 });
-Indi.ready(function(){
-    Indi.trail.options.crumbs.home = <?=Indi::admin()->foreign('profileId')->home ? 'true' : 'false'?>;
-}, 'trail');
-Indi.ready(function(){
-    Indi.layout.menu.data = <?=json_encode($this->menu)?>;
-    Indi.layout.adminInfo = '<?=$this->admin?>';
-}, 'layout');
 </script>
 <div style="display: none;"><div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div></div>
 </body>

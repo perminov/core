@@ -882,7 +882,7 @@ class Indi {
      * @param string $alias
      * @return int
      */
-    public function implode($files = array(), $alias = '') {
+    public static function implode($files = array(), $alias = '') {
 
         // Get the type of files, here we assume that all files in $files argument have same type
         preg_match('/\.(css|js)$/', $files[0], $ext); $ext = $ext[1];
@@ -905,6 +905,11 @@ class Indi {
 
             // Get 'mtime' file contents and convert is to json
             $json = json_decode(file_get_contents($mtime), true);
+
+            // Append mirror files
+            for($i = 0; $i < count($files); $i++)
+                if (is_file(DOC . STD . '/www' . $files[$i]))
+                    array_splice($files, ++$i, 0, '/../www' . $files[$i-1]);
 
             // If $json is not an array, or is empty array, of files, mentioned in it do not match files in $files arg
             if (!is_array($json) || !count($json) || count(array_diff($files, array_keys($json)))
@@ -1124,17 +1129,24 @@ class Indi {
     }
 	
     /**
-     * Return an array containing defined constants
+     * Return an array containing defined constants, which are lang-constants at most
      *
      * @static
-     * @param string $category
      * @param boolean $json
      * @return array|json
      */
-	public static function constants($category = 'user', $json = false) {
-		$constants = get_defined_constants(true);
-		$constants = $category ? $constants[$category] : $constants;
-		return $json ? json_encode($constants) : $constants;
+	public static function lang($json = false) {
+
+        // Define $langA array
+        $langA = array();
+
+        // Foreach defined constants check if constant name starts with 'I_', and if so - append it to $langA array
+		foreach (get_defined_constants() as $name => $value)
+            if (preg_match('/^I_/', $name))
+                $langA[$name] = $value;
+
+        // Return lang constants as an array, optionally encoded to json, depending on $json argument is boolean true
+		return $json ? json_encode($langA) : $langA;
 	}
 
     /**

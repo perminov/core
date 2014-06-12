@@ -11,7 +11,7 @@ class Indi_View_Helper_Admin_RenderGrid {
         </script><?
         if (count($comboFilters)){
             echo '<span style="display: none;">' . implode('', $comboFilters) . '</span>';
-            ?><script>Indi.combo.filter = Indi.combo.filter || new Indi.proto.combo.filter(); Indi.combo.filter.run();</script><?
+            /*?><script>Indi.combo.filter = Indi.combo.filter || new Indi.proto.combo.filter(); Indi.combo.filter.run();</script><?*/
         }
         return ob_get_clean();
     }
