@@ -19,6 +19,9 @@ Options FollowSymLinks
 </IfModule>
 <FilesMatch "gz\.(js|css)$">
   Header set Content-Encoding gzip
+  <IfModule mod_env.c>
+    SetEnv no-gzip 
+  </IfModule>
 </FilesMatch>
 
 ###################
