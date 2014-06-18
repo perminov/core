@@ -48,8 +48,25 @@ class Indi_Trail_Admin_Item {
             $actionA[] = $section2actionR->foreign('actionId');
         $this->actions = Indi::model('Action')->createRowset(array('rows' => $actionA));
 
-        // Setup $this->sections
+        // Setup subsections
         $this->sections = $sectionR->nested('section');
+
+        // Setup nested section2action-s for subsections
+        $sectionR->nested('section')->nested('section2action', array(
+            'where' => array(
+                '`toggle` = "y"',
+                'FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `profileIds`)',
+                'FIND_IN_SET(`actionId`, "' . implode(',', Indi_Trail_Admin::$toggledActionIdA) . '")',
+                '`actionId` = "1"'
+            ),
+            'order' => 'move',
+            'foreign' => 'actionId'
+        ));
+
+        // Exclude inaccessbile subsections from subsections list
+        foreach ($sectionR->nested('section') as $subsection)
+            if (!$subsection->nested('section2action')->count())
+                $this->sections->exclude($subsection->id);
 
         // If current trail item will be a first item
         if (count(Indi_Trail_Admin::$items) == 0) {
