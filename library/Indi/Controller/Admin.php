@@ -241,21 +241,11 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Output
             die(json_encode($options));
 
-        } else if (is_array(Indi::trail(1)->disabledFields['save']) && count(Indi::trail(1)->disabledFields['save'])) {
-
-            $fieldIdA = array();
-            foreach (Indi::trail(1)->fields as $fieldR)
-                if (in_array($fieldR->alias, Indi::trail(1)->disabledFields['save']))
-                    $fieldIdA[$fieldR->id] = $fieldR->alias;
-
-            $disabledFieldRs = Indi::model('DisabledField')->fetchAll(array(
-                '`sectionId` = "' . Indi::trail(1)->section->id . '"',
-                '`fieldId` IN (' . implode(',', array_keys($fieldIdA)) . ')'
-            ));
-            foreach ($disabledFieldRs as $disabledFieldR) {
+        } else if (Indi::trail()->disabledFields->count()) {
+            Indi::trail()->disabledFields->foreign('fieldId');
+            foreach (Indi::trail()->disabledFields as $disabledFieldR) {
                 if (strlen($disabledFieldR->defaultValue)) {
-                    Indi::$cmpTpl = $disabledFieldR->defaultValue; eval(Indi::$cmpRun); $disabledFieldR->defaultValue = Indi::cmpOut();
-                    $this->row->{$fieldIdA[$disabledFieldR->fieldId]} = $disabledFieldR->defaultValue;
+                    $this->row->{$disabledFieldR->foreign('fieldId')->alias} = $disabledFieldR->compiled('defaultValue');
                 }
             }
         }

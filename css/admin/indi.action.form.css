@@ -119,7 +119,6 @@ span.checkbox.checked.disabled, table.multicheckbox.disabled span.checkbox.check
 span.upload{background: url(/i/admin/transparentBg.png);}
 
 /* Browser fixes */
-.x-gecko.i-action-form .i-form table tr td textarea, 
 .x-ie9.i-action-form .i-form table tr td textarea,
 .x-ie8.i-action-form .i-form table tr td textarea{
     margin-bottom: 1px;
@@ -139,9 +138,7 @@ span.upload{background: url(/i/admin/transparentBg.png);}
 .x-ie8.i-action-form .i-form table tr td input[type=text]{
     padding-top: 2px;
 }
-.x-gecko.i-action-form .i-form table tr td .i-element-calendar-wrapper,
 .x-ie8.i-action-form .i-form table tr td .i-element-calendar-wrapper,
-.x-gecko.i-action-form .i-form table tr td .i-element-datetime-wrapper,
 .x-ie8.i-action-form .i-form table tr td .i-element-datetime-wrapper{
     position: relative;
     top: -1px;

@@ -109,22 +109,21 @@
     background-position: 0 -8px;
     cursor: default;
 }
-.i-combo.i-combo-disabled .i-combo-single{
-    border-color: #c5c5c5 !important;
+.i-combo.i-combo-disabled .i-combo-single, .i-combo.i-combo-disabled .i-combo-multiple{
+    border-color: #dfdfdf !important;
     background: #F7F7F7;
 }
-.i-combo.i-combo-disabled .i-combo-single .i-combo-color-box-div,
-.i-combo.i-combo-disabled .i-combo-single .i-combo-keyword-div,
-.i-combo.i-combo-disabled .i-combo-single .i-combo-info-div{
-    border-color: #DFDFDF !important;
-}
-.i-combo.i-combo-disabled .i-combo-multiple{
-    border-color: #DFDFDF !important;
+.i-combo.i-combo-filter.i-combo-disabled .i-combo-single,
+.i-combo.i-combo-filter.i-combo-disabled .i-combo-multiple{
+    border-color: #c5c5c5 !important;
     background: #F7F7F7;
 }
 
 /* Browser fixes */
-.x-gecko .i-combo-info * {position: relative;top: -1px; font-size: 9px;}
+.x-gecko .i-combo-info * {font-size: 9px;}
+.x-gecko .i-combo-table td > *{position: relative;top: -1px;}
+.x-gecko .i-combo-table td .i-combo-info-div{position: relative;top: 0px;}
+.x-gecko .i-combo.i-combo-form .i-combo-keyword{padding-top: 1px;}
 .x-safari .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-left: 1px;}
 .x-safari .i-combo .i-combo-multiple input[type=text].i-combo-keyword {padding-left: 0px;}
 .x-ie8 .i-combo .i-combo-single input[type=text].i-combo-keyword {padding-top: 1px;}

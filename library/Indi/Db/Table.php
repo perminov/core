@@ -614,12 +614,15 @@ class Indi_Db_Table
     }
 
     /**
-     * Provide readonly access to _evalFields property
+     * Provide readonly access to _evalFields property.
+     * If $evalField argument is given - function will return boolean true or false, depends on whether or not
+     * $evalField is within list of eval fields
      *
-     * @return array
+     * @param null $evalField
+     * @return array|bool
      */
-    public function getEvalFields() {
-        return $this->_evalFields;
+    public function getEvalFields($evalField = null) {
+        return $evalField ? in_array($evalField, $this->_evalFields) : $this->_evalFields;
     }
 
     /**

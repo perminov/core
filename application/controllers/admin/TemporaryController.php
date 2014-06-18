@@ -31,7 +31,7 @@ class Admin_TemporaryController extends Indi_Controller {
             'search' => 'fieldId'
         );
 
-        $project = 'vkenguru';
+        $project = 'profpole';
 
         $projectTitleFieldAliasA = array(
             'picneon' => array(
@@ -59,6 +59,10 @@ class Admin_TemporaryController extends Indi_Controller {
             'vkenguru' => array(
                 'eventAnimator' => 'animatorId',
                 'adjustment' => 'datetime'
+            ),
+            'profpole' => array(
+                'rating' => 'datetime',
+                'lpProduct' => 'productId'
             )
         );
 

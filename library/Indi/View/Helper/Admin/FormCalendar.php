@@ -36,8 +36,8 @@ class Indi_View_Helper_Admin_FormCalendar {
             }
         }
         $xhtml  = '<div style="position: relative; ' . $shift .  '" id="calendar' . $name . 'Div" class="calendar-div i-element-calendar-wrapper">';
-        $xhtml .= '<input type="text" name="' . $name . '" value="' . $value . '" style="width: 62px; margin-top: 1px;" id="' . $name . '" class="calendar-input"> ';
-		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-top: 1px; margin-left: -2px;"></a>';
+        $xhtml .= '<input type="text" name="' . $name . '" value="' . $value . '" style="width: 62px;" id="' . $name . '" class="calendar-input"> ';
+		$xhtml .= '<a href="javascript:void(0);" onclick="$(\'#' . $name . 'CalendarRender\').toggle();" id="' . $name . 'CalendarIcon" class="calendar-trigger"><img src="' . $p . 'b_calendar.png" alt="Show calendar" width="14" height="18" border="0" style="vertical-align: top; margin-left: -2px;"></a>';
 		ob_start();?>
 		<div id="<?=$name?>CalendarRender" style="position: absolute; display: none; margin-top: 1px; z-index: <?=(100 - $zIndex)?>;">
 			<script>

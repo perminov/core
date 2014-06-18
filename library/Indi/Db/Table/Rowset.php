@@ -1206,4 +1206,16 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'keyProperty' => $keyProperty
         );
     }
+
+    /**
+     * Append row to current rowset, using $original argument as the base data for
+     * construction of a row, that will be appended
+     *
+     * @param array $original
+     */
+    public function append(array $original) {
+        $this->_rows[] = new $this->_rowClass(array('original' => $original));
+        $this->_count++;
+        $this->_found++;
+    }
 }
