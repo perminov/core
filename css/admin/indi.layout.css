@@ -141,7 +141,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 
 /* Ext combos default style adjustments (Ext's combos, not Indi's combos mean here) */
-.x-boundlist-item{
+.x-boundlist-item, .x-boundlist-item-disabled{
     border-right: 0;
     border-left: 0;
     border-bottom: 0;

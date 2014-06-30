@@ -1916,6 +1916,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
 
+        die(json_encode(Indi::post()));
         // Perform the whole set of file upload maintenance
         $this->row->files($filefields);
 

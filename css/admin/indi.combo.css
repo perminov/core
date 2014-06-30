@@ -1,15 +1,10 @@
 .i-combo {width: 100%; position: relative; line-height: 15px; border: none;}
 .i-combo .i-combo-single, .i-combo .i-combo-multiple {border: 1px solid #b5b8c8;}
 .i-combo .x-form-text {font-size: 11px; padding: 0;}
-.i-combo.i-combo-focus .i-combo-single, .i-combo.i-combo-focus .i-combo-multiple {border: 1px solid #99BCE8;}
+.i-combo.i-combo-focus .i-combo-single, .x-form-trigger-wrap-focus .i-combo .i-combo-single, .i-combo.i-combo-focus .i-combo-multiple {border: 1px solid #99BCE8;}
 .i-combo .i-combo-multiple {height: auto; padding-bottom: 1px;}
 .i-combo.i-combo-filter {overflow: hidden; display: inline-block;}
 .i-combo.i-combo-filter .i-combo-multiple{overflow: hidden; height: 19px; width: 200%;}
-.i-combo .i-combo-single {
-    -webkit-border-top-right-radius: 3px;
-    -moz-border-radius-topright: 3px;
-    border-top-right-radius: 3px;
-}
 
 /* Combo table */
 .i-combo .i-combo-multiple .i-combo-table {margin-bottom: -3px;}
@@ -76,6 +71,8 @@
     position: absolute; display: none; background-color: white; border: 1px solid #99BCE8; margin-top: 1px;
     z-index: 1; line-height: 13px; font-size: 8pt; overflow-y: hidden;
 }
+.x-panel.i-combo-data {display: block;}
+.i-combo-data .x-panel-body {font-size: 8pt;}
 .i-combo-data ul {padding: 0px;margin: 0px;}
 .i-combo-data ul li {
     list-style-type: none; list-style-position: outside; cursor: default; padding-left: 2px; border-right: 0;

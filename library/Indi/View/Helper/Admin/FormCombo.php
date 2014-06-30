@@ -107,7 +107,7 @@ class Indi_View_Helper_Admin_FormCombo {
      * @param null $tableName
      * @return string
      */
-    public function formCombo($name, $tableName = null) {
+    public function formCombo($name, $tableName = null, $mode = 'default') {
 
         // Set name
         $this->name = $name;
@@ -239,9 +239,6 @@ class Indi_View_Helper_Admin_FormCombo {
         // Setup groups for options
         if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
 
-        // Encode that set in json format
-        $options = json_encode($options);
-
         // If combo-field of current row currently does not have a value, we should disable paging up
         $this->pageUpDisabled = $this->getRow()->$name ? 'false' : 'true';
 
@@ -251,15 +248,35 @@ class Indi_View_Helper_Admin_FormCombo {
 
         ob_start();
 
-        if ($this->field->storeRelationAbility == 'one' ||
-            ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12)) {
-            echo $this->formComboSingle();
-        } else if ($this->field->storeRelationAbility == 'many') {
-            echo $this->formComboMultiple();
-        }
+        if ($mode == 'extjs') {
+            Indi::trail()->row->view($this->field->alias,
+                array(
+                    'subTplData' => array(
+                        'selected' => self::detectColor($this->selected),
+                        'satellite' => $this->satellite->alias,
+                        'attrs' => $this->attrs,
+                        'pageUpDisabled' => $this->pageUpDisabled,
+                    ),
+                    'store' => $options
+                )
+            );
+            /*?><div id="boundlist-<?=$this->name?>-listEl" class="x-boundlist-list-ct" style="overflow: auto; height: auto;"><ul><li role="option" class="x-boundlist-item x-boundlist-selected">Системная</li><li role="option" class="x-boundlist-item">Проектная</li><li role="option" class="x-boundlist-item">Типовая</li></ul></div><?*/
+        } else {
 
-        // Init combo store data
-        ?><script>Indi.ready(function(){<?=$this->context?>.Indi.combo.<?=$this->type?>.store['<?=$this->name?>'] = (<?=$options?>)}, 'combo.<?=$this->type?>', <?=$this->context?>);</script><?
+            // Encode that set in json format
+            $options = json_encode($options);
+
+            if ($this->field->storeRelationAbility == 'one' ||
+                ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12)) {
+                echo $this->formComboSingle();
+            } else if ($this->field->storeRelationAbility == 'many') {
+                echo $this->formComboMultiple();
+            }
+
+            // Init combo store data
+            ?><script>Indi.ready(function(){<?=$this->context?>.Indi.combo.<?=$this->type?>.store['<?=$this->name?>'] = (<?=$options?>)}, 'combo.<?=$this->type?>', <?=$this->context?>);</script><?
+
+        }
 
         return ob_get_clean();
     }
@@ -269,8 +286,8 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public function formComboSingle(){
 		ob_start();
-        ?><div class="i-combo i-combo-<?=$this->type?> i-combo-focus"><?
-            ?><div class="i-combo-single"><?
+        ?><div id="i-section-<?=Indi::trail()->section->alias?>-action-<?=Indi::trail()->action->alias?>-row-<?=Indi::trail()->row->id?>-field-<?=$this->name?>-combo" class="i-combo i-combo-<?=$this->type?>"><?
+            ?><div class="i-combo-single x-form-text"><?
                 ?><table class="i-combo-table"><tr><?
                     ?><td class="i-combo-color-box-cell"><?
                         ?><div class="i-combo-color-box-div"><?
@@ -306,8 +323,8 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public function formComboMultiple() {
         ob_start();
-        ?><div class="i-combo i-combo-<?=$this->type?> i-combo-focus"><?
-            ?><div class="i-combo-multiple"><?
+        ?><div id="i-section-<?=Indi::trail()->section->alias?>-action-<?=Indi::trail()->action->alias?>-row-<?=Indi::trail()->row->id?>-field-<?=$this->name?>-combo" class="i-combo i-combo-<?=$this->type?>"><?
+            ?><div class="i-combo-multiple x-form-text"><?
             foreach($this->comboDataRs->selected as $selectedR) {
                 $item = self::detectColor(array('title' => $selectedR->title));
                 ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style'] ? $item['style'] : ($item['font'] ? ' style="' . $item['font'] . '"' : '')?>><?

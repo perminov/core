@@ -7,7 +7,7 @@ class Indi_View_Helper_Admin_RenderGrid {
                 $comboFilters[] = Indi::view()->filterCombo($filter);
         }
         ob_start();?><script>
-            Indi.trail.apply(<?=json_encode(Indi::trail(true)->toArray())?>);
+            Indi.trail(true).apply(<?=json_encode(Indi::trail(true)->toArray())?>);
         </script><?
         if (count($comboFilters)){
             echo '<span style="display: none;">' . implode('', $comboFilters) . '</span>';

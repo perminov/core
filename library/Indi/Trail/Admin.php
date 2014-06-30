@@ -80,7 +80,7 @@ class Indi_Trail_Admin {
 
         // Setup initial set of properties
         foreach ($sectionRs as $sectionR)
-            self::$items[] = new Indi_Trail_Admin_Item($sectionR);
+            self::$items[] = new Indi_Trail_Admin_Item($sectionR, $sectionRs->count() - ++$i);
 
         // If currently we are at at least 2-level section, assuming that
         // 0-level sections are the most top sections, e.g left menu groups,

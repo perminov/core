@@ -17,6 +17,17 @@ Ext.override(Ext.tip.ToolTip, {
  */
 Ext.override(Ext.Component, {
 
+    ctx: function() {
+        var trailLevel = this.trailLevel != undefined ? this.trailLevel : Ext.getCmp('i-center-center-wrapper').trailLevel;
+        var trailItem = Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
+        return Indi.app.getController(trailItem.section.alias).actions[trailItem.action.alias];
+    },
+
+    ti: function(){
+        var trailLevel = this.trailLevel != undefined ? this.trailLevel : Ext.getCmp('i-center-center-wrapper').trailLevel;
+        return Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
+    },
+
     // AfterRender
     afterRender: function() {
         var me = this;
@@ -24,6 +35,12 @@ Ext.override(Ext.Component, {
         // Define tooltip getter
         me.getToolTip = function() {
             return Ext.getCmp(me.id + '-tooltip');
+        }
+
+        me.ctx = function() {
+            var trailLevel = Ext.getCmp('i-center-center-wrapper').trailLevel;
+            var trailItem = Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
+            return Indi.app.getController(trailItem.section.alias).actions[trailItem.action.alias];
         }
 
         // If 'tooltip' property was defined
@@ -134,5 +151,47 @@ Ext.override(Ext.Component, {
 
         // Call parent
         me.callParent();
+    }
+});
+
+/**
+ * Here we override Ext.Component for being
+ */
+Ext.define('Ext.Component', {
+    extend: 'Ext.Component',
+    mcopwso: [], // Merge Config Object-Properties With Superclass Ones
+    mergeParent: function(config) {
+        var initialMcopwso = this.mcopwso.join(',').split(',');
+        var obj = this;
+
+        while (obj.superclass) {
+            if (obj.superclass.mcopwso && obj.superclass.mcopwso.length)
+                for (var i = 0; i < obj.superclass.mcopwso.length; i++)
+                    if (this.mcopwso.indexOf(obj.superclass.mcopwso[i]) == -1)
+                        this.mcopwso.push(obj.superclass.mcopwso[i]);
+            obj = obj.superclass;
+        }
+        obj = this;
+
+        if (this.mcopwso.length)
+            while (obj.superclass) {
+                for (var i = 0; i < this.mcopwso.length; i++)
+                    if (this[this.mcopwso[i]] && obj.superclass && obj.superclass[this.mcopwso[i]])
+                        this[this.mcopwso[i]]
+                            = Ext.merge(Ext.clone(obj.superclass[this.mcopwso[i]]), this[this.mcopwso[i]]);
+
+                obj = obj.superclass;
+            }
+
+        for (var i = 0; i < initialMcopwso.length; i++) {
+            if (typeof config == 'object' && typeof config[initialMcopwso[i]] == 'object') {
+                this[initialMcopwso[i]] = Ext.merge(this[initialMcopwso[i]], config[initialMcopwso[i]]);
+                delete config[initialMcopwso[i]];
+            }
+        }
+    },
+    constructor: function(config){
+        this.mergeParent(config);
+        this.callParent(arguments);
     }
 });

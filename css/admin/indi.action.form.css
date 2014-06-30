@@ -1,167 +1,34 @@
-.i-action-form.x-body{
+.x-form-item-label, .x-form-cb-label-after {
     font-size: 11px;
 }
-.i-action-form .i-form{
-    padding: 10px;
-}
-.i-action-form .i-form .i-form-subheader{
-    background-color: #DDFFE0;
-    border: 1px solid #C7D4FF;
-}
-.i-action-form .i-form .i-form-subheader td{
-    text-align: center;
-    height: 21px;
-}
-.i-action-form .i-form .i-form-table > tr, .i-action-form .i-form .i-form-table > tbody > tr {
-    border-bottom: 1px solid #C7D4FF;
-    min-height: 21px;
-}
-.i-action-form .i-form .i-form-table > tr > td > input,
-.i-action-form .i-form .i-form-table > tr > td > div > input,
-.i-action-form .i-form .i-form-table > tbody > tr > td > input,
-.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
-.i-action-form .i-form .i-form-table > tr > td > textarea,
-.i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
-    padding: 0 2px 0 2px;
-    border: 1px solid #99BCE8;
-}
-.i-action-form .i-form .i-form-table > tbody > tr > td > input,
-.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
-.i-action-form .i-form .i-form-table > tr > td > input{
-    height: 18px;
-}
-.i-action-form .i-form .i-form-table > tr > td:first-child,
-.i-action-form .i-form .i-form-table > tbody > tr > td:first-child {
+.x-form-item-label {
     padding-left: 2px;
 }
-.i-action-form .i-form .i-form-table tr.i-tr-disabled td input{
-    border-color: #DFDFDF !important;
-    background: #F7F7F7;
-    color: rgba(4, 64, 140, 0.5);
-}
-.i-action-form .i-form .i-form-table tr.i-tr-disabled td:first-child{
-    color: rgba(4, 64, 140, 0.5);
-}
-
-/* Not fully beautified yet styles */
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload span.radio{
-    display: inline-block;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.radio,
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.checkbox {
-    display: block;
-    padding-left: 15px;
-    margin-top: 2px;
-    margin-bottom: 1px;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.radio label{
+.x-form-cb-label-after {
+    margin-left: 2px;
     position: relative;
     top: -1px;
 }
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload.no-file-yet {
-    position: relative !important;
-    padding: 3px 0 0 0;
-    display: inline-block;
-    margin-bottom: -1px;
+.i-field{
+    border-top-width: 1px !important;
+    border-color: #C7D4FF;
+    border-style: solid;
+    margin-bottom: 0;
 }
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload span.radio {
-    display: inline;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload a {
-    position: relative;
-    top: -1px;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload.no-file-yet span.selected-fname {
-    height: 16px;
-    position: relative;
-    top: -1px;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload span.selected-fname {
-    border: 1px solid #99BCE8;
-    padding: 0px 2px 0px 2px;
-    display: none;
-    max-width: 250px;
-    overflow: hidden;
-    height: 15px;
-    word-break: break-all;
-    position: relative;
-    margin-right: 4px;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td input[type=file] {
-    position: absolute;
-    visibility: hidden;
-    width: 1px;
-    overflow: hidden;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload {
-    position: absolute;
-    height: 19px;
-    padding: 3px 0px 0 4px;
-}
-.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload span.selected {
-    position: relative;
-    top: -1px;
-    display: none;
-}
-.i-action-form .i-form .i-form-table .i-form-table-field-control-cell{
+.i-field .x-form-item-body{
     padding: 1px 0 1px 0;
 }
-span.radio{background: url(/i/admin/radio.png) no-repeat;}
-span.radio.disabled{background: url(/i/admin/radio-disabled.png) no-repeat;}
-span.radio.checked{background: url(/i/admin/radioChecked.png) no-repeat;}
-span.radio.checked.disabled{background: url(/i/admin/radio-checked-disabled.png) no-repeat;}
-span.checkbox{background: url(/i/admin/checkbox.png) no-repeat;}
-span.checkbox.disabled, table.multicheckbox.disabled span.checkbox{background: url(/i/admin/checkbox-disabled.png) no-repeat;}
-span.checkbox.checked{background: url(/i/admin/checkboxChecked.png) no-repeat;}
-span.checkbox.checked.disabled, table.multicheckbox.disabled span.checkbox.checked{
-    background: url(/i/admin/checkbox-checked-disabled.png) no-repeat;
+.i-field .x-field-label-cell, .i-field .x-form-item-body{
+    vertical-align: middle;
 }
-span.upload{background: url(/i/admin/transparentBg.png);}
-
-/* Browser fixes */
-.x-ie9.i-action-form .i-form table tr td textarea,
-.x-ie8.i-action-form .i-form table tr td textarea{
-    margin-bottom: 1px;
+.i-field.i-field-span .x-form-display-field{
+    text-align: center;
+    padding-top: 0;
 }
-.x-chrome.i-action-form .i-form table tr td textarea, 
-.x-safari.i-action-form .i-form table tr td textarea{
-    margin-bottom: -2px;
-}
-.x-safari.i-action-form .i-form table tr td input[type=text]{
-    padding-top: 4px;
-    padding-left: 1px;
-}
-.x-safari.i-action-form .i-form table tr td:last-child span.upload {
-    margin-top: 0px;
-}
-.x-ie9.i-action-form .i-form table tr td input[type=text],
-.x-ie8.i-action-form .i-form table tr td input[type=text]{
-    padding-top: 2px;
-}
-.x-ie8.i-action-form .i-form table tr td .i-element-calendar-wrapper,
-.x-ie8.i-action-form .i-form table tr td .i-element-datetime-wrapper{
-    position: relative;
-    top: -1px;
-}
-.x-ie8.i-action-form .i-form .i-form-table tr td:first-child  + td span.upload.no-file-yet{
-    top: 0px !important;
-}
-.x-ie8.i-action-form .i-form .i-form-table tr td:first-child{
-    margin-top: -1px;
-}
-.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tr > td > input,
-.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tr > td > div > input,
-.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tbody > tr > td > input,
-.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
-.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tr > td > textarea,
-.x-gecko.x-nlg.i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
-    padding: 1px 2px 0 2px;
-}
-.x-ie9p.i-action-form .i-form .i-form-table > tr > td > input,
-.x-ie9p.i-action-form .i-form .i-form-table > tr > td > div > input,
-.x-ie9p.i-action-form .i-form .i-form-table > tbody > tr > td > input,
-.x-ie9p.i-action-form .i-form .i-form-table > tbody > tr > td > div > input,
-.x-ie9p.i-action-form .i-form .i-form-table > tr > td > textarea,
-.x-ie9p.i-action-form .i-form .i-form-table > tbody > tr > td > textarea{
-    padding: 1px 2px 0 2px;
+.i-field.i-field-span {
+    border-right-width: 1px !important;
+    border-left-width: 1px !important;
+    border-right-style: solid;
+    background-color: #DDFFE0;
+    height: 22px;
 }
