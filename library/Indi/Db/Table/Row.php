@@ -73,6 +73,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     public static $comboOptionsVisibleCount = 300;
 
     /**
+     * Used to store data, required for rendering the UI for current row's properties.
+     * Usage: $row->view('someRowProperty', array('someparam1' => 'somevalue1')), assuming that 'someRowProperty'
+     * is a field, that need to have some additional params for being properly displayed in the UI
+     *
+     * @var array
+     */
+    protected $_view = array();
+
+    /**
      * Constructor
      *
      * @param array $config
@@ -1294,6 +1303,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Append _system array as separate array within returning array, under '_system' key
             if (count($this->_system)) $array['_system'] = $this->_system;
 
+            // Append _view array as separate array within returning array, under '_view' key
+            if (count($this->_view)) $array['_view'] = $this->_view;
+
         } else if ($type == 'original') {
             $array = (array) $this->_original;
         } else if ($type == 'modified') {
@@ -2254,6 +2266,23 @@ class Indi_Db_Table_Row implements ArrayAccess
             return $this;
         } else {
             return $this->_system;
+        }
+    }
+
+    /**
+     * This function sets of gets a value of $this->_system array by a given key (argument #1)
+     * using a given value (argument # 2)
+     *
+     * @return mixed
+     */
+    public function view() {
+        if (func_num_args() == 1) {
+            return $this->_view[func_get_arg(0)];
+        } else if (func_num_args() == 2) {
+            $this->_view[func_get_arg(0)] = func_get_arg(1);
+            return $this;
+        } else {
+            return $this->_view;
         }
     }
 

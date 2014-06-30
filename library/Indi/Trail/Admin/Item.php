@@ -17,6 +17,13 @@ class Indi_Trail_Admin_Item {
     public $scope = null;
 
     /**
+     * Store current trail item index
+     *
+     * @var int
+     */
+    public $level = null;
+
+    /**
      * Getter. Currently declared only for getting 'model' property
      *
      * @param $property
@@ -31,14 +38,18 @@ class Indi_Trail_Admin_Item {
     /**
      * Set up all internal properties
      *
-     * @param Indi_Db_Table_Row $sectionR
+     * @param $sectionR
+     * @param $level
      */
-    public function __construct($sectionR) {
+    public function __construct($sectionR, $level) {
         // Setup $this->section
         $config = array();
         $dataTypeA = array('original', 'temporary', 'compiled', 'foreign');
         foreach ($dataTypeA as $dataTypeI) $config[$dataTypeI] = $sectionR->$dataTypeI();
         $this->section = Indi::model('Section')->createRow($config);
+
+        // Setup index
+        $this->level = $level;
 
         // Setup section href
         $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
@@ -238,6 +249,40 @@ class Indi_Trail_Admin_Item {
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray();
         if ($this->scope) $array['scope'] = $this->scope->toArray();
+        $array['level'] = $this->level;
         return $array;
+    }
+
+    /**
+     * Return the trail item, that is parent for current trail item
+     *
+     * @param int $step
+     * @return Indi_Trail_Admin_Item object
+     */
+    public function parent($step = 1) {
+        return Indi_Trail_Admin::$items[$this->level - $step];
+    }
+
+    /**
+     * Return base id for current trail item. It is used for building unique 'id' attributes of html elements,
+     * and for giving direct access to those of javascript objects, who can be got by their id
+     *
+     * @return string
+     */
+    public function bid() {
+
+        // Basement if base id - include section alias and action alias
+        $bid = 'i-section-' . $this->section->alias . '-action-' . $this->action->alias;
+
+        // If current trail item has a row - append it's id
+        if ($this->row)
+            $bid .= '-row-' . (int) $this->row->id;
+
+        // Else if current trail item doesn't have a row, but parent trail item do - append it's id
+        else if ($this->parent()->row)
+            $bid .= '-parentrow-' + (int) $this->parent()->row->id;
+
+        // Return base id
+        return $bid;
     }
 }

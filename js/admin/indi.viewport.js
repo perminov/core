@@ -179,7 +179,6 @@ Ext.define('Indi.Viewport', {
     listeners: {
         afterrender: function (){
             Indi.metrics = new Ext.util.TextMetrics();
-            Indi.trail = Ext.create('Indi.Trail');
         },
         afterlayout: function(){
             if (Ext.getCmp('i-center-center-wrapper')) {

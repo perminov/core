@@ -6,9 +6,32 @@ Ext.define('Indi', {
     extend: 'Ext.app.Application',
 
     /**
+     * Disable quick tips, as we use tooltips instead
+     */
+    enableQuickTips: false,
+    name: 'Indi',
+    appFolder: '../js/admin/app',
+
+    /**
      * Static properties and methods
      */
     statics: {
+
+        /**
+         * Shortcut to trail data
+         *
+         * Indi.trail(true) - return Indi.Trail.instance object
+         * Indi.trail([0-9]*) - return Indi.Trail.instance.item($1) object
+         *
+         * @return {*}
+         */
+        trail: function() {
+            if (arguments[0] === true) {
+                return Indi.Trail.instance;
+            } else {
+                return Indi.Trail.instance.item(arguments.length ? parseInt(arguments[0]) : 0);
+            }
+        },
 
         /**
          * Prototypes store
@@ -255,7 +278,7 @@ Ext.define('Indi', {
             Indi.story.push(url);
 
 
-            if (url.match(/\/form\//) || iframe) {
+            /*if (url.match(/\/form\//) || iframe) {
 
                 Indi.clearCenter();
                 Ext.create('Ext.Panel', {
@@ -270,12 +293,12 @@ Ext.define('Indi', {
                 });
                 new Ext.LoadMask(top.window.$('#iframe-wrapper')[0], {id: 'iframe-mask'});
                 Ext.getCmp('iframe-mask').show();
-            } else {
+            } else {*/
                 $.post(url, function(response){
                     Indi.clearCenter();
                     $('#i-center-center-body').html(response);
                 });
-            }
+            //}
         },
 
         /**
@@ -383,7 +406,8 @@ Ext.define('Indi', {
         } else {
             Indi.viewport = Ext.create('Indi.Viewport');
         }
-        // Create viewport
+
+        Indi.app = this;
     }
 }, function() {
 

@@ -29,7 +29,7 @@ class Indi_View_Helper_Admin_FormHtml {
         $CKconfig['uiColor'] = '#B8D1F7';
 
         // Set up editor size
-        if ($field->params['width']) $CKconfig['width'] = $field->params['width'] + 52;
+        $CKconfig['width'] = $field->params['width'] ? $field->params['width'] + 52 : 'auto';
         if ($field->params['height']) $CKconfig['height'] = $field->params['height'];
 
         // Set up editor javascript
@@ -62,12 +62,14 @@ class Indi_View_Helper_Admin_FormHtml {
         $CKconfig['language'] = Indi::ini('view')->lang;
 
         ob_start();?>
+        <div id="i-section-<?=Indi::trail()->section->alias?>-action-<?=Indi::trail()->action->alias?>-row-<?=Indi::trail()->row->id?>-field-<?=$name?>-html">
         <textarea id="<?=$name?>" name="<?=$name?>"><?=str_replace(array('<','>'), array('&lt;','&gt;'), $value)?></textarea>
         <script>
             CKFinder.setupCKEditor(null, '<?=STD?>/library/ckfinder/');
-            var config = <?=json_encode($CKconfig)?>;
+            <?$ns = 'i-section-' . Indi::trail()->section->alias . '-action-' . Indi::trail()->action->alias . '-row-' . Indi::trail()->row->id . '-field-' . $name . '-html'?>
+            window['<?=$ns.'-config'?>'] = <?=json_encode($CKconfig)?>;
 
-            config.toolbar = [
+            window['<?=$ns.'-config'?>'].toolbar = [
                 {items: ['Source', 'Preview'] },
                 {items: [ 'Paste', 'PasteText', 'PasteFromWord', 'Table'] },
                 {items: [ 'Image', 'Flash', 'oembed','Link', 'Unlink'] },
@@ -80,10 +82,12 @@ class Indi_View_Helper_Admin_FormHtml {
                 {items: [ 'TextColor', 'BGColor', '-', 'Blockquote', 'CreateDiv' ] },
                 {items: [ 'Maximize', 'ShowBlocks', 'Find', '-', 'RemoveFormat'  ] }
             ];
-            config.enterMode = CKEDITOR.ENTER_BR;
+            window['<?=$ns.'-config'?>'].enterMode = CKEDITOR.ENTER_BR;
+            window['<?=$ns.'-config'?>'].bodyId = '<?=$ns?>';
 
-            CKEDITOR.replace('<?=$name?>', config);$('#td-wide-<?=$name?>').css('padding-bottom', '1px');$('#tr-<?=$name?>').css('padding-bottom', '1px');
+            CKEDITOR.replace('<?=$name?>', window['<?=$ns.'-config'?>']);$('#td-wide-<?=$name?>').css('padding-bottom', '1px');$('#tr-<?=$name?>').css('padding-bottom', '1px');
         </script>
+        </div>
         <? $xhtml = ob_get_clean();
 
         return $xhtml;
