@@ -55,7 +55,7 @@
     position: relative;
     top: -1px;
 }
-.x-gecko.x-nlg #i-center-north-trail span, .x-gecko #i-center-north-trail a{
+.x-gecko.x-nlg #i-center-north-trail span{
     position: relative;
     top: 0px;
 }
