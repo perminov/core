@@ -152,7 +152,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-boundlist-item-over{
     background-color: #ecffeb;
 }
-
+.x-boundlist-selected {
+	background: #ecffeb;
+}
 /* Indi combos default style adjustments - for cases, when indi combos are used as an ext components*/
 .i-filter-combo .x-panel-body-default{
     background: transparent;
