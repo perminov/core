@@ -1916,11 +1916,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
 
-        // Perform the whole set of file upload maintenance
-        $this->row->files($filefields);
+        // If current row is an existing row - perform the whole set of file upload maintenance right here
+        if (!$updateAix) $this->row->files($filefields);
 
         // Save the row
         $this->row->save();
+
+        // If current row is a row, that was created a moment ago (e.g it was a new row)
+        // perform the whole set of file upload maintenance right here
+        if ($updateAix) $this->row->files($filefields);
 
         // If current row has been just successfully created
         if ($updateAix && $this->row->id) {
