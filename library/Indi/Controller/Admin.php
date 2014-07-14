@@ -1885,12 +1885,6 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Unset 'move' key from data, because 'move' is a system field, and it's value will be set up automatically
         unset($data['move']);
 
-        // If current cms user is an alternate, and if there is corresponding field within current entity structure
-        if ($_SESSION['admin']['alternate'] && in_array($_SESSION['admin']['alternate'] . 'Id', $possibleA))
-
-            // Force setup of that field value as id of current cms user
-            $data[$_SESSION['admin']['alternate'] . 'Id'] = $_SESSION['admin']['id'];
-
         // If there was disabled fields defined for current section, we check if default value was additionally set up
         // and if so - assign that default value under that disabled field alias in $data array, or, if default value
         // was not set - drop corresponding key from $data array
@@ -1899,6 +1893,12 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if ($fieldR->id == $disabledFieldR->fieldId)
                     if (!strlen($disabledFieldR->defaultValue)) unset($data[$fieldR->alias]);
                     else $data[$fieldR->alias] = $disabledFieldR->compiled('defaultValue');
+
+        // If current cms user is an alternate, and if there is corresponding field within current entity structure
+        if ($_SESSION['admin']['alternate'] && in_array($_SESSION['admin']['alternate'] . 'Id', $possibleA))
+
+            // Force setup of that field value as id of current cms user
+            $data[$_SESSION['admin']['alternate'] . 'Id'] = $_SESSION['admin']['id'];
 
         // Update current row properties with values from $data array
         foreach ($data as $field => $value) $this->row->$field = $value;
