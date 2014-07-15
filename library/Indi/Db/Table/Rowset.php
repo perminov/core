@@ -1218,4 +1218,26 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         $this->_count++;
         $this->_found++;
     }
+
+    /**
+     * Convert current plain-tree rowset to a nesting-tree rowset. Actually, this function does not
+     * modify current rowset, it just returns it's clone, that contains only root-level tree items,
+     * and all other (non-root-level) items are accessible as nested items
+     *
+     * @return Indi_Db_Table_Rowset
+     */
+    public function toNestingTree() {
+
+        // If current rowset is owned by a non-tree model - return rowset with no changes
+        if (!($treeColumn = $this->model()->treeColumn())) return $this;
+
+        // Get root-level items
+        $rs = $this->select(0, $treeColumn);
+
+        // Attach child items to each root item, recursively
+        foreach ($rs as $r) $r->nestDescedants($this);
+
+        // Return nesting-tree rowset
+        return $rs;
+    }
 }
