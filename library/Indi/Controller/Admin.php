@@ -1174,7 +1174,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 imagecolortransparent($canvasIm, imagecolorallocate($canvasIm, 0, 0, 0));
 
                 // Pick hue bg and place it on canvas
-                $iconFn = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . STD . '/core/library/extjs4/resources/themes/images/default/grid/sort_' . $columnI['sortState'] . '.gif';
+                $iconFn = DOC . STD . '/core/library/extjs4/resources/themes/images/default/grid/sort_' . $columnI['sortState'] . '.gif';
                 $iconIm = imagecreatefromgif($iconFn);
                 imagecopy($canvasIm, $iconIm, 0, 0, 0, 0, 13, 5);
 
@@ -1804,7 +1804,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      *
      * @param string $location
      */
-    public function redirect($location = ''){
+    public function redirect($location = '', $return = false){
 
         // If $location argument is empty
         if (!$location) {
@@ -1823,7 +1823,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Redirect
-        die('<script>window.parent.Indi.load("' . $location . '");</script>');
+        if ($return) return $location; else die('<script>window.parent.Indi.load("' . $location . '");</script>');
     }
 
     /**
@@ -1916,9 +1916,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
 
-        die(json_encode(Indi::post()));
         // Perform the whole set of file upload maintenance
-        $this->row->files($filefields);
+        //$this->row->files($filefields);
 
         // Save the row
         $this->row->save();
@@ -1952,6 +1951,14 @@ class Indi_Controller_Admin extends Indi_Controller {
             }
         }
 
+        if ($this->row->mismatch()) {
+            die(json_encode(array(
+                'success' => false,
+                'msg' => 'Incorrect input',
+                'data' => $this->row->mismatch()
+            )));
+        }
+
         // Do post-save operations
         $this->postSave();
 
@@ -1979,7 +1986,12 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Redirect
-        if ($redirect) $this->redirect($location);
+        $response = array(
+            'success' => true,
+            'msg' => 'Data saved',
+        );
+        if ($redirect) $response['redirect'] = $this->redirect($location, true);
+        die(json_encode($response));
     }
 
     /**

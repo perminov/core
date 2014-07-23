@@ -52,7 +52,7 @@ Ext.define('Indi.controller.entities', {
                 };*/
                 return filter;
             },
-            panelToolbarFilterItemA: function() {
+            panelToolbarFilterItemA1: function() {
                 var itemA = Object.getPrototypeOf(this).panelToolbarFilterItemA.call(this, arguments);
 
                 itemA.push({

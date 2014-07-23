@@ -1,7 +1,19 @@
+/**
+ * Custom alternative for Ext.form.field.ComboBox.
+ * Supports a lot of additonal features, such as options disabling, grouping, advanced option trees merging,
+ * multiSelect mode, color detection and etc.
+ * todo: implement Ext.data.Store usage as a data source instead of custom store implementation
+ */
 Ext.define('Indi.combo.form', {
+
+    // @inheritdoc
     extend: 'Ext.form.field.Picker',
+
+    // @inheritdoc
     alias: 'widget.combo.form',
-    displayField: 'name',
+
+    // @inheritdoc
+    multiSelect: false,
 
     /**
      * This value is be used for combo width adjustment, if options list was refreshed and the longest
@@ -12,8 +24,8 @@ Ext.define('Indi.combo.form', {
     averageTitleCharWidth: 6.5,
 
     /**
-     * We need this to be able to separate options div visibility after keyword was erased
-     * At form combos options wont be hidden, but at indi.proto.combo.filter same param is set to true
+     * We need this to be able to separate options list visibility after keyword was erased
+     * At form combos options wont be hidden, but at Indi.combo.filter same param is set to true
      *
      * @type {Boolean}
      */
@@ -33,14 +45,28 @@ Ext.define('Indi.combo.form', {
      */
     colorReg: new RegExp('^[0-9]{3}(#[0-9a-fA-F]{6})$', 'i'),
 
+    // @inheritdoc
     renderSelectors: {
         comboEl: '.i-combo',
+        multipleEl: '.i-combo-multiple',
+        wrapperEl: '.i-combo-table-wrapper',
+        tableEl: '.i-combo-table',
+        colorCell: '.i-combo-color-box-cell',
+        colorDiv: '.i-combo-color-box-div',
+        colorBox: '.i-combo-color-box',
+        keywordEl: '.i-combo-keyword',
         hiddenEl: '[type="hidden"]',
+        infoDiv: '.i-combo-info-div',
         infoEl: '.i-combo-info',
         countEl: '.i-combo-count',
+        ofEl: '.i-combo-of',
         foundEl: '.i-combo-found'
     },
-    fieldSubTpl: [
+
+    /**
+     * Template for use in case if combo runs in single-value mode
+     */
+    tplSingle: [
         '<div class="i-combo i-combo-form">',
             '<div class="i-combo-single x-form-text">',
                 '<table class="i-combo-table"><tr>',
@@ -69,46 +95,116 @@ Ext.define('Indi.combo.form', {
         '</div>'
     ],
 
+    /**
+     * Template for use in case if combo runs in multiple-values mode
+     */
+    tplMultiple: [
+        '<div class="i-combo i-combo-form">',
+            '<div class="i-combo-multiple x-form-text">',
+                '<tpl for="selected.items">',
+                    '<span class="i-combo-selected-item" selected-id="{id}"<tpl if="style">{style}<tpl elseif="font">style="{font}"</tpl>>',
+                        '{box}{title}',
+                        '<span class="i-combo-selected-item-delete"></span>',
+                    '</span>',
+                '</tpl>',
+                '<div class="i-combo-table-wrapper" id="{field.alias}-table-wrapper"><table class="i-combo-table"><tr>',
+                    '<td class="i-combo-color-box-cell">',
+                        '<div class="i-combo-color-box-div">',
+                            '{selected.box}',
+                        '</div>',
+                    '</td>',
+                    '<td class="i-combo-keyword-cell">',
+                        '<div class="i-combo-keyword-div">',
+                            '<input id="{field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{field.alias}" value="" lookup="{field.params.noLookup}" placeholder="{field.params.placeholder}"/>',
+                            '<input id="{field.alias}" type="hidden" value="{selected.value}" name="{field.alias}"/>',
+                        '</div>',
+                    '</td>',
+                    '<td class="i-combo-info-cell">',
+                        '<div class="i-combo-info-div">',
+                            '<table class="i-combo-info i-combo-info-multiple" id="{field.alias}-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                '<td><span class="i-combo-count" id="{field.alias}-count"></span></td>',
+                                '<td><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+                                '<td><span class="i-combo-found" id="{field.alias}-found"></span></td>',
+                            '</tr></table>',
+                        '</div>',
+                    '</td>',
+                    '</tr></table>',
+                '</div>',
+                '<div class="i-combo-clear" style="clear: both;"></div>',
+            '</div>',
+        '</div>'
+    ],
+
+    /**
+     * Provide usage of this.getValue() result as a way of getting submit value, instead of this.getRawValue
+     *
+     * @return {*}
+     */
     getSubmitValue: function() {
-        return this.hiddenEl.getValue();
+        return this.getValue();
     },
 
+    /**
+     * Provide use of this.keywordEl as input element, that should be listened for focus/blur
+     *
+     * @return {*}
+     */
     getFocusEl: function(){
-        return this.inputEl;
+        return this.keywordEl;
     },
 
+    /**
+     * Create custom picker component, with 'Ext.Panel' instead of 'xtype: boundlist' usage
+     *
+     * @return {*}
+     */
     createPicker: function() {
         var me = this;
-
-        var picker = Ext.create('Ext.Panel', {
+        return Ext.create('Ext.Panel', {
             id: this.field.alias + '-suggestions',
-            cls: 'i-combo-data',
+            cls: 'x-boundlist x-boundlist-floating x-boundlist-default',
             border: 0,
             floating: true,
+            maxHeight: me.visibleCount * me.store.optionHeight,
+            autoScroll: true,
             listeners: {
                 afterrender: function() {
-                    $(this.el.dom).attr('hover', 'false');
-                    $(this.el.dom).hover(function(){
-                        $(this).attr('hover','true');
+                    this.el.attr('hover', 'false');
+                    this.el.hover(function(){
+                        Ext.get(this).attr('hover','true');
                     }, function(){
-                        $(this).attr('hover','false');
+                        Ext.get(this).attr('hover','false');
                     });
                 },
                 show: function() {
                     me.rebuildComboData();
                 }
             }
-        });
-        return picker;
+        })
     },
 
+    /**
+     * Get data 'title' property or whole data object, depending on dataShouldBeReturned is boolean true, by a given value
+     *
+     * @param value
+     * @param dataShouldBeReturned
+     * @return {*}
+     */
+    valueToRaw: function (value, dataShouldBeReturned) {
+        var me = this;
+        var index = me.store.ids.indexOf(value);
+        if (index == -1) index = me.store.ids.indexOf(parseInt(value));
+        var data = me.store.data[index];
+        return dataShouldBeReturned ? (data ? data : {}) : (data ? data.title : '');
+    },
+
+    /**
+     * Get combo value
+     *
+     * @return {*}
+     */
     getValue: function() {
-        return this.getSubmitValue();
-    },
-
-    valueToRaw: function(value) {
-        return 'Наименование 1';
-        return '' + Ext.value(value, '');
+        return this.value;
     },
 
     /**
@@ -118,319 +214,414 @@ Ext.define('Indi.combo.form', {
      * @return {Ext.form.field.Text} this
      */
     setValue: function(value) {
-        var me = this,
-            inputEl = me.inputEl;
+        var me = this, data;
 
-        if (inputEl && me.emptyText && !Ext.isEmpty(value)) {
-            inputEl.removeCls(me.emptyCls);
-            me.valueContainsPlaceholder = false;
+        // If combo is already rendered
+        if (me.el) {
+
+            // If combo is running in multiple-values mode
+            if (me.multiSelect) {
+
+                // Detect difference between old value and new value
+                var was = me.value ? me.value.split(',') : [], now = value ? value.split(',') : [],
+                    remove = Ext.Array.difference(was, now), append = Ext.Array.difference(now, was);
+
+                // Remove items that should be removed
+                for (var i = 0; i < remove.length; i++) {
+
+                    // Try to find .i-combo-selected-item-delete child node within the item that should be removed
+                    var d = me.el.select('.i-combo-selected-item[selected-id="' + remove[i] +'"] .i-combo-selected-item-delete').first();
+
+                    // If found - setup 'no-change' attribute to 'true' to prevent 'onHiddenChange' call and 'change'
+                    // event listener firing (because those will be fired bit later) and do programmatically click
+                    // on found .i-combo-selected-item-delete child, as there is already binded the listener that will
+                    // do item deletion with all additional concomitant operations
+                    if (d) d.attr('no-change', 'true').dom.click();
+                }
+
+                // Append items that should be appended
+                for (i = 0; i < append.length; i++) {
+
+                    // Get the whole option data object by option value
+                    data = me.valueToRaw(append[i], true);
+
+                    // Detect option color (style or box) and declare 'css' object with empty 'color' property
+                    var color = me.color(data, value), css = {color: ''};
+
+                    // If color was detected in option data object, and that color is not a color-box color
+                    if (color.color && color.src != 'boxColor') css.color = color.color;
+
+                    // Set the width of .i-combo-table element to 1px, to prevent combo label jumping for cases if
+                    // adding the new item leads to height-increase of an area, that contains all currently selected
+                    // items
+                    me.tableEl.setWidth(1);
+
+                    // Append new selected item after the last existing selected item
+                    Ext.DomHelper.insertHtml('beforeBegin', me.wrapperEl.dom,
+                    '<span class="i-combo-selected-item" selected-id="'+append[i]+'">'+
+                        color.box + color.title +
+                        '<span class="i-combo-selected-item-delete"></span>' +
+                    '</span>');
+
+                    // Get that newly inserted selected item as an already appended dom node
+                    var a = me.el.select('.i-combo-selected-item[selected-id="' + append[i] +'"]').last();
+
+                    // Apply color
+                    a.css(css);
+
+                    // Bind a click event handler for a .i-combo-selected-item-delete
+                    // child node within newly appended item
+                    me.el.select('.i-combo-selected-item-delete').last().on('click', me.onItemDelete, me);
+
+                    // Execute javascript-code, assigned to appended item
+                    if (me.store.enumset) {
+                        var index = me.store['ids'].indexOf(append[i]);
+                        if (index != -1 && me.store['data'][index].system.js) {
+                            eval(me.store['data'][index].system.js);
+                        }
+                    }
+
+                    // Adjust width of .i-combo-table element for it to fit all available space
+                    me.adjustKeywordFieldWidth();
+                }
+
+            // Else if combo is running in single-value mode
+            } else {
+
+                // Get the whole option data object by option value
+                data = me.valueToRaw(value, true);
+
+                // Detect option color (style or box) and apply it
+                me.color(data, value).apply();
+            }
+
+            // Setup value for hiddenEl element
+            me.hiddenEl.val(value);
+
+            // Call onHiddenChange()
+            me.onHiddenChange();
         }
 
+        // Call parent
         me.callParent(arguments);
-        if (me.hiddenEl) me.hiddenEl.dom.value = value;
 
-        me.applyEmptyText();
+        // If combo is running in multiple-values mode is rendered - empty keyword input element
+        if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
+
+        // Return combo itself
         return me;
     },
 
     /**
-     * Returns the input id for this field. If none was specified via the {@link #inputId} config, then an id will be
-     * automatically generated.
+     * Returns the input id for this field.
      */
     getInputId: function() {
-        //return this.inputId || (this.inputId = this.id + '-inputEl');
         return this.inputId || (this.inputId = this.field.alias + '-keyword');
     },
 
-    constructor: function() {
+    /**
+     * Constructor
+     *
+     * @param config
+     */
+    constructor: function(config) {
+
+        // Setup multiSelect and fieldSubTpl properties depending on config.field.storeRelationAbility value
+        if (config.field.storeRelationAbility == 'many') {
+            this.multiSelect = true;
+            this.fieldSubTpl = this.tplMultiple;
+        } else {
+            this.fieldSubTpl = this.tplSingle;
+        }
+
+        // Call parent
         this.callParent(arguments);
+
+        // Setup 'field' property as one of this.subTplData object properties
         this.subTplData.field = this.field;
-        this.subTplData.selected.keyword = (this.subTplData.selected.input || this.subTplData.selected.title || '').replace(/"/g, '&quot;');
+
+        // If combo is running in single-value mode, setup keyword input element value
+        if (!this.multiSelect)
+            this.subTplData.selected.keyword
+                = (this.subTplData.selected.input || this.subTplData.selected.title || '').replace(/"/g, '&quot;');
     },
 
     /**
-     * If combo has a satellite, and satellite value is 0, combo should be disabled.
-     * Otherwise, combo wil be enabled.
+     * This function differs from parent 'setDisabled' function.
+     * The difference is that if there is a need to achieve the result of parent 'setDisabled()' call
+     * - here 'setDisabled(false)' call should be used, e.g there is a need for explicit pass of first argument.
+     * If first argument is not given then this function will do the following check:
+     *    If combo has a satellite, and satellite value is 0, combo should be disabled.
+     *    Otherwise, combo will be enabled.
      *
-     * @param name
-     * @param name
+     * So, if first argument is not given, function will try to automatically detect whether combo should be disabled
+     * or not
+     *
+     * @param force
      */
-    setDisabled: function(name, force){
-        name = this.name;
-        // Check if this combo should be disabled
-        var satellite = $('#'+name+'-info').attr('satellite').toString();
-        if (satellite.length && $('#'+satellite).length) {
-            var sv = $('#'+satellite).val().toString();
-            sv = sv.length == 0 ? 0 : parseInt(sv);
-            if (sv == 0 || force == true) {
-                $('#'+name+'-keyword').attr('disabled', 'disabled');
-                $('#'+name+'-keyword').parents('.i-combo').addClass('i-combo-disabled x-item-disabled');
-                $('#'+name+'-keyword').val('');
+    setDisabled: function(force){
+        var me = this, sComboName = me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp('tr-' + sComboName);
 
-                // We set hidden field value as 0 (or '', if multiple), and fire 'change event' because there can be
+        // If current combo has a satellite, and satellite combo is an also existing component
+        if (sComboName.length && sCombo) {
+
+            // Get satellite value
+            var sv = sCombo.getValue().toString(); sv = sv.length == 0 ? 0 : parseInt(sv);
+
+            // If satellite value is 0, or 'force' argument is boolean 'true'
+            if (sv == 0 || force == true) {
+
+                // Explicitly setup first argument as boolean 'true'
+                arguments[0] = true;
+
+                // We set hidden field value as 0 (or '', if multiple), and fire 'change' event because there can be
                 // satellited combos for current combo, so if we have, for example 5 cascading combos,
                 // that are satellited to each other, this code provide that if top combo is disabled,
                 // all dependent (satellited) combos will also be disabled recursively
-                if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
-
-                    $('#'+name+'-keyword')
-                        .parents('.i-combo-multiple')
-                        .find('.i-combo-selected-item-delete')
-                        .attr('no-change', 'true')
-                        .click();
-
-                    $('#'+name).val('');
+                if (me.multiSelect) {
+                    me.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
+                    me.hiddenEl.val('');
                 } else {
-                    $('#'+name).val(0);
-                }
-                $('#'+name).change();
-
-                // There is currently only one case when 'force' param is passed,
-                // and this case only happen if we were fetching satellited (dependent) results,
-                // and we had no success for that search (nothing found). That is why we are giving
-                // a corresponding message, that there is no results related to such satellite value
-                if (force && sv != 0) {
-                    var satellite = $('#'+name+'-info').attr('satellite');
-                    $('#'+name+'-keyword').addClass('no-results-within');
-                    $('#'+name+'-keyword').removeAttr('readonly'); // ? think about need
-                    $('#'+name+'-keyword').val('');
+                    me.hiddenEl.val(0);
                 }
 
-                // Enable combo
-            } else {
-                $('#'+name+'-keyword').removeAttr('disabled');
-                $('#'+name+'-keyword').parents('.i-combo').removeClass('i-combo-disabled x-item-disabled');
+                // Erase keyworв input element value
+                me.keywordEl.val('');
+
+                // Call onHiddenChange
+                me.onHiddenChange();
             }
         }
 
         // Restore default values for auxiliary attributes
-        $('#'+name+'-info').attr('fetch-mode', 'no-keyword');
-        $('#'+name+'-info').attr('page-top-reached', 'false');
-        $('#'+name+'-info').attr('page-btm-reached', 'false');
-        $('#'+name+'-info').attr('page-top', '0');
-        $('#'+name+'-info').attr('page-btm', '0');
-        $('#'+name+'-keyword').attr('selectedIndex', 0);
+        me.infoEl.attr({
+            'fetch-mode': 'no-keyword',
+            'page-top-reached': 'false',
+            'page-btm-reached': 'false',
+            'page-top': 0,
+            'page-btm': 0
+        });
+        me.keywordEl.attr('selectedIndex', 0);
+
+        // Call parent, if arguments exist
+        if (arguments.length) this.callParent(arguments);
     },
 
+    /**
+     * Do the most general things
+     */
     afterRender: function() {
+        var me = this;
 
-        var me = this, name = me.name;
 
-        $(this.inputEl.dom).keyup(this.keyUpHandler);
+        me.keywordEl.on({
+            keyup: {
+                fn: me.keyUpHandler,
+                scope: me
+            },
+            keydown: {
+                fn: me.keyDownHandler,
+                scope: me
+            }
+        });
 
-        $(this.inputEl.dom).keydown(this.keyDownHandler);
-
-        // Setup combo as disabled, if needed
-        if (this.store['ids'].length == 0) this.setDisabled(null, true);
+        // If options store is empty - disable combo
+        if (me.store['ids'].length == 0) me.setDisabled(true);
 
         // Initially, we setup each combo as not able to lookup if there take place one of conditions:
         // 1. combo is used in enumset field and is not disabled ('non-disabled' condition is here due to css styles
         // conflict between input[disabled] and input[readonly]. ? - think about need)
         // 2. combo lookup ability was manually switched off by special param
-        this.setReadonlyIfNeeded();
+        me.setReadonlyIfNeeded();
 
-        // Set previous value as current value at initialisation
-        $(this.inputEl.dom).attr('prev', $(this.inputEl.dom).val());
+        // Set previous keyword input value as current keyword value at initialization
+        me.keywordEl.attr('prev', me.keywordEl.val());
 
-        // Call 'hideSuggestions' function on blur, if current mouse position is not over options
-        $(this.inputEl.dom).blur(function(){
-            if ($('#'+me.name+'-suggestions').attr('hover') != 'true') me.hideSuggestions();
-        });
+        // Bind a handler for 'click' event for .i-combo element
+        me.comboEl.on('click', this.onKeywordClick, me);
 
-        $(this.inputEl.dom).click(function(){
-            var name = $(this).attr('lookup');
-
-            // Check if combo is disabled
-            if ($(this).parents('.i-combo').hasClass('i-combo-disabled') || $(this).hasClass('i-combo-keyword-no-results')) return;
-
-            if ($(this).parents('.i-combo').hasClass('i-combo-filter')
-                && arguments.length && arguments[0].ctrlKey) {
-                me.clearCombo();
-                return;
-            }
-
-            /*$('.i-combo-keyword').each(function(){
-                if ($(this).attr('lookup') != name) $(this).blur();
-            });*/
-
-            // Toggle options and info
-            me.onTriggerClick();
-            if ($('#'+name+'-info').css('visibility') != 'hidden') {
-                if ($(this).parents('.i-combo-table').find('.i-combo-info').css('display') == 'none') {
-                    $(this).parents('.i-combo-table').find('.i-combo-info').css('display', 'block');
-                } else {
-                    $(this).parents('.i-combo-table').find('.i-combo-info').css('display', 'none');
-                }
-            }
-        });
-
-        $(this.inputEl.dom).parents('.i-combo-table').find('.i-combo-color-box').click(function(){
-            $('#'+name+'-keyword').click();
-        });
-
-        this.adjustKeywordFieldWidth();
-
-        $('#'+name).change(this.changeHandler);
-
-        $(this.inputEl.dom).parents('.i-combo-table').find('.i-combo-info').click(function(){
-            $('#'+name+'-keyword').focus();
-        });
+        // Adjust width of .i-combo-table element for it to fit all available space
+        me.comboTableFit();
 
         // Execute javascript code, if it was assigned to default selected option/options
-        if (this.store.enumset) {
-            if ($('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').length) {
-                $('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').each(function(){
-                    var index = me.store['ids'].indexOf($(this).attr('selected-id'));
+        if (me.store.enumset) {
+            if (me.multiSelect) {
+                me.el.select('.i-combo-selected-item').each(function(el){
+                    var index = me.store['ids'].indexOf(el.attr('selected-id'));
                     if (index != -1 && me.store['data'][index].system.js) {
                         eval(me.store['data'][index].system.js);
                     }
                 });
             } else {
-                var index = me.store['ids'].indexOf($('#'+name).val());
+                var index = me.store['ids'].indexOf(me.hiddenEl.val());
                 if (index != -1 && this.store['data'][index].system.js) {
                     eval(this.store['data'][index].system.js);
                 }
             }
         }
 
-        this.bindDelete();
+        // Bind a deletion click handler for .i-combo-selected-item-delete items
+        me.el.select('.i-combo-selected-item-delete').on('click', me.onItemDelete, me);
     },
 
+    /**
+     * Keyword element click handler
+     *
+     * @param e
+     * @param dom
+     */
+    onKeywordClick: function(e, dom) {
+
+        // Setup 'el' and 'me' shortcuts
+        var el = Ext.get(dom), me = this;
+
+        // If there currently is no options - return
+        if (el.hasCls('i-combo-keyword-no-results') || me.disabled || el.hasCls('i-combo-selected-item-delete')) return;
+
+        // If current combo is a filter-combo, and ctrl key is pressed - clear combo
+        if (el.up('.i-combo').hasCls('i-combo-filter') && e.ctrlKey) {
+            me.clearCombo();
+            return;
+        }
+
+        // Call trigger click handler
+        me.onTriggerClick();
+    },
+
+    /**
+     * Trigger click handler
+     */
     onTriggerClick: function() {
         var me = this;
+
+        // If combo is not read-only and is not disabled
         if (!me.readOnly && !me.disabled) {
-            if (me.isExpanded) {
-                me.collapse();
+
+            // Expand/collapse combo options boundlist
+            if (!me.lastCollapsed || (new Date().getTime() - me.lastCollapsed > 250)) {
+                if (me.isExpanded) {
+                    me.collapse();
+                } else {
+                    me.expand();
+                }
+                Ext.defer(function(){me.keywordEl.focus();}, 10);
             } else {
-                me.expand();
+                me.keywordEl.blur();
             }
-            setTimeout(function(){
-                me.inputEl.focus();
-            });
+        }
+    },
+
+    // @inheritdoc
+    expand: function() {
+        var me = this;
+        me.applyState({pickerOffset: [-me.keywordEl.getOffsetsTo(me.comboEl)[0], 2]});
+        me.callParent(arguments);
+        me.infoEl.show();
+    },
+
+    // @inheritdoc
+    collapse: function() {
+        var me = this;
+        this.callParent(arguments);
+        me.lastCollapsed = new Date().getTime();
+        me.infoEl.hide();
+    },
+
+    /**
+     * This is an extraction, having the aim to be able to setup a different logic in Indi.combo.filter
+     */
+    setReadonlyIfNeeded: function() {
+        var me = this;
+        if ((me.keywordEl.attr('disabled') != 'disabled' && me.store.enumset && !me.multiSelect)) {
+            me.keywordEl.attr('readonly', 'readonly');
         }
     },
 
     /**
-     * This is an extraction, having the aim to be able to setup a different logic in indi.proto.combo.filter
-     *
-     * @param name
-     */
-    setReadonlyIfNeeded: function(name) {
-        name = this.name;
-        if (($('#'+name+'-keyword').attr('disabled') != 'disabled' && this.store.enumset && !$('#'+name+'-info').hasClass('i-combo-info-multiple'))) {
-            $('#'+name+'-keyword').attr('readonly', 'readonly');
-            $('#'+name+'-keyword').addClass('readonly');
-        }
-    },
-
-    /**
-     * Function for hiding options list
-     *
-     * @param name
-     */
-    hideSuggestions: function() {
-        var name = this.name;
-
-        // Hide options
-        //$('#'+name+'-suggestions').hide();
-
-        // Hide info about count and found
-        //$('#'+name+'-info').hide();
-    },
-
-    /**
-     * Clear combo's keyword and value (hidden and visual)
-     *
-     * @param name
+     * Clear combo's keyword and value
      */
     clearCombo: function() {
-        var name = this.name;
+        var me = this;
+
         // Remove color-box
-        $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').remove();
+        if (me.colorBox) me.colorBox.remove();
 
         // Remove color
-        $('#'+name+'-keyword').css({color: ''});
+        me.keywordEl.setStyle({color: ''});
 
         // Erase keyword
-        $('#'+name+'-keyword').val('');
+        me.setRawValue('');
 
         // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
         // value will be cleared automatically
-        if ($('#'+name).parents('.i-combo-table').find('.i-combo-info').hasClass('i-combo-info-multiple')) {
-            $('#'+name).parents('.i-combo-table').find('.i-combo-selected-item-delete').click();
+        if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').click();
 
-            // Else combo is single, we set it's value to 0, if it's not boolean, or '' otherwise
-        } else {
-            $('#'+name).val($('#'+name).attr('boolean') != 'true' ? 0 : '');
-        }
+        // Else combo is single, we set it's value to 0, if it's not boolean, or '' otherwise
+        else me.hiddenEl.val(me.hiddenEl.attr('boolean') != 'true' ? 0 : '');
     },
 
     /**
      * Rebuild html of options list of combo data, apply some styles, props, attrs and events
-     *
-     * @param name
      */
     rebuildComboData: function() {
-        var name = this.name;
+        var me = this;
+
         // Set initial 'index' and 'selectedIndex' attribs values
-        if ($('#'+name+'-keyword').attr('selectedIndex') == undefined) {
-            $('#'+name+'-keyword').attr('selectedIndex', 0);
-        }
+        if (me.keywordEl.attr('selectedIndex') == undefined) me.keywordEl.attr('selectedIndex', 0);
 
         // Rebuild html for options
-        var html = this.suggestions(this.store);
-        this.getPicker().update(html);
+        var html = me.suggestions(me.store);
 
-        // Set height of options list div
-        this.adjustComboOptionsDivHeight();
+        // Update picker panel contents
+        me.getPicker().update(html);
 
-        // Adjust positioning
-        this.adjustComboOptionsDivPosition();
+        // If picker contents is not empty
+        if (html) {
 
-        // Set height of option height for all options
-        $('#'+name+'-suggestions li').css({height: this.store.optionHeight + 'px', overflow: 'hidden', 'vertical-align': 'top'});
-        $('#'+name+'-suggestions li:last-child').css({height: (this.store.optionHeight-1) + 'px', overflow: 'hidden', 'vertical-align': 'top'});
+            // Get default options height
+            var defaultHeight = parseInt(me.getPicker().el.select('li').first().getStyle('height'));
 
-        // Set special css class for options if optionHeight > 14
-        if (this.store.optionHeight > 14) $('#'+name+'-suggestions ul').addClass('tall');
-
-        // Set scrolling if number of options more than instance.visibleCount
-        $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > this.visibleCount ? 'scroll' : '');
-
-        // Bind a 'selected' class adding on hover
-        $('#'+name+'-suggestions').find('ul li[class!="disabled"]').hover(
-            function(){
-                $(this).parent().find('li').removeClass('selected');
-                $(this).addClass('selected');
-                var k = $(this).parent().find('li[class!="disabled"]').index(this);
-                $('#'+name+'-keyword').attr('selectedIndex', k+1);
+            // Set special css class for options if optionHeight > 14
+            if (me.store.optionHeight > defaultHeight) {
+                me.getPicker().el.select('li').css({height: me.store.optionHeight + 'px'});
+                me.getPicker().el.select('ul').first().addCls('i-combo-data-tall');
             }
-        );
 
-        // Bind a click event to each option
-        $('#'+name+'-suggestions ul li[class!="disabled"]').click(this.select);
+            // Bind 'hover' and 'click' event handlers for boundlist items
+            me.bindItemHoverClick();
+        }
+    },
+
+    // @inheritdoc
+    getPicker: function() {
+        var me = this;
+        if (!me.picker) {
+            me.picker = me.createPicker();
+            me.picker.doAutoRender();
+            me.rebuildComboData();
+            me.getPicker().hide();
+        }
+        return me.picker;
     },
 
     /**
      * Build options html
      *
      * @param json Source data for html building
-     * @param name Name of param, which value option will contain
      * @return {String} html-code for options list
      */
     suggestions: function(json){
-        var name = this.name;
-        var items = [];
-        var groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}};
-        var groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '';
-        var disabledCount = 0;
-        var color = {};
+        var me = this, name = me.name, items = [],
+        groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}},
+        groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '',
+        disabledCount = 0, color = {}, item;
 
+        // Foreach options groups
         for (var j in groups) {
             if (j != 'none') {
 
                 // Open <li>
-                var item = '<li class="disabled" group="true"';
+                item = '<li class="x-boundlist-item x-boundlist-item-group x-boundlist-item-disabled"';
 
                 // Apply css color, if it was passed within store. Currently this feature is used for
                 // cases then item title got from database was something like
@@ -440,21 +631,26 @@ Ext.define('Indi.combo.form', {
                 if (groups[j].system && groups[j].system['color'] && typeof groups[j].system['color'] == 'string')
                     item += ' style="color: ' + groups[j].system['color'] + ';"';
 
+                // Close <li>
                 item += '>';
 
-                // Detect color
-                color = this.color(groups[j], j);
+                // Detect and apply color to '<li>', and append '<li>' to 'items' array
+                color = me.color(groups[j], j);
                 item += color.box + color.title + '</li>';
                 items.push(item);
             }
-            for (var i = 0; i < json['ids'].length; i++) {
-                if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {
-                    // Classes for option
-                    var cls = [];
 
-                    // Open <li>
-                    var item = '<li';
-                    item += ' ' + name + '="' + json['ids'][i] + '"';
+            // Foreach data item
+            for (var i = 0; i < json['ids'].length; i++) {
+
+                // If data item is owner by current group
+                if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {
+
+                    // Classes for option
+                    var cls = ['x-boundlist-item'];
+
+                    // Open <li>, and append value attribute
+                    item = '<li' + ' ' + name + '="' + json['ids'][i] + '"';
 
                     // Additional attributes for option
                     if (json.attrs && json.attrs.length) {
@@ -463,23 +659,26 @@ Ext.define('Indi.combo.form', {
                         }
                     }
 
-                    // Mark as disabled
+                    // If data option is disabled
                     if (json['data'][i].system && json['data'][i].system['disabled']) {
-                        cls.push('disabled');
 
-                        // We are counting disabled options, to decrease json['ids'].length with
+                        // Append x-boundlist-item-disabled class to the css classes array
+                        cls.push('x-boundlist-item-disabled');
+
+                        // We are counting disabled options, to further valid calculations
                         disabledCount++;
                     }
 
                     // If one this option is selected
-                    if ($('#'+name).val() == json['ids'][i]) {
+                    if (me.hiddenEl.val() == json['ids'][i]) {
 
                         // We need to cover situation then we had two searches: at first search some element was
                         // selected and at next search same element is disabled, so while constructing html we
                         // shoud not mark disabled element as selected
-                        if (cls.indexOf('disabled') == -1) {
+                        if (cls.indexOf('x-boundlist-item-disabled') == -1) {
+
                             // Mark as selected
-                            cls.push('selected');
+                            cls.push('x-boundlist-item-over');
                         }
                     }
 
@@ -511,7 +710,7 @@ Ext.define('Indi.combo.form', {
                     if (json['data'][i].option) {
                         item += json['data'][i].option;
                     } else {
-                        var color = this.color(json['data'][i], json['ids'][i]);
+                        color = this.color(json['data'][i], json['ids'][i]);
                         item += color.box;
                         item += color.title;
                     }
@@ -519,64 +718,78 @@ Ext.define('Indi.combo.form', {
                     // Close <li> tag
                     item += '</li>';
 
+                    // Apend item to 'items' array
                     items.push(item);
                 }
             }
         }
 
-        // If optgroups is used and we are deaing with items tree, we should distibute items by optgroups,
+        // If optgroups are used and we are deaing with items tree, we should distibute items by optgroups,
         // but insert all parents for options, if these parents not in same groups as child options
-        if (json.optgroup != undefined && json.tree) items = this.appendNotSameGroupParents(items, json, name);
+        if (json.optgroup != undefined && json.tree) items = me.appendNotSameGroupParents(items, json);
 
         // Stat info
-        $('#'+name+'-count').removeClass('i-combo-count-visible').text(Indi.numberFormat(json['ids'].length - disabledCount));
-        $('#'+name+'-found').text(Indi.numberFormat(json['found']));
+        me.countEl.removeCls('i-combo-count-visible').update(Indi.numberFormat(json['ids'].length - disabledCount));
+        me.foundEl.update(Indi.numberFormat(json['found']));
 
+        // Check if all possible options are already exist in store
+        // and append/remove .i-combo-info-fetched-all class
         if (json['ids'].length - disabledCount == json['found']) {
-            $('#'+name+'-info').addClass('i-combo-info-fetched-all');
+            me.infoEl.addCls('i-combo-info-fetched-all');
         } else {
-            $('#'+name+'-info').removeClass('i-combo-info-fetched-all');
+            me.infoEl.removeCls('i-combo-info-fetched-all');
         }
 
         // Info should be displayed only if maximum possible results per page is less that total found results
         // or combo is running in 'keyword' mode
-        if (($('#'+name+'-info').attr('fetch-mode') == 'keyword' ||
-            parseInt($('#'+name+'-found').text().replace(',','')) > this.visibleCount) &&
-            $('#'+name+'-keyword').attr('disabled') != 'disabled') {
-            $('#'+name+'-info').css('visibility', 'visible');
+        if ((me.infoEl.attr('fetch-mode') == 'keyword' || parseInt(me.foundEl.getHTML().replace(',','')) > this.visibleCount)
+            && me.keywordEl.attr('disabled') != 'disabled') {
+            Ext.defer(function(){
+                me.infoEl.setStyle('visibility', 'visible');
+            }, 1);
         }
 
+        // Get the html blob
         var html = items.length ? '<ul>'+items.join("\n")+'</ul>' : '';
 
-        // We setup selectedIndex attribute
-        if ($(html).find('li').length) {
+        // Instantiate html blob as a new (uninserted) dom node
+        var dom = Ext.DomHelper.createDom({tag: 'ul', html: items.join("\n")});
 
-            // Get current selectedIndex, and if it is 0, calculate it
-            var currentSelectedIndex = parseInt($('#'+name+'-keyword').attr('selectedIndex'));
+        // Get the array of 'li' dom elements
+        var liA = Ext.query('li', dom);
+
+        // If options length is non-zero
+        if (liA.length) {
+
+            // Get current selectedIndex
+            var currentSelectedIndex = parseInt(me.keywordEl.attr('selectedIndex'));
+
+            // If current selectedIndex is 0, calculate and setup it
             if (currentSelectedIndex == 0) {
 
                 // We reset disabledCount here, because now, we should count all disabled html-items, not only json-items
                 // because now in options html there can be another disabled options, appeared as a result of using 'group'
-                // (mean 'optgroup') ability and as result of instance.appendNotSameGroupParents() function execution
+                // (mean 'optgroup') ability and as result of me.appendNotSameGroupParents() function execution
                 disabledCount = 0;
                 var selectedIndex = 0;
                 var selectedFound = false;
-                $(html).find('li').each(function(index, li){
-                    if ($(li).hasClass('selected')) {
+                liA.forEach(function(li, index){
+                    if (Ext.fly(li).hasCls('x-boundlist-item-over')) {
                         selectedIndex = index - disabledCount + 1;
                         selectedFound = true;
 
-                        // We increment disabledCount until selected value is found
-                    } else if (selectedFound == false && $(li).hasClass('disabled')) {
+                    // We increment disabledCount until selected value is found
+                    } else if (selectedFound == false && Ext.fly(li).hasCls('x-boundlist-item-disabled')) {
                         disabledCount++;
                     }
                 });
-                $('#'+name+'-keyword').attr('selectedIndex', selectedIndex);
+                me.keywordEl.attr('selectedIndex', selectedIndex);
             }
-        } else {
-            $('#'+name+'-keyword').attr('selectedIndex', 0);
-        }
 
+        // Else if options length is zero
+        } else me.keywordEl.attr('selectedIndex', 0);
+
+        // Return html blob
         return html;
     },
 
@@ -594,16 +807,21 @@ Ext.define('Indi.combo.form', {
         value = value || '';
 
         // Declare `info` object
-        var info = {title: data.title.trim(), color: '', src: '', box: '', css: {color: ''}}, color;
+        var info = {title: data.title ? data.title.trim() : '', color: '', src: '', box: '', css: {color: ''}}, color;
 
         // Check if `title` or `value` contain a color definition
         if (color = value.toString().match(this.colorReg)) {
             info.src = 'value';
         } else if (color = info.title.match(this.colorReg)) {
             info.src = 'title';
-        } else if (data.system && data.system['boxColor'] && typeof data.system['boxColor'] == 'string') {
-            info.src = 'boxColor';
-            var color = [true, data.system['boxColor']];
+        } else if (data.system) {
+            if (data.system['boxColor'] && typeof data.system['boxColor'] == 'string') {
+                info.src = 'boxColor';
+                color = [true, data.system['boxColor']];
+            } else if (data.system['color'] && typeof data.system['color'] == 'string') {
+                info.src = 'color';
+                color = [true, data.system['color']];
+            }
         }
 
         // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
@@ -613,35 +831,34 @@ Ext.define('Indi.combo.form', {
             info.color = color[1];
 
             // Build color box
-            info.box = '<span class="i-combo-color-box" style="background: ' + info.color + ';"></span> ';
+            if (info.src == 'boxColor') info.box = '<span class="i-combo-color-box" style="background: ' + info.color + ';"></span> ';
 
             // If color was got from title (means that title was in format hue#rrggbb), set title as same color
             // but without hue
             if (info.src == 'title') info.title = info.color;
-
         }
 
-        // Creates .i-combo-color-box element with if it doesn't yet exists, or updates it's background color
+        // Setup an internal 'apply' function that will create .i-combo-color-box element
+        // if it doesn't yet exists, or will update it's background color
         info.apply = function() {
-            var name= me.name;
-            if ($('#'+name+'-keyword').parents('.i-combo-single').length) {
-                if ($('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-span').length) {
-                    $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-span').css('background', info.color);
-                } else {
-                    $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-div').html(info.box);
-                    $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box-div').click(function(){
-                        $('#'+name+'-keyword').click();
-                    });
-                }
+
+            // If color was detected
+            if (this.color) {
+
+                // If color should be represented as a color box - setup/update box
+                if (this.src == 'boxColor') Ext.defer(function(){me.colorDiv.update(this.box)}, 1, this);
+
+                // Else is color should be represented as color of inner option contents - apply it
+                else Ext.defer(function(){me.keywordEl.css('color', this.color)}, 1, this);
+
+            // Else if there was no color detected in option data
             } else {
-                if ($('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').length) {
-                    $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').css('background', info.color);
-                } else {
-                    $(info.box).insertBefore('#'+name+'-keyword');
-                    $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').click(function(){
-                        $('#'+name+'-keyword').click();
-                    });
-                }
+
+                // Erase colorDiv element contents and erase css color inline declaration
+                Ext.defer(function(){
+                    me.colorDiv.update('')
+                    me.keywordEl.css('color', '');
+                }, 1, this);
             }
         }
 
@@ -657,20 +874,23 @@ Ext.define('Indi.combo.form', {
      * @param json
      * @return []
      */
-    appendNotSameGroupParents: function(items, json, name) {
+    appendNotSameGroupParents: function(items, json) {
+        var me = this, name = me.name;
+
         // Store info about parents that were aready added, to prevent adding them more that once
         var addedParents = [];
 
         // Html for seaching <li> of parent options
         var html = '<ul>' + items.join('') + '</ul>';
 
+        // Foreach element in 'items' array
         for (var i = 0; i < items.length; i++) {
 
             // If item is a option, not optgroup
-            if ($(items[i]).attr(name)) {
+            if (Indi.fly(items[i]).attr(name)) {
 
                 // Get some basic data about current option
-                var id = parseInt($(items[i]).attr(name));
+                var id = parseInt(Indi.fly(items[i]).attr(name));
                 var index = json['ids'].indexOf(id);
                 var group = json['data'][index].system.group;
                 var parentId = parseInt(json['data'][index].system.parentId);
@@ -692,8 +912,8 @@ Ext.define('Indi.combo.form', {
                         if (group != parentGroup && addedParents.indexOf(parentId) == -1) {
 
                             // Get html for parent option
-                            var parentOption = $(html).find('li['+name+'="'+parentId+'"]').
-                                addClass('disabled').removeClass('selected').wrap('<p>').parent().html();
+                            var parentOption = Indi.fly(html).select('li['+name+'="'+parentId+'"]').first().
+                                addCls('x-boundlist-item-disabled').removeCls('x-boundlist-item-over').dom.outerHTML;
 
                             // Insert parent in certain position within options
                             items.splice(i, 0, parentOption);
@@ -712,9 +932,6 @@ Ext.define('Indi.combo.form', {
         // After parents were found and used for insertion in not-same groups, there is a possibility
         // that some of them not more needed
 
-        // Html for seaching <li> of parent options
-        var html = '<ul>' + items.join('') + '</ul>';
-
         // Array for colecting needed options indexes
         var neededIndexes = [];
 
@@ -723,7 +940,7 @@ Ext.define('Indi.combo.form', {
         for (var i = 0; i < items.length; i++) {
 
             // We do this action only if it is a non-disabled option
-            if (!$(items[i]).hasClass('disabled')) {
+            if (!Indi.fly(items[i]).hasCls('x-boundlist-item-disabled')) {
 
                 // Collect needed ids
                 neededIndexes.push(i);
@@ -740,7 +957,11 @@ Ext.define('Indi.combo.form', {
                         }
                     }
                 }
-            } else if ($(items[i]).attr('group') == '') {
+
+            // Else if current item is not only disabled, but also is a group
+            } else if (Indi.fly(items[i]).hasCls('x-boundlist-item-group')) {
+
+                // Setup groupIndex variable value
                 groupIndex = i;
             }
         }
@@ -752,191 +973,180 @@ Ext.define('Indi.combo.form', {
                 neededItems.push(items[i]);
             }
         }
+
+        // Return
         return neededItems;
     },
 
     /**
-     * Adjust height of div, containing ul with options
-     * @param name
+     * Adjust .i-combo-table element width, so it will use all available space within selected item area,
+     * after each append of newly selected item to list of selected items or delete it from list
+     * Function is used only if combo is running in multiple-values mode
      */
-    adjustComboOptionsDivHeight: function() {
-        var name = this.name;
-        if ($('#'+name+'-suggestions ul li').length >= this.visibleCount) {
-            $('#'+name+'-suggestions').css('height', (this.visibleCount * this.store.optionHeight + 1) + 'px');
-        } else {
-            $('#'+name+'-suggestions').css('height', ($('#'+name+'-suggestions ul li').length * this.store.optionHeight + 1) + 'px');
-        }
-    },
-
-    /**
-     * Empty function here, but is redeclared in indi.proto.combo.filter, because
-     * at filters, options divs are appended to different dom nodes and different coordinates are applied
-     *
-     * @param name
-     */
-    adjustComboOptionsDivPosition: function() {
-
-    },
-
-    keywordSelector: function(){
-        return this.componentNameClass() + ' .i-combo-keyword';
-    },
-
-    componentNameClass: function(){
-        return '.i-' + this.xtype.replace('.', '-');
-    },
-
-    /**
-     * Adjust keyword input field after each append new selected item to list of selected items or delete it from list
-     * Function is used only if combo is running in multiple mode
-     *
-     * @param name
-     */
-    adjustKeywordFieldWidth: function() {
-        var name = this.name;
+    comboTableFit: function() {
+        var me = this;
 
         // We do not setup widths for single-value combos
-        if ($('#'+name+'-keyword').parents('.i-combo-single').length) return;
+        if (!me.multiSelect) return;
 
         // Define auxiliary variables
-        var comboEl, comboMultipleEl, decrease = 0;
+        var decrease = 0;
 
         // Here we do width adjust using a setTimeout, because there is some strange thing happens with the
         // results of comboEl.width() call. For some reason, outside the setTimeout body it gives result, that
         // differs from the same one, got inside. I guess it is caused by some browser rendering particularity
-        setTimeout(function(){
-            comboEl = $('#'+name+'-keyword').parents('.i-combo');
-            comboMultipleEl = comboEl.find('.i-combo-multiple');
-            decrease += parseInt(comboEl.css('padding-right')) + parseInt(comboEl.css('padding-left'));
-            decrease += parseInt(comboMultipleEl.css('margin-right')) + parseInt(comboMultipleEl.css('margin-left'));
-            decrease += parseInt(comboMultipleEl.css('padding-right')) + parseInt(comboMultipleEl.css('padding-left'));
-            if (comboMultipleEl.find('.i-combo-selected-item').length) {
-                var last = comboMultipleEl.find('.i-combo-selected-item').last();
-                decrease += last.position().left;
-                decrease += last.outerWidth();
+        Ext.defer(function(){
+            decrease = 0;
+            decrease += parseInt(me.comboEl.css('padding-right')) + parseInt(me.comboEl.css('padding-left'));
+            decrease += parseInt(me.multipleEl.css('margin-right')) + parseInt(me.multipleEl.css('margin-left'));
+            decrease += parseInt(me.multipleEl.css('padding-right')) + parseInt(me.multipleEl.css('padding-left'));
+            if (me.multipleEl.select('.i-combo-selected-item').getCount()) {
+                var last = me.multipleEl.select('.i-combo-selected-item').last();
+                decrease += last.getOffsetsTo(me.comboEl)[0];
+                decrease += last.getWidth();
             }
-            $('#'+name+'-keyword').parents('.i-combo-table').width(comboMultipleEl.width() - decrease);
-        }, 0);
+
+            me.tableEl.setWidth(me.multipleEl.getWidth(true) - decrease);
+            if (last && (last.getOffsetsTo(me.comboEl)[0] > me.keywordEl.getOffsetsTo(me.comboEl)[0])) {
+                me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1);
+            } else if (me.tableEl.getWidth() == me.multipleEl.getWidth(true)) {
+                me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1);
+            }
+        }, 10);
     },
 
     /**
-     * Bind handers for clicks on .i-combo-selected-item-delete items
-     * @param appended
+     * Handler for item deletion from the list of selected items
+     *
+     * @param evt
+     * @param dom
      */
-    bindDelete: function(appended){
-        var instance = this;
-        var scope = appended ? appended : $(instance.el.dom).find('.i-combo-selected-item-delete');
-        scope.click(function(){
-            // If combo is disabled, no selected item deletion should be performed
-            if (scope.parents('.i-combo').hasClass('i-combo-disabled')) return;
+    onItemDelete: function(evt, dom){
+        var me = this;
 
-            // Set up auxilary variabes
-            var name = $(this).parents('.i-combo').parent().find(instance.keywordSelector()).attr('lookup');
-            var selected = $('#'+name).val().split(',');
-            var deleted = $(this).parents('.i-combo-selected-item').attr('selected-id');
-            var index = selected.indexOf(deleted);
+        // If combo is disabled, no selected item deletion should be performed
+        if (me.disabled) return;
 
-            // Unset item from selected items array
-            selected.splice(index, 1);
+        // Get needed .i-combo-selected-item-delete element
+        var deleteEl = Ext.get(dom).hasCls('i-combo-keyword')
+            ? me.el.select('.i-combo-selected-item-delete').last()
+            : Ext.get(dom);
 
-            // Check if change() handler for current combo should not be fired. Currently there is a only one
-            // case there this feature is used - in case if current combo is multiple and have a satellite, which
-            // value has just changed, so current combo data will should be reloaded and currently selected options
-            // should be removed. Usually, .change() fires each time when .i-combo-selected-item-delete was clicked
-            // and if we clicked on several items with such class, .change() handler will be fired several times,
-            // not once - as we need in that situation. So noChange variable will prevent .change() handler firing.
-            // .change() handler will be fired, but only once, and separately from current (current - mean click
-            // handler for .i-combo-selected-item-delete items) handler
-            var noChange = $(this).attr('no-change') ? true : false;
+        // Get .i-combo-selected-item element, appropriate for .i-combo-selected-item-delete element,
+        // that was found bit ealier
+        var itemEl = deleteEl.up('.i-combo-selected-item');
 
-            // Remove visual representation of deleted item from combo
-            $(this).parents('.i-combo-selected-item').remove();
+        // Set up auxilary variables
+        var selected = me.hiddenEl.val().split(',');
+        var deleted = itemEl.attr('selected-id');
+        var index = selected.indexOf(deleted);
 
-            // Adjust width of keyword field
-            instance.adjustKeywordFieldWidth();
+        // Unset item from selected items array
+        selected.splice(index, 1);
 
-            // Remove attributes
-            if (instance.store.attrs && instance.store.attrs.length) {
-                for(var n = 0; n < instance.store.attrs.length; n++) {
-                    $('#'+name).removeAttr(instance.store.attrs[n]+'-'+deleted);
-                }
+        // Check if me.onHiddenChange() handler for current combo should not be fired. Currently there is a only one
+        // case there this feature is used - in case if current combo is multiple and have a satellite, which
+        // value has just changed, so current combo data will should be reloaded and currently selected options
+        // should be removed. Usually, me.onHiddenChange() fires each time when .i-combo-selected-item-delete was clicked
+        // and if we clicked on several items with such class, me.onHiddenChange() handler will be fired several times,
+        // not once - as we need in that situation. So noChange variable will prevent me.onHiddenChange() handler firing.
+        // me.onHiddenChange() handler will be fired, but only once, and separately from current (current - mean click
+        // handler for .i-combo-selected-item-delete items) handler
+        var noChange = deleteEl.attr('no-change') ? true : false;
+
+        // Remove visual representation of deleted item from combo
+        itemEl.remove();
+
+        // Adjust width of .i-combo-table element for it to fit all available space
+        me.comboTableFit();
+
+        // Remove attributes
+        if (me.store.attrs && me.store.attrs.length) {
+            for(var n = 0; n < me.store.attrs.length; n++) {
+                me.hiddenEl.removeAttr(me.store.attrs[n]+'-'+deleted);
             }
+        }
 
-            // Set the updated value and fire change event
-            $('#'+name).val(selected.join(','));
-            if (noChange == false) $('#'+name).change();
-        });
+        // Set the updated value and call 'onHiddenChange' function
+        me.hiddenEl.val(selected.join(','));
+        me.value = selected.join(',');
+        if (noChange == false) me.onHiddenChange();
     },
 
     /**
      * Do several thins after keyword was erased
      *
-     * @param name
+     * @param mode
      */
     keywordErased: function(mode) {
-        var name = this.name;
-
-        // Get input
-        var input = $('#'+name+'-keyword');
+        var me = this;
 
         // Correct value of 'prev' attr
-        input.attr('prev', input.val());
+        me.keywordEl.attr('prev', me.keywordEl.val());
 
         // Remove color
-        input.css({color: ''});
-
-        // Remove color-box
-        input.parents('.i-combo-table').find('.i-combo-color-box').remove();
+        me.keywordEl.css({color: ''});
 
         // We need to fire 'change' event only if combo is running in single-value mode.
         // In that mode no keyword = no value. But in multiple-value mode combo may have a
         // value without a keyword. Also, we fire change only if previous value was not 0
-        if($('#'+name+'-info').hasClass('i-combo-info-multiple') == false) {
+        if (!me.multiSelect) {
+
+            // Remove color-box
+            if (me.colorBox) me.colorBox.remove();
 
             // If we have a value
-            if ($('#'+name).val()) {
+            if (me.hiddenEl.val()) {
 
                 // If combo is used to represent a checkbox (boolean value)
-                if ($('#'+name).attr('boolean') == 'true') {
+                if (me.hiddenEl.attr('boolean') == 'true') {
 
                     // We set it's value to empty string and fire change handler
-                    $('#'+name).val('').change();
+                    me.hiddenEl.val('');
+                    me.onHiddenChange();
 
-                    // Else if is it non-boolean combo
+                // Else if is it non-boolean combo
                 } else {
 
                     // We set it's value to 0 and fire change handler
-                    $('#'+name).val(0).change();
+                    me.hiddenEl.val(0);
+                    me.onHiddenChange();
                 }
 
-                // Else if we have no value (empty string), but combo is boolean
-            } else if ($('#'+name).attr('boolean') == 'true') {
+            // Else if we have no value (empty string), but combo is boolean
+            } else if (me.hiddenEl.attr('boolean') == 'true') {
 
                 // We just fire change handler
-                $('#'+name).change();
+                me.onHiddenChange();
             }
         }
 
         // We restore combo state, that is had before first run of 'keyword' fetch mode
-        if (this.store.backup) {
-            $('#'+name+'-info')[0].outerHTML = this.store.backup.info;
-            $('#'+name+'-info').hide();
-            var restore = Indi.copy(this.store.backup.options);
-            this.store = {};
-            this.store = restore;
+        if (me.store.backup) {
+            me.infoEl.remove();
+            me.infoDiv.update(me.store.backup.info);
+            me.infoEl = me.infoDiv.first(me.renderSelectors.infoEl);
+            me.countEl = me.infoDiv.select(me.renderSelectors.countEl).first();
+            me.foundEl = me.infoDiv.select(me.renderSelectors.foundEl).first();
+            me.ofEl = me.infoDiv.select(me.renderSelectors.ofEl).first();
+            me.infoEl.hide();
+            var restore = Indi.copy(me.store.backup.options);
+            me.store = {};
+            me.store = restore;
         }
 
         // If user erases wrong keyword, remove 'i-combo-keyword-no-results' class and show options list, that was available
         // before first run of 'keyword' fetch mode
-        if (input.hasClass('i-combo-keyword-no-results')) input.removeClass('i-combo-keyword-no-results');
+        if (me.keywordEl.hasCls('i-combo-keyword-no-results')) me.keywordEl.removeCls('i-combo-keyword-no-results');
 
         // Rebuild combo and show it
         if (mode == 'only-erased-not-selected' && this.hideOptionsAfterKeywordErased == false) {
-            input.click();
+            me.expand();
+            Ext.defer(function(){me.keywordEl.focus();}, 10);
 
-            // Rebuild combo but do not show at this time
+        // Rebuild combo but do not show at this time
         } else if (mode == 'selected-but-found-with-lookup'){
-            this.rebuildComboData();
+            me.rebuildComboData();
         }
     },
 
@@ -946,44 +1156,41 @@ Ext.define('Indi.combo.form', {
      * @param event Used to get code of pressed key on keyboard
      */
     keyUpHandler: function (event){
-
-        // Get input element
-        var input = $(this);
-
-        // Get field name
-        var name = input.attr('lookup');
-
-        var instance = Ext.getCmp('tr-' + name);
+        var me = this;
 
         // We will be fetching results with a timeout, so fetch requests will be
         // sent after keyword typing is finished (or seems to be finished)
-        clearTimeout(instance.timeout);
+        clearTimeout(me.timeout);
 
         // Variable for detecting fetch mode. Fetch mode can be 'keyword' and 'no-keyword', and is 'no-keyword' by default
-        var fetchMode = $('#'+name+'-info').attr('fetch-mode');
+        var fetchMode = me.infoEl.attr('fetch-mode');
 
         // Setup variables for range of pages that's results are already fetched and displayed in combo as options
         // This variables will be used if current fetchMode is 'no-keyword', because for 'keyword' fetchMode will be
         // used different logic
-        var pageTop = parseInt($('#'+name+'-info').attr('page-top'));
-        var pageBtm = parseInt($('#'+name+'-info').attr('page-btm'));
+        var pageTop = parseInt(me.infoEl.attr('page-top'));
+        var pageBtm = parseInt(me.infoEl.attr('page-btm'));
 
         // Variable for detection if next|prev page of results should be fetched
-        var moreResultsNeeded = event.keyCode.toString().match(/^(34|33)$/) && $('#'+name+'-suggestions').attr('more') && $('#'+name+'-suggestions').attr('more').toString().match(/^(upper|lower)$/) ? $('#'+name+'-suggestions').attr('more') : false;
+        var moreResultsNeeded = event.keyCode.toString().match(/^(34|33)$/) && me.getPicker().el.attr('more') && me.getPicker().el.attr('more').toString().match(/^(upper|lower)$/) ? me.getPicker().el.attr('more') : false;
 
         // We are detecting the change of keyword value by using 'keyup' event, instead of 'input' event, because 'input'
         // is supported by not al browsers. But with 'keyup' event there is a small problem - if we will be inputting
         // too fast
-        var tooFastKeyUp = instance.store.lastTimeKeyUp && (new Date().getTime() - instance.store.lastTimeKeyUp < 200);
+        var tooFastKeyUp = me.store.lastTimeKeyUp && (new Date().getTime() - me.store.lastTimeKeyUp < 200);
+
+        // Here we explicitly set up 'prev' variable as empty string in case if 'prev' arrtibute of keyword element is null
+        // There was no need in such hack, because earlier this (combo) component was using jQuery instead of Ext
+        var prev = me.keywordEl.attr('prev') || '';
 
         // Variable for detection if keyword was changed and first page of related results should be fetched
-        var keywordChanged = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/));
+        var keywordChanged = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/) && !(Ext.EventObject.altKey || Ext.EventObject.ctrlKey || Ext.EventObject.shiftKey));
 
         // Check if keyword was emptied
-        var keywordChangedToEmpty = (($(this).attr('prev') != input.val() || tooFastKeyUp) && input.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/));
+        var keywordChangedToEmpty = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/) && !(Ext.EventObject.altKey || Ext.EventObject.ctrlKey || Ext.EventObject.shiftKey));
 
         // Renew lastTimeKeyUp
-        instance.store.lastTimeKeyUp = new Date().getTime();
+        me.store.lastTimeKeyUp = new Date().getTime();
 
         // If keyword was at least once changed, we switch fetch mode to 'keyword'.
         // We need to take it to attention, because PgUp fetching is impossible in case
@@ -991,31 +1198,30 @@ Ext.define('Indi.combo.form', {
         if (keywordChanged) {
 
             // Here we have a situation when we are going to run 'keyword' fetch mode at first time.
-            // At this moment we backup current instance.store object - we will need it if keyword
+            // At this moment we backup current me.store object - we will need it if keyword
             // will be changed to '' (empty string), and in this case it will be user-friendly to display last
             // available results got by 'no-keyword' fetch mode, and we will be able to restore them from backup
-            if ($('#'+name+'-info').attr('fetch-mode') == 'no-keyword') {
+            if (me.infoEl.attr('fetch-mode') == 'no-keyword') {
                 var backup = {
-                    options: Indi.copy(instance.store),
-                    info: $('#'+name+'-info')[0].outerHTML
+                    options: Indi.copy(me.store),
+                    info: me.infoEl.dom.outerHTML
                 };
-                instance.store.backup = backup;
+                me.store.backup = backup;
             }
 
             // Update fetch mode and remember the keyword for further changes detection
-            $('#'+name+'-info').attr('fetch-mode', 'keyword');
-            $('#'+name+'-info').attr('keyword', input.val());
+            me.infoEl.attr('fetch-mode', 'keyword');
+            me.infoEl.attr('keyword', me.keywordEl.val());
 
             // Temporary strip red color from input, as we do not know if there will be at least
             // one result related to specified keyword, and if no - keyword will be coloured in red
-            $('#'+name+'-keyword').removeClass('i-combo-keyword-no-results');
+            me.keywordEl.removeCls('i-combo-keyword-no-results');
 
             // Reset selected index
-            $('#'+name+'-keyword').attr('selectedIndex', 0);
+            me.keywordEl.attr('selectedIndex', 0);
 
             // Scroll options list to the most top
-            $('#'+name+'-suggestions').scrollTo('0px');
-
+            me.getPicker().body.scrollTo({x: 0, y: 0});
         }
 
         // We will fetch data only if keyword was changed or if next|prev page of results
@@ -1023,13 +1229,16 @@ Ext.define('Indi.combo.form', {
         if (keywordChanged || moreResultsNeeded) {
 
             // Get field satellite
-            var satellite = $('#'+name+'-info').attr('satellite');
+            var satellite = me.infoEl.attr('satellite');
+
+            // Get satellite as Ext combo object
+            var he = Ext.getCmp('tr-' + satellite);
 
             // Prepare data for fetch request
-            var data = {field: name};
+            var data = {};
 
             // Pass satellite value only if it was at east one time changed. Otherwise default satellite value will be used
-            if ($('#'+satellite+'-info').attr('changed') == 'true') data.satellite = $('#'+satellite).val();
+            if (he && he.infoEl.attr('changed') == 'true') data.satellite = he.hiddenEl.val();
 
             // If we are paging
             if (moreResultsNeeded) {
@@ -1039,99 +1248,100 @@ Ext.define('Indi.combo.form', {
 
                     // If keyword was at least once changed
                     if (fetchMode == 'keyword') {
-                        $('#'+data.field+'-keyword').attr('selectedIndex', 1);
-                        instance.keyDownHandler(33);
+                        me.keywordEl.attr('selectedIndex', 1);
+                        me.keyDownHandler(33);
                         return;
 
-                        // Else if we are still walking through pages of all (not filtered by keyword) results
+                    // Else if we are still walking through pages of all (not filtered by keyword) results
                     } else if (fetchMode == 'no-keyword') {
+
                         // If top border of range of displayed pages is not yet 1
                         // we will be requesting decremented page. Attribute 'page-top',
                         // there pageTop variable value was got, will be decremented
                         // later - after request will be done and results fetched
-                        if ($('#'+name+'-info').attr('page-top-reached') == 'false') {
+                        if (me.infoEl.attr('page-top-reached') == 'false') {
                             data.page = pageTop - 1;
 
-                            // Otherwise, if top border of range of displayed pages is already 1
-                            // so it is smallest possible value and therefore we won't do any request,
-                            // and we only should move selection to first option
+                        // Otherwise, if top border of range of displayed pages is already 1
+                        // so it is smallest possible value and therefore we won't do any request,
+                        // and we only should move selection to first option
                         } else {
 
-                            $('#'+data.field+'-keyword').attr('selectedIndex', 1);
-                            instance.keyDownHandler(33);
+                            me.keywordEl.attr('selectedIndex', 1);
+                            me.keyDownHandler(33);
                             return;
                         }
                     }
 
-                    // If next page needed
+                // If next page needed
                 } else if (event.keyCode == '34') {
 
                     // If keyword was at least once changed
                     if (fetchMode == 'keyword') {
-                        data.keyword = $('#'+name+'-info').attr('keyword');
+                        data.keyword = me.infoEl.attr('keyword');
                     }
 
                     // If requested page of results is out of range of already fetched options
                     // and bottom border of range of displayed pages is not already reached
-                    if ($('#'+name+'-info').attr('page-btm-reached') == 'false') {
+                    if (me.infoEl.attr('page-btm-reached') == 'false') {
                         data.page = pageBtm + 1;
 
-                        // Otherwise, if bottom border of range of displayed pages is already reached,
-                        // so it is biggest possible value for page number and therefore we won't do any request
+                    // Otherwise, if bottom border of range of displayed pages is already reached,
+                    // so it is biggest possible value for page number and therefore we won't do any request
                     } else {
-                        $('#'+data.field+'-keyword').attr('selectedIndex', $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size());
-                        instance.keyDownHandler(34);
+                        me.keywordEl.attr('selectedIndex', me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').getCount());
+                        me.keyDownHandler(34);
                         return;
                     }
                 }
                 data.more = moreResultsNeeded;
 
                 // Fetch request
-                instance.remoteFetch(data);
+                me.remoteFetch(data);
 
-                // If we are searching by keyword
+            // If we are searching by keyword
             } else if (event.keyCode != '33') {
 
                 // Setup request keyword
-                data.keyword = input.val();
+                data.keyword = me.keywordEl.val();
 
                 // Setup previous keyword
-                input.attr('prev', input.val());
+                me.keywordEl.attr('prev', me.keywordEl.val());
 
                 // Setup range borders as they were by default
-                $('#'+name+'-info').attr('page-top', '0');
-                $('#'+name+'-info').attr('page-btm', '0');
+                me.infoEl.attr('page-top', '0');
+                me.infoEl.attr('page-btm', '0');
 
                 // Here we check if all possible results are already fetched, and if so, we will use local fetch
                 // instead of remote fetch, so we will search keyword within currently loaded set of options. Such
                 // scheme is useful for situations then number of results is not too large, and all results ARE already
                 // collected (initially, by first combo load, and/or by additional hoarding while upper/lower pages fetching)
-                if (instance.store.backup &&
-                    instance.store.backup.options.data.length >= parseInt(instance.store.backup.options.found) &&
+                if (me.store.backup &&
+                    me.store.backup.options.data.length >= parseInt(me.store.backup.options.found) &&
                     data.keyword.length) {
-                    instance.localFetch(data);
+                    me.localFetch(data);
                 } else {
-                    instance.timeout = setTimeout(instance.remoteFetch, 500, data);
+                    me.timeout = Ext.defer(me.remoteFetch, 500, me, [data]);
                 }
             }
         }
 
         // If keyword was changed to empty we fire 'change' event. We do that for being sure
         // that dependent combos (combos that are satellited by current combo) are disabled. Also,
-        // after keyword was changed to empty, hidden value was set to 0, so we should call .change() anyway
+        // after keyword was changed to empty, hidden value was set to 0, so we should call me.onHiddenChange() anyway
         // Note: 'change' event firing is need only if combo is running in non-multiple mode.
         if (keywordChangedToEmpty) {
 
             // Hide options ist
-            instance.hideSuggestions();
+            me.collapse();
 
             // Do some things after keyword was erased
-            instance.keywordErased('only-erased-not-selected');
+            me.keywordErased('only-erased-not-selected');
         }
     },
 
     /**
-     * Converts a given string to version, representing this string as is it was types in a dirrerent keyboard
+     * Converts a given string to version, representing this string as is it was types in a different keyboard
      * layout
      *
      * @param string
@@ -1166,135 +1376,134 @@ Ext.define('Indi.combo.form', {
             converted += (j = en.indexOf(c)) != -1 ? ru[j] : ((j = ru.indexOf(c)) != -1 ? en[j] : c);
         }
 
+        // Return keyword value, converted to a different keyboard layout
         return converted;
     },
 
     /**
      * Set keyboard keys handling (Up, Down, PgUp, PgDn, Esc, Enter), related to visual appearance
      *
-     * @param eventOrName Used to get code of pressed key on keyboard in case if this is event object
-     * @param code Alternative way for getting code of pressed key on keyboard
+     * @param evt
      * @return {Boolean}
      */
-    keyDownHandler: function(eventOrCode, code){
-        // Setup code, name and input variables
-        var code, name, input, instance;
-        if (Ext.isNumeric(eventOrCode)) {
-            code = eventOrCode;
-            name = this.name;
-            input = $('#'+name+'-keyword');
-            instance = this;
-        } else {
-            code = eventOrCode.keyCode;
-            input = $(this);
-            name = input.attr('lookup');
-            instance = Ext.getCmp('tr-' + name);
-        }
+    keyDownHandler: function(evt){
+
+        // Setup 'code' and 'name' variables
+        var me = this, name = me.name, code = Ext.isNumeric(evt) ? evt : evt.keyCode;
 
         // Enter - select an option
-        if (code == '13') {
-            if ($('#'+name+'-suggestions').css('display') == 'block' || arguments[1]) instance.select();
+        if (code == Ext.EventObject.ENTER) {
+            if (me.isExpanded) me.onItemSelect();
             return false;
 
-            // Up or Down arrows
-        } else if (code == '40' || code == '38' || code == '34' || code == '33') {
-            if (code == '40' && $('#'+name+'-suggestions').css('display') == 'none' && !arguments[1]) {
+        // Up or Down arrows
+        } else if (code == Ext.EventObject.DOWN || code == Ext.EventObject.UP || code == Ext.EventObject.PAGE_DOWN || code == Ext.EventObject.PAGE_UP) {
 
-                // If no suggestions list yet builded, build it
-                if ($('#'+name+'-suggestions').html() == '') {
-                    $('#'+name+'-keyword').click();
+            // If Down key was pressed but picker is not shown
+            if (code == Ext.EventObject.DOWN && !me.isExpanded) {
 
-                    // Else show existing sugestions list
-                } else {
-                    $('#'+name+'-suggestions').show();
-                    if ($('#'+name+'-info').css('visibility') != 'hidden') $('#'+name+'-info').show();
-                }
-                instance.adjustKeywordFieldWidth();
+                // Call onTriggerClick, so picker contents will be rebuilded and shown
+                me.onTriggerClick();
 
+                // Adjust width of .i-combo-table element for it to fit all available space
+                me.comboTableFit();
+
+            // Else
             } else {
+
                 // Get items count for calculations
-                var size = $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size();
+                var size = me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').getCount();
 
                 // Down key
-                if (code == '40'){
-                    if (parseInt(input.attr('selectedIndex')) < size) {
-                        input.attr('selectedIndex', parseInt(input.attr('selectedIndex'))+1);
+                if (code == Ext.EventObject.DOWN){
+                    if (parseInt(me.keywordEl.attr('selectedIndex')) < size) {
+                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+1);
                     }
-                    // Up key
-                } else  if (code == '38'){
-                    if (parseInt(input.attr('selectedIndex')) > 1) {
-                        input.attr('selectedIndex', parseInt(input.attr('selectedIndex'))-1);
+
+                // Up key
+                } else  if (code == Ext.EventObject.UP){
+                    if (parseInt(me.keywordEl.attr('selectedIndex')) > 1) {
+                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-1);
                     }
-                    // PgDn key
-                } else if (code == '34') {
-                    if (parseInt(input.attr('selectedIndex')) < size - instance.visibleCount) {
-                        input.attr('selectedIndex', parseInt(input.attr('selectedIndex'))+instance.visibleCount);
-                        $('#'+name+'-suggestions').attr('more', '');
-                    } else if (parseInt(input.attr('selectedIndex')) <= size) {
-                        if (parseInt($('#'+name+'-count').text()) < parseInt($('#'+name+'-found').text().replace(',',''))){
-                            $('#'+name+'-suggestions').attr('more', 'lower');
+
+                // PgDn key
+                } else if (code == Ext.EventObject.PAGE_DOWN) {
+                    if (parseInt(me.keywordEl.attr('selectedIndex')) < size - me.visibleCount) {
+                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+me.visibleCount);
+                        me.getPicker().el.attr('more', '');
+                    } else if (parseInt(me.keywordEl.attr('selectedIndex')) <= size) {
+                        if (parseInt(me.countEl.getHTML()) < parseInt(me.foundEl.getHTML().replace(',',''))){
+                            me.getPicker().el.attr('more', 'lower');
                         } else {
-                            input.attr('selectedIndex', size);
-                            $('#'+name+'-suggestions').attr('more', '');
+                            me.keywordEl.attr('selectedIndex', size);
+                            me.getPicker().el.attr('more', '');
                         }
                     }
 
-                    // PgUp key
-                } else if (code == '33') {
-                    if (parseInt(input.attr('selectedIndex')) > instance.visibleCount) {
-                        input.attr('selectedIndex', parseInt(input.attr('selectedIndex'))-instance.visibleCount);
-                        $('#'+name+'-suggestions').attr('more', '');
+                    // Prevent page scrolldown, so picker contents will be scrolled instead of form panel contents
+                    if (evt.preventDefault) evt.preventDefault();
+
+                // PgUp key
+                } else if (code == Ext.EventObject.PAGE_UP) {
+                    if (parseInt(me.keywordEl.attr('selectedIndex')) > me.visibleCount) {
+                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-me.visibleCount);
+                        me.getPicker().el.attr('more', '');
                     } else {
-                        if (parseInt($('#'+name+'-count').text()) < parseInt($('#'+name+'-found').text().replace(',',''))/* && !$('#'+name+'-suggestions').attr('find') &&*/){
-                            $('#'+name+'-suggestions').attr('more', 'upper');
+                        if (parseInt(me.countEl.getHTML()) < parseInt(me.foundEl.getHTML().replace(',',''))){
+                            me.getPicker().el.attr('more', 'upper');
                         } else {
-                            input.attr('selectedIndex', 1);
-                            $('#'+name+'-suggestions').attr('more', '');
+                            me.keywordEl.attr('selectedIndex', 1);
+                            me.getPicker().el.attr('more', '');
                         }
                     }
+
+                    // Prevent page scrolldown, so picker contents will be scrolled instead of form panel contents
+                    if (evt.preventDefault) evt.preventDefault();
                 }
 
                 // Set up selected item, depending on what key was pressed, and deal scroll list of options if need
                 var disabledCount = 0;
-                $('#'+name+'-suggestions'+' ul li').each(function(liIndex){
-                    if ($(this).hasClass('disabled')) disabledCount++;
-                    if (!$(this).hasClass('disabled') && parseInt(input.attr('selectedIndex')) > 0 && liIndex == parseInt(input.attr('selectedIndex'))-1 + disabledCount) {
-                        $(this).addClass('selected');
-                        input.attr('selectedIndex', liIndex + 1 - disabledCount);
+
+                // Provide picker contents appropriate scrolling, depending on currently selected item
+                me.getPicker().el.select('.x-boundlist-item').each(function(el, c, liIndex){
+                    if (el.hasCls('x-boundlist-item-disabled')) disabledCount++;
+                    if (!el.hasCls('x-boundlist-item-disabled') && parseInt(me.keywordEl.attr('selectedIndex')) > 0 && liIndex == parseInt(me.keywordEl.attr('selectedIndex'))-1 + disabledCount) {
+                        el.addCls('x-boundlist-item-over');
+                        me.keywordEl.attr('selectedIndex', liIndex + 1 - disabledCount);
                         disabledCount = 0;
-                        var visibleS = $('#'+name+'-suggestions').scrollTop()/instance.store.optionHeight;
-                        var visibleE = visibleS + instance.visibleCount - 1;
+                        var visibleS = me.getPicker().body.getScroll().top/me.store.optionHeight;
+                        var visibleE = visibleS + me.visibleCount - 1;
                         var delta = 0;
                         if (liIndex > visibleE) {
-                            delta = (liIndex - visibleE) * instance.store.optionHeight;
+                            delta = (liIndex - visibleE) * me.store.optionHeight;
                         } else if (liIndex < visibleS) {
-                            delta = (liIndex - visibleS) * instance.store.optionHeight;
+                            delta = (liIndex - visibleS) * me.store.optionHeight;
                         }
                         var expr = (delta > 0 ? '+' : '-')+'='+Math.abs(delta)+'px';
-                        if (delta) $('#'+name+'-suggestions').scrollTo(expr);
+                        if (delta) me.getPicker().scrollBy({x: 0, y: delta});
                     } else {
-                        $(this).removeClass('selected');
+                        el.removeCls('x-boundlist-item-over');
                     }
                 });
 
-                // Set value while walking trough options list
-                var id = $('#'+name+'-suggestions'+' ul li.selected').attr(name);
+                // Get hidden value while walking trough options list
+                var selectedLi = me.getPicker().el.select('x-boundlist-item-over').first();
+                var id = selectedLi ? selectedLi.attr(name) : null;
 
                 // If we were running fetch in 'keyword' mode, but then switched to 'no-keyword' mode,
                 // There can be a situation that there will be no li.selected in options list, so we wrap
                 // following code with a condition of li.selected existence
-                if (id != undefined && $('#'+name+'-info').hasClass('i-combo-info-multiple') == false) {
-                    //$('#'+name).val(id);
+                if (id !== null && !me.multiSelect) {
 
-                    // Get the index of selected option id in instance.store.ids
-                    var index = instance.store.ids.indexOf(instance.store.enumset ? id : parseInt(id));
+                    // Get the index of selected option id in me.store.ids
+                    var index = me.store.ids.indexOf(me.store.enumset ? id : parseInt(id));
 
-                    // Find related title property in instance.store.data
-                    var title = instance.store.data[index].title.toString().trim();
+                    // Find related title property in me.store.data
+                    var title = me.store.data[index].title.toString().trim();
 
                     // Setup color box if needed
-                    var color = instance.color(instance.store.data[index], instance.store.ids[index]);
-                    color.apply();
+                    var color = me.color(me.store.data[index], me.store.ids[index]);
+                        color.apply();
 
                     // Apply css color, if it was passed within store. Currently this feature is used for
                     // cases then item title got from database was something like
@@ -1302,67 +1511,68 @@ Ext.define('Indi.combo.form', {
                     // combo data, strips that html from option, but detect defined color and
                     // store it in ...['data'][i].system['color'] property
                     var css = {color: ''};
-                    if (instance.store.data[index].system && instance.store.data[index].system['color']
-                        && typeof instance.store.data[index].system['color'] == 'string')
-                        css.color = instance.store.data[index].system['color'];
-                    $('#'+name+'-keyword').css(css);
+                    if (me.store.data[index].system && me.store.data[index].system['color']
+                        && typeof me.store.data[index].system['color'] == 'string')
+                        css.color = me.store.data[index].system['color'];
+                    me.keywordEl.css(css);
 
-                    // Adjust keyword field width
-                    instance.adjustKeywordFieldWidth();
-
-                    // Adjust combo options div position
-                    instance.adjustComboOptionsDivPosition();
+                    // Adjust width of .i-combo-table element for it to fit all available space
+                    me.comboTableFit();
 
                     // Set keyword text
-                    $('#'+name+'-keyword').val(color.title);
-                    $('#'+name+'-keyword').attr('prev', color.title);
+                    me.keywordEl.val(color.title);
+                    me.keywordEl.attr('prev', color.title);
                 }
             }
             return false;
 
-            // Esc key or Tab key
-        } else if (code == '27' || code == '9') {
+        // Esc key or Tab key
+        } else if (code == Ext.EventObject.ESC || code == Ext.EventObject.TAB) {
 
             // If there is no currently selected option, we just hide suggestions list,
             // Else if there is - we select it by the same way as it would clicked
-            if (instance.select() === false) instance.hideSuggestions();
+            if (me.onItemSelect() === false) me.collapse();
 
-            // Other keys
+        // Other keys
         } else {
+
             // If combo is multiple
-            if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
+            if (me.multiSelect) {
 
                 // If Delete or Backspace is pressed and current keyword value is '' - we should delete last selected
                 // value from list of selected values. We will do it by firing 'click' event on .i-combo-selected-item-delete
                 // because this element has a handler for that event, and that handler will perform all necessary operations
-                if ((code == '8' || code == '46') && !$('#'+name+'-keyword').val()) {
-                    $('#'+name).parents('.i-combo-multiple').find('.i-combo-selected-item').last().find('.i-combo-selected-item-delete').click();
+                if ((code == Ext.EventObject.BACKSPACE || code == Ext.EventObject.DELETE) && !me.keywordEl.val()) {
 
-                    if (instance.hideOptionsAfterKeywordErased) instance.hideSuggestions();
+                    // Remove last selected item
+                    if (me.el.select('.i-combo-selected-item-delete').last())
+                        me.el.select('.i-combo-selected-item-delete').last().dom.click();
 
-                    // Otherwise, is any other key was pressed and no-lookup is true then ignore that key
-                } else if ($('#'+name+'-keyword').attr('no-lookup') == 'true') {
+                    // Hide picker
+                    if (me.hideOptionsAfterKeywordErased) me.collapse();
+
+                // Otherwise, is any other key was pressed and no-lookup is true then ignore that key
+                } else if (me.keywordEl.attr('no-lookup') == 'true') {
                     return false;
                 }
 
-                // If combo is not multiple
+            // If combo is not multiple
             } else {
 
                 // We provide necessary operations if combo is running with no-lookup option
-                if ($('#'+name+'-keyword').attr('no-lookup') == 'true') {
+                if (me.keywordEl.attr('no-lookup') == 'true') {
 
                     // If Backspace or Del key is pressed, we should set current value as 0 and set keyword to '',
-                    // but only if instance.store.enumset == false, because there can be only one case then
-                    // both "instance.store.enumset == true" and "multiple" are used - combo field is dealing
+                    // but only if me.store.enumset == false, because there can be only one case then
+                    // both "me.store.enumset == true" and "multiple" are used - combo field is dealing
                     // with ENUM database table column type and within that type no empty or zero values allowed,
                     // except empty or zero value is in the list of ENUM values, specified in the process of column
                     // declaration
-                    if ((code == '8' || code == '46') && (!instance.store.enumset || $('#'+name+'-keyword').parents('.i-combo').hasClass('i-combo-filter'))){
-                        instance.clearCombo();
-                        // If any other key was pressed, there should be no reaction
-                    } else {
-                        return false;
-                    }
+                    if ((code == Ext.EventObject.BACKSPACE || code == Ext.EventObject.DELETE) && (!me.store.enumset || me.comboEl.hasCls('i-combo-filter'))){
+                        me.clearCombo();
+
+                    // If any other key was pressed, there should be no reaction
+                    } else return false;
                 }
             }
         }
@@ -1371,35 +1581,31 @@ Ext.define('Indi.combo.form', {
     /**
      * Perform some additional things after option was selected
      *
-     * @param name
      * @param li
      */
     postSelect: function(li) {
-        var name = this.name;
-
-        // Detect multiple mode
-        var multiple = $('#'+name+'-info').hasClass('i-combo-info-multiple');
+        var me = this, name = me.name;
 
         // Apply selected option additional attributes to a hidden input,
         // so attributes and their values to be accessible within hidden input context
-        if (this.store.attrs && this.store.attrs.length) {
-            for(var n = 0; n < this.store.attrs.length; n++) {
+        if (me.store.attrs && me.store.attrs.length) {
+            for(var n = 0; n < me.store.attrs.length; n++) {
 
                 // If combo is running in multiple mode, we add a postfix to attribute names, for making a posibillity
                 // of picking up attributes, related to each separate selected value from the whole list of selected values
-                if (multiple) {
-                    $('#'+name).attr(this.store.attrs[n]+'-'+li.attr(name), li.attr(this.store.attrs[n]));
+                if (me.multiSelect) {
+                    me.hiddenEl.attr(this.store.attrs[n]+'-'+li.attr(name), li.attr(me.store.attrs[n]));
                 } else {
-                    $('#'+name).attr(this.store.attrs[n], li.attr(this.store.attrs[n]));
+                    me.hiddenEl.attr(this.store.attrs[n], li.attr(me.store.attrs[n]));
                 }
             }
         }
 
-        // Adjust keyword filed width
-        this.adjustKeywordFieldWidth(name);
+        // Adjust width of .i-combo-table element for it to fit all available space
+        me.comboTableFit();
 
         // Fire 'change' event
-        $('#'+name).change();
+        me.onHiddenChange();
 
         // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
         // We will need this fact in request data prepare process, because if at the moment of sending
@@ -1407,124 +1613,130 @@ Ext.define('Indi.combo.form', {
         // request data object. We need this to get upper and lower page results fetched from currently selected
         // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
         // have start point different to selected value, and based on most top alphabetic order.
-        $('#'+name+'-info').attr('changed', 'true');
+        me.infoEl.attr('changed', 'true');
     },
 
     /**
      * Set some option as selected, autosets value for hidden field
      */
-    select: function (){
-        var name, li, index, title, color, css = {color: ''};
+    onItemSelect: function (e, dom) {
+        var li, index, color, css = {color: ''}, me = this, name = me.name;
 
         if (arguments.length == 0) {
-            name = this.name;
-            li = $('#'+name+'-suggestions ul li.selected');
-            if (li.length == 0) return false;
+            li = me.getPicker().el.select('.x-boundlist-item.x-boundlist-item-over').first();
+            if (!li) return false;
         } else {
-            name = $(this).parents('.i-combo-data').attr('id').replace('-suggestions', '');
-            li = $(this);
+            li = Ext.get(dom);
         }
 
-        var instance = Ext.getCmp('tr-' + name);
-
-        // Get the index of selected option id in instance.store.ids
-        if (instance.store.enumset) {
+        // Get the index of selected option id in me.store.ids
+        if (me.store.enumset) {
             if (!li.attr(name).toString().match(/^[0-9]+$/)) {
-                index = instance.store.ids.indexOf(li.attr(name));
+                index = me.store.ids.indexOf(li.attr(name));
             } else {
-                index = instance.store.ids.indexOf(parseInt(li.attr(name)));
+                index = me.store.ids.indexOf(parseInt(li.attr(name)));
             }
         } else {
-            index = instance.store.ids.indexOf(parseInt(li.attr(name)));
+            index = me.store.ids.indexOf(parseInt(li.attr(name)));
         }
-
-        // Find related title property in instance.store.data
-        title = instance.store.data[index].title;
 
         // Apply css color, if it was passed within store. Currently this feature is used for
         // cases then item title got from database was something like
         // <span style="color: red">Some title</span>. At such cases, php code which is preparing
         // combo data, strips that html from option, but detect defined color and
         // store it in ...['data'][i].system['color'] property
-        if (instance.store.data[index].system && instance.store.data[index].system['color']
-            && typeof instance.store.data[index].system['color'] == 'string')
-            css.color = instance.store.data[index].system['color'];
+        if (me.store.data[index].system && me.store.data[index].system['color']
+            && typeof me.store.data[index].system['color'] == 'string')
+            css.color = me.store.data[index].system['color'];
 
         // Detect if colorbox should be applied
-        var color = instance.color(instance.store.data[index], li.attr(name));
+        color = me.color(me.store.data[index], li.attr(name));
 
         // If combo is in multiple-value mode
-        if ($('#'+name+'-info').hasClass('i-combo-info-multiple')) {
-            var selected = $('#'+name).val() ? $('#'+name).val().split(',') : [];
+        if (me.multiSelect) {
+
+            // Get array of selected items keys
+            var selected = me.hiddenEl.val() ? me.hiddenEl.val().split(',') : [];
 
             // If option, that is going to be added to selected list, is not already exists there
             if (selected.indexOf(li.attr(name)) == -1) {
 
-                // Create visual representation and append it to existing
-                $('<span class="i-combo-selected-item" selected-id="'+li.attr(name)+'">'+
-                    color.box +
-                    color.title +
+                // Set the width of .i-combo-table element to 1px, to prevent combo label jumping for cases if
+                // adding the new item leads to height-increase of an area, that contains all currently selected
+                // items
+                me.tableEl.setWidth(1);
+
+                // Append new selected item after the last existing selected item
+                Ext.DomHelper.insertHtml('beforeBegin', me.wrapperEl.dom,
+                '<span class="i-combo-selected-item" selected-id="'+li.attr(name)+'">'+
+                    color.box + color.title +
                     '<span class="i-combo-selected-item-delete"></span>' +
-                    '</span>')
-                    .css(css).insertBefore('#'+name+'-table-wrapper');
-                instance.bindDelete($('#'+name+'-info').parents('.i-combo-multiple').find('.i-combo-selected-item').last().find('.i-combo-selected-item-delete'));
+                '</span>');
+
+                // Get that newly inserted selected item as an already appended dom node
+                var a = me.el.select('.i-combo-selected-item[selected-id="' + li.attr(name) +'"]').last();
+
+                // Apply color
+                a.css(css);
+
+                // Bind a click event handler for a .i-combo-selected-item-delete
+                // child node within newly appended item
+                me.el.select('.i-combo-selected-item-delete').last().on('click', me.onItemDelete, me);
 
                 // Determine way of how to deal with .i-combo-data (rebuild|rebuild-and-show|no-rebuild)
-                var mode = $('#'+name+'-keyword').val() ? 'selected-but-found-with-lookup' : '';
+                var mode = me.keywordEl.val() ? 'selected-but-found-with-lookup' : '';
 
                 // Reset keyword field and it's 'prev' attr, append just selected value to already selected and
                 // adjust keyword field width
-                $('#'+name+'-keyword').val('');
-                $('#'+name+'-keyword').attr('prev', '');
+                me.keywordEl.val('');
+                me.keywordEl.attr('prev', '');
                 selected.push(li.attr(name));
-                $('#'+name).val(selected.length > 1 ? selected.join(',') : selected[0]);
+                me.hiddenEl.val(selected.length > 1 ? selected.join(',') : selected[0]);
 
-                // Hide options
+                // Hide options, is ctrlKey was not pressed
                 var e = window.event || (typeof arguments[0] == 'object' ? arguments[0] : null);
-                if ((e && !(e.metaKey || e.ctrlKey)) || !e) instance.hideSuggestions();
+                if ((e && !(e.metaKey || e.ctrlKey)) || !e) me.collapse();
 
                 // Restore list of options
-                instance.keywordErased(mode);
+                me.keywordErased(mode);
 
                 // Execute javascript-code, assigned to selected item
-                if (instance.store.enumset) {
-                    var index = instance.store['ids'].indexOf(li.attr(name));
-                    if (index != -1 && instance.store['data'][index].system.js) {
-                        eval(instance.store['data'][index].system.js);
+                if (me.store.enumset) {
+                    var index = me.store['ids'].indexOf(li.attr(name));
+                    if (index != -1 && me.store['data'][index].system.js) {
+                        eval(me.store['data'][index].system.js);
                     }
                 }
 
                 // Additional operations, that should be done after some option was selected
-                instance.postSelect(li);
+                me.postSelect(li);
 
-                // Indicate that option can't be once more selected because it's already selected
+            // Indicate that option can't be once more selected because it's already selected
             } else {
-                var existing = $('#'+name+'-info').parents('.i-combo-multiple').find('.i-combo-selected-item[selected-id="'+li.attr(name)+'"] .i-combo-selected-item-delete');
-                existing.fadeTo('fast', 0.2);
-                existing.fadeTo(0, 1);
+                var existing = me.el.select('.i-combo-selected-item[selected-id="'+li.attr(name)+'"] .i-combo-selected-item-delete').first();
+                if (existing) existing.fadeOut({opacity: 0.25, duration: 200}).fadeIn();
             }
 
-            // Else if combo is running in single-value mode
+        // Else if combo is running in single-value mode
         } else {
 
             // Apply selected color
             color.apply(name);
 
             // Apply color got from store, or unset css color property, if no color
-            $('#'+name+'-keyword').css(css);
+            me.keywordEl.setStyle(css);
 
             // Set keyword text
-            $('#'+name+'-keyword').val(color.title);
-            $('#'+name+'-keyword').attr('prev', color.title);
+            me.keywordEl.val(color.title).attr('prev', color.title);
 
             // Update field value
-            $('#'+name).val(li.attr(name));
+            me.hiddenEl.val(li.attr(name));
 
             // Hide options
-            instance.hideSuggestions(name);
+            me.collapse();
 
             // Additional operations, that should be done after some option was selected
-            instance.postSelect(name, li);
+            me.postSelect(li);
         }
     },
 
@@ -1532,72 +1744,69 @@ Ext.define('Indi.combo.form', {
      * Function that will be called after combo value change. Contain auxiliary operations such as
      * dependent-combos reloading, javascript execution and others
      */
-    changeHandler: function() {
-        // Get name of the combo
-        var name = $(this).attr('id');
-        var instance = Ext.getCmp('tr-' + name);
+    onHiddenChange: function() {
+        var me = this, name = me.name, sComboName, sCombo;
+
         // Remove attributes from hidden field, if it's value became 0. We do it here only for single-value combos
         // because multiple-value combos have different way of how-and-when the same aim should be reached -
-        // attributes deletion for multiple-value combos is implemented in instance.bindDelete() function of this script
-        if ($('#'+name+'-info').hasClass('i-combo-info-multiple') == false && $('#'+name).val() == '0') {
-            if (instance.store.attrs && instance.store.attrs.length) {
-                for(var n = 0; n < instance.store.attrs.length; n++) {
-                    $('#'+name).removeAttr(instance.store.attrs[n]);
+        // attributes deletion for multiple-value combos is implemented in me.bindDelete() function of this script
+        if (!me.multiSelect && me.hiddenEl.val() == '0') {
+            if (me.store.attrs && me.store.attrs.length) {
+                for (var n = 0; n < me.store.attrs.length; n++) {
+                    me.hiddenEl.removeAttr(me.store.attrs[n]);
                 }
             }
 
             // Also we remove a .i-combo-color-box element, related to previously selected option
-            if ($('#'+name+'-keyword').val() == '#' || $('#'+name+'-keyword').val() == '')
-                $('#'+name+'-keyword').parents('.i-combo-table').find('.i-combo-color-box').remove();
+            if (me.keywordEl.val() == '#' || me.keywordEl.val() == '') me.colorDiv.update('');
         }
-        // If current combo is a satelite for one or more other combos, we should refres data in that other combos
-        $('.i-combo-info[satellite="'+name+'"]').each(function(){
-            var satellited = $(this).parents('.i-combo').parent().find(instance.keywordSelector()).attr('lookup');
-            Ext.getCmp('tr-' +satellited).setDisabled();
-            /// instance.setDisabled(satellited);
-            if ($(this).parents('.i-combo').hasClass('i-combo-disabled') == false) {
+
+        // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
+        me.el.up('div[id^=form]').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
+            sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
+            sCombo = Ext.getCmp('tr-' + sComboName);
+            //sCombo.setDisabled();
+            //if (!sCombo.disabled) {
 
                 // Here we are emptying the satellited combo selected values, either hidden and visible
                 // because if we would do it in afterFetchAdjustmetns, there would be a delay until fetch
                 // request would be completed
-                if ($('#'+satellited+'-info').hasClass('i-combo-info-multiple')) {
-
-                    $('#'+satellited+'-keyword')
-                        .parents('.i-combo-multiple')
-                        .find('.i-combo-selected-item-delete')
-                        .attr('no-change', 'true')
-                        .click();
-
-                    $('#'+satellited).val('');
+                if (sCombo.multiSelect) {
+                    sCombo.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
+                    sCombo.hiddenEl.val('');
                 } else {
-                    $('#'+satellited).val(0);
+                    sCombo.hiddenEl.val(0);
                 }
 
-                Ext.getCmp('tr-' +satellited).remoteFetch({
-                    field: satellited,
-                    satellite: $('#'+$(this).attr('satellite')).val(),
+                sCombo.keywordEl.val('');
+                sCombo.remoteFetch({
+                    satellite: me.hiddenEl.val(),
                     mode: 'refresh-children'
                 });
-            }
+            //}
         });
 
         // Execute javascript code, if it was assigned to selected option. The additional clause for execution
         // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
         // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
-        // know about the fact of new item was added, it also could be removed, because .change() (if combo is
+        // know about the fact of new item was added, it also could be removed, because me.onHiddenChange() (if combo is
         // running in multiple-value mode) if firing in both cases. So, for the aim of selected item assigned javascript
-        // execution to be reached, we need this execution to be provided at instance.select() function of this script
-        if (instance.store.enumset && $('#'+name+'-info').hasClass('i-combo-info-multiple') == false) {
-            var index = instance.store['ids'].indexOf($(this).val());
-            if (index != -1 && instance.store['data'][index].system.js) {
-                eval(instance.store['data'][index].system.js);
+        // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
+        if (me.store.enumset && !me.multiSelect) {
+            var index = me.store['ids'].indexOf(me.hiddenEl.val());
+            if (index != -1 && me.store['data'][index].system.js) {
+                eval(me.store['data'][index].system.js);
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (instance.store.js) {
-            eval(instance.store.js);
-        }
+        if (me.store.js) eval(me.store.js);
+
+        // Call superclass setValue method to provide 'change' event firing
+        me.superclass.setValue.call(this, me.hiddenEl.val());
+
+        // If combo is running in multiple-values mode is rendered - empty keyword input element
+        if (me.multiSelect && me.keywordEl) me.keywordEl.dom.value = Ext.emptyString;
     },
 
     /**
@@ -1607,148 +1816,152 @@ Ext.define('Indi.combo.form', {
      * @param responseData
      */
     afterFetchAdjustments: function(requestData, responseData) {
-        var instance = this;
-
-        // Get name of field
-        var name = requestData.field;
+        var me = this;
 
         // Remove more attribute
-        $('#'+name+'-suggestions').removeAttr('more');
+        me.getPicker().el.removeAttr('more');
 
         // Rebuild options list
-        var html = instance.suggestions(instance.store);
+        var html = me.suggestions(me.store);
 
-        instance.getPicker().update(html);
-
-        // Set scrolling if number of options more than instance.visibleCount
-        $('#'+name+'-suggestions').css('overflow-y', $('#'+name+'-suggestions ul li').length > instance.visibleCount ? 'scroll' : '');
-
-        // Adjust options div height
-        instance.adjustComboOptionsDivHeight();
+        // Update picker contents
+        me.getPicker().update(html);
 
         // If at least one result was found
         if (responseData['found']) {
 
             // We get json['found'] value only in case if we are running 'keyword' fetch mode,
-            // and in json is stored first portion of results and this mean that paging up shoud be disabled
-            $('#'+name+'-info').attr('page-top-reached', 'true');
+            // and in json is stored first portion of results and this mean that paging up should be disabled
+            me.infoEl.attr('page-top-reached', 'true');
 
             // Also, we should renew 'page-btm-reached' attribute value
-            if (responseData['found'] <= instance.visibleCount) {
-                $('#'+name+'-info').attr('page-btm-reached', 'true');
-            } else {
-                $('#'+name+'-info').attr('page-btm-reached', 'false');
-            }
+            me.infoEl.attr('page-btm-reached', responseData['found'] <= me.visibleCount ? 'true' : 'false');
         }
 
-        // Bind handlers for hover and click events for each option
-        $('#'+name+'-suggestions'+' ul li[class!="disabled"]').hover(
-            function(){
-                $(this).parent().find('li').removeClass('selected');
-                $(this).addClass('selected');
-                var k = $(this).parent().find('li[class!="disabled"]').index(this);
-                $('#'+name+'-keyword').attr('selectedIndex', k+1);
-            }
-        );
-        $('#'+name+'-suggestions'+' ul li[class!="disabled"]').click(instance.select);
+        // Bind 'hover' and 'click' event handlers for boundlist items
+        me.bindItemHoverClick();
 
         // If results set is not empty
-        if ($(html).find('li[class!="disabled"]').length) {
+        if (me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').getCount()) {
 
             // Show options list after keyword typing is finished
-            if ($('#'+name+'-suggestions').css('display') == 'none') {
+            if (me.isExpanded) {
 
                 // If we selected some option in satellite and current results are
                 // results for satellited field, we do not expand them at this time.
                 // We just remove 'no-results-within' class from satellited field
                 // keyword and set keyword to empty string
                 if (requestData.mode == 'refresh-children') {
-                    $('#'+name+'-keyword').removeClass('no-results-within').val('');
-                    $('#'+name).change();
-
-                    // Show results
-                } else {
-                    $('#'+name+'-keyword').click();
+                    me.keywordEl.removeCls('no-results-within').val('');
+                    me.onHiddenChange();
                 }
+
+            // Show results
+            } else if (requestData.mode != 'refresh-children') {
+                me.keywordEl.dom.click();
             }
+
+            // Enable combo if children were found
+            if (requestData.mode == 'refresh-children') me.setDisabled(false);
 
             // Options selected adjustments
             if (requestData.more && requestData.more.toString().match(/^(upper|lower)$/)) {
 
                 // If these was no more results
-                if (responseData.ids['length'] <= instance.visibleCount) {
+                if (responseData.ids['length'] <= me.visibleCount) {
 
                     // We mark that top|bottom range is reached
-                    if (responseData.ids['length'] < instance.visibleCount)
-                        $('#'+name+'-info').attr('page-'+(requestData.more == 'upper' ? 'top' : 'btm')+'-reached', 'true');
+                    if (responseData.ids['length'] < me.visibleCount)
+                        me.infoEl.attr('page-'+(requestData.more == 'upper' ? 'top' : 'btm')+'-reached', 'true');
 
                     // Move selectedIndex at the most top
                     if (requestData.more == 'upper') {
-                        $('#'+name+'-keyword').attr('selectedIndex', 1);
+                        me.keywordEl.attr('selectedIndex', 1);
 
                         // Move selectedIndex at the most bottom
-                    } else if (requestData.more == 'lower' && responseData.ids['length'] < instance.visibleCount) {
-                        $('#'+name+'-keyword').attr('selectedIndex', $('#'+name+'-suggestions'+' ul li[class!="disabled"]').size());
+                    } else if (requestData.more == 'lower' && responseData.ids['length'] < me.visibleCount) {
+                        me.keywordEl.attr('selectedIndex', me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').getCount());
                     }
                 }
 
+                // If the aim of the latest user request was to fetch upper page of results
                 if (requestData.more.toString() == 'upper') {
-                    instance.store.fetchedByPageUps = instance.store.fetchedByPageUps || 0;
-                    instance.store.fetchedByPageUps += responseData.data.length;
 
+                    // Setup and increase the number of data items, fetched by page ups
+                    me.store.fetchedByPageUps = me.store.fetchedByPageUps || 0;
+                    me.store.fetchedByPageUps += responseData.data.length;
+
+                    // Decreate the number of data items, fetched by page ups, by count
+                    // of disabled data items, found in responseData
                     for (var i = 0; i < responseData.data.length; i++)
                         if (responseData['data'][i].system && responseData['data'][i].system['disabled'])
-                            instance.store.fetchedByPageUps--;
+                            me.store.fetchedByPageUps--;
                 }
 
                 // Adjust selection based on selectedIndex
-                instance.keyDownHandler(requestData.more == 'upper' ? 33 : 34);
+                me.keyDownHandler(requestData.more == 'upper' ? 33 : 34);
 
                 // Update page-top|page-btm value
-                $('#'+name+'-info').attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
+                me.infoEl.attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
             }
 
             // Increase combo width, if needed
             var prevMaxLength, backup;
-            if (instance.store.backup
-                && instance.store.backup.options
-                && instance.store.backup.options.titleMaxLength) {
-                prevMaxLength = instance.store.backup.options.titleMaxLength;
+            if (me.store.backup
+                && me.store.backup.options
+                && me.store.backup.options.titleMaxLength) {
+                prevMaxLength = me.store.backup.options.titleMaxLength;
                 backup = true;
             } else {
-                prevMaxLength = instance.store.titleMaxLength;
+                prevMaxLength = me.store.titleMaxLength;
                 backup = false;
             }
 
+            // If value of 'titleMaxLength' property of responseData object is greater than prevMaxLength variable
             if (responseData.titleMaxLength > prevMaxLength) {
-                var increasedMarginLeft = instance.increaseWidthBy(Math.round(
+                var increasedMarginLeft = me.increaseWidthBy(Math.round(
                     (responseData.titleMaxLength - prevMaxLength) *
-                        instance.averageTitleCharWidth
+                        me.averageTitleCharWidth
                 ));
-                instance.store.titleMaxLength = responseData.titleMaxLength;
+                me.store.titleMaxLength = responseData.titleMaxLength;
                 if (backup && increasedMarginLeft) {
-                    instance.store.backup.options.titleMaxLength = responseData.titleMaxLength;
-                    instance.store.backup.info = instance.store.backup.info.replace(/margin-left: [0-9]+px/, 'margin-left: ' + increasedMarginLeft + 'px');
+                    me.store.backup.options.titleMaxLength = responseData.titleMaxLength;
                 }
             }
 
-            // Else if results set is empty (no non-disabled options), we hide options, and set red
-            // color for keyword, as there was no related results found
+        // Else if results set is empty (no non-disabled options), we hide options, and set red
+        // color for keyword, as there was no related results found
         } else {
 
             // Hide options list div
-            if ($('#'+name+'-suggestions').css('display') != 'none') $('#'+name+'-keyword').click();
+            me.collapse();
 
             // If just got resuts are result for satellited combo, autofetched after satellite value was changed
             // and we have no results related to current satellite value, we disable satellited combo
             if (requestData.mode == 'refresh-children') {
-                instance.setDisabled(name, true);
+                me.setDisabled(true);
 
-                // Else if reason of no results was not in satellite, we add special css class for that case
-            } else {
-                $('#'+name+'-keyword').addClass('i-combo-keyword-no-results');
-            }
+            // Else if reason of no results was not in satellite, we add special css class for that case
+            } else me.keywordEl.addCls('i-combo-keyword-no-results');
         }
+    },
+
+    /*
+     * Bind 'hover' and 'click' event handlers for boundlist items
+     */
+    bindItemHoverClick: function() {
+        var me = this, query = '.x-boundlist-item:not(.x-boundlist-item-disabled)';
+
+        // Bind a 'x-boundlist-item-over' class adding on hover
+        me.getPicker().el.select(query).hover(function(e, dom){
+            Ext.get(dom).up('ul').select('li').removeCls('x-boundlist-item-over');
+            Ext.get(dom).addCls('x-boundlist-item-over');
+            var k = Ext.get(dom).up('ul').select(query).indexOf(dom);
+            me.keywordEl.attr('selectedIndex', k+1);
+        }, Ext.emptyFn);
+
+        // Bind a click event to each option
+        me.getPicker().el.select(query).on('click', me.onItemSelect, me);
     },
 
     /**
@@ -1761,46 +1974,43 @@ Ext.define('Indi.combo.form', {
      * @param data Request data object, containing same properties, as per remote-fetch scheme
      */
     localFetch: function(data) {
-        var instance = this;
+        var me = this;
 
-        // Get the name of combo field
-        var name = instance.name;
-
-        // Empty options
-        instance.store.data = [];
-        instance.store.ids = [];
+        // Empty store
+        me.store.data = [];
+        me.store.ids = [];
 
         // Prepare regular expression for keyword search
         var keywordReg = new RegExp('^'+Indi.pregQuote(data.keyword, '/'), 'i');
 
         // Prepare regular expression for keyword, if it was typed in wrong keyboard layout
-        var keywordRegWKL = new RegExp('^'+Indi.pregQuote(instance.convertWKL(data.keyword), '/'), 'i');
+        var keywordRegWKL = new RegExp('^'+Indi.pregQuote(me.convertWKL(data.keyword), '/'), 'i');
 
         // This variable will contain a title, which will be tested against a keyword
         var against;
 
         // If we are dealing with tree of options, we should find not only search results, but also all level parents
         // for user to be able to view all parents of each result
-        if (instance.store.tree) {
+        if (me.store.tree) {
             var results = [];
             var parents = [];
             var parentId, currentIndex;
 
             // Collect ids of options that are primary results of search, and collect ids of all their distinct parents
-            for (var i = 0; i < instance.store.backup.options.data.length; i++) {
+            for (var i = 0; i < me.store.backup.options.data.length; i++) {
 
                 // If tested title is a color, we should strip hue part of title, before keyword match will be performed
-                against = instance.color(instance.store.backup.options.data[i]).title;
+                against = me.color(me.store.backup.options.data[i]).title;
 
                 // Test title against a keyword
                 if (keywordReg.test(against) || keywordRegWKL.test(against)) {
-                    results.push(instance.store.backup.options.ids[i]);
+                    results.push(me.store.backup.options.ids[i]);
                     currentIndex = i;
-                    while (parentId = parseInt(instance.store.backup.options.data[currentIndex].system.parentId)) {
+                    while (parentId = parseInt(me.store.backup.options.data[currentIndex].system.parentId)) {
                         if (parents.indexOf(parentId) == -1) {
                             parents.push(parentId);
                         }
-                        currentIndex = instance.store.backup.options.ids.indexOf(parentId);
+                        currentIndex = me.store.backup.options.ids.indexOf(parentId);
                     }
                     parentId = 0;
                 }
@@ -1815,44 +2025,50 @@ Ext.define('Indi.combo.form', {
 
             // Walk though full backuped options list and pick items, that are primary results or are parents for
             // primary results
-            for (var i = 0; i < instance.store.backup.options.data.length; i++) {
-                var optionId = instance.store.backup.options.ids[i];
+            for (var i = 0; i < me.store.backup.options.data.length; i++) {
+                var optionId = me.store.backup.options.ids[i];
                 if (results.indexOf(optionId) != -1 || parents.indexOf(optionId) != -1) {
-                    instance.store.ids.push(instance.store.backup.options.ids[i]);
-                    instance.store.data.push(Indi.copy(instance.store.backup.options.data[i]));
+                    me.store.ids.push(me.store.backup.options.ids[i]);
+                    me.store.data.push(Indi.copy(me.store.backup.options.data[i]));
 
                     // Mark parents as disabled, so they will be no selectable
                     if (parents.indexOf(optionId) != -1) {
-                        var disabledIndex = instance.store.data.length - 1;
-                        instance.store.data[disabledIndex].system.disabled = true;
+                        var disabledIndex = me.store.data.length - 1;
+                        me.store.data[disabledIndex].system.disabled = true;
                     }
                 }
             }
 
             // Set up number of found (primary) results
-            instance.store.found = results.length;
+            me.store.found = results.length;
 
-            // If we are dealing with non-tree list of options, all it simpler for a bit
+        // If we are dealing with non-tree list of options, all it simpler for a bit
         } else {
-            for (var i = 0; i < instance.store.backup.options.data.length; i++) {
+            for (var i = 0; i < me.store.backup.options.data.length; i++) {
 
                 // If tested title is a color, we should strip hue part of title, before keyword match will be performed
-                against = instance.color(instance.store.backup.options.data[i]).title;
+                against = me.color(me.store.backup.options.data[i]).title;
 
                 // Test title against a keyword
                 if (keywordReg.test(against) || keywordRegWKL.test(against)) {
-                    instance.store.data.push(instance.store.backup.options.data[i]);
-                    instance.store.ids.push(instance.store.backup.options.ids[i]);
+                    me.store.data.push(me.store.backup.options.data[i]);
+                    me.store.ids.push(me.store.backup.options.ids[i]);
                 }
             }
-            instance.store.found = instance.store.ids.length;
+            me.store.found = me.store.ids.length;
         }
 
         // Here we build html for options list, setup scrolling if needed, adjust combo options div height and
         // margin-left for .i-combo-info, bind hover and click handlers on each option and do other things
-        instance.afterFetchAdjustments(data, instance.store);
+        me.afterFetchAdjustments(data, me.store);
     },
 
+    /**
+     * Empty function. Declared for possible usage in components, extended from current component,
+     * such as Indi.combo.sibling and Indi.combo.filter
+     *
+     * @param pixels
+     */
     increaseWidthBy: function(pixels) {
 
     },
@@ -1866,7 +2082,7 @@ Ext.define('Indi.combo.form', {
         if (window.comboFetchRelativePath) {
             return Indi.std + window.comboFetchRelativePath;
         } else {
-            return Indi.pre + '/';
+            return this.ctx().uri;
         }
     },
 
@@ -1892,100 +2108,115 @@ Ext.define('Indi.combo.form', {
      * @param data
      */
     remoteFetch: function(data){
-        var instance = this;
-
-        // Get name of field
-        var name = data.field;
+        var me = this, name = me.name;
 
         // Show loading pic
-        $('#'+name+'-count')
-            .html('<img src="' + Indi.std + '/i/admin/combo-data-loading.gif" class="i-combo-data-loading">')
-            .addClass('i-combo-count-visible');
+        me.countEl
+            .setHTML('<img src="' + Indi.std + '/i/admin/combo-data-loading.gif" class="i-combo-data-loading">')
+            .addCls('i-combo-count-visible');
+
+        // Provide ability for loading pic to be visible
+        if (!me.isExpanded) {
+            me.infoEl.css('display', 'block');
+            me.ofEl.css('display', 'none');
+        }
 
         // Appendix
-        var parts = instance.xtype.split('.'), appendix = [];
+        var parts = me.xtype.split('.'), appendix = [];
         for (var i = 0; i < parts.length; i++) appendix.push(parts[i], 1); appendix = appendix.join('/');
 
         // Fetch request
-        $.post(instance.fetchRelativePath() + '/'+appendix+'/', data,
-            function(json) {
+        Ext.Ajax.request({
+            url: me.fetchRelativePath() + appendix+'/',
+            params: Ext.merge({field: me.name}, data),
+            success: function(response) {
+
+                // Convert response.responseText to JSON object
+                var json = JSON.parse(response.responseText);
+
                 // Save current options to backup
-                var backupOptions = []; backupOptions = Indi.copy(instance.store);
+                var backupOptions = []; backupOptions = Indi.copy(me.store);
 
                 // If current options list should be prepended with fetched options
                 if (data.more == 'upper') {
 
                     // Empty current options
-                    instance.store['ids'] = [];
-                    instance.store['data'] = [];
+                    me.store['ids'] = [];
+                    me.store['data'] = [];
 
-                    // So now we start to fill instance.store array with fetched options
+                    // So now we start to fill me.store array with fetched options
                     for (var key = 0; key < json['ids'].length; key++) {
-                        instance.store['ids'].push(json['ids'][key]);
-                        instance.store['data'].push(json['data'][key]);
+                        me.store['ids'].push(json['ids'][key]);
+                        me.store['data'].push(json['data'][key]);
                     }
 
                     // And after that we append options from backupOptions, so as the result
                     // we will have full options list in correct order
                     for (var key = 0; key < backupOptions['ids'].length; key++) {
-                        instance.store['ids'].push(backupOptions['ids'][key]);
-                        instance.store['data'].push(backupOptions['data'][key]);
+                        me.store['ids'].push(backupOptions['ids'][key]);
+                        me.store['data'].push(backupOptions['data'][key]);
                     }
 
                     // Merge optgroup info
-                    if (instance.store.optgroup)
-                        instance.store.optgroup = instance.mergeOptgroupInfo(instance.store.optgroup, json.optgroup);
+                    if (me.store.optgroup)
+                        me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                    // Else if fetched options should be appended to current options list
+                // Else if fetched options should be appended to current options list
                 } else if (data.more == 'lower') {
 
                     // If we are dealing with tree of results, we should merge existing options tree
                     // with tree of just received additional page of results
-                    if (instance.store.tree) {
+                    if (me.store.tree) {
 
                         // Merge trees
-                        instance.store = instance.merge(instance.store, json);
+                        me.store = me.merge(me.store, json);
 
-                        // Else we just append fetched options to existing options
+                    // Else we just append fetched options to existing options
                     } else {
                         for (var key in json['ids']) {
-                            instance.store['ids'].push(json['ids'][key]);
-                            instance.store['data'].push(json['data'][key]);
+                            me.store['ids'].push(json['ids'][key]);
+                            me.store['data'].push(json['data'][key]);
                         }
                     }
 
                     // Merge optgroup info
-                    if (instance.store.optgroup)
-                        instance.store.optgroup = instance.mergeOptgroupInfo(instance.store.optgroup, json.optgroup);
+                    if (me.store.optgroup) me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                    // Otherwise we just replace current options with fetched options
+                // Otherwise we just replace current options with fetched options
                 } else {
-                    var jsBackup = instance.store.js;
-                    var optionHeightBackup = instance.store.optionHeight;
-                    instance.store = json;
-                    instance.store.js = jsBackup;
-                    instance.store.optionHeight = optionHeightBackup;
+                    var jsBackup = me.store.js;
+                    var optionHeightBackup = me.store.optionHeight;
+                    me.store = json;
+                    me.store.js = jsBackup;
+                    me.store.optionHeight = optionHeightBackup;
                 }
-                instance.store.backup = backupOptions.backup;
+
+                // Setup backup
+                me.store.backup = backupOptions.backup;
 
                 // Build html for options, and do all other things
-                instance.afterFetchAdjustments(data, json);
-            }, 'json'
-        )
+                me.afterFetchAdjustments(data, json);
+
+                // Restore infoEl element, and child ofEl element display properties
+                if (!me.isExpanded) {
+                    me.infoEl.css('display', 'none');
+                    me.ofEl.css('display', 'inline');
+                }
+            }
+        })
     },
 
     /**
      * Mark some options as disabled
      *
-     * @param name
      * @param disabledIds
      */
     setDisabledOptions: function(disabledIds) {
-        var instance = this;
-        for (var i in instance.store.data) {
-            instance.store.data[i].system.disabled = disabledIds.indexOf(instance.store.ids[i]) != -1;
+        var me = this;
+        for (var i in me.store.data) {
+            me.store.data[i].system.disabled = disabledIds.indexOf(me.store.ids[i]) != -1;
         }
-        instance.store.found = instance.store.data.length - disabledIds.length;
+        me.store.found = me.store.data.length - disabledIds.length;
     },
 
     /**
@@ -2045,8 +2276,8 @@ Ext.define('Indi.combo.form', {
                         tree1['data'].splice(insertAfter, 0, tree2['data'][index2]);
                     }
 
-                    // Else if such an option is already presented in existing tree, we check if it is
-                    // disabled there but not in new tree and if so we set 'disabled' property to 'false'
+                // Else if such an option is already presented in existing tree, we check if it is
+                // disabled there but not in new tree and if so we set 'disabled' property to 'false'
                 } else {
 
                     // Find index
@@ -2060,32 +2291,32 @@ Ext.define('Indi.combo.form', {
             }
         }
 
+        // Return final tree
         return tree1;
     },
 
     /**
      * Disable or enable combo depending on a given param
      *
-     * @param name
      * @param disable true|false
      */
-    toggle: function(disable){
-        var name = this.name;
-        if (disable) {
-            $('#'+name+'-keyword').attr('disabled', 'disabled');
-            $('#'+name+'-keyword').parents('.i-combo').addClass('i-combo-disabled x-item-disabled');
-            $('#'+name+'-keyword').val('');
-            // We set hidden field value as 0, and fire 'change event' because there can be
-            // satellited combos for current combo, so if we have, for example 5 cascading combos,
-            // that are satellited to each other, this code provide that if top combo is disabled,
-            // all dependent (satellited) combos will also be disabled recursively
-            //$('#'+name).val(0);
-            //$('#'+name).change();
+    toggle: function(disable) {
+        var me = this;
+        if (arguments.length) {
+            if (disable) {
+                me.keywordEl.attr('disabled', 'disabled');
+                me.keywordEl.up('.i-combo').addCls('i-combo-disabled x-item-disabled');
+                me.keywordEl.val('');
 
             // Enable combo
+            } else {
+                me.keywordEl.removeAttr('disabled');
+                me.keywordEl.up('.i-combo').removeCls('i-combo-disabled x-item-disabled');
+            }
+        } else if (this.disabled) {
+            this.enable();
         } else {
-            $('#'+name+'-keyword').removeAttr('disabled');
-            $('#'+name+'-keyword').parents('.i-combo').removeClass('i-combo-disabled x-item-disabled');
+            this.disable();
         }
     }
 });

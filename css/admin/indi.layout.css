@@ -140,19 +140,6 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background-position: -15px -360px;
 }
 
-/* Ext combos default style adjustments (Ext's combos, not Indi's combos mean here) */
-.x-boundlist-item, .x-boundlist-item-disabled{
-    border-right: 0;
-    border-left: 0;
-    border-bottom: 0;
-    padding: 0 2px 1px 4px;
-    border-top: 1px solid #dfffdf;
-    font-size: 11px;
-}
-.x-boundlist-item-over{
-    background-color: #ecffeb;
-}
-
 /* Indi combos default style adjustments - for cases, when indi combos are used as an ext components*/
 .i-filter-combo .x-panel-body-default{
     background: transparent;

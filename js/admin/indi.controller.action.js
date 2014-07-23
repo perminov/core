@@ -5,8 +5,9 @@ Ext.define('Indi.Controller', {
         defaultView: {index: 'grid', form: 'form'}
     },
     actionsConfig: {},
-    dispatch: function(action){
+    dispatch: function(action, uri){
         var a, aCfg = Ext.clone(this.actionsConfig[action]); aCfg = aCfg || {}; aCfg.trailLevel = this.trailLevel;
+        aCfg.uri = Ext.clone(uri);
         if (!this.trail().action.mode) this.trail().action.mode = Indi.Controller.defaultMode[action];
         if (!this.trail().action.view) this.trail().action.view = Indi.Controller.defaultView[action];
         a = 'Indi.Controller.Action.' + Indi.ucfirst(this.trail().action.mode) + '.' + Indi.ucfirst(this.trail().action.view);
@@ -939,8 +940,9 @@ Ext.define('Indi.Controller.Action.Rowset', {
         if (actionItemA.length) (itemA = itemA.concat(actionItemA)).push('-');
 
         // Append subsections list
-        /*if (Indi.trail().sections.length) items.push(new Indi.layout.ux.Subsections({
-            toolbarId: 'i-section-' + Indi.trail().section.alias + '-action-' + Indi.trail().action.alias + '-toolbar-keyword',
+        if (Indi.trail().sections.length) itemA.push({
+            xtype: 'subsectionlist',
+            toolbarId: 'i-section-' + Indi.trail().section.alias + '-action-' + Indi.trail().action.alias + '-toolbar-master',
             id: 'i-section-' + Indi.trail().section.alias + '-action-' + Indi.trail().action.alias + '-subsections',
             tooltip: {
                 html: Indi.lang.I_NAVTO_NESTED,
@@ -968,7 +970,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
                     Indi.load(Indi.pre + '/' + item.getAttribute('alias') + '/index/id/' + selection[0].data.id + '/' +
                         'ph/'+Indi.trail().scope.hash+'/aix/' + (selection[0].index + 1)+'/');
             }
-        }));*/
+        });
 
         // We figure that other items should be right-aligned at the keyword toolbar
         if (keywordItem) itemA.push('->', keywordItem);
@@ -1238,7 +1240,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
                 }
             }
         }
-    },
+    }
 });
 
 Ext.define('Indi.Controller.Action.Rowset.Grid', {
@@ -1414,7 +1416,8 @@ Ext.define('Indi.Controller.Action.Rowset.Grid', {
                 key: Ext.EventObject.ENTER,
                 fn:  function(){
                     var btn = Ext.getCmp(this.ctx().bid() + '-button-form'); if (btn) btn.handler();
-                }
+                },
+                scope: this
             }]
         });
 
@@ -1589,7 +1592,8 @@ Ext.define('Indi.Controller.Action.Row.Form', {
                     console.log(form.url);
                     form.submit({
                         success: function(form, action) {
-                            Ext.Msg.alert('Success', action.result.msg);
+                            //Ext.Msg.alert('Success', action.result.msg);
+                            if (action.result.redirect) Indi.load(action.result.redirect);
                         },
                         failure: function(form, action) {
                             Ext.Msg.alert('Failed', action.result.msg);
@@ -1656,7 +1660,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
             id: 'tr-' + field.alias,
             xtype: 'textfield',
             fieldLabel: field.title,
-            labelWidth: '50%',
+            labelWidth: '100%',
             name: field.alias,
             value: this.trail().row[field.alias]
         };
@@ -1668,7 +1672,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
             id: 'tr-' + field.alias,
             xtype: 'numberfield',
             fieldLabel: field.title,
-            labelWidth: '50%',
+            labelWidth: '100%',
             minValue: 1,
             name: field.alias,
             value: this.trail().row[field.alias]
@@ -1680,7 +1684,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
             id: this.trail().bid() + '-field-' + field.alias,
             id: 'tr-' + field.alias,
             xtype     : 'textarea',
-            labelWidth: '50%',
+            labelWidth: '100%',
             grow      : true,
             name      : field.alias,
             fieldLabel: field.title,
@@ -1707,7 +1711,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
             xtype: 'fieldcontainer',
             fieldLabel : field.title,
             defaultType: 'radio',
-            labelWidth: '50%',
+            labelWidth: '100%',
             defaults: {
                 flex: 1,
                 height: 10
@@ -1723,7 +1727,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
             xtype: 'checkbox',
             fieldLabel : field.title,
             //defaultType: 'checkbox',
-            labelWidth: '50%',
+            labelWidth: '100%',
             layout: 'hbox',
             height: 21,
             name      : field.alias,
@@ -1741,7 +1745,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
             id: 'tr-' + field.alias,
             xtype: 'combo.form',
             fieldLabel : field.title,
-            labelWidth: '50%',
+            labelWidth: '100%',
             field: field,
             layout: 'hbox',
             name: field.alias,
@@ -1758,7 +1762,7 @@ Ext.define('Indi.Controller.Action.Row.Form', {
         return {
             xtype: 'fieldcontainer',
             fieldLabel : field.title,
-            labelWidth: '50%',
+            labelWidth: '100%',
             padding: 0,
             id: fieldCmpId + '-item',
             //cls: 'i-filter-combo',

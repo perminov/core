@@ -1,26 +1,31 @@
-Ext.define('Indi.Db.Table.Row', {
-    extend: 'Ext.Component',
-    foreign: function(key) {
+Indi.Db = Indi.Db || {};
+Indi.Db.Table = Indi.Db.Table || {};
+Indi.Db.Table.Row = Indi.Db.Table.Row || {};
+Indi.Db.Table.Row.prototype = function (data) {
+    this.foreign = function(key) {
         if (key == 'fieldId') {
             for (var i = 0; i < Indi.trail(true).store.length; i++) {
                 if (Indi.trail(i).fields)
-                for (var j = 0; j < Indi.trail(i).fields.length; j++) {
-                    if (parseInt(Indi.trail(i).fields[j].id) == parseInt(this.fieldId)) {
-                        return Indi.trail(i).fields[j];
+                    for (var j = 0; j < Indi.trail(i).fields.length; j++) {
+                        if (parseInt(Indi.trail(i).fields[j].id) == parseInt(this.fieldId)) {
+                            return Indi.trail(i).fields[j];
+                        }
                     }
-                }
             }
         } else if (this._foreign && this._foreign[key]) {
             return this._foreign[key];
         }
-    },
-    nested: function(key) {
+    };
+
+    this.nested = function(key) {
         return this._nested[key];
-    },
-    view: function(key) {
+    };
+
+    this.view = function(key) {
         return this._view[key];
-    }
-});
+    };
+    Ext.merge(this, data);
+};
 
 Ext.define('Indi.Trail.Item', {
     extend: 'Ext.Component',
@@ -50,15 +55,17 @@ Ext.define('Indi.Trail.Item', {
         // Convert each filter to an instance of Indi.Db.Table.Row object
         if (this.filters)
             for (var f = 0; f < this.filters.length; f++)
-                this.filters[f] = Ext.create('Indi.Db.Table.Row', this.filters[f]);
+                this.filters[f] = new Indi.Db.Table.Row.prototype(this.filters[f]);
 
         // Convert each field to an instance of Indi.Db.Table.Row object
         if (this.fields)
             for (var f = 0; f < this.fields.length; f++)
-                this.fields[f] = Ext.create('Indi.Db.Table.Row', this.fields[f]);
+//                this.fields[f] = Ext.create('Indi.Db.Table.Row', this.fields[f]);
+                this.fields[f] = new Indi.Db.Table.Row.prototype(this.fields[f]);
 
         // Convert this.row plain object to an instance of Indi.Db.Table.Row object
-        if (this.row) this.row = Ext.create('Indi.Db.Table.Row', this.row);
+        //if (this.row) this.row = Ext.create('Indi.Db.Table.Row', this.row);
+        if (this.row) this.row = new Indi.Db.Table.Row.prototype(this.row);
     }
 });
 
@@ -289,7 +296,7 @@ Ext.define('Indi.Trail', {
 
                     // We append 'form' action title, but it' version for case then new row is going to be
                     // created, hovewer, got from localization object, instead of actual action title
-                    crumbA.push('<span>' + indi.lang.I_CREATE + '</span>');
+                    crumbA.push('<span>' + Indi.lang.I_CREATE + '</span>');
                 }
             }
         }
@@ -351,7 +358,7 @@ Ext.define('Indi.Trail', {
         try {
             var controller = Indi.app.getController(Indi.trail().section.alias);
             try {
-                controller.dispatch(Indi.trail().action.alias);
+                controller.dispatch(Indi.trail().action.alias, Indi.story[Indi.story.length-1]);
             } catch (e) {
                 console.log(e.stack);
             }
@@ -360,7 +367,7 @@ Ext.define('Indi.Trail', {
             Ext.define('Indi.controller.' + Indi.trail().section.alias, {
                 extend: 'Indi.Controller'
             });
-            Indi.app.getController(Indi.trail().section.alias).dispatch(Indi.trail().action.alias);
+            Indi.app.getController(Indi.trail().section.alias).dispatch(Indi.trail().action.alias, Indi.story[Indi.story.length-1]);
         }
     },
 
