@@ -48,6 +48,7 @@ Ext.define('Indi.combo.form', {
     // @inheritdoc
     renderSelectors: {
         comboEl: '.i-combo',
+        comboInner: '.x-form-text',
         multipleEl: '.i-combo-multiple',
         wrapperEl: '.i-combo-table-wrapper',
         tableEl: '.i-combo-table',
@@ -303,7 +304,7 @@ Ext.define('Indi.combo.form', {
         }
 
         // Call parent
-        me.callParent(arguments);
+        if (me.el) Ext.form.field.Picker.setValue.call(me, me.hiddenEl.val());
 
         // If combo is running in multiple-values mode is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
@@ -372,7 +373,7 @@ Ext.define('Indi.combo.form', {
             if (sv == 0 || force == true) {
 
                 // Explicitly setup first argument as boolean 'true'
-                arguments[0] = true;
+                force = true;
 
                 // We set hidden field value as 0 (or '', if multiple), and fire 'change' event because there can be
                 // satellited combos for current combo, so if we have, for example 5 cascading combos,
@@ -390,7 +391,8 @@ Ext.define('Indi.combo.form', {
 
                 // Call onHiddenChange
                 me.onHiddenChange();
-            }
+
+            } else if (!arguments.length) force = false;
         }
 
         // Restore default values for auxiliary attributes
@@ -403,8 +405,8 @@ Ext.define('Indi.combo.form', {
         });
         me.keywordEl.attr('selectedIndex', 0);
 
-        // Call parent, if arguments exist
-        if (arguments.length) this.callParent(arguments);
+        // Call parent
+        this.callParent([force]);
     },
 
     /**
@@ -412,7 +414,6 @@ Ext.define('Indi.combo.form', {
      */
     afterRender: function() {
         var me = this;
-
 
         me.keywordEl.on({
             keyup: {
@@ -438,7 +439,7 @@ Ext.define('Indi.combo.form', {
         me.keywordEl.attr('prev', me.keywordEl.val());
 
         // Bind a handler for 'click' event for .i-combo element
-        me.comboEl.on('click', this.onKeywordClick, me);
+        me.comboEl.on('click', me.onKeywordClick, me);
 
         // Adjust width of .i-combo-table element for it to fit all available space
         me.comboTableFit();
@@ -479,7 +480,7 @@ Ext.define('Indi.combo.form', {
         if (el.hasCls('i-combo-keyword-no-results') || me.disabled || el.hasCls('i-combo-selected-item-delete')) return;
 
         // If current combo is a filter-combo, and ctrl key is pressed - clear combo
-        if (el.up('.i-combo').hasCls('i-combo-filter') && e.ctrlKey) {
+        if (e.ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
             me.clearCombo();
             return;
         }
@@ -516,7 +517,7 @@ Ext.define('Indi.combo.form', {
         var me = this;
         me.applyState({pickerOffset: [-me.keywordEl.getOffsetsTo(me.comboEl)[0], 2]});
         me.callParent(arguments);
-        me.infoEl.show();
+        if (me.keywordEl.attr('no-lookup') != 'true' && !me.store.enumset) me.infoEl.show();
     },
 
     // @inheritdoc
@@ -524,7 +525,7 @@ Ext.define('Indi.combo.form', {
         var me = this;
         this.callParent(arguments);
         me.lastCollapsed = new Date().getTime();
-        me.infoEl.hide();
+        if (!me.keywordEl.attr('no-lookup') != 'true' && !me.store.enumset) me.infoEl.hide();
     },
 
     /**
@@ -1568,11 +1569,14 @@ Ext.define('Indi.combo.form', {
                     // with ENUM database table column type and within that type no empty or zero values allowed,
                     // except empty or zero value is in the list of ENUM values, specified in the process of column
                     // declaration
-                    if ((code == Ext.EventObject.BACKSPACE || code == Ext.EventObject.DELETE) && (!me.store.enumset || me.comboEl.hasCls('i-combo-filter'))){
+                    if ((code == Ext.EventObject.BACKSPACE || code == Ext.EventObject.DELETE) && (!me.store.enumset || me.xtype == 'combo.filter')){
                         me.clearCombo();
 
                     // If any other key was pressed, there should be no reaction
-                    } else return false;
+                    } else {
+                        evt.preventDefault();
+                        return false;
+                    }
                 }
             }
         }
@@ -1761,31 +1765,6 @@ Ext.define('Indi.combo.form', {
             if (me.keywordEl.val() == '#' || me.keywordEl.val() == '') me.colorDiv.update('');
         }
 
-        // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
-        me.el.up('div[id^=form]').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
-            sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
-            sCombo = Ext.getCmp('tr-' + sComboName);
-            //sCombo.setDisabled();
-            //if (!sCombo.disabled) {
-
-                // Here we are emptying the satellited combo selected values, either hidden and visible
-                // because if we would do it in afterFetchAdjustmetns, there would be a delay until fetch
-                // request would be completed
-                if (sCombo.multiSelect) {
-                    sCombo.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
-                    sCombo.hiddenEl.val('');
-                } else {
-                    sCombo.hiddenEl.val(0);
-                }
-
-                sCombo.keywordEl.val('');
-                sCombo.remoteFetch({
-                    satellite: me.hiddenEl.val(),
-                    mode: 'refresh-children'
-                });
-            //}
-        });
-
         // Execute javascript code, if it was assigned to selected option. The additional clause for execution
         // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
         // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
@@ -1802,11 +1781,43 @@ Ext.define('Indi.combo.form', {
         // Execute javascript code, assigned as an additional handler for 'select' event
         if (me.store.js) eval(me.store.js);
 
-        // Call superclass setValue method to provide 'change' event firing
-        me.superclass.setValue.call(this, me.hiddenEl.val());
+        // If combo is running in multiple-values mode and is rendered - empty keyword input element
+        if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
 
-        // If combo is running in multiple-values mode is rendered - empty keyword input element
-        if (me.multiSelect && me.keywordEl) me.keywordEl.dom.value = Ext.emptyString;
+        // Call superclass setValue method to provide 'change' event firing
+        me.superclass.setValue.call(me, me.hiddenEl.val());
+        //Ext.form.field.Picker.setValue.call(me, me.hiddenEl.val());
+
+        // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
+        me.el.up('div[id^=form]').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
+            sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
+            sCombo = Ext.getCmp('tr-' + sComboName);
+            sCombo.setDisabled();
+            if (!sCombo.disabled) {
+
+                // Here we are emptying the satellited combo selected values, either hidden and visible
+                // because if we would do it in afterFetchAdjustmetns, there would be a delay until fetch
+                // request would be completed
+                if (sCombo.multiSelect) {
+                    sCombo.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
+                    sCombo.hiddenEl.val('');
+                } else {
+                    sCombo.hiddenEl.val(0);
+                }
+
+                sCombo.keywordEl.val('');
+                sCombo.remoteFetch({
+                    satellite: me.hiddenEl.val(),
+                    mode: 'refresh-children'
+                });
+            }
+        });
+    },
+
+    listeners: {
+        change: function(me, newValue, oldValue) {
+            //console.log(me.name, newValue, oldValue);
+        }
     },
 
     /**

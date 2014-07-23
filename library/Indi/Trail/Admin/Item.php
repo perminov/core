@@ -23,6 +23,8 @@ class Indi_Trail_Admin_Item {
      */
     public $level = null;
 
+    public $filtersSharedRow = null;
+
     /**
      * Getter. Currently declared only for getting 'model' property
      *
@@ -67,6 +69,9 @@ class Indi_Trail_Admin_Item {
 
             // Setup filters
             $this->filters = $sectionR->nested('search');
+
+            // Setup filters shared row
+            $this->filtersSharedRow = $this->model->createRow();
 
             // Setup action
             foreach ($this->actions as $actionR)
@@ -248,6 +253,7 @@ class Indi_Trail_Admin_Item {
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray();
+        if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray();
         if ($this->scope) $array['scope'] = $this->scope->toArray();
         $array['level'] = $this->level;
         return $array;

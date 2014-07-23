@@ -18,6 +18,7 @@
         '/js/admin/indi.controller.action.js',
         //'/js/admin/app/controller/entities.js',
         '/js/admin/indi.combo.form.js',
+        '/js/admin/indi.combo.filter.js',
         /*'/js/admin/indi.combo.filter.js',
         '/js/admin/indi.combo.sibling.js',
         '/js/admin/indi.action.index.js'*/

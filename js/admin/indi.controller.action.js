@@ -137,7 +137,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
 
         // Declare and fulfil an array with properties, available for each row in the rowset
         var columnA = [];
-        for (var i = 0; i < this.trail().gridFields.length; i++) {
+        for (i = 0; i < this.trail().gridFields.length; i++) {
             columnA.push(this.trail().gridFields[i].alias);
         }
 
@@ -156,7 +156,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
         var usedFilterAliasesThatHasGridColumnRepresentedByA = [];
 
         // Foreach filter component id in filterCmpIdA array
-        for (var i = 0; i < filterCmpIdA.length; i++) {
+        for (i = 0; i < filterCmpIdA.length; i++) {
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpIdA[i].replace(filterCmpIdPrefix, '');
@@ -198,7 +198,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
                         paramO[alias] = Ext.getCmp(filterCmpIdA[i]).getRawValue();
                     }
 
-                    // Else if current filter is not a ext's datetime component
+                // Else if current filter is not a ext's datetime component
                 } else {
 
                     // We just assign the value to param's object certain property as a current filter value, too
@@ -272,12 +272,12 @@ Ext.define('Indi.Controller.Action.Rowset', {
             this.getStore().lastOptions.start = 0;
 
             // If used filter is a combobox or multislider, we reload store data immideatly
-            if (['combobox', 'multislider'].indexOf(cmp.xtype) != -1) {
-                this.reload();
+            if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
+                this.getStore().reload();
 
-                // Else if used filter is not a datefield, or is, but it's value matches proper date format or
-                // value is empty, we reload store data with a 500ms delay, because direct typing is allowed in that
-                // datefield, so it's better to reload after user has finished typing.
+            // Else if used filter is not a datefield, or is, but it's value matches proper date format or
+            // value is empty, we reload store data with a 500ms delay, because direct typing is allowed in that
+            // datefield, so it's better to reload after user has finished typing.
             } else if (cmp.xtype != 'datefield' || (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/
                 .test(cmp.getRawValue()) || !cmp.getRawValue().length)) {
                 clearTimeout(this.getStore().timeout);
@@ -507,19 +507,40 @@ Ext.define('Indi.Controller.Action.Rowset', {
 
     panelToolbarFilterItemI_Combo: function(filter) {
 
+        // Get the field
+        var field = filter.foreign('fieldId');
+
         // Define a shortcut for filter field alias
-        var alias = filter.foreign('fieldId').alias;
+        var alias = field.alias;
 
         // Prepare the id for current filter component
         var filterCmpId = this.bid() + '-filter-' + alias;
 
         // Get the label
-        var fieldLabel = filter.alt || filter.foreign('fieldId').title;
+        var fieldLabel = filter.alt || field.title;
+
+        // Setup a shortcut for filters shared row
+        var row = this.trail().filtersSharedRow;
 
         // Push the special extjs component data object to represent needed filter. Component consists of
         // two hboxed components. First is extjs label component, and second - is setup to pick up
         // a custom DOM node as it's contentEl property. This DOM node is already prepared by non-extjs
         // solution, implemented in IndiEngine
+        return {
+            id: filterCmpId,
+            xtype: 'combo.filter',
+            fieldLabel : fieldLabel,
+            labelWidth: Indi.metrics.getWidth(fieldLabel) + 5,
+            width: 'auto',
+            field: field,
+            name: alias,
+            height: 21,
+            padding: '0 0 3 0',
+            value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
+            subTplData: row.view(field.alias).subTplData,
+            store: row.view(field.alias).store
+        }
+
         return {
             padding: 0,
             id: filterCmpId + '-item',
