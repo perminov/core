@@ -12,19 +12,18 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @param Search_Row $filter
      * @return string
      */
-    public function filterCombo($filter) {
+    public function filterCombo($filter, $mode = 'default') {
         // Here we create a shared *_Row object, that will be used by all filters, that are presented in current grid.
         // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
         // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
         // there dependent combo can get that value.
-        if (!Indi::view()->filtersSharedRow) Indi::view()->filtersSharedRow = Indi::trail()->model->createRow();
         $this->filter = $filter;
 
         $this->getRow()->{$this->getField()->alias} = null;
 
         $this->where = $this->filter->filter;
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
-        ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias); return ob_get_clean();
+        ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias, null, $mode); return ob_get_clean();
     }
 
     public function getSelected() {
@@ -54,7 +53,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      * @return Indi_Db_Table_Row
      */
     public function getRow(){
-        return Indi::view()->filtersSharedRow;
+        return Indi::trail()->filtersSharedRow;
     }
 
     /**
@@ -69,12 +68,12 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             if ($this->field->storeRelationAbility == 'many')
                 if(is_array($gotFromScope))
                     $gotFromScope = implode(',', $gotFromScope);
-            $this->filter->defaultValue = Indi::view()->filtersSharedRow->{$this->field->alias} = $gotFromScope;
+            $this->filter->defaultValue = $this->getRow()->{$this->field->alias} = $gotFromScope;
             return $gotFromScope;
         }
         if ($this->filter->defaultValue || ($this->field->columnTypeId == 12 && $this->filter->defaultValue != '')) {
             Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::cmpOut();
-            Indi::view()->filtersSharedRow->{$this->field->alias} = $this->filter->defaultValue;
+            $this->getRow()->{$this->field->alias} = $this->filter->defaultValue;
             return $this->filter->defaultValue;
         } else {
             return '';
@@ -116,7 +115,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
      */
     public function formComboSingle(){
         ob_start();
-        ?><div class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single" id="i-section-<?=Indi::trail()->section->alias?>-action-index-filter-<?=$this->name?>-combo" style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>"><?
+        ?><div id="i-section-<?=Indi::trail()->section->alias?>-action-index-filter-<?=$this->name?>-combo" class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single" style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>"><?
             ?><div class="i-combo-single x-form-text"><?
             ?><table class="i-combo-table"><tr><?
                 ?><td class="i-combo-color-box-cell"><?

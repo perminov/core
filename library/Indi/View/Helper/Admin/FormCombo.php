@@ -251,6 +251,7 @@ class Indi_View_Helper_Admin_FormCombo {
         ob_start();
 
         if ($mode == 'extjs') {
+
             $view = array(
                 'subTplData' => array(
                     'satellite' => $this->satellite->alias,
@@ -270,7 +271,8 @@ class Indi_View_Helper_Admin_FormCombo {
             } else {
                 $view['subTplData']['selected'] = self::detectColor($this->selected);
             }
-            Indi::trail()->row->view($this->field->alias, $view);
+            $this->getRow()->view($this->field->alias, $view);
+
         } else {
 
             // Encode that set in json format

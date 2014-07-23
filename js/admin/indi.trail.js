@@ -66,6 +66,8 @@ Ext.define('Indi.Trail.Item', {
         // Convert this.row plain object to an instance of Indi.Db.Table.Row object
         //if (this.row) this.row = Ext.create('Indi.Db.Table.Row', this.row);
         if (this.row) this.row = new Indi.Db.Table.Row.prototype(this.row);
+
+        if (this.filtersSharedRow) this.filtersSharedRow = new Indi.Db.Table.Row.prototype(this.filtersSharedRow);
     }
 });
 
