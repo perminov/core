@@ -6,12 +6,12 @@
     <?
     Indi::implode(array(
         '/js/jquery-1.9.1.min.js',
-        '/js/jquery.scrollTo-min.js',
         '/library/extjs4/ext-all.js',
         //'/library/extjs4/ext-debug.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
         '/js/admin/ext.override.js',
         '/js/admin/indi.js',
+        '/js/admin/indi.ux.js',
         '/js/admin/indi.lang.' . Indi::ini()->lang->admin . '.js',
         '/js/admin/indi.viewport.js',
         '/js/admin/indi.trail.js',

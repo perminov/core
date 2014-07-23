@@ -44,6 +44,8 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public $titleMaxIndent = 0;
 
+    public $pageUpDisabled = false;
+
     /**
      * Setup row object for combo
      *
@@ -243,24 +245,32 @@ class Indi_View_Helper_Admin_FormCombo {
         $this->pageUpDisabled = $this->getRow()->$name ? 'false' : 'true';
 
         // Assign local variables to public class variables
-        $vars = array('name', 'selected', 'params', 'attrs', 'pageUpDisabled', 'satellite', 'comboDataRs', 'keyProperty');
+        $vars = array('name', 'selected', 'params', 'attrs', 'satellite', 'comboDataRs', 'keyProperty');
         foreach ($vars as $var) $this->$var = $$var;
 
         ob_start();
 
         if ($mode == 'extjs') {
-            Indi::trail()->row->view($this->field->alias,
-                array(
-                    'subTplData' => array(
-                        'selected' => self::detectColor($this->selected),
-                        'satellite' => $this->satellite->alias,
-                        'attrs' => $this->attrs,
-                        'pageUpDisabled' => $this->pageUpDisabled,
-                    ),
-                    'store' => $options
-                )
+            $view = array(
+                'subTplData' => array(
+                    'satellite' => $this->satellite->alias,
+                    'attrs' => $this->attrs,
+                    'pageUpDisabled' => $this->pageUpDisabled,
+                ),
+                'store' => $options
             );
-            /*?><div id="boundlist-<?=$this->name?>-listEl" class="x-boundlist-list-ct" style="overflow: auto; height: auto;"><ul><li role="option" class="x-boundlist-item x-boundlist-selected">Системная</li><li role="option" class="x-boundlist-item">Проектная</li><li role="option" class="x-boundlist-item">Типовая</li></ul></div><?*/
+
+            if ($this->field->storeRelationAbility == 'many') {
+                $view['subTplData']['selected'] = $this->selected;
+                foreach($this->comboDataRs->selected as $selectedR) {
+                    $item = self::detectColor(array('title' => $selectedR->title));
+                    $item['id'] = $selectedR->{$this->keyProperty};
+                    $view['subTplData']['selected']['items'][] = $item;
+                }
+            } else {
+                $view['subTplData']['selected'] = self::detectColor($this->selected);
+            }
+            Indi::trail()->row->view($this->field->alias, $view);
         } else {
 
             // Encode that set in json format

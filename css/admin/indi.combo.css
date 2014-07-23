@@ -1,7 +1,10 @@
 .i-combo {width: 100%; position: relative; line-height: 15px; border: none;}
 .i-combo .i-combo-single, .i-combo .i-combo-multiple {border: 1px solid #b5b8c8;}
 .i-combo .x-form-text {font-size: 11px; padding: 0;}
-.i-combo.i-combo-focus .i-combo-single, .x-form-trigger-wrap-focus .i-combo .i-combo-single, .i-combo.i-combo-focus .i-combo-multiple {border: 1px solid #99BCE8;}
+.i-combo.i-combo-focus .i-combo-single,
+.x-form-trigger-wrap-focus .i-combo .i-combo-single,
+.i-combo.i-combo-focus .i-combo-multiple,
+.x-form-trigger-wrap-focus .i-combo .i-combo-multiple {border: 1px solid #99BCE8;}
 .i-combo .i-combo-multiple {height: auto; padding-bottom: 1px;}
 .i-combo.i-combo-filter {overflow: hidden; display: inline-block;}
 .i-combo.i-combo-filter .i-combo-multiple{overflow: hidden; height: 19px; width: 200%;}
@@ -9,12 +12,13 @@
 /* Combo table */
 .i-combo .i-combo-multiple .i-combo-table {margin-bottom: -3px;}
 .i-combo .i-combo-single .i-combo-table {width: 100%;}
-.i-combo.i-combo-form .i-combo-multiple .i-combo-table-wrapper {height: 17px; float: right; margin-bottom: -1px;}
+.i-combo.i-combo-form .i-combo-multiple .i-combo-table-wrapper {height: 17px; float: left; margin-bottom: -1px;}
 
 /* Combo color box */
 .i-combo .i-combo-single .i-combo-color-box-cell {width: 1px;}
 .i-combo .i-combo-color-box {width: 14px; height: 9px; display: inline-block;}
-.i-combo .i-combo-single .i-combo-color-box-cell .i-combo-color-box{margin: 0px 2px 0 3px;}
+.i-combo .i-combo-single .i-combo-color-box-cell .i-combo-color-box{margin: 0 2px 0 3px;}
+.i-combo .i-combo-multiple .i-combo-color-box-cell .i-combo-color-box-div{width: 0; display: none;}
 
 /* Combo multiple selected items*/
 .i-combo .i-combo-multiple .i-combo-selected-item {
@@ -25,6 +29,7 @@
     background-repeat: no-repeat; background-position: 0 0; width: 8px; height: 8px; display: inline-block;
     margin-left: 2px; cursor: pointer;background-image: url(/i/admin/combo-multiple-selected-item-delete.png);
 }
+.x-panel .i-combo .i-combo-multiple .i-combo-selected-item,
 .i-combo.i-combo-filter .i-combo-multiple .i-combo-selected-item {
     border-top: 1px solid white; border-left: 1px solid white; margin-top: 0px; margin-left: 0px;
 }
@@ -34,23 +39,28 @@
 .i-combo .i-combo-keyword.i-combo-keyword-no-results {color: red;}
 .i-combo .i-combo-multiple .i-combo-keyword {margin-left: 1px;}
 .i-combo.i-combo-form .i-combo-keyword {height: 16px;}
+.x-panel .i-combo .i-combo-keyword{border: 0; background: transparent;}
+.x-panel .i-combo .i-combo-multiple .i-combo-keyword {margin-left: 1px; padding-left: 1px;}
 
 /* Combo info */
 .i-combo .i-combo-info-cell {width: 1px;}
 .i-combo .i-combo-info-div {height: 18px; padding-top: 2px; padding-right: 1px;}
 .i-combo.i-combo-form .i-combo-info-div {height: 17px; padding-top: 1px;}
+.x-field .i-combo.i-combo-form .i-combo-info-div {height: 17px; padding-top: 2px;}
 .i-combo .i-combo-info {visibility: hidden; display: none; font-size: 10px;}
+/*.x-field .i-combo .i-combo-info {visibility: visible;}*/
 .i-combo .i-combo-info .i-combo-of{margin-left: 3px;}
 .i-combo .i-combo-info .i-combo-count {width: 20px; display: inline-block; text-align: right;}
 .i-combo .i-combo-info .i-combo-found {padding-right: 1px; padding-left: 1px; border: 1px solid rgba(255, 255, 255, 0);}
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found {padding-bottom: 1px;}
 .i-combo .i-combo-info .i-combo-data-loading {position: relative; top: 1px; right: 2px; width: 15px;}
 .i-combo.i-combo-form .i-combo-info .i-combo-data-loading {top: -1px;}
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-data-loading {right: -10px;}
+.x-field .i-combo.i-combo-form .i-combo-info .i-combo-data-loading {top: 1px;}
+/*.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible .i-combo-data-loading {right: -10px;}*/
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-found {background-color: #C2FCC2; border: 1px solid #1BBB0D;}
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count,
 .i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-of {visibility: hidden;}
-.i-combo .i-combo-info.i-combo-info-fetched-all .i-combo-count.i-combo-count-visible {visibility: visible;}
+.i-combo .i-combo-info .i-combo-count.i-combo-count-visible {visibility: visible;}
 .i-combo.i-combo-form .i-combo-multiple .i-combo-info-div {height: 17px; display: block;}
 
 /* Combo trigger*/
@@ -67,51 +77,67 @@
 .i-combo .i-combo-trigger.x-form-trigger.x-form-trigger-click {background-position: -34px -1px;}
 
 /* Combo options data */
-.i-combo-data {
-    position: absolute; display: none; background-color: white; border: 1px solid #99BCE8; margin-top: 1px;
-    z-index: 1; line-height: 13px; font-size: 8pt; overflow-y: hidden;
+.x-boundlist{
+    line-height: 13px;
 }
-.x-panel.i-combo-data {display: block;}
-.i-combo-data .x-panel-body {font-size: 8pt;}
-.i-combo-data ul {padding: 0px;margin: 0px;}
-.i-combo-data ul li {
-    list-style-type: none; list-style-position: outside; cursor: default; padding-left: 2px; border-right: 0;
-    border-left: 0; border-top: 0; border-bottom: 1px solid #dfffdf; word-break: break-all;
+.x-boundlist-item {
+    border-right: 0;
+    border-left: 0;
+    border-top: 0;
+    border-bottom: 1px solid #e0eeff;
+    padding: 0 2px 0 2px;
+    font-size: 11px;
+    cursor: default;
+    word-break: break-all;
+    vertical-align: top;
+    overflow: hidden;
 }
-.i-combo-data ul li .i-combo-color-box {width: 14px; display: inline-block; height: 9px;}
-.i-combo-data ul li.selected {background-color: #ecffeb;}
-.i-combo-data ul li:last-child {border-bottom: none;}
-.i-combo-data ul.i-combo-data-tall li {border-bottom: 1px solid #99BCE8;}
-.i-combo.i-combo-form .i-combo-data {width: 100%; margin-top: -1px;}
-
-/* Disabled styling*/
-.i-combo .i-combo-keyword[disabled] {background: inherit;}
-.i-combo-data ul li.disabled, ul li.disabled *{
-    color: #cccccc;
+.x-boundlist-item:last-child {
+    border-bottom: none;
 }
-.i-combo-data ul li.disabled[group] {
+.x-boundlist-item .i-combo-color-box {width: 14px; display: inline-block; height: 9px;}
+.x-boundlist-item-over{
+    background-color: #ecffeb;
+}
+.x-boundlist-item-group {
     font-style: italic;
     background-color: #dfe8f6;
     color: #0554c1;
     font-weight: bold;
 }
-.i-combo-data ul li.disabled[group] *{
+.x-boundlist-item-group *{
     color: inherit;
 }
-.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item {
-    background-color: #ECECEC;
-    color: rgba(4, 64, 140, 0.5);
+.x-boundlist-item-disabled, .x-boundlist-item-disabled * {
+    color: #cccccc;
 }
-.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
+/*.i-combo-data ul.i-combo-data-tall li {border-bottom: 1px solid #99BCE8;}*/
+
+/* Disabled styling*/
+.i-combo .i-combo-keyword[disabled] {background: inherit;}
+/*.i-combo-data ul li.disabled, ul li.disabled *{
+    color: #cccccc;
+}*/
+.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item,
+.x-item-disabled .i-combo .i-combo-multiple .i-combo-selected-item {
+    background-color: #ECECEC;
+    filter: alpha(opacity=30);
+    opacity: .3;
+}
+.i-combo.i-combo-disabled .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete,
+.x-item-disabled .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     background-position: 0 -8px;
     cursor: default;
 }
-.i-combo.i-combo-disabled .i-combo-single, .i-combo.i-combo-disabled .i-combo-multiple{
-    border-color: #dfdfdf !important;
+.i-combo.i-combo-disabled .i-combo-single, .i-combo.i-combo-disabled .i-combo-multiple,
+.x-item-disabled .i-combo .i-combo-single, .x-item-disabled .i-combo .i-combo-multiple{
+    border-color: #ebebeb !important;
     background: #F7F7F7;
 }
 .i-combo.i-combo-filter.i-combo-disabled .i-combo-single,
-.i-combo.i-combo-filter.i-combo-disabled .i-combo-multiple{
+.i-combo.i-combo-filter.i-combo-disabled .i-combo-multiple,
+.x-item-disabled .i-combo.i-combo-filter .i-combo-single,
+.x-item-disabled .i-combo.i-combo-filter .i-combo-multiple{
     border-color: #c5c5c5 !important;
     background: #F7F7F7;
 }

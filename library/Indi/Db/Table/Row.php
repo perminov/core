@@ -70,7 +70,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 300;
+    public static $comboOptionsVisibleCount = 20;
 
     /**
      * Used to store data, required for rendering the UI for current row's properties.
