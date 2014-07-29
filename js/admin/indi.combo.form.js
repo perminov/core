@@ -15,13 +15,8 @@ Ext.define('Indi.combo.form', {
     // @inheritdoc
     multiSelect: false,
 
-    /**
-     * This value is be used for combo width adjustment, if options list was refreshed and the longest
-     * option title became longer than it was before refresh
-     *
-     * @type {Number}
-     */
-    averageTitleCharWidth: 6.5,
+    // @inheritdoc
+    pickerOffset: [0, -1],
 
     /**
      * We need this to be able to separate options list visibility after keyword was erased
@@ -30,6 +25,15 @@ Ext.define('Indi.combo.form', {
      * @type {Boolean}
      */
     hideOptionsAfterKeywordErased: false,
+
+    /**
+     * This config differs from the same native config. At first, it's only take effect only if multiSelect
+     * config is set to true, so, if 'grow' config is set to true too, after each append new selected item
+     * to the list of currently selected items - combo's height will grow to fit all selected items. Otherwise,
+     * combo's height won't grow, and selected items will be displayed in one line, even despite on that some of
+     * them would be clipped by parent div's overflow: hidden css property
+     */
+    grow: true,
 
     /**
      * Number of items, that will be visible by default
@@ -52,13 +56,12 @@ Ext.define('Indi.combo.form', {
         multipleEl: '.i-combo-multiple',
         wrapperEl: '.i-combo-table-wrapper',
         tableEl: '.i-combo-table',
-        colorCell: '.i-combo-color-box-cell',
         colorDiv: '.i-combo-color-box-div',
-        colorBox: '.i-combo-color-box',
         keywordEl: '.i-combo-keyword',
         hiddenEl: '[type="hidden"]',
         infoDiv: '.i-combo-info-div',
         infoEl: '.i-combo-info',
+        loadingCell: '.i-combo-info-loadingCell',
         countEl: '.i-combo-count',
         ofEl: '.i-combo-of',
         foundEl: '.i-combo-found'
@@ -82,12 +85,13 @@ Ext.define('Indi.combo.form', {
                             '<input id="{field.alias}" type="hidden" value="{selected.value}" name="{field.alias}"/>',
                         '</div>',
                     '</td>',
-                    '<td class="i-combo-info-cell">',
+                    '<td class="i-combo-infoCell">',
                         '<div class="i-combo-info-div">',
-                            '<table class="i-combo-info" id="{field.alias}-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
-                                '<td><span class="i-combo-count" id="{field.alias}-count"></span></td>',
-                                '<td><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
-                                '<td><span class="i-combo-found" id="{field.alias}-found"></span></td>',
+                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
+                                '<td class="i-combo-info-countCell"><span class="i-combo-count">30</span></td>',
+                                '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+                                '<td class="i-combo-info-foundCell"><span class="i-combo-found">30</span></td>',
                             '</tr></table>',
                         '</div>',
                     '</td>',
@@ -99,16 +103,17 @@ Ext.define('Indi.combo.form', {
     /**
      * Template for use in case if combo runs in multiple-values mode
      */
-    tplMultiple: [
-        '<div class="i-combo i-combo-form">',
-            '<div class="i-combo-multiple x-form-text">',
+    tplMultiple: new Ext.XTemplate(
+        '<div class="i-combo i-combo-form" {me.grow}>',
+            '<div class="i-combo-multiple x-form-text<tpl if="me.grow != true"> i-combo-multiple-inlined</tpl>">',
+                '<tpl if="me.grow != true"><div></tpl>',
                 '<tpl for="selected.items">',
                     '<span class="i-combo-selected-item" selected-id="{id}"<tpl if="style">{style}<tpl elseif="font">style="{font}"</tpl>>',
                         '{box}{title}',
                         '<span class="i-combo-selected-item-delete"></span>',
                     '</span>',
                 '</tpl>',
-                '<div class="i-combo-table-wrapper" id="{field.alias}-table-wrapper"><table class="i-combo-table"><tr>',
+                '<div class="i-combo-table-wrapper"><table class="i-combo-table"><tr>',
                     '<td class="i-combo-color-box-cell">',
                         '<div class="i-combo-color-box-div">',
                             '{selected.box}',
@@ -120,21 +125,31 @@ Ext.define('Indi.combo.form', {
                             '<input id="{field.alias}" type="hidden" value="{selected.value}" name="{field.alias}"/>',
                         '</div>',
                     '</td>',
-                    '<td class="i-combo-info-cell">',
+                    '<td class="i-combo-infoCell">',
                         '<div class="i-combo-info-div">',
-                            '<table class="i-combo-info i-combo-info-multiple" id="{field.alias}-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
-                                '<td><span class="i-combo-count" id="{field.alias}-count"></span></td>',
-                                '<td><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
-                                '<td><span class="i-combo-found" id="{field.alias}-found"></span></td>',
+                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
+                                '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
+                                '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+                                '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
                             '</tr></table>',
                         '</div>',
                     '</td>',
                     '</tr></table>',
                 '</div>',
+                '<tpl if="me.grow != true"></div></tpl>',
                 '<div class="i-combo-clear" style="clear: both;"></div>',
             '</div>',
-        '</div>'
-    ],
+        '</div>',
+        {
+            hello: function() {
+                console.log(this);
+                return 'asd';
+            },
+
+            me: this
+        }
+    ),
 
     /**
      * Provide usage of this.getValue() result as a way of getting submit value, instead of this.getRawValue
@@ -161,20 +176,18 @@ Ext.define('Indi.combo.form', {
      */
     createPicker: function() {
         var me = this;
+
+        // Create Ext.Panel object, for use a a picker
         return Ext.create('Ext.Panel', {
-            id: this.field.alias + '-suggestions',
-            cls: 'x-boundlist x-boundlist-floating x-boundlist-default',
+            cls: 'x-boundlist x-boundlist-default',
             border: 0,
             floating: true,
-            maxHeight: me.visibleCount * me.store.optionHeight,
+            maxHeight: me.visibleCount * parseInt(me.field.params.optionHeight) + 1,
             autoScroll: true,
             listeners: {
                 afterrender: function() {
-                    this.el.attr('hover', 'false');
-                    this.el.hover(function(){
-                        Ext.get(this).attr('hover','true');
-                    }, function(){
-                        Ext.get(this).attr('hover','false');
+                    this.body.on('scroll', function(){
+                        me.keywordEl.focus();
                     });
                 },
                 show: function() {
@@ -192,8 +205,7 @@ Ext.define('Indi.combo.form', {
      * @return {*}
      */
     valueToRaw: function (value, dataShouldBeReturned) {
-        var me = this;
-        var index = me.store.ids.indexOf(value);
+        var me = this, index = me.store.ids.indexOf(value);
         if (index == -1) index = me.store.ids.indexOf(parseInt(value));
         var data = me.store.data[index];
         return dataShouldBeReturned ? (data ? data : {}) : (data ? data.title : '');
@@ -223,6 +235,9 @@ Ext.define('Indi.combo.form', {
             // If combo is running in multiple-values mode
             if (me.multiSelect) {
 
+                // Normalize me.value
+                me.value = me.value + '';
+
                 // Detect difference between old value and new value
                 var was = me.value ? me.value.split(',') : [], now = value ? value.split(',') : [],
                     remove = Ext.Array.difference(was, now), append = Ext.Array.difference(now, was);
@@ -241,50 +256,7 @@ Ext.define('Indi.combo.form', {
                 }
 
                 // Append items that should be appended
-                for (i = 0; i < append.length; i++) {
-
-                    // Get the whole option data object by option value
-                    data = me.valueToRaw(append[i], true);
-
-                    // Detect option color (style or box) and declare 'css' object with empty 'color' property
-                    var color = me.color(data, value), css = {color: ''};
-
-                    // If color was detected in option data object, and that color is not a color-box color
-                    if (color.color && color.src != 'boxColor') css.color = color.color;
-
-                    // Set the width of .i-combo-table element to 1px, to prevent combo label jumping for cases if
-                    // adding the new item leads to height-increase of an area, that contains all currently selected
-                    // items
-                    me.tableEl.setWidth(1);
-
-                    // Append new selected item after the last existing selected item
-                    Ext.DomHelper.insertHtml('beforeBegin', me.wrapperEl.dom,
-                    '<span class="i-combo-selected-item" selected-id="'+append[i]+'">'+
-                        color.box + color.title +
-                        '<span class="i-combo-selected-item-delete"></span>' +
-                    '</span>');
-
-                    // Get that newly inserted selected item as an already appended dom node
-                    var a = me.el.select('.i-combo-selected-item[selected-id="' + append[i] +'"]').last();
-
-                    // Apply color
-                    a.css(css);
-
-                    // Bind a click event handler for a .i-combo-selected-item-delete
-                    // child node within newly appended item
-                    me.el.select('.i-combo-selected-item-delete').last().on('click', me.onItemDelete, me);
-
-                    // Execute javascript-code, assigned to appended item
-                    if (me.store.enumset) {
-                        var index = me.store['ids'].indexOf(append[i]);
-                        if (index != -1 && me.store['data'][index].system.js) {
-                            eval(me.store['data'][index].system.js);
-                        }
-                    }
-
-                    // Adjust width of .i-combo-table element for it to fit all available space
-                    me.adjustKeywordFieldWidth();
-                }
+                for (i = 0; i < append.length; i++) me.insertSelectedItem(append[i]);
 
             // Else if combo is running in single-value mode
             } else {
@@ -299,18 +271,86 @@ Ext.define('Indi.combo.form', {
             // Setup value for hiddenEl element
             me.hiddenEl.val(value);
 
-            // Call onHiddenChange()
-            me.onHiddenChange();
-        }
+            // Call parent
+            me.getNative().setValue.call(me, me.hiddenEl.val());
+
+            // If combo is running in multiple-values mode is rendered - empty keyword input element
+            if (me.multiSelect) me.keywordEl.dom.value = Ext.emptyString;
 
         // Call parent
-        if (me.el) Ext.form.field.Picker.setValue.call(me, me.hiddenEl.val());
-
-        // If combo is running in multiple-values mode is rendered - empty keyword input element
-        if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
+        } else me.getNative().setValue.call(me, value);
 
         // Return combo itself
         return me;
+    },
+
+    /**
+     * Walk through current instance's superclasses until found with $className property equal
+     * to 'Ext.form.field.Picker', and return that superclass instance. Currently this method is used to
+     * call Ext.form.field.Picker's native setValue method within current Indi.combo.form instance, and
+     * all other instances, created using a classes, extended from 'Indi.combo.form' class, e.g 'Indi.combo.filter'
+     * and 'Indi.combo.sibling'
+     *
+     * @return {*}
+     */
+    getNative: function() {
+        var me = this, parent = me.superclass;
+        while (parent.$className != 'Ext.form.field.Picker') {
+            parent = parent.superclass;
+        }
+        return parent;
+    },
+
+    /**
+     * Append new selected item to the list of selected items.
+     * This function is for use only for 'multiSelect = true' combos
+     *
+     * @param key
+     */
+    insertSelectedItem: function(key) {
+        var me = this, data;
+
+        // Get the whole option data object by option value
+        data = me.valueToRaw(key, true);
+
+        // Detect option color (style or box) and declare 'css' object with empty 'color' property
+        var color = me.color(data, key), css = {color: ''};
+
+        // If color was detected in option data object, and that color is not a color-box color
+        if (color.color && color.src != 'boxColor') css.color = color.color;
+
+        // Set the width of .i-combo-table element to 1px, to prevent combo label jumping for cases if
+        // adding the new item leads to height-increase of an area, that contains all currently selected
+        // items
+        me.tableEl.setWidth(1);
+
+        // Append new selected item after the last existing selected item
+        Ext.DomHelper.insertHtml('beforeBegin', me.wrapperEl.dom,
+            '<span class="i-combo-selected-item" selected-id="'+key+'">'+
+                color.box + color.title +
+                '<span class="i-combo-selected-item-delete"></span>' +
+                '</span>');
+
+        // Get that newly inserted selected item as an already appended dom node
+        var a = me.el.select('.i-combo-selected-item[selected-id="' + key +'"]').last();
+
+        // Apply color
+        a.css(css);
+
+        // Bind a click event handler for a .i-combo-selected-item-delete
+        // child node within newly appended item
+        me.el.select('.i-combo-selected-item-delete').last().on('click', me.onItemDelete, me);
+
+        // Execute javascript-code, assigned to appended item
+        if (me.store.enumset) {
+            var index = me.store['ids'].indexOf(key);
+            if (index != -1 && me.store['data'][index].system.js) {
+                eval(me.store['data'][index].system.js);
+            }
+        }
+
+        // Adjust width of .i-combo-table element for it to fit all available space
+        me.comboTableFit();
     },
 
     /**
@@ -326,11 +366,13 @@ Ext.define('Indi.combo.form', {
      * @param config
      */
     constructor: function(config) {
+        var me = this;
 
         // Setup multiSelect and fieldSubTpl properties depending on config.field.storeRelationAbility value
         if (config.field.storeRelationAbility == 'many') {
             this.multiSelect = true;
             this.fieldSubTpl = this.tplMultiple;
+            if (!config.hasOwnProperty('hideTrigger')) this.hideTrigger = true;
         } else {
             this.fieldSubTpl = this.tplSingle;
         }
@@ -338,8 +380,12 @@ Ext.define('Indi.combo.form', {
         // Call parent
         this.callParent(arguments);
 
+        // Setup noLookup property
+        me.setupNoLookup();
+
         // Setup 'field' property as one of this.subTplData object properties
         this.subTplData.field = this.field;
+        this.subTplData.me = me;
 
         // If combo is running in single-value mode, setup keyword input element value
         if (!this.multiSelect)
@@ -348,52 +394,25 @@ Ext.define('Indi.combo.form', {
     },
 
     /**
-     * This function differs from parent 'setDisabled' function.
-     * The difference is that if there is a need to achieve the result of parent 'setDisabled()' call
-     * - here 'setDisabled(false)' call should be used, e.g there is a need for explicit pass of first argument.
-     * If first argument is not given then this function will do the following check:
-     *    If combo has a satellite, and satellite value is 0, combo should be disabled.
-     *    Otherwise, combo will be enabled.
-     *
-     * So, if first argument is not given, function will try to automatically detect whether combo should be disabled
-     * or not
-     *
-     * @param force
+     * Setup noLookup property within me.field.params object, is there was no such a property, or if there was
+     * no such an object
      */
-    setDisabled: function(force){
-        var me = this, sComboName = me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp('tr-' + sComboName);
+    setupNoLookup: function() {
+        var me = this;
 
-        // If current combo has a satellite, and satellite combo is an also existing component
-        if (sComboName.length && sCombo) {
+        // Setup params object, if it was not set
+        me.field.params = me.field.params || {};
 
-            // Get satellite value
-            var sv = sCombo.getValue().toString(); sv = sv.length == 0 ? 0 : parseInt(sv);
+        // Setup noLookup property, if it was not set within me.field.params object
+        me.field.params.noLookup = me.field.params.noLookup || me.store.enumset.toString()
+    },
 
-            // If satellite value is 0, or 'force' argument is boolean 'true'
-            if (sv == 0 || force == true) {
-
-                // Explicitly setup first argument as boolean 'true'
-                force = true;
-
-                // We set hidden field value as 0 (or '', if multiple), and fire 'change' event because there can be
-                // satellited combos for current combo, so if we have, for example 5 cascading combos,
-                // that are satellited to each other, this code provide that if top combo is disabled,
-                // all dependent (satellited) combos will also be disabled recursively
-                if (me.multiSelect) {
-                    me.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
-                    me.hiddenEl.val('');
-                } else {
-                    me.hiddenEl.val(0);
-                }
-
-                // Erase keyworв input element value
-                me.keywordEl.val('');
-
-                // Call onHiddenChange
-                me.onHiddenChange();
-
-            } else if (!arguments.length) force = false;
-        }
+    /**
+     * Clear satellited combo, for example in case if satellite (master) combo value was changed, so satellited combos
+     * should be cleared before their data will be reloaded
+     */
+    clearSatellitedCombo: function() {
+        var me = this;
 
         // Restore default values for auxiliary attributes
         me.infoEl.attr({
@@ -405,8 +424,54 @@ Ext.define('Indi.combo.form', {
         });
         me.keywordEl.attr('selectedIndex', 0);
 
-        // Call parent
-        this.callParent([force]);
+        // Clear combo
+        me.clearCombo();
+    },
+
+    /**
+     * Function acts identical as same parent class function, but with one difference - if 'clear' argument is set to
+     * boolean 'true', then combo will be not only disabled, but cleared, mean there will be zero-value set up for combo
+     *
+     * @param force
+     */
+    setDisabled: function(force, clear){
+        var me = this, sComboName = me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp(me.bid() + sComboName);
+
+        // If current combo has a satellite, and satellite combo is an also existing component
+        if (sCombo) {
+
+            // Get satellite value
+            var sv = sCombo.getValue() + ''; sv = sv.length == 0 ? 0 : parseInt(sv);
+
+            // If satellite value is 0, or 'force' argument is boolean 'true'
+            if (sv == 0) {
+
+                // Disable combo
+                me.callParent([true]);
+
+                // If 'clear' argument is boolean true
+                if (clear) me.clearSatellitedCombo();
+
+
+            // Else if satellite value is non-zero
+            } else {
+
+                // Disable/Enable combo
+                me.callParent([force]);
+
+                // If 'clear' argument is boolean true
+                if (clear) me.clearSatellitedCombo();
+            }
+
+        // Else if current combo does not have a satellite
+        } else {
+
+            // Disable/Enable combo
+            me.callParent([force]);
+
+            // Clea combo, if it should be cleared
+            if (clear) me.clearCombo();
+        }
     },
 
     /**
@@ -440,6 +505,7 @@ Ext.define('Indi.combo.form', {
 
         // Bind a handler for 'click' event for .i-combo element
         me.comboEl.on('click', me.onKeywordClick, me);
+        me.comboEl.on('click', me.onTriggerClick, me);
 
         // Adjust width of .i-combo-table element for it to fit all available space
         me.comboTableFit();
@@ -474,19 +540,10 @@ Ext.define('Indi.combo.form', {
     onKeywordClick: function(e, dom) {
 
         // Setup 'el' and 'me' shortcuts
-        var el = Ext.get(dom), me = this;
+        var me = this, el = me.keywordEl;
 
         // If there currently is no options - return
         if (el.hasCls('i-combo-keyword-no-results') || me.disabled || el.hasCls('i-combo-selected-item-delete')) return;
-
-        // If current combo is a filter-combo, and ctrl key is pressed - clear combo
-        if (e.ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
-            me.clearCombo();
-            return;
-        }
-
-        // Call trigger click handler
-        me.onTriggerClick();
     },
 
     /**
@@ -495,8 +552,15 @@ Ext.define('Indi.combo.form', {
     onTriggerClick: function() {
         var me = this;
 
+        // If current combo is a filter-combo, and ctrl key is pressed - clear combo
+        if (arguments.length && arguments[0].ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
+            me.clearCombo();
+            return;
+        }
+
         // If combo is not read-only and is not disabled
-        if (!me.readOnly && !me.disabled) {
+        if (!me.readOnly && !me.disabled
+            && !Ext.get(Ext.EventObject.getTarget()).hasCls('i-combo-selected-item-delete')) {
 
             // Expand/collapse combo options boundlist
             if (!me.lastCollapsed || (new Date().getTime() - me.lastCollapsed > 250)) {
@@ -505,19 +569,40 @@ Ext.define('Indi.combo.form', {
                 } else {
                     me.expand();
                 }
-                Ext.defer(function(){me.keywordEl.focus();}, 10);
-            } else {
-                me.keywordEl.blur();
             }
+            me.focus(false, true);
         }
+    },
+
+    /**
+     * Performs the alignment on the picker using the class defaults.
+     *
+     * The only difference with parent class's doAlign method is that here we change the element,
+     * that picker should be aligned to - was me.inputEl, became me.inputCell.
+     * We do that because current combo component multiSelect ability implementation assumes,
+     * that inputEl is a html Input element with css 'float' property set to 'left', and if
+     * we have at least one selected item in the combo, inputEl is positioned after that selected item,
+     * i mean it's actual offsetX position is shifted, so it's a bad idea to still use it as an element
+     * that picker should be aligned to
+     *
+     * @private
+     */
+    doAlign: function() {
+        var me = this, picker = me.picker, aboveSfx = '-above', isAbove;
+
+        me.picker.alignTo(me.inputCell, me.pickerAlign, me.pickerOffset);
+        // add the {openCls}-above class if the picker was aligned above
+        // the field due to hitting the bottom of the viewport
+        isAbove = picker.el.getY() < me.inputEl.getY();
+        me.bodyEl[isAbove ? 'addCls' : 'removeCls'](me.openCls + aboveSfx);
+        picker[isAbove ? 'addCls' : 'removeCls'](picker.baseCls + aboveSfx);
     },
 
     // @inheritdoc
     expand: function() {
         var me = this;
-        me.applyState({pickerOffset: [-me.keywordEl.getOffsetsTo(me.comboEl)[0], 2]});
         me.callParent(arguments);
-        if (me.keywordEl.attr('no-lookup') != 'true' && !me.store.enumset) me.infoEl.show();
+        if (me.isInfoShowable()) me.infoEl.addCls('i-combo-info-expanded');
     },
 
     // @inheritdoc
@@ -525,7 +610,17 @@ Ext.define('Indi.combo.form', {
         var me = this;
         this.callParent(arguments);
         me.lastCollapsed = new Date().getTime();
-        if (!me.keywordEl.attr('no-lookup') != 'true' && !me.store.enumset) me.infoEl.hide();
+        if (me.isInfoShowable()) me.infoEl.removeCls('i-combo-info-expanded');
+    },
+
+    isInfoShowable: function() {
+        var me = this, notShowable;
+
+        notShowable = me.keywordEl.attr('no-lookup') == 'true'
+            || me.store.enumset
+            || parseInt(me.foundEl.getHTML().replace(',', '')) <= me.visibleCount;
+
+        return !me.disabled && (me.infoEl.attr('fetch-mode') == 'keyword' || !notShowable);
     },
 
     /**
@@ -544,8 +639,11 @@ Ext.define('Indi.combo.form', {
     clearCombo: function() {
         var me = this;
 
+        // If current combo is not clearable - return
+        if (!me.isClearable()) return;
+
         // Remove color-box
-        if (me.colorBox) me.colorBox.remove();
+        me.colorDiv.setHTML('');
 
         // Remove color
         me.keywordEl.setStyle({color: ''});
@@ -553,12 +651,37 @@ Ext.define('Indi.combo.form', {
         // Erase keyword
         me.setRawValue('');
 
+        // Clear combo hidden value
+        me.clearComboValue();
+    },
+
+    /**
+     * Check if current combo can be cleared.
+     *
+     * Unclearable combos:
+     * 1. Boolean combos (e.g combo is representing a checkbox)
+     * 2. Single enumset combos
+     *
+     * So, if current combo is not of any of these types - it is clearable
+     *
+     * @return {Boolean}
+     */
+    isClearable: function() {
+        return this.hiddenEl.attr('boolean') != 'true' && (!this.store.enumset || this.multiSelect);
+    },
+
+    clearComboValue: function() {
+        var me = this;
+
         // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
         // value will be cleared automatically
-        if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').click();
+        if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
 
-        // Else combo is single, we set it's value to 0, if it's not boolean, or '' otherwise
-        else me.hiddenEl.val(me.hiddenEl.attr('boolean') != 'true' ? 0 : '');
+        // Else if combo is single and is not boolean, we set it's value to 0, '' otherwise
+        else me.hiddenEl.val(0);
+
+        // Call setValue
+        me.getNative().setValue.call(me, me.hiddenEl.val());
     },
 
     /**
@@ -582,10 +705,12 @@ Ext.define('Indi.combo.form', {
             // Get default options height
             var defaultHeight = parseInt(me.getPicker().el.select('li').first().getStyle('height'));
 
+            // Get required option height
+            var requiredHeight = parseInt(me.field.params.optionHeight || me.store.optionHeight);
+
             // Set special css class for options if optionHeight > 14
-            if (me.store.optionHeight > defaultHeight) {
-                me.getPicker().el.select('li').css({height: me.store.optionHeight + 'px'});
-                me.getPicker().el.select('ul').first().addCls('i-combo-data-tall');
+            if (requiredHeight > defaultHeight) {
+                me.getPicker().el.select('.x-boundlist-item').css({height: requiredHeight + 'px'});
             }
 
             // Bind 'hover' and 'click' event handlers for boundlist items
@@ -711,7 +836,7 @@ Ext.define('Indi.combo.form', {
                     if (json['data'][i].option) {
                         item += json['data'][i].option;
                     } else {
-                        color = this.color(json['data'][i], json['ids'][i]);
+                        color = me.color(json['data'][i], json['ids'][i]);
                         item += color.box;
                         item += color.title;
                     }
@@ -739,15 +864,6 @@ Ext.define('Indi.combo.form', {
             me.infoEl.addCls('i-combo-info-fetched-all');
         } else {
             me.infoEl.removeCls('i-combo-info-fetched-all');
-        }
-
-        // Info should be displayed only if maximum possible results per page is less that total found results
-        // or combo is running in 'keyword' mode
-        if ((me.infoEl.attr('fetch-mode') == 'keyword' || parseInt(me.foundEl.getHTML().replace(',','')) > this.visibleCount)
-            && me.keywordEl.attr('disabled') != 'disabled') {
-            Ext.defer(function(){
-                me.infoEl.setStyle('visibility', 'visible');
-            }, 1);
         }
 
         // Get the html blob
@@ -832,7 +948,8 @@ Ext.define('Indi.combo.form', {
             info.color = color[1];
 
             // Build color box
-            if (info.src == 'boxColor') info.box = '<span class="i-combo-color-box" style="background: ' + info.color + ';"></span> ';
+            if (['boxColor', 'value'].indexOf(info.src) != -1)
+                info.box = '<span class="i-combo-color-box" style="background: ' + info.color + ';"></span> ';
 
             // If color was got from title (means that title was in format hue#rrggbb), set title as same color
             // but without hue
@@ -847,7 +964,8 @@ Ext.define('Indi.combo.form', {
             if (this.color) {
 
                 // If color should be represented as a color box - setup/update box
-                if (this.src == 'boxColor') Ext.defer(function(){me.colorDiv.update(this.box)}, 1, this);
+                if (['boxColor', 'value'].indexOf(this.src) != -1)
+                    Ext.defer(function(){me.colorDiv.update(this.box)}, 1, this);
 
                 // Else is color should be represented as color of inner option contents - apply it
                 else Ext.defer(function(){me.keywordEl.css('color', this.color)}, 1, this);
@@ -991,27 +1109,33 @@ Ext.define('Indi.combo.form', {
         if (!me.multiSelect) return;
 
         // Define auxiliary variables
-        var decrease = 0;
+        var staticDecrease = 0, dynamicDecrease = 0;
 
-        // Here we do width adjust using a setTimeout, because there is some strange thing happens with the
+        // Here we do width adjust using a Ext.defer, because there is some strange thing happens with the
         // results of comboEl.width() call. For some reason, outside the setTimeout body it gives result, that
         // differs from the same one, got inside. I guess it is caused by some browser rendering particularity
         Ext.defer(function(){
-            decrease = 0;
-            decrease += parseInt(me.comboEl.css('padding-right')) + parseInt(me.comboEl.css('padding-left'));
-            decrease += parseInt(me.multipleEl.css('margin-right')) + parseInt(me.multipleEl.css('margin-left'));
-            decrease += parseInt(me.multipleEl.css('padding-right')) + parseInt(me.multipleEl.css('padding-left'));
+            staticDecrease += parseInt(me.comboEl.css('padding-right')) + parseInt(me.comboEl.css('padding-left'));
+            staticDecrease += parseInt(me.multipleEl.css('margin-right')) + parseInt(me.multipleEl.css('margin-left'));
+            staticDecrease += parseInt(me.multipleEl.css('padding-right')) + parseInt(me.multipleEl.css('padding-left'));
             if (me.multipleEl.select('.i-combo-selected-item').getCount()) {
                 var last = me.multipleEl.select('.i-combo-selected-item').last();
-                decrease += last.getOffsetsTo(me.comboEl)[0];
-                decrease += last.getWidth();
+                dynamicDecrease += last.getOffsetsTo(me.comboEl)[0];
+                dynamicDecrease += last.getWidth();
             }
+            staticDecrease += (me.hideTrigger && last ? 1 : 0);
 
-            me.tableEl.setWidth(me.multipleEl.getWidth(true) - decrease);
-            if (last && (last.getOffsetsTo(me.comboEl)[0] > me.keywordEl.getOffsetsTo(me.comboEl)[0])) {
-                me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1);
-            } else if (me.tableEl.getWidth() == me.multipleEl.getWidth(true)) {
-                me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1);
+            var w = me.multipleEl.getWidth(true) - staticDecrease - dynamicDecrease;
+            var fraction = Math.ceil((me.multipleEl.getWidth(true) - staticDecrease) * 0.25);
+            if (me.grow) {
+                me.tableEl.setWidth(w);
+                if ((last && (last.getOffsetsTo(me.comboEl)[0] > me.keywordEl.getOffsetsTo(me.comboEl)[0])) ||
+                    me.tableEl.getWidth() == me.multipleEl.getWidth(true)) {
+                    me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1 + (me.hideTrigger ? 1 : 0));
+                }
+            } else {
+                me.tableEl.setWidth(fraction);
+                me.keywordEl.scrollIntoView(me.comboInner, true, true);
             }
         }, 10);
     },
@@ -1070,8 +1194,8 @@ Ext.define('Indi.combo.form', {
 
         // Set the updated value and call 'onHiddenChange' function
         me.hiddenEl.val(selected.join(','));
-        me.value = selected.join(',');
-        if (noChange == false) me.onHiddenChange();
+
+        if (noChange == false) me.getNative().setValue.call(me, me.hiddenEl.val());
     },
 
     /**
@@ -1085,42 +1209,10 @@ Ext.define('Indi.combo.form', {
         // Correct value of 'prev' attr
         me.keywordEl.attr('prev', me.keywordEl.val());
 
-        // Remove color
-        me.keywordEl.css({color: ''});
-
         // We need to fire 'change' event only if combo is running in single-value mode.
         // In that mode no keyword = no value. But in multiple-value mode combo may have a
         // value without a keyword. Also, we fire change only if previous value was not 0
-        if (!me.multiSelect) {
-
-            // Remove color-box
-            if (me.colorBox) me.colorBox.remove();
-
-            // If we have a value
-            if (me.hiddenEl.val()) {
-
-                // If combo is used to represent a checkbox (boolean value)
-                if (me.hiddenEl.attr('boolean') == 'true') {
-
-                    // We set it's value to empty string and fire change handler
-                    me.hiddenEl.val('');
-                    me.onHiddenChange();
-
-                // Else if is it non-boolean combo
-                } else {
-
-                    // We set it's value to 0 and fire change handler
-                    me.hiddenEl.val(0);
-                    me.onHiddenChange();
-                }
-
-            // Else if we have no value (empty string), but combo is boolean
-            } else if (me.hiddenEl.attr('boolean') == 'true') {
-
-                // We just fire change handler
-                me.onHiddenChange();
-            }
-        }
+        if (!me.multiSelect) me.clearCombo();
 
         // We restore combo state, that is had before first run of 'keyword' fetch mode
         if (me.store.backup) {
@@ -1130,7 +1222,6 @@ Ext.define('Indi.combo.form', {
             me.countEl = me.infoDiv.select(me.renderSelectors.countEl).first();
             me.foundEl = me.infoDiv.select(me.renderSelectors.foundEl).first();
             me.ofEl = me.infoDiv.select(me.renderSelectors.ofEl).first();
-            me.infoEl.hide();
             var restore = Indi.copy(me.store.backup.options);
             me.store = {};
             me.store = restore;
@@ -1156,8 +1247,8 @@ Ext.define('Indi.combo.form', {
      *
      * @param event Used to get code of pressed key on keyboard
      */
-    keyUpHandler: function (event){
-        var me = this;
+    keyUpHandler: function (event) {
+        var me = this, eo = Ext.EventObject, k = eo.getKey();
 
         // We will be fetching results with a timeout, so fetch requests will be
         // sent after keyword typing is finished (or seems to be finished)
@@ -1185,10 +1276,10 @@ Ext.define('Indi.combo.form', {
         var prev = me.keywordEl.attr('prev') || '';
 
         // Variable for detection if keyword was changed and first page of related results should be fetched
-        var keywordChanged = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() != '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/) && !(Ext.EventObject.altKey || Ext.EventObject.ctrlKey || Ext.EventObject.shiftKey));
+        var keywordChanged = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() != '' && (!Ext.EventObject.isSpecialKey() || (k == eo.BACKSPACE || k == eo.DELETE)));
 
         // Check if keyword was emptied
-        var keywordChangedToEmpty = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() == '' && !event.keyCode.toString().match(/^(13|40|38|34|33|9|16)$/) && !(Ext.EventObject.altKey || Ext.EventObject.ctrlKey || Ext.EventObject.shiftKey));
+        var keywordChangedToEmpty = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() == '' && (!Ext.EventObject.isSpecialKey() || (k == eo.BACKSPACE || k == eo.DELETE)));
 
         // Renew lastTimeKeyUp
         me.store.lastTimeKeyUp = new Date().getTime();
@@ -1233,7 +1324,7 @@ Ext.define('Indi.combo.form', {
             var satellite = me.infoEl.attr('satellite');
 
             // Get satellite as Ext combo object
-            var he = Ext.getCmp('tr-' + satellite);
+            var he = Ext.getCmp(me.bid() + satellite);
 
             // Prepare data for fetch request
             var data = {};
@@ -1531,8 +1622,9 @@ Ext.define('Indi.combo.form', {
         } else if (code == Ext.EventObject.ESC || code == Ext.EventObject.TAB) {
 
             // If there is no currently selected option, we just hide suggestions list,
-            // Else if there is - we select it by the same way as it would clicked
-            if (me.onItemSelect() === false) me.collapse();
+            // Else if there is - we select it by the same way as it would clicked,
+            // but only if combo is not running in multiple-values mode
+            if (me.multiSelect || me.onItemSelect() === false) me.collapse();
 
         // Other keys
         } else {
@@ -1609,15 +1701,7 @@ Ext.define('Indi.combo.form', {
         me.comboTableFit();
 
         // Fire 'change' event
-        me.onHiddenChange();
-
-        // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
-        // We will need this fact in request data prepare process, because if at the moment of sending
-        // request 'changed' will still be 'false' (initial value), satellite property won't be set in
-        // request data object. We need this to get upper and lower page results fetched from currently selected
-        // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
-        // have start point different to selected value, and based on most top alphabetic order.
-        me.infoEl.attr('changed', 'true');
+        me.getNative().setValue.call(me, me.hiddenEl.val());
     },
 
     /**
@@ -1631,6 +1715,9 @@ Ext.define('Indi.combo.form', {
             if (!li) return false;
         } else {
             li = Ext.get(dom);
+
+            // If click event target is actually not an item, but some it's child item - go upper the DOM and find
+            if (!li.hasCls('x-boundlist-item')) li = li.up('.x-boundlist-item');
         }
 
         // Get the index of selected option id in me.store.ids
@@ -1698,8 +1785,7 @@ Ext.define('Indi.combo.form', {
                 me.hiddenEl.val(selected.length > 1 ? selected.join(',') : selected[0]);
 
                 // Hide options, is ctrlKey was not pressed
-                var e = window.event || (typeof arguments[0] == 'object' ? arguments[0] : null);
-                if ((e && !(e.metaKey || e.ctrlKey)) || !e) me.collapse();
+                if (!Ext.EventObject.ctrlKey) me.collapse();
 
                 // Restore list of options
                 me.keywordErased(mode);
@@ -1749,7 +1835,15 @@ Ext.define('Indi.combo.form', {
      * dependent-combos reloading, javascript execution and others
      */
     onHiddenChange: function() {
-        var me = this, name = me.name, sComboName, sCombo;
+        var me = this, name = me.name, dComboName, dCombo;
+
+        // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
+        // We will need this fact in request data prepare process, because if at the moment of sending
+        // request 'changed' will still be 'false' (initial value), satellite property won't be set in
+        // request data object. We need this to get upper and lower page results fetched from currently selected
+        // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
+        // have start point different to selected value, and based on most top alphabetic order.
+        me.infoEl.attr('changed', 'true');
 
         // Remove attributes from hidden field, if it's value became 0. We do it here only for single-value combos
         // because multiple-value combos have different way of how-and-when the same aim should be reached -
@@ -1784,29 +1878,16 @@ Ext.define('Indi.combo.form', {
         // If combo is running in multiple-values mode and is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
 
-        // Call superclass setValue method to provide 'change' event firing
-        me.superclass.setValue.call(me, me.hiddenEl.val());
-        //Ext.form.field.Picker.setValue.call(me, me.hiddenEl.val());
+        // Align picker
+        Ext.defer(me.alignPicker, 10, me);
 
         // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
         me.el.up('div[id^=form]').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
-            sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
-            sCombo = Ext.getCmp('tr-' + sComboName);
-            sCombo.setDisabled();
-            if (!sCombo.disabled) {
-
-                // Here we are emptying the satellited combo selected values, either hidden and visible
-                // because if we would do it in afterFetchAdjustmetns, there would be a delay until fetch
-                // request would be completed
-                if (sCombo.multiSelect) {
-                    sCombo.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
-                    sCombo.hiddenEl.val('');
-                } else {
-                    sCombo.hiddenEl.val(0);
-                }
-
-                sCombo.keywordEl.val('');
-                sCombo.remoteFetch({
+            dComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
+            dCombo = Ext.getCmp(me.bid() + dComboName);
+            dCombo.setDisabled(false, true);
+            if (!dCombo.disabled) {
+                dCombo.remoteFetch({
                     satellite: me.hiddenEl.val(),
                     mode: 'refresh-children'
                 });
@@ -1815,8 +1896,8 @@ Ext.define('Indi.combo.form', {
     },
 
     listeners: {
-        change: function(me, newValue, oldValue) {
-            //console.log(me.name, newValue, oldValue);
+        change: function() {
+            this.onHiddenChange();
         }
     },
 
@@ -1858,14 +1939,8 @@ Ext.define('Indi.combo.form', {
             // Show options list after keyword typing is finished
             if (me.isExpanded) {
 
-                // If we selected some option in satellite and current results are
-                // results for satellited field, we do not expand them at this time.
-                // We just remove 'no-results-within' class from satellited field
-                // keyword and set keyword to empty string
-                if (requestData.mode == 'refresh-children') {
-                    me.keywordEl.removeCls('no-results-within').val('');
-                    me.onHiddenChange();
-                }
+                // Align picker
+                me.alignPicker();
 
             // Show results
             } else if (requestData.mode != 'refresh-children') {
@@ -1873,7 +1948,7 @@ Ext.define('Indi.combo.form', {
             }
 
             // Enable combo if children were found
-            if (requestData.mode == 'refresh-children') me.setDisabled(false);
+            if (requestData.mode == 'refresh-children') me.setDisabled();
 
             // Options selected adjustments
             if (requestData.more && requestData.more.toString().match(/^(upper|lower)$/)) {
@@ -1914,30 +1989,6 @@ Ext.define('Indi.combo.form', {
 
                 // Update page-top|page-btm value
                 me.infoEl.attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
-            }
-
-            // Increase combo width, if needed
-            var prevMaxLength, backup;
-            if (me.store.backup
-                && me.store.backup.options
-                && me.store.backup.options.titleMaxLength) {
-                prevMaxLength = me.store.backup.options.titleMaxLength;
-                backup = true;
-            } else {
-                prevMaxLength = me.store.titleMaxLength;
-                backup = false;
-            }
-
-            // If value of 'titleMaxLength' property of responseData object is greater than prevMaxLength variable
-            if (responseData.titleMaxLength > prevMaxLength) {
-                var increasedMarginLeft = me.increaseWidthBy(Math.round(
-                    (responseData.titleMaxLength - prevMaxLength) *
-                        me.averageTitleCharWidth
-                ));
-                me.store.titleMaxLength = responseData.titleMaxLength;
-                if (backup && increasedMarginLeft) {
-                    me.store.backup.options.titleMaxLength = responseData.titleMaxLength;
-                }
             }
 
         // Else if results set is empty (no non-disabled options), we hide options, and set red
@@ -2075,16 +2126,6 @@ Ext.define('Indi.combo.form', {
     },
 
     /**
-     * Empty function. Declared for possible usage in components, extended from current component,
-     * such as Indi.combo.sibling and Indi.combo.filter
-     *
-     * @param pixels
-     */
-    increaseWidthBy: function(pixels) {
-
-    },
-
-    /**
      * Builds a path to make a fetch request to
      *
      * @return string
@@ -2119,18 +2160,10 @@ Ext.define('Indi.combo.form', {
      * @param data
      */
     remoteFetch: function(data){
-        var me = this, name = me.name;
+        var me = this;
 
         // Show loading pic
-        me.countEl
-            .setHTML('<img src="' + Indi.std + '/i/admin/combo-data-loading.gif" class="i-combo-data-loading">')
-            .addCls('i-combo-count-visible');
-
-        // Provide ability for loading pic to be visible
-        if (!me.isExpanded) {
-            me.infoEl.css('display', 'block');
-            me.ofEl.css('display', 'none');
-        }
+        me.infoEl.addCls('i-combo-info-loading');
 
         // Appendix
         var parts = me.xtype.split('.'), appendix = [];
@@ -2205,14 +2238,11 @@ Ext.define('Indi.combo.form', {
                 // Setup backup
                 me.store.backup = backupOptions.backup;
 
+                // Restore default visibility for countEl element
+                me.infoEl.removeCls('i-combo-info-loading');
+
                 // Build html for options, and do all other things
                 me.afterFetchAdjustments(data, json);
-
-                // Restore infoEl element, and child ofEl element display properties
-                if (!me.isExpanded) {
-                    me.infoEl.css('display', 'none');
-                    me.ofEl.css('display', 'inline');
-                }
             }
         })
     },
@@ -2329,5 +2359,9 @@ Ext.define('Indi.combo.form', {
         } else {
             this.disable();
         }
+    },
+
+    bid: function() {
+        return 'tr-';
     }
 });

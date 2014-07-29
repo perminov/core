@@ -441,6 +441,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
     },
 
     panelToolbarFilter: function() {
+        var me = this;
 
         // If there is at least one filter was setup for current section
         if (this.trail().filters.length) {
@@ -452,24 +453,27 @@ Ext.define('Indi.Controller.Action.Rowset', {
             return {
                 xtype: 'toolbar',
                 dock: 'top',
-                padding: '1 3 5 5',
+                padding: '1 5 5 5',
                 id: this.bid()+'-toolbar-filter',
+                layout: 'auto',
                 items: [{
                     xtype:'fieldset',
                     id: this.bid()+'-toolbar-filter-fieldset',
-                    padding: '0 4 1 5',
-                    margin: '0 2 ' + fieldsetMarginBottom + ' 0',
+                    padding: '0 0 1 3',
                     title: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_TITLE,
                     width: '100%',
-                    columnWidth: '100%',
                     layout: 'column',
                     defaults: {
-                        padding: '0 5 4 0',
-                        margin: '-1 0 0 0'
+                        margin: '0 5 4 2',
+                        labelSeparator: '',
+                        labelPad: 6,
+                        labelStyle: 'padding-left: 0'
                     },
                     items: this.panelToolbarFilterItemA(),
                     listeners: {
-                        //afterrender: this.setFilterValues
+                        afterrender: function(){
+                            me.setFilterValues();
+                        }
                     }
                 }]
             }
@@ -530,96 +534,12 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: filterCmpId,
             xtype: 'combo.filter',
             fieldLabel : fieldLabel,
-            labelWidth: Indi.metrics.getWidth(fieldLabel) + 5,
-            width: 'auto',
+            labelWidth: Indi.metrics.getWidth(fieldLabel),
             field: field,
             name: alias,
-            height: 21,
-            padding: '0 0 3 0',
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store
-        }
-
-        return {
-            padding: 0,
-            id: filterCmpId + '-item',
-            layout: 'hbox',
-            margin: '0 5 4 0',
-            cls: 'i-filter-combo',
-            border: 0,
-            items: [{
-                xtype: 'label',
-                id: filterCmpId + '-label',
-                text: fieldLabel,
-                forId: filter.foreign('fieldId').alias + '-keyword',
-                margin: '0 5 0 0',
-                padding: '1 0 1 0',
-                cls: 'i-filter-combo-label',
-                border: 0
-            }, {
-                id: filterCmpId,
-                contentEl: filterCmpId + '-combo',
-                border: 0,
-                multiple: filter.foreign('fieldId').storeRelationAbility == 'many',
-                boolean: filter.foreign('fieldId').storeRelationAbility == 'none',
-                cls: 'i-filter-combo-component',
-                getValue: function(){
-                    // Me
-                    var me = this;
-
-                    // If at this monent combo DOM node is not yet picked by 'me', we set 'hidden'
-                    // variable directly as a DOM node outside 'me'
-                    if (!me.el) var hidden = $('#' + me.contentEl + ' input[type="hidden"]');
-
-                    // Else we set 'hidden' variable as a node within 'me'
-                    else var hidden = $(me.el.dom).find('input[type="hidden"]');
-
-                    // If combo is single-value
-                    if (hidden.parents('i-combo-single')) {
-
-                        // If combo value is 0, and combo is not used to represent BOOLEAN database
-                        // column - the '' (empty string) will be returned, or actial combo value otherwise
-                        return hidden.val() == '0' && hidden.attr('boolean') != 'true' ? '' : hidden.val();
-
-                        // Else if combo is mltiple-value, an array of values (got by splitting combo value,
-                        // by ',') will be returned
-                    } else if (hidden.parents('i-combo-multiple')) {
-                        return hidden.val().split(',');
-                    }
-                },
-
-                // Here we define a setValue method, because it will be called at certain stage
-                // within this.setFilterValues() execution, and if if won't define - error will
-                // occur. Also we need it to be working at 'clear-all-filters' function, represented by
-                // a special panel header tool
-                setValue: function(value){
-                    if (value == '') {
-                        Indi.combo.filter.clearCombo(
-                            $('#'+this.contentEl).find('input[type="hidden"]').attr('name')
-                        );
-                    }
-                },
-
-                // Provide the event handlers
-                listeners: {
-
-                    // Provide a handler for 'render' event
-                    render: function(){
-
-                        // Here we provide an ability for width autoadjusting, in case if current combo has
-                        // a satellite, and satelitte value was changed, so maximum option width may change,
-                        // because options list was refreshed
-                        var me = this;
-                        var width = parseInt($('#'+me.contentEl).css('width'));
-                        var diff = width + Ext.getCmp(me.id+'-label').getWidth() - Ext.getCmp(me.id + '-item').getWidth()
-                        me.setWidth(width);
-                        Ext.getCmp(me.id + '-item').setWidth(
-                            Ext.getCmp(me.id + '-item').getWidth() + diff + 5
-                        );
-                    }
-                }
-            }]
         }
     },
 
@@ -641,7 +561,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: filterCmpId,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
-            labelSeparator: '',
+            //labelSeparator: '',
             labelClsExtra: 'i-multislider-color-label',
             values: [0, 360],
             increment: 1,
@@ -674,7 +594,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: this.bid() + '-filter-' + alias,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
-            labelSeparator: '',
+            //labelSeparator: '',
             hiddenName: alias,
             width: 80 + Indi.metrics.getWidth(fieldLabel),
             margin: 0,
@@ -716,7 +636,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: filterCmpId + '-gte',
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
-            labelSeparator: '',
+            //labelSeparator: '',
             width: 50 + Indi.metrics.getWidth(fieldLabel),
             margin: 0,
             minValue: 0,
@@ -733,7 +653,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: filterCmpId + '-lte',
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
-            labelSeparator: '',
+            //labelSeparator: '',
             width: 50 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
             margin: 0,
             minValue: 0,
@@ -757,7 +677,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
 
         // Get the format
         var dateFormat = filter.foreign('fieldId').params['display' +
-            (Indi.trail().filters[i].foreign('fieldId').foreign('elementId').alias == 'datetime' ?
+            (filter.foreign('fieldId').foreign('elementId').alias == 'datetime' ?
                 'Date': '') + 'Format'] || 'Y-m-d';
 
         // Get the label for filter minimal value component
@@ -772,10 +692,8 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: filterCmpId + '-gte',
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
-            labelSeparator: '',
             width: 85 + Indi.metrics.getWidth(fieldLabel),
             startDay: 1,
-            margin: 0,
             validateOnChange: false,
             listeners: {
                 change: function(cmp){
@@ -790,10 +708,8 @@ Ext.define('Indi.Controller.Action.Rowset', {
             id: filterCmpId + '-lte',
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
-            labelSeparator: '',
             width: 85 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
             startDay: 1,
-            margin: 0,
             validateOnChange: false,
             listeners: {
                 change: function(cmp){
@@ -1007,7 +923,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
             fieldLabel: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
-            labelSeparator: '',
+            //labelSeparator: '',
             value: this.trail().scope.keyword ? Indi.urldecode(this.trail().scope.keyword) : '',
             width: 100 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             height: 19,
@@ -1227,7 +1143,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
                             Ext.getCmp(filterCmpId + '-' + j).noReload = false;
                         }
 
-                    // Else current filter is not a renge-filter
+                // Else current filter is not a renge-filter
                 } else {
 
                     // Toggle 'noReload' property to 'true' to prevent store reload
@@ -1252,7 +1168,7 @@ Ext.define('Indi.Controller.Action.Rowset', {
                             Ext.getCmp(filterCmpId).setValue(j, d[j], false);
 
 
-                        // Else set by original way
+                    // Else set by original way
                     } else
                         Ext.getCmp(filterCmpId).setValue(d);
 
@@ -1724,7 +1640,20 @@ Ext.define('Indi.Controller.Action.Row.Form', {
                 name      : field.alias,
                 inputValue: enumset.alias,
                 id        : field.alias + Indi.ucfirst(enumset.alias),
-                checked     : enumset.alias == this.trail().row[field.alias]
+                checked     : enumset.alias == this.trail().row[field.alias],
+                enumset: enumset,
+                listeners: {
+                    change: function(radio, now, was) {
+                        if (now) {
+                            try {
+                                eval(radio.enumset.javascript);
+                                eval(field.javascript);
+                            } catch (e) {
+                                //console.log(e);
+                            }
+                        }
+                    }
+                }
             });
         }
         return {
@@ -1738,13 +1667,20 @@ Ext.define('Indi.Controller.Action.Row.Form', {
                 height: 10
             },
             layout: 'vbox',
-            items: optionA
+            items: optionA,
+            listeners: {
+                afterlayout: function(cmp) {
+                    var checked = cmp.items.findBy(function(item){return item.checked == true});
+                    checked.fireEvent('change', checked, true);
+                }
+            }
         };
     },
 
     rowItemICheck: function(field) {
         return {
             id: this.trail().bid() + '-field-' + field.alias,
+            id: 'tr-' + field.alias,
             xtype: 'checkbox',
             fieldLabel : field.title,
             //defaultType: 'checkbox',

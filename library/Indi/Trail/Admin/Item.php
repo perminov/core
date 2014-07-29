@@ -253,7 +253,7 @@ class Indi_Trail_Admin_Item {
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray();
-        if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray();
+        if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
         if ($this->scope) $array['scope'] = $this->scope->toArray();
         $array['level'] = $this->level;
         return $array;

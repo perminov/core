@@ -1,3 +1,28 @@
+Ext.override(Ext.form.field.Text, {
+
+    /**
+     * Sets a data value into the field and runs the change detection and validation. Also applies any configured
+     * {@link #emptyText} for text fields. To set the value directly without these inspections see {@link #setRawValue}.
+     * @param {Object} value The value to set
+     * @return {Ext.form.field.Text} this
+     */
+    setValue: function(value) {
+        var me = this,
+            inputEl = me.inputEl;
+
+        if (inputEl && me.emptyText && !Ext.isEmpty(value)) {
+            inputEl.removeCls(me.emptyCls);
+            me.valueContainsPlaceholder = false;
+        }
+        //console.log(me.name, value);
+
+        me.callParent(arguments);
+
+        me.applyEmptyText();
+        return me;
+    }
+});
+
 Ext.override(Ext.dom.Element, {
     attr: function(name, value) {
         if (arguments.length == 1) {
@@ -27,6 +52,120 @@ Ext.override(Ext.dom.Element, {
         } else {
             return this.dom.value;
         }
+    },
+
+    click: function() {
+        this.dom.click();
+    },
+
+    /**
+     * Gets the x,y coordinates to align this element with another element. See {@link #alignTo} for more info on the
+     * supported position values.
+     * @param {String/HTMLElement/Ext.Element} element The element to align to.
+     * @param {String} [position="tl-bl?"] The position to align to (defaults to )
+     * @param {Number[]} [offsets] Offset the positioning by [x, y]
+     * @return {Number[]} [x, y]
+     */
+    getAlignToXY : function(alignToEl, posSpec, offset) {
+        var doc = document,
+            alignRe = /^([a-z]+)-([a-z]+)(\?)?$/,
+            round = Math.round;
+
+        alignToEl = Ext.get(alignToEl);
+
+        if (!alignToEl || !alignToEl.dom) {
+            //<debug>
+            Ext.Error.raise({
+                sourceClass: 'Ext.dom.Element',
+                sourceMethod: 'getAlignToXY',
+                msg: 'Attempted to align an element that doesn\'t exist'
+            });
+            //</debug>
+        }
+
+        offset = offset || [0,0];
+        posSpec = (!posSpec || posSpec == "?" ? "tl-bl?" : (!(/-/).test(posSpec) && posSpec !== "" ? "tl-" + posSpec : posSpec || "tl-bl")).toLowerCase();
+
+        var me = this,
+            myPosition,
+            alignToElPosition,
+            x,
+            y,
+            myWidth,
+            myHeight,
+            alignToElRegion,
+            viewportWidth = Ext.dom.Element.getViewWidth(),
+            viewportHeight = Ext.dom.Element.getViewHeight(),
+            p1y,
+            p1x,
+            p2y,
+            p2x,
+            swapY,
+            swapX,
+            docElement = doc.documentElement,
+            docBody = doc.body,
+            scrollX = (docElement.scrollLeft || docBody.scrollLeft || 0),// + 5, WHY was 5 ever added?
+            scrollY = (docElement.scrollTop  || docBody.scrollTop  || 0),// + 5, It means align will fail if the alignTo el was at less than 5,5
+            constrain, //constrain to viewport
+            align1,
+            align2,
+            alignMatch = posSpec.match(alignRe);
+
+        //<debug>
+        if (!alignMatch) {
+            Ext.Error.raise({
+                sourceClass: 'Ext.dom.Element',
+                sourceMethod: 'getAlignToXY',
+                el: alignToEl,
+                position: posSpec,
+                offset: offset,
+                msg: 'Attemmpted to align an element with an invalid position: "' + posSpec + '"'
+            });
+        }
+        //</debug>
+
+        align1 = alignMatch[1];
+        align2 = alignMatch[2];
+        constrain = !!alignMatch[3];
+
+        //Subtract the aligned el's internal xy from the target's offset xy
+        //plus custom offset to get this Element's new offset xy
+        myPosition = me.getAnchorXY(align1, true);
+        alignToElPosition = alignToEl.getAnchorXY(align2, false);
+
+        x = alignToElPosition[0] - myPosition[0] + offset[0];
+        y = alignToElPosition[1] - myPosition[1] + offset[1];
+
+        // If position spec ended with a "?", then constrain to viewport is necessary
+        if (constrain) {
+            myWidth = me.getWidth();
+            myHeight = me.getHeight();
+            alignToElRegion = alignToEl.getRegion();
+            //If we are at a viewport boundary and the aligned el is anchored on a target border that is
+            //perpendicular to the vp border, allow the aligned el to slide on that border,
+            //otherwise swap the aligned el to the opposite border of the target.
+            p1y = align1.charAt(0);
+            p1x = align1.charAt(align1.length - 1);
+            p2y = align2.charAt(0);
+            p2x = align2.charAt(align2.length - 1);
+            swapY = ((p1y == "t" && p2y == "b") || (p1y == "b" && p2y == "t"));
+            swapX = ((p1x == "r" && p2x == "l") || (p1x == "l" && p2x == "r"));
+
+            if (x + myWidth > viewportWidth + scrollX) {
+                x = swapX ? alignToElRegion.left - myWidth : viewportWidth + scrollX - myWidth;
+            }
+            if (x < scrollX) {
+                x = swapX ? alignToElRegion.right : scrollX;
+            }
+            if (y + myHeight > viewportHeight + scrollY) {
+                y = swapY ? alignToElRegion.top - myHeight : viewportHeight + scrollY - myHeight;
+                y -= offset[1]; // This line is thу only difference with original getAlignToXY function source code
+            }
+            if (y < scrollY) {
+                y = (swapY ? alignToElRegion.bottom : scrollY) + offset[1];
+            }
+        }
+        return [x,y];
     }
 });
 Ext.override(Ext.dom.CompositeElementLite, {
