@@ -44,6 +44,11 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public $titleMaxIndent = 0;
 
+    /**
+     * Declared for availablity in child classes
+     *
+     * @var bool
+     */
     public $pageUpDisabled = false;
 
     /**
@@ -107,6 +112,7 @@ class Indi_View_Helper_Admin_FormCombo {
      *
      * @param $name
      * @param null $tableName
+     * @param string $mode
      * @return string
      */
     public function formCombo($name, $tableName = null, $mode = 'default') {
@@ -248,8 +254,7 @@ class Indi_View_Helper_Admin_FormCombo {
         $vars = array('name', 'selected', 'params', 'attrs', 'satellite', 'comboDataRs', 'keyProperty');
         foreach ($vars as $var) $this->$var = $$var;
 
-        ob_start();
-
+        // If combo mode is 'extjs', we prepare a data object containing all involved info
         if ($mode == 'extjs') {
 
             $view = array(
@@ -273,11 +278,15 @@ class Indi_View_Helper_Admin_FormCombo {
             }
             $this->getRow()->view($this->field->alias, $view);
 
-        } else {
+        }/* else {
+
+            // Start output buffering
+            ob_start();
 
             // Encode that set in json format
             $options = json_encode($options);
 
+            // Use different templates depend on field type
             if ($this->field->storeRelationAbility == 'one' ||
                 ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12)) {
                 echo $this->formComboSingle();
@@ -288,9 +297,9 @@ class Indi_View_Helper_Admin_FormCombo {
             // Init combo store data
             ?><script>Indi.ready(function(){<?=$this->context?>.Indi.combo.<?=$this->type?>.store['<?=$this->name?>'] = (<?=$options?>)}, 'combo.<?=$this->type?>', <?=$this->context?>);</script><?
 
-        }
-
-        return ob_get_clean();
+            // Get and return buffered output
+            return ob_get_clean();
+        }*/
     }
 
     /**

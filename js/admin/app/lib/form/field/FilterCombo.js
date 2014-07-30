@@ -1,7 +1,13 @@
-Ext.define('Indi.combo.filter', {
+/**
+ * Special version of Indi.form.Combo, created for grid/tile/etc store filtering purposes
+ */
+Ext.define('Indi.lib.form.field.FilterCombo', {
 
     // @inheritdoc
-    extend: 'Indi.combo.form',
+    extend: 'Indi.form.Combo',
+
+    // @inheritdoc
+    alternateClassName: 'Indi.form.FilterCombo',
 
     // @inheritdoc
     alias: 'widget.combo.filter',

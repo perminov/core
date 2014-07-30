@@ -1,4 +1,4 @@
-Ext.define('Indi.Login', {
+Ext.define('Indi.view.LoginBox', {
     extend: 'Ext.Panel',
     id: 'i-login-panel',
     renderTo: 'i-login-box',
@@ -51,46 +51,53 @@ Ext.define('Indi.Login', {
                 }
 
                 // Make an authentication request
-                $.post(Indi.pre + '/', data, function(response){
+                Ext.Ajax.request({
+                    url: Indi.pre + '/',
+                    params: data,
+                    success: function(response){
 
-                    // If request returned an error, display a Ext.MessageBox
-                    if (response.error) {
-                        Ext.MessageBox.show({
-                            title: Indi.lang.I_LOGIN_ERROR_MSGBOX_TITLE,
-                            msg: response.error,
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.ERROR
-                        });
+                        // Parse response
+                        response = JSON.parse(response.responseText);
 
-                        // Else signin was ok, we check if 'remember' checkbox was checked,
-                        // and if so - set the cookies. After that we do a page reload
-                    } else if (response.ok) {
+                        // If request returned an error, display a Ext.MessageBox
+                        if (response.error) {
+                            Ext.MessageBox.show({
+                                title: Indi.lang.I_LOGIN_ERROR_MSGBOX_TITLE,
+                                msg: response.error,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.ERROR
+                            });
 
-                        // Delete 'enter' property from 'data' object for it to be ready to
-                        // set or remove cookies for it's all remaining properties
-                        delete data.enter;
+                            // Else signin was ok, we check if 'remember' checkbox was checked,
+                            // and if so - set the cookies. After that we do a page reload
+                        } else if (response.ok) {
 
-                        // For each remaining property in 'data' object
-                        for (var i in data)
+                            // Delete 'enter' property from 'data' object for it to be ready to
+                            // set or remove cookies for it's all remaining properties
+                            delete data.enter;
 
-                            // If 'remember' checkbox was checked, we create cookie
-                            if (data.remember)
-                                Ext.util.Cookies.set(
-                                    'i-' + i,
-                                    data[i],
+                            // For each remaining property in 'data' object
+                            for (var i in data)
 
-                                    // We set cookie expire date as 1 month
-                                    Ext.Date.add(new Date(), Ext.Date.MONTH, 1),
-                                    Indi.pre
-                                );
+                                // If 'remember' checkbox was checked, we create cookie
+                                if (data.remember)
+                                    Ext.util.Cookies.set(
+                                        'i-' + i,
+                                        data[i],
 
-                            // Else we delete cookie
-                            else Ext.util.Cookies.clear(i, Indi.pre);
+                                        // We set cookie expire date as 1 month
+                                        Ext.Date.add(new Date(), Ext.Date.MONTH, 1),
+                                        Indi.pre
+                                    );
 
-                        // Reload window contents
-                        window.location.replace(Indi.pre + '/');
+                                // Else we delete cookie
+                                else Ext.util.Cookies.clear(i, Indi.pre);
+
+                            // Reload window contents
+                            window.location.replace(Indi.pre + '/');
+                        }
                     }
-                }, 'json');
+                });
             }
         },{
             xtype: 'button',
