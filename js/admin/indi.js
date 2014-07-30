@@ -27,18 +27,11 @@ Ext.define('Indi', {
          */
         trail: function() {
             if (arguments[0] === true) {
-                return Indi.Trail.instance;
+                return Indi.Trail;
             } else {
-                return Indi.Trail.instance.item(arguments.length ? parseInt(arguments[0]) : 0);
+                return Indi.Trail.item(arguments.length ? parseInt(arguments[0]) : 0);
             }
         },
-
-        /**
-         * Prototypes store
-         *
-         * @type {Object}
-         */
-        proto: {},
 
         /**
          * Equivalent for php's strip_tags function. Source code got from http://phpjs.org/functions/strip_tags/
@@ -276,9 +269,13 @@ Ext.define('Indi', {
             // Push the given url to a story stack
             Indi.story.push(uri);
 
-            $.post(uri, function(response){
-                Indi.clearCenter();
-                $('#i-center-center-body').html(response);
+            // Make the request
+            Ext.Ajax.request({
+                url: uri,
+                success: function(response){
+                    Indi.clearCenter();
+                    Ext.get('i-center-center-body').update(response.responseText, true);
+                }
             });
         },
 
@@ -373,6 +370,13 @@ Ext.define('Indi', {
             }
         },
 
+        /**
+         * Custom implementation of Ext.fly() method, that allows to treat any html blob as Ext.dom.Element.Fly object,
+         * and makes possible to do with it such things as dom queries, etc
+         *
+         * @param html
+         * @return {*}
+         */
         fly: function(html) {
             return Ext.fly(Ext.query('> *:first-child', Ext.DomHelper.createDom({tag: 'div', html: html})).pop());
         }
@@ -387,9 +391,9 @@ Ext.define('Indi', {
         this.self = Ext.merge(this.self, this.statics);
 
         if (Ext.get('i-login-box')) {
-            Ext.create('Indi.Login', {title: Indi.title});
+            Ext.create('Indi.view.LoginBox', {title: Indi.title});
         } else {
-            Indi.viewport = Ext.create('Indi.Viewport');
+            Indi.viewport = Ext.create('Indi.view.Viewport');
         }
 
         Indi.app = this;

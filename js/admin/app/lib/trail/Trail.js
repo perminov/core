@@ -1,77 +1,10 @@
-Indi.Db = Indi.Db || {};
-Indi.Db.Table = Indi.Db.Table || {};
-Indi.Db.Table.Row = Indi.Db.Table.Row || {};
-Indi.Db.Table.Row.prototype = function (data) {
-    this.foreign = function(key) {
-        if (key == 'fieldId') {
-            for (var i = 0; i < Indi.trail(true).store.length; i++) {
-                if (Indi.trail(i).fields)
-                    for (var j = 0; j < Indi.trail(i).fields.length; j++) {
-                        if (parseInt(Indi.trail(i).fields[j].id) == parseInt(this.fieldId)) {
-                            return Indi.trail(i).fields[j];
-                        }
-                    }
-            }
-        } else if (this._foreign && this._foreign[key]) {
-            return this._foreign[key];
-        }
-    };
+/**
+ * Trail object
+ */
+Ext.define('Indi.lib.trail.Trail', {
+    alternateClassName: 'Indi.Trail',
+    singleton: true,
 
-    this.nested = function(key) {
-        return this._nested[key];
-    };
-
-    this.view = function(key) {
-        return this._view[key];
-    };
-    Ext.merge(this, data);
-};
-
-Ext.define('Indi.Trail.Item', {
-    extend: 'Ext.Component',
-    bid: function() {
-        var s = 'i-section-' + this.section.alias + '-action-' + this.action.alias;
-        if (this.row) {
-                s += '-row-' + (this.row.id || 0);
-        } else if (this.parent().row) {
-            s += '-parentrow-' + this.parent().row.id;
-        }
-        return s;
-    },
-
-    parent: function(up) {
-        return Indi.trail(true).store[this.level - 1 - (up ? up : 0)];
-    },
-
-    constructor: function(config) {
-
-        // Call parent
-        this.callParent(arguments);
-
-        // Setup a 'href' property for each store's item's section object, as a shortcut, which will be used
-        // in configuring urls for all system interface components, that are used for navigation
-        this.section.href = Indi.pre + '/' + this.section.alias + '/';
-
-        // Convert each filter to an instance of Indi.Db.Table.Row object
-        if (this.filters)
-            for (var f = 0; f < this.filters.length; f++)
-                this.filters[f] = new Indi.Db.Table.Row.prototype(this.filters[f]);
-
-        // Convert each field to an instance of Indi.Db.Table.Row object
-        if (this.fields)
-            for (var f = 0; f < this.fields.length; f++)
-//                this.fields[f] = Ext.create('Indi.Db.Table.Row', this.fields[f]);
-                this.fields[f] = new Indi.Db.Table.Row.prototype(this.fields[f]);
-
-        // Convert this.row plain object to an instance of Indi.Db.Table.Row object
-        //if (this.row) this.row = Ext.create('Indi.Db.Table.Row', this.row);
-        if (this.row) this.row = new Indi.Db.Table.Row.prototype(this.row);
-
-        if (this.filtersSharedRow) this.filtersSharedRow = new Indi.Db.Table.Row.prototype(this.filtersSharedRow);
-    }
-});
-
-Ext.define('Indi.Trail', {
     /**
      * Configuration
      *
@@ -354,7 +287,7 @@ Ext.define('Indi.Trail', {
 
         // Update store
         for (var i = 0; i < store.length; i++)
-            this.store.push(Ext.create('Indi.Trail.Item', Ext.merge({level: i}, store[i])));
+            this.store.push(Ext.create('Indi.trail.Item', Ext.merge({level: i}, store[i])));
 
         // Run
         try {
@@ -365,19 +298,19 @@ Ext.define('Indi.Trail', {
                 console.log(e.stack);
             }
         } catch (e){
-            //console.log(e.stack);
-            Ext.define('Indi.controller.' + Indi.trail().section.alias, {
-                extend: 'Indi.Controller'
-            });
+            Ext.define('Indi.controller.' + Indi.trail().section.alias, {extend: 'Indi.Controller'});
             Indi.app.getController(Indi.trail().section.alias).dispatch(Indi.trail().action.alias, Indi.story[Indi.story.length-1]);
         }
     },
 
+    /**
+     * Get the trail item
+     *
+     * @param stepsUp
+     * @return {*}
+     */
     item: function(stepsUp) {
         if (typeof stepsUp == 'undefined') stepsUp = 0;
         return this.store[this.store.length - 1 - stepsUp];
     }
-
-}, function(){
-    Indi.Trail.instance = Ext.create('Indi.Trail');
 });

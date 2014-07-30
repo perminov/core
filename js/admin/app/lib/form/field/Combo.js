@@ -4,10 +4,13 @@
  * multiSelect mode, color detection and etc.
  * todo: implement Ext.data.Store usage as a data source instead of custom store implementation
  */
-Ext.define('Indi.combo.form', {
+Ext.define('Indi.lib.form.field.Combo', {
 
     // @inheritdoc
     extend: 'Ext.form.field.Picker',
+
+    // @inheritdoc
+    alternateClassName: 'Indi.form.Combo',
 
     // @inheritdoc
     alias: 'widget.combo.form',
@@ -72,84 +75,76 @@ Ext.define('Indi.combo.form', {
      */
     tplSingle: [
         '<div class="i-combo i-combo-form">',
-            '<div class="i-combo-single x-form-text">',
-                '<table class="i-combo-table"><tr>',
-                    '<td class="i-combo-color-box-cell">',
-                        '<div class="i-combo-color-box-div">',
-                            '{selected.box}',
-                        '</div>',
-                    '</td>',
-                    '<td class="i-combo-keyword-cell">',
-                        '<div class="i-combo-keyword-div">',
-                            '<input id="{field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{field.alias}" value="{selected.keyword}" no-lookup="{field.params.noLookup}" placeholder="{field.params.placeholder}"/>',
-                            '<input id="{field.alias}" type="hidden" value="{selected.value}" name="{field.alias}"/>',
-                        '</div>',
-                    '</td>',
-                    '<td class="i-combo-infoCell">',
-                        '<div class="i-combo-info-div">',
-                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
-                                '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
-                                '<td class="i-combo-info-countCell"><span class="i-combo-count">30</span></td>',
-                                '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
-                                '<td class="i-combo-info-foundCell"><span class="i-combo-found">30</span></td>',
-                            '</tr></table>',
-                        '</div>',
-                    '</td>',
-                '</tr></table>',
-            '</div>',
+        '<div class="i-combo-single x-form-text">',
+        '<table class="i-combo-table"><tr>',
+        '<td class="i-combo-color-box-cell">',
+        '<div class="i-combo-color-box-div">',
+        '{selected.box}',
+        '</div>',
+        '</td>',
+        '<td class="i-combo-keyword-cell">',
+        '<div class="i-combo-keyword-div">',
+        '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
+        '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}"/>',
+        '</div>',
+        '</td>',
+        '<td class="i-combo-infoCell">',
+        '<div class="i-combo-info-div">',
+        '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+        '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
+        '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
+        '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+        '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
+        '</tr></table>',
+        '</div>',
+        '</td>',
+        '</tr></table>',
+        '</div>',
         '</div>'
     ],
 
     /**
      * Template for use in case if combo runs in multiple-values mode
      */
-    tplMultiple: new Ext.XTemplate(
+    tplMultiple: [
         '<div class="i-combo i-combo-form" {me.grow}>',
-            '<div class="i-combo-multiple x-form-text<tpl if="me.grow != true"> i-combo-multiple-inlined</tpl>">',
-                '<tpl if="me.grow != true"><div></tpl>',
-                '<tpl for="selected.items">',
-                    '<span class="i-combo-selected-item" selected-id="{id}"<tpl if="style">{style}<tpl elseif="font">style="{font}"</tpl>>',
-                        '{box}{title}',
-                        '<span class="i-combo-selected-item-delete"></span>',
-                    '</span>',
-                '</tpl>',
-                '<div class="i-combo-table-wrapper"><table class="i-combo-table"><tr>',
-                    '<td class="i-combo-color-box-cell">',
-                        '<div class="i-combo-color-box-div">',
-                            '{selected.box}',
-                        '</div>',
-                    '</td>',
-                    '<td class="i-combo-keyword-cell">',
-                        '<div class="i-combo-keyword-div">',
-                            '<input id="{field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{field.alias}" value="" lookup="{field.params.noLookup}" placeholder="{field.params.placeholder}"/>',
-                            '<input id="{field.alias}" type="hidden" value="{selected.value}" name="{field.alias}"/>',
-                        '</div>',
-                    '</td>',
-                    '<td class="i-combo-infoCell">',
-                        '<div class="i-combo-info-div">',
-                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
-                                '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
-                                '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
-                                '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
-                                '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
-                            '</tr></table>',
-                        '</div>',
-                    '</td>',
-                    '</tr></table>',
-                '</div>',
-                '<tpl if="me.grow != true"></div></tpl>',
-                '<div class="i-combo-clear" style="clear: both;"></div>',
-            '</div>',
+        '<div class="i-combo-multiple x-form-text<tpl if="me.grow != true"> i-combo-multiple-inlined</tpl>">',
+        '<tpl if="me.grow != true"><div></tpl>',
+        '<tpl for="selected.items">',
+        '<span class="i-combo-selected-item" selected-id="{id}"<tpl if="style">{style}<tpl elseif="font">style="{font}"</tpl>>',
+        '{box}{title}',
+        '<span class="i-combo-selected-item-delete"></span>',
+        '</span>',
+        '</tpl>',
+        '<div class="i-combo-table-wrapper"><table class="i-combo-table"><tr>',
+        '<td class="i-combo-color-box-cell">',
+        '<div class="i-combo-color-box-div">',
+        '{selected.box}',
         '</div>',
-        {
-            hello: function() {
-                console.log(this);
-                return 'asd';
-            },
-
-            me: this
-        }
-    ),
+        '</td>',
+        '<td class="i-combo-keyword-cell">',
+        '<div class="i-combo-keyword-div">',
+        '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
+        '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}"/>',
+        '</div>',
+        '</td>',
+        '<td class="i-combo-infoCell">',
+        '<div class="i-combo-info-div">',
+        '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+        '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
+        '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
+        '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+        '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
+        '</tr></table>',
+        '</div>',
+        '</td>',
+        '</tr></table>',
+        '</div>',
+        '<tpl if="me.grow != true"></div></tpl>',
+        '<div class="i-combo-clear" style="clear: both;"></div>',
+        '</div>',
+        '</div>'
+    ],
 
     /**
      * Provide usage of this.getValue() result as a way of getting submit value, instead of this.getRawValue
@@ -258,7 +253,7 @@ Ext.define('Indi.combo.form', {
                 // Append items that should be appended
                 for (i = 0; i < append.length; i++) me.insertSelectedItem(append[i]);
 
-            // Else if combo is running in single-value mode
+                // Else if combo is running in single-value mode
             } else {
 
                 // Get the whole option data object by option value
@@ -277,7 +272,7 @@ Ext.define('Indi.combo.form', {
             // If combo is running in multiple-values mode is rendered - empty keyword input element
             if (me.multiSelect) me.keywordEl.dom.value = Ext.emptyString;
 
-        // Call parent
+            // Call parent
         } else me.getNative().setValue.call(me, value);
 
         // Return combo itself
@@ -287,8 +282,8 @@ Ext.define('Indi.combo.form', {
     /**
      * Walk through current instance's superclasses until found with $className property equal
      * to 'Ext.form.field.Picker', and return that superclass instance. Currently this method is used to
-     * call Ext.form.field.Picker's native setValue method within current Indi.combo.form instance, and
-     * all other instances, created using a classes, extended from 'Indi.combo.form' class, e.g 'Indi.combo.filter'
+     * call Ext.form.field.Picker's native setValue method within current Indi.lib.form.field.Combo instance, and
+     * all other instances, created using a classes, extended from 'Indi.lib.form.field.Combo' class, e.g 'Indi.combo.filter'
      * and 'Indi.combo.sibling'
      *
      * @return {*}
@@ -370,27 +365,26 @@ Ext.define('Indi.combo.form', {
 
         // Setup multiSelect and fieldSubTpl properties depending on config.field.storeRelationAbility value
         if (config.field.storeRelationAbility == 'many') {
-            this.multiSelect = true;
-            this.fieldSubTpl = this.tplMultiple;
-            if (!config.hasOwnProperty('hideTrigger')) this.hideTrigger = true;
+            me.multiSelect = true;
+            me.fieldSubTpl = me.tplMultiple;
+            if (!config.hasOwnProperty('hideTrigger')) me.hideTrigger = true;
         } else {
-            this.fieldSubTpl = this.tplSingle;
+            me.fieldSubTpl = me.tplSingle;
         }
 
         // Call parent
-        this.callParent(arguments);
+        me.callParent(arguments);
 
         // Setup noLookup property
         me.setupNoLookup();
 
-        // Setup 'field' property as one of this.subTplData object properties
-        this.subTplData.field = this.field;
-        this.subTplData.me = me;
+        // Setup a link to current combo instance, within subTplData object
+        me.subTplData.me = me;
 
         // If combo is running in single-value mode, setup keyword input element value
-        if (!this.multiSelect)
-            this.subTplData.selected.keyword
-                = (this.subTplData.selected.input || this.subTplData.selected.title || '').replace(/"/g, '&quot;');
+        if (!me.multiSelect)
+            me.subTplData.selected.keyword
+                = (me.subTplData.selected.input || me.subTplData.selected.title || '').replace(/"/g, '&quot;');
     },
 
     /**
@@ -453,7 +447,7 @@ Ext.define('Indi.combo.form', {
                 if (clear) me.clearSatellitedCombo();
 
 
-            // Else if satellite value is non-zero
+                // Else if satellite value is non-zero
             } else {
 
                 // Disable/Enable combo
@@ -463,7 +457,7 @@ Ext.define('Indi.combo.form', {
                 if (clear) me.clearSatellitedCombo();
             }
 
-        // Else if current combo does not have a satellite
+            // Else if current combo does not have a satellite
         } else {
 
             // Disable/Enable combo
@@ -738,9 +732,9 @@ Ext.define('Indi.combo.form', {
      */
     suggestions: function(json){
         var me = this, name = me.name, items = [],
-        groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}},
-        groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '',
-        disabledCount = 0, color = {}, item;
+            groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}},
+            groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '',
+            disabledCount = 0, color = {}, item;
 
         // Foreach options groups
         for (var j in groups) {
@@ -895,7 +889,7 @@ Ext.define('Indi.combo.form', {
                         selectedIndex = index - disabledCount + 1;
                         selectedFound = true;
 
-                    // We increment disabledCount until selected value is found
+                        // We increment disabledCount until selected value is found
                     } else if (selectedFound == false && Ext.fly(li).hasCls('x-boundlist-item-disabled')) {
                         disabledCount++;
                     }
@@ -903,7 +897,7 @@ Ext.define('Indi.combo.form', {
                 me.keywordEl.attr('selectedIndex', selectedIndex);
             }
 
-        // Else if options length is zero
+            // Else if options length is zero
         } else me.keywordEl.attr('selectedIndex', 0);
 
         // Return html blob
@@ -970,7 +964,7 @@ Ext.define('Indi.combo.form', {
                 // Else is color should be represented as color of inner option contents - apply it
                 else Ext.defer(function(){me.keywordEl.css('color', this.color)}, 1, this);
 
-            // Else if there was no color detected in option data
+                // Else if there was no color detected in option data
             } else {
 
                 // Erase colorDiv element contents and erase css color inline declaration
@@ -1077,7 +1071,7 @@ Ext.define('Indi.combo.form', {
                     }
                 }
 
-            // Else if current item is not only disabled, but also is a group
+                // Else if current item is not only disabled, but also is a group
             } else if (Indi.fly(items[i]).hasCls('x-boundlist-item-group')) {
 
                 // Setup groupIndex variable value
@@ -1236,7 +1230,7 @@ Ext.define('Indi.combo.form', {
             me.expand();
             Ext.defer(function(){me.keywordEl.focus();}, 10);
 
-        // Rebuild combo but do not show at this time
+            // Rebuild combo but do not show at this time
         } else if (mode == 'selected-but-found-with-lookup'){
             me.rebuildComboData();
         }
@@ -1344,7 +1338,7 @@ Ext.define('Indi.combo.form', {
                         me.keyDownHandler(33);
                         return;
 
-                    // Else if we are still walking through pages of all (not filtered by keyword) results
+                        // Else if we are still walking through pages of all (not filtered by keyword) results
                     } else if (fetchMode == 'no-keyword') {
 
                         // If top border of range of displayed pages is not yet 1
@@ -1354,9 +1348,9 @@ Ext.define('Indi.combo.form', {
                         if (me.infoEl.attr('page-top-reached') == 'false') {
                             data.page = pageTop - 1;
 
-                        // Otherwise, if top border of range of displayed pages is already 1
-                        // so it is smallest possible value and therefore we won't do any request,
-                        // and we only should move selection to first option
+                            // Otherwise, if top border of range of displayed pages is already 1
+                            // so it is smallest possible value and therefore we won't do any request,
+                            // and we only should move selection to first option
                         } else {
 
                             me.keywordEl.attr('selectedIndex', 1);
@@ -1365,7 +1359,7 @@ Ext.define('Indi.combo.form', {
                         }
                     }
 
-                // If next page needed
+                    // If next page needed
                 } else if (event.keyCode == '34') {
 
                     // If keyword was at least once changed
@@ -1378,8 +1372,8 @@ Ext.define('Indi.combo.form', {
                     if (me.infoEl.attr('page-btm-reached') == 'false') {
                         data.page = pageBtm + 1;
 
-                    // Otherwise, if bottom border of range of displayed pages is already reached,
-                    // so it is biggest possible value for page number and therefore we won't do any request
+                        // Otherwise, if bottom border of range of displayed pages is already reached,
+                        // so it is biggest possible value for page number and therefore we won't do any request
                     } else {
                         me.keywordEl.attr('selectedIndex', me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').getCount());
                         me.keyDownHandler(34);
@@ -1391,7 +1385,7 @@ Ext.define('Indi.combo.form', {
                 // Fetch request
                 me.remoteFetch(data);
 
-            // If we are searching by keyword
+                // If we are searching by keyword
             } else if (event.keyCode != '33') {
 
                 // Setup request keyword
@@ -1488,7 +1482,7 @@ Ext.define('Indi.combo.form', {
             if (me.isExpanded) me.onItemSelect();
             return false;
 
-        // Up or Down arrows
+            // Up or Down arrows
         } else if (code == Ext.EventObject.DOWN || code == Ext.EventObject.UP || code == Ext.EventObject.PAGE_DOWN || code == Ext.EventObject.PAGE_UP) {
 
             // If Down key was pressed but picker is not shown
@@ -1500,7 +1494,7 @@ Ext.define('Indi.combo.form', {
                 // Adjust width of .i-combo-table element for it to fit all available space
                 me.comboTableFit();
 
-            // Else
+                // Else
             } else {
 
                 // Get items count for calculations
@@ -1512,13 +1506,13 @@ Ext.define('Indi.combo.form', {
                         me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+1);
                     }
 
-                // Up key
+                    // Up key
                 } else  if (code == Ext.EventObject.UP){
                     if (parseInt(me.keywordEl.attr('selectedIndex')) > 1) {
                         me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-1);
                     }
 
-                // PgDn key
+                    // PgDn key
                 } else if (code == Ext.EventObject.PAGE_DOWN) {
                     if (parseInt(me.keywordEl.attr('selectedIndex')) < size - me.visibleCount) {
                         me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+me.visibleCount);
@@ -1535,7 +1529,7 @@ Ext.define('Indi.combo.form', {
                     // Prevent page scrolldown, so picker contents will be scrolled instead of form panel contents
                     if (evt.preventDefault) evt.preventDefault();
 
-                // PgUp key
+                    // PgUp key
                 } else if (code == Ext.EventObject.PAGE_UP) {
                     if (parseInt(me.keywordEl.attr('selectedIndex')) > me.visibleCount) {
                         me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-me.visibleCount);
@@ -1595,7 +1589,7 @@ Ext.define('Indi.combo.form', {
 
                     // Setup color box if needed
                     var color = me.color(me.store.data[index], me.store.ids[index]);
-                        color.apply();
+                    color.apply();
 
                     // Apply css color, if it was passed within store. Currently this feature is used for
                     // cases then item title got from database was something like
@@ -1618,7 +1612,7 @@ Ext.define('Indi.combo.form', {
             }
             return false;
 
-        // Esc key or Tab key
+            // Esc key or Tab key
         } else if (code == Ext.EventObject.ESC || code == Ext.EventObject.TAB) {
 
             // If there is no currently selected option, we just hide suggestions list,
@@ -1626,7 +1620,7 @@ Ext.define('Indi.combo.form', {
             // but only if combo is not running in multiple-values mode
             if (me.multiSelect || me.onItemSelect() === false) me.collapse();
 
-        // Other keys
+            // Other keys
         } else {
 
             // If combo is multiple
@@ -1644,12 +1638,12 @@ Ext.define('Indi.combo.form', {
                     // Hide picker
                     if (me.hideOptionsAfterKeywordErased) me.collapse();
 
-                // Otherwise, is any other key was pressed and no-lookup is true then ignore that key
+                    // Otherwise, is any other key was pressed and no-lookup is true then ignore that key
                 } else if (me.keywordEl.attr('no-lookup') == 'true') {
                     return false;
                 }
 
-            // If combo is not multiple
+                // If combo is not multiple
             } else {
 
                 // We provide necessary operations if combo is running with no-lookup option
@@ -1664,7 +1658,7 @@ Ext.define('Indi.combo.form', {
                     if ((code == Ext.EventObject.BACKSPACE || code == Ext.EventObject.DELETE) && (!me.store.enumset || me.xtype == 'combo.filter')){
                         me.clearCombo();
 
-                    // If any other key was pressed, there should be no reaction
+                        // If any other key was pressed, there should be no reaction
                     } else {
                         evt.preventDefault();
                         return false;
@@ -1759,10 +1753,10 @@ Ext.define('Indi.combo.form', {
 
                 // Append new selected item after the last existing selected item
                 Ext.DomHelper.insertHtml('beforeBegin', me.wrapperEl.dom,
-                '<span class="i-combo-selected-item" selected-id="'+li.attr(name)+'">'+
-                    color.box + color.title +
-                    '<span class="i-combo-selected-item-delete"></span>' +
-                '</span>');
+                    '<span class="i-combo-selected-item" selected-id="'+li.attr(name)+'">'+
+                        color.box + color.title +
+                        '<span class="i-combo-selected-item-delete"></span>' +
+                        '</span>');
 
                 // Get that newly inserted selected item as an already appended dom node
                 var a = me.el.select('.i-combo-selected-item[selected-id="' + li.attr(name) +'"]').last();
@@ -1801,13 +1795,13 @@ Ext.define('Indi.combo.form', {
                 // Additional operations, that should be done after some option was selected
                 me.postSelect(li);
 
-            // Indicate that option can't be once more selected because it's already selected
+                // Indicate that option can't be once more selected because it's already selected
             } else {
                 var existing = me.el.select('.i-combo-selected-item[selected-id="'+li.attr(name)+'"] .i-combo-selected-item-delete').first();
                 if (existing) existing.fadeOut({opacity: 0.25, duration: 200}).fadeIn();
             }
 
-        // Else if combo is running in single-value mode
+            // Else if combo is running in single-value mode
         } else {
 
             // Apply selected color
@@ -1896,6 +1890,9 @@ Ext.define('Indi.combo.form', {
     },
 
     listeners: {
+        resize: function() {
+            this.comboTableFit();
+        },
         change: function() {
             this.onHiddenChange();
         }
@@ -1942,7 +1939,7 @@ Ext.define('Indi.combo.form', {
                 // Align picker
                 me.alignPicker();
 
-            // Show results
+                // Show results
             } else if (requestData.mode != 'refresh-children') {
                 me.keywordEl.dom.click();
             }
@@ -1991,8 +1988,8 @@ Ext.define('Indi.combo.form', {
                 me.infoEl.attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
             }
 
-        // Else if results set is empty (no non-disabled options), we hide options, and set red
-        // color for keyword, as there was no related results found
+            // Else if results set is empty (no non-disabled options), we hide options, and set red
+            // color for keyword, as there was no related results found
         } else {
 
             // Hide options list div
@@ -2003,7 +2000,7 @@ Ext.define('Indi.combo.form', {
             if (requestData.mode == 'refresh-children') {
                 me.setDisabled(true);
 
-            // Else if reason of no results was not in satellite, we add special css class for that case
+                // Else if reason of no results was not in satellite, we add special css class for that case
             } else me.keywordEl.addCls('i-combo-keyword-no-results');
         }
     },
@@ -2104,7 +2101,7 @@ Ext.define('Indi.combo.form', {
             // Set up number of found (primary) results
             me.store.found = results.length;
 
-        // If we are dealing with non-tree list of options, all it simpler for a bit
+            // If we are dealing with non-tree list of options, all it simpler for a bit
         } else {
             for (var i = 0; i < me.store.backup.options.data.length; i++) {
 
@@ -2205,7 +2202,7 @@ Ext.define('Indi.combo.form', {
                     if (me.store.optgroup)
                         me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                // Else if fetched options should be appended to current options list
+                    // Else if fetched options should be appended to current options list
                 } else if (data.more == 'lower') {
 
                     // If we are dealing with tree of results, we should merge existing options tree
@@ -2215,7 +2212,7 @@ Ext.define('Indi.combo.form', {
                         // Merge trees
                         me.store = me.merge(me.store, json);
 
-                    // Else we just append fetched options to existing options
+                        // Else we just append fetched options to existing options
                     } else {
                         for (var key in json['ids']) {
                             me.store['ids'].push(json['ids'][key]);
@@ -2226,7 +2223,7 @@ Ext.define('Indi.combo.form', {
                     // Merge optgroup info
                     if (me.store.optgroup) me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                // Otherwise we just replace current options with fetched options
+                    // Otherwise we just replace current options with fetched options
                 } else {
                     var jsBackup = me.store.js;
                     var optionHeightBackup = me.store.optionHeight;
@@ -2317,8 +2314,8 @@ Ext.define('Indi.combo.form', {
                         tree1['data'].splice(insertAfter, 0, tree2['data'][index2]);
                     }
 
-                // Else if such an option is already presented in existing tree, we check if it is
-                // disabled there but not in new tree and if so we set 'disabled' property to 'false'
+                    // Else if such an option is already presented in existing tree, we check if it is
+                    // disabled there but not in new tree and if so we set 'disabled' property to 'false'
                 } else {
 
                     // Find index
@@ -2349,7 +2346,7 @@ Ext.define('Indi.combo.form', {
                 me.keywordEl.up('.i-combo').addCls('i-combo-disabled x-item-disabled');
                 me.keywordEl.val('');
 
-            // Enable combo
+                // Enable combo
             } else {
                 me.keywordEl.removeAttr('disabled');
                 me.keywordEl.up('.i-combo').removeCls('i-combo-disabled x-item-disabled');
