@@ -60,14 +60,14 @@ Examples:
 
 ATTENTION: The trailing slash is required.
 */
-include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['REDIRECT_STD'] .'/core/library/Misc.php');
+include_once($_SERVER['DOCUMENT_ROOT'] . $_SERVER['REDIRECT_STD'] .'/core/library/Indi.php');
 foreach (array('www', 'core') as $p) {
-	if (($cnf = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['REDIRECT_STD'] . '/' . $p . '/application/config.ini') && is_file($cnf)) {
-		$cnf = @Misc::ini($cnf);
-		break;
-	}
+    if (($cnf = $_SERVER['DOCUMENT_ROOT'] . $_SERVER['REDIRECT_STD'] . '/' . $p . '/application/config.ini') && is_file($cnf)) {
+        $cnf = @Indi::ini($cnf);
+        break;
+    }
 }
-$baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . $cnf['upload']->path . '/' . $cnf['ckeditor']->uploadPath .'/';
+$baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
 /*
 $baseDir : the path to the local directory (in the server) which points to the
 above $baseUrl URL. This is the path used by CKFinder to handle the files in

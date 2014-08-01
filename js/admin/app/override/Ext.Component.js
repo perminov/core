@@ -23,14 +23,14 @@ Ext.override(Ext.Component, {
         return Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
     },
 
-    // AfterRender
+    // @inheritdoc
     afterRender: function() {
         var me = this;
 
         // Define tooltip getter
         me.getToolTip = function() {
             return Ext.getCmp(me.id + '-tooltip');
-        }
+        };
 
         me.ctx = function() {
             var trailLevel = Ext.getCmp('i-center-center-wrapper').trailLevel;
@@ -38,85 +38,8 @@ Ext.override(Ext.Component, {
             return Indi.app.getController(trailItem.section.alias).actions[trailItem.action.alias];
         }
 
-        // If 'tooltip' property was defined
-        if (me.tooltip) {
-
-            // Setup initial arrow tooltip config
-            var tooltipCfg = {
-                id: this.id + '-tooltip',
-                hideDelay: 0,
-                showDelay: 0,
-                dismissDelay: 0,
-                staticOffset: [0, 0],
-                anchor: 'top',
-                cls: 'i-tip',
-                target: this.id,
-                isFast: Ext.ToolTip.isFast,
-                listeners: {
-                    // Setup tooltip positioning
-                    afterlayout: function(){
-                        if (this.anchor == 'top' || this.anchor == 'bottom') {
-                            var offsetX = (this.getWidth() - this.target.getWidth())/2;
-                            this.mouseOffset = [-offsetX + this.staticOffset[0], this.staticOffset[1]];
-                            this.anchorOffset = -20;
-                            this.anchorOffset += this.getWidth()/2;
-
-                            if (this.target.lastBox.x < offsetX) {
-                                this.mouseOffset = [-this.target.lastBox.x + this.staticOffset[0], this.staticOffset[1]];
-                                this.anchorOffset -= offsetX - this.target.lastBox.x;
-                            }
-                        } else {
-                            this.mouseOffset = [this.staticOffset[0], this.staticOffset[1]];
-                        }
-                    },
-
-                    // Do not show tooltips for disabled targets
-                    beforeshow: function(){
-                        if (this.target.hasCls('x-item-disabled')) return false;
-                    },
-
-                    // Provide fading in as per Gmail style
-                    show: function(){
-                        this.noFadeOut = false;
-                        if (Ext.ToolTip.lastTip && Ext.ToolTip.lastTip.id != this.id) {
-                            if (new Date().getTime() - Ext.ToolTip.lastFade < Ext.ToolTip.isFast) {
-                                this.getEl().setStyle({opacity: 1});
-                            } else {
-                                this.getEl().fadeIn();
-                            }
-                            Ext.ToolTip.lastTip.noFadeOut = true;
-                            Ext.ToolTip.lastTip.hide();
-                        } else {
-                            this.getEl().fadeIn();
-                        }
-                        Ext.ToolTip.lastFade = new Date().getTime();
-                    },
-
-                    // Provide fading out as per Gmail style
-                    beforehide: function(){
-                        var me = this;
-                        Ext.ToolTip.lastTip = me;
-                        if (!me.noFadeOut) {
-                            me.getEl().fadeOut({callback: function(){
-                                me.noFadeOut = true;
-                                me.hide();
-                            }});
-                            return false;
-                        }
-                        Ext.ToolTip.lastFade = new Date().getTime();
-                    }
-                }
-            };
-
-            // If 'tooltip' property is an object
-            if (typeof me.tooltip == 'object') tooltipCfg =  Ext.Object.merge(tooltipCfg, me.tooltip);
-
-            // Else we assume it is just a tooltip string
-            else tooltipCfg.html = me.tooltip;
-
-            // Create tooltip
-            new Ext.tip.ToolTip(tooltipCfg);
-        }
+        // If 'tooltip' property was defined, create the tooltip object
+        if (me.tooltip) Ext.tip.ToolTip.create(me);
 
         // Call parent
         me.callParent();
@@ -187,6 +110,8 @@ Ext.define('Ext.Component', {
             }
         }
     },
+
+    // @inheritdoc
     constructor: function(config){
         this.mergeParent(config);
         this.callParent(arguments);

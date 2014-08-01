@@ -13,6 +13,8 @@
         '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
         '/js/admin/app/override/Ext.tip.ToolTip.js',
         '/js/admin/app/override/Ext.Component.js',
+        '/js/admin/app/override/Ext.form.field.Number.js',
+        '/js/admin/app/override/Ext.picker.Date.js',
 
         '/js/admin/indi.js',
         '/js/admin/indi.ux.js',
@@ -27,6 +29,12 @@
         '/js/admin/app/lib/dbtable/Row.js',
         '/js/admin/app/lib/form/field/Combo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
+        '/js/admin/app/lib/form/field/CkEditor.js',
+
+        '/js/admin/app/lib/form/field/Time.js',
+        '/js/admin/app/lib/picker/DateTime.js',
+        '/js/admin/app/lib/form/field/DateTime.js',
+
         '/js/admin/app/lib/controller/Controller.js',
         '/js/admin/app/lib/controller/action/Action.js',
         '/js/admin/app/lib/controller/action/Rowset.js',
@@ -44,10 +52,10 @@
         '/css/admin/indi.combo.css'
     ));
     ?>
-    <!-- Imploded and gzipped scripts and styles -->
-    <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
+    <!-- Imploded and gzipped scripts and styles -->
+    <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
 </head>
 <body id="body">
