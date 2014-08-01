@@ -25,7 +25,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             disabled: true,
             handler: function() {
                 var form = this.up('form').getForm();
-                if (form.isValid()) {
+                console.log(form.getValues());
+                /*if (form.isValid()) {
                     console.log(form.url);
                     form.submit({
                         success: function(form, action) {
@@ -36,7 +37,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                             Ext.Msg.alert('Failed', action.result.msg);
                         }
                     });
-                }
+                }*/
             }
         }]
     },
@@ -103,16 +104,59 @@ Ext.define('Indi.lib.controller.action.Form', {
         };
     },
 
-    rowItemINumber: function(field) {
+    rowItemICalendar: function(field) {
         return {
             id: this.trail().bid() + '-field-' + field.alias,
+            id: 'tr-' + field.alias,
+            xtype: 'datefield',
+            fieldLabel: field.title,
+            labelWidth: '100%',
+            ariaTitle: '',
+            name: field.alias,
+            value: this.trail().row[field.alias],
+            cls: 'i-field-date',
+            format: field.params.displayFormat,
+            ariaTitle: ''
+        };
+    },
+
+    rowItemIDatetime: function(field) {
+        return {
+            //id: this.trail().bid() + '-field-' + field.alias,
+            id: 'tr-' + field.alias,
+            xtype: 'datetimefield',
+            fieldLabel: field.title,
+            labelWidth: '100%',
+            name: field.alias,
+            value: this.trail().row[field.alias],
+            cls: 'i-field-datetime',
+            format: field.params.displayDateFormat
+        };
+    },
+
+    rowItemITime: function(field) {
+        return {
+            //id: this.trail().bid() + '-field-' + field.alias,
+            id: 'tr-' + field.alias,
+            xtype: 'timefield',
+            fieldLabel: field.title,
+            labelWidth: '100%',
+            name: field.alias,
+            value: this.trail().row[field.alias],
+            cls: 'i-field-time'
+        };
+    },
+
+    rowItemINumber: function(field) {
+        return {
+            //id: this.trail().bid() + '-field-' + field.alias,
             id: 'tr-' + field.alias,
             xtype: 'numberfield',
             fieldLabel: field.title,
             labelWidth: '100%',
             minValue: 1,
             name: field.alias,
-            value: this.trail().row[field.alias]
+            value: 11//this.trail().row[field.alias]
         };
     },
 
@@ -213,51 +257,18 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     rowItemIHtml: function(field) {
-        //return null;
         var fieldCmpId = this.bid() + '-row-' + this.trail().row.id +'-field-' + field.alias;
         var config = window[fieldCmpId + '-html-config'];
         return {
-            xtype: 'fieldcontainer',
+            xtype: 'ckeditor',
             fieldLabel : field.title,
             labelWidth: '100%',
-            padding: 0,
-            id: fieldCmpId + '-item',
-            //cls: 'i-filter-combo',
-            border: 0,
-            defaults: {
-                flex: 1
-            },
-            layout: 'anchor',
-            items: [{
-                id: fieldCmpId,
-                xtype: 'hiddenfield',
-                contentEl: fieldCmpId + '-html',
-                layout: 'fit',
-                name: field.alias,
-                border: 0,
-                value: this.trail().row[field.alias],
-                width: '100%',
-                listeners: {
-                    afterrender: function(me) {
-                        setTimeout(function(){
-                            var cfg = window[me.id + '-html-config'];
-                            var top = me.el.select('.cke_top').first().getHeight();
-                            var btm = me.el.select('.cke_bottom').first().getHeight();
-                            me.setHeight(parseInt(cfg.height) + top + btm + 2);
-                        }, 500);
-                    }
-                },
-                setValue: function(value) {
-                    CKEDITOR.instances[this.name].setData(value);
-                    return this;
-                },
-                getValue: function() {
-                    return CKEDITOR.instances[this.name].getData();
-                },
-                getSubmitValue: function() {
-                    return this.getValue();
-                }
-            }]
+            grow: true,
+            field: field,
+            row: this.trail().row,
+            id: fieldCmpId,
+            name: field.alias,
+            value: this.trail().row[field.alias]
         }
     }
 });

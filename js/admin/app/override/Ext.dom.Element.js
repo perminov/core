@@ -1,8 +1,64 @@
 /**
- * Append some jQuery-style methods to Ext.dom.Element component, and apply a small fix for getAlignToXY() method
+ * Append some jQuery-style methods to Ext.dom.Element component, and apply a small fix for getAlignToXY() method.
+ * Also, new method 'createTooltip' defined
  */
 Ext.override(Ext.dom.Element, {
 
+    /**
+     * Create the new Ext.tip.ToolTip object for current element
+     *
+     * @param {Object|String} tooltip
+     */
+    createTooltip: function(tooltip) {
+        var me = this;
+
+        // If 'tooltip' argument is an object
+        if (Ext.isObject(tooltip)) {
+
+            // If that object doesn't have 'html' property
+            if (!tooltip.hasOwnProperty('html')) {
+
+                // If current element has 'title' attribute
+                if (me.attr('title')) {
+
+                    // Set up 'html' property of 'tooltip' object as the value of 'title' attrubute of current element
+                    tooltip.html = me.attr('title');
+
+                    // Remove 'title' attrubite, as tooltip will be used instead
+                    me.removeAttr('title');
+                }
+            }
+
+        // Else 'tooltip' argument is neither not an object nor a string
+        } else if (!Ext.isString(tooltip)) {
+
+            // Set up 'tooltip' argument as the value of 'title' attrubute of current element
+            // despite 'title' attribute may be not-specified/null/empty
+            tooltip = me.attr('title');
+
+            // Remove 'title' attrubite, as tooltip will be used instead,
+            // despite 'title' attribute may be not-specified/null/empty
+            me.removeAttr('title');
+        }
+
+        // If, after all tries, tooltip is still inconsistent - return
+        if ((Ext.isObject(tooltip) && !tooltip.hasOwnProperty('html')) || !tooltip) return;
+
+        // Assign 'tooltip' property
+        me.tooltip = tooltip;
+
+        // Create tooltip
+        Ext.tip.ToolTip.create(me);
+
+        // Define a 'getToolTip' method for easy access to tooltip object
+        me.getToolTip = function() {
+            return Ext.getCmp(me.id + '-tooltip');
+        }
+    },
+
+    /**
+     * jQuery style
+     */
     attr: function(name, value) {
         if (arguments.length == 1) {
             return typeof name == 'object' ? this.set(name) : this.getAttribute(name);
@@ -11,7 +67,6 @@ Ext.override(Ext.dom.Element, {
             return this.set(attrO);
         }
     },
-
     css: function(name, value) {
         if (arguments.length == 1) {
             return typeof name == 'object' ? this.setStyle(name) : this.getStyle(name);
@@ -20,12 +75,10 @@ Ext.override(Ext.dom.Element, {
             return this.setStyle(styleO);
         }
     },
-
     removeAttr: function(name) {
         this.dom.removeAttribute(name);
         return this;
     },
-
     val: function(val) {
         if (arguments.length) {
             this.dom.value = val;
@@ -35,7 +88,6 @@ Ext.override(Ext.dom.Element, {
             return this.dom.value;
         }
     },
-
     click: function() {
         this.dom.click();
     },

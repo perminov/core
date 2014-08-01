@@ -393,7 +393,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                 return e.join("")
             },
             buildScriptHtml: function (a) {
-                for (var a = [].concat(a), b, e = [], d = 0; d < a.length; d++) if (b = a[d]) /\.js\$/.test(b) ? e.push("<script>" + b + "</script>") : e.push('<script type="text/javascript" language=javascript src="' + b + '"></script>');
+                for (var a = [].concat(a), b, e = [], d = 0; d < a.length; d++) if (b = a[d]) if((new RegExp('\.js$')).test(b)) { e.push('<script type="text/javascript" language=javascript src="' + b + '"></script>') } else { e.push("<script>" + b + "</script>")};
                 return e.join("")
             },
             htmlEncode: function (a) {
@@ -18104,7 +18104,18 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                         a.ui.space("contents").append(b);
                         b = a.editable(new c(a, b));
                         var s = a.getData(1);
-                        if (a.config.sourceStripper) eval(a.config.sourceStripper);
+                        if (a.config.sourceStripper) {
+                            if (typeof a.config.sourceStripper == 'string') {
+                                if (a.config.sourceStripper.match(/function/)) {
+                                    eval('a.config.sourceStripper = ' + a.config.sourceStripper)
+                                }
+                            }
+                            if (typeof a.config.sourceStripper == 'function') {
+                                s = a.config.sourceStripper(s);
+                            } else if (typeof a.config.sourceStripper == 'string') {
+                                eval(a.config.sourceStripper);
+                            }
+                        }
                         b.setData(s);
                         CKEDITOR.env.ie && (b.attachListener(a, "resize", d, b), b.attachListener(CKEDITOR.document.getWindow(), "resize", d, b), CKEDITOR.tools.setTimeout(d, 0, b));
                         a.fire("ariaWidget", this);

@@ -1,5 +1,12 @@
-.x-form-item-label, .x-form-cb-label-after {
+.x-form-item-label, .x-form-item-label-top, .x-form-cb-label-after {
     font-size: 11px;
+}
+.cke, .cke_chrome{
+    display: inline-block !important;
+}
+.x-form-item-label-top {
+    text-align: center;
+    padding: 2px 0 5px 0;
 }
 .x-form-item-label {
     padding-left: 2px;
@@ -15,8 +22,20 @@
     border-style: solid;
     margin-bottom: 0;
 }
+.i-field.i-field-date .x-form-trigger-wrap{
+    width: 79px !important;
+}
+.i-field.i-field-datetime .x-form-trigger-wrap{
+    width: 126px !important;
+}
+.i-field-time .x-form-text{
+    text-align: right;
+}
 .i-field .x-form-item-body{
     padding: 1px 0 1px 0;
+}
+.i-field .x-field .x-form-item-body{
+    padding: 0;
 }
 .i-field .x-field-label-cell, .i-field .x-form-item-body{
     vertical-align: middle;
