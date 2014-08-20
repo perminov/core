@@ -290,7 +290,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     initComponent: function() {
         this.id = this.bid();
         this.rowset = Ext.merge({
-            id: this.bid() + '-rowset-grid',
+            id: this.id + '-rowset-grid',
             columns: this.gridColumnA(),
             store: this.getStore(),
             dockedItems: this.rowsetToolbarA()

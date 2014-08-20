@@ -41,6 +41,11 @@ Ext.override(Ext.tip.ToolTip, {
                                 this.mouseOffset = [-this.target.lastBox.x + this.staticOffset[0], this.staticOffset[1]];
                                 this.anchorOffset -= offsetX - this.target.lastBox.x;
                             }
+
+                            /*if (true) {
+                                this.mouseOffset[0] = 0;
+                                this.anchorOffset = -7;
+                            }*/
                         } else {
                             this.mouseOffset = [this.staticOffset[0], this.staticOffset[1]];
                         }

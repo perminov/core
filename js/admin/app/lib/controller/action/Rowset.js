@@ -838,6 +838,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             },
             itemClick: function(item){
 
+                if (!item.hasCls('i-subsections-item')) item = item.up('.i-subsections-item');
+
                 // Get selection
                 var selection = Ext.getCmp('i-center-center-wrapper').getComponent(0).getSelectionModel().getSelection();
 
@@ -851,9 +853,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                         // Else load the subsection
                     });
-                } else if (item.getAttribute('alias'))
+                } else if (item.getAttribute('alias')) {
                     Indi.load(Indi.pre + '/' + item.getAttribute('alias') + '/index/id/' + selection[0].data.id + '/' +
                         'ph/'+Indi.trail().scope.hash+'/aix/' + (selection[0].index + 1)+'/');
+
+                }
             }
         });
 

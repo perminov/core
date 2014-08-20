@@ -1,4 +1,4 @@
-Ext.define('Indi.controller.entities', {
+Ext.define('Indi.controller.staticpages', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
@@ -73,6 +73,37 @@ Ext.define('Indi.controller.entities', {
                     }
                 });
                 return itemA;
+            }
+        },
+
+        form: {
+            rowToolbarA: function() {
+                return [{
+                    xtype: 'toolbar',
+                    dock: 'top',
+                    items: [{
+                        xtype: 'button',
+                        text: 'asd'
+                    }]
+                }]
+            },
+
+            formItemXString: function(field, item) {
+                return {
+                    allowBlank: false
+                }
+            },
+
+            formItem$Details: function(item) {
+                return {
+                    editorCfg: {
+                        width: 300
+                    }
+                }
+            },
+
+            formItem$Title: function(field, item) {
+                return {allowBlank: true}
             }
         }
     }

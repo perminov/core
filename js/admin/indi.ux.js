@@ -39,14 +39,14 @@ Ext.define('Indi.ux.SubsectionList', {
         if (this.initiallyDisabled()) this.disable(); else this.enable();
         this.tpl.overwrite(this.el, this.store);
         this.superclass.afterRender.apply(this, arguments);
-        this.getEl().select('.i-subsections-item').on('click', function(){
-            me.fireEvent('itemclick', Ext.get(this));
+        this.getEl().select('.i-subsections-item').on('click', function(c, el){
+            me.fireEvent('itemclick', this, Ext.get(el));
         });
-        this.getEl().select('.i-subsections-item').on('mouseover', function(){
-            me.fireEvent('itemmouseover', Ext.get(this));
+        this.getEl().select('.i-subsections-item').on('mouseover', function(c, el){
+            me.fireEvent('itemmouseover', this, Ext.get(el));
         });
-        this.getEl().on('mouseleave', function(){
-            me.fireEvent('mouseleave', Ext.get(this));
+        this.getEl().on('mouseleave', function(c, el){
+            me.fireEvent('mouseleave', this, Ext.get(el));
         });
     },
     getMinItemWidth: function(){
@@ -269,13 +269,13 @@ Ext.define('Indi.ux.SubsectionList', {
     listeners: {
 
         // Handler for a subsection click
-        itemclick: function(item){
+        itemclick: function(me, item){
 
             // Call item click handler
             this.itemClick(item);
         },
 
-        itemmouseover: function(item){
+        itemmouseover: function(me, item){
             clearTimeout(this.lastHoverTimeout);
             this.lastHoverTimeout = setTimeout(function(me){
                 item.parent().select('.i-subsections-item').each(function(el, c, index){

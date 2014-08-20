@@ -1880,7 +1880,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         $possibleA = Indi::trail()->model->fields(null, 'columns');
 
         // Pick values from Indi::post()
-        foreach ($possibleA as $possibleI) $data[$possibleI] = Indi::post($possibleI);
+        foreach ($possibleA as $possibleI)
+            if (array_key_exists($possibleI, Indi::post()))
+                $data[$possibleI] = Indi::post($possibleI);
 
         // Unset 'move' key from data, because 'move' is a system field, and it's value will be set up automatically
         unset($data['move']);
@@ -1954,8 +1956,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if ($this->row->mismatch()) {
             die(json_encode(array(
                 'success' => false,
-                'msg' => 'Incorrect input',
-                'data' => $this->row->mismatch()
+                'mismatch' => $this->row->mismatch()
             )));
         }
 
