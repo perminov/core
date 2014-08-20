@@ -140,6 +140,15 @@
     background: url('../../resources/themes/images/default/form/text-bg.gif');
 }
 
+/* Error styling*/
+.x-form-invalid .i-combo .x-form-text {
+    background-color: white;
+    background-image: url('../../resources/themes/images/default/grid/invalid_line.gif');
+    background-repeat: repeat-x;
+    background-position: bottom;
+    border-color: #c30;
+}
+
 /* Browser fixes */
 .x-gecko .i-combo-info * {font-size: 9px;}
 .x-gecko .i-combo-table td > *{position: relative;top: -1px;}

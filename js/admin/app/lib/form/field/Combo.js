@@ -200,9 +200,14 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     valueToRaw: function (value, dataShouldBeReturned) {
-        var me = this, index = me.store.ids.indexOf(value);
+        var me = this, index = me.store.ids.indexOf(value), store = me.store;
         if (index == -1) index = me.store.ids.indexOf(parseInt(value));
-        var data = me.store.data[index];
+        if (index == -1 && me.store.backup) {
+            index = me.store.backup.options.ids.indexOf(value);
+            if (index == -1) index = me.store.backup.options.ids.indexOf(parseInt(value));
+            store = me.store.backup.options;
+        }
+        var data = store.data[index];
         return dataShouldBeReturned ? (data ? data : {}) : (data ? data.title : '');
     },
 
@@ -340,7 +345,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.store.enumset) {
             var index = me.store['ids'].indexOf(key);
             if (index != -1 && me.store['data'][index].system.js) {
-                eval(me.store['data'][index].system.js);
+                Indi.eval(me.store['data'][index].system.js, me);
             }
         }
 
@@ -510,13 +515,13 @@ Ext.define('Indi.lib.form.field.Combo', {
                 me.el.select('.i-combo-selected-item').each(function(el){
                     var index = me.store['ids'].indexOf(el.attr('selected-id'));
                     if (index != -1 && me.store['data'][index].system.js) {
-                        eval(me.store['data'][index].system.js);
+                        Indi.eval(me.store['data'][index].system.js, me);
                     }
                 });
             } else {
                 var index = me.store['ids'].indexOf(me.hiddenEl.val());
                 if (index != -1 && this.store['data'][index].system.js) {
-                    eval(this.store['data'][index].system.js);
+                    Indi.eval(this.store['data'][index].system.js, me);
                 }
             }
         }
@@ -1788,7 +1793,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 if (me.store.enumset) {
                     var index = me.store['ids'].indexOf(li.attr(name));
                     if (index != -1 && me.store['data'][index].system.js) {
-                        eval(me.store['data'][index].system.js);
+                        Indi.eval(me.store['data'][index].system.js, me);
                     }
                 }
 
@@ -1862,12 +1867,12 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.store.enumset && !me.multiSelect) {
             var index = me.store['ids'].indexOf(me.hiddenEl.val());
             if (index != -1 && me.store['data'][index].system.js) {
-                eval(me.store['data'][index].system.js);
+                Indi.eval(me.store['data'][index].system.js, me);
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) eval(me.store.js);
+        if (me.store.js) Indi.eval(me.store.js, me);
 
         // If combo is running in multiple-values mode and is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
@@ -1876,7 +1881,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         Ext.defer(me.alignPicker, 10, me);
 
         // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
-        me.el.up('div[id^=form]').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
+        Ext.get(me.ctx().trail().bid() + '-form').select('.i-combo-info[satellite="'+name+'"]').each(function(el){
             dComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
             dCombo = Ext.getCmp(me.bid() + dComboName);
             dCombo.setDisabled(false, true);
@@ -2278,7 +2283,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         tree1['ids'].push(id);
                         tree1['data'].push(tree2['data'][index2]);
 
-                        // Else we implement bit more complicated logic
+                    // Else we implement bit more complicated logic
                     } else {
 
                         // At first we are checking if in existing options there are at least one
@@ -2359,6 +2364,6 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     bid: function() {
-        return 'tr-';
+        return this.id.replace(new RegExp(this.field.alias+'$'), '');
     }
 });

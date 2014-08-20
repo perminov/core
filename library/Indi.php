@@ -874,8 +874,40 @@ class Indi {
      *    '.gz.css' and 'gz.css'
      * 2. Adding a .htaccess directive for additional header 'Content-Encoding: gzip' for such files
      *
-     * This policy is modified version of static content compression idea, and the difference is that 'gz.css' and
-     * 'gz.js' files are ALREADY gzipped, so we-server is not forced to compress them each time it receceives a request,
+     * In case if method is used for javascript files joining, and one or more of the files is actually not
+     * javascript files, but php files - method assumes that such php files contain php constants definitions, such as
+     *
+     * <?php
+     * define('CONST1_NAME', 'CONST1_VALUE');
+     * define('CONST2_NAME', 'CONST2_VALUE');
+     *
+     * So, method will parse such php files and try to find name-value pairs for these constants. Then they will be
+     * json-encoded, for being available as properties of special javascript object, accessible anywhere in the
+     * javascript code. Here method additionally implements the namespaces concept, that allows to define the exact
+     * place within the global javascript scope, where javascript object (containing json-encoded php constants) will
+     * be accessible. To explicitly define that place, you should append the namespace definition after the php file
+     * name, after colon - ':' - sign
+     *
+     * Example:
+     *
+     * Indi::implode(array(
+     *   '/path/to/file1.js',
+     *   '/path/to/file2.js',
+     *   '/path/to/php-constants-file.php:mynamespace'
+     * ))
+     *
+     * In this example, any php-constant will be accessible as simple as 'window.mynamespace.CONST1_NAME'
+     *
+     * If constants object should be placed within some other object, you can use ':some.other.object' as namespace
+     * definition, so our example php constant will be accessible at 'window.some.other.object.CONST1_NAME'
+     *
+     * If that other object is not yet declared, it will be (recursively, if needed)
+     *
+     * If namespace definition is omitted, constant will be accessible within the global scope, e.g.
+     * 'window.CONST1_NAME'
+     *
+     * This policy is a modified version of static content compression idea, and the difference is that 'gz.css' and
+     * 'gz.js' files are ALREADY gzipped, so the server is not forced to compress them each time it receceives a request,
      * so it just flush it as is, but with special 'Content-Encoding' header, for them to be decompressed at client-side
      *
      * @param array $files
@@ -908,12 +940,15 @@ class Indi {
 
             // Append mirror files
             for($i = 0; $i < count($files); $i++)
-                if (is_file(DOC . STD . '/www' . $files[$i]))
+                if (is_file(DOC . STD . '/www' . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i])))
                     array_splice($files, ++$i, 0, '/../www' . $files[$i-1]);
 
+            // Prepare array containing file names with trimmed namespace definitions
+            for ($i = 0; $i < count($files); $i++) $noNsFiles[$i] = preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i]);
+
             // If $json is not an array, or is empty array, of files, mentioned in it do not match files in $files arg
-            if (!is_array($json) || !count($json) || count(array_diff($files, array_keys($json)))
-                || count(array_diff(array_keys($json), $files)))
+            if (!is_array($json) || !count($json) || count(array_diff($noNsFiles, array_keys($json)))
+                || count(array_diff(array_keys($json), $noNsFiles)))
 
                 // We set $refresh as true
                 $refresh = true;
@@ -923,8 +958,8 @@ class Indi {
 
                 // If modification time  of at least one file in $files argument, is not equal to time,
                 // stored in $json for that file, we set $refresh as true
-                for ($i = 0; $i < count($files); $i++)
-                    if (filemtime(DOC . STD . '/core' . $files[$i]) != $json[$files[$i]]) {
+                for ($i = 0; $i < count($noNsFiles); $i++)
+                    if (filemtime(DOC . STD . '/core' . $noNsFiles[$i]) != $json[$noNsFiles[$i]]) {
                         $refresh = true;
                         break;
                     }
@@ -943,13 +978,38 @@ class Indi {
             for ($i = 0; $i < count($files); $i++) {
 
                 // Get full file name
-                $file = DOC . STD . '/core' . $files[$i];
+                $file = DOC . STD . '/core' . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i]);
 
                 // Collect info about that file's modification time
                 $json[$files[$i]] = filemtime($file);
 
+                // If current file extension is 'php', we assume it's a file containing php constants definitions
+                // We we need to parse such file contents and make it javascript-compatible by converting to JSON
+                if (preg_match('/\.php(:[a-zA-Z\.]+|)$/', $files[$i], $ns)) {
+
+                    // Get the namespace. If no namespace defined - use 'window' by default
+                    $ns = $ns[1] ? ltrim($ns[1], ':') : 'window';
+
+                    // Get the php constants file contents
+                    $php = file_get_contents($file);
+
+                    // Pick constants names and values
+                    preg_match_all('/define\(\'([A-Z0-9_]+)\', \'(.*)\'\);/', $php, $const);
+
+                    // Define key-value-pairs $kvp array
+                    $kvp = array();
+
+                    // Fulfil $kvp array
+                    for ($j = 0; $j < count($const[1]); $j++) $kvp[$const[1][$j]] = str_replace("\'", "'", $const[2][$j]);
+
+                    // Provide namespace initialization
+                    echo preg_match('/\./', $ns) ? "Ext.ns('$ns');" : ($ns != 'window' ? "var $ns = $ns || {};" : '');
+
+                    // Setup key-value pairs, converted to JSON, under defined javascript namespace
+                    echo "$ns = Ext.Object.merge($ns, " . json_encode($kvp) . ");";
+
                 // Echo that file contents
-                readfile($file);
+                } else readfile($file);
 
                 // Echo ';' if we deal with javascript files. Also flush double newline
                 echo ($ext == 'js' ? ';' : '') . "\n\n";

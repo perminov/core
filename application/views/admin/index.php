@@ -18,7 +18,7 @@
 
         '/js/admin/indi.js',
         '/js/admin/indi.ux.js',
-        '/js/admin/indi.lang.' . Indi::ini()->lang->admin . '.js',
+        '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
 
         '/js/admin/app/view/LoginBox.js',
         '/js/admin/app/view/Menu.js',
@@ -65,7 +65,7 @@ Ext.create('Indi', {
     statics: {
         std: '<?=STD?>',
         com: '<?=COM ? '' : '/admin'?>',
-        pre: '<?=STD?><?=COM ? '' : '/admin'?>',
+        pre: '<?=PRE?>',
         uri: <?=json_encode(Indi::uri()->toArray())?>,
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,

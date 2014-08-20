@@ -4,6 +4,9 @@
 Ext.define('Indi.lib.form.field.CkEditor', {
 
     // @inheritdoc
+    mcopwso: ['editorCfg'],
+
+    // @inheritdoc
     extend: 'Ext.form.field.TextArea',
 
     // @inheritdoc
@@ -41,7 +44,8 @@ Ext.define('Indi.lib.form.field.CkEditor', {
             {items: [ 'Maximize', 'ShowBlocks', 'Find', '-', 'RemoveFormat'  ]}
         ],
         enterMode: CKEDITOR.ENTER_BR,
-        uiColor: '#B8D1F7'
+        uiColor: '#B8D1F7',
+        defaultWidth: 600
     },
 
     // @inheritdoc
@@ -77,8 +81,9 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         // 2.If contentsCss param is not an array - convert it to array with itself as first array item
         // 3.Push 'style' param to the contentsCss array
         // 4. Prepend contentsCss paths with Indi.std
-        if (!Array.isArray(me.editorCfg.contentsCss)) me.editorCfg.contentsCss = [me.editorCfg.contentsCss];
-        me.editorCfg.contentsCss.push(me.editorCfg.style);
+        if (!me.editorCfg.contentsCss) me.editorCfg.contentsCss = [];
+        else if (!Array.isArray(me.editorCfg.contentsCss)) me.editorCfg.contentsCss = [me.editorCfg.contentsCss];
+        if (me.editorCfg.style) me.editorCfg.contentsCss.push(me.editorCfg.style);
         for (i = 0; i < me.editorCfg.contentsCss.length; i++)
             if (me.editorCfg.contentsCss[i].match(/^\/.*\.css$/))
                 me.editorCfg.contentsCss[i] = Indi.std + me.editorCfg.contentsCss[i];
@@ -90,12 +95,12 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         // 2.If contentsJs param is not an array - convert it to array with itself as first array item
         // 3.Push 'script' param to the contentsJs array
         // 4.Prepend contentsJs paths with Indi.std
-        if (!Array.isArray(me.editorCfg.contentsJs)) me.editorCfg.contentsJs = [me.editorCfg.contentsJs];
-        me.editorCfg.contentsJs.push(me.editorCfg.script);
+        if (!me.editorCfg.contentsJs) me.editorCfg.contentsJs = [];
+        else if (!Array.isArray(me.editorCfg.contentsJs)) me.editorCfg.contentsJs = [me.editorCfg.contentsJs];
+        if (me.editorCfg.script) me.editorCfg.contentsJs.push(me.editorCfg.script);
         for (i = 0; i < me.editorCfg.contentsJs.length; i++)
             if (me.editorCfg.contentsJs[i].match(/^\/.*\.js$/))
                 me.editorCfg.contentsJs[i] = Indi.std + me.editorCfg.contentsJs[i];
-
     },
 
     /**
@@ -107,8 +112,15 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         var me = this, picked = {}, rowProp;
         for (var i = 0; i < me.editorCfgPickFromRowProps.length; i++) {
             rowProp = config.name + Indi.ucfirst(me.editorCfgPickFromRowProps[i]);
+
+            // If width and/or height are picked from row props, but picker values are 0 - use default values
+            if (['width', 'height'].indexOf(me.editorCfgPickFromRowProps[i]) != -1)
+                if (config.row[rowProp] && !parseInt(config.row[rowProp]))
+                    config.row[rowProp] = me.editorCfg['default' + Indi.ucfirst(me.editorCfgPickFromRowProps[i])];
+
             if (config.row[rowProp]) picked[me.editorCfgPickFromRowProps[i]] = config.row[rowProp];
         }
+
         Ext.Object.merge(me.editorCfg, picked);
     },
 

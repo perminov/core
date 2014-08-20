@@ -77,10 +77,10 @@ Ext.override(Ext.Component, {
  * through all superclass hierarchy, starting from current component instance and up to it's most top superclass,
  * instead of simple overwriting that properties
  */
-Ext.define('Ext.Component', {
-    extend: 'Ext.Component',
+Ext.override(Ext.Component, {
     mcopwso: [], // Merge Config Object-Properties With Superclass Ones
     mergeParent: function(config) {
+        //console.log(this.mcopwso);
         var initialMcopwso = this.mcopwso.join(',').split(',');
         var obj = this;
 

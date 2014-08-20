@@ -4,14 +4,14 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title><?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?></title>
     <!-- Imploded and gzipped scripts and styles -->
-    <script type="text/javascript" src="/js/admin/indi.all.index.gz.js"></script>
-    <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.index.gz.css"/>
+    <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
+    <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
     <script>
     Ext.create('Indi', {
         statics: {
             std: '<?=STD?>',
             com: '<?=COM ? '' : '/admin'?>',
-            pre: '<?=STD?><?=COM ? '' : '/admin'?>',
+            pre: '<?=PRE?>',
             uri: <?=json_encode(Indi::uri()->toArray())?>,
             title: '<?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?>',
             throwOutMsg: '<?=$this->throwOutMsg?>'
@@ -21,4 +21,3 @@
 </head>
 <body class="i-login"><div id="i-login-box"></div></body>
 </html>
-<?//=Indi::lang('js');?>

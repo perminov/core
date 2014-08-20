@@ -191,7 +191,10 @@ Ext.define('Indi', {
          * @param ids
          */
         hide: function(ids){
-            $('#'+ids.split(',').join(', #')).hide();
+            ids.split(',').forEach(function(i){
+                if (Ext.getCmp(i)) Ext.getCmp(i).hide();
+                else $('#'+i).hide();
+            });
         },
 
         /**
@@ -199,7 +202,41 @@ Ext.define('Indi', {
          * @param ids
          */
         show: function(ids){
-            $('#'+ids.split(',').join(', #')).show();
+            ids.split(',').forEach(function(i){
+                if (Ext.getCmp(i)) Ext.getCmp(i).show();
+                else $('#'+i).show();
+            });
+        },
+
+
+        /**
+         * This function is used to wrap native 'eval' usage, to check if javascript (to be executed by 'eval')
+         * contains expressions like "hide('tr-field1Alias, tr-field2Alias')" or "show('tr-field1Alias, tr-field2Alias')"
+         *
+         * Such expressions have been used already a long time, and involved in a number of existing project,
+         * in most cases, for showing/hiding some form fields. So this function is need to provide a backward-compability
+         * for such cases, because, earlier, form fields weren't built by Ext components usage, but were built by
+         * native HTML and JavaScript, and hiding/showing was based on jQuery calls like this -
+         * $('#tr-someField1Alias, #tr-someField2Alias').hide();
+         *
+         * So, this function checks if 'js' argument contains 'hide' or 'show', and checks if target (that are to be
+         * shown/hidden) identifiers starts from 'tr-' string, and if so - function will replace 'tr-' with calculated
+         * id prefix, and only after that executes the 'js' arguments as a JavaScript-string
+         *
+         * 'me' argument - is a component, that fires the execution. It's used to determine a proper id-prefix, for it
+         * to be used as a replacement for 'tr-'
+         *
+         * @param js
+         * @param me
+         */
+        eval: function(js, me) {
+            var hsRex = new RegExp("(hide|show)\\('tr-"), rex, bid, what;
+            if (what = js.match(hsRex)) {
+                rex = new RegExp(me.field.alias+'$');
+                bid = me.id.replace(rex, '');
+                js = js.replace(hsRex, what[1] + "('" + bid);
+            }
+            eval(js);
         },
 
         /**
@@ -367,6 +404,95 @@ Ext.define('Indi', {
              */
             'window.JSON': function() {
                 if (typeof window.JSON!=="object"){window.JSON={}}(function(){"use strict";function f(e){return e<10?"0"+e:e}function quote(e){escapable.lastIndex=0;return escapable.test(e)?'"'+e.replace(escapable,function(e){var t=meta[e];return typeof t==="string"?t:"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+e+'"'}function str(e,t){var n,r,i,s,o=gap,u,a=t[e];if(a&&typeof a==="object"&&typeof a.toJSON==="function"){a=a.toJSON(e)}if(typeof rep==="function"){a=rep.call(t,e,a)}switch(typeof a){case"string":return quote(a);case"number":return isFinite(a)?String(a):"null";case"boolean":case"null":return String(a);case"object":if(!a){return"null"}gap+=indent;u=[];if(Object.prototype.toString.apply(a)==="[object Array]"){s=a.length;for(n=0;n<s;n+=1){u[n]=str(n,a)||"null"}i=u.length===0?"[]":gap?"[\n"+gap+u.join(",\n"+gap)+"\n"+o+"]":"["+u.join(",")+"]";gap=o;return i}if(rep&&typeof rep==="object"){s=rep.length;for(n=0;n<s;n+=1){if(typeof rep[n]==="string"){r=rep[n];i=str(r,a);if(i){u.push(quote(r)+(gap?": ":":")+i)}}}}else{for(r in a){if(Object.prototype.hasOwnProperty.call(a,r)){i=str(r,a);if(i){u.push(quote(r)+(gap?": ":":")+i)}}}}i=u.length===0?"{}":gap?"{\n"+gap+u.join(",\n"+gap)+"\n"+o+"}":"{"+u.join(",")+"}";gap=o;return i}}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null};String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(){return this.valueOf()}}var cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,escapable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta={"\b":"\\b","	":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},rep;if(typeof window.JSON.stringify!=="function"){window.JSON.stringify=function(e,t,n){var r;gap="";indent="";if(typeof n==="number"){for(r=0;r<n;r+=1){indent+=" "}}else if(typeof n==="string"){indent=n}rep=t;if(t&&typeof t!=="function"&&(typeof t!=="object"||typeof t.length!=="number")){throw new Error("JSON.stringify")}return str("",{"":e})}}if(typeof window.JSON.parse!=="function"){window.JSON.parse=function(text,reviver){function walk(e,t){var n,r,i=e[t];if(i&&typeof i==="object"){for(n in i){if(Object.prototype.hasOwnProperty.call(i,n)){r=walk(i,n);if(r!==undefined){i[n]=r}else{delete i[n]}}}}return reviver.call(e,t,i)}var j;text=String(text);cx.lastIndex=0;if(cx.test(text)){text=text.replace(cx,function(e){return"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})}if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){j=eval("("+text+")");return typeof reviver==="function"?walk({"":j},""):j}throw new SyntaxError("JSON.parse")}}})();
+            },
+
+            /**
+             * Get array of values of a single property picked from each object-item within current array
+             *
+             * @param name The name of the property, that should be got
+             * @return {Array}
+             */
+            'Array.prototype.column': function() {
+                Object.defineProperty(Array.prototype, 'column', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(name) {
+
+                        // Declare array for pushing needed property values
+                        var column = [];
+
+                        // Get those values
+                        for (var i = 0; i < this.length; i++)
+                            if (this[i].hasOwnProperty(name))
+                                column.push(this[i][name]);
+
+                        // Return them
+                        return column;
+                    }
+                });
+            },
+
+            /**
+             * Force array to contain only item, that have keys, mentioned in `val` argument
+             * If `clone` argument is set to true (this is it's default value), a clone of current array will be
+             * filtered and returned. Otherwise - method will operate on current array instead of on it's clone
+             *
+             * @param val String, may be comma-separated
+             * @param key String
+             * @param clone bool
+             * @return Array
+             */
+            'Array.prototype.select': function() {
+                Object.defineProperty(Array.prototype, 'select', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(val, key, clone) {
+                        return (clone !== false ? Ext.clone(this) : this).exclude(val, key, true);
+                    }
+                });
+            },
+
+            /**
+             * Exclude items from current array, that have keys, mentioned in `val` argument.
+             * If `inverse` argument is set to true, then function will return only items,
+             * which keys are mentioned in `val` argument
+             *
+             * @param val String, may be comma-separated
+             * @param key String
+             * @param inverse bool
+             * @return Array
+             */
+            'Array.prototype.exclude': function() {
+                Object.defineProperty(Array.prototype, 'exclude', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(val, key, inverse) {
+
+                        // Get the array of values, by comma-splitting 'val' arg
+                        val = val.split(',');
+
+                        // If 'inverse' arg is true
+                        if (inverse) {
+
+                            // Remove from 'this' array all object-items,
+                            // that have value of 'key' prop not in selection list
+                            for (var i = 0; i < this.length; i++)
+                                if (val.indexOf(this[i][key]+'') == -1)
+                                    this.splice(i--, 1);
+                        // Else
+                        } else {
+
+                            // Remove from 'this' array all object-items,
+                            // that have value of 'key' prop in exclusion list
+                            for (var i = 0; i < this.length; i++)
+                                if (val.indexOf(this[i][key]+'') != -1)
+                                    this.splice(i, 1);
+                        }
+
+                        // Return array itself
+                        return this;
+                    }
+                });
             }
         },
 
