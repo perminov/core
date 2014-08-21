@@ -101,7 +101,11 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     border-radius: 0px;
 }
 .x-field-default-toolbar .x-form-item-label-left {
-    padding-left: 0px;
+    padding-left: 0;
+}
+.x-field-default-toolbar .x-form-display-field{
+    padding-top: 0;
+    margin-top: -1px;
 }
 
 /* Grids default style adjustments */
@@ -196,21 +200,6 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 .x-form-trigger-wrap .x-form-spinner-down.x-form-spinner-down-over.x-form-spinner-down-click {
     background-position: -34px -13px;
-}
-
-/* Style for action form topbar spinners*/
-.i-action-form-topbar .x-form-trigger-wrap .x-form-spinner-down{
-    background-position: 0 -11px;
-}
-.i-action-form-topbar .x-form-trigger-wrap .x-form-spinner-down.x-form-trigger-over.x-form-spinner-down-over,
-.i-action-form-topbar .x-form-trigger-wrap-focus .x-form-spinner-down.x-form-trigger {
-    background-position: -17px -11px;
-}
-.i-action-form-topbar .x-form-trigger-wrap-focus .x-form-spinner-down.x-form-spinner-down-over.x-form-trigger-over{
-    background-position: -68px -11px;
-}
-.i-action-form-topbar .x-form-trigger-wrap .x-form-spinner-down.x-form-spinner-down-over.x-form-spinner-down-click {
-    background-position: -34px -11px;
 }
 
 /* Color multislider filter style adjustments */

@@ -1,4 +1,4 @@
-Ext.define('Indi.controller.staticpages', {
+Ext.define('Indi.controller.entities', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
@@ -103,7 +103,7 @@ Ext.define('Indi.controller.staticpages', {
             },
 
             formItem$Title: function(field, item) {
-                return {allowBlank: true}
+                return {allowBlank: false}
             }
         }
     }

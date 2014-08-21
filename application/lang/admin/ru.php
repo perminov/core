@@ -57,6 +57,7 @@ define('I_BACK', 'Вернуться');
 define('I_SAVE', 'Сохранить');
 define('I_TOTAL', 'Всего');
 define('I_EXPORT_EXCEL', 'Экспортировать в Excel');
+define('I_NAVTO_ROWSET', 'Вернуться к списку');
 define('I_NAVTO_ID', 'Перейти к записи по ID');
 define('I_AUTOSAVE', 'Автосохранять перед переходами');
 define('I_NAVTO_PREV', 'Перейти к предыдущей записи');
@@ -114,13 +115,13 @@ define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Запись �
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_SPM', ' с учетом текущих параметров поиска');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_END', ' - нет записи с таким ID');
-define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_TITLE', 'Запись #');
-define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_OF', 'из ');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE', 'Запись #');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_OF', 'из ');
 
-define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
-define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
-define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_SPM', ' с учетом текущих параметров поиска');
-define('I_ACTION_FORM_TOPBAR_NAVTOROWNUMBER_NOT_FOUND_MSGBOX_MSG_END', ' - нет записи с таким порядковым номером, но на момент загрузки формы она была');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_MSG_SPM', ' с учетом текущих параметров поиска');
+define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_MSG_END', ' - нет записи с таким порядковым номером, но на момент загрузки формы она была');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'Отсутствуют');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Выберите--');
 

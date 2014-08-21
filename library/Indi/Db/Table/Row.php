@@ -1441,13 +1441,28 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param bool $check
      * @return array
      */
-    public function mismatch($check = false) {
+    public function mismatch($check = false, $message = null) {
 
         // If $check argument is boolean
         if (is_bool($check)) {
 
             // If $check argument is set to false, return $this->_mismatch stack, else reset $this->_mismatch array
             if ($check == false) return $this->_mismatch; else $this->_mismatch = array();
+
+        // Else if $check argument is not boolean, and, additionally, $message argument was given
+        } else if (func_num_args() == 2) {
+
+            // If $message argument was given, and it is strict null
+            if ($message === null) {
+
+                // Delete the item, stored under $check key from $this->_mismatch array
+                unset($this->_mismatch[$check]);
+
+                // Return array of all remaining mismatches
+                return $this->_mismatch;
+
+            // Else we explicitly setup $message as an item within $this->_mismatch array, under $check key
+            } else return $this->_mismatch[$check] = $message;
 
         // Else we assume that $check argument is field name, so the mismatch for especially that field will be returned
         } else return $this->_mismatch[$check];

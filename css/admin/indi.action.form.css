@@ -51,3 +51,18 @@
     background-color: #DDFFE0;
     height: 22px;
 }
+/* Style for action form topbar spinners*/
+.x-toolbar .x-form-trigger-wrap .x-form-spinner-down{
+    background-position: 0 -11px;
+}
+.x-toolbar .x-form-trigger-wrap .x-form-spinner-down.x-form-trigger-over.x-form-spinner-down-over,
+.x-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down.x-form-trigger {
+    background-position: -17px -11px;
+}
+.x-toolbar .x-form-trigger-wrap-focus .x-form-spinner-down.x-form-spinner-down-over.x-form-trigger-over{
+    background-position: -68px -11px;
+}
+.x-toolbar .x-form-trigger-wrap .x-form-spinner-down.x-form-spinner-down-over.x-form-spinner-down-click {
+    background-position: -34px -11px;
+}
+
