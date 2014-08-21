@@ -39,6 +39,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $applyA = array('hash' => Indi::trail()->section->primaryHash);
                 if (Indi::uri()->ph) $applyA['upperHash'] = Indi::uri()->ph;
                 if (Indi::uri()->aix) $applyA['upperAix'] = Indi::uri()->aix;
+                if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
                 Indi::trail()->scope->apply($applyA);
 
                 // If a rowset should be fetched
@@ -90,7 +91,10 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Else if where is some another action
             } else {
 
-                Indi::trail()->scope->apply(array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix));
+                // Apply some scope params
+                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix);
+                if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
+                Indi::trail()->scope->apply($applyA);
 
                 // If we are here for just check of row availability, do it
                 if (Indi::uri()->check) die($this->checkRowIsInScope());
@@ -1884,6 +1888,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             if (array_key_exists($possibleI, Indi::post()))
                 $data[$possibleI] = Indi::post($possibleI);
 
+
         // Unset 'move' key from data, because 'move' is a system field, and it's value will be set up automatically
         unset($data['move']);
 
@@ -1966,23 +1971,28 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If 'redirect-url' param exists within post data
         if ($location = Indi::post('redirect-url')) {
 
-            // Chech if $url contains primary hash value
-            if (preg_match('#/ph/([0-9a-f]+)/#', $location, $matches)) {
+            // Get the primary hash either from $location, or from current trail item scope info
+            $hash = ($inLocation = preg_match('#/ph/([0-9a-f]+)/#', $location, $matches))
+                ? $matches[1]
+                : Indi::trail()->scope->hash;
 
-                // Remember the fact that save button was toggled on
-                $_SESSION['indi']['admin'][Indi::uri()->section][$matches[1]]['toggledSave'] = true;
+            // Remember the fact that save button was toggled on
+            $_SESSION['indi']['admin'][Indi::uri()->section][$hash]['toggledSave'] = true;
+
+            // Chech if $url contains primary hash value
+            if ($inLocation) {
 
                 // If it was a new row, that we've just saved
                 if (!Indi::uri()->id) {
 
                     // Increment 'found' scope param
-                    $_SESSION['indi']['admin'][Indi::uri()->section][$matches[1]]['found']++;
+                    $_SESSION['indi']['admin'][Indi::uri()->section][$hash]['found']++;
 
                     // Replace the null id with id of newly created row
                     $location = str_replace('null', Indi::trail()->row->id, $location);
                 }
 
-                // Replace the null id with id of newly created row
+            // Replace the null id with id of newly created row
             } else if (!Indi::uri()->id)  $location = str_replace('null', Indi::trail()->row->id, $location);
         }
 

@@ -1,7 +1,13 @@
 Ext.define('Indi.lib.controller.action.Action', {
     extend: 'Ext.Component',
     alternateClassName: 'Indi.Controller.Action',
+
+    // @inheritdoc
     mcopwso: ['panel'],
+
+    /**
+     * Main panel config
+     */
     panel: {
         id: 'i-center-center-wrapper',
         renderTo: 'i-center-center-body',
@@ -10,19 +16,64 @@ Ext.define('Indi.lib.controller.action.Action', {
         closable: true,
         layout: 'fit'
     },
-    trail: function(up) {
+
+    /**
+     * Get the current trail item, or upper trail item - if `up` argument is given
+     *
+     * @param up
+     * @return {Indi.lib.Trail.Item}
+     */
+    ti: function(up) {
         return Indi.trail(this.trailLevel - (Indi.trail(true).store.length - 1) + (up ? up : 0));
     },
+
+    /**
+     * Get the base id for all components, created while controller's action execution
+     * If `up` argument is given, function will return base id of upper-level controller's action
+     *
+     * @param up
+     * @return {String}
+     */
     bid: function(up) {
-        var ti = this.trail();
-        return 'i-section-'+ti.section.alias+'-action-'+ti.action.alias;
+        return this.ti(up).bid();
     },
+
+    // @inheritdoc
     initComponent: function() {
+        var me = this;
+
+        // Append tools and toolbars to the main panel
+        me.panel = Ext.merge({
+            tools: me.panelToolA(),
+            dockedItems: me.panelToolbarA()
+        }, this.panel);
+
+        // Setup main panel title, contents and trailLevel property
         Ext.create('Ext.Panel', Ext.merge({
-            title: this.trail().section.title,
-            items: this.panel.items,
-            trailLevel: this.trailLevel
-        }, this.panel));
-        this.callParent();
+            title: me.ti().section.title,
+            items: me.panel.items,
+            trailLevel: me.trailLevel
+        }, me.panel));
+
+        // Call parent
+        me.callParent();
+    },
+
+    /**
+     * Panel tools array builder. This method is for use in subclasses of Indi.Controller.Action
+     *
+     * @return {Array}
+     */
+    panelToolA: function() {
+        return []
+    },
+
+    /**
+     * Panel toolbars array builder. This method is for use in subclasses of Indi.Controller.Action
+     *
+     * @return {Array}
+     */
+    panelToolbarA: function() {
+        return []
     }
 });

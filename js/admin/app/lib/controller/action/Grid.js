@@ -1,3 +1,4 @@
+//console.log(Ext.LoadMask.prototype.msg);
 Ext.define('Indi.lib.controller.action.Grid', {
     alternateClassName: 'Indi.Controller.Action.Rowset.Grid',
     extend: 'Indi.Controller.Action.Rowset',
@@ -26,16 +27,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-button-form'); if (btn) btn.handler();
+                var btn = Ext.getCmp(this.ctx().bid() + '-toolbar-master-button-form'); if (btn) btn.handler();
             }
         }
     },
-
-    /**
-     * Prepare and return array of items, that are to be placed at grid paging bar
-     *
-     * @return {Array}
-     */
 
     gridColumn$Id: function() {
         return {header: 'ID', dataIndex: 'id', width: 30, sortable: true, align: 'right', hidden: true}
@@ -69,9 +64,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
         if (column$Id) columnA.push(column$Id);
 
         // Other columns
-        for (var i = 0; i < this.trail().gridFields.length; i++) {
-            columnI = this.gridColumnDefault(this.trail().gridFields[i]);
-            columnICustom = 'gridColumn$'+Indi.ucfirst(this.trail().gridFields[i].alias);
+        for (var i = 0; i < this.ti().gridFields.length; i++) {
+            columnI = this.gridColumnDefault(this.ti().gridFields[i]);
+            columnICustom = 'gridColumn$'+Indi.ucfirst(this.ti().gridFields[i].alias);
             if (typeof this[columnICustom] == 'function') columnI = this[columnICustom](columnI);
             if (columnI) columnA.push(columnI);
         }
@@ -93,7 +88,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         for(var i in grid.columns) {
             if (grid.columns[i].hidden == false) {
                 columnWidths[i] = Indi.metrics.getWidth(grid.columns[i].text) + 12;
-                if (grid.columns[i].dataIndex == this.trail().section.defaultSortFieldAlias) {
+                if (grid.columns[i].dataIndex == this.ti().section.defaultSortFieldAlias) {
                     columnWidths[i] += 12;
                 }
                 for (var j = 0; j < grid.getStore().data.items.length; j++) {
@@ -155,11 +150,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
         grid.getView().focus();
 
         // Setup last row autoselection, if need
-        if (this.trail().scope.aix) {
+        if (this.ti().scope.aix) {
 
             // Calculate row index value, relative to current page
-            var index = parseInt(this.trail().scope.aix) - 1 - (parseInt(this.trail().scope.page) - 1) *
-                parseInt(this.trail().section.rowsOnPage);
+            var index = parseInt(this.ti().scope.aix) - 1 - (parseInt(this.ti().scope.page) - 1) *
+                parseInt(this.ti().section.rowsOnPage);
 
             // If such row (row at that index) exists in grid - selectit
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
@@ -202,6 +197,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+    /**
+     * Prepare and return array of items, that are to be placed at grid paging bar
+     *
+     * @return {Array}
+     */
     rowsetToolbarPagingItemA: function() {
         var itemA = [], itemExcel = this.rowsetToolbarPagingItemExcel();
 
@@ -264,10 +264,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
                 // property for each object, that is representing a color-filter in request
-                for (var i = 0; i < this.ctx().trail().filters.length; i++) {
-                    if (this.ctx().trail().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
-                        var reg = new RegExp('(%7B%22' + this.ctx().trail().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
-                        request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(this.ctx().trail().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
+                for (var i = 0; i < this.ctx().ti().filters.length; i++) {
+                    if (this.ctx().ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
+                        var reg = new RegExp('(%7B%22' + this.ctx().ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                        request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(this.ctx().ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
                     }
                 }
 
