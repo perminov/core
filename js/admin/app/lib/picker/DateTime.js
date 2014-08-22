@@ -1,3 +1,6 @@
+/**
+ * Ext.picker.Date extension, but with ability to handle date+time instead of only date
+ */
 Ext.define('Ext.lib.picker.DateTime', {
     extend: 'Ext.picker.Date',
     alternateClassName: 'Ext.picker.DateTime',

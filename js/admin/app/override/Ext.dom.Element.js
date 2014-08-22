@@ -98,6 +98,11 @@ Ext.override(Ext.dom.Element, {
      * condition for the problem to appear is case when that constrain affects so aligned element is placed at the top
      * of alignToEl element, that is why the native code was picked from source, and small adjustment was implemented
      * to fix the described problem
+     *
+     * @param alignToEl
+     * @param posSpec
+     * @param offset
+     * @return {Array}
      */
     getAlignToXY : function(alignToEl, posSpec, offset) {
         var doc = document,

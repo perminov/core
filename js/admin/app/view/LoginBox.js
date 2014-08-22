@@ -1,3 +1,6 @@
+/**
+ * Login box for Indi Engine login page
+ */
 Ext.define('Indi.view.LoginBox', {
     extend: 'Ext.Panel',
     id: 'i-login-panel',
@@ -112,13 +115,12 @@ Ext.define('Indi.view.LoginBox', {
             }
         }
     ],
-    listeners: {
-        afterRender: function(){
-            this.keyNav = Ext.create('Ext.util.KeyNav', this.el, {
-                enter: function(){
-                    Ext.getCmp('i-login-box-submit').handler();
-                }
-            });
-        }
+    afterRender: function(){
+        this.callParent(arguments);
+        this.keyNav = Ext.create('Ext.util.KeyNav', this.el, {
+            enter: function(){
+                Ext.getCmp('i-login-box-submit').handler();
+            }
+        });
     }
 });

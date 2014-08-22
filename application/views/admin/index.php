@@ -17,7 +17,6 @@
         '/js/admin/app/override/Ext.picker.Date.js',
 
         '/js/admin/indi.js',
-        '/js/admin/indi.ux.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
 
         '/js/admin/app/view/LoginBox.js',
@@ -27,6 +26,7 @@
         '/js/admin/app/lib/trail/Trail.js',
         '/js/admin/app/lib/trail/Item.js',
         '/js/admin/app/lib/dbtable/Row.js',
+        '/js/admin/app/lib/view/ShrinkList.js',
         '/js/admin/app/lib/form/field/Combo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',

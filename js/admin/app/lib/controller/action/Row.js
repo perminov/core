@@ -1,5 +1,12 @@
+/**
+ * Base class for all controller actions instances, that operate with some certain rows
+ */
 Ext.define('Indi.lib.controller.action.Row', {
+
+    // @inheritdoc
     alternateClassName: 'Indi.Controller.Action.Row',
+
+    // @inheritdoc
     extend: 'Indi.Controller.Action',
 
     // @inheritdoc
@@ -59,6 +66,12 @@ Ext.define('Indi.lib.controller.action.Row', {
                     }
                 }*/
             },
+
+            /**
+             * Function is used when id-by-offset or offset-by-id detection failed
+             *
+             * @param {Ext.form.field.Text} input
+             */
             onDetectionFailed: function(input) {
 
                 // Declare `smp` variable. SMP - mean Search Params Mention
@@ -91,6 +104,13 @@ Ext.define('Indi.lib.controller.action.Row', {
                 });
             },
 
+            /**
+             * Function is used when user changed the value of 'Offset' master toolbar item's component,
+             * or (in certain cases) pressed 'Prev' or 'Next' items buttons
+             *
+             * @param offset
+             * @param input
+             */
             gotoOffset: function(offset, input) {
 
                 // Build the request uri
@@ -180,6 +200,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Array}
      */
     panelToolbarMasterItemA: function() {
+
+        // Setup auxilliary variables
         var me = this, itemA = [], kind, itemI, fnItemI, kindO = {2: '-', 3: '->', 4: ' '},
             itemO = me.panel.toolbarMaster.items;
 
@@ -418,7 +440,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     cmbSibling.keyDownHandler('13', true);
 
                 // Else if we have 'Offset' master toolbar item - use it's spinDown method
-                } else if (false && spnOffset) spnOffset.spinDown();
+                } else if (spnOffset) spnOffset.spinDown();
 
                 // Try to navigate to current row's sibling by it's offset
                 else me.panel.toolbarMaster.gotoOffset.call(me, me.ti().scope.aix - 1);
@@ -463,16 +485,16 @@ Ext.define('Indi.lib.controller.action.Row', {
                     cmbSibling.keyDownHandler('13', true);
 
                 // Else if we have 'Offset' master toolbar item - use it's spinUp method
-                } else if (false && spnOffset) spnOffset.spinUp();
+                } else if (spnOffset) spnOffset.spinUp();
 
                 // Try to navigate to current row's sibling by it's offset
-                else me.panel.toolbarMaster.gotoOffset.call(me, parseInt(me.ti().scope.aix) + 1);
+                else me.panel.toolbarMaster.gotoOffset.call(me, (parseInt(me.ti().scope.aix) ? parseInt(me.ti().scope.aix) : 0)+ 1);
 
                 // Disable 'Next' master toolbar item if needed
                 btnNext.setDisabled(!btnNextEnabled);
 
                 // Enable 'Prev' master toolbar item, if it exists
-                if (btnPrev) btnPrev.enable();
+                if (btnPrev && !isNaN(parseInt(me.ti().scope.aix))) btnPrev.enable();
             }
         }
     },

@@ -1,3 +1,6 @@
+/**
+ * Main left menu for Indi Engine interface
+ */
 Ext.define('Indi.view.Menu', {
     extend: 'Ext.tree.Panel',
     alternateClassName: 'Indi.Menu',
@@ -11,6 +14,13 @@ Ext.define('Indi.view.Menu', {
     collapsible: true,
     padding: '50 0 0 0',
     weight: 300,
+
+    /**
+     * Convert `data` argument to array, suitable for usage with Ext.tree.Panel
+     *
+     * @param data
+     * @return {Array}
+     */
     data2items: function(data){
 
         // Menu items array
@@ -50,18 +60,24 @@ Ext.define('Indi.view.Menu', {
         // Return items array
         return itemA;
     },
+
+    // @inheritdoc
     initComponent: function() {
         var me = this;
+
+        // Setup store
         me.store = Ext.create('Ext.data.TreeStore', {
             root: {
                 expanded: true,
                 children: me.data2items(Indi.menu)
             }
         });
+
+        // Call parent
         me.callParent();
     },
 
-    // Setup listeners for itemclick, beforecollapse, collapse and expand events
+    // @inheritdoc
     listeners: {
         itemclick: function(view, rec, item, index, eventObj) {
             if (rec.get('leaf') == false) {

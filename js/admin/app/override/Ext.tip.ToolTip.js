@@ -4,15 +4,33 @@
  */
 Ext.override(Ext.tip.ToolTip, {
     statics: {
+
+        /**
+         * Timestamp of last tooltip fadeout. Not matter which tooltip was fade out.
+         */
         lastFade: null,
+
+        /**
+         * Keeps the javasctip timeout-resource, created at the stage of tooltip fadeout
+         */
         lastFadeTimeout: null,
+
+        /**
+         * Keeps the Ext.tip.ToolTip object instance which was the last active
+         */
         lastTip: null,
+
+        /**
+         * Number of milliseconds, for detecting whether or not current tooltip became active
+         * too fast since the moment of previous tooltip became inactive. This property is used
+         * to determine, whether or not simple show/hide should be used instead of fadin/fadout
+         */
         isFast: 350,
 
         /**
          * Tooltip creating method
          *
-         * @param me
+         * @param me Target, that tooltip is being created for. It can be any instance of Ext.Component/Ext.dom.Element
          */
         create: function(me) {
 
