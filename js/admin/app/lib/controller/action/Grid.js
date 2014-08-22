@@ -1,7 +1,18 @@
-//console.log(Ext.LoadMask.prototype.msg);
+/**
+ * Base class for all controller actions instances, that operate with rowsets,
+ * and use Ext.panel.Grid view to display/modify those rowsets
+ */
 Ext.define('Indi.lib.controller.action.Grid', {
+
+    // @inheritdoc
     alternateClassName: 'Indi.Controller.Action.Rowset.Grid',
+
+    // @inheritdoc
     extend: 'Indi.Controller.Action.Rowset',
+
+    /**
+     * Config of panel, that will be used for representing the rowset
+     */
     rowset: {
         xtype: 'grid',
         multiSelect: false,
@@ -32,11 +43,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+    /**
+     * Builds and returns config for grid Id column
+     *
+     * @return {Object}
+     */
     gridColumn$Id: function() {
         return {header: 'ID', dataIndex: 'id', width: 30, sortable: true, align: 'right', hidden: true}
     },
 
+    /**
+     * Builds and returns default/initial config for all grid columns (except 'Id' columns)
+     *
+     * @return {Object}
+     */
     gridColumnDefault: function(column) {
+
+        // Default column config
         return {
             id: this.bid() + '-rowset-grid-column-' + column.alias,
             header: column.title,
@@ -47,7 +70,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 return (column.storeRelationAbility == 'none' &&
                     [3,5].indexOf(parseInt(column.columnTypeId)) != -1) ? 'right' : 'left';
             }(),
-            hidden: column.alias == 'move' ? true : false
+            hidden: !!(column.alias == 'move')
         }
     },
 
@@ -61,6 +84,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Id column
         var columnA = [], column$Id = this.gridColumn$Id(), columnI, columnICustom;
 
+        // Append Id column
         if (column$Id) columnA.push(column$Id);
 
         // Other columns
@@ -176,18 +200,31 @@ Ext.define('Indi.lib.controller.action.Grid', {
         this.gridColumnAFit();
     },
 
+    /**
+     * Rowset panel toolbars array builder
+     *
+     * @return {Array}
+     */
     rowsetToolbarA: function() {
 
         // Toolbars array
         var toolbarA = [], toolbarPaging = this.rowsetToolbarPaging();
 
+        // Append paging toolbar
         if (toolbarPaging) toolbarA.push(toolbarPaging);
 
         // Return toolbars array
         return toolbarA;
     },
 
+    /**
+     * Rowset panel paging toolbar builder
+     *
+     * @return {Object}
+     */
     rowsetToolbarPaging: function() {
+
+        // Paging toolbar cfg
         return {
             xtype: 'pagingtoolbar',
             dock: 'bottom',
@@ -204,14 +241,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     rowsetToolbarPagingItemA: function() {
         var itemA = [], itemExcel = this.rowsetToolbarPagingItemExcel();
-
         if (itemExcel) itemA.push('-', itemExcel);
-
         return itemA;
     },
 
+    /**
+     * Rowset panel paging toolbar 'Excel' button-item, for ability to make an advanced Excel-export
+     * within the currently available rows scope
+     *
+     * @return {Object}
+     */
     rowsetToolbarPagingItemExcel: function() {
 
+        // 'Excel' item cfg
         return {
             text: '',
             iconCls: 'i-btn-icon-xls',
@@ -277,26 +319,52 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+    /**
+     * Builds and return an array of panels, that will be used to represent the major UI contents.
+     * Currently is consists only from this.rowset form panel configuration
+     *
+     * @return {Array}
+     */
     panelItemA: function() {
+
+        // Panels array
         var itemA = [], rowsetItem = this.rowsetPanel();
+
+        // Append rowset panel
         if (rowsetItem) itemA.push(rowsetItem);
+
+        // Return panels array
         return itemA;
     },
 
+    /**
+     * Build an return main panel's rowset panel config object
+     *
+     * @return {*}
+     */
     rowsetPanel: function() {
         return this.rowset;
     },
 
+    // @inheritdoc
     initComponent: function() {
-        this.id = this.bid();
-        this.rowset = Ext.merge({
-            id: this.id + '-rowset-grid',
-            columns: this.gridColumnA(),
-            store: this.getStore(),
-            dockedItems: this.rowsetToolbarA()
-        }, this.rowset);
+        var me = this;
 
-        this.panel.items = this.panelItemA();
+        // Setup id
+        me.id = me.bid();
+
+        // Setup rowset panel config
+        me.rowset = Ext.merge({
+            id: me.id + '-rowset-grid',
+            columns: me.gridColumnA(),
+            store: me.getStore(),
+            dockedItems: me.rowsetToolbarA()
+        }, me.rowset);
+
+        // Setup main panel items
+        me.panel.items = me.panelItemA();
+
+        // Call parent
         this.callParent();
     }
 });

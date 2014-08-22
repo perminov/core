@@ -1,5 +1,13 @@
+/**
+ * Base class for all controller actions instances, that operate with some certain rows,
+ * and use forms controls to display/modify those rows properties
+ */
 Ext.define('Indi.lib.controller.action.Form', {
+
+    // @inheritdoc
     alternateClassName: 'Indi.Controller.Action.Row.Form',
+
+    // @inheritdoc
     extend: 'Indi.Controller.Action.Row',
 
     // @inheritdoc
@@ -14,15 +22,21 @@ Ext.define('Indi.lib.controller.action.Form', {
                 autosave: 2,
                 prev: 1,
                 next: 2,
-                create: 3,
+                create: 2,
+                nested: 3,
                 offset: {
                     mode: 1,
                     width: function(found, mode) {
+
+                        // Setup auxilliary variables
                         var labelWidth = Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE),
                             triggerWidth = 20, inputWidth = (found.toString().length + 1) * 7 + 2;
 
+                        // Set the minimum input field width as 30px
                         inputWidth = inputWidth > 30 ? inputWidth : 30;
 
+                        // Calculate and return total width, depending whether or not width will be used to determite
+                        // x-offset of current field's tooltip
                         return mode == 'tooltipOffset'
                             ? labelWidth + 5 + inputWidth/2 - (labelWidth + 5 + inputWidth + triggerWidth)/2
                             : labelWidth + inputWidth + triggerWidth;
@@ -46,6 +60,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             anchor: '100%'
         },
 
+        // @inheritdoc
         listeners: {
             validitychange: function(form, valid){
                 this.ctx().toggleSaveAbility(valid);
@@ -55,6 +70,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             },
             actionfailed: function(form, action) {
                 var cmp, msg;
+
+                // The the info about invalid fields from the response, and mark the as invalid
                 Object.keys(action.result.mismatch).forEach(function(i, index, mismatch){
                     if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field-' + i)) {
                         msg = action.result.mismatch[i];
@@ -63,12 +80,15 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 });
 
+                // Reset value of the 'ID' master toolbar item to the last valid value
                 var idCmp = Ext.getCmp(this.ctx().panelToolbarMasterId() + '-id');
                 if (idCmp) idCmp.setValue(idCmp.lastValidValue);
 
+                // Reset value of the 'Offset' master toolbar item to the last valid value
                 var offsetCmp = Ext.getCmp(this.ctx().panelToolbarMasterId() + '-offset');
                 if (offsetCmp) offsetCmp.setValue(offsetCmp.lastValidValue);
 
+                // Fire the 'validitychange' event
                 form.fireEvent('validitychange', form, false);
 
                 // Hide mask
@@ -77,13 +97,27 @@ Ext.define('Indi.lib.controller.action.Form', {
         }
     },
 
+    /**
+     * Disabled/enable master toolbar controls, explicitly related to form save ability.
+     * Function is called each time form validity changes
+     *
+     * @param valid
+     */
     toggleSaveAbility: function(valid) {
-        var me = this, cbAutosave = Ext.getCmp(me.panelToolbarMasterId() + '-autosave');
-        var toggleA = ['save', 'autosave'], toggleI;
+
+        // Setup auxilliary variables and the array of master toolbar items,
+        // that should be primary affected each time form saving ability is changed
+        var me = this, cbAutosave = Ext.getCmp(me.panelToolbarMasterId() + '-autosave'),
+            toggleA = ['save', 'autosave'], toggleI;
+
+        // For each master toolbar item, that should be affected on form saving ability change
         for (var i = 0; i < toggleA.length; i++) {
+
+            // Get item's component and if got - disable
             toggleI = Ext.getCmp(me.panelToolbarMasterId() + '-' + toggleA[i]);
             if (toggleI) toggleI.setDisabled(!valid);
 
+            // If that component is 'Autosave' - implement additional behaviour
             if (toggleA[i] == 'autosave' && toggleI) {
                 if (!valid) {
                     toggleI.backupValue = toggleI.checked ? 1 : 0;
@@ -99,16 +133,17 @@ Ext.define('Indi.lib.controller.action.Form', {
 
     // @inheritdoc
     initComponent: function() {
-        this.id = this.bid();
-        this.row = Ext.merge({
-            id: this.id + '-form',
-            items: this.formItemA(),
-            url: this.ti().section.href + 'save'
-                + (this.ti().row.id ? '/id/' + this.ti().row.id : '')
-                + (this.ti().scope.hash ? '/ph/' + this.ti().scope.hash : '') + '/'
-        }, this.row);
-        this.panel.items = this.panelItemA();
-        this.callParent();
+        var me = this;
+        me.id = me.bid();
+        me.row = Ext.merge({
+            id: me.id + '-form',
+            items: me.formItemA(),
+            url: me.ti().section.href + 'save'
+                + (me.ti().row.id ? '/id/' + me.ti().row.id : '')
+                + (me.ti().scope.hash ? '/ph/' + me.ti().scope.hash : '') + '/'
+        }, me.row);
+        me.panel.items = me.panelItemA();
+        me.callParent();
     },
 
     /**
@@ -236,7 +271,9 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXString: function(item) {
-        return item.fieldLabel == 'Auto title' ? null : {}
+        return item.fieldLabel == 'Auto title'
+            ? null
+            : (item.name == 'alias' ? {allowBlank: false} : {});
     },
 
     /**
@@ -405,42 +442,12 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
-     * Loads the url, given in `url` arg. This function overrides parent class `goto` function,
-     * as autosave mode should be additionally taken into attention here
-     *
-     * @param url
-     */
-    goto: function(url) {
-        var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
-            btnSave = Ext.getCmp(me.panelToolbarMasterId() + '-save'),
-            formCmp = Ext.getCmp(me.bid() + '-form'),
-            autosave = Ext.getCmp(me.bid() + '-form-autosave');
-
-        // If save button is toggled
-        if (btnSave && btnSave.pressed && !btnSave.disabled) {
-
-            // Update value of the 'redirect-url' field, or, if it's not
-            // yet exists - create it and assign `url` as it's value
-            if (hidden) hidden.setValue(url); else formCmp.add({
-                id: me.bid() + '-redirect-url',
-                xtype: 'hidden',
-                name: 'redirect-url',
-                value: url
-            });
-
-            // Submit form
-            if (formCmp.getForm().isValid()) formCmp.submit(); else me.getMask().hide();
-
-        // Else we just load required contents
-        } else Indi.load(url + (me.ti().scope.toggledSave ? '?stopAutosave=1' : ''));
-    },
-
-    /**
      * Master toolbar 'Save' item, for ability to save form data
      *
      * @return {Object}
      */
     panelToolbarMasterItem$Save: function() {
+
         // Here we check if 'save' action is in the list of allowed actions
         var me = this, formCmp = Ext.getCmp(me.bid() + '-form'); me.ti().disableSave = true;
         for (var i = 0; i < me.ti().actions.length; i++)
@@ -453,7 +460,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'button',
             text: Indi.lang.I_SAVE,
             handler: function() {
-                me.goto(me.panelToolbarMasterItem$Back(true));
+                me.goto(me.panelToolbarMasterItem$Back(true), true);
             },
             disabled: me.ti().disableSave,
             iconCls: 'i-btn-icon-save',
@@ -475,22 +482,21 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: me.panelToolbarMasterId() + '-autosave',
             xtype: 'checkbox',
-            tooltip: {
-                html: Indi.lang.I_AUTOSAVE,
-                staticOffset: [0, 4]
-            },
+            tooltip: {html: Indi.lang.I_AUTOSAVE, staticOffset: [0, 4]},
             disabled: me.ti().disableSave,
             iconCls: 'i-btn-icon-save',
             cls: 'i-action-form-topbar-checkbox-autosave',
             checked: me.ti().scope.toggledSave,
             margin: '0 6 0 3',
             handler: function(cb){
+
+                // Create shortcuts for involved components
                 var btnSave = Ext.getCmp(me.panelToolbarMasterId() + '-save'),
                     sqNested = Ext.getCmp(me.panelToolbarMasterId() + '-nested');
 
+                // Other items adjustments
                 if (btnSave) btnSave.toggle();
-                if (sqNested && me.ti().sections.length && !me.ti().row.id)
-                    sqNested[cb.checked ? 'enable' : 'disable']();
+                if (sqNested && me.ti().sections.length && !me.ti().row.id) sqNested.setDisabled(!cb.checked);
             },
             listeners: {
                 afterrender: function(){
@@ -521,6 +527,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             disabled: parseInt(me.ti().section.disableAdd) || me.ti().disableSave ? true : false,
             tooltip: Indi.lang.I_NAVTO_CREATE,
             handler: function(){
+
+                // Create shortcuts for involved components
                 var url = me.ti().section.href + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
                     tfID = Ext.getCmp(me.panelToolbarMasterId() + '-id'),
                     btnPrev = Ext.getCmp(me.panelToolbarMasterId() + '-prev'),
@@ -531,15 +539,95 @@ Ext.define('Indi.lib.controller.action.Form', {
                 // Show mask
                 me.getMask().show();
 
+                // Other items adjustments
                 if (tfID) tfID.setValue('');
                 if (btnPrev) btnPrev.disable();
-                if (cmbSibling && typeof me.ti().row.title != 'undefined')
-                    cmbSibling.setKeywordValue(''); // !!
+                if (cmbSibling && typeof me.ti().row.title != 'undefined') cmbSibling.setKeywordValue(''); // !!
                 if (btnNext && parseInt(me.ti().scope.found)) btnNext.enable();
                 if (spnOffset) spnOffset.setValue('');
 
+                // Goto the url
                 me.goto(url);
             }
+        }
+    },
+
+    /**
+     * Master toolbar 'Nested' item, for ability to navigate to current row's nested entries lists
+     *
+     * @return {Object}
+     */
+    panelToolbarMasterItem$Nested: function() {
+        var me = this, btnSave = Ext.getCmp(me.panelToolbarMasterId() + '-save');
+
+        // If there are currently no nested sections - return
+        if (!me.ti().sections.length) return null;
+
+        // 'Nested' item config
+        return {
+            id: me.panelToolbarMasterId() + '-nested',
+            xtype: 'shrinklist',
+            displayField: 'title',
+            disabled: !me.ti().row.id && ((btnSave && btnSave.pressed != true) || true),
+            tooltip: {
+                html: Indi.lang.I_NAVTO_NESTED,
+                hideDelay: 0,
+                showDelay: 1000,
+                dismissDelay: 2000,
+                staticOffset: [0, 1]
+            },
+            store: {
+                xtype: 'store',
+                fields: ['alias', 'title'],
+                data : me.ti().sections
+            },
+            listeners: {
+                itemclick: function(cmp, row) {
+                    me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
+                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
+                }
+            }
+        }
+    },
+
+    /**
+     * Loads the url, given in `url` arg. This function overrides parent class `goto` function,
+     * as autosave mode should be additionally taken into attention here
+     *
+     * @param url
+     */
+    goto: function(url, btnSaveClick) {
+
+        // Create shortcuts for involved components
+        var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
+            btnSave = Ext.getCmp(me.panelToolbarMasterId() + '-save'),
+            formCmp = Ext.getCmp(me.bid() + '-form'),
+            autosave = Ext.getCmp(me.bid() + '-form-autosave');
+
+        // If save button is toggled
+        if (btnSave && !btnSave.disabled && (btnSave.pressed || btnSaveClick)) {
+
+            // Update value of the 'redirect-url' field, or, if it's not
+            // yet exists - create it and assign `url` as it's value
+            if (hidden) hidden.setValue(url);
+            else if (!btnSaveClick) formCmp.add({
+                id: me.bid() + '-redirect-url',
+                xtype: 'hidden',
+                name: 'redirect-url',
+                value: url
+            });
+
+            // Submit form
+            if (formCmp.getForm().isValid()) formCmp.submit(); else me.getMask().hide();
+
+        // Else
+        } else {
+
+            // If `forceValidate` arg is given we check form validity before loading required contents
+            if (!formCmp.getForm().isValid()) return;
+
+            // We just load required contents
+            Indi.load(url + (me.ti().scope.toggledSave ? '?stopAutosave=1' : ''));
         }
     }
 });

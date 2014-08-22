@@ -1,5 +1,12 @@
+/**
+ * Base class for all controller actions instances
+ */
 Ext.define('Indi.lib.controller.action.Action', {
+
+    // @inheritdoc
     extend: 'Ext.Component',
+
+    // @inheritdoc
     alternateClassName: 'Indi.Controller.Action',
 
     // @inheritdoc

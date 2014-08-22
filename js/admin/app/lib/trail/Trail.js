@@ -1,8 +1,12 @@
 /**
- * Trail object
+ * Trail object. Is used to handle all levels of Indi Engine interface places hierarchy
  */
 Ext.define('Indi.lib.trail.Trail', {
+
+    // @inheritdoc
     alternateClassName: 'Indi.Trail',
+
+    // @inheritdoc
     singleton: true,
 
     /**

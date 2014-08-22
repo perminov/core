@@ -1,3 +1,6 @@
+/**
+ * Ext.form.field.Date extension, but with ability to handle date+time instead of only date
+ */
 Ext.define('Ext.lib.form.field.DateTime', {
     extend: 'Ext.form.field.Date',
     alias: 'widget.datetimefield',

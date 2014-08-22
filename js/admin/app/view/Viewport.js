@@ -1,5 +1,5 @@
 /**
- * Setup a viewport
+ * Setup a viewport for Indi Engine interface
  */
 Ext.define('Indi.view.Viewport', {
     extend: 'Ext.container.Viewport',
@@ -53,6 +53,9 @@ Ext.define('Indi.view.Viewport', {
     menu: {
     },
 
+    /**
+     * Center panel cfg
+     */
     center: {
         region: 'center',
         defaults: {split: true},
@@ -87,11 +90,15 @@ Ext.define('Indi.view.Viewport', {
             contentEl: 'i-section-index-action-index-content'
         }]
     },
+
+    // @inheritdoc
     initComponent: function() {
         this.menu = Ext.create('Indi.Menu', this.menu);
         this.items = [this.logo, this.menu, this.center];
         this.callParent();
     },
+
+    // @inheritdoc
     listeners: {
         afterrender: function (){
             Indi.metrics = new Ext.util.TextMetrics();
