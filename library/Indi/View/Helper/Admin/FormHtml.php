@@ -10,12 +10,13 @@ class Indi_View_Helper_Admin_FormHtml {
 		$field = Indi::trail()->model->fields($name);
 
         $customParams = array('width','height','bodyClass','style','script','sourceStripper');
+        $params = $field->params;
         foreach($customParams as $customParam) {
             if (Indi::view()->row->{$name . ucfirst($customParam)}) {
-                $field->params[$customParam] = Indi::view()->row->{$name . ucfirst($customParam)};
+                $params[$customParam] = Indi::view()->row->{$name . ucfirst($customParam)};
             }
         }
-
+        $field->params = $params;
         // Set up styles configuration for editor contents
         if ($field->params['style']) $CKconfig['style'] = $field->params['style'];
         $CKconfig['style'] .= 'body{max-width: auto;min-width: auto;width: auto;}';

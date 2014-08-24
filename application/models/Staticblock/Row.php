@@ -9,4 +9,14 @@ class Staticblock_Row extends Indi_Db_Table_Row {
 		if ($this->type == 'textarea') $value = nl2br($value);
 		return $value;
 	}
+	
+	/**
+	 * Prevent tags-stripping from `detailsTextarea` contents
+	 */
+	public function mismatch($check = false) {
+		$textarea = $this->detailsTextarea;
+		$return = parent::mismatch($check);
+		$this->detailsTextarea = $textarea;
+		return $return;
+	}
 }
