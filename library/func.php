@@ -405,11 +405,27 @@ function ldate($format, $date) {
 }
 
 /**
- * 
- *
+ * Provide php's lcfirst() function declaration, as it's usefult, but not available in PHP versions < 5.3.0
  */
 if (!function_exists('lcfirst')) {
 	function lcfirst($string) {
 		return strtolower(substr($string, 0, 1)) . substr($string, 1);
 	}
+}
+
+/**
+ * Provide php's array_column() function declaration, as it's useful, but not available in PHP versions < 5.5.0
+ */
+if (!function_exists('array_column')) {
+    function array_column(array $array, $column_key, $index_key = null) {
+        $column = array();
+        foreach ($array as $item) {
+            if ($index_key) {
+                $column[$item[$index_key]] = $item[$column_key];
+            } else {
+                $column[] = $item[$column_key];
+            }
+        }
+        return $column;
+    }
 }
