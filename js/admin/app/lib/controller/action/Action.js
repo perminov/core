@@ -52,7 +52,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Append tools and toolbars to the main panel
         me.panel = Ext.merge({
             tools: me.panelToolA(),
-            dockedItems: me.panelToolbarA()
+            dockedItems: me.panelDockedA()
         }, this.panel);
 
         // Setup main panel title, contents and trailLevel property
@@ -80,7 +80,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      *
      * @return {Array}
      */
-    panelToolbarA: function() {
+    panelDockedA: function() {
         return []
     }
 });

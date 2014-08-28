@@ -434,11 +434,14 @@ Ext.define('Indi', {
 
             /**
              * Force array to contain only item, that have keys, mentioned in `val` argument
+             * If `limit` argument is specified, the return value won't contain greater number of items than
+             * specified in that arguments.
              * If `clone` argument is set to true (this is it's default value), a clone of current array will be
              * filtered and returned. Otherwise - method will operate on current array instead of on it's clone
              *
              * @param val String, may be comma-separated
              * @param key String
+             * @param limit Number
              * @param clone bool
              * @return Array
              */
@@ -446,8 +449,34 @@ Ext.define('Indi', {
                 Object.defineProperty(Array.prototype, 'select', {
                     enumerable: false,
                     configurable: false,
-                    value: function(val, key, clone) {
-                        return (clone !== false ? Ext.clone(this) : this).exclude(val, key, true);
+                    value: function(val, key, limit, clone) {
+
+                        // Get the selected items
+                        var selected = (clone !== false ? Ext.clone(this) : this).exclude(val, key, true);
+
+                        // Trim the selected items array, for it to contain only certain number of items
+                        if (limit && !isNaN(parseInt(limit))) selected.splice(limit, selected.length - limit);
+
+                        // Return
+                        return selected;
+                    }
+                });
+            },
+
+            /**
+             * Does the same as Array.select() method, but returns first selected item, directly
+             *
+             * @param val String, may be comma-separated
+             * @param key String
+             */
+            'Array.prototype.r': function() {
+                Object.defineProperty(Array.prototype, 'r', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(val, key) {
+
+                        // Return
+                        return this.select(val, key, 1)[0];
                     }
                 });
             },
@@ -467,6 +496,22 @@ Ext.define('Indi', {
                     enumerable: false,
                     configurable: false,
                     value: function(val, key, inverse) {
+
+                        // If no explicit key name was given in `key`
+                        if (!key) {
+
+                            // Setup array of other possible key names, what will be tried to use instead
+                            var defaultKeyNameA = ['id', 'alias', 'key'];
+
+                            // Check if any of these key names are exists as one of each item's properties
+                            for (var i = 0; i < defaultKeyNameA.length; i++)
+
+                                // And if so, we will use that key name instead of value of `key` argument
+                                if (this.column(defaultKeyNameA[i]).length) {
+                                    key = defaultKeyNameA[i];
+                                    break;
+                                }
+                        }
 
                         // Get the array of values, by comma-splitting 'val' arg
                         val = val.split(',');

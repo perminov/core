@@ -417,10 +417,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Array}
      */
-    panelToolbarA: function() {
+    panelDockedA: function() {
 
         // Toolbars array
-        var toolbarA = [], toolbarFilter = this.panelToolbarFilter(), toolbarMaster = this.panelToolbarMaster();
+        var toolbarA = [], toolbarFilter = this.panelDockedFilter(), toolbarMaster = this.panelDocked$Master();
 
         // Append filter and master toolbars
         if (toolbarFilter) toolbarA.push(toolbarFilter);
@@ -435,7 +435,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Object}
      */
-    panelToolbarFilter: function() {
+    panelDockedFilter: function() {
         var me = this;
 
         // If there is at least one filter was setup for current section
@@ -461,7 +461,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         labelPad: 6,
                         labelStyle: 'padding-left: 0'
                     },
-                    items: this.panelToolbarFilterItemA(),
+                    items: this.panelDockedFilterItemA(),
                     listeners: {
                         afterrender: function(){
                             me.setFilterValues();
@@ -477,15 +477,15 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Array}
      */
-    panelToolbarFilterItemA: function() {
+    panelDockedFilterItemA: function() {
 
         // Declare toolbar filter panel items array, and some additional variables
         var itemA = [], itemI, itemICustom;
 
         // Fulfil items array
         for (var i = 0; i < this.ti().filters.length; i++) {
-            itemI = this.panelToolbarFilterItemIDefault(this.ti().filters[i]);
-            itemICustom = 'panelToolbarFilterItemI$' + Indi.ucfirst(this.ti().filters[i].foreign('fieldId').alias);
+            itemI = this.panelDockedFilterItemIDefault(this.ti().filters[i]);
+            itemICustom = 'panelDockedFilterItemI$' + Indi.ucfirst(this.ti().filters[i].foreign('fieldId').alias);
             if (typeof this[itemICustom] == 'function') itemI = this[itemICustom](itemI);
             if (itemI) itemA = itemA.concat(itemI.length ? itemI: [itemI]);
         }
@@ -500,7 +500,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemI_Combo: function(filter) {
+    panelDockedFilterItemI_Combo: function(filter) {
 
         // Get the field
         var field = filter.foreign('fieldId');
@@ -540,7 +540,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemIColor: function(filter) {
+    panelDockedFilterItemIColor: function(filter) {
 
         // Define a shortcut for filter field alias
         var alias = filter.foreign('fieldId').alias;
@@ -583,7 +583,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemI_Keyword: function(filter) {
+    panelDockedFilterItemI_Keyword: function(filter) {
 
         // Define a shortcut for filter field alias
         var alias = filter.foreign('fieldId').alias;
@@ -614,8 +614,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemIString: function(filter) {
-        return this.panelToolbarFilterItemI_Keyword(filter);
+    panelDockedFilterItemIString: function(filter) {
+        return this.panelDockedFilterItemI_Keyword(filter);
     },
 
     /**
@@ -624,8 +624,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemITextarea: function(filter) {
-        return this.panelToolbarFilterItemI_Keyword(filter);
+    panelDockedFilterItemITextarea: function(filter) {
+        return this.panelDockedFilterItemI_Keyword(filter);
     },
 
     /**
@@ -634,8 +634,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemIHtml: function(filter) {
-        return this.panelToolbarFilterItemI_Keyword(filter);
+    panelDockedFilterItemIHtml: function(filter) {
+        return this.panelDockedFilterItemI_Keyword(filter);
     },
 
     /**
@@ -644,7 +644,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemINumber: function(filter) {
+    panelDockedFilterItemINumber: function(filter) {
 
         // Define a shortcut for filter field alias
         var alias = filter.foreign('fieldId').alias;
@@ -699,7 +699,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemI_Calendar: function(filter) {
+    panelDockedFilterItemI_Calendar: function(filter) {
 
         // Define a shortcut for filter field alias
         var alias = filter.foreign('fieldId').alias;
@@ -772,8 +772,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemICalendar: function(filter) {
-        return this.panelToolbarFilterItemI_Calendar(filter);
+    panelDockedFilterItemICalendar: function(filter) {
+        return this.panelDockedFilterItemI_Calendar(filter);
     },
 
     /**
@@ -782,8 +782,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemIDatetime: function(filter) {
-        return this.panelToolbarFilterItemI_Calendar(filter);
+    panelDockedFilterItemIDatetime: function(filter) {
+        return this.panelDockedFilterItemI_Calendar(filter);
     },
 
     /**
@@ -792,8 +792,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemICombo: function(filter) {
-        return this.panelToolbarFilterItemI_Combo(filter);
+    panelDockedFilterItemICombo: function(filter) {
+        return this.panelDockedFilterItemI_Combo(filter);
     },
 
     /**
@@ -802,8 +802,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemIRadio: function(filter) {
-        return this.panelToolbarFilterItemI_Combo(filter);
+    panelDockedFilterItemIRadio: function(filter) {
+        return this.panelDockedFilterItemI_Combo(filter);
     },
 
     /**
@@ -812,8 +812,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemICheck: function(filter) {
-        return this.panelToolbarFilterItemI_Combo(filter);
+    panelDockedFilterItemICheck: function(filter) {
+        return this.panelDockedFilterItemI_Combo(filter);
     },
 
     /**
@@ -822,8 +822,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param filter
      * @return {Object}
      */
-    panelToolbarFilterItemIMulticheck: function(filter) {
-        return this.panelToolbarFilterItemI_Combo(filter);
+    panelDockedFilterItemIMulticheck: function(filter) {
+        return this.panelDockedFilterItemI_Combo(filter);
     },
 
     /**
@@ -831,7 +831,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Object}
      */
-    panelToolbarFilterItemIDefault: function(filter) {
+    panelDockedFilterItemIDefault: function(filter) {
 
         // Setup auxilliary variables
         var itemI, itemIDefault, itemICustom;
@@ -839,7 +839,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Define a shortcut for filter field element alias
         var control = filter.foreign('fieldId').foreign('elementId').alias;
 
-        itemIDefault = 'panelToolbarFilterItemI' + Indi.ucfirst(control);
+        itemIDefault = 'panelDockedFilterItemI' + Indi.ucfirst(control);
         if (typeof this[itemIDefault] == 'function') itemI = this[itemIDefault](filter);
 
         return itemI;
@@ -850,7 +850,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Object}
      */
-    panelToolbarMaster: function() {
+    panelDocked$Master: function() {
 
         // Master toolbar cfg
         return {
@@ -859,7 +859,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             dock: 'top',
             height: 27,
             padding: '0 3 0 2',
-            items: this.panelToolbarMasterItemA()
+            items: this.panelDocked$MasterItemA()
         }
     },
 
@@ -868,7 +868,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItemAction$Create: function(){
+    panelDocked$MasterItemAction$Create: function(){
 
         // Check if 'save' and 'form' actions are allowed
         var canSave = false, canForm = false, canAdd = this.ti().section.disableAdd == '0';
@@ -902,7 +902,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItemActionDefault: function(action) {
+    panelDocked$MasterItemActionDefault: function(action) {
 
         // If action is visible
         if (action.display == 1) {
@@ -964,18 +964,18 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Array}
      */
-    panelToolbarMasterItemActionA: function() {
+    panelDocked$MasterItemActionA: function() {
 
         // Setup auxillirary variables
-        var actionItemA = [], actionItem, actionItemCustom, actionItemCreate = this.panelToolbarMasterItemAction$Create();
+        var actionItemA = [], actionItem, actionItemCustom, actionItemCreate = this.panelDocked$MasterItemAction$Create();
 
         // Append 'Create' action button
         if (actionItemCreate) actionItemA.push(actionItemCreate);
 
         // Append othe action buttons
         for (var i = 0; i < this.ti().actions.length; i++) {
-            actionItem = this.panelToolbarMasterItemActionDefault(this.ti().actions[i]);
-            actionItemCustom = 'panelToolbarMasterItemAction$'+Indi.ucfirst(this.ti().actions[i].alias);
+            actionItem = this.panelDocked$MasterItemActionDefault(this.ti().actions[i]);
+            actionItemCustom = 'panelDocked$MasterItemAction$'+Indi.ucfirst(this.ti().actions[i].alias);
             if (typeof this[actionItemCustom] == 'function') actionItem = this[actionItemCustom](actionItem);
             if (actionItem) actionItemA.push(actionItem);
         }
@@ -989,9 +989,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Array}
      */
-    panelToolbarMasterItemA: function() {
-        var me = this, itemA = [], actionItemA = me.panelToolbarMasterItemActionA(),
-            keywordItem = me.panelToolbarMasterItemKeyword();
+    panelDocked$MasterItemA: function() {
+        var me = this, itemA = [], actionItemA = me.panelDocked$MasterItemActionA(),
+            keywordItem = me.panelDocked$MasterItemKeyword();
 
         // Append separator, if at least one action button item is alredy exist within 'items' array
         if (actionItemA.length) (itemA = itemA.concat(actionItemA)).push('-');
@@ -1049,7 +1049,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItemKeyword: function() {
+    panelDocked$MasterItemKeyword: function() {
 
         // Append fast search keyword field component to the items stack
         return {
