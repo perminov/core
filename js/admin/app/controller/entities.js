@@ -2,8 +2,11 @@ Ext.define('Indi.controller.entities', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
-            panel: {
+            panel1: {
                 //dockedItems: [],
+                docked: [{
+                    alias: 'master1'
+                }]
             },
             /*panelToolbarMasterItemAction$Form: function(actionItem){
                 actionItem.tooltip = 'Hello, world';
@@ -77,6 +80,24 @@ Ext.define('Indi.controller.entities', {
         },
 
         form: {
+            panel: {
+                docked: {
+                    items: [{alias: 'master'}, {alias: 'bottom', dock: 'bottom'}],
+                    elems: {
+                        //master: [{alias: 'save'}, '-', {alias: 'nested'}],
+                        //bottom: [{alias: 'back'}]
+                    }
+                }
+            },
+            panelDockedElem$Save: function(item) {
+                var me = this;
+                return Ext.merge(Object.getPrototypeOf(this).panelDockedElem$Save.call(this), {
+                    handler: function(btnSave){
+                        me.goto(me.ctx().uri, -1);
+                    }
+                });
+            },
+
             rowToolbarA: function() {
                 return [{
                     xtype: 'toolbar',
@@ -94,12 +115,8 @@ Ext.define('Indi.controller.entities', {
                 }
             },
 
-            formItem$Details: function(item) {
-                return {
-                    editorCfg: {
-                        width: 300
-                    }
-                }
+            formItem$Table: function(item) {
+                return {allowBlank: false}
             },
 
             formItem$Title: function(field, item) {

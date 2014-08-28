@@ -10,7 +10,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     extend: 'Indi.Controller.Action',
 
     // @inheritdoc
-    mcopwso: ['row'],
+    mcopwso: ['row', 'panel'],
 
     // @inheritdoc
     panel: {
@@ -23,123 +23,28 @@ Ext.define('Indi.lib.controller.action.Row', {
         },
 
         /**
-         * Master toolbar config
+         * Here we separate docked items on items-level1 and items-level2, e.g items-level1 are
+         * panels/toolbars definitions, and items-level2 are child items within these panels/toolbars.
+         * The `alias` property is a special property, in some sense similar to extjs 'xtype' property.
+         * `alias` property in some sense is the key that connecting panels/toolbars with their items collections.
+         * In 99.99% cases, when `alias` property faced here - it means that there is exist a special function
+         * that is responsible for building fully/partially configuration object for such item
          */
-        toolbarMaster: {
-
-            /**
-             * Possible value of properties, or of properties's `mode` property, in case if properties are objects
-             *
-             * 1 - item only
-             * 2 - item with tbseparator
-             * 3 - item with tbfill
-             * 4 - item with tbspacer
-             */
-            items: {
-                back: 2,
-                ID: {
-                    mode: 2,
-                    width: function(row, mode) {
-                        var labelWidth = 20, inputWidth = 30;
-
-                        if (row.id) {
-                            inputWidth = row.id.toString().length * 9;
-                            inputWidth = inputWidth > 30 ? inputWidth : 30;
-                        }
-
-                        return mode == 'tooltipOffset'
-                            ? labelWidth + inputWidth/2 - (labelWidth + inputWidth)/2
-                            : labelWidth + inputWidth;
-                    }
-                }
-                /*offset: {
-                    mode: 1,
-                    width: function(found, mode) {
-                        var labelWidth = Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE),
-                            triggerWidth = 20, inputWidth = (found.toString().length + 1) * 7 + 2;
-
-                        inputWidth = inputWidth > 30 ? inputWidth : 30;
-
-                        return mode == 'tooltipOffset'
-                            ? labelWidth + 5 + inputWidth/2 - (labelWidth + 5 + inputWidth + triggerWidth)/2
-                            : labelWidth + inputWidth + triggerWidth;
-                    }
-                }*/
+        docked: {
+            default: {
+                xtype: 'toolbar',
+                style: {paddingRight: '3px'}
             },
-
-            /**
-             * Function is used when id-by-offset or offset-by-id detection failed
-             *
-             * @param {Ext.form.field.Text} input
-             */
-            onDetectionFailed: function(input) {
-
-                // Declare `smp` variable. SMP - mean Search Params Mention
-                var me = this, spm,
-                    kind = (input ? input.id.replace(me.panelToolbarMasterId() +'-', '') : 'offset').toUpperCase();
-
-                // If no `input` argument given, we assume it's a 'Offset' item
-                if (!input) input = Ext.getCmp(me.panelToolbarMasterId() + '-offset');
-
-                // Hide mask
-                me.getMask().hide();
-
-                // If user was using filters or keyword for browsing the scope of rows,
-                // the warning message will contain an indication about that
-                if (me.ti().scope.filters != '[]' || (me.ti().scope.keyword && me.ti().scope.keyword.length))
-                    spm = Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_MSG_SPM'];
-
-                // Display an Ext message box
-                Ext.MessageBox.show({
-                    buttons: Ext.MessageBox.OK,
-                    icon: Ext.MessageBox.WARNING,
-                    title: Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_TITLE'],
-                    msg: Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_MSG_START'] +
-                        spm + Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_MSG_END'],
-
-                    // After OK button was pressed, we restore the last valid value
-                    fn: function(){
-                        if (input) input.setValue(input.lastValidValue);
-                    }
-                });
-            },
-
-            /**
-             * Function is used when user changed the value of 'Offset' master toolbar item's component,
-             * or (in certain cases) pressed 'Prev' or 'Next' items buttons
-             *
-             * @param offset
-             * @param input
-             */
-            gotoOffset: function(offset, input) {
-
-                // Build the request uri
-                var me = this, url = me.ti().section.href + me.ti().action.alias + '/aix/' +
-                    offset + '/ph/'+ me.ti().section.primaryHash+'/',
-                    spnOffset = Ext.getCmp(me.panelToolbarMasterId() + '-offset');
-
-                // Set temporary value of 'Offset' spinner
-                if (spnOffset) spnOffset.setRawValue(offset);
-
-                // We should ensure that row that user wants to retrieve
-                // - is exists within a current section scope
-                Ext.Ajax.request({
-                    url: url + 'check/1/',
-                    success: function(response){
-
-                        // Get the result of row id detection from the response
-                        var rowId = response.responseText.match(/^[0-9]+$/)
-                            ? parseInt(response.responseText)
-                            : false;
-
-                        // If row id was successfully detected,
-                        // append 'id' param to the url, and load that url
-                        if (rowId) me.goto(url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1'));
-
-                        // Otherwise we build an warning message, and display Ext.MessageBox
-                        else me.panel.toolbarMaster.onDetectionFailed.call(me, input);
-                    }
-                });
+            items: [{alias: 'master'}],
+            elems: {
+                master: [
+                    {alias: 'back'}, '-',
+                    {alias: 'ID'}, '-',
+                    {alias: 'prev'}, {alias: 'next'}, '-',
+                    {alias: 'create'}, '-',
+                    {alias: 'nested'}, '->',
+                    {alias: 'offset'}, {alias: 'found'}
+                ]
             }
         }
     },
@@ -156,16 +61,71 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Array}
      */
-    panelToolbarA: function() {
+    panelDockedA: function() {
+        var me = this;
 
-        // Toolbars array
-        var toolbarA = [], toolbarMaster = this.panelToolbarMaster();
+        // Setup docked items
+        return me.push(me.panel.docked.items, 'panelDocked', false, function(itemI){
 
-        // Append master toolbar
-        if (toolbarMaster) toolbarA.push(toolbarMaster);
+            // Setup default toolbar config
+            itemI = Ext.merge({}, me.panel.docked.default, itemI);
 
-        // Return toolbars array
-        return toolbarA;
+            // Setup toolbar items, if not yet
+            if (!itemI.items && itemI.alias && me.panel.docked.elems[itemI.alias])
+                itemI.items = me.push(me.panel.docked.elems[itemI.alias], 'panelDockedElem', true);
+
+            // Return
+            return itemI;
+        });
+    },
+
+    /**
+     * Builder for items arrays. Used for toolbars, items within each toolbar, etc
+     *
+     * @param itemCfgA
+     * @param fnItemPrefix
+     * @param allowNaO
+     * @param adjust
+     * @return {Array}
+     */
+    push: function(itemCfgA, fnItemPrefix, allowNaO, adjust) {
+
+        // Setup auxilliary variables
+        var me = this, itemA = [], itemI, fnItemI;
+
+        // Build itemA array
+        for (var i = 0; i < itemCfgA.length; i++) {
+
+            // If only object-items are allowed for pushing, but itemCfgA[i] is not an object, try itemCfg[i+1]
+            if (!allowNaO && !Ext.isObject(itemCfgA[i])) continue;
+
+            // Else if itemCfgA[i] is an object, and have `alias` property
+            if (itemCfgA[i].hasOwnProperty('alias')) {
+
+                // Get the item's creator function name
+                fnItemI = fnItemPrefix + '$' + Indi.ucfirst(itemCfgA[i].alias);
+
+                // Reset itemI
+                itemI = null;
+
+                // If such function exists and return value of that function call
+                if (typeof me[fnItemI] == 'function') itemI = me[fnItemI]();
+
+                // If config is an object, merge itemI with it
+                if (Ext.isObject(itemCfgA[i])) Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
+
+                // Adjust item
+                if (typeof adjust == 'function') itemI = adjust(itemI);
+
+                // If itemI become consistent - push it to items array
+                if (itemI && (Ext.isObject(itemI) || allowNaO)) itemA.push(itemI);
+
+            // Else append it to items array, as is
+            } else itemA.push(itemCfgA[i]);
+        }
+
+        // Return items array
+        return itemA;
     },
 
     /**
@@ -173,15 +133,11 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMaster: function() {
+    panelDocked$Master: function() {
         return {
-            id: this.panelToolbarMasterId(),
-            xtype: 'toolbar',
+            id: this.bid() + '-docked$master',
             dock: 'top',
-            style: {
-                paddingRight: '3px'
-            },
-            items: this.panelToolbarMasterItemA()
+            items: this.panelDocked$MasterItemA()
         }
     },
 
@@ -190,8 +146,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {String}
      */
-    panelToolbarMasterId: function() {
-        return this.bid() + '-toolbar-master';
+    panelDockedElemBid: function() {
+        return this.bid() + '-docked-elem$';
     },
 
     /**
@@ -199,29 +155,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Array}
      */
-    panelToolbarMasterItemA: function() {
-
-        // Setup auxilliary variables
-        var me = this, itemA = [], kind, itemI, fnItemI, kindO = {2: '-', 3: '->', 4: ' '},
-            itemO = me.panel.toolbarMaster.items;
-
-        // Build itemA array
-        for (var i in itemO) {
-            kind = parseInt(Ext.isObject(itemO[i]) ? itemO[i].mode : itemO[i]);
-            if (kind) {
-                fnItemI = 'panelToolbarMasterItem$' + Indi.ucfirst(i);
-                if (typeof me[fnItemI] == 'function') {
-                    itemI = me[fnItemI]();
-                    if (itemI) {
-                        itemA.push(itemI);
-                        if (kind >= 2) itemA.push(kindO[kind]);
-                    }
-                }
-            }
-        }
-
-        // Return master toolbar items array
-        return itemA;
+    panelDocked$MasterItemA: function() {
+        return this.push(this.panel.docked.elems['master'], 'panelDockedElem', true);
     },
 
     /**
@@ -229,7 +164,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItem$Back: function(urlonly) {
+    panelDockedElem$Back: function(urlonly) {
 
         // Build the url for goto
         var me = this, url = me.ti().section.href;
@@ -239,7 +174,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Return builded url, if `geturl` arg is given, or return 'Back' button config otherwise
         return urlonly ? url : {
-            id: me.panelToolbarMasterId() + '-back',
+            id: me.panelDockedElemBid() + 'back',
             text: '',
             iconCls: 'i-btn-icon-back',
             tooltip: Indi.lang.I_NAVTO_ROWSET,
@@ -259,22 +194,35 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItem$ID: function() {
-        var me = this;
+    panelDockedElem$ID: function() {
+
+        // Setup getMaxWidth function
+        var me = this, getMaxWidth = function(row, mode) {
+            var labelWidth = 20, inputWidth = 30;
+
+            if (row.id) {
+                inputWidth = row.id.toString().length * 9;
+                inputWidth = inputWidth > 30 ? inputWidth : 30;
+            }
+
+            return mode == 'tooltipOffset'
+                ? labelWidth + inputWidth/2 - (labelWidth + inputWidth)/2
+                : labelWidth + inputWidth;
+        };
 
         // ID field config
         return {
-            id: me.panelToolbarMasterId()+'-id',
+            id: me.panelDockedElemBid()+'-id',
             fieldLabel: 'ID',
             labelWidth: 15,
             xtype: 'numberfield',
             hideTrigger: true,
             tooltip: {
                 html: Indi.lang.I_NAVTO_ID,
-                staticOffset: [me.panel.toolbarMaster.items.ID.width(me.ti().row, 'tooltipOffset'), 1]
+                staticOffset: [getMaxWidth(me.ti().row, 'tooltipOffset'), 1]
             },
             value: me.ti().row.id,
-            width: me.panel.toolbarMaster.items.ID.width(me.ti().row),
+            width: getMaxWidth(me.ti().row),
             lastValidValue: me.ti().row.id,
             margin: '0 3 0 3',
             disabled: parseInt(me.ti().scope.found) ? false : true,
@@ -316,7 +264,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                                     if (aix) me.goto(url += 'aix/' + aix + '/');
 
                                     // Otherwise we build an warning message, and display Ext.MessageBox
-                                    else me.panel.toolbarMaster.onDetectionFailed.call(me, input);
+                                    else me.onDetectionFailed(me, input);
                                 }
                             });
                         }
@@ -332,12 +280,12 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItem$Found: function() {
+    panelDockedElem$Found: function() {
         var me = this;
 
         // 'Found' field config
         return {
-            id: me.panelToolbarMasterId() + '-found',
+            id: me.panelDockedElemBid() + 'found',
             xtype: 'displayfield',
             disabled: parseInt(me.ti().scope.found) ? false : true,
             value: Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_OF + Indi.numberFormat(me.ti().scope.found),
@@ -352,22 +300,39 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItem$Offset: function() {
-        var me = this;
+    panelDockedElem$Offset: function() {
+
+        // Setup getMaxWidth function
+        var me = this, getMaxWidth = function(found, mode) {
+
+            // Setup auxilliary variables
+            var labelWidth = Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE),
+                triggerWidth = 20, inputWidth = (found.toString().length + 1) * 7 + 2;
+
+            // Set the minimum input field width as 30px
+            inputWidth = inputWidth > 30 ? inputWidth : 30;
+
+            // Calculate and return total width, depending whether or not width will be used to determite
+            // x-offset of current field's tooltip
+            return mode == 'tooltipOffset'
+                ? labelWidth + 5 + inputWidth/2 - (labelWidth + 5 + inputWidth + triggerWidth)/2
+                : labelWidth + inputWidth + triggerWidth;
+
+        };
 
         // 'Offset' field config
         return {
-            id: me.panelToolbarMasterId() + '-offset',
+            id: me.panelDockedElemBid() + 'offset',
             fieldLabel: Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE,
             labelSeparator: '',
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE) + 1,
             xtype: 'numberfield',
             tooltip: {
                 html: Indi.lang.I_NAVTO_ROWINDEX,
-                staticOffset: [me.panel.toolbarMaster.items.offset.width(me.ti().scope.found, 'tooltipOffset'), 0]
+                staticOffset: [getMaxWidth(me.ti().scope.found, 'tooltipOffset'), 0]
             },
             value: (me.ti().row.id ? me.ti().scope.aix : ''),
-            width: me.panel.toolbarMaster.items.offset.width(me.ti().scope.found) + 1,
+            width: getMaxWidth(me.ti().scope.found) + 1,
             disabled: parseInt(me.ti().scope.found) ? false : true,
             margin: '0 5 0 3',
             minValue: 1,
@@ -393,15 +358,15 @@ Ext.define('Indi.lib.controller.action.Row', {
                             me.getMask().show();
 
                             // Get 'Prev' and 'Next' items
-                            var btnPrev = Ext.getCmp(me.panelToolbarMasterId() + '-prev'),
-                                btnNext = Ext.getCmp(me.panelToolbarMasterId() + '-next');
+                            var btnPrev = Ext.getCmp(me.panelDockedElemBid() + 'prev'),
+                                btnNext = Ext.getCmp(me.panelDockedElemBid() + 'next');
 
                             // Disable/enable them if needed
                             if (btnPrev) btnPrev.setDisabled(input.getValue() == input.minValue);
                             if (btnNext) btnNext.setDisabled(input.getValue() == input.maxValue);
 
                             // Try to navigate to current row's sibling by it's offset
-                            me.panel.toolbarMaster.gotoOffset.call(me, input.getValue(), input);
+                            me.gotoOffset(input.getValue(), input);
                         }
                     }, 500, input);
                 }
@@ -415,20 +380,20 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItem$Prev: function() {
+    panelDockedElem$Prev: function() {
         var me = this, enabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
             && parseInt(me.ti().scope.aix) > 1;
 
         // 'Prev' field config
         return {
-            id: me.panelToolbarMasterId() + '-prev',
+            id: me.panelDockedElemBid() + 'prev',
             disabled: !enabled,
             tooltip: Indi.lang.I_NAVTO_PREV,
             iconCls: Ext.baseCSSPrefix + 'tbar-page-prev',
             handler: function(btnPrev){
-                var cmbSibling = Ext.getCmp(me.panelToolbarMasterId() + '-sibling'),
-                    spnOffset = Ext.getCmp(me.panelToolbarMasterId() + '-offset'),
-                    btnNext = Ext.getCmp(me.panelToolbarMasterId() + '-next'),
+                var cmbSibling = Ext.getCmp(me.panelDockedElemBid() + 'sibling'),
+                    spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset'),
+                    btnNext = Ext.getCmp(me.panelDockedElemBid() + 'next'),
                     btnPrevEnabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
                         && parseInt(me.ti().scope.aix) - 1 > 1;
 
@@ -443,7 +408,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 } else if (spnOffset) spnOffset.spinDown();
 
                 // Try to navigate to current row's sibling by it's offset
-                else me.panel.toolbarMaster.gotoOffset.call(me, me.ti().scope.aix - 1);
+                else me.gotoOffset(me.ti().scope.aix - 1);
 
                 // Disable 'Prev' master toolbar item if needed
                 btnPrev.setDisabled(!btnPrevEnabled);
@@ -460,20 +425,20 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelToolbarMasterItem$Next: function() {
+    panelDockedElem$Next: function() {
         var me = this, enabled = parseInt(me.ti().scope.found) && ((parseInt(me.ti().scope.aix) &&
             parseInt(me.ti().scope.aix) < parseInt(me.ti().scope.found)) || !parseInt(me.ti().scope.aix));
 
         // 'Prev' item config
         return {
-            id: me.panelToolbarMasterId() + '-next',
+            id: me.panelDockedElemBid() + 'next',
             disabled: !enabled,
             tooltip: Indi.lang.I_NAVTO_NEXT,
             iconCls: Ext.baseCSSPrefix + 'tbar-page-next',
             handler: function(btnNext){
-                var cmbSibling = Ext.getCmp(me.panelToolbarMasterId() + '-sibling'),
-                    spnOffset = Ext.getCmp(me.panelToolbarMasterId() + '-offset'),
-                    btnPrev = Ext.getCmp(me.panelToolbarMasterId() + '-prev'),
+                var cmbSibling = Ext.getCmp(me.panelDockedElemBid() + 'sibling'),
+                    spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset'),
+                    btnPrev = Ext.getCmp(me.panelDockedElemBid() + 'prev'),
                     btnNextEnabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
                         && parseInt(me.ti().scope.aix) + 1 < parseInt(me.ti().scope.found);
 
@@ -488,7 +453,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 } else if (spnOffset) spnOffset.spinUp();
 
                 // Try to navigate to current row's sibling by it's offset
-                else me.panel.toolbarMaster.gotoOffset.call(me, (parseInt(me.ti().scope.aix) ? parseInt(me.ti().scope.aix) : 0)+ 1);
+                else me.gotoOffset((parseInt(me.ti().scope.aix) ? parseInt(me.ti().scope.aix) : 0)+ 1);
 
                 // Disable 'Next' master toolbar item if needed
                 btnNext.setDisabled(!btnNextEnabled);
@@ -526,5 +491,80 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     goto: function(url) {
         Indi.load(url);
+    },
+
+    /**
+     * Function is used when id-by-offset or offset-by-id detection failed
+     *
+     * @param {Ext.form.field.Text} input
+     */
+    onDetectionFailed: function(input) {
+
+        // Declare `smp` variable. SMP - mean Search Params Mention
+        var me = this, spm,
+            kind = (input ? input.id.replace(me.panelDockedElemBid() +'-', '') : 'offset').toUpperCase();
+
+        // If no `input` argument given, we assume it's a 'Offset' item
+        if (!input) input = Ext.getCmp(me.panelDockedElemBid() + 'offset');
+
+        // Hide mask
+        me.getMask().hide();
+
+        // If user was using filters or keyword for browsing the scope of rows,
+        // the warning message will contain an indication about that
+        if (me.ti().scope.filters != '[]' || (me.ti().scope.keyword && me.ti().scope.keyword.length))
+            spm = Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_MSG_SPM'];
+
+        // Display an Ext message box
+        Ext.MessageBox.show({
+            buttons: Ext.MessageBox.OK,
+            icon: Ext.MessageBox.WARNING,
+            title: Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_TITLE'],
+            msg: Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_MSG_START'] +
+                spm + Indi.lang['I_ACTION_FORM_TOPBAR_NAVTOROW'+kind+'_NOT_FOUND_MSGBOX_MSG_END'],
+
+            // After OK button was pressed, we restore the last valid value
+            fn: function(){
+                if (input) input.setValue(input.lastValidValue);
+            }
+        });
+    },
+
+    /**
+     * Function is used when user changed the value of 'Offset' master toolbar item's component,
+     * or (in certain cases) pressed 'Prev' or 'Next' items buttons
+     *
+     * @param offset
+     * @param input
+     */
+    gotoOffset: function(offset, input) {
+
+        // Build the request uri
+        var me = this, url = me.ti().section.href + me.ti().action.alias + '/aix/' +
+                offset + '/ph/'+ me.ti().section.primaryHash+'/',
+            spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset');
+
+        // Set temporary value of 'Offset' spinner
+        if (spnOffset) spnOffset.setRawValue(offset);
+
+        // We should ensure that row that user wants to retrieve
+        // - is exists within a current section scope
+        Ext.Ajax.request({
+            url: url + 'check/1/',
+            success: function(response){
+
+                // Get the result of row id detection from the response
+                var rowId = response.responseText.match(/^[0-9]+$/)
+                    ? parseInt(response.responseText)
+                    : false;
+
+                // If row id was successfully detected,
+                // append 'id' param to the url, and load that url
+                if (rowId) me.goto(url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1'));
+
+                // Otherwise we build an warning message, and display Ext.MessageBox
+                else me.onDetectionFailed(input);
+            }
+        });
     }
 });
