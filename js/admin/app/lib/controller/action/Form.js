@@ -16,7 +16,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         // @inheritdoc
         docked: {
             items: [{alias: 'master'}],
-            elems: {
+            inner: {
                 master: [
                     {alias: 'back'}, '-',
                     {alias: 'ID'}, '-',
@@ -64,11 +64,11 @@ Ext.define('Indi.lib.controller.action.Form', {
                 });
 
                 // Reset value of the 'ID' master toolbar item to the last valid value
-                var idCmp = Ext.getCmp(this.ctx().panelDockedElemBid() + 'id');
+                var idCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'id');
                 if (idCmp) idCmp.setValue(idCmp.lastValidValue);
 
                 // Reset value of the 'Offset' master toolbar item to the last valid value
-                var offsetCmp = Ext.getCmp(this.ctx().panelDockedElemBid() + 'offset');
+                var offsetCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'offset');
                 if (offsetCmp) offsetCmp.setValue(offsetCmp.lastValidValue);
 
                 // Fire the 'validitychange' event
@@ -90,14 +90,14 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Setup auxilliary variables and the array of master toolbar items,
         // that should be primary affected each time form saving ability is changed
-        var me = this, cbAutosave = Ext.getCmp(me.panelDockedElemBid() + 'autosave'),
+        var me = this, cbAutosave = Ext.getCmp(me.panelDockedInnerBid() + 'autosave'),
             toggleA = ['save', 'autosave'], toggleI;
 
         // For each master toolbar item, that should be affected on form saving ability change
         for (var i = 0; i < toggleA.length; i++) {
 
             // Get item's component and if got - disable
-            toggleI = Ext.getCmp(me.panelDockedElemBid() + toggleA[i]);
+            toggleI = Ext.getCmp(me.panelDockedInnerBid() + toggleA[i]);
             if (toggleI) toggleI.setDisabled(!valid);
 
             // If that component is 'Autosave' - implement additional behaviour
@@ -429,7 +429,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      *
      * @return {Object}
      */
-    panelDockedElem$Save: function() {
+    panelDockedInner$Save: function() {
 
         // Here we check if 'save' action is in the list of allowed actions
         var me = this, formCmp = Ext.getCmp(me.bid() + '-form'); me.ti().disableSave = true;
@@ -439,11 +439,11 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // 'Save' item config
         return {
-            id: me.panelDockedElemBid() + 'save',
+            id: me.panelDockedInnerBid() + 'save',
             xtype: 'button',
             text: Indi.lang.I_SAVE,
             handler: function() {
-                me.goto(me.panelDockedElem$Back(true), true);
+                me.goto(me.panelDockedInner$Back(true), true);
             },
             disabled: me.ti().disableSave,
             iconCls: 'i-btn-icon-save',
@@ -457,12 +457,12 @@ Ext.define('Indi.lib.controller.action.Form', {
      *
      * @return {Object}
      */
-    panelDockedElem$Autosave: function() {
+    panelDockedInner$Autosave: function() {
         var me = this;
 
         // 'Autosave' item config
         return {
-            id: me.panelDockedElemBid() + 'autosave',
+            id: me.panelDockedInnerBid() + 'autosave',
             xtype: 'checkbox',
             tooltip: {html: Indi.lang.I_AUTOSAVE, staticOffset: [0, 4]},
             disabled: me.ti().disableSave,
@@ -473,8 +473,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             handler: function(cb){
 
                 // Create shortcuts for involved components
-                var btnSave = Ext.getCmp(me.panelDockedElemBid() + 'save'),
-                    sqNested = Ext.getCmp(me.panelDockedElemBid() + 'nested');
+                var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
+                    sqNested = Ext.getCmp(me.panelDockedInnerBid() + 'nested');
 
                 // Other items adjustments
                 if (btnSave) btnSave.toggle();
@@ -482,7 +482,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             },
             listeners: {
                 afterrender: function(){
-                    var btnSave = Ext.getCmp(me.panelDockedElemBid() + 'save');
+                    var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
                     this.getEl().hover(function(){
                         btnSave.getEl().addCls('x-btn-default-toolbar-small-over');
                     }, function(){
@@ -499,12 +499,12 @@ Ext.define('Indi.lib.controller.action.Form', {
      *
      * @return {Object}
      */
-    panelDockedElem$Create: function() {
+    panelDockedInner$Create: function() {
         var me = this;
 
         // 'Create' item config
         return {
-            id: me.panelDockedElemBid() + 'create',
+            id: me.panelDockedInnerBid() + 'create',
             iconCls: 'i-btn-icon-create',
             disabled: parseInt(me.ti().section.disableAdd) || me.ti().disableSave ? true : false,
             tooltip: Indi.lang.I_NAVTO_CREATE,
@@ -512,11 +512,11 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // Create shortcuts for involved components
                 var url = me.ti().section.href + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
-                    tfID = Ext.getCmp(me.panelDockedElemBid() + 'id'),
-                    btnPrev = Ext.getCmp(me.panelDockedElemBid() + 'prev'),
-                    btnNext = Ext.getCmp(me.panelDockedElemBid() + 'next'),
-                    cmbSibling = Ext.getCmp(me.panelDockedElemBid() + 'sibling'),
-                    spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset');
+                    tfID = Ext.getCmp(me.panelDockedInnerBid() + 'id'),
+                    btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
+                    btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
+                    cmbSibling = Ext.getCmp(me.panelDockedInnerBid() + 'sibling'),
+                    spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
 
                 // Show mask
                 me.getMask().show();
@@ -535,44 +535,6 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
-     * Master toolbar 'Nested' item, for ability to navigate to current row's nested entries lists
-     *
-     * @return {Object}
-     */
-    panelDockedElem$Nested: function() {
-        var me = this, btnSave = Ext.getCmp(me.panelDockedElemBid() + 'save');
-
-        // If there are currently no nested sections - return
-        if (!me.ti().sections.length) return null;
-
-        // 'Nested' item config
-        return {
-            id: me.panelDockedElemBid() + 'nested',
-            xtype: 'shrinklist',
-            displayField: 'title',
-            disabled: !me.ti().row.id && ((btnSave && btnSave.pressed != true) || true),
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
-            },
-            store: {
-                xtype: 'store',
-                fields: ['alias', 'title'],
-                data : me.ti().sections
-            },
-            listeners: {
-                itemclick: function(cmp, row) {
-                    me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
-                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
-                }
-            }
-        }
-    },
-
-    /**
      * Loads the url, given in `url` arg. This function overrides parent class `goto` function,
      * as autosave mode should be additionally taken into attention here
      *
@@ -582,7 +544,7 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Create shortcuts for involved components
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
-            btnSave = Ext.getCmp(me.panelDockedElemBid() + 'save'),
+            btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
             formCmp = Ext.getCmp(me.bid() + '-form');
 
         // If save button is toggled

@@ -83,7 +83,7 @@ Ext.define('Indi.controller.entities', {
             panel: {
                 docked: {
                     items: [{alias: 'master'}, {alias: 'bottom', dock: 'bottom'}],
-                    elems: {
+                    inner: {
                         //master: [{alias: 'save'}, '-', {alias: 'nested'}],
                         //bottom: [{alias: 'back'}]
                     }
