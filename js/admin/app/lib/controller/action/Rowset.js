@@ -43,8 +43,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         docked: {
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
-                master: [{alias: 'actions'}, '-', {alias: 'nested'}, '->', {alias: 'keyword'}],
-                filter: [{xtype: 'checkbox', name: 'test', value: 1}, {alias: 'customfilter'}]
+                master: [{alias: 'actions'}, '-', {alias: 'nested'}, '->', {alias: 'keyword'}]
             }
         }
     },
@@ -118,6 +117,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
+
+            // We do not involve values of hidden or disabled filter components in request query building
+            if (filterCmpA[i].hidden || filterCmpA[i].disabled) continue;
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpA[i].name;
@@ -442,6 +444,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
 
         // Setup non-regular filters
+        if (me.panel.docked && me.panel.docked.inner && me.panel.docked.inner.filter && me.panel.docked.inner.filter.length)
         moreItemA = me.push(me.panel.docked.inner.filter, 'panelDocked$Filter', false, function(itemI){
             return Ext.merge({
                 listeners: {
@@ -493,7 +496,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterXCombo: function(filter) {
 
         // Setup auxilliary variables/shortcuts
-        var me = this, field = filter.foreign('fieldId'), alias = field.alias, filterCmpId = me.bid() + '-toolbar-filter-'
+        var me = this, field = filter.foreign('fieldId'), alias = field.alias, filterCmpId = me.bid() + '-toolbar-filter$'
             + alias, fieldLabel = filter.alt || field.title, row = me.ti().filtersSharedRow;
 
         // Push the special extjs component data object to represent needed filter. Component consists of
@@ -557,7 +560,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // 'String' item config
         return {
             xtype: 'textfield',
-            id: me.bid() + '-toolbar-filter-' + alias,
+            id: me.bid() + '-toolbar-filter$' + alias,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             hiddenName: alias,
@@ -600,7 +603,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterXCalendar: function(filter) {
 
         // Setup auxilliary variables/shortcuts
-        var me = this, alias = filter.foreign('fieldId').alias, filterCmpId = this.bid() + '-toolbar-filter-' + alias,
+        var me = this, alias = filter.foreign('fieldId').alias, filterCmpId = this.bid() + '-toolbar-filter$' + alias,
             dateFormat, fieldLabel, datefieldFrom, datefieldUntil;
 
         // Get date format
@@ -674,7 +677,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterXNumber: function(filter) {
 
         // Setup auxilliary variables/shortcuts
-        var me = this, alias = filter.foreign('fieldId').alias, filterCmpId = me.bid() + '-toolbar-filter-' + alias,
+        var me = this, alias = filter.foreign('fieldId').alias, filterCmpId = me.bid() + '-toolbar-filter$' + alias,
             fieldLabel, gte, lte;
 
         // Get the label
@@ -728,7 +731,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterXColor: function(filter) {
 
         // Setup auxilliary variables/shortcuts
-        var me = this, alias = filter.foreign('fieldId').alias, filterCmpId = me.bid() + '-toolbar-filter-' + alias,
+        var me = this, alias = filter.foreign('fieldId').alias, filterCmpId = me.bid() + '-toolbar-filter$' + alias,
             fieldLabel = filter.alt || filter.foreign('fieldId').title;
 
         // Append the extjs multislider component data object to filters stack, as multislider will

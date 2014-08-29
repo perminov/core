@@ -230,11 +230,21 @@ Ext.define('Indi', {
          * @param me
          */
         eval: function(js, me) {
-            var hsRex = new RegExp("(hide|show)\\('tr-"), rex, bid, what;
-            if (what = js.match(hsRex)) {
-                rex = new RegExp(me.field.alias+'$');
-                bid = me.id.replace(rex, '');
-                js = js.replace(hsRex, what[1] + "('" + bid);
+            var s = "(hide|show)\\('((tr-[a-zA-Z0-9]+,?)+)'\\);?", ttrMRex = new RegExp(s, 'g'), ttrSRex = new RegExp(s),
+                ttrMMatch, ttrSMatch, ttrSFoundTrA, ttrSReplace, ttrSReplaceTrA = [], trA, replace = [], trueTr;
+            if (ttrMMatch = js.match(ttrMRex)) {
+                var pid = me.ownerCt.id;
+                for (var i = 0; i < ttrMMatch.length; i++) {
+                    ttrSReplaceTrA = [];
+                    ttrSMatch = ttrMMatch[i].match(ttrSRex);
+                    ttrSFoundTrA = ttrSMatch[2].split(',');
+                    for (var j = 0; j < ttrSFoundTrA.length; j++) {
+                        var found = Ext.ComponentQuery.query('#' + pid + ' > [name="' + ttrSFoundTrA[j].replace(/^tr-/, '') +'"]');
+                        ttrSReplaceTrA.push(found.length ? found[0].id : ttrSFoundTrA[j]);
+                    }
+                    ttrSReplace = ttrMMatch[i].replace(ttrSFoundTrA.join(','), ttrSReplaceTrA.join(','));
+                    js = js.replace(ttrMMatch[i], ttrSReplace);
+                }
             }
             eval(js);
         },
