@@ -31,12 +31,8 @@ Ext.define('Indi.lib.controller.action.Row', {
          * that is responsible for building fully/partially configuration object for such item
          */
         docked: {
-            default: {
-                xtype: 'toolbar',
-                style: {paddingRight: '3px'}
-            },
             items: [{alias: 'master'}],
-            elems: {
+            inner: {
                 master: [
                     {alias: 'back'}, '-',
                     {alias: 'ID'}, '-',
@@ -57,78 +53,6 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
-     * Panel toolbars array builder
-     *
-     * @return {Array}
-     */
-    panelDockedA: function() {
-        var me = this;
-
-        // Setup docked items
-        return me.push(me.panel.docked.items, 'panelDocked', false, function(itemI){
-
-            // Setup default toolbar config
-            itemI = Ext.merge({}, me.panel.docked.default, itemI);
-
-            // Setup toolbar items, if not yet
-            if (!itemI.items && itemI.alias && me.panel.docked.elems[itemI.alias])
-                itemI.items = me.push(me.panel.docked.elems[itemI.alias], 'panelDockedElem', true);
-
-            // Return
-            return itemI;
-        });
-    },
-
-    /**
-     * Builder for items arrays. Used for toolbars, items within each toolbar, etc
-     *
-     * @param itemCfgA
-     * @param fnItemPrefix
-     * @param allowNaO
-     * @param adjust
-     * @return {Array}
-     */
-    push: function(itemCfgA, fnItemPrefix, allowNaO, adjust) {
-
-        // Setup auxilliary variables
-        var me = this, itemA = [], itemI, fnItemI;
-
-        // Build itemA array
-        for (var i = 0; i < itemCfgA.length; i++) {
-
-            // If only object-items are allowed for pushing, but itemCfgA[i] is not an object, try itemCfg[i+1]
-            if (!allowNaO && !Ext.isObject(itemCfgA[i])) continue;
-
-            // Else if itemCfgA[i] is an object, and have `alias` property
-            if (itemCfgA[i].hasOwnProperty('alias')) {
-
-                // Get the item's creator function name
-                fnItemI = fnItemPrefix + '$' + Indi.ucfirst(itemCfgA[i].alias);
-
-                // Reset itemI
-                itemI = null;
-
-                // If such function exists and return value of that function call
-                if (typeof me[fnItemI] == 'function') itemI = me[fnItemI]();
-
-                // If config is an object, merge itemI with it
-                if (Ext.isObject(itemCfgA[i])) Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
-
-                // Adjust item
-                if (typeof adjust == 'function') itemI = adjust(itemI);
-
-                // If itemI become consistent - push it to items array
-                if (itemI && (Ext.isObject(itemI) || allowNaO)) itemA.push(itemI);
-
-            // Else append it to items array, as is
-            } else itemA.push(itemCfgA[i]);
-        }
-
-        // Return items array
-        return itemA;
-    },
-
-    /**
      * Panel master toolbar builder
      *
      * @return {Object}
@@ -146,8 +70,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {String}
      */
-    panelDockedElemBid: function() {
-        return this.bid() + '-docked-elem$';
+    panelDockedInnerBid: function() {
+        return this.bid() + '-docked-inner$';
     },
 
     /**
@@ -156,7 +80,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Array}
      */
     panelDocked$MasterItemA: function() {
-        return this.push(this.panel.docked.elems['master'], 'panelDockedElem', true);
+        return this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
     },
 
     /**
@@ -164,7 +88,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelDockedElem$Back: function(urlonly) {
+    panelDockedInner$Back: function(urlonly) {
 
         // Build the url for goto
         var me = this, url = me.ti().section.href;
@@ -174,7 +98,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Return builded url, if `geturl` arg is given, or return 'Back' button config otherwise
         return urlonly ? url : {
-            id: me.panelDockedElemBid() + 'back',
+            id: me.panelDockedInnerBid() + 'back',
             text: '',
             iconCls: 'i-btn-icon-back',
             tooltip: Indi.lang.I_NAVTO_ROWSET,
@@ -194,7 +118,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelDockedElem$ID: function() {
+    panelDockedInner$ID: function() {
 
         // Setup getMaxWidth function
         var me = this, getMaxWidth = function(row, mode) {
@@ -212,7 +136,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // ID field config
         return {
-            id: me.panelDockedElemBid()+'-id',
+            id: me.panelDockedInnerBid()+'-id',
             fieldLabel: 'ID',
             labelWidth: 15,
             xtype: 'numberfield',
@@ -225,7 +149,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             width: getMaxWidth(me.ti().row),
             lastValidValue: me.ti().row.id,
             margin: '0 3 0 3',
-            disabled: parseInt(me.ti().scope.found) ? false : true,
+            disabled: parseInt(me.ti().scope.found) > 1 ? false : true,
             errorMsgCls: '',
             minValue: 1,
             listeners: {
@@ -280,12 +204,12 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelDockedElem$Found: function() {
+    panelDockedInner$Found: function() {
         var me = this;
 
         // 'Found' field config
         return {
-            id: me.panelDockedElemBid() + 'found',
+            id: me.panelDockedInnerBid() + 'found',
             xtype: 'displayfield',
             disabled: parseInt(me.ti().scope.found) ? false : true,
             value: Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_OF + Indi.numberFormat(me.ti().scope.found),
@@ -300,7 +224,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelDockedElem$Offset: function() {
+    panelDockedInner$Offset: function() {
 
         // Setup getMaxWidth function
         var me = this, getMaxWidth = function(found, mode) {
@@ -322,7 +246,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // 'Offset' field config
         return {
-            id: me.panelDockedElemBid() + 'offset',
+            id: me.panelDockedInnerBid() + 'offset',
             fieldLabel: Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE,
             labelSeparator: '',
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE) + 1,
@@ -333,7 +257,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             },
             value: (me.ti().row.id ? me.ti().scope.aix : ''),
             width: getMaxWidth(me.ti().scope.found) + 1,
-            disabled: parseInt(me.ti().scope.found) ? false : true,
+            disabled: parseInt(me.ti().scope.found) > 1 ? false : true,
             margin: '0 5 0 3',
             minValue: 1,
             maxValue: me.ti().scope.found,
@@ -358,8 +282,8 @@ Ext.define('Indi.lib.controller.action.Row', {
                             me.getMask().show();
 
                             // Get 'Prev' and 'Next' items
-                            var btnPrev = Ext.getCmp(me.panelDockedElemBid() + 'prev'),
-                                btnNext = Ext.getCmp(me.panelDockedElemBid() + 'next');
+                            var btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
+                                btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next');
 
                             // Disable/enable them if needed
                             if (btnPrev) btnPrev.setDisabled(input.getValue() == input.minValue);
@@ -380,20 +304,20 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelDockedElem$Prev: function() {
+    panelDockedInner$Prev: function() {
         var me = this, enabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
             && parseInt(me.ti().scope.aix) > 1;
 
         // 'Prev' field config
         return {
-            id: me.panelDockedElemBid() + 'prev',
+            id: me.panelDockedInnerBid() + 'prev',
             disabled: !enabled,
             tooltip: Indi.lang.I_NAVTO_PREV,
             iconCls: Ext.baseCSSPrefix + 'tbar-page-prev',
             handler: function(btnPrev){
-                var cmbSibling = Ext.getCmp(me.panelDockedElemBid() + 'sibling'),
-                    spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset'),
-                    btnNext = Ext.getCmp(me.panelDockedElemBid() + 'next'),
+                var cmbSibling = Ext.getCmp(me.panelDockedInnerBid() + 'sibling'),
+                    spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset'),
+                    btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
                     btnPrevEnabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
                         && parseInt(me.ti().scope.aix) - 1 > 1;
 
@@ -425,20 +349,20 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @return {Object}
      */
-    panelDockedElem$Next: function() {
+    panelDockedInner$Next: function() {
         var me = this, enabled = parseInt(me.ti().scope.found) && ((parseInt(me.ti().scope.aix) &&
             parseInt(me.ti().scope.aix) < parseInt(me.ti().scope.found)) || !parseInt(me.ti().scope.aix));
 
         // 'Prev' item config
         return {
-            id: me.panelDockedElemBid() + 'next',
+            id: me.panelDockedInnerBid() + 'next',
             disabled: !enabled,
             tooltip: Indi.lang.I_NAVTO_NEXT,
             iconCls: Ext.baseCSSPrefix + 'tbar-page-next',
             handler: function(btnNext){
-                var cmbSibling = Ext.getCmp(me.panelDockedElemBid() + 'sibling'),
-                    spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset'),
-                    btnPrev = Ext.getCmp(me.panelDockedElemBid() + 'prev'),
+                var cmbSibling = Ext.getCmp(me.panelDockedInnerBid() + 'sibling'),
+                    spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset'),
+                    btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
                     btnNextEnabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
                         && parseInt(me.ti().scope.aix) + 1 < parseInt(me.ti().scope.found);
 
@@ -460,6 +384,42 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                 // Enable 'Prev' master toolbar item, if it exists
                 if (btnPrev && !isNaN(parseInt(me.ti().scope.aix))) btnPrev.enable();
+            }
+        }
+    },
+
+    /**
+     * Master toolbar 'Nested' item, for ability to navigate to current row's nested entries lists
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Nested: function() {
+        var me = this, btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
+
+        // 'Nested' item config
+        return {
+            id: me.panelDockedInnerBid() + 'nested',
+            xtype: 'shrinklist',
+            displayField: 'title',
+            hidden: !me.ti().sections.length,
+            disabled: !me.ti().row.id && ((btnSave && btnSave.pressed != true) || true),
+            tooltip: {
+                html: Indi.lang.I_NAVTO_NESTED,
+                hideDelay: 0,
+                showDelay: 1000,
+                dismissDelay: 2000,
+                staticOffset: [0, 1]
+            },
+            store: {
+                xtype: 'store',
+                fields: ['alias', 'title'],
+                data : me.ti().sections
+            },
+            listeners: {
+                itemclick: function(cmp, row) {
+                    me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
+                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
+                }
             }
         }
     },
@@ -502,10 +462,10 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Declare `smp` variable. SMP - mean Search Params Mention
         var me = this, spm,
-            kind = (input ? input.id.replace(me.panelDockedElemBid() +'-', '') : 'offset').toUpperCase();
+            kind = (input ? input.id.replace(me.panelDockedInnerBid() +'-', '') : 'offset').toUpperCase();
 
         // If no `input` argument given, we assume it's a 'Offset' item
-        if (!input) input = Ext.getCmp(me.panelDockedElemBid() + 'offset');
+        if (!input) input = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
 
         // Hide mask
         me.getMask().hide();
@@ -542,7 +502,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         // Build the request uri
         var me = this, url = me.ti().section.href + me.ti().action.alias + '/aix/' +
                 offset + '/ph/'+ me.ti().section.primaryHash+'/',
-            spnOffset = Ext.getCmp(me.panelDockedElemBid() + 'offset');
+            spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
 
         // Set temporary value of 'Offset' spinner
         if (spnOffset) spnOffset.setRawValue(offset);
