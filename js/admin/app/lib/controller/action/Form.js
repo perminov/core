@@ -208,7 +208,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemDefault: function(field) {
         return {
-            id: this.bid() + '-field-' + field.alias,
+            id: this.bid() + '-field$' + field.alias,
             xtype: 'textfield',
             fieldLabel: field.title,
             labelWidth: '100%',
@@ -227,7 +227,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemXSpan: function(item){
         return {
-            id: this.bid() + (item ? '-field-' + item.field.alias : '-header'),
+            id: this.bid() + (item ? '-field$' + item.field.alias : '-header'),
             xtype: 'displayfield',
             cls: (item ? '' : 'i-field ') + 'i-field-span',
             fieldLabel: '',

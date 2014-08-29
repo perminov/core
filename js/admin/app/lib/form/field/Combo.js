@@ -85,7 +85,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         '<td class="i-combo-keyword-cell">',
         '<div class="i-combo-keyword-div">',
         '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
-        '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}"/>',
+        '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}" <tpl if="me.boolean">boolean="true"</tpl>/>',
         '</div>',
         '</td>',
         '<td class="i-combo-infoCell">',
@@ -376,6 +376,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         } else {
             me.fieldSubTpl = me.tplSingle;
         }
+
+        // Setup `boolean` property
+        me.boolean = config.field.storeRelationAbility == 'none';
 
         // Call parent
         me.callParent(arguments);
@@ -1881,7 +1884,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         Ext.defer(me.alignPicker, 10, me);
 
         // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
-        Ext.get(me.ctx().trail().bid() + '-form').select('.i-combo-info[satellite="'+name+'"]').each(function(el){
+        Ext.get(me.ctx().ti().bid() + '-form').select('.i-combo-info[satellite="'+name+'"]').each(function(el){
             dComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
             dCombo = Ext.getCmp(me.bid() + dComboName);
             dCombo.setDisabled(false, true);

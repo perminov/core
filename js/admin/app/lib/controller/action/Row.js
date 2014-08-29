@@ -136,7 +136,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // ID field config
         return {
-            id: me.panelDockedInnerBid()+'-id',
+            id: me.panelDockedInnerBid()+'id',
             fieldLabel: 'ID',
             labelWidth: 15,
             xtype: 'numberfield',
@@ -462,7 +462,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Declare `smp` variable. SMP - mean Search Params Mention
         var me = this, spm,
-            kind = (input ? input.id.replace(me.panelDockedInnerBid() +'-', '') : 'offset').toUpperCase();
+            kind = (input ? input.id.replace(me.panelDockedInnerBid(), '') : 'offset').toUpperCase();
 
         // If no `input` argument given, we assume it's a 'Offset' item
         if (!input) input = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
