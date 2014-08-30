@@ -26,7 +26,6 @@ Ext.define('Indi.lib.controller.action.Action', {
             default: {
                 xtype: 'toolbar',
                 style: {paddingRight: '3px'},
-                minHeight: 27,
                 padding: '0 3 0 2'
             },
             items: [],

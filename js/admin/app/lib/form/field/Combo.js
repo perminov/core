@@ -177,7 +177,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             cls: 'x-boundlist x-boundlist-default',
             border: 0,
             floating: true,
-            maxHeight: me.visibleCount * parseInt(me.field.params.optionHeight) + 1,
+            maxHeight: me.visibleCount * parseInt(me.field.params.optionHeight || 14) + 1,
             autoScroll: true,
             listeners: {
                 afterrender: function() {
@@ -393,6 +393,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (!me.multiSelect)
             me.subTplData.selected.keyword
                 = (me.subTplData.selected.input || me.subTplData.selected.title || '').replace(/"/g, '&quot;');
+
+        // Setup `fetchedByPageUps` store property
+        me.store.fetchedByPageUps = 0;
     },
 
     /**
@@ -620,7 +623,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         notShowable = me.keywordEl.attr('no-lookup') == 'true'
             || me.store.enumset
-            || parseInt(me.foundEl.getHTML().replace(',', '')) <= me.visibleCount;
+            || me.found() <= me.visibleCount;
 
         return !me.disabled && (me.infoEl.attr('fetch-mode') == 'keyword' || !notShowable);
     },
@@ -1526,7 +1529,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+me.visibleCount);
                         me.getPicker().el.attr('more', '');
                     } else if (parseInt(me.keywordEl.attr('selectedIndex')) <= size) {
-                        if (parseInt(me.countEl.getHTML()) < parseInt(me.foundEl.getHTML().replace(',',''))){
+                        if (me.count() < me.found()){
                             me.getPicker().el.attr('more', 'lower');
                         } else {
                             me.keywordEl.attr('selectedIndex', size);
@@ -1543,7 +1546,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-me.visibleCount);
                         me.getPicker().el.attr('more', '');
                     } else {
-                        if (parseInt(me.countEl.getHTML()) < parseInt(me.foundEl.getHTML().replace(',',''))){
+                        if (me.count() < me.found()){
                             me.getPicker().el.attr('more', 'upper');
                         } else {
                             me.keywordEl.attr('selectedIndex', 1);
@@ -1832,6 +1835,17 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
     },
 
+    // @inheritdoc
+    onChange: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Call combo's special onHiddenChange()
+        me.onHiddenChange();
+    },
+
     /**
      * Function that will be called after combo value change. Contain auxiliary operations such as
      * dependent-combos reloading, javascript execution and others
@@ -1895,15 +1909,6 @@ Ext.define('Indi.lib.form.field.Combo', {
                 });
             }
         });
-    },
-
-    listeners: {
-        resize: function() {
-            this.comboTableFit();
-        },
-        change: function() {
-            this.onHiddenChange();
-        }
     },
 
     /**
@@ -1979,10 +1984,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                 if (requestData.more.toString() == 'upper') {
 
                     // Setup and increase the number of data items, fetched by page ups
-                    me.store.fetchedByPageUps = me.store.fetchedByPageUps || 0;
                     me.store.fetchedByPageUps += responseData.data.length;
 
-                    // Decreate the number of data items, fetched by page ups, by count
+                    // Decrease the number of data items, fetched by page ups, by count
                     // of disabled data items, found in responseData
                     for (var i = 0; i < responseData.data.length; i++)
                         if (responseData['data'][i].system && responseData['data'][i].system['disabled'])
@@ -2354,19 +2358,55 @@ Ext.define('Indi.lib.form.field.Combo', {
                 me.keywordEl.up('.i-combo').addCls('i-combo-disabled x-item-disabled');
                 me.keywordEl.val('');
 
-                // Enable combo
+            // Enable combo
             } else {
                 me.keywordEl.removeAttr('disabled');
                 me.keywordEl.up('.i-combo').removeCls('i-combo-disabled x-item-disabled');
             }
-        } else if (this.disabled) {
-            this.enable();
+        } else if (me.disabled) {
+            me.enable();
         } else {
-            this.disable();
+            me.disable();
         }
     },
 
     bid: function() {
         return this.id.replace(new RegExp(this.field.alias+'$'), '');
+    },
+
+    /**
+     * Get the current count valid/non-disabled options in the combo
+     * The difference between count() and found() is the same as, for example,
+     * between php's mysql_num_rows() and sql's FOUND_ROWS()
+     *
+     * @return {Number}
+     */
+    count: function() {
+        return parseInt(this.countEl.getHTML().replace(',', ''));
+    },
+
+    /**
+     * Get the total number of found options, that may be displayed in combo.
+     * The difference between count() and found() is the same as, for example,
+     * between php's mysql_num_rows() and sql's FOUND_ROWS()
+     *
+     * @return {Number}
+     */
+    found: function() {
+        return parseInt(this.store.found);
+    },
+
+    // @inheritdoc
+    setSize: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Fit me.tableEl width
+        me.comboTableFit();
+
+        // Fit picker width to combo width
+        if (me.picker) me.getPicker().setWidth(me.triggerWrap.getWidth());
     }
 });

@@ -31,6 +31,7 @@ Ext.define('Indi.lib.controller.action.Row', {
          * that is responsible for building fully/partially configuration object for such item
          */
         docked: {
+            default: {minHeight: 26},
             items: [{alias: 'master'}],
             inner: {
                 master: [
@@ -61,6 +62,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         return {
             id: this.bid() + '-docked$master',
             dock: 'top',
+            //height: 25,
             items: this.panelDocked$MasterItemA()
         }
     },

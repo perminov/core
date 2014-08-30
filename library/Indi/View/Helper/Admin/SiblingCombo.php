@@ -9,24 +9,15 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $this->comboDataOrderColumn = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
         if (preg_match('/\(/', $order)) $this->comboDataOffset = Indi::uri('aix') - 1;
 
-        ob_start();
-        ?><div style="display: none;"><div id="i-action-form-topbar-nav-to-sibling-combo-wrapper"><?
-        echo parent::formCombo('i-action-form-topbar-nav-to-sibling-id');
-        ?></div></div><?
-        return ob_get_clean();
+        return parent::formCombo('sibling', null, 'extjs');
     }
 
     public function getSelected() {
 
         // If current row does not exist, combo will use field's default value as selected value
-        if ($this->getRow()->id) {
-            $selected = $this->getRow()->id;
-        }
-
+        if ($this->getRow()->id) $selected = $this->getRow()->id;
         return $selected;
     }
-
-
 
     public function getField($name, $tableName) {
         $pseudoFieldR = Indi::model('Field')->createRow();
@@ -61,6 +52,19 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
 
     public function getRow(){
         return Indi::trail()->row;
+    }
+
+    public function extjs($options) {
+        $this->getRow()->view($this->field->alias, array(
+            'subTplData' => array(
+                'satellite' => $this->satellite->alias,
+                'attrs' => $this->attrs,
+                'pageUpDisabled' => $this->getRow()->id ? 'false' : 'true',
+                'selected' => self::detectColor($this->selected)
+            ),
+            'store' => $options,
+            'field' => $this->field->toArray()
+        ));
     }
 
     /**
