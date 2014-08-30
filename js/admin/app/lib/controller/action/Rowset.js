@@ -463,13 +463,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return itemA;
     },
 
-    panelDocked$Filter$Customfilter: function() {
-        return {
-            xtype: 'textfield',
-            name: 'table'
-        }
-    },
-
     /**
      * Builds and returns default/initial config for all filter panel items
      *
@@ -1267,5 +1260,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 filterCmpA[i].noReload = false;
             }
         }
+    },
+
+    /**
+     * Build and return array of rowset-panel toolbars
+     *
+     * @return {Array}
+     */
+    rowsetDockedA: function() {
+        return this._docked('rowset');
     }
 });

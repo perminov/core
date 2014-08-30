@@ -61,6 +61,7 @@ define('I_NAVTO_ROWSET', 'Вернуться к списку');
 define('I_NAVTO_ID', 'Перейти к записи по ID');
 define('I_AUTOSAVE', 'Автосохранять перед переходами');
 define('I_NAVTO_PREV', 'Перейти к предыдущей записи');
+define('I_NAVTO_SIBLING', 'Перейти к любой другой записи');
 define('I_NAVTO_NEXT', 'Перейти к следующей записи');
 define('I_NAVTO_CREATE', 'Перейти к созданию новой записи');
 define('I_NAVTO_NESTED', 'Перейти к списку вложенных записей');
