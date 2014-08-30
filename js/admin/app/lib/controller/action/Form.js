@@ -21,7 +21,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     {alias: 'back'}, '-',
                     {alias: 'ID'}, '-',
                     {alias: 'save'}, {alias: 'autosave'}, '-',
-                    {alias: 'prev'}, {alias: 'next'}, '-',
+                    {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
                     {alias: 'create'}, '-',
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
@@ -46,7 +46,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         // @inheritdoc
         listeners: {
             validitychange: function(form, valid){
-                this.ctx().toggleSaveAbility(valid);
+                if (valid) this.ctx().toggleSaveAbility(valid);
             },
             actioncomplete: function(form, action) {
                 if (action.result.redirect) Indi.load(action.result.redirect);
@@ -207,6 +207,9 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemDefault: function(field) {
+        var me = this;
+
+        // Default config
         return {
             id: this.bid() + '-field$' + field.alias,
             xtype: 'textfield',
@@ -215,7 +218,12 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             value: this.ti().row[field.alias],
             field: field,
-            row: this.ti().row
+            row: this.ti().row,
+            listeners: {
+                validitychange: function(cmp, valid){
+                    if (!valid) me.toggleSaveAbility(valid);
+                }
+            }
         }
     },
 
@@ -488,6 +496,69 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }, function(){
                         btnSave.getEl().removeCls('x-btn-default-toolbar-small-over');
                     });
+                }
+            }
+        }
+    },
+
+    panelDockedInner$Sibling: function() {
+        var me = this, row = me.ti().row, field = row.view('sibling').field;
+        return {
+            id: me.panelDockedInnerBid() + 'sibling',
+            name: 'sibling',
+            xtype: 'combo.sibling',
+            disabled: parseInt(me.ti().scope.found) <= 1,
+            field: field,
+            value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
+            subTplData: row.view(field.alias).subTplData,
+            store: row.view(field.alias).store,
+            listeners: {
+                change: function(cmb, value) {
+
+                    // If value is a non-zero integer
+                    if (parseInt(value)) {
+
+                        // Show mask
+                        me.getMask().show();
+
+                        // Build the request uri and setup save button shortcut
+                        var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                            value + '/ph/'+ me.ti().section.primaryHash + '/';
+
+                        // If value was selected without combo lookup usage
+                        if (cmb.infoEl.attr('fetch-mode') == 'no-keyword') {
+
+                            // Get the index
+                            var index = cmb.count() < cmb.found()
+                                ? (me.ti().scope.aix ? parseInt(me.ti().scope.aix) : 1)
+                                    - 1 + parseInt(cmb.keywordEl.attr('selectedIndex'))
+                                    - cmb.store.fetchedByPageUps
+                                : cmb.keywordEl.attr('selectedIndex');
+
+                            // Append index to the url
+                            url += 'aix/' + index + '/';
+
+                            /*top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').lastValidValue = selected.index;
+                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').setValue(selected.index);
+
+                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').lastValidValue = selected.value;
+                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').setValue(selected.value);
+
+                            if (selected.index == indi.trail.item().scope.found) {
+                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').disable();
+                            } else {
+                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
+                            }
+
+                            if (selected.index == 1) {
+                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-prev').disable();
+                            } else {
+                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-prev').enable();
+                            }*/
+                        }
+
+                        me.goto(url);
+                    }
                 }
             }
         }

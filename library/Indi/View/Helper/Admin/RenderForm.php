@@ -5,6 +5,9 @@ class Indi_View_Helper_Admin_RenderForm {
         // Start output buffering
         ob_start();
 
+        // Setup sibling combo
+        echo Indi::view()->siblingCombo();
+
         // Declare arrays that will store info about what fields should be excluded
         // from form, and what included, but disabled in form
         $disabled = array(); $excluded = array();

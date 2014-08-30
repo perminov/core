@@ -14,6 +14,9 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public $where = null;
 
+
+    public $field;
+
     /**
      * Context of combo initialization javascript execution
      *
@@ -255,30 +258,7 @@ class Indi_View_Helper_Admin_FormCombo {
         foreach ($vars as $var) $this->$var = $$var;
 
         // If combo mode is 'extjs', we prepare a data object containing all involved info
-        if ($mode == 'extjs') {
-
-            $view = array(
-                'subTplData' => array(
-                    'satellite' => $this->satellite->alias,
-                    'attrs' => $this->attrs,
-                    'pageUpDisabled' => $this->pageUpDisabled,
-                ),
-                'store' => $options
-            );
-
-            if ($this->field->storeRelationAbility == 'many') {
-                $view['subTplData']['selected'] = $this->selected;
-                foreach($this->comboDataRs->selected as $selectedR) {
-                    $item = self::detectColor(array('title' => $selectedR->title));
-                    $item['id'] = $selectedR->{$this->keyProperty};
-                    $view['subTplData']['selected']['items'][] = $item;
-                }
-            } else {
-                $view['subTplData']['selected'] = self::detectColor($this->selected);
-            }
-            $this->getRow()->view($this->field->alias, $view);
-
-        }/* else {
+        if ($mode == 'extjs') $this->extjs($options); /* else {
 
             // Start output buffering
             ob_start();
@@ -300,6 +280,30 @@ class Indi_View_Helper_Admin_FormCombo {
             // Get and return buffered output
             return ob_get_clean();
         }*/
+    }
+
+    public function extjs($options) {
+
+        $view = array(
+            'subTplData' => array(
+                'satellite' => $this->satellite->alias,
+                'attrs' => $this->attrs,
+                'pageUpDisabled' => $this->pageUpDisabled,
+            ),
+            'store' => $options
+        );
+
+        if ($this->field->storeRelationAbility == 'many') {
+            $view['subTplData']['selected'] = $this->selected;
+            foreach($this->comboDataRs->selected as $selectedR) {
+                $item = self::detectColor(array('title' => $selectedR->title));
+                $item['id'] = $selectedR->{$this->keyProperty};
+                $view['subTplData']['selected']['items'][] = $item;
+            }
+        } else {
+            $view['subTplData']['selected'] = self::detectColor($this->selected);
+        }
+        $this->getRow()->view($this->field->alias, $view);
     }
 
     /**

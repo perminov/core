@@ -41,6 +41,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
          * Docked items special config
          */
         docked: {
+            default: {minHeight: 27},
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
                 master: [{alias: 'actions'}, '-', {alias: 'nested'}, '->', {alias: 'keyword'}]
@@ -509,7 +510,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             fieldLabel : fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             field: field,
-            //name: alias,
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store
