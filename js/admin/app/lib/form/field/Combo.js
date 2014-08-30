@@ -485,6 +485,10 @@ Ext.define('Indi.lib.form.field.Combo', {
     afterRender: function() {
         var me = this;
 
+        // Call parent
+        me.callParent(arguments);
+
+        // Setup keyboard handlers
         me.keywordEl.on({
             keyup: {
                 fn: me.keyUpHandler,
@@ -548,7 +552,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this, el = me.keywordEl;
 
         // If there currently is no options - return
-        if (el.hasCls('i-combo-keyword-no-results') || me.disabled || el.hasCls('i-combo-selected-item-delete')) return;
+        if (me.hasActiveError() || me.disabled || el.hasCls('i-combo-selected-item-delete')) return;
     },
 
     /**
@@ -1234,7 +1238,10 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // If user erases wrong keyword, remove 'i-combo-keyword-no-results' class and show options list, that was available
         // before first run of 'keyword' fetch mode
-        if (me.keywordEl.hasCls('i-combo-keyword-no-results')) me.keywordEl.removeCls('i-combo-keyword-no-results');
+        if (me.keywordEl.hasCls('i-combo-keyword-no-results')) {
+            me.keywordEl.removeCls('i-combo-keyword-no-results');
+            me.clearInvalid();
+        }
 
         // Rebuild combo and show it
         if (mode == 'only-erased-not-selected' && this.hideOptionsAfterKeywordErased == false) {
@@ -1313,6 +1320,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Temporary strip red color from input, as we do not know if there will be at least
             // one result related to specified keyword, and if no - keyword will be coloured in red
             me.keywordEl.removeCls('i-combo-keyword-no-results');
+            me.clearInvalid();
 
             // Reset selected index
             me.keywordEl.attr('selectedIndex', 0);
@@ -1490,14 +1498,14 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Enter - select an option
         if (code == Ext.EventObject.ENTER) {
-            if (me.isExpanded) me.onItemSelect();
+            if (me.isExpanded || arguments[1] === true) me.onItemSelect();
             return false;
 
             // Up or Down arrows
         } else if (code == Ext.EventObject.DOWN || code == Ext.EventObject.UP || code == Ext.EventObject.PAGE_DOWN || code == Ext.EventObject.PAGE_UP) {
 
             // If Down key was pressed but picker is not shown
-            if (code == Ext.EventObject.DOWN && !me.isExpanded) {
+            if (code == Ext.EventObject.DOWN && !me.isExpanded && !(arguments[1] === true)) {
 
                 // Call onTriggerClick, so picker contents will be rebuilded and shown
                 me.onTriggerClick();
@@ -1505,7 +1513,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Adjust width of .i-combo-table element for it to fit all available space
                 me.comboTableFit();
 
-                // Else
+            // Else
             } else {
 
                 // Get items count for calculations
@@ -1584,7 +1592,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 });
 
                 // Get hidden value while walking trough options list
-                var selectedLi = me.getPicker().el.select('x-boundlist-item-over').first();
+                var selectedLi = me.getPicker().el.select('.x-boundlist-item-over').first();
                 var id = selectedLi ? selectedLi.attr(name) : null;
 
                 // If we were running fetch in 'keyword' mode, but then switched to 'no-keyword' mode,
@@ -2012,8 +2020,11 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (requestData.mode == 'refresh-children') {
                 me.setDisabled(true);
 
-                // Else if reason of no results was not in satellite, we add special css class for that case
-            } else me.keywordEl.addCls('i-combo-keyword-no-results');
+            // Else if reason of no results was not in satellite, we add special css class for that case
+            } else {
+                me.keywordEl.addCls('i-combo-keyword-no-results');
+                me.markInvalid('Ничего не найдено');
+            }
         }
     },
 

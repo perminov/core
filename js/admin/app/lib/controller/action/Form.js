@@ -121,6 +121,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         me.row = Ext.merge({
             id: me.id + '-form',
             items: me.formItemA(),
+            dockedItems: me.rowDockedA(),
             url: me.ti().section.href + 'save'
                 + (me.ti().row.id ? '/id/' + me.ti().row.id : '')
                 + (me.ti().scope.hash ? '/ph/' + me.ti().scope.hash : '') + '/'
@@ -501,69 +502,6 @@ Ext.define('Indi.lib.controller.action.Form', {
         }
     },
 
-    panelDockedInner$Sibling: function() {
-        var me = this, row = me.ti().row, field = row.view('sibling').field;
-        return {
-            id: me.panelDockedInnerBid() + 'sibling',
-            name: 'sibling',
-            xtype: 'combo.sibling',
-            disabled: parseInt(me.ti().scope.found) <= 1,
-            field: field,
-            value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
-            subTplData: row.view(field.alias).subTplData,
-            store: row.view(field.alias).store,
-            listeners: {
-                change: function(cmb, value) {
-
-                    // If value is a non-zero integer
-                    if (parseInt(value)) {
-
-                        // Show mask
-                        me.getMask().show();
-
-                        // Build the request uri and setup save button shortcut
-                        var url = me.ti().section.href + me.ti().action.alias + '/id/' +
-                            value + '/ph/'+ me.ti().section.primaryHash + '/';
-
-                        // If value was selected without combo lookup usage
-                        if (cmb.infoEl.attr('fetch-mode') == 'no-keyword') {
-
-                            // Get the index
-                            var index = cmb.count() < cmb.found()
-                                ? (me.ti().scope.aix ? parseInt(me.ti().scope.aix) : 1)
-                                    - 1 + parseInt(cmb.keywordEl.attr('selectedIndex'))
-                                    - cmb.store.fetchedByPageUps
-                                : cmb.keywordEl.attr('selectedIndex');
-
-                            // Append index to the url
-                            url += 'aix/' + index + '/';
-
-                            /*top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').lastValidValue = selected.index;
-                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-number').setValue(selected.index);
-
-                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').lastValidValue = selected.value;
-                            top.window.Ext.getCmp('i-action-form-topbar-nav-to-row-id').setValue(selected.value);
-
-                            if (selected.index == indi.trail.item().scope.found) {
-                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').disable();
-                            } else {
-                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-next').enable();
-                            }
-
-                            if (selected.index == 1) {
-                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-prev').disable();
-                            } else {
-                                top.window.Ext.getCmp('i-action-form-topbar-nav-to-sibling-prev').enable();
-                            }*/
-                        }
-
-                        me.goto(url);
-                    }
-                }
-            }
-        }
-    },
-
     /**
      * Master toolbar 'Autosave' item, for ability to toggle autosave mode while navigating
      * within the currently available rows scope
@@ -595,7 +533,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 // Other items adjustments
                 if (tfID) tfID.setValue('');
                 if (btnPrev) btnPrev.disable();
-                if (cmbSibling && typeof me.ti().row.title != 'undefined') cmbSibling.setKeywordValue(''); // !!
+                if (cmbSibling && typeof me.ti().row.title != 'undefined') cmbSibling.keywordEl.val('');
                 if (btnNext && parseInt(me.ti().scope.found)) btnNext.enable();
                 if (spnOffset) spnOffset.setValue('');
 

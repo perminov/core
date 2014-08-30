@@ -31,17 +31,18 @@ Ext.define('Indi.lib.controller.action.Row', {
          * that is responsible for building fully/partially configuration object for such item
          */
         docked: {
-            default: {minHeight: 26},
+            default: {minHeight: 27},
             items: [{alias: 'master'}],
             inner: {
                 master: [
                     {alias: 'back'}, '-',
                     {alias: 'ID'}, '-',
-                    {alias: 'prev'}, {alias: 'next'}, '-',
+                    {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
                     {alias: 'create'}, '-',
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
-                ]
+                ],
+                tmp: [{text: 'tmp'}]
             }
         }
     },
@@ -54,6 +55,15 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
+     * Build and return array of row-panel toolbars
+     *
+     * @return {Array}
+     */
+    rowDockedA: function() {
+        return this._docked('row');
+    },
+
+    /**
      * Panel master toolbar builder
      *
      * @return {Object}
@@ -62,7 +72,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         return {
             id: this.bid() + '-docked$master',
             dock: 'top',
-            //height: 25,
+            minHeight: 26,
             items: this.panelDocked$MasterItemA()
         }
     },
@@ -326,12 +336,36 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Show mask
                 me.getMask().show();
 
-                if (false && cmbSibling && typeof me.ti().row.title != 'undefined') {
+                // Here we should detect, whether we can use sibling combo for navigation
+                // We check several conditions:
+                // 1. Sibling combo exists
+                // 2. It's running in 'no-keyword' mode
+                // 3. Programmatical keyboard UP causes actual change
+                //    of 'selectedIndex' attribute of combo's `keywordEl` element
+                var canUseSibling = false, selectedIndexWas, selectedIndexNow;
+                if (cmbSibling && cmbSibling.infoEl.attr('fetch-mode') == 'no-keyword') {
+
+                    // Initiate sibling combo's picker rendering, if it wasn't yet rendered
+                    cmbSibling.getPicker();
+
+                    // Get value of 'selectedIndex' attribute before programmatic UP key press simulation
+                    selectedIndexWas = cmbSibling.keywordEl.attr('selectedIndex');
+
+                    // Do programmatic UP key press simulation
                     cmbSibling.keyDownHandler('38', true);
-                    cmbSibling.keyDownHandler('13', true);
+
+                    // Get value of 'selectedIndex' attribute after programmatic UP key press simulation was done
+                    selectedIndexNow = cmbSibling.keywordEl.attr('selectedIndex');
+
+                    // Compare values of `selectedIndex` attribute, and if change detected - allow use sibling
+                    if (selectedIndexWas != selectedIndexNow) canUseSibling = true;
+                }
+
+                // If we have 'Sibling' master toolbar item - use it for navigation
+                if (canUseSibling) cmbSibling.keyDownHandler('13', true);
 
                 // Else if we have 'Offset' master toolbar item - use it's spinDown method
-                } else if (spnOffset) spnOffset.spinDown();
+                else if (spnOffset) spnOffset.spinDown();
 
                 // Try to navigate to current row's sibling by it's offset
                 else me.gotoOffset(me.ti().scope.aix - 1);
@@ -341,6 +375,74 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                 // Enable 'Next' master toolbar item, if it exists
                 if (btnNext) btnNext.enable();
+            }
+        }
+    },
+
+    /**
+     * Master toolbar 'Sibling' item, for ability to navigate through current row's siblings
+     * within the currently available rows scope, using combobox
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Sibling: function() {
+        // Setup auxilliary variables
+        var me = this, row = me.ti().row, field = row.view('sibling').field;
+
+        // 'Sibling' item config
+        return {
+            id: me.panelDockedInnerBid() + 'sibling',
+            name: 'sibling',
+            xtype: 'combo.sibling',
+            tooltip: Indi.lang.I_NAVTO_SIBLING,
+            disabled: parseInt(me.ti().scope.found) <= 1,
+            field: field,
+            value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
+            subTplData: row.view(field.alias).subTplData,
+            store: row.view(field.alias).store,
+            listeners: {
+                change: function(cmb, value) {
+
+                    // If value is a non-zero integer
+                    if (parseInt(value)) {
+
+                        // Show mask
+                        me.getMask().show();
+
+                        // Build the request uri and setup save button shortcut
+                        var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                            value + '/ph/'+ me.ti().section.primaryHash + '/';
+
+                        // If value was selected without combo lookup usage
+                        if (cmb.infoEl.attr('fetch-mode') == 'no-keyword') {
+
+                            // Get the index
+                            var index = cmb.count() < cmb.found()
+                                ? (me.ti().scope.aix ? parseInt(me.ti().scope.aix) : 1)
+                                - 1 + parseInt(cmb.keywordEl.attr('selectedIndex'))
+                                - cmb.store.fetchedByPageUps
+                                : cmb.keywordEl.attr('selectedIndex');
+
+                            // Append index to the url
+                            url += 'aix/' + index + '/';
+
+                            // Setup shortcuts for other navigation components
+                            var tfID = Ext.getCmp(me.panelDockedInnerBid() + 'id'),
+                                tfOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset'),
+                                btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
+                                btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next');
+
+                            // Apply state where it can be applied
+                            if (tfID) tfID.setRawValue(value);
+                            if (tfOffset) tfOffset.setRawValue(index);
+                            if (btnNext) btnNext.setDisabled(index == me.ti().scope.found);
+                            if (btnPrev) btnPrev.setDisabled(index == 1);
+                        }
+
+                        // Goto url
+                        me.goto(url);
+                    }
+                }
             }
         }
     },
@@ -371,12 +473,36 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Show mask
                 me.getMask().show();
 
-                if (false && cmbSibling && typeof me.ti().row.title != 'undefined') {
+                // Here we should detect, whether we can use sibling combo for navigation
+                // We check several conditions:
+                // 1. Sibling combo exists
+                // 2. It's running in 'no-keyword' mode
+                // 3. Programmatical keyboard DOWN causes actual change
+                //    of 'selectedIndex' attribute of combo's `keywordEl` element
+                var canUseSibling = false, selectedIndexWas, selectedIndexNow;
+                if (cmbSibling && cmbSibling.infoEl.attr('fetch-mode') == 'no-keyword') {
+
+                    // Initiate sibling combo's picker rendering, if it wasn't yet rendered
+                    cmbSibling.getPicker();
+
+                    // Get value of 'selectedIndex' attribute before programmatic DOWN key press simulation
+                    selectedIndexWas = cmbSibling.keywordEl.attr('selectedIndex');
+
+                    // Do programmatic DOWN key press simulation
                     cmbSibling.keyDownHandler('40', true);
-                    cmbSibling.keyDownHandler('13', true);
+
+                    // Get value of 'selectedIndex' attribute after programmatic DOWN key press simulation was done
+                    selectedIndexNow = cmbSibling.keywordEl.attr('selectedIndex');
+
+                    // Compare values of `selectedIndex` attribute, and if change detected - allow use sibling
+                    if (selectedIndexWas != selectedIndexNow) canUseSibling = true;
+                }
+
+                // If we have 'Sibling' master toolbar item - use it for navigation
+                if (canUseSibling) cmbSibling.keyDownHandler('13', true);
 
                 // Else if we have 'Offset' master toolbar item - use it's spinUp method
-                } else if (spnOffset) spnOffset.spinUp();
+                else if (spnOffset) spnOffset.spinUp();
 
                 // Try to navigate to current row's sibling by it's offset
                 else me.gotoOffset((parseInt(me.ti().scope.aix) ? parseInt(me.ti().scope.aix) : 0)+ 1);

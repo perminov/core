@@ -61,6 +61,7 @@ define('I_NAVTO_ROWSET', 'Go back to rowset');
 define('I_NAVTO_ID', 'Goto row by ID');
 define('I_AUTOSAVE', 'Autosave before goto');
 define('I_NAVTO_PREV', 'Goto previous row');
+define('I_NAVTO_SIBLING', 'Goto any other row');
 define('I_NAVTO_NEXT', 'Goto next row');
 define('I_NAVTO_CREATE', 'Goto new row creation');
 define('I_NAVTO_NESTED', 'Goto nested objects');

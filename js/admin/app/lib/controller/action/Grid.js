@@ -18,6 +18,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
         multiSelect: false,
         firstColumnWidthFraction: 0.4,
         border: 0,
+
+        /**
+         * Docked items special config
+         */
+        docked: {
+            items: [{alias: 'paging'}],
+            inner: {
+                paging: ['-', {alias: 'excel'}]
+            }
+        },
+
+        /**
+         * View config
+         */
         viewConfig: {
             getRowClass: function (row) {
                 if (row.raw._system && row.raw._system.disabled)
@@ -205,16 +219,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Array}
      */
-    rowsetToolbarA: function() {
-
-        // Toolbars array
-        var toolbarA = [], toolbarPaging = this.rowsetToolbarPaging();
-
-        // Append paging toolbar
-        if (toolbarPaging) toolbarA.push(toolbarPaging);
-
-        // Return toolbars array
-        return toolbarA;
+    rowsetDockedA: function() {
+        return this._docked('rowset');
     },
 
     /**
@@ -222,7 +228,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Object}
      */
-    rowsetToolbarPaging: function() {
+    rowsetDocked$Paging: function() {
 
         // Paging toolbar cfg
         return {
@@ -230,19 +236,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             dock: 'bottom',
             store: this.getStore(),
             displayInfo: true,
-            items: this.rowsetToolbarPagingItemA()
+            items: this.push(this.rowset.docked.inner.paging, 'rowsetInner', true)
         }
-    },
-
-    /**
-     * Prepare and return array of items, that are to be placed at grid paging bar
-     *
-     * @return {Array}
-     */
-    rowsetToolbarPagingItemA: function() {
-        var itemA = [], itemExcel = this.rowsetToolbarPagingItemExcel();
-        if (itemExcel) itemA.push('-', itemExcel);
-        return itemA;
     },
 
     /**
@@ -251,7 +246,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Object}
      */
-    rowsetToolbarPagingItemExcel: function() {
+    rowsetInner$Excel: function() {
 
         // 'Excel' item cfg
         return {
@@ -358,7 +353,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             id: me.id + '-rowset-grid',
             columns: me.gridColumnA(),
             store: me.getStore(),
-            dockedItems: me.rowsetToolbarA()
+            dockedItems: me.rowsetDockedA()
         }, me.rowset);
 
         // Setup main panel items

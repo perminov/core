@@ -13,7 +13,7 @@ Ext.define('Indi.lib.controller.action.Action', {
     mcopwso: ['panel'],
 
     /**
-     * Main panel config
+     * Wrapper-panel config
      */
     panel: {
         id: 'i-center-center-wrapper',
@@ -27,6 +27,38 @@ Ext.define('Indi.lib.controller.action.Action', {
                 xtype: 'toolbar',
                 style: {paddingRight: '3px'},
                 padding: '0 3 0 2'
+            },
+            items: [],
+            inner: {}
+        }
+    },
+
+    /**
+     * Rowset-panel config
+     */
+    rowset: {
+        docked: {
+            default: {
+                xtype: 'toolbar',
+                style: {paddingRight: '3px'},
+                padding: '0 3 0 2',
+                height: 26
+            },
+            items: [],
+            inner: {}
+        }
+    },
+
+    /**
+     * Row-panel config
+     */
+    row: {
+        docked: {
+            default: {
+                xtype: 'toolbar',
+                style: {paddingRight: '3px'},
+                padding: '0 3 0 2',
+                height: 26
             },
             items: [],
             inner: {}
@@ -117,7 +149,8 @@ Ext.define('Indi.lib.controller.action.Action', {
             if (typeof adjust == 'function') itemI = adjust(itemI);
 
             // If itemI become consistent - push it to items array
-            if (itemI && (Ext.isObject(itemI) || allowNaO)) itemA.push(itemI);
+            if (itemI && ((Ext.isObject(itemI) && JSON.stringify(Object.keys(itemI)) != '["alias"]') || allowNaO))
+                itemA.push(itemI);
         }
 
         // Return items array
@@ -134,26 +167,34 @@ Ext.define('Indi.lib.controller.action.Action', {
     },
 
     /**
-     * Build and return array of panel toolbars
+     * Build and return array of wrapper-panel toolbars
      *
      * @return {Array}
      */
     panelDockedA: function() {
-        var me = this;
+        return this._docked('panel');
+    },
+
+    /**
+     *
+     * @param panel
+     * @private
+     */
+    _docked: function(panel) {
+       var me = this;
 
         // Setup docked items
-        return me.push(me.panel.docked.items, 'panelDocked', false, function(itemI){
+        return me.push(me[panel].docked.items, panel+'Docked', false, function(itemI){
 
-            // Setup default toolbar config
-            if (itemI) itemI = Ext.merge({}, me.panel.docked.default, itemI);
+            // Setup default config
+            if (itemI) itemI = Ext.merge({}, me[panel].docked.default, itemI);
 
-            // Setup toolbar items, if not yet
-            if (!itemI.items && itemI.alias && me.panel.docked.inner && me.panel.docked.inner[itemI.alias])
-                itemI.items = me.push(me.panel.docked.inner[itemI.alias], 'panelDockedInner', true);
+            // Try to setup `items` property, if it's not yet set
+            if (!itemI.items && itemI.alias && me[panel].docked.inner && me[panel].docked.inner[itemI.alias])
+                itemI.items = me.push(me[panel].docked.inner[itemI.alias], panel+'DockedInner', true);
 
             // Return
             return itemI.items ? itemI : null;
         });
-
     }
 });
