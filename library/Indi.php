@@ -852,6 +852,9 @@ class Indi {
                 ? Indi::model($table)->fetchRow('`id` = "' . (int) $_SESSION['admin']['id'] . '"')
                 : false;
 
+            // Setup 'alternate' property
+            $adminR->alternate = $_SESSION['admin']['alternate'];
+
             // If current cms user was found not in 'admin' database table,  we explicilty setup foreign
             // data for 'profileId' foreign key, despite on in that other table may be not such a foreign key
             if ($table != 'admin')

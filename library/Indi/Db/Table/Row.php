@@ -2652,4 +2652,22 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return boolean true
         return true;
     }
+
+    /**
+     * Get all direct descedants (incapsulated in Indi_Db_Table_Rowset object), found in $source rowset especially for
+     * current row, and attach these to $this->_nested property, under the '$this->model()->treeColumn()' key, so they
+     * will be accessible by the same way as per $this->nested() ordinary usage. After that, function calls itself for
+     * each item within nested items, so function is acting recursively
+     *
+     *
+     * @param Indi_Db_Table_Rowset $source
+     */
+    public function nestDescedants(Indi_Db_Table_Rowset $source) {
+
+        // Find and attach direct descedants of current row to $this->_nested property
+        $this->nested($this->_table, $source->select($this->id, $this->model()->treeColumn()));
+
+        // Do quite the same for each direct descedant
+        foreach ($this->nested($this->_table) as $nestedR) $nestedR->nestDescedants($source);
+    }
 }
