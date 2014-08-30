@@ -153,7 +153,7 @@ class Indi_Uri_Base {
             header('HTTP/1.1 301 Moved Permanently');
 
             // Redirect and die
-            header('Location: http://' . preg_replace('/^www\.', '', $_SERVER['HTTP_HOST']) . $_SERVER['REQUEST_URI']); die();
+            header('Location: http://' . preg_replace('/^www\./', '', $_SERVER['HTTP_HOST']) . $_SERVER['REQUEST_URI']); die();
         }
     }
 

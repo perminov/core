@@ -25,7 +25,7 @@ class Section extends Indi_Db_Table {
         $tmpA = Indi::db()->query('
             SELECT `id`, `sectionId`, `title`, `alias`
             FROM `section`
-            WHERE `sectionId` = "0"
+            WHERE `sectionId` = "0" AND `toggle` = "y"
             ORDER BY `move`
         ')->fetchAll();
 

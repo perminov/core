@@ -9,6 +9,13 @@ class Indi_Trail_Admin {
     public static $items = array();
 
     /**
+     * Array of actions that are toggled on
+     *
+     * @var array
+     */
+    public static $toggledActionIdA = array();
+
+    /**
      * Indi_Controller_Admin object, by reference
      *
      * @var array
@@ -31,15 +38,18 @@ class Indi_Trail_Admin {
         // Get the id of most top section (menu group)
         $top = $routeA[count($routeA) - 1];
 
+        // Get array of actions that are toggled on
+        self::$toggledActionIdA = Indi::db()
+            ->query('SELECT `id` FROM `action` WHERE `toggle` = "y"')
+            ->fetchAll(PDO::FETCH_COLUMN);
+
         // Setup accessible actions
         $sectionRs->nested('section2action', array(
             'where' => array(
                 '`sectionId` != "' . $top . '"',
                 '`toggle` = "y"',
                 'FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `profileIds`)',
-                '`actionId` IN (' . implode(',', Indi::db()
-                    ->query('SELECT `id` FROM `action` WHERE `toggle` = "y"')
-                    ->fetchAll(PDO::FETCH_COLUMN)) . ')'
+                'FIND_IN_SET(`actionId`, "' . implode(',', self::$toggledActionIdA) . '")'
             ),
             'order' => 'move',
             'foreign' => 'actionId'
