@@ -31,6 +31,7 @@
         '/js/admin/app/lib/form/field/SiblingCombo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
+        '/js/admin/app/lib/form/field/File.js',
 
         '/js/admin/app/lib/form/field/Time.js',
         '/js/admin/app/lib/picker/DateTime.js',

@@ -19,7 +19,7 @@ class Indi_View_Helper_Admin_RenderForm {
         // Echo a <tr> for each form's field, but only if field's control element's 'hidden' checkbox is not checked
         foreach (Indi::trail()->fields as $fieldR)
             if (!$excluded[$fieldR->id] && $fieldR->foreign('elementId')->hidden != 1)
-                if (preg_match('/combo/', $fieldR->foreign('elementId')->alias))
+                if (preg_match('/combo|upload/', $fieldR->foreign('elementId')->alias))
                     echo Indi::view()->{'form' . ucfirst($fieldR->foreign('elementId')->alias)}($fieldR->alias, null, 'extjs');
 
         ?><script>Indi.trail(true).apply(<?=json_encode(Indi::trail(true)->toArray())?>);</script><?

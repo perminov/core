@@ -1,9 +1,14 @@
 <?php
 class Indi_View_Helper_Admin_FormUpload
 {
-    public function formUpload($name = null, $copy = null, $silence = true, $entity = null, $id = null)
-    {
-        static $index = null;
+    public function formUpload($name = null, $copy = null, $silence = true, $entity = null, $id = null) {
+
+        if ($abs = Indi::trail()->row->abs($name))
+            Indi::trail()->row->view($name, Indi::trail()->row->file($name));
+
+        //i(Indi::trail()->row->toArray());
+
+        /*static $index = null;
 
         $xhtml = '';
         
@@ -127,6 +132,6 @@ class Indi_View_Helper_Admin_FormUpload
 		$xhtml .= $type == 'file' ? '' : $uploaded;
 		$xhtml .= '<script>$(document).ready($("span.upload").width($("td[id^=td-right]").first().width()))</script>';
 		$xhtml .= '</div>';
-        return $xhtml;
+        return $xhtml;*/
     }
 }
