@@ -111,7 +111,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      * @return string
      */
     fetchRelativePath: function() {
-        return Indi.pre + '/' + this.ctx().trail().section.alias + '/form/';
+        return Indi.pre + '/' + this.ctx().ti().section.alias + '/form/';
     },
 
     // @inheritdoc

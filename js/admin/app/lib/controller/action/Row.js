@@ -261,7 +261,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             id: me.panelDockedInnerBid() + 'offset',
             fieldLabel: Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE,
             labelSeparator: '',
-            labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE) + 1,
+            labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_TITLE) + 2,
             xtype: 'numberfield',
             tooltip: {
                 html: Indi.lang.I_NAVTO_ROWINDEX,
@@ -305,6 +305,9 @@ Ext.define('Indi.lib.controller.action.Row', {
                             me.gotoOffset(input.getValue(), input);
                         }
                     }, 500, input);
+                },
+                afterrender: function() {
+                    this.el.removeCls('x-field-default-toolbar');
                 }
             }
         }

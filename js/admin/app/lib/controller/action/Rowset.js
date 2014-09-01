@@ -685,7 +685,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 50 + Indi.metrics.getWidth(fieldLabel),
-            margin: 0,
+            margin: '0 5 0 0',
             minValue: 0,
             listeners: {
                 change: function(cmp){
@@ -702,7 +702,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
             width: 50 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
-            margin: 0,
+            margin: '0 4 0 0',
             minValue: 0,
             listeners: {
                 change: function(cmp){
@@ -876,9 +876,17 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             icon: Ext.MessageBox.WARNING
                         });
 
-                        // Run the handler
+                    // Run the handler
                     } else {
-                        if (typeof this.javascript == 'function') this.javascript(); else eval(this.javascript);
+                        if (typeof this.javascript == 'function') this.javascript(); else {
+
+                            // Backwards compability
+                            this.javascript = this.javascript
+                                .replace(/indi\./g, 'Indi.')
+                                .replace(/Indi\.trail\.item\(/g, 'Indi.trail(');
+
+                            eval(this.javascript);
+                        }
                     }
                 }
             }

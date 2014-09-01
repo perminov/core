@@ -110,7 +110,7 @@
 .x-boundlist-item-over{
     background-color: #ecffeb;
 }
-.x-boundlist-item-group {
+.x-boundlist-item-group, .x-boundlist-item-group.x-boundlist-item-disabled {
     font-style: italic;
     background-color: #dfe8f6;
     color: #0554c1;
