@@ -59,6 +59,13 @@ class Indi_Db_Table
     protected $_evalFields = array();
 
     /**
+     * Store array of aliases, related to fields, that are fileupload fields.
+     *
+     * @var array
+     */
+    protected $_fileFields = null;
+
+    /**
      * Class name for row
      *
      * @var string
@@ -618,11 +625,26 @@ class Indi_Db_Table
      * If $evalField argument is given - function will return boolean true or false, depends on whether or not
      * $evalField is within list of eval fields
      *
-     * @param null $evalField
+     * @param string $evalField
      * @return array|bool
      */
     public function getEvalFields($evalField = null) {
         return $evalField ? in_array($evalField, $this->_evalFields) : $this->_evalFields;
+    }
+
+    /**
+     * Provide readonly access to _fileFields property.
+     * If $fileField argument is given - function will return boolean true or false, depends on whether or not
+     * $fileField is within list of file fields
+     *
+     * @param string $fileField
+     * @return array|bool
+     */
+    public function getFileFields($fileField = null) {
+
+        // Setup $this->_fileFields property, if it wasn't yet, and then do the job
+        if ($this->_fileFields === null) $this->_fileFields = $this->fields()->select(14, 'elementId')->column('alias');
+        return $fileField ? in_array($fileField, $this->_fileFields) : $this->_fileFields;
     }
 
     /**

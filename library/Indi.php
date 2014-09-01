@@ -1509,4 +1509,47 @@ class Indi {
         // Else if still no extension got - return 'unknown'
         else return 'unknown';
     }
+
+    /**
+     * Try to detect the mimetype according to extension, given in $ext argument.
+     * $ext arguments can also be a filename, in that case function will preliminary doa try to
+     * detect the mimetype using php's Fileinfo extension, and if that try fails - use usual
+     * detection logic
+     *
+     * @param $ext
+     * @return string
+     */
+    public function mime($ext) {
+
+        // If $ext argument seems to be a file name
+        if (preg_match('/\./', $ext)) {
+
+            // If that file exists, and php's Fileinfo extensions is enabled, and finfo resource was created
+            if (is_file($ext) && function_exists('finfo_open') && $finfo = finfo_open(FILEINFO_MIME_TYPE)) {
+
+                // Get the mimetype
+                $mime = finfo_file($finfo, $ext);
+
+                // Close finfo resource
+                finfo_close($finfo);
+
+                // Return mimetype
+                return $mime;
+
+            // Get the extension from filename
+            } else $ext = array_pop(explode('.', $ext));
+        }
+
+        // If extension was found in definitive list of mimetype-extension pairs - return mimetype
+        if ($mime = array_search($ext, self::$_mime['definitive'])) return $mime;
+
+        // Then try to find mimetype in ambiguous list of mimetype-extension pairs
+        foreach (self::$_mime['ambiguous'] as $mime => $extA)
+
+            // Return mimetype if extension found
+            if (in_array($ext, $extA)) return $mime;
+
+        // Return 'unknown/unknown'
+        return 'unknown/unknown';
+    }
 }

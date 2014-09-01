@@ -1127,14 +1127,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param $alias
      * @param string $copy
+     * @param bool $dc Whether or not to append modification timestamp, for disabling browser cache
      * @return string|null
      */
-    public function src($alias, $copy = '') {
-        // Get the filename with absolute path
-        if ($abs = $this->abs($alias, $copy))
+    public function src($alias, $copy = '', $dc = false) {
 
-            // Else return path to first found file, relative to document root
-            return str_replace(DOC . STD, '', $abs);
+        // Get the filename with absolute path
+        if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy))
+
+            // Return path, relative to document root
+            return str_replace(DOC . STD, '', $abs) . ($dc ? '?' . filemtime($abs) : '');
     }
 
     /**
@@ -1300,6 +1302,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Merge _original, _modified, _compiled and _temporary array of properties
             $array = (array) array_merge($this->_original, $this->_modified, $this->_compiled, $this->_temporary);
 
+            // Setup filefields values
+            foreach ($this->model()->getFileFields() as $fileField) $array[$fileField] = $this->$fileField;
+
             // Append _system array as separate array within returning array, under '_system' key
             if (count($this->_system)) $array['_system'] = $this->_system;
 
@@ -1354,6 +1359,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (array_key_exists($columnName, $this->_modified)) return $this->_modified[$columnName];
         else if (array_key_exists($columnName, $this->_original)) return $this->_original[$columnName];
         else if ($this->_temporary[$columnName]) return $this->_temporary[$columnName];
+        else if ($fieldR = $this->model()->fields($columnName)) if ($fieldR->foreign('elementId')->alias == 'upload')
+            return $this->src($columnName);
     }
 
     /**
@@ -2669,5 +2676,45 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Do quite the same for each direct descedant
         foreach ($this->nested($this->_table) as $nestedR) $nestedR->nestDescedants($source);
+    }
+
+    /**
+     * Get some basic info about uploaded file
+     *
+     * @param $field
+     * @return array
+     */
+    public function file($field) {
+
+        // If given field alias - is not an alias of one of filefields - return
+        if (!$this->model()->getFileFields($field)) return;
+
+        // If there is currently no file uploaded - return
+        if (!($abs = $this->abs($field))) return;
+
+        // Get the extension
+        $ext = array_pop(explode('.', $abs));
+
+        // Setup basic file info
+        $file = array(
+            'mtime' => filemtime($abs),
+            'size' => filesize($abs),
+            'src' => $this->src($abs),
+            'ext' => $ext,
+            'mime' => Indi::mime($abs)
+        );
+
+        // Get more info, using getimagesize/getflashsize functions
+        if (array_shift(explode('/', $file['mime'])) == 'image') $more = getimagesize($abs);
+        else if ($ext == 'swf') $more = getflashsize($abs);
+
+        // If more info was successfully got, append some of it to main info
+        if ($more) {
+            $file['width'] = $more[0];
+            $file['height'] = $more[1];
+        }
+
+        // Return
+        return $file;
     }
 }

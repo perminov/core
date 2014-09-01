@@ -202,6 +202,18 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
+     * Fileupload-fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXUpload: function(item) {
+        return {
+            xtype: 'filepanel'
+        }
+    },
+
+    /**
      * Provide initial/default config for all fields
      *
      * @param field
