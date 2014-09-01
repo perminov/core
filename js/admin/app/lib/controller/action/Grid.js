@@ -143,7 +143,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (first) {
                     first = false;
                 } else {
-                    grid.columns[i].width = columnWidths[i];
+                    grid.columns[i].setWidth(columnWidths[i]);
                 }
             }
         } else {
