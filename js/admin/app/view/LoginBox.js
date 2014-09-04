@@ -33,7 +33,7 @@ Ext.define('Indi.view.LoginBox', {
             margin: '0 0 2 8',
             cls: 'i-inline-block',
             tooltip: {
-                html: 'Запомнить',
+                html: Indi.lang.I_LOGIN_BOX_REMEMBER,
                 anchor: 'left',
                 staticOffset: [0, -3]
             }

@@ -5,6 +5,7 @@ define('I_URI_ERROR_ID_FORMAT', 'Uri param \'id\' should have a positive integer
 
 define('I_LOGIN_BOX_USERNAME', 'Username');
 define('I_LOGIN_BOX_PASSWORD', 'Password');
+define('I_LOGIN_BOX_REMEMBER', 'Remember');
 define('I_LOGIN_BOX_ENTER', 'Enter');
 define('I_LOGIN_BOX_RESET', 'Reset');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');

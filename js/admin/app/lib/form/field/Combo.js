@@ -125,7 +125,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         '<td class="i-combo-keyword-cell">',
         '<div class="i-combo-keyword-div">',
         '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
-        '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}"/>',
+        '<input id="{me.field.alias}" type="hidden" value="<tpl if="selected.value">{selected.value}</tpl>" name="{me.field.alias}"/>',
         '</div>',
         '</td>',
         '<td class="i-combo-infoCell">',
@@ -277,7 +277,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             // If combo is running in multiple-values mode is rendered - empty keyword input element
             if (me.multiSelect) me.keywordEl.dom.value = Ext.emptyString;
 
-            // Call parent
+        // Call parent
         } else me.getNative().setValue.call(me, value);
 
         // Return combo itself
@@ -519,6 +519,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Adjust width of .i-combo-table element for it to fit all available space
         me.comboTableFit();
 
+        // Bind a deletion click handler for .i-combo-selected-item-delete items
+        me.el.select('.i-combo-selected-item-delete').on('click', me.onItemDelete, me);
+
         // Execute javascript code, if it was assigned to default selected option/options
         if (me.store.enumset) {
             if (me.multiSelect) {
@@ -536,8 +539,8 @@ Ext.define('Indi.lib.form.field.Combo', {
             }
         }
 
-        // Bind a deletion click handler for .i-combo-selected-item-delete items
-        me.el.select('.i-combo-selected-item-delete').on('click', me.onItemDelete, me);
+        // Execute javascript code, assigned as an additional handler for 'select' event
+        if (me.store.js) Indi.eval(me.store.js, me);
     },
 
     /**
@@ -676,7 +679,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {Boolean}
      */
     isClearable: function() {
-        return this.hiddenEl.attr('boolean') != 'true' && (!this.store.enumset || this.multiSelect);
+        return !this.boolean && (!this.store.enumset || this.multiSelect);
     },
 
     clearComboValue: function() {
