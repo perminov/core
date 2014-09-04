@@ -312,7 +312,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
                         browsed.inputEl.attr('placeholder', Indi.lang.I_FORM_UPLOAD_MODE_REMOTE_PLACEHOLDER);
                         browsed.emptyText = Indi.lang.I_FORM_UPLOAD_MODE_REMOTE_PLACEHOLDER;
                         browsed.setReadOnly(false);
-                        browsed.name = 'avatar';
+                        browsed.name = me.name;
 
                         // 'Browse' item adjustments
                         browse.fileInputEl.attr('disabled', 'disabled');
@@ -395,7 +395,6 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             alias: 'embed',
             src: me.data.src + '?' + me.data.mtime
         };
-        console.log('zxc');
         return Ext.DomHelper.markup(imgSpec);
     }
 

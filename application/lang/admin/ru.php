@@ -5,6 +5,7 @@ define('I_URI_ERROR_ID_FORMAT', 'Параметр \'id\' должен быть �
 
 define('I_LOGIN_BOX_USERNAME', 'Пользователь');
 define('I_LOGIN_BOX_PASSWORD', 'Пароль');
+define('I_LOGIN_BOX_REMEMBER', 'Запомнить');
 define('I_LOGIN_BOX_ENTER', 'Вход');
 define('I_LOGIN_BOX_RESET', 'Сброс');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');

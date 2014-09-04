@@ -370,10 +370,10 @@ Ext.define('Indi.lib.controller.action.Form', {
                     change: function(radio, now, was) {
                         if (now) {
                             try {
-                                eval(radio.enumset.javascript);
-                                eval(item.field.javascript);
+                                Indi.eval(radio.enumset.javascript, radio.ownerCt);
+                                Indi.eval(item.field.javascript, radio.ownerCt);
                             } catch (e) {
-                                //console.log(e);
+                                throw e;
                             }
                         }
                     }
@@ -390,7 +390,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             layout: 'vbox',
             items: optionA,
             listeners: {
-                afterlayout: function(cmp) {
+                afterrender: function(cmp) {
                     var checked = cmp.items.findBy(function(item){return item.checked == true});
                     checked.fireEvent('change', checked, true);
                 }
