@@ -49,7 +49,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         $title = array();
 
         // Append entity title to filename parts array, if needed
-        if ($fieldR->params['prependEntityTitle'] != 'false') $title[] = Indi::model($fieldR->entityId)->title() . ',';
+        //if ($fieldR->params['prependEntityTitle'] == 'true') $title[] = Indi::model($fieldR->entityId)->title() . ',';
 
         // Append row title to filename parts array
         $title[] = $r->title;

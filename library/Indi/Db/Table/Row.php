@@ -2485,6 +2485,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Delete them
                 foreach ($fileA as $fileI) @unlink($fileI);
+
+            // If url was detected in $_POST data under key, assotiated with file-upload field
+            } else if (preg_match(Indi::rex('url'), Indi::post($field))) {
+                $this->wget(Indi::post($field), $field);
             }
         }
     }
@@ -2609,7 +2613,23 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->deleteFiles($field);
 
         // Get the extension of the uploaded file
-        preg_match('/.*\.([a-zA-Z0-9+]+)$/', $url, $m); $ext = $m[1];
+        preg_match('/[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+\/[^?#]*\.([a-zA-Z0-9+]+)$/', $url, $m); $ext = $m[1];
+
+        // Try to detect remote file props using cURL request
+        list($size, $mime, $cext) = each(Indi::probe($url));
+
+        // If simple extension detection failed - use one that curl detected
+        if (!$ext) $ext = $cext;
+
+        // If no size, or zero-size detected
+        if (!$size) {
+
+            // Setup an error to $this->_mismatch array, under $field key
+            $this->_mismatch[$field] = sprintf(I_WGET_ERR_ZEROSIZE, $field);
+
+            // Exit
+            return false;
+        }
 
         // If no extension was got from the given url
         if (!$ext) {

@@ -1919,8 +1919,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // and are to be some changes applied on
         $filefields = array();
         foreach (Indi::trail()->fields as $fieldR)
-            if ($fieldR->foreign('elementId')->alias == 'upload' && !in_array($fieldR->id, $disabledA)
-                && preg_match('/^m|d$/', Indi::post($fieldR->alias))) $filefields[] = $fieldR->alias;
+            if ($fieldR->foreign('elementId')->alias == 'upload' && !in_array($fieldR->id, $disabledA))
+                if (preg_match('/^m|d$/', Indi::post($fieldR->alias)) || preg_match(Indi::rex('url'), Indi::post($fieldR->alias)))
+                    $filefields[] = $fieldR->alias;
 
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
