@@ -103,6 +103,8 @@ define('I_UPLOAD_ERR_UNKNOWN', 'Загрузка файла в поле "%s" н�
 
 define('I_WGET_ERR_ZEROSIZE', 'Загрузка файла в поле "%s" с использованием веб-ссылки не удалась, так как этот файл пустой');
 
+define('I_FORM_UPLOAD_FILE', 'Файл');
+define('I_FORM_UPLOAD_INFORMAT', 'в формате');
 define('I_FORM_UPLOAD_NOCHANGE', 'Оставить');
 define('I_FORM_UPLOAD_DELETE', 'Удалить');
 define('I_FORM_UPLOAD_REPLACE', 'Заменить');

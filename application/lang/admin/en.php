@@ -103,6 +103,8 @@ define('I_UPLOAD_ERR_UNKNOWN', 'File upload in field "%s" failed due to unknown 
 
 define('I_WGET_ERR_ZEROSIZE', 'Web-url usage as file\'s source for field "%s" failed because that file is zero-size');
 
+define('I_FORM_UPLOAD_FILE', 'File');
+define('I_FORM_UPLOAD_INFORMAT', 'in format');
 define('I_FORM_UPLOAD_NOCHANGE', 'No change');
 define('I_FORM_UPLOAD_DELETE', 'Delete');
 define('I_FORM_UPLOAD_REPLACE', 'Replace');
