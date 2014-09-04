@@ -42,7 +42,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
 
         // Config
         return {
-            value: '<a href="'+Indi.pre+'/auxiliary/download/id/'+me.row.id+'/field/'+me.field.id+'/">Файл</a> в формате ' + me.data.ext,
+            value: '<a href="'+Indi.pre+'/auxiliary/download/id/'+me.row.id+'/field/'+me.field.id+'/">'
+                + Indi.lang.I_FORM_UPLOAD_FILE + '</a> ' + Indi.lang.I_FORM_UPLOAD_INFORMAT + ' ' + me.data.ext,
             margin: '0 5 0 0',
             xtype: 'displayfield'
         }
@@ -106,9 +107,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             listeners: {
                 afterrender: function(rb){
                     rb.el.on('click', function(){
-                        if (me.get('mode').getValue()) {
-                            me.get('browse').buttonEl.dom.click();
-                        }
+                        if (me.get('mode').getValue()) me.get('browse').buttonEl.dom.click();
                         if (!me.get('browsed').getValue()) me.get('browse').labelEl.dom.click();
                     });
                 }
