@@ -100,6 +100,8 @@ define('I_UPLOAD_ERR_CANT_WRITE', 'Failed to write file, uploaded in field "%s",
 define('I_UPLOAD_ERR_EXTENSION', 'File upload in field "%s" stopped by one of the php extensions, running on server');
 define('I_UPLOAD_ERR_UNKNOWN', 'File upload in field "%s" failed due to unknown error');
 
+define('I_WGET_ERR_ZEROSIZE', 'Web-url usage as file\'s source for field "%s" failed because that file is zero-size');
+
 define('I_FORM_UPLOAD_NOCHANGE', 'No change');
 define('I_FORM_UPLOAD_DELETE', 'Delete');
 define('I_FORM_UPLOAD_REPLACE', 'Replace');
@@ -107,6 +109,10 @@ define('I_FORM_UPLOAD_REPLACE_WITH', 'with');
 define('I_FORM_UPLOAD_NOFILE', 'No');
 define('I_FORM_UPLOAD_BROWSE', 'Browse');
 define('I_FORM_UPLOAD_ORIGINAL', 'Original');
+define('I_FORM_UPLOAD_MODE_TIP', 'Use a web-link to pick a file');
+define('I_FORM_UPLOAD_MODE_LOCAL_PLACEHOLDER', 'your local PC file..');
+define('I_FORM_UPLOAD_MODE_REMOTE_PLACEHOLDER', 'file at web-link..');
+
 define('I_FORM_DATETIME_HOURS', 'hours');
 define('I_FORM_DATETIME_MINUTES', 'minutes');
 define('I_FORM_DATETIME_SECONDS', 'seconds');

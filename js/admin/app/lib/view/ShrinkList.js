@@ -334,7 +334,7 @@ Ext.define('Indi.lib.view.ShrinkList', {
         me.adjustWidth();
         me.callParent(arguments);
         me.getEl().on('mouseleave', me.onMouseLeave, me);
-        me.isContained.on('resize', function(){
+        if (me.isContained) me.isContained.on('resize', function(){
             me.hide();
             me.adjustWidth();
             me.show();

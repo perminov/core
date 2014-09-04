@@ -1552,4 +1552,48 @@ class Indi {
         // Return 'unknown/unknown'
         return 'unknown/unknown';
     }
+
+    /**
+     * Get the info about contents, that remote host may response with in case of request - size in bytes,
+     * mime-type and file extension. Actually, this function is used as preliminary check before *_Row->wget()
+     * calls, e.g. it used to detect remote file size and type, as it is useful information for making a decision
+     * on whether or not start downloading the actual contents of a remote file
+     *
+     * @static
+     * @param $url
+     * @return array
+     */
+    public static function probe($url) {
+
+        // Create curl resource
+        $ch = curl_init($url);
+
+        // Setup options
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_HEADER, TRUE);
+        curl_setopt($ch, CURLOPT_NOBODY, TRUE);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+
+        // Execute
+        $response = curl_exec($ch);
+
+        // Get size and mime-type
+        $size = curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+        $mime = array_shift(explode(';', curl_getinfo($ch, CURLINFO_CONTENT_TYPE)));
+
+        // Close curl resource
+        curl_close($ch);
+
+        // Try to detect appropriate file extension, using Content-Disposition header, if exists in response
+        $headers = http_parse_headers($response);
+        foreach ($headers as $header => $value)
+            if (preg_match('/Content-Disposition/', $header))
+                $ext = array_pop(explode('.', trim(array_pop(explode('=',array_pop(explode(';', $value)))), '"\'')));
+
+        // If no extension detected, try to detect it using mime-type
+        if (!$ext) $ext = Indi::ext($mime);
+
+        // Return info
+        return array('size' => $size, 'mime' => $mime, 'ext' => $ext);
+    }
 }

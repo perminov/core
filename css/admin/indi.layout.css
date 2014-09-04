@@ -186,7 +186,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-form-trigger-wrap .x-form-spinner-down{
     height: 9px !important;
 }
-.x-toolbar .x-form-trigger-wrap .x-form-spinner-down{
+.x-form-trigger-wrap .x-form-spinner-down{
     position: relative;
     top: 1px;
     background-position: 0 -13px !important;
