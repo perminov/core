@@ -44,6 +44,7 @@ Ext.override(Ext.tip.ToolTip, {
                 anchor: 'top',
                 cls: 'i-tip',
                 target: me.id,
+                constrainParent: true,
                 isFast: Ext.ToolTip.isFast,
                 listeners: {
 
@@ -55,7 +56,7 @@ Ext.override(Ext.tip.ToolTip, {
                             this.anchorOffset = -20;
                             this.anchorOffset += this.getWidth()/2;
 
-                            if (this.target.lastBox && this.target.lastBox.x < offsetX) {
+                            if (this.constrainParent && this.target.lastBox && this.target.lastBox.x < offsetX) {
                                 this.mouseOffset = [-this.target.lastBox.x + this.staticOffset[0], this.staticOffset[1]];
                                 this.anchorOffset -= offsetX - this.target.lastBox.x;
                             }

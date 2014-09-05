@@ -35,7 +35,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         xtype: 'form',
         bodyPadding: 10,
         closable: false,
-        autoScroll: true,
+        overflowY: 'auto',
 
         // Fields will be arranged vertically, stretched to full width
         layout: 'anchor',
