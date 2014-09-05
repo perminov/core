@@ -103,15 +103,14 @@ define('I_UPLOAD_ERR_UNKNOWN', 'Загрузка файла в поле "%s" н�
 
 define('I_WGET_ERR_ZEROSIZE', 'Загрузка файла в поле "%s" с использованием веб-ссылки не удалась, так как этот файл пустой');
 
-define('I_FORM_UPLOAD_FILE', 'Файл');
-define('I_FORM_UPLOAD_INFORMAT', 'в формате');
+define('I_FORM_UPLOAD_SAVETOHDD', 'Сохранить на диск');
+define('I_FORM_UPLOAD_ORIGINAL', 'Показать оригинал');
 define('I_FORM_UPLOAD_NOCHANGE', 'Оставить');
 define('I_FORM_UPLOAD_DELETE', 'Удалить');
 define('I_FORM_UPLOAD_REPLACE', 'Заменить');
 define('I_FORM_UPLOAD_REPLACE_WITH', 'на');
 define('I_FORM_UPLOAD_NOFILE', 'Отсутствует');
 define('I_FORM_UPLOAD_BROWSE', 'Выбрать');
-define('I_FORM_UPLOAD_ORIGINAL', 'Оригинал');
 define('I_FORM_UPLOAD_MODE_TIP', 'Загрузить по веб-ссылке');
 define('I_FORM_UPLOAD_MODE_LOCAL_PLACEHOLDER', 'файл с вашего ПК..');
 define('I_FORM_UPLOAD_MODE_REMOTE_PLACEHOLDER', 'файл по веб-ссылке..');

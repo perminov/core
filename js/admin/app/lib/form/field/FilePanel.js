@@ -20,32 +20,13 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      * @return {Object}
      */
     previewWrap: function() {
-        var me = this, preview = me.preview();
+        var me = this;
         return {
             alias: 'preview',
-            html: preview,
+            html: me.preview,
             border: 0,
-            minHeight: 20
-        }
-    },
-
-    /**
-     * Config function for master toolbar's 'File in format' xtype:displayfield item
-     *
-     * @return {Object}
-     */
-    toolbar$Master$FileInFormat: function() {
-        var me = this;
-
-        // If field currently has no value, or value is not previewable - return
-        if (!me.value || me.hasPreview) return null;
-
-        // Config
-        return {
-            value: '<a href="'+Indi.pre+'/auxiliary/download/id/'+me.row.id+'/field/'+me.field.id+'/">'
-                + Indi.lang.I_FORM_UPLOAD_FILE + '</a> ' + Indi.lang.I_FORM_UPLOAD_INFORMAT + ' ' + me.data.ext,
-            margin: '0 5 0 0',
-            xtype: 'displayfield'
+            minHeight: 20,
+            maxHeight: 150
         }
     },
 
@@ -65,7 +46,10 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             inputValue: 'r',
             checked: true,
             margin: '0 5 0 0',
-            boxLabel: me.value ? Indi.lang.I_FORM_UPLOAD_NOCHANGE : Indi.lang.I_FORM_UPLOAD_NOFILE
+            style: me.value ? 'top: 4px !important;' : '',
+            boxLabel: me.value ? Indi.lang.I_FORM_UPLOAD_NOCHANGE : Indi.lang.I_FORM_UPLOAD_NOFILE,
+            boxLabel: me.value ? '' : Indi.lang.I_FORM_UPLOAD_NOFILE,
+            tooltip: me.value ? {html: Indi.lang.I_FORM_UPLOAD_NOCHANGE, anchor: 'bottom'} : null
         }
     },
 
@@ -84,7 +68,11 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             name: me.name,
             inputValue: 'd',
             margin: '0 5 0 0',
-            boxLabel: Indi.lang.I_FORM_UPLOAD_DELETE
+            boxLabel: Indi.lang.I_FORM_UPLOAD_DELETE,
+            style: 'top: 4px !important;',
+            boxLabel: '',
+            tooltip: {html: Indi.lang.I_FORM_UPLOAD_DELETE, anchor: 'bottom'}
+
         } : null;
     },
 
@@ -104,6 +92,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             inputValue: 'm',
             style: 'top: 4px !important;',
             margin: 0,
+            tooltip: me.value ? {html: Indi.lang.I_FORM_UPLOAD_REPLACE, anchor: 'bottom'} : null,
             listeners: {
                 afterrender: function(rb){
                     rb.el.on('click', function(){
@@ -139,8 +128,10 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             alias: 'browsed',
             height: 17,
             fieldLabel: me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE_WITH : '',
+            fieldLabel: '',
             readOnly: true,
             labelWidth: Indi.metrics.getWidth(me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE_WITH : ''),
+            labelWidth: Indi.metrics.getWidth(''),
             labelPad: 3,
             labelSeparator: '',
             emptyText: Indi.lang.I_FORM_UPLOAD_MODE_LOCAL_PLACEHOLDER,
@@ -177,9 +168,12 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             alias: 'browse',
             name: me.name,
             buttonText: me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE : Indi.lang.I_FORM_UPLOAD_BROWSE,
+            buttonText: me.value ? '&raquo;' : Indi.lang.I_FORM_UPLOAD_BROWSE,
             height: 16,
             margin: '0 5 0 0',
+            margin: '0 8 0 0',
             width: Indi.metrics.getWidth(me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE : Indi.lang.I_FORM_UPLOAD_BROWSE),
+            width: Indi.metrics.getWidth(me.value ? '&raquo;' : Indi.lang.I_FORM_UPLOAD_BROWSE),
             buttonConfig: {
                 border: 0,
                 margin: '0 0 0 -1',
@@ -204,6 +198,87 @@ Ext.define('Indi.lib.form.field.FilePanel', {
     },
 
     /**
+     * Config builder function for master toolbar 'Type' item. This item
+     * provides info about extension and mime-type of an uploaded file
+     *
+     * @return {Object}
+     */
+    toolbar$Master$Type: function () {
+        var me = this;
+
+        // If component have no info about uploaded file - return
+        if (!me.data) return null;
+
+        // 'Type' item config
+        return {
+            xtype: 'displayfield',
+            value: me.data.ext.toUpperCase(),
+            width: Indi.metrics.getWidth(me.data.ext.toUpperCase()),
+            tooltip: {
+                html: me.data.mime,
+                anchor: 'bottom',
+                constrainParent: false
+            }
+        }
+    },
+
+    /**
+     * Config builder function for master toolbar 'Size' item. This item provides info about size
+     * of an uploaded file, and provide an ability to download it
+     *
+     * @return {Object}
+     */
+    toolbar$Master$Size: function () {
+
+        // Setup auxiliary variables
+        var me = this, pow, size, postfix = {0: 'b', 1: 'kb', 2: 'mb', 3: 'gb', 4: 'tb', 5: 'pb'};
+
+        // If component have no info about uploaded file - return
+        if (!me.data) return null;
+
+        // Get the uploaded file size grade
+        pow = Math.floor(me.data.size.toString().length/3);
+
+        // Get the string representation of a filesize
+        size = Math.floor((me.data.size/Math.pow(1024, pow))*100)/100 + postfix[pow];
+
+        // 'Size' item config
+        return {
+            xtype: 'displayfield',
+            value: '<a href="' + Indi.pre + '/auxiliary/download/id/' + me.row.id + '/field/'+me.field.id + '/">'
+                + size + '</a>',
+            width: Indi.metrics.getWidth(size),
+            tooltip: {
+                html: Indi.lang.I_FORM_UPLOAD_SAVETOHDD,
+                anchor: 'bottom',
+                constrainParent: false
+            }
+        }
+    },
+
+    /**
+     * Config builder function for master toolbar 'Dims' item. This item provides info about real dimensions
+     * of an uploaded image or swf file, and provide an ability to open that file in a new browser window
+     *
+     * @return {Object}
+     */
+    toolbar$Master$Dims: function () {
+        var me = this;
+
+        // 'Dims' item config
+        return {
+            xtype: 'displayfield',
+            value: '<a href="' + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
+            width: Indi.metrics.getWidth(me.data.width + 'x' + me.data.height),
+            tooltip: {
+                html: Indi.lang.I_FORM_UPLOAD_ORIGINAL,
+                anchor: 'bottom',
+                constrainParent: false
+            }
+        }
+    },
+
+    /**
      * Master toolbar config setup function
      *
      * @return {Object}
@@ -221,7 +296,12 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             style: {background: 'rgba(255, 255, 255, 0.7)'},
             defaults: {style: {padding: 0}},
             items: [
-                me.toolbar$Master$FileInFormat() ,
+                me.value ? me.toolbar$Master$Type() : null,
+                me.value ? {xtype: 'displayfield', value: '&nbsp;&raquo;&nbsp;'} : null,
+                me.value ? me.toolbar$Master$Size() : null,
+                me.value ? {xtype: 'displayfield', value: '&nbsp;&raquo;&nbsp;'}: null,
+                me.preview ? me.toolbar$Master$Dims() : null,
+                me.preview ? {xtype: 'displayfield', value: '&nbsp;&raquo;&nbsp;'} : null,
                 me.toolbar$Master$Nochange() ,
                 me.toolbar$Master$Delete(),
                 me.toolbar$Master$Modify(),
@@ -236,20 +316,41 @@ Ext.define('Indi.lib.form.field.FilePanel', {
     initComponent: function() {
         var me = this;
         me.data = me.row.view(me.name);
-        me.items = [me.previewWrap(), me.toolbar$Master()];
+        me.preview = me.getPreview();
+        me.items = [me.toolbar$Master(), me.previewWrap()];
         me.callParent(arguments);
     },
 
     // @inheritdoc
     afterRender: function() {
         var me = this;
+
+        // Call parent
         me.callParent(arguments);
+
+        // Adjust master toolbar position, for it to be at most top both by z-index and by Y-position
+        me.get('toolbar').el.setStyle({position: 'absolute', 'z-index': 1});
+
+        // Bind handler for field resize, and adjust label target
         me.on('resize', me.onResize);
         me.get('browse').labelEl.attr('for', me.get('browse').fileInputEl.id);
+
+        // If component's value is previewable
+        if (me.preview) {
+
+            // Get preview inner element
+            me.embed = me.bodyEl.select('[alias="embed"]').first();
+
+            // Bind handler on 'click' event
+            me.embed.on('click', me.expandEmbed, me);
+
+            // Setup positioning
+            me.bodyEl.select('[alias="embed"]').first().setStyle({position: 'absolute', top: '50%'});
+        }
     },
 
     /**
-     * Provide preview auto-fit and toolbar position auto-adjustment each time field was resized
+     * Provide preview auto-fit and toolbar width auto-adjustment each time field was resized
      */
     onResize: function() {
 
@@ -273,13 +374,22 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             // Apply these attributes
             me.bodyEl.select('[alias="embed"]').first().setSize(attrWidth, attrHeight);
             me.get('preview').setHeight(attrHeight);
+            me.bodyEl.select('[alias="embed"]').first().setStyle({marginTop: '-' + Math.ceil(attrHeight/2) + 'px'});
         }
-
-        // Adjust master toolbar position, for it to be at most top both by z-index and by Y-position
-        me.get('toolbar').el.setStyle({position: 'absolute', 'margin-top': '-' + me.get('preview').getHeight() + 'px'});
 
         // Adjust master toolbar width, for it to be the same as field body width
         me.get('toolbar').setWidth(availWidth);
+
+        // If component's value is previewable
+        if (me.preview) {
+
+            // Get preview inner element
+            me.embed = me.bodyEl.select('[alias="embed"]').first();
+
+            // If component's resize caused the change of clipping state of embed element - setup appropriate
+            // value for css 'cursor' property. It's need for collapse/expand feature toggling
+            me.embed.setStyle('cursor', me.embed.getHeight() > me.get('preview').maxHeight ? 'pointer' : 'default');
+        }
     },
 
     /**
@@ -296,7 +406,11 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             xtype: 'checkbox',
             alias: 'mode',
             style: 'top: 4px !important',
-            tooltip: Indi.lang.I_FORM_UPLOAD_MODE_TIP,
+            tooltip: {
+                html: Indi.lang.I_FORM_UPLOAD_MODE_TIP,
+                anchor: 'bottom',
+                constrainOwner: false
+            },
             listeners: {
                 change: function(cb, value) {
 
@@ -345,7 +459,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      *
      * @return {String}
      */
-    preview: function() {
+    getPreview: function() {
         var me = this, preview;
 
         // If there is currently no value - return
@@ -395,20 +509,28 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             src: me.data.src + '?' + me.data.mtime
         };
         return Ext.DomHelper.markup(imgSpec);
+    },
+
+    /**
+     * Preview expand/collapse
+     */
+    expandEmbed: function() {
+        var me = this, expandHeight = me.embed.getHeight();
+
+        // If embed element's 'cursor' css property in not 'pointer' - return
+        // Value of that 'cursor' property may change dynamically on each component's resize
+        if (me.embed.getStyle('cursor') != 'pointer') return;
+
+        // Setup percentage height instead of in px units for preview panel body
+        me.get('preview').body.setHeight('100%');
+
+        // Expand/collapse
+        if (me.embed.attr('expanded') != 'true') {
+            me.get('preview').el.setHeight(expandHeight, true);
+            me.embed.attr('expanded', 'true');
+        } else {
+            me.get('preview').el.setHeight(me.get('preview').maxHeight, true);
+            me.embed.attr('expanded', 'false');
+        }
     }
-
-    /*
-    toolbar$Size: function() {
-        var me = this, size, postfix = {0: 'b', 1: 'kb', 2: 'mb', 3: 'gb', 4: 'tb', 5: 'pb'};
-        if (!me.value || !me.data) return;
-        size = Math.floor(me.data.size.toString().length/3);
-        return Math.floor((me.data.size/Math.pow(1024, size))*100)/100 + postfix[size]
-    },
-
-    toolbar$Info: function() {
-        var me = this;
-        if (!me.data) return;
-        return me.data.mime;
-    },
-    */
 });
