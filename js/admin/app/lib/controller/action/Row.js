@@ -398,7 +398,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             name: 'sibling',
             xtype: 'combo.sibling',
             tooltip: Indi.lang.I_NAVTO_SIBLING,
-            disabled: parseInt(me.ti().scope.found) <= 1,
+            disabled: !parseInt(me.ti().scope.found) || (parseInt(me.ti().scope.found) == 1 && me.ti().row.id),
             field: field,
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
@@ -526,14 +526,14 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     panelDockedInner$Nested: function() {
         var me = this, btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
-
+        //console.log(btnSave.pressed);
         // 'Nested' item config
         return {
             id: me.panelDockedInnerBid() + 'nested',
             xtype: 'shrinklist',
             displayField: 'title',
             hidden: !me.ti().sections.length,
-            disabled: !me.ti().row.id && ((btnSave && btnSave.pressed != true) || true),
+            disabled: !me.ti().row.id && btnSave && !btnSave.pressed,
             tooltip: {
                 html: Indi.lang.I_NAVTO_NESTED,
                 hideDelay: 0,
