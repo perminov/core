@@ -5,7 +5,7 @@
  * English Translations
  * updated to 2.2 by Condor (8 Aug 2008)
  */
-//Ext.onReady(function() {
+// Ext.onReady(function() {
     if (Ext.Updater) {
         Ext.Updater.defaults.indicatorText = '<div class="loading-indicator">Loading...</div>';
     }
@@ -347,4 +347,4 @@
         blankText : "You must select one item in this group"
       });
     }
-//});
+// });

@@ -946,15 +946,18 @@ class Indi {
                 if (is_file(DOC . STD . '/www' . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i])))
                     array_splice($files, ++$i, 0, '/../www' . $files[$i-1]);
 
-            // Prepare array containing file names with trimmed namespace definitions
+            // Prepare arrays containing file names with trimmed namespace definitions, for proper comparing
             for ($i = 0; $i < count($files); $i++) $noNsFiles[$i] = preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i]);
+            if (is_array($json)) foreach ($json as $file => $time)
+                    $noNsJson[preg_replace('/:[a-zA-Z\.]+$/', '', $file)] = $time;
 
             // If $json is not an array, or is empty array, of files, mentioned in it do not match files in $files arg
-            if (!is_array($json) || !count($json) || count(array_diff($noNsFiles, array_keys($json)))
-                || count(array_diff(array_keys($json), $noNsFiles)))
+            if (!is_array($json) || !count($json) || count(array_diff($noNsFiles, array_keys($noNsJson)))
+                || count(array_diff(array_keys($noNsJson), $noNsFiles)))
 
                 // We set $refresh as true
                 $refresh = true;
+
 
             // Else we do a final check:
             else
@@ -962,7 +965,7 @@ class Indi {
                 // If modification time  of at least one file in $files argument, is not equal to time,
                 // stored in $json for that file, we set $refresh as true
                 for ($i = 0; $i < count($noNsFiles); $i++)
-                    if (filemtime(DOC . STD . '/core' . $noNsFiles[$i]) != $json[$noNsFiles[$i]]) {
+                    if (filemtime(DOC . STD . '/core' . $noNsFiles[$i]) != $noNsJson[$noNsFiles[$i]]) {
                         $refresh = true;
                         break;
                     }
@@ -1036,6 +1039,13 @@ class Indi {
 
                 // Remove tabs, excessive spaces and newlines
                 $txt = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   '), '', $txt);
+
+            } else if ($ext == 'js') {
+
+                // Remove comments, return-carets, tabs and pseudo tabs (4 spaces) from js
+                $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
+                $txt = preg_replace('!// .*!', '', $txt);
+                $txt = str_replace(array("\r", '    ', "\t"), '', $txt);
             }
 
             // Compress compilation

@@ -839,6 +839,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     panelDockedInner$Actions_Default: function(action) {
+        var me = this;
 
         // If action is visible
         if (action.display == 1) {
@@ -880,12 +881,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     } else {
                         if (typeof this.javascript == 'function') this.javascript(); else {
 
-                            // Backwards compability
+                            /*// Backwards compability
                             this.javascript = this.javascript
                                 .replace(/indi\./g, 'Indi.')
                                 .replace(/Indi\.trail\.item\(/g, 'Indi.trail(');
 
-                            eval(this.javascript);
+                            eval(this.javascript);*/
+                            me.panelDockedInner$Actions_InnerHandler(action, row, aix);
                         }
                     }
                 }
@@ -901,6 +903,58 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Put to the actions stack
             return actionItem;
         }
+    },
+
+    /**
+     * Inner handler function for 'Delete' action button
+     *
+     * @param action
+     * @param row
+     * @param aix
+     */
+    panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix) {
+        var me = this;
+
+        // Show the deletion confirmation message box
+        Ext.MessageBox.show({
+            title: Indi.lang.I_ACTION_DELETE_CONFIRM_TITLE,
+            msg: Indi.lang.I_ACTION_DELETE_CONFIRM_MSG,
+            buttons: Ext.MessageBox.YESNO,
+            icon: Ext.MessageBox.QUESTION,
+            fn: function(answer) {
+                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix)
+            }
+        });
+    },
+
+    /**
+     * Inner handler function choicer. Detects whether special inner handler function exists certainly
+     * for current action, and if yes - call it, or call default otherwise
+     *
+     * @param action
+     * @param row
+     * @param aix
+     */
+    panelDockedInner$Actions_InnerHandler: function(action, row, aix) {
+        var me = this, fn;
+        fn = 'panelDockedInner$Actions$' + Indi.ucfirst(action.alias) + '_InnerHandler';
+        if (typeof me[fn] == 'function') me[fn](action, row, aix);
+        else me.panelDockedInner$Actions_DefaultInnerHandler(action,row, aix);
+    },
+
+    /**
+     * Default inner handler function for action button
+     *
+     * @param action
+     * @param row
+     * @param aix
+     */
+    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix) {
+        var me = this;
+
+        // Build the url and load it
+        Indi.load(me.ti().section.href + action.alias +
+            '/id/' + row.id + '/ph/' + Indi.trail().section.primaryHash + '/aix/' + aix + '/');
     },
 
     /**
