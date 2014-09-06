@@ -3,7 +3,7 @@
  * By ZooKeeper (utf-8 encoding)
  * 6 November 2007
  */
-//Ext.onReady(function() {
+// Ext.onReady(function() {
     if(Ext.Updater) {
         Ext.Updater.defaults.indicatorText = '<div class="loading-indicator">Идет загрузка...</div>';
     }
@@ -320,4 +320,4 @@
             collapsibleSplitTip : "Тяните для изменения размера. Двойной щелчок спрячет панель."
         });
     }
-//});
+// });
