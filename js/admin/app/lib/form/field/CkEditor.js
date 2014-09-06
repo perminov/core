@@ -45,7 +45,10 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         ],
         enterMode: CKEDITOR.ENTER_BR,
         uiColor: '#B8D1F7',
-        defaultWidth: 600
+        defaultWidth: 600,
+        defaultHeight: 200,
+        resize_minWidth: 100,
+        resize_minHeight: 50
     },
 
     // @inheritdoc
