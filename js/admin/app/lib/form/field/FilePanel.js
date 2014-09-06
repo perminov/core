@@ -173,7 +173,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             margin: '0 5 0 0',
             margin: '0 8 0 0',
             width: Indi.metrics.getWidth(me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE : Indi.lang.I_FORM_UPLOAD_BROWSE),
-            width: Indi.metrics.getWidth(me.value ? '&raquo;' : Indi.lang.I_FORM_UPLOAD_BROWSE),
+            width: Indi.metrics.getWidth(me.value ? '&raquo;' : Indi.lang.I_FORM_UPLOAD_BROWSE) + 1,
             buttonConfig: {
                 border: 0,
                 margin: '0 0 0 -1',
