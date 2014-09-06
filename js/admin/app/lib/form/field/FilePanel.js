@@ -14,6 +14,30 @@ Ext.define('Indi.lib.form.field.FilePanel', {
     items: [],
     minHeight: 24,
 
+    // @inheritdoc
+    statics: {
+
+        /**
+         * Handler function, that will be placed as the value of 'onchange' file input element attribute,
+         * to cover the situation, when user clicked on '<input type="file" ...>' and native browser's
+         * file selection window was opened, but, instead of selecting some file and pressing 'OK' in that
+         * native window, user presses 'Cancel'. In such scenario value of '<input type="file" ...>' will
+         * be set to "" (empty string), but this value change is not (for some reason) captured by Ext's
+         * 'xtype: filefield' component, and 'change' event is not fired by that component, so we need to
+         * implement such a solution
+         *
+         * @param dom
+         */
+        fileInputElDomOnChange: function(dom) {
+            var ff, el;
+            if (!dom.value){
+                el = Ext.get(dom);
+                ff = Ext.getCmp(el.up("table").up("table").attr("id"));
+                ff.fireEvent("change", ff, dom.value);
+            }
+        }
+    },
+
     /**
      * Preview container panel
      *
@@ -334,6 +358,16 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         // Bind handler for field resize, and adjust label target
         me.on('resize', me.onResize);
         me.get('browse').labelEl.attr('for', me.get('browse').fileInputEl.id);
+
+        // Provide firing 'change' event in case if user started browsing a file for upload, but then pressed 'Cancel'
+        // button in the native browser's file selection window, that causes emptying of fileInputEl.dom.value, that
+        // is not covered by the execution of expression
+        //    me.fileInputEl.on({
+        //        scope: me,
+        //        change: me.onFileChange
+        //    });
+        // in Ext's filefield component source code
+        me.get('browse').fileInputEl.attr('onchange', 'Indi.form.FilePanel.fileInputElDomOnChange(this)');
 
         // If component's value is previewable
         if (me.preview) {
