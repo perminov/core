@@ -269,7 +269,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         // 'Size' item config
         return {
             xtype: 'displayfield',
-            value: '<a href="' + Indi.pre + '/auxiliary/download/id/' + me.row.id + '/field/'+me.field.id + '/">'
+            value: '<a style="text-decoration: none;" href="' + Indi.pre + '/auxiliary/download/id/' + me.row.id + '/field/'+me.field.id + '/">'
                 + size + '</a>',
             width: Indi.metrics.getWidth(size),
             tooltip: {
@@ -292,7 +292,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         // 'Dims' item config
         return {
             xtype: 'displayfield',
-            value: '<a href="' + Indi.std + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
+            value: '<a style="text-decoration: none;" href="' + Indi.std + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
             width: Indi.metrics.getWidth(me.data.width + 'x' + me.data.height),
             tooltip: {
                 html: Indi.lang.I_FORM_UPLOAD_ORIGINAL,
