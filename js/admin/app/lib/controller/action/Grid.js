@@ -176,23 +176,24 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * Callback for store load, will be fired if current section type = 'grid'
      */
     storeLoadCallbackDefault: function() {
+        var me = this;
 
         // Call parent
-        this.callParent();
+        me.callParent();
 
         // Get the grid panel object
-        var grid = Ext.getCmp(this.bid() + '-rowset-grid');
+        var grid = Ext.getCmp(me.bid() + '-rowset-grid');
 
         // Set the focus on grid, to automatically provide an ability to use keyboard
-        // cursor to navigate through rows
-        grid.getView().focus();
+        // cursor to navigate through rows, but only if it's not prevented
+        if (me.preventViewFocus) me.preventViewFocus = false; else grid.getView().focus();
 
         // Setup last row autoselection, if need
-        if (this.ti().scope.aix) {
+        if (me.ti().scope.aix) {
 
             // Calculate row index value, relative to current page
-            var index = parseInt(this.ti().scope.aix) - 1 - (parseInt(this.ti().scope.page) - 1) *
-                parseInt(this.ti().section.rowsOnPage);
+            var index = parseInt(me.ti().scope.aix) - 1 - (parseInt(me.ti().scope.page) - 1) *
+                parseInt(me.ti().section.rowsOnPage);
 
             // If such row (row at that index) exists in grid - selectit
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
@@ -204,9 +205,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
             binding: [{
                 key: Ext.EventObject.ENTER,
                 fn:  function(){
-                    var btn = Ext.getCmp(this.ctx().bid() + '-button-form'); if (btn) btn.handler();
+                    var btn = Ext.getCmp(me.bid() + '-button-form'); if (btn) btn.handler();
                 },
-                scope: this
+                scope: me
             }]
         });
 

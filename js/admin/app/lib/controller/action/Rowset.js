@@ -219,6 +219,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // If used filter is a combobox or multislider, we reload store data immideatly
             if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
+                me.preventViewFocus = true;
                 me.getStore().reload();
 
             // Else if used filter is not a datefield, or is, but it's value matches proper date format or
@@ -228,6 +229,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 .test(cmp.getRawValue()) || !cmp.getRawValue().length)) {
                 clearTimeout(me.getStore().timeout);
                 me.getStore().timeout = setTimeout(function(){
+                    me.preventViewFocus = true;
                     me.getStore().reload();
                 }, 500);
             }
@@ -290,7 +292,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             handler: function(event, target, owner, tool){
 
                 // Prepare a prefix for filter component ids
-                var filterCmpIdPrefix = me.bid() + '-toolbar-filter-';
+                var filterCmpIdPrefix = me.bid() + '-toolbar-filter$';
 
                 // Setup a flag, what will
                 var atLeastOneFilterIsUsed = false;
