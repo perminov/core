@@ -36,7 +36,8 @@ Ext.define('Indi.lib.controller.action.Row', {
             inner: {
                 master: [
                     {alias: 'back'}, '-',
-                    {alias: 'ID'}, '-',
+                    {alias: 'ID'},
+                    {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
                     {alias: 'create'}, '-',
                     {alias: 'nested'}, '->',
@@ -206,6 +207,30 @@ Ext.define('Indi.lib.controller.action.Row', {
                         }
                     }, 500, input);
                 }
+            }
+        }
+    },
+
+    /**
+     * Master toolbar 'Reload' item, for ability to reload the current row
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Reload: function() {
+        var me = this;
+
+        // 'Reload' item config
+        return {
+            id: me.panelDockedInnerBid() + 'reload',
+            iconCls: 'x-tbar-loading',
+            tooltip: Indi.lang.I_NAVTO_RELOAD,
+            handler: function(){
+
+                // Show mask
+                me.getMask().show();
+
+                // Reload the current uri
+                me.goto(me.uri);
             }
         }
     },
@@ -400,7 +425,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             tooltip: Indi.lang.I_NAVTO_SIBLING,
             disabled: !parseInt(me.ti().scope.found) || (parseInt(me.ti().scope.found) == 1 && me.ti().row.id),
             field: field,
-            value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
+            value: Ext.isNumeric(row.id) ? parseInt(row.id) : row.id,
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store,
             listeners: {

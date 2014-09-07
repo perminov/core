@@ -933,6 +933,8 @@ Ext.define('Indi.lib.form.field.Combo', {
     color: function(data, value) {
         var me = this;
 
+        // Normalize arguments
+        data = data || {};
         value = value || '';
 
         // Declare `info` object
@@ -968,29 +970,17 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (info.src == 'title') info.title = info.color;
         }
 
-        // Setup an internal 'apply' function that will create .i-combo-color-box element
-        // if it doesn't yet exists, or will update it's background color
+        // Setup an internal 'apply' function that will create/update/remove .i-combo-color-box element
+        // and setup/update/remove css 'color' definition
         info.apply = function() {
 
-            // If color was detected
-            if (this.color) {
+            // Update color box/style
+            me.colorDiv.update(this.box);
+            me.keywordEl.css('color', ['boxColor', 'value'].indexOf(this.src) == -1 ? this.color : '');
 
-                // If color should be represented as a color box - setup/update box
-                if (['boxColor', 'value'].indexOf(this.src) != -1)
-                    Ext.defer(function(){me.colorDiv.update(this.box)}, 1, this);
-
-                // Else is color should be represented as color of inner option contents - apply it
-                else Ext.defer(function(){me.keywordEl.css('color', this.color)}, 1, this);
-
-                // Else if there was no color detected in option data
-            } else {
-
-                // Erase colorDiv element contents and erase css color inline declaration
-                Ext.defer(function(){
-                    me.colorDiv.update('')
-                    me.keywordEl.css('color', '');
-                }, 1, this);
-            }
+            // Set keyword text
+            me.keywordEl.val(this.title);
+            me.keywordEl.attr('prev', this.title);
         }
 
         // Return `info` object
@@ -1297,7 +1287,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var keywordChangedToEmpty = ((prev != me.keywordEl.val() || tooFastKeyUp) && me.keywordEl.val() == '' && (!Ext.EventObject.isSpecialKey() || (k == eo.BACKSPACE || k == eo.DELETE)));
 
         // Renew lastTimeKeyUp
-        me.store.lastTimeKeyUp = new Date().getTime();
+        if (!Ext.EventObject.isSpecialKey() || (k == eo.BACKSPACE || k == eo.DELETE)) me.store.lastTimeKeyUp = new Date().getTime();
 
         // If keyword was at least once changed, we switch fetch mode to 'keyword'.
         // We need to take it to attention, because PgUp fetching is impossible in case
@@ -1598,51 +1588,30 @@ Ext.define('Indi.lib.form.field.Combo', {
                 var selectedLi = me.getPicker().el.select('.x-boundlist-item-over').first();
                 var id = selectedLi ? selectedLi.attr(name) : null;
 
-                // If we were running fetch in 'keyword' mode, but then switched to 'no-keyword' mode,
-                // There can be a situation that there will be no li.selected in options list, so we wrap
-                // following code with a condition of li.selected existence
-                if (id !== null && !me.multiSelect) {
-
-                    // Get the index of selected option id in me.store.ids
-                    var index = me.store.ids.indexOf(me.store.enumset ? id : parseInt(id));
-
-                    // Find related title property in me.store.data
-                    var title = me.store.data[index].title.toString().trim();
-
-                    // Setup color box if needed
-                    var color = me.color(me.store.data[index], me.store.ids[index]);
-                    color.apply();
-
-                    // Apply css color, if it was passed within store. Currently this feature is used for
-                    // cases then item title got from database was something like
-                    // <span style="color: red">Some title</span>. At such cases, php code which is preparing
-                    // combo data, strips that html from option, but detect defined color and
-                    // store it in ...['data'][i].system['color'] property
-                    var css = {color: ''};
-                    if (me.store.data[index].system && me.store.data[index].system['color']
-                        && typeof me.store.data[index].system['color'] == 'string')
-                        css.color = me.store.data[index].system['color'];
-                    me.keywordEl.css(css);
-
-                    // Adjust width of .i-combo-table element for it to fit all available space
-                    me.comboTableFit();
-
-                    // Set keyword text
-                    me.keywordEl.val(color.title);
-                    me.keywordEl.attr('prev', color.title);
-                }
+                // Set temporary value for combo. It will mean that combo will look the same
+                // as if value was assigned, but without actual value change
+                me.setTemporaryValue(id);
             }
             return false;
 
-            // Esc key or Tab key
-        } else if (code == Ext.EventObject.ESC || code == Ext.EventObject.TAB) {
+        // Esc key or Tab key
+        } else if (code == Ext.EventObject.TAB) {
 
             // If there is no currently selected option, we just hide suggestions list,
             // Else if there is - we select it by the same way as it would clicked,
             // but only if combo is not running in multiple-values mode
             if (me.multiSelect || me.onItemSelect() === false) me.collapse();
 
-            // Other keys
+        // Esc key
+        } else if (code == Ext.EventObject.ESC) {
+
+            // Get combo back to the state, that combo had before expanding.
+            // Here we use setTemporaryValue() function, with no argument, that
+            // will be threated by this function as a directive, meaning that
+            // actual combo `value` property should be used instead of missing argument
+            me.setTemporaryValue();
+
+        // Other keys
         } else {
 
             // If combo is multiple
@@ -2422,5 +2391,40 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Fit picker width to combo width
         if (me.picker) me.getPicker().setWidth(me.triggerWrap.getWidth());
+    },
+
+    /**
+     * Do all look and feel adjustments for combo, that would happen
+     * if some value would be assigned, but withoud actual assigning
+     *
+     * @param id
+     */
+    setTemporaryValue: function(id) {
+        var me = this, index, color;
+
+        // If no `id` argument was given - use current value of `value` property of current combo
+        id = arguments.length ? id : me.value;
+
+        // If we were running fetch in 'keyword' mode, but then switched to 'no-keyword' mode,
+        // There can be a situation that there will be no li.selected in options list, so we wrap
+        // following code with a condition of li.selected existence
+        if (!me.multiSelect) {
+
+            if (id !== null) {
+
+                // Get the index of selected option id in me.store.ids
+                index = me.store.ids.indexOf(me.store.enumset ? id : parseInt(id));
+
+                // Setup color box if needed
+                color = me.color(me.store.data[index], me.store.ids[index]);
+
+            } else color = me.color();
+
+            // Apply color and color-trimmed keyword value or unset both, if `id` argument is null
+            color.apply();
+
+            // Adjust width of .i-combo-table element for it to fit all available space
+            me.comboTableFit();
+        }
     }
 });
