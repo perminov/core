@@ -217,7 +217,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Object}
      */
     panelDockedInner$Reload: function() {
-        var me = this;
+        var me = this, url;
 
         // 'Reload' item config
         return {
@@ -229,8 +229,12 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Show mask
                 me.getMask().show();
 
+                // Build the url
+                url = me.ti().section.href + me.ti().action.alias + '/id/'+ me.ti().row.id
+                    +'/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
+
                 // Reload the current uri
-                me.goto(me.uri);
+                me.goto(url);
             }
         }
     },
@@ -551,7 +555,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     panelDockedInner$Nested: function() {
         var me = this, btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
-        //console.log(btnSave.pressed);
+
         // 'Nested' item config
         return {
             id: me.panelDockedInnerBid() + 'nested',
