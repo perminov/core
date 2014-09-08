@@ -170,9 +170,10 @@ class Indi_Db_Table
      * @param int $parentId
      * @param int $selected
      * @param null|string $keyword
+     * @param bool $offsetDetection
      * @return Indi_Db_Table_Rowset object
      */
-    public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null) {
+    public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null, $offsetDetection = false) {
         // Get raw tree
         $tree = $this->fetchRawTree($order, $where);
 
@@ -427,8 +428,8 @@ class Indi_Db_Table
             'page' => $page
         );
 
-        // Return rowset
-        return new $this->_rowsetClass($data);
+        // Return rowset/offset
+        return $offsetDetection ? $start : new $this->_rowsetClass($data);
     }
 
     /**
@@ -587,6 +588,9 @@ class Indi_Db_Table
         // Prepare WHERE and ORDER clauses
         if (is_array($where) && count($where)) $where = implode(' AND ', $where);
         if (is_array($order) && count($order)) $order = implode(', ', $order);
+
+        // If current model is a tree - use special approach for offset detection
+        if ($this->treeColumn()) return ($this->fetchTree($where, $order, 1, null, null, $id, null, true) + 1) . '';
 
         // Offset variable
         Indi::db()->query('SET @o=0;');
@@ -785,13 +789,22 @@ class Indi_Db_Table
         if (is_array($where) && count($where)) $where = implode(' AND ', $where);
         if (is_array($order) && count($order)) $order = implode(', ', $order);
 
+        // If we are trying to get row by offset, and current model is a tree - use special approach
+        if ($offset !== null && $this->treeColumn())
+            return $this->fetchTree($where, $order, 1, $offset + 1)->current();
+
+        // Else use usual approach
+        else {
+            $data = Indi::db()->query($sql =
+                'SELECT * FROM `' . $this->_table . '`' .
+                    (strlen($where) ? ' WHERE ' . $where : '') .
+                    ($order ? ' ORDER BY ' . $order : '') .
+                    ($offset ? ' LIMIT ' . $offset . ',1' : '')
+            )->fetch();
+        }
+
         // Build query, fetch row and return it as an Indi_Db_Table_Row object
-        if ($data = Indi::db()->query($sql =
-            'SELECT * FROM `' . $this->_table . '`' .
-                (strlen($where) ? ' WHERE ' . $where : '') .
-                ($order ? ' ORDER BY ' . $order : '') .
-                ($offset ? ' LIMIT ' . $offset . ',1' : '')
-        )->fetch()) {
+        if ($data) {
 
             // Release memory
             unset($where, $order, $offset);
