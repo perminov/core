@@ -240,7 +240,7 @@ Ext.define('Indi', {
                     ttrSMatch = ttrMMatch[i].match(ttrSRex);
                     ttrSFoundTrA = ttrSMatch[2].split(',');
                     for (var j = 0; j < ttrSFoundTrA.length; j++) {
-                        var found = Ext.ComponentQuery.query('#' + pid + ' > [name="' + ttrSFoundTrA[j].replace(/^tr-/, '') +'"]');
+                        var found = Ext.getCmp(pid).query('> [name="' + ttrSFoundTrA[j].replace(/^tr-/, '') +'"]');
                         ttrSReplaceTrA.push(found.length ? found[0].id : ttrSFoundTrA[j]);
                     }
                     ttrSReplace = ttrMMatch[i].replace(ttrSFoundTrA.join(','), ttrSReplaceTrA.join(','));

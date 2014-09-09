@@ -42,8 +42,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     {alias: 'create'}, '-',
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
-                ],
-                tmp: [{text: 'tmp'}]
+                ]
             }
         }
     },

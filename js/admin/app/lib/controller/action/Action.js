@@ -196,5 +196,186 @@ Ext.define('Indi.lib.controller.action.Action', {
             // Return
             return itemI.items ? itemI : null;
         });
+    },
+
+    /**
+     * Panel filter toolbar builder
+     *
+     * @return {Object}
+     */
+    panelDocked$Filter: function() {
+        var me = this;
+
+        // 'Filter' toolbar config
+        return {
+            xtype: 'toolbar',
+            dock: 'top',
+            hidden: (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
+            padding: '1 5 5 5',
+            id: me.bid() + '-toolbar$filter',
+            layout: 'auto',
+            items: [{
+                xtype:'fieldset',
+                id: me.bid()+'-toolbar$filter-fieldset',
+                padding: '0 0 1 3',
+                title: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_TITLE,
+                width: '100%',
+                layout: 'column',
+                defaults: {
+                    margin: '0 5 4 2',
+                    labelSeparator: '',
+                    labelPad: 6,
+                    labelStyle: 'padding-left: 0'
+                },
+                items: me.panelDocked$FilterItemA()
+            }],
+            doRequest: function() {
+                Ext.Ajax.request({
+                    method: 'GET',
+                    url: me.uri,
+                    params: {search: this.extraParams},
+                    success: me.obarRequestCallback
+                });
+            }
+        }
+    },
+
+    /**
+     * Get Options/Filters toolbar
+     *
+     * @return {*}
+     */
+    getObar: function() {
+        return Ext.getCmp(this.bid() + '-toolbar$filter');
+    },
+
+    /**
+     * Build and return array of filter toolbar items configs
+     *
+     * @return {Array}
+     */
+    panelDocked$FilterItemA: function() {
+
+        // Declare toolbar filter panel items array, and some additional variables
+        var me = this, itemA = [];
+
+        // Setup filters
+        if (me.panel.docked && me.panel.docked.inner && me.panel.docked.inner.filter && me.panel.docked.inner.filter.length)
+            itemA = me.push(me.panel.docked.inner.filter, 'panelDocked$Filter', false, function(itemI){
+                return Ext.merge({
+                    listeners: {
+                        change: function(cmp) {
+                            me.filterChange(cmp);
+                        }
+                    }
+                }, itemI);
+            });
+
+        // Return filter toolbar items
+        return itemA;
+    },
+
+    /**
+     * Handler for any filter change
+     *
+     * @param cmp Component, that fired filterChange
+     */
+    filterChange: function(cmp){
+
+        // Setup auxilliary variables/shortcuts
+        var me = this, fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset';
+
+        // Declare an array for params, which will be fulfiled with filters's values
+        var paramA = [];
+
+        // Get all filter components
+        var filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+
+        // Foreach filter component id in filterCmpIdA array
+        for (var i = 0; i < filterCmpA.length; i++) {
+
+            // We do not involve values of hidden or disabled filter components in request query building
+            if (filterCmpA[i].hidden || filterCmpA[i].disabled) continue;
+
+            // Define a shortcut for filter filed alias
+            var alias = filterCmpA[i].name;
+
+            // Get current filter value
+            var value = filterCmpA[i].getValue();
+
+            // If current filter is filter for color-field, and it's value is [0, 360], we set 'value' variable
+            // as '' (empty string) because such value for color field filter mean that filter is not used
+            if (filterCmpA[i].xtype == 'multislider' && JSON.stringify(filterCmpA[i].getValue()) == '[0,360]')
+                value = '';
+
+            // If value is not empty
+            if (value + '' != '' && value !== null) {
+
+                // Prepare param object for storing current filter value. We will be using separate objects for
+                // each used filter, e.g [{property1: "value1"}, {property2: "value2"}], instead of single object
+                // {property1: "value1", property2: "value2"}, because it's the way of how extjs use it, for
+                // passing sorting params within store request, so here we just do by the same way
+                var paramO = {};
+
+                // If current filter is a ext's datefield components
+                if (filterCmpA[i].xtype == 'datefield') {
+
+                    // If format of date, used in ext's datafield component - differs from 'Y-m-d'
+                    if (filterCmpA[i].format != 'Y-m-d') {
+
+                        // We get the raw value in that format, convert it back to 'Y-m-d' format
+                        // and assign to paramO's object certain property as a current filter value
+                        paramO[alias] = Ext.Date.format(
+                            Ext.Date.parse(filterCmpA[i].getRawValue(), filterCmpA[i].format),
+                            'Y-m-d'
+                        );
+
+                    // Else we just assign the value to param's object certain property as a current filter value
+                    } else paramO[alias] = filterCmpA[i].getRawValue();
+
+                // Else if current filter is not a ext's datetime component
+                } else {
+
+                    // We just assign the value to param's object certain property as a current filter value, too
+                    paramO[alias] = filterCmpA[i].getValue();
+                }
+
+                // Push the paramO object to the param stack
+                paramA.push(paramO);
+            }
+        }
+
+        // Apply collected used filter alises and their values as a this.getStore().proxy.extraParams property
+        me.getObar().extraParams = {search: JSON.stringify(paramA)};
+
+        // Adjust an 'url' property of  this.getStore().proxy object, to apply keyword search usage
+        me.getObar().url = me.uri;
+
+        // If there is no noReload flag turned on
+        if (!cmp.noReload) {
+
+            // If used filter is a combobox or multislider, we do a request immediately
+            if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
+                me.getObar().doRequest();
+
+            // Else if used filter is not a datefield, or is, but it's value matches proper date format or
+            // value is empty, we reload store data with a 500ms delay, because direct typing is allowed in that
+            // datefield, so it's better to reload after user has finished typing.
+            } else if (cmp.xtype != 'datefield' || (/^([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}\.[0-9]{2}\.[0-9]{4})$/
+                .test(cmp.getRawValue()) || !cmp.getRawValue().length)) {
+                clearTimeout(me.getObar().timeout);
+                me.getObar().timeout = setTimeout(function(){
+                    me.getObar().doRequest();
+                }, 500);
+            }
+        }
+    },
+
+    /**
+     * Callback function for requests, made by Options/Filters toolbar
+     *
+     * @param response
+     */
+    obarRequestCallback: function(response) {
     }
 });

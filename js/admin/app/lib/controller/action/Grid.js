@@ -212,7 +212,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
 
         // Adjust grid column widths
-        this.gridColumnAFit();
+        me.gridColumnAFit();
     },
 
     /**
