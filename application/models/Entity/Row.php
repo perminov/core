@@ -41,8 +41,39 @@ class Entity_Row extends Indi_Db_Table_Row {
 
         // If all files were deleted - try to delete empty directory and return it's success,
         // else return count of files that were not deleted for some reason
-        return $deleted == count($fileA) ? rmdir($dir) : count($fileA) - $deleted;
+        $return = $deleted == count($fileA) ? rmdir($dir) : count($fileA) - $deleted;
+
+        // Delete all files/folder uploaded/created while using CKFinder
+        $this->deleteCKFinderFiles();
+
+        // Return
+        return $return;
 	}
+
+    /**
+     * Delete all of the files/folders uploaded/created as a result of CKFinder usage. Actually,
+     * this function can do a deletion only in one case - if entity/model, that current row is representing
+     * - is involved in 'alternate-cms-users' feature. That feature assumes, that any row, related to
+     * such an entity/model - is representing a separate user account, that have ability to sign in into the
+     * Indi Engine system interface, and users might have been signing into the interface and using CKFinder,
+     * so this function provides the removing such usage results
+     *
+     * @return mixed
+     */
+    public function deleteCKFinderFiles () {
+
+        // If CKFinder upload dir (special dir for entity/model,
+        // that current row instance represents) does not exist - return
+        if (($dir = Indi::model($this->id)->dir('exists', true)) === false) return;
+
+        // Delete recursively all the contents - folder and files
+        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+            $path->isDir() ? rmdir($path->getPathname()) : unlink($path->getPathname());
+        }
+
+        // Remove the directory itself
+        rmdir($dir);
+    }
 
     /**
      * Create/rename database table, refresh/remove cache file, rename upload folder if need
@@ -65,7 +96,7 @@ class Entity_Row extends Indi_Db_Table_Row {
             // Run the RENAME TABLE sql query
             Indi::db()->query('RENAME TABLE  `' . $this->_original['table'] . '` TO  `' . $this->_modified['table'] . '`');
 
-            // Get the original upload directory name
+            // Get the original ordinary upload directory name
             $old = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_original['table'] . '/';
 
             // If directory exists - rename it
@@ -73,6 +104,20 @@ class Entity_Row extends Indi_Db_Table_Row {
 
                 // Get the new directory name
                 $new = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_modified['table'] . '/';
+
+                // Do rename
+                rename($old, $new);
+            }
+
+            // Get the original CKFinder upload directory name
+            $old = Indi::model($this->id)->dir('name', true);
+
+            // If directory exists - rename it
+            if (is_dir($old)) {
+
+                // Get the new directory name
+                $new = DOC . STD . '/' . Indi::ini()->upload->path . '/' . Indi::ini()->ckeditor->uploadPath
+                    . '/' . $this->_modified['table'] . '/';
 
                 // Do rename
                 rename($old, $new);

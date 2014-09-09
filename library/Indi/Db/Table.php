@@ -1123,13 +1123,33 @@ class Indi_Db_Table
      * perform the full scope of operations, and return error, if error will be met, or directory name, if directory
      * is exists and writable
      *
+     * If $ckeditor argument is set to boolean `true`, then function will do the stuff with CKFinder uploads directory.
+     * This feature is a part of a concept, that assumes that if database table (that current model is linked to)
+     * is used as a place where cms special users are stored, these users should have access (via CKFinder) only to
+     * their own files, stored in their own special directories, that are within main CKFinder uploads directory.
+     *
+     * Example:
+     *
+     * We have Teacher model, and, of course, `teacher` database table, where all details of all teachers are stored.
+     * So, if we decided to give each teacher the ability to access the admin area, for them to be able to create their
+     * own education documents/materials via WYSIWYG-editor (Indi Engine uses CKEditor as a WYSIWYG-editor). Any teacher
+     * may need to upload some files (images, pdfs, etc) on a server, so Indi Engine provides that feature using CKFinder,
+     * that, in it turn, deals with some certain folder, where all files uploaded by it (it - mean CKFinder) are stored.
+     * So, this feature is a part of an access restriction policy, so any teacher won't be able to deal with files,
+     * that were uploaded by other teachers.
+     *
+     *
      * @param string $mode
+     * @param bool|int $ckfinder
      * @return string
      */
-    public function dir($mode = '') {
+    public function dir($mode = '', $ckfinder = false) {
 
         // Build the target directory name
-        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+        $dir = DOC . STD . '/' . Indi::ini()->upload->path
+            . ($ckfinder ? '/' . Indi::ini()->ckeditor->uploadPath : '')
+            . '/' . $this->_table . '/'
+            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '');
 
         // If $only argument is true
         if ($mode == 'name') return $dir;

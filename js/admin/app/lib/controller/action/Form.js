@@ -94,6 +94,9 @@ Ext.define('Indi.lib.controller.action.Form', {
         var me = this, cbAutosave = Ext.getCmp(me.panelDockedInnerBid() + 'autosave'),
             toggleA = ['save', 'autosave'], toggleI;
 
+        // If we are within readOnly mode - return
+        if (me.row.readOnly) return;
+
         // For each master toolbar item, that should be affected on form saving ability change
         for (var i = 0; i < toggleA.length; i++) {
 
@@ -118,6 +121,13 @@ Ext.define('Indi.lib.controller.action.Form', {
     // @inheritdoc
     initComponent: function() {
         var me = this;
+
+        // Detect if readOnly mode should turned On
+        me.row.readOnly = true;
+        for (var i = 0; i < me.ti().actions.length; i++)
+            if (me.ti().actions[i].alias == 'save')
+                me.row.readOnly = false;
+
         me.id = me.bid();
         me.row = Ext.merge({
             id: me.id + '-form',
@@ -227,6 +237,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: this.bid() + '-field$' + field.alias,
             xtype: 'textfield',
+            readOnly: me.row.readOnly,
             fieldLabel: field.title,
             labelWidth: '100%',
             name: field.alias,
@@ -454,10 +465,7 @@ Ext.define('Indi.lib.controller.action.Form', {
     panelDockedInner$Save: function() {
 
         // Here we check if 'save' action is in the list of allowed actions
-        var me = this, formCmp = Ext.getCmp(me.bid() + '-form'); me.ti().disableSave = true;
-        for (var i = 0; i < me.ti().actions.length; i++)
-            if (me.ti().actions[i].alias == 'save')
-                me.ti().disableSave = false;
+        var me = this;
 
         // 'Save' item config
         return {
@@ -467,7 +475,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             handler: function() {
                 me.goto(me.panelDockedInner$Back(true), true);
             },
-            disabled: me.ti().disableSave,
+            disabled: me.row.readOnly,
             iconCls: 'i-btn-icon-save',
             pressed: me.ti().scope.toggledSave
         }
@@ -487,7 +495,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             id: me.panelDockedInnerBid() + 'autosave',
             xtype: 'checkbox',
             tooltip: {html: Indi.lang.I_AUTOSAVE, staticOffset: [0, 4]},
-            disabled: me.ti().disableSave,
+            disabled: me.row.readOnly,
             iconCls: 'i-btn-icon-save',
             cls: 'i-cb-autosave',
             checked: me.ti().scope.toggledSave,
@@ -528,7 +536,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: me.panelDockedInnerBid() + 'create',
             iconCls: 'i-btn-icon-create',
-            disabled: parseInt(me.ti().section.disableAdd) || me.ti().disableSave ? true : false,
+            disabled: parseInt(me.ti().section.disableAdd) || me.row.readOnly ? true : false,
             tooltip: Indi.lang.I_NAVTO_CREATE,
             handler: function(){
 

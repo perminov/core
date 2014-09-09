@@ -11,6 +11,7 @@
  * Other settings may be left with their default values, or used to control
  * advanced features of CKFinder.
  */
+session_start();
 
 /**
  * This function must check the user session to be sure that he/she is
@@ -30,7 +31,7 @@ function CheckAuthentication()
 	// user logs in your system. To be able to use session variables don't
 	// forget to add session_start() at the top of this file.
 
-	return true;
+	return $_SESSION['admin']['id'];
 }
 
 // LicenseKey : Paste your license key here. If left blank, CKFinder will be
@@ -68,6 +69,8 @@ foreach (array('www', 'core') as $p) {
     }
 }
 $baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
+
+if ($_SESSION['admin']['alternate']) $baseUrl .= $_SESSION['admin']['alternate'] . '/' . $_SESSION['admin']['id'] . '/';
 /*
 $baseDir : the path to the local directory (in the server) which points to the
 above $baseUrl URL. This is the path used by CKFinder to handle the files in

@@ -339,6 +339,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Delete all files (images, etc) that have been attached to row
         $this->deleteFiles();
 
+        // Delete all files/folder uploaded/created while using CKFinder
+        $this->deleteCKFinderFiles();
+
         // Delete other rows of entities, that have fields, related to entity of current row
         // This function also covers other situations, such as if entity of current row has a tree structure,
         // or row has dependent rowsets
@@ -1091,6 +1094,30 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Delete them
         foreach ($fileA as $fileI) @unlink($fileI);
+    }
+
+
+    /**
+     * Delete all of the files/folders uploaded/created as a result of CKFinder usage. Actually,
+     * this function can do a deletion only in one case - if entity, that current row is related to
+     * - is involved in 'alternate-cms-users' feature. This feature assumes, that any row, related to
+     * such an entity/model - is representing a separate user account, that have ability to sign in into the
+     * Indi Engine system interface, and therefore may have access to CKFinder
+     *
+     * @return mixed
+     */
+    public function deleteCKFinderFiles () {
+
+        // If CKFinder upload dir (special dir for current row instance) does not exist - return
+        if (($dir = $this->model()->dir('exists', $this->id)) === false) return;
+
+        // Delete recursively all the contents - folder and files
+        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+            $path->isDir() ? rmdir($path->getPathname()) : unlink($path->getPathname());
+        }
+
+        // Remove the directory itself
+        rmdir($dir);
     }
 
     /**
