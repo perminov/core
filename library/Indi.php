@@ -1606,4 +1606,48 @@ class Indi {
         // Return info
         return array('size' => $size, 'mime' => $mime, 'ext' => $ext);
     }
+
+    /**
+     * This function is useful for short-hand access to values, passed within json_encoded value of
+     * $_GET's 'search' param
+     *
+     * @static
+     * @param null $arg1
+     * @param null $arg2
+     * @return array
+     */
+    public static function obar($arg1 = null, $arg2 = null) {
+
+        // If there is no 'search' param within query string - set up it as json-encoded empty array
+        if (!Indi::get('search')) Indi::get('search', json_encode($obar = array()));
+
+        // Json-decode $_GET's 'search' param
+        $rawA = json_decode(Indi::get('search'), true);
+
+        // Build the $obar array
+        foreach ($rawA as $rawI) $obar[key($rawI)] = current($rawI);
+
+        // If no arguments given - return $_GET's search param as a usage-friendly array
+        if (func_num_args() == 0) return $obar;
+
+        // Else if single argument given - assume it's a key within $obar, and return it's value
+        else if (func_num_args() == 1) return $obar[func_get_arg(0)];
+
+        // Else if two arguments given - assume it's a key and a value, that should be assigned to a key
+        else if (func_num_args() == 2) {
+
+            // Assign the value
+            $obar[$arg1] = $arg2;
+
+            // Prepare a new array, that will be used a replacement for $_GET's 'search' param
+            $rawA = array(); foreach ($obar as $k => $v) $rawA[] = array($k => $v);
+
+            // Replace, so Indi::get()->search will reflect new value ($arg2 argument)
+            // assignment for a given key ($arg1 argument)
+            Indi::get()->search = json_encode($rawA);
+
+            // Return assigned value
+            return $obar[$arg1];
+        }
+    }
 }

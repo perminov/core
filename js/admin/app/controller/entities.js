@@ -44,9 +44,9 @@ Ext.define('Indi.controller.entities', {
             },
             store: {
             }*/
-            storeLoadCallback: function() {
+            /*storeLoadCallback: function() {
                 //console.log(this, 'entities');
-            },
+            },*/
             panelToolbarFilterItemI$System: function(filter) {
                 //console.log(filter);
                 //filter.items[0].text = '';
@@ -55,7 +55,7 @@ Ext.define('Indi.controller.entities', {
                 };*/
                 return filter;
             },
-            panelToolbarFilterItemA1: function() {
+            /*panelToolbarFilterItemA1: function() {
                 var itemA = Object.getPrototypeOf(this).panelToolbarFilterItemA.call(this, arguments);
 
                 itemA.push({
@@ -76,16 +76,15 @@ Ext.define('Indi.controller.entities', {
                     }
                 });
                 return itemA;
-            }
+            }*/
         },
 
         form: {
             panel: {
                 docked: {
-                    items: [{alias: 'master'}, {alias: 'bottom', dock: 'bottom'}],
+                    items: [{alias: 'master'}],
                     inner: {
-                        //master: [{alias: 'save'}, '-', {alias: 'nested'}],
-                        //bottom: [{alias: 'back'}]
+                        filter: [{xtype: 'textfield', name: 'hello'}]
                     }
                 }
             },
@@ -121,6 +120,10 @@ Ext.define('Indi.controller.entities', {
 
             formItem$Title: function(field, item) {
                 return {allowBlank: false}
+            },
+
+            obarRequestCallback: function(response) {
+                console.log(response.responseText);
             }
         }
     }
