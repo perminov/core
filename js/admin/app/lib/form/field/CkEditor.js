@@ -104,6 +104,12 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         for (i = 0; i < me.editorCfg.contentsJs.length; i++)
             if (me.editorCfg.contentsJs[i].match(/^\/.*\.js$/))
                 me.editorCfg.contentsJs[i] = Indi.std + me.editorCfg.contentsJs[i];
+
+        // Setup readOnly mode if needed
+        if (me.readOnly) {
+            me.editorCfg.removeDialogTabs = 'link:upload;image:Upload;flash:Upload';
+            me.editorCfg.readOnly = true;
+        }
     },
 
     /**

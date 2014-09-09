@@ -136,8 +136,10 @@
 		config.width = config.height = '100%';
 		//config.skin = 'v1';
 		config.uiColor = '#dfe8f6';
+        // Get CkEditor component
+        var id = decodeURIComponent(get('CKEditor')).replace(/-inputEl/, '');
 		// Check if CKFinder should be used in read-only mode
-		$.post(window.opener.location.pathname.replace('/form/', '/save/') + '?check', function(access){
+		$.post(window.opener.Ext.getCmp(id).ctx().uri.replace('/form/', '/save/') + '?check', function(access){
 			if (access != 'ok') {
 				config.readOnly = true;
 			}
