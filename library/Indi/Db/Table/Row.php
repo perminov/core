@@ -977,7 +977,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Return a model, that current row is related to
      *
-     * @return mixed
+     * @return Indi_Db_Table
      */
     public function model() {
         return Indi::model($this->_table);
@@ -986,7 +986,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Return a database table name, that current row is dealing with
      *
-     * @return mixed
+     * @return string
      */
     public function table() {
         return $this->_table;

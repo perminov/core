@@ -637,6 +637,18 @@ class Indi_Db_Table
     }
 
     /**
+     * Provide write access to _evalFields property.
+     * If $evalField argument is given - function will return boolean true or false, depends on whether or not
+     * $evalField is within list of eval fields
+     *
+     * @param array $evalFields
+     * @return array
+     */
+    public function setEvalFields($evalFields = array()) {
+        return $this->_evalFields = $evalFields;
+    }
+
+    /**
      * Provide readonly access to _fileFields property.
      * If $fileField argument is given - function will return boolean true or false, depends on whether or not
      * $fileField is within list of file fields
