@@ -686,4 +686,37 @@ class Field_Row extends Indi_Db_Table_Row {
     public function clearEnumset() {
         if ($this->id) Indi::db()->query('DELETE FROM `enumset` WHERE `fieldId` = "' . $this->id . '"');
     }
+
+    /**
+     * Implementation of toArray() function, special for Field_Row class.
+     * Here we exclude values, stored in $this->_compiled, from the process of converting
+     * current Field_Row object to array, to prevent possibility of any other values being
+     * overwritten ones stored under same keys in $this->_compiled property.
+     * After conversion is done, the initial state of $this->_compiled property is restored.
+     *
+     * @param string $type
+     * @param bool $deep
+     * @return array
+     */
+    public function toArray($type = 'current', $deep = true) {
+
+        // If toArray conversion mode is 'current'
+        if ($type == 'current') {
+
+            // Backup values, stored in $this->_compiled property
+            $compiled = $this->_compiled;
+
+            // Reset $this->_compiled property
+            $this->_compiled = array();
+        }
+
+        // Do regular conversion
+        $return = parent::toArray($type, $deep);
+
+        // If toArray conversion mode is 'current' - restore $this->_compiled property
+        if ($type == 'current') $this->_compiled = $compiled;
+
+        // Return conversion result
+        return $return;
+    }
 }

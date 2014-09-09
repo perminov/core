@@ -343,6 +343,9 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemXNumber: function(item) {
         return {
             xtype: 'numberfield',
+            cls: 'i-field-number',
+            afterSubTpl: '<span class="i-field-number-after">'+item.field.params.measure+'</span>',
+            maxLength: item.field.params.maxlength,
             minValue: 0
         };
     },
@@ -594,7 +597,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             });
 
             // Submit form
-            if (formCmp.getForm().isValid()) formCmp.submit(); else me.getMask().hide();
+            if (formCmp.getForm().isValid()) formCmp.submit({submitEmptyText: false}); else me.getMask().hide();
 
         // Else
         } else {

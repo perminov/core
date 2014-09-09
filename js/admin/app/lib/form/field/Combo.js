@@ -39,11 +39,23 @@ Ext.define('Indi.lib.form.field.Combo', {
     grow: true,
 
     /**
-     * Number of items, that will be visible by default
+     * Number of items, that will be available by default, assuming optionHeight = 14px
      *
      * @type {Number}
      */
-    visibleCount: 20,
+    optionsOnPage: 20,
+
+    /**
+     * Default option height in pixels
+     *
+     * @type {Number}
+     */
+    defaultOptionHeight: 14,
+
+    /**
+     * Measure of width, related to single '&nbsb;' symbol. Used to convert &nbsp;-indends to padding-left-indents
+     */
+    nbspPx: 4,
 
     /**
      * Regular expression for color detecting
@@ -75,31 +87,31 @@ Ext.define('Indi.lib.form.field.Combo', {
      */
     tplSingle: [
         '<div class="i-combo i-combo-form">',
-        '<div class="i-combo-single x-form-text">',
-        '<table class="i-combo-table"><tr>',
-        '<td class="i-combo-color-box-cell">',
-        '<div class="i-combo-color-box-div">',
-        '{selected.box}',
-        '</div>',
-        '</td>',
-        '<td class="i-combo-keyword-cell">',
-        '<div class="i-combo-keyword-div">',
-        '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
-        '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}" <tpl if="me.boolean">boolean="true"</tpl>/>',
-        '</div>',
-        '</td>',
-        '<td class="i-combo-infoCell">',
-        '<div class="i-combo-info-div">',
-        '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
-        '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
-        '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
-        '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
-        '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
-        '</tr></table>',
-        '</div>',
-        '</td>',
-        '</tr></table>',
-        '</div>',
+            '<div class="i-combo-single x-form-text">',
+                '<table class="i-combo-table"><tr>',
+                    '<td class="i-combo-color-box-cell">',
+                        '<div class="i-combo-color-box-div">',
+                            '{selected.box}',
+                        '</div>',
+                    '</td>',
+                    '<td class="i-combo-keyword-cell">',
+                        '<div class="i-combo-keyword-div">',
+                            '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
+                            '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}" <tpl if="me.boolean">boolean="true"</tpl>/>',
+                        '</div>',
+                    '</td>',
+                    '<td class="i-combo-infoCell">',
+                        '<div class="i-combo-info-div">',
+                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
+                                '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
+                                '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+                                '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
+                            '</tr></table>',
+                        '</div>',
+                    '</td>',
+                '</tr></table>',
+            '</div>',
         '</div>'
     ],
 
@@ -107,42 +119,43 @@ Ext.define('Indi.lib.form.field.Combo', {
      * Template for use in case if combo runs in multiple-values mode
      */
     tplMultiple: [
-        '<div class="i-combo i-combo-form" {me.grow}>',
-        '<div class="i-combo-multiple x-form-text<tpl if="me.grow != true"> i-combo-multiple-inlined</tpl>">',
-        '<tpl if="me.grow != true"><div></tpl>',
-        '<tpl for="selected.items">',
-        '<span class="i-combo-selected-item" selected-id="{id}"<tpl if="style">{style}<tpl elseif="font">style="{font}"</tpl>>',
-        '{box}{title}',
-        '<span class="i-combo-selected-item-delete"></span>',
-        '</span>',
-        '</tpl>',
-        '<div class="i-combo-table-wrapper"><table class="i-combo-table"><tr>',
-        '<td class="i-combo-color-box-cell">',
-        '<div class="i-combo-color-box-div">',
-        '{selected.box}',
-        '</div>',
-        '</td>',
-        '<td class="i-combo-keyword-cell">',
-        '<div class="i-combo-keyword-div">',
-        '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
-        '<input id="{me.field.alias}" type="hidden" value="<tpl if="selected.value">{selected.value}</tpl>" name="{me.field.alias}"/>',
-        '</div>',
-        '</td>',
-        '<td class="i-combo-infoCell">',
-        '<div class="i-combo-info-div">',
-        '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
-        '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
-        '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
-        '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
-        '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
-        '</tr></table>',
-        '</div>',
-        '</td>',
-        '</tr></table>',
-        '</div>',
-        '<tpl if="me.grow != true"></div></tpl>',
-        '<div class="i-combo-clear" style="clear: both;"></div>',
-        '</div>',
+        '<div class="i-combo i-combo-form">',
+            '<div class="i-combo-multiple x-form-text<tpl if="me.grow != true"> i-combo-multiple-inlined</tpl>">',
+                '<tpl if="me.grow != true"><div></tpl>',
+                '<tpl for="selected.items">',
+                    '<span class="i-combo-selected-item" selected-id="{id}"<tpl if="style">{style}<tpl elseif="font">style="{font}"</tpl>>',
+                        '{box}{title}',
+                        '<span class="i-combo-selected-item-delete"></span>',
+                    '</span>',
+                '</tpl>',
+                '<div class="i-combo-table-wrapper">' +
+                    '<table class="i-combo-table"><tr>',
+                        '<td class="i-combo-color-box-cell">',
+                            '<div class="i-combo-color-box-div">',
+                                '{selected.box}',
+                            '</div>',
+                        '</td>',
+                        '<td class="i-combo-keyword-cell">',
+                            '<div class="i-combo-keyword-div">',
+                                '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
+                                '<input id="{me.field.alias}" type="hidden" value="<tpl if="selected.value">{selected.value}</tpl>" name="{me.field.alias}"/>',
+                            '</div>',
+                        '</td>',
+                        '<td class="i-combo-infoCell">',
+                            '<div class="i-combo-info-div">',
+                                '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                    '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
+                                    '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
+                                    '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
+                                    '<td class="i-combo-info-foundCell"><span class="i-combo-found"></span></td>',
+                                '</tr></table>',
+                            '</div>',
+                        '</td>',
+                    '</tr></table>',
+                '</div>',
+                '<tpl if="me.grow != true"></div></tpl>',
+                '<div class="i-combo-clear" style="clear: both;"></div>',
+            '</div>',
         '</div>'
     ],
 
@@ -177,7 +190,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             cls: 'x-boundlist x-boundlist-default',
             border: 0,
             floating: true,
-            maxHeight: me.visibleCount * parseInt(me.field.params.optionHeight || 14) + 1,
+            maxHeight: me.getPickerMaxHeight(),
             autoScroll: true,
             listeners: {
                 afterrender: function() {
@@ -612,9 +625,11 @@ Ext.define('Indi.lib.form.field.Combo', {
 
     // @inheritdoc
     expand: function() {
-        var me = this;
+        var me = this, selected;
         me.callParent(arguments);
         if (me.isInfoShowable()) me.infoEl.addCls('i-combo-info-expanded');
+        if (selected = me.getPicker().body.select('.x-boundlist-item-over').first())
+            selected.scrollIntoView(me.getPicker().body)
     },
 
     // @inheritdoc
@@ -630,7 +645,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         notShowable = me.keywordEl.attr('no-lookup') == 'true'
             || me.store.enumset
-            || me.found() <= me.visibleCount;
+            || me.found() <= me.optionsOnPage;
 
         return !me.disabled && (me.infoEl.attr('fetch-mode') == 'keyword' || !notShowable);
     },
@@ -711,23 +726,8 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Update picker panel contents
         me.getPicker().update(html);
 
-        // If picker contents is not empty
-        if (html) {
-
-            // Get default options height
-            var defaultHeight = parseInt(me.getPicker().el.select('li').first().getStyle('height'));
-
-            // Get required option height
-            var requiredHeight = parseInt(me.field.params.optionHeight || me.store.optionHeight);
-
-            // Set special css class for options if optionHeight > 14
-            if (requiredHeight > defaultHeight) {
-                me.getPicker().el.select('.x-boundlist-item').css({height: requiredHeight + 'px'});
-            }
-
-            // Bind 'hover' and 'click' event handlers for boundlist items
-            me.bindItemHoverClick();
-        }
+        // If picker contents is not empty - Bind 'hover' and 'click' event handlers for boundlist items
+        if (html) me.bindItemHoverClick();
     },
 
     // @inheritdoc
@@ -743,6 +743,31 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Determine options height. This value will be involved in a number of calculations
+     *
+     * @param mode
+     * @return {String}
+     */
+    getOptionHeight: function(mode) {
+        var me = this, height = parseInt(me.field.params.optionHeight)
+            ? parseInt(me.field.params.optionHeight) : me.defaultOptionHeight;
+
+        return me.defaultOptionHeight == height
+            ? (mode == 'style' ? '' : height)
+            : (mode == 'style' ? 'height: ' + height + 'px;' : height);
+    },
+
+    /**
+     * Get picker maximum height
+     *
+     * @return {String}
+     */
+    getPickerMaxHeight: function() {
+        var me = this, height = me.getOptionHeight();
+        return (me.optionsOnPage * me.defaultOptionHeight/height) * height + 1
+    },
+
+    /**
      * Build options html
      *
      * @param json Source data for html building
@@ -752,11 +777,14 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this, name = me.name, items = [],
             groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}},
             groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '',
-            disabledCount = 0, color = {}, item;
+            disabledCount = 0, color = {}, item, height = me.getOptionHeight('style'), css;
 
         // Foreach options groups
         for (var j in groups) {
             if (j != 'none') {
+
+                // Reset inline styles array
+                css = [];
 
                 // Open <li>
                 item = '<li class="x-boundlist-item x-boundlist-item-group x-boundlist-item-disabled"';
@@ -767,7 +795,10 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // combo data, strips that html from option, but detect defined color and
                 // store it in ...['data'][i].system['color'] property
                 if (groups[j].system && groups[j].system['color'] && typeof groups[j].system['color'] == 'string')
-                    item += ' style="color: ' + groups[j].system['color'] + ';"';
+                    css.push('color: ' + groups[j].system['color'] + ';');
+
+                // Insert inline styles
+                if (css.length)  item += ' style="' + css.join(' ') + '"';
 
                 // Close <li>
                 item += '>';
@@ -785,7 +816,10 @@ Ext.define('Indi.lib.form.field.Combo', {
                 if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {
 
                     // Classes for option
-                    var cls = ['x-boundlist-item'];
+                    var cls = ['x-boundlist-item'], indent = groupIndent + '';
+
+                    // Reset inline styles array
+                    css = [];
 
                     // Open <li>, and append value attribute
                     item = '<li' + ' ' + name + '="' + json['ids'][i] + '"';
@@ -830,18 +864,24 @@ Ext.define('Indi.lib.form.field.Combo', {
                     // store it in ...['data'][i].system['color'] property
                     if (json['data'][i].system && json['data'][i].system['color']
                         && typeof json['data'][i].system['color'] == 'string')
-                        item += ' style="color: ' + json['data'][i].system['color'] + ';"';
-
-                    // Enclose opening <li> tag
-                    item += '>';
-
-                    // Prepend option title with optgroup indent, if optgroups are used
-                    item += groupIndent;
+                        css.push('color: ' + json['data'][i].system['color']);
 
                     // Prepend option title with indent if needed
                     if (json['data'][i].system && json['data'][i].system['indent']
                         && typeof json['data'][i].system['indent'] == 'string')
-                        item += json['data'][i].system['indent'];
+                        indent += json['data'][i].system['indent'];
+
+                    // Setup left padding, as it will be used to represent the indents
+                    if (indent) css.push('padding-left: ' + (indent.length/6 * me.nbspPx) + 'px;');
+
+                    // Setup height
+                    if (height) css.push(height);
+
+                    // Insert inline styles
+                    if (css.length)  item += ' style="' + css.join(' ') + '"';
+
+                    // Enclose opening <li> tag
+                    item += '>';
 
                     // If 'option' property exists (mean that 'template' combo param is used),
                     // we use 'option' property contents as <li> inner contents, instead of 'title' contents
@@ -1057,7 +1097,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var neededIndexes = [];
 
         // Variable for stepping up once non-disabled option is catched
-        var groupIndex = 0;
+        var groupIndex = 0, reg, level, previousLevel;
         for (var i = 0; i < items.length; i++) {
 
             // We do this action only if it is a non-disabled option
@@ -1067,11 +1107,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                 neededIndexes.push(i);
 
                 // We check all-level parents of current option.
-                var reg = items[i].match(/<li[^>]+>([&nbsp;]*)/);
-                var level = reg[1] ? reg[1].length/6/5 : 0;
+                reg = items[i].match(/<li[^>]+style="[^"]*padding-left: ([0-9]+)px;[^"]*"[^>]*>/);
+                level = reg ? parseInt(reg[1])/(me.nbspPx*5) : 0;
                 for (var j = i - 1; j >= groupIndex; j--) {
-                    var reg = items[j].match(/<li[^>]+>([&nbsp;]*)/);
-                    var previousLevel = reg[1] ? reg[1].length/6/5 : 0;
+                    reg = items[j].match(/<li[^>]+style="[^"]*padding-left: ([0-9]+)px;[^"]*"[^>]*>/);
+                    previousLevel = reg ? parseInt(reg[1])/(me.nbspPx*5) : 0;
                     if (previousLevel < level) {
                         if (neededIndexes.indexOf(j) == -1) {
                             neededIndexes.push(j);
@@ -1526,8 +1566,8 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                     // PgDn key
                 } else if (code == Ext.EventObject.PAGE_DOWN) {
-                    if (parseInt(me.keywordEl.attr('selectedIndex')) < size - me.visibleCount) {
-                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+me.visibleCount);
+                    if (parseInt(me.keywordEl.attr('selectedIndex')) < size - me.optionsOnPage) {
+                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))+me.optionsOnPage);
                         me.getPicker().el.attr('more', '');
                     } else if (parseInt(me.keywordEl.attr('selectedIndex')) <= size) {
                         if (me.count() < me.found()){
@@ -1543,8 +1583,8 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                     // PgUp key
                 } else if (code == Ext.EventObject.PAGE_UP) {
-                    if (parseInt(me.keywordEl.attr('selectedIndex')) > me.visibleCount) {
-                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-me.visibleCount);
+                    if (parseInt(me.keywordEl.attr('selectedIndex')) > me.optionsOnPage) {
+                        me.keywordEl.attr('selectedIndex', parseInt(me.keywordEl.attr('selectedIndex'))-me.optionsOnPage);
                         me.getPicker().el.attr('more', '');
                     } else {
                         if (me.count() < me.found()){
@@ -1564,24 +1604,29 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Provide picker contents appropriate scrolling, depending on currently selected item
                 me.getPicker().el.select('.x-boundlist-item').each(function(el, c, liIndex){
+                    var si = parseInt(me.keywordEl.attr('selectedIndex'));
+
+                    // Increment disabled count
                     if (el.hasCls('x-boundlist-item-disabled')) disabledCount++;
-                    if (!el.hasCls('x-boundlist-item-disabled') && parseInt(me.keywordEl.attr('selectedIndex')) > 0 && liIndex == parseInt(me.keywordEl.attr('selectedIndex'))-1 + disabledCount) {
+
+                    // If current item is active
+                    if (!el.hasCls('x-boundlist-item-disabled') && si > 0 && liIndex == si - 1 + disabledCount) {
+
+                        // Add hover class
                         el.addCls('x-boundlist-item-over');
+
+                        // Setup selectedIndex attribute
                         me.keywordEl.attr('selectedIndex', liIndex + 1 - disabledCount);
+
+                        // Reset disabled count
                         disabledCount = 0;
-                        var visibleS = me.getPicker().body.getScroll().top/me.store.optionHeight;
-                        var visibleE = visibleS + me.visibleCount - 1;
-                        var delta = 0;
-                        if (liIndex > visibleE) {
-                            delta = (liIndex - visibleE) * me.store.optionHeight;
-                        } else if (liIndex < visibleS) {
-                            delta = (liIndex - visibleS) * me.store.optionHeight;
-                        }
-                        var expr = (delta > 0 ? '+' : '-')+'='+Math.abs(delta)+'px';
-                        if (delta) me.getPicker().scrollBy({x: 0, y: delta});
-                    } else {
-                        el.removeCls('x-boundlist-item-over');
-                    }
+
+                        // Setup scrolling
+                        if (liIndex == 1) me.getPicker().body.scrollTo('top', 0);
+                        else el.scrollIntoView(me.getPicker().body);
+
+                    // Else remove hover class
+                    } else el.removeCls('x-boundlist-item-over');
                 });
 
                 // Get hidden value while walking trough options list
@@ -1917,7 +1962,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             me.infoEl.attr('page-top-reached', 'true');
 
             // Also, we should renew 'page-btm-reached' attribute value
-            me.infoEl.attr('page-btm-reached', responseData['found'] <= me.visibleCount ? 'true' : 'false');
+            me.infoEl.attr('page-btm-reached', responseData['found'] <= me.optionsOnPage ? 'true' : 'false');
         }
 
         // Bind 'hover' and 'click' event handlers for boundlist items
@@ -1944,10 +1989,10 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (requestData.more && requestData.more.toString().match(/^(upper|lower)$/)) {
 
                 // If these was no more results
-                if (responseData.ids['length'] <= me.visibleCount) {
+                if (responseData.ids['length'] <= me.optionsOnPage) {
 
                     // We mark that top|bottom range is reached
-                    if (responseData.ids['length'] < me.visibleCount)
+                    if (responseData.ids['length'] < me.optionsOnPage)
                         me.infoEl.attr('page-'+(requestData.more == 'upper' ? 'top' : 'btm')+'-reached', 'true');
 
                     // Move selectedIndex at the most top
@@ -1955,7 +2000,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         me.keywordEl.attr('selectedIndex', 1);
 
                         // Move selectedIndex at the most bottom
-                    } else if (requestData.more == 'lower' && responseData.ids['length'] < me.visibleCount) {
+                    } else if (requestData.more == 'lower' && responseData.ids['length'] < me.optionsOnPage) {
                         me.keywordEl.attr('selectedIndex', me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').getCount());
                     }
                 }
