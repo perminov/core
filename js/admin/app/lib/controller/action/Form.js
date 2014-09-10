@@ -262,7 +262,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 }
             },
             getDirtyIcon: function() {
-                if (!this.dirtyIcon) this.dirtyIcon = this.el.createChild({cls: 'i-field-dirty-icon'});
+                if (!this.dirtyIcon) this.dirtyIcon = this.el.createChild({cls: 'i-field-dirty-icon', html: '&nbsp;'});
                 return this.dirtyIcon
             }
         }
