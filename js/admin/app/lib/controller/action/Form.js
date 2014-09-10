@@ -22,6 +22,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'save'}, {alias: 'autosave'}, '-',
+                    {alias: 'reset'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
                     {alias: 'create'}, '-',
                     {alias: 'nested'}, '->',
@@ -48,6 +49,10 @@ Ext.define('Indi.lib.controller.action.Form', {
         listeners: {
             validitychange: function(form, valid){
                 if (valid) this.ctx().toggleSaveAbility(valid);
+            },
+            dirtychange: function(form, dirty) {
+                var resetBtn = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'reset');
+                if (resetBtn) resetBtn.setDisabled(!dirty);
             },
             actioncomplete: function(form, action) {
                 if (action.result.redirect) Indi.load(action.result.redirect);
@@ -247,7 +252,18 @@ Ext.define('Indi.lib.controller.action.Form', {
             listeners: {
                 validitychange: function(cmp, valid){
                     if (!valid) me.toggleSaveAbility(valid);
+                },
+                dirtychange: function(cmp, dirty) {
+                    cmp.getDirtyIcon().alignTo(cmp.el, 'tl', [0, 1]);
+                    cmp.getDirtyIcon().setVisible(dirty);
+                },
+                resize: function(cmp) {
+                    if (cmp.dirtyIcon) cmp.dirtyIcon.alignTo(cmp.el, 'tl', [0, 1]);
                 }
+            },
+            getDirtyIcon: function() {
+                if (!this.dirtyIcon) this.dirtyIcon = this.el.createChild({cls: 'i-field-dirty-icon'});
+                return this.dirtyIcon
             }
         }
     },
@@ -299,6 +315,12 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXCalendar: function(item) {
+
+        // Prevent field from being marked as dirty in case if initial value is "0000-00-00", but actual (Date object)
+        // value is null, because "0000-00-00" can't be converted into a valid Date object
+        if (item.value == '0000-00-00') item.value = null;
+
+        // Config
         return {
             xtype: 'datefield',
             ariaTitle: '',
@@ -314,6 +336,13 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXDatetime: function(item) {
+
+        // Prevent field from being marked as dirty in case if initial value is "0000-00-00 00:00:00",
+        // but actual (Date object) value is null, because "0000-00-00 00:00:00" can't be converted
+        // into a valid Date object
+        if (item.value == '0000-00-00 00:00:00') item.value = null;
+
+        // Config
         return {
             xtype: 'datetimefield',
             cls: 'i-field-datetime',
@@ -522,6 +551,26 @@ Ext.define('Indi.lib.controller.action.Form', {
                         btnSave.getEl().removeCls('x-btn-default-toolbar-small-over');
                     });
                 }
+            }
+        }
+    },
+
+    /**
+     * Master toolbar 'Reset' item, for ability to reset form changes
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Reset: function() {
+        var me = this;
+
+        // 'Reset' item config
+        return {
+            id: me.panelDockedInnerBid() + 'reset',
+            iconCls: 'i-btn-icon-reset',
+            disabled: true,
+            tooltip: Indi.lang.I_NAVTO_RESET,
+            handler: function() {
+                Ext.getCmp(me.row.id).getForm().reset();
             }
         }
     },

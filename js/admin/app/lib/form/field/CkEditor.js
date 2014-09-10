@@ -156,9 +156,34 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         // Setup center alignment for editor, if 'wide' editor config params is set to 'true'
         if (me.editorCfg.wide == 'true') me.bodyEl.setStyle('text-align', 'center');
 
-        // Update component value if editor value was changed
-        me.getEditor().on('blur', function(eventInfo) {
-            me.setValue(eventInfo.editor.getData())
-        });
+        // Setup interval for value live pickup from editor
+        me.mirrorInterval = setInterval(function(){
+            me.setValue(me.getEditor().getData(), true);
+        }, 250, me);
+    },
+
+    // @inheritdoc
+    setValue: function(value, dontUpdateEditor) {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Set editor data
+        if (me.getEditor() && !dontUpdateEditor) me.getEditor().setData(value);
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+
+        // Clear mirror interval
+        clearInterval(me.mirrorInterval);
+
+        // Delete CKEDITOR instance
+        delete CKEDITOR.instances[me.inputId];
+
+        // Call parent
+        me.callParent();
     }
 });
