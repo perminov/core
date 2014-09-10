@@ -233,6 +233,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-back{background-image: url('/i/admin/btn-icon-back.png');}
 .i-btn-icon-save{background-image: url('/i/admin/btn-icon-save.png');}
 .i-btn-icon-toggle{background-image: url('/i/admin/btn-icon-toggle.png');}
+.i-btn-icon-reset{background-image: url('/i/admin/btn-icon-reset.png');}
 .i-btn-icon-up{background-image: url('/i/admin/btn-icon-up.png');}
 .i-btn-icon-down{background-image: url('/i/admin/btn-icon-down.png');}
 .i-btn-icon-xls{background-image: url('/i/admin/btn-icon-xls.png');}
