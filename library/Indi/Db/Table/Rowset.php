@@ -221,7 +221,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     public function offsetGet($offset) {
         $offset = (int) $offset;
         if ($offset < 0 || $offset >= $this->_count) {
-            throw new Exception("Illegal index $offset");
+            return null;
         }
         $this->_pointer = $offset;
 
