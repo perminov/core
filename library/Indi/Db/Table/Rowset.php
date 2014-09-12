@@ -16,7 +16,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     protected $_table = '';
 
     /**
-     * Contain keys, that current rowset have nested rowset under
+     * Contain keys, that current rowset have nested rowsets under
      *
      * @var array
      */
@@ -710,7 +710,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Setup foreign data for nested rowset, if need
             if ($foreign) $nestedRs->foreign($foreign);
 
-            // Setup foreign data for nested rowset, if need
+            // Setup nested data for nested rowset, if need
             if ($nested) {
                 if (is_array($nested)) $nestedRs->nested($nested[0], $nested[1], $nested[2], $nested[3], $nested[4]);
                 else $nestedRs->nested($nested);
