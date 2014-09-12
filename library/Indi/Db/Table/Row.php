@@ -1282,7 +1282,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (is_array($fetch)) {
 
                 // Define the allowed keys within $fetch array
-                $params = array('where', 'order', 'count', 'page', 'offset');
+                $params = array('where', 'order', 'count', 'page', 'offset', 'foreign', 'nested');
 
                 // Unset all keys within $fetch array, that are not allowed
                 foreach ($fetch as $k => $v) if (!in_array($k, $params)) unset($fetch[$k]);
@@ -1309,8 +1309,20 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Else an Exception will be thrown, as connector field do not exists or don't have store relation ability
             else throw new Exception();
 
-            // Fetch nested rowset, assign it under $key key within $this->_nested array and return that rowset
-            return $this->_nested[$key] = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
+            // Fetch nested rowset, assign it under $key key within $this->_nested array
+            $this->_nested[$key] = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
+
+            // Setup foreign data for nested rowset, if need
+            if ($foreign) $this->_nested[$key]->foreign($foreign);
+
+            // Setup nested data for nested rowset, if need
+            if (is_string($nested)) $this->_nested[$key]->nested($nested);
+            else if (is_array($nested))
+                foreach ($nested as $args)
+                    $this->_nested[$key]->nested($args[0], $args[1], $args[2], $args[3], $args[4]);
+
+            // Return nested rowset
+            return $this->_nested[$key];
         }
     }
 

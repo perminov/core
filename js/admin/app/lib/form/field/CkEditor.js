@@ -87,6 +87,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         if (!me.editorCfg.contentsCss) me.editorCfg.contentsCss = [];
         else if (!Array.isArray(me.editorCfg.contentsCss)) me.editorCfg.contentsCss = [me.editorCfg.contentsCss];
         if (me.editorCfg.style) me.editorCfg.contentsCss.push(me.editorCfg.style);
+        me.editorCfg.contentsCss.push('body{min-width: 100%;}');
         for (i = 0; i < me.editorCfg.contentsCss.length; i++)
             if (me.editorCfg.contentsCss[i].match(/^\/.*\.css$/))
                 me.editorCfg.contentsCss[i] = Indi.std + me.editorCfg.contentsCss[i];
