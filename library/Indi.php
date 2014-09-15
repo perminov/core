@@ -1624,6 +1624,9 @@ class Indi {
         // Json-decode $_GET's 'search' param
         $rawA = json_decode(Indi::get('search'), true);
 
+        // If Json-encoded string was invalid - return empty array
+        if (!is_array($rawA)) return array();
+
         // Build the $obar array
         foreach ($rawA as $rawI) $obar[key($rawI)] = current($rawI);
 
