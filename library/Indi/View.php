@@ -637,4 +637,17 @@ class Indi_View {
         $this->$storeVar = $store;
         return $store[$name];
     }
+
+    /**
+     * Involve some other view into the rendering process.
+     * This is useful when we are in some view, and want to additionally use some other view, by specifying
+     * that view using it's filename (without file extension). Note that this function will use caller's view file
+     * location as the directory where other view, specified by $name argument, would be tried to be found
+     *
+     * @param $name
+     */
+    public function other($name) {
+        $file = str_replace('\\', '/', array_shift(array_shift(debug_backtrace(false))));
+        include preg_replace('/\/[a-z0-9A-Z]+\.php/', '/' . $name . '.php', $file);
+    }
 }
