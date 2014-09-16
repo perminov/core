@@ -86,3 +86,7 @@
     background-position: -34px -11px;
 }
 
+/* Browser fixes */
+.x-safari .x-form-cb-label.x-form-cb-label-after{
+    top: 1px !important;
+}
