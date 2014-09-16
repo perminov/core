@@ -244,7 +244,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'textfield',
             readOnly: me.row.readOnly,
             fieldLabel: field.title,
-            labelWidth: '100%',
+            labelWidth: '50%',
             name: field.alias,
             value: this.ti().row[field.alias],
             field: field,
