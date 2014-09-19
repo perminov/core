@@ -120,7 +120,9 @@ class Db {
     function mget($table, $where = '', $field = '*', $order = null) {
 
         // Build the sql query
-        $sql = 'SELECT ' . $field . ' FROM ' . $table . ' ' . ($where ? 'WHERE ' . $where : '') . ($order ? ' ORDER BY ' . $order : '');
+        $sql = preg_match('/\s/', $table)
+            ? $table
+            : 'SELECT ' . $field . ' FROM ' . $table . ' ' . ($where ? 'WHERE ' . $where : '') . ($order ? ' ORDER BY ' . $order : '');
 
         // Get the result resource
         $mr = self::query($sql);

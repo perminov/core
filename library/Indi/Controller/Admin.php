@@ -355,8 +355,10 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @return string
      */
     public function alternateWHERE($trailStepsUp = 0) {
-        if ($_SESSION['admin']['alternate'] && Indi::trail($trailStepsUp)->model->fields($_SESSION['admin']['alternate'] . 'Id'))
-            return '`' . $_SESSION['admin']['alternate'] . 'Id` = "' . $_SESSION['admin']['id'] . '"';
+        if ($_SESSION['admin']['alternate'] && $alternateFieldR = Indi::trail($trailStepsUp)->model->fields($_SESSION['admin']['alternate'] . 'Id'))
+            return $alternateFieldR->storeRelationAbility == 'many'
+                ? 'FIND_IN_SET("' . $_SESSION['admin']['id'] . '", `' . $_SESSION['admin']['alternate'] . 'Id' . '`)'
+                : '`' . $_SESSION['admin']['alternate'] . 'Id' . '` = "' . $_SESSION['admin']['id'] . '"';
     }
 
     /**
@@ -2015,7 +2017,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Return clause
         return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
-            ? 'FIND_IN_SET("' . $connectorValue . '" IN `' . $connectorAlias . '`)'
+            ? 'FIND_IN_SET("' . $connectorValue . '", `' . $connectorAlias . '`)'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
 }
