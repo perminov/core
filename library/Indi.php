@@ -728,20 +728,26 @@ class Indi {
      * @return mixed
      */
     public static function registry($key = null, $value = null) {
-        // If only $key param passed, the assigned registry value will be returned
+
+		// If only $key param passed, the assigned registry value will be returned
         if (func_num_args() == 1) return self::$_registry[$key];
 
-        // Else if $value argument was given - it will be placed into registry under passed $key param.
-        // If $value argument is an array, it will be converted to a new instance of ArrayObject class,
-        // with setting ArrayObject::ARRAY_AS_PROPS flag for that newly created instance properties
-        // to be also accessible as if they were an array elements
-        else if (func_num_args() == 2)
-            return self::$_registry[$key] = is_array($value)
-                ? new ArrayObject($value, ArrayObject::ARRAY_AS_PROPS)
-                : $value;
+        // Else if $value argument was given
+        else if (func_num_args() == 2) {
+
+			// If $value argument is null, unset the value from registry
+			if ($value === null) unset(self::$_registry[$key]); 
+
+			// Else placed it into registry under passed $key param.
+			// If $value argument is an array, it will be converted to a new instance of ArrayObject class,
+			// with setting ArrayObject::ARRAY_AS_PROPS flag for that newly created instance properties
+			// to be also accessible as if they were an array elements
+			else return self::$_registry[$key] = is_array($value)
+				? new ArrayObject($value, ArrayObject::ARRAY_AS_PROPS)
+				: $value;
 
         // Else if no arguments passed, return the whole registry
-        else if (func_num_args() == 0) return self::$_registry;
+        } else if (func_num_args() == 0) return self::$_registry;
     }
 
     /**
