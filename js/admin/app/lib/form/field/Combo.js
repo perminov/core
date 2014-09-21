@@ -1479,7 +1479,7 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
-     * Converts a given string to version, representing this string as is it was types in a different keyboard
+     * Converts a given string to version, representing this string as is it was typed in a different keyboard
      * layout
      *
      * @param string
@@ -1487,31 +1487,56 @@ Ext.define('Indi.lib.form.field.Combo', {
      */
     convertWKL: function(string){
 
-        // Define an array for english alphabetic characters
-        var en = ['~','Q','W','E','R','T','Y','U','I','O','P','{','}',
-            'A','S','D','F','G','H','J','K','L',':','"',
-            'Z','X','C','V','B','N','M','<','>',
+        // Define object, containing characters that are located on the
+        // same keyboard buttons, but within another keyboad layouts
+        var kl = {
 
-            '`','q','w','e','r','t','y','u','i','o','p','[',']',
-            'a','s','d','f','g','h','j','k','l',';',"'",
-            'z','x','c','v','b','n','m',',','.'];
+            // Define an array for english alphabetic characters
+            en: ['~','Q','W','E','R','T','Y','U','I','O','P','{','}',
+                'A','S','D','F','G','H','J','K','L',':','"',
+                'Z','X','C','V','B','N','M','<','>',
 
-        // Define an array for russian alphabetic characters
-        var ru = ['Ё','Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ',
-            'Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э',
-            'Я','Ч','С','М','И','Т','Ь','Б','Ю',
+                '`','q','w','e','r','t','y','u','i','o','p','[',']',
+                'a','s','d','f','g','h','j','k','l',';',"'",
+                'z','x','c','v','b','n','m',',','.'],
 
-            'ё','й','ц','у','к','е','н','г','ш','щ','з','х','ъ',
-            'ф','ы','в','а','п','р','о','л','д','ж','э',
-            'я','ч','с','м','и','т','ь','б','ю'];
+            // Define an array for russian alphabetic characters
+            ru: ['Ё','Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ',
+                'Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э',
+                'Я','Ч','С','М','И','Т','Ь','Б','Ю',
+
+                'ё','й','ц','у','к','е','н','г','ш','щ','з','х','ъ',
+                'ф','ы','в','а','п','р','о','л','д','ж','э',
+                'я','ч','с','м','и','т','ь','б','ю']
+        }
 
         // Define a variable for converted equivalent, and index variable
-        var converted = '', j;
+        var converted = '', names = Object.keys(kl);
 
         // For each character within given string find its equvalent and append to 'converted' variable
         for (var i = 0; i < string.length; i++) {
+
+            // Get character
             var c = string.substr(i, 1);
-            converted += (j = en.indexOf(c)) != -1 ? ru[j] : ((j = ru.indexOf(c)) != -1 ? en[j] : c);
+
+            // Define/reset and detect character source keyboard layout, and reset destination layout
+            for (var k = 0, src = '', dst = ''; k < names.length; k++)
+                if (kl[names[k]].indexOf(c) != -1)
+                    src = names[k];
+
+            // If no source was detected - try another next character
+            if (!src) converted += c; else {
+
+                // If source layout differs from current language
+                // - setup current language as destination layout
+                if (src != Indi.lang.name) dst = Indi.lang.name;
+
+                // Else if source layout is 'ru' - setup destination layout as 'en'
+                else if (src == 'ru') dst = 'en';
+
+                // Get converted character
+                if (dst) converted += kl[dst][kl[src].indexOf(c)];
+            }
         }
 
         // Return keyword value, converted to a different keyboard layout

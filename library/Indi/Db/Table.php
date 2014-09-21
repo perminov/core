@@ -189,14 +189,19 @@ class Indi_Db_Table
         // If we have to deal a keyword search clause we have different behaviour
         if ($keyword) {
 
+            // Get the title column
+            $titleColumn = $this->titleColumn();
+
             // Check if keyword is a part of color value in format #rrggbb, and if so, we use RLIKE mysql command instead
             // of LIKE, and prepare a special regular expression
             if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
                 $rlike = '^[0-9]{3}' . $keyword . '[0-9a-fA-F]{' . (7 - mb_strlen($keyword, 'utf-8')) . '}$';
-                $where[] = '`' . $this->titleColumn() . '` RLIKE "' . $rlike . '"';
-            } else {
-                $where[] = '`' . $this->titleColumn() . '` LIKE "' . $keyword . '%"';
-            }
+                $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
+
+            // Else
+            } else $where[] = ($keyword2 = Indi::kl($keyword))
+                ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
+                : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
 
             // Fetch rows that match $where clause, ant set foundRows
             $foundRs = $this->fetchAll($where, $order, $count, $page);

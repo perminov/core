@@ -1020,6 +1020,10 @@ class Indi {
                     // Setup key-value pairs, converted to JSON, under defined javascript namespace
                     echo "$ns = Ext.Object.merge($ns, " . json_encode($kvp) . ");";
 
+                    // If namespace is given, and is 'Indi.lang' - setup an additional
+                    // `name` property, that will store current language identifier
+                    if ($ns == 'Indi.lang') echo 'Ext.Object.merge(Indi.lang, {name: "' . Indi::ini('lang')->admin . '"});';
+
                 // Echo that file contents
                 } else readfile($file);
 
@@ -1658,5 +1662,80 @@ class Indi {
             // Return assigned value
             return $obar[$arg1];
         }
+    }
+
+    /**
+     * Converts a given string to version, representing this string as is it was typed
+     * in a different keyboard layout. The 'kl' abbreviation mean 'keyboard layout'
+     *
+     * @static
+     * @param string $string
+     * @param null|string $l - layout to convert to, e.g. 'ru', 'en' or others
+     * @return string
+     */
+    public static function kl($string, $l = null) {
+
+        // Define object, containing characters that are located on the
+        // same keyboard buttons, but within another keyboard layouts
+        $kl = array(
+
+            // Define an array for english alphabetic characters
+            'en' => array('~','Q','W','E','R','T','Y','U','I','O','P','{','}',
+                'A','S','D','F','G','H','J','K','L',':','"',
+                'Z','X','C','V','B','N','M','<','>',
+
+                '`','q','w','e','r','t','y','u','i','o','p','[',']',
+                'a','s','d','f','g','h','j','k','l',';',"'",
+                'z','x','c','v','b','n','m',',','.'),
+
+            // Define an array for russian alphabetic characters
+            'ru' =>  array('Ё','Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ',
+                'Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э',
+                'Я','Ч','С','М','И','Т','Ь','Б','Ю',
+
+                'ё','й','ц','у','к','е','н','г','ш','щ','з','х','ъ',
+                'ф','ы','в','а','п','р','о','л','д','ж','э',
+                'я','ч','с','м','и','т','ь','б','ю')
+        );
+
+        // Define a variable for converted equivalent, and index variable
+        $converted = ''; $names = array_keys($kl);
+
+        // For each character within given string find its equivalent and append to 'converted' variable
+        for ($i = 0; $i < mb_strlen($string, 'utf-8'); $i++) {
+
+            // Get character
+            $c = mb_substr($string, $i, 1, 'utf-8');
+
+            // Define auxiliary variables
+            $src = ''; $dst = ''; $at = null;
+
+            // Define/reset and detect character source keyboard layout, and reset destination layout
+            for ($k = 0; $k < count($names); $k++)
+                if (($j = array_search($c, $kl[$names[$k]])) !== false) {
+                    $src = $names[$k];
+                    $at = $j;
+                }
+
+            // If no source was detected - try another next character
+            if (!$src) $converted .= $c; else {
+
+                // If $l argument is given - setup $dst variable with the value of $l argument
+                if ($l) $dst = $l;
+
+                // Else if source layout differs from current language
+                // - setup current language as destination layout
+                else if ($src != Indi::ini('lang')->admin) $dst = Indi::ini('lang')->admin;
+
+                // Else if source layout is 'ru' - setup destination layout as 'en'
+                else if ($src == 'ru') $dst = 'en';
+
+                // Get converted character
+                if ($dst) $converted .= $kl[$dst][$at];
+            }
+        }
+
+        // Return converted string
+        return $converted;
     }
 }
