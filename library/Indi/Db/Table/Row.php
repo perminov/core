@@ -581,11 +581,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
             }
 
-
             // Unset found rows to prevent disabling of paging up
             if ($unsetFoundRows) $dataRs->found('unset');
 
-            // Otherwise
+        // Otherwise
         } else {
 
             // If we selected option is set, or if we have keyword that results should match, special logic will run
@@ -597,19 +596,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Get WHERE clause for options fetch
                 if ($selectedTypeIsKeyword) {
-                    if (!preg_match('/\(/', $order)) {
-                        //$order = 'TRIM(SUBSTR(`' . $titleColumn . '`, 1))';
-                    }
+
                     // Check if keyword is a part of color value in format #rrggbb, and if so, we use RLIKE instead
                     // of LIKE, and prepare a special regular expression
                     if (preg_match('/^#[0-9a-fA-F]{0,6}$/', $keyword)) {
                         $rlike = '^[0-9]{3}' . $keyword . '[0-9a-fA-F]{' . (7 - mb_strlen($keyword, 'utf-8')) . '}$';
                         $where['lookup'] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
-                    } else {
-                        $where['lookup'] = '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
-                    }
 
-                    // We should get results started from selected value only if we have no $satellite argument passed
+                    // Else
+                    } else $where['lookup'] = ($keyword2 = Indi::kl($keyword))
+                        ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
+                        : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+
+                // We should get results started from selected value only if we have no $satellite argument passed
                 } else if (is_null(func_get_arg(4))) {
 
                     // If $order is a name of a column, and not an SQL expression, we setup results start point as

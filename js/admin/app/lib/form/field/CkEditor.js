@@ -48,7 +48,8 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         defaultWidth: 600,
         defaultHeight: 200,
         resize_minWidth: 100,
-        resize_minHeight: 50
+        resize_minHeight: 50,
+        language: Indi.lang.name
     },
 
     // @inheritdoc

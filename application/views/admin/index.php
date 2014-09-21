@@ -42,9 +42,7 @@
         '/js/admin/app/lib/controller/action/Rowset.js',
         '/js/admin/app/lib/controller/action/Grid.js',
         '/js/admin/app/lib/controller/action/Row.js',
-        '/js/admin/app/lib/controller/action/Form.js',
-
-        /*'/js/admin/indi.combo.sibling.js'*/
+        '/js/admin/app/lib/controller/action/Form.js'
     ));
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',
