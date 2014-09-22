@@ -561,7 +561,6 @@ Ext.define('Indi.lib.controller.action.Row', {
             xtype: 'shrinklist',
             displayField: 'title',
             hidden: !me.ti().sections.length,
-            disabled: !me.ti().row.id && btnSave && !btnSave.pressed,
             tooltip: {
                 html: Indi.lang.I_NAVTO_NESTED,
                 hideDelay: 0,
@@ -575,6 +574,10 @@ Ext.define('Indi.lib.controller.action.Row', {
                 data : me.ti().sections
             },
             listeners: {
+                afterrender: function(cmp) {
+                    var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
+                    cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
+                },
                 itemclick: function(cmp, row) {
                     me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
                         +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
