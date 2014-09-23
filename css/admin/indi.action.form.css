@@ -71,6 +71,10 @@
     background-color: #DDFFE0;
     height: 22px;
 }
+
+.i-field .x-checkboxgroup-form-item {
+    margin-bottom: 0;
+}
 /* Style for action form topbar spinners*/
 .x-toolbar .x-form-trigger-wrap .x-form-spinner-down{
     background-position: 0 -11px;

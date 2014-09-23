@@ -425,13 +425,9 @@ Ext.define('Indi.lib.controller.action.Form', {
             });
         }
         return {
-            xtype: 'fieldcontainer',
-            defaultType: 'radio',
-            defaults: {
-                flex: 1,
-                height: 10
-            },
-            layout: 'vbox',
+            xtype: 'radiogroup',
+            columns: 1,
+            vertical: true,
             items: optionA,
             listeners: {
                 afterrender: function(cmp) {
@@ -439,7 +435,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     checked.fireEvent('change', checked, true);
                 }
             }
-        };
+        }
     },
 
     /**
