@@ -176,7 +176,8 @@ class Indi_Db {
                     $fieldI['nested']['enumset'] = new Indi_Db_Table_Rowset(array(
                         'table' => 'enumset',
                         'rows' => $fEnumsetA[$fieldI['original']['id']],
-                        'rowClass' => 'Enumset_Row'
+                        'rowClass' => 'Enumset_Row',
+                        'found' => count($fEnumsetA[$fieldI['original']['id']])
                     ));
                     unset($fEnumsetA[$fieldI['id']]);
                 }

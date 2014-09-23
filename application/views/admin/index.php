@@ -15,6 +15,7 @@
         '/js/admin/app/override/Ext.Component.js',
         '/js/admin/app/override/Ext.form.field.Number.js',
         '/js/admin/app/override/Ext.picker.Date.js',
+        '/js/admin/app/override/Ext.form.RadioGroup.js',
 
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',

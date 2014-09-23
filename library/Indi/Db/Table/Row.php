@@ -391,8 +391,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If current field column type is ENUM or SET
         if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
-            $where[] = '`fieldId` = "' . $fieldR->id . '"';
-            $dataRs = $relatedM->fetchAll($where, '`move`');
+
+            // Use existing enumset data, already nested for current field, instead of additional db fetch
+            $dataRs = $fieldR->nested('enumset');
 
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
