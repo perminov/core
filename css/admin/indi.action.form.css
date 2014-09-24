@@ -1,7 +1,7 @@
 .x-form-item-label, .x-form-item-label-top, .x-form-cb-label-after {
     font-size: 11px;
 }
-.cke, .cke_chrome{
+.x-form-item-body > .cke, .x-form-item-body > .cke_chrome{
     display: inline-block !important;
 }
 .x-form-item-label-top {
