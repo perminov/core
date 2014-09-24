@@ -114,5 +114,16 @@ Ext.override(Ext.Component, {
 
         // Call parent
         me.callParent();
-    }
+    },
+    
+    /**
+     * Special function for short-hand access to any component, that is a sibling to current component, 
+     * e.g. has the same value of `ownerCt` property
+     *
+     * @param alias
+     * @return {*}
+     */
+    sbl: function(name) {
+        return this.ownerCt.query('[name="'+name+'"]')[0];
+    },
 });
