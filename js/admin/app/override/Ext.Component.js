@@ -126,4 +126,18 @@ Ext.override(Ext.Component, {
     sbl: function(name) {
         return this.ownerCt.query('[name="'+name+'"]')[0];
     },
+    
+    /**
+     * jQuery-styled shortcut for getValue/setValue members
+     * 
+     * @param value
+     * @return {*}
+     */
+    val: function(value) {
+        if (arguments.length) {
+            if (typeof this.setValue == 'function') return this.setValue(value);
+        } else {
+            if (typeof this.getValue == 'function') return this.getValue();
+        }
+    }
 });

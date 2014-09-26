@@ -62,7 +62,7 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // The the info about invalid fields from the response, and mark the as invalid
                 Object.keys(action.result.mismatch).forEach(function(i, index, mismatch){
-                    if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field-' + i)) {
+                    if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
                         msg = action.result.mismatch[i];
                         msg = msg.replace(cmp.fieldLabel, '').replace(/""/g, '');
                         cmp.markInvalid(msg);
