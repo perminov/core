@@ -129,4 +129,70 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // Return rowset itself
         return $this;
     }
+
+    /**
+     * Builds an SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
+     * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
+     * not contain search clauses for columns, that are involved in building of set of another kind of WHERE clauses -
+     * related to grid filters
+     *
+     * @param $keyword
+     * @param $exclude
+     * @param $nested
+     * @return string
+     */
+    public function keywordWHERE($keyword, $exclude = array(), array $nested = array()) {
+
+        // Convert quotes and perform an urldecode
+        $keyword = str_replace('"', '&quot;', strip_tags(urldecode($keyword)));
+
+        // Explode the keyword by spaces
+        $keywordA = explode(' ', $keyword);
+
+        // Remove unfriendly characters from each word within the keyword
+        foreach ($keywordA as $i => $keywordI) {
+            $keywordI = preg_replace('/[^a-zA-Z0-9а-яА-Я]/u', '', $keywordI);
+            $keywordI = trim($keywordI);
+            if (!mb_strlen($keywordI, 'utf-8')) unset($keywordA[$i]);
+        }
+
+        // Update the keyword, so now we are sure that any word within the keyword doesn't contain unfriendly characters
+        $keyword = implode(' ', $keywordA);
+
+        // If keyword is empty, nothing to do here
+        if (mb_strlen($keyword, 'utf-8') == 0) return;
+
+        // Clauses stack
+        $where = array();
+
+        // Set up info about column types to be available within each grid field
+        $this->foreign('columnTypeId');
+
+        // Check each grid field's alias (same as db tabe column name) to ensure it's not in is not in exclusions,
+        // and build WHERE clause for each db table column, that is presented in section's grid
+        foreach ($this as $fieldR)
+            if (!in_array($fieldR->alias, $exclude))
+                if ($keywordFieldWHERE = $fieldR->keywordWHERE($keyword))
+                    $where[] = $keywordFieldWHERE;
+
+        // Append clauses, for deeper/nested keyword-search, if $nested argument is given
+        if ($this[0]) {
+            $connector = Indi::model($this[0]->entityId)->table() . 'Id';
+            foreach ($nested as $table => $columns) {
+                if ($nestedWHERE = Indi::model($table)->fields($columns, 'rowset')->keywordWHERE($keyword)) {
+                    $idA = Indi::db()->query('
+                        SELECT `' . $connector . '` FROM `block` WHERE ' . $nestedWHERE
+                    )->fetchAll(PDO::FETCH_COLUMN);
+                    $where[] = count($idA) ? '`id` IN (' . implode(',', $idA) . ')' : 'FALSE';
+                }
+            }
+        }
+
+        // Setup $nonFalseClauseA array
+        $nonFALSE = array(); for ($i = 0; $i < count($where); $i++) if ($where[$i] != 'FALSE') $nonFALSE[] = $where[$i];
+
+        // If we have at least one non-FALSE clause - return them all, imploded by 'OR', else if
+        // we have only FALSE clauses - return single 'FALSE', otherwise, if we have no clauses at all - return null
+        return count($nonFALSE) ? '(' . implode(' OR ', $nonFALSE) . ')' : (count($where) ? 'FALSE' : null);
+    }
 }

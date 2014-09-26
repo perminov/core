@@ -368,7 +368,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     /**
      * Builds a SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
      * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
-     * not contain seach clauses for columns, that are involved in building of set of another kind of WHERE clauses -
+     * not contain search clauses for columns, that are involved in building of set of another kind of WHERE clauses -
      * related to grid filters
      *
      * @param $keyword
@@ -379,108 +379,13 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If $keyword param is not passed we pick Indi::get()->keyword as $keyword
         if (strlen($keyword) == 0) $keyword = Indi::get()->keyword;
 
-        // If keyword is empty, nothing to do here
-        if (strlen($keyword) == 0) return;
-
-        // Convert quotes and perform an urldecode
-        $keyword = str_replace('"','&quot;', strip_tags(urldecode($keyword)));
-
-        // Clauses stack
-        $where = array();
-
-        // Set up info about column types to be available within each grid field
-        Indi::trail()->gridFields->foreign('columnTypeId');
-
         // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
         // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
         // not both at the same time
-        $exclude = array();
-        if (Indi::get()->search) {
-            $search = json_decode(Indi::get()->search, true);
-            foreach ($search as $searchOnField) $exclude[] = key($searchOnField);
-        }
+        $exclude = array_keys(Indi::obar());
 
-        // Build WHERE clause for each db table column, that is presented in section's grid
-        foreach (Indi::trail()->gridFields as $fieldR) {
-
-            // Check that grid field's alias (same as db tabe column name) is not in exclusions
-            if (!in_array($fieldR->alias, $exclude)) {
-
-                // If column does not store foreign keys
-                if ($fieldR->relation == 0) {
-
-                    // If column store boolean values
-                    if (preg_match('/BOOLEAN/', $fieldR->foreign('columnTypeId')->type)) {
-                        $where[] = 'IF(`' . $fieldR->alias . '`, "' . I_YES . '", "' .
-                            I_NO . '") LIKE "%' . $keyword . '%"';
-
-                    // Otherwise handle keyword search on other non-relation column types
-                    } else {
-
-                        // Setup an array with several column types and possible characters sets for each type.
-                        $reg = array(
-                            'YEAR' => '[0-9]', 'DATE' => '[0-9\-]', 'DATETIME' => '[0-9\- :]',
-                            'TIME' => '[0-9:]', 'INT' => '[0-9]', 'DOUBLE' => '[0-9\.]'
-                        );
-
-                        // We check if db table column type is presented within a keys of $reg array, and if so, we check
-                        // if $keyword consists from characters, that are within a column's type's allowed character set.
-                        // If yes, we add a keyword clause for that column in a stack. We need to do these two checks
-                        // because otherwise, for example if we will be trying to find keyword 'Привет' in column that have
-                        // type DATE - it will cause a mysql collation error
-                        if (preg_match(
-                            '/(' . implode('|', array_keys($reg)) . ')/',
-                            $fieldR->foreign('columnTypeId')->type, $matches
-                        )) {
-                            if (preg_match('/^' . $reg[$matches[1]] . '$/', $keyword)) {
-                                $where[] = '`' . $fieldR->alias . '` LIKE "%' . $keyword . '%"';
-                            }
-
-                            // If column's type is CHAR|VARCHAR|TEXT - all is quite simple
-                        } else  {
-                            $where[] = '`' . $fieldR->alias . '` LIKE "%' . $keyword . '%"';
-                        }
-                    }
-
-                // If column store foreign keys from `enumset` table
-                } else if ($fieldR->relation == 6) {
-
-                    // Find `enumset` keys (mean `alias`-es), that have `title`-s, that match keyword
-                    $relatedRs = Indi::model('Enumset')->fetchAll(
-                        '`fieldId` = "' . $fieldR->id . '" AND `title` LIKE "%' . $keyword . '%"'
-                    );
-                    $idA = array(); foreach ($relatedRs as $relatedR) $idA[] = $relatedR->alias;
-
-                    // If at least one key was found, append a clause
-                    if (count($idA))
-                        $where[] = 'FIND_IN_SET(`' . $fieldR->alias . '`, "' . implode(',', $idA) . '")';
-
-                // If column store foreign keys, but not from `enumset` table
-                } else {
-
-                    // If column does not have a satellite (dependency='u'), or have but dependency type is set to 'c'
-                    // (- mean childs-by-parent logic)
-                    if (preg_match('/c|u/',$fieldR->dependency)) {
-
-                        // Load related model
-                        $relatedM = Indi::model($fieldR->relation);
-
-                        // Find matched foreign rows, collect their ids, and add a clause
-                        $relatedRs = $relatedM->fetchAll('`title` LIKE "%' . $keyword . '%"');
-                        $idA = array(); foreach ($relatedRs as $relatedR) $idA[] = $relatedR->id;
-                        if (count($idA))
-                            $where[] = 'FIND_IN_SET(`' . $fieldR->alias . '`, "' . implode(',', $idA) . '")';
-
-                    // Else if dependency=e - mean 'Variable entity'. Will be implemented later
-                    } else {
-
-                    }
-                }
-            }
-        }
-
-        // Return clauses, imploded by OR, if clauses count > 0
-        return count($where) ? '(' . implode(' OR ', $where) . ')' : null;
+        // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
+        return Indi::trail()->gridFields->keywordWHERE($keyword, $exclude);
     }
 
     /**

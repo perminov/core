@@ -719,4 +719,120 @@ class Field_Row extends Indi_Db_Table_Row {
         // Return conversion result
         return $return;
     }
+
+    /**
+     * Builds the part of WHERE clause, that will be involved in keyword-search, especially for current field
+     *
+     * @param $keyword
+     * @return string
+     */
+    public function keywordWHERE($keyword) {
+
+        // If current field does not have it's own column within database table - return
+        if (!$this->columnTypeId) return;
+
+        // If column does not store foreign keys
+        if ($this->relation == 0) {
+
+            // If column store boolean values
+            if (preg_match('/BOOLEAN/', $this->foreign('columnTypeId')->type)) {
+                return 'IF(`' . $this->alias . '`, "' . I_YES . '", "' .
+                    I_NO . '") LIKE "%' . $keyword . '%"';
+
+            // Otherwise handle keyword search on other non-relation column types
+            } else {
+
+                // Setup an array with several column types and possible characters sets for each type.
+                $reg = array(
+                    'YEAR' => '[0-9]', 'DATE' => '[0-9\-]', 'DATETIME' => '[0-9\- :]',
+                    'TIME' => '[0-9:]', 'INT' => '[0-9]', 'DOUBLE' => '[0-9\.]'
+                );
+
+                // We check if db table column type is presented within a keys of $reg array, and if so, we check
+                // if $keyword consists from characters, that are within a column's type's allowed character set.
+                // If yes, we add a keyword clause for that column in a stack. We need to do these two checks
+                // because otherwise, for example if we will be trying to find keyword 'Привет' in column that have
+                // type DATE - it will cause a mysql collation error
+                if (preg_match(
+                    '/(' . implode('|', array_keys($reg)) . ')/',
+                    $this->foreign('columnTypeId')->type, $matches
+                )) {
+                    if (preg_match('/^' . $reg[$matches[1]] . '+$/', $keyword)) {
+                        return '`' . $this->alias . '` LIKE "%' . $keyword . '%"';
+                    } else {
+                        return 'FALSE';
+                    }
+
+                // If column's type is CHAR|VARCHAR|TEXT - all is quite simple
+                }/* else if ($this->foreign('columnTypeId')->type == 'TEXT') {
+                    return 'MATCH(`' . $this->alias . '`) AGAINST("' . implode('* ', explode(' ', $keyword)) . '*' . '" IN BOOLEAN MODE)';
+                }*/ else {
+                    return '`' . $this->alias . '` LIKE "%' . $keyword . '%"';
+                }
+            }
+
+        // If column store foreign keys from `enumset` table
+        } else if ($this->relation == 6) {
+
+            // Find `enumset` keys (mean `alias`-es), that have `title`-s, that match keyword
+            $idA = Indi::db()->query('
+                SELECT `alias` FROM `enumset`
+                WHERE `fieldId` = "' . $this->id . '" AND `title` LIKE "%' . $keyword . '%"
+            ')->fetchAll(PDO::FETCH_COLUMN);
+
+            // Return clause
+            return count($idA)
+                ? ($this->storeRelationAbility == 'many'
+                    ? 'CONCAT(",", `' . $this->alias . '`, ",") REGEXP ",(' . implode('|', $idA) . '),"'
+                    : 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $idA) . '")')
+                : 'FALSE';
+
+            // If column store foreign keys, but not from `enumset` table
+        } else {
+
+            // If column does not have a satellite (dependency='u'), or have but dependency type is set to 'c'
+            // (- mean childs-by-parent logic)
+            if (preg_match('/c|u/',$this->dependency)) {
+
+                // Get the related model
+                $relatedM = Indi::model($this->relation);
+
+                // Declare empty $idA array
+                $idA = array();
+
+                // If title column is `id` and
+                if ($relatedM->titleColumn() == 'id') {
+
+                    // If keyword consists from only numeric characters
+                    if (preg_match('/^[0-9]+$/', $keyword))
+
+                        // Get the ids
+                        $idA = Indi::db()->query('
+                            SELECT `id` FROM `' . $relatedM->table() . '`
+                            WHERE `id` LIKE "%' . $keyword . '%"
+                        ')->fetchAll(PDO::FETCH_COLUMN);
+
+                // Else if WHERE clause, got for keyword search on related model title field - is not 'FALSE'
+                } else if (($titleColumnWHERE = $relatedM->titleField()->keywordWHERE($keyword)) != 'FALSE') {
+
+                    // Find matched foreign rows, collect their ids, and add a clause
+                    $idA = Indi::db()->query($sql = '
+                        SELECT `id` FROM `' . $relatedM->table() . '`
+                        WHERE ' . $titleColumnWHERE . '
+                    ')->fetchAll(PDO::FETCH_COLUMN);
+                }
+
+                // Return clause
+                return count($idA)
+                    ? ($this->storeRelationAbility == 'many'
+                        ? 'CONCAT(",", `' . $this->alias . '`, ",") REGEXP ",(' . implode('|', $idA) . '),"'
+                        : 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $idA) . '")')
+                    : 'FALSE';
+
+            // Else if dependency=e - mean 'Variable entity'. Will be implemented later
+            } else {
+
+            }
+        }
+    }
 }
