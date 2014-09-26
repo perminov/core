@@ -1628,8 +1628,11 @@ class Indi {
      */
     public static function obar($arg1 = null, $arg2 = null) {
 
+        // Define $obar array, that will contain key->value pairs for all involved filters
+        $obar = array();
+
         // If there is no 'search' param within query string - set up it as json-encoded empty array
-        if (!Indi::get('search')) Indi::get('search', json_encode($obar = array()));
+        if (!Indi::get('search')) Indi::get('search', json_encode($obar));
 
         // Json-decode $_GET's 'search' param
         $rawA = json_decode(Indi::get('search'), true);
