@@ -15,6 +15,7 @@
         '/js/admin/app/override/Ext.Component.js',
         '/js/admin/app/override/Ext.form.field.Number.js',
         '/js/admin/app/override/Ext.picker.Date.js',
+        '/js/admin/app/override/Ext.form.field.Radio.js',
         '/js/admin/app/override/Ext.form.RadioGroup.js',
 
         '/js/admin/indi.js',
@@ -33,6 +34,7 @@
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
         '/js/admin/app/lib/form/field/FilePanel.js',
+        '/js/admin/app/lib/form/field/Radios.js',
 
         '/js/admin/app/lib/form/field/Time.js',
         '/js/admin/app/lib/picker/DateTime.js',
