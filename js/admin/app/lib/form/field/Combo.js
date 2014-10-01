@@ -1511,7 +1511,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
 
         // Define a variable for converted equivalent, and index variable
-        var converted = '', names = Object.keys(kl);
+        var converted = '', j, names = Object.keys(kl);
 
         // For each character within given string find its equvalent and append to 'converted' variable
         for (var i = 0; i < string.length; i++) {

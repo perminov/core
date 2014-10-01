@@ -90,6 +90,8 @@
     background-position: -34px -11px;
 }
 
+.i-radio-color-box {width: 14px; height: 10px; display: inline-block; position: relative; top: 1px; margin-right: 4px;}
+
 /* Browser fixes */
 .x-safari .x-form-cb-label.x-form-cb-label-after{
     top: 1px !important;

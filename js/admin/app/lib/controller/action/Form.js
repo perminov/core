@@ -394,48 +394,14 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
-     * Radio-fields config adjuster
+     * Radio-fields config adjuster. If field, that radio should represent
+     * is not enumset field - use combo instead radios
      *
      * @param item
      * @return {Object}
      */
     formItemXRadio: function(item) {
-        var optionA = [], enumset;
-        for (var i = 0; i < item.field.nested('enumset').length; i++) {
-            enumset = item.field.nested('enumset')[i];
-            optionA.push({
-                boxLabel: enumset.title,
-                name: item.name,
-                inputValue: enumset.alias,
-                id: item.name + Indi.ucfirst(enumset.alias),
-                checked: enumset.alias == item.row[item.name],
-                enumset: enumset,
-                listeners: {
-                    change: function(radio, now, was) {
-                        if (now) {
-                            try {
-                                Indi.eval(radio.enumset.javascript, radio.ownerCt);
-                                Indi.eval(item.field.javascript, radio.ownerCt);
-                            } catch (e) {
-                                throw e;
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        return {
-            xtype: 'radiogroup',
-            columns: 1,
-            vertical: true,
-            items: optionA,
-            listeners: {
-                afterrender: function(cmp) {
-                    var checked = cmp.items.findBy(function(item){return item.checked == true});
-                    checked.fireEvent('change', checked, true);
-                }
-            }
-        }
+        return item.field.relation == '6' ? {xtype: 'radios'} : this.formItemXCombo(item);
     },
 
     /**
