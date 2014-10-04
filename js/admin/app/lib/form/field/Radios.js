@@ -1,4 +1,6 @@
 /**
+ * The general purpose of this component is to provide the ability to treat this
+ * component instances values as strings rather than objects containing key-value pairs
  */
 Ext.define('Indi.lib.form.field.Radios', {
 
@@ -52,7 +54,6 @@ Ext.define('Indi.lib.form.field.Radios', {
                         if (now) {
                             try {
                                 Indi.eval(rb.enumset.system.js, rb.ownerCt);
-                                Indi.eval(me.field.javascript, rb.ownerCt);
                             } catch (e) {
                                 throw e;
                             }
@@ -77,6 +78,9 @@ Ext.define('Indi.lib.form.field.Radios', {
         // If checked radio exists - fire 'change' event for it
         if (checked) checked.fireEvent('change', checked, true);
 
+        // Execute javascript code, assigned as an additional handler value change event
+        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+
         // Call parent
         me.callParent();
     },
@@ -90,20 +94,76 @@ Ext.define('Indi.lib.form.field.Radios', {
         // Setup auxilliary variables
         var me = this, name = me.name, dComboName, dCombo;
 
+        // Execute javascript code, assigned as an additional handler value change event
+        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+
         // Call parent
         me.callParent(arguments);
 
         // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
-        Ext.get(me.ctx().ti().bid() + '-form').select('.i-combo-info[satellite="'+name+'"]').each(function(el){
-            dComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
-            dCombo = me.sbl(dComboName);
-            dCombo.setDisabled(false, true);
-            if (!dCombo.disabled) {
-                dCombo.remoteFetch({
-                    satellite: me.getValue(),
-                    mode: 'refresh-children'
-                });
+        if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
+            if (d.xtype == 'combo.form') {
+                d.setDisabled(false, true);
+                if (!d.disabled) {
+                    d.remoteFetch({
+                        satellite: me.getValue(),
+                        mode: 'refresh-children'
+                    });
+                }
             }
         });
+    },
+
+    /**
+     * Override native getValue() method for it to return the value of checked radio item,
+     * instead of object, containing key-value pair
+     *
+     * @return {*}
+     */
+    getValue: function() {
+        return this.callParent(arguments)[this.name];
+    },
+
+
+    /**
+     * Override native {xtype:radiogroup}'s checkChange() method, and use {Ext.form.field.Field}'s one directly,
+     * for skipping several operations that assume the return value of getValue() method is object, as bit upper
+     * we overrided getValue() method for it to return non-object value
+     *
+     * @return {*}
+     */
+    checkChange: function() {
+        if (!Ext.isArray(this.getValue())) Ext.form.field.Field.prototype.checkChange.call(this);
+    },
+
+    /**
+     * Override native setValue() method for it to be able to deal with non-object `value` argument, e.g
+     * not only setValue({name: 'value'}) calls are allowable, but setValue('value') call are too
+     *
+     * @param {Object/String} value
+     * @return {*}
+     */
+    setValue: function(value) {
+        return this.callParent([this.normalizeValue(value)]);
+    },
+
+    /**
+     * Convert given `value` argument to a format, that this component's
+     * parent component - xtype: radiogroup - is used to deal
+     *
+     * @param value
+     * @return {Object}
+     */
+    normalizeValue: function(value) {
+        var me = this, normalized = {};
+
+        // If `value` argument is an object - return it as is
+        if (Ext.isObject(value)) return value;
+
+        // Build object, containing normalized value
+        normalized[me.name] = value;
+
+        // Return normalized value
+        return normalized;
     }
 });

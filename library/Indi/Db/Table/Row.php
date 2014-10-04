@@ -479,29 +479,35 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // and do not use any external values
                     if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
                     $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
-                    if ($satelliteR->satellitealias) {
-                        $where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $satelliteR->satellitealias . '`)';
-                    } else {
-                        $where[] = 'FIND_IN_SET("' . $rowLinkedToSatellite->{$fieldR->alternative} . '", `' . $fieldR->alternative . '`)';
-                    }
+                    $v = $rowLinkedToSatellite->{$fieldR->alternative};
+                    $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
+                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $v)
+                        ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
+                        : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
 
-                    // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
-                    // we use it's alias instead. Example:
-                    // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
-                    //    `similarCityId`
-                    // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
-                    //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
-                    //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
-                    //    `similarCountryId` column, it has only `countryId` column.
-                    // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
-                    //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
-                    //    `countryId` so the result will be exactly as we need
+                // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
+                // we use it's alias instead. Example:
+                // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
+                //    `similarCityId`
+                // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
+                //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
+                //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
+                //    `similarCountryId` column, it has only `countryId` column.
+                // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
+                //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
+                //    `countryId` so the result will be exactly as we need
                 } else if ($satelliteR->satellitealias) {
-                    $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
 
-                    // Standard logic
+                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                        ? 'CONCAT(",", `' . $satelliteR->satellitealias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
+                        : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
+
+                // Standard logic
                 } else {
-                    $where[] = 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
+
+                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                        ? 'CONCAT(",", `' . $satelliteR->alias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
+                        : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
                 }
 
             // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
