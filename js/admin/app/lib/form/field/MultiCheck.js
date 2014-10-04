@@ -44,7 +44,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
     // @inheritdoc
     beforeRender: function() {
         var me = this;
-        if (me.columns == 'auto') me.columns = 3;
+        if (me.columns == 'auto') me.columns = 1;
         me.callParent();
     },
 
