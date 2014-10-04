@@ -525,7 +525,7 @@ Ext.define('Indi', {
                         }
 
                         // Get the array of values, by comma-splitting 'val' arg
-                        val = val.split(',');
+                        val = (val+'').split(',');
 
                         // If 'inverse' arg is true
                         if (inverse) {

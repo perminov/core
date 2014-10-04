@@ -240,12 +240,13 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Default config
         return {
-            id: this.bid() + '-field$' + field.alias,
+            id: me.bid() + '-field$' + field.alias,
             xtype: 'textfield',
             readOnly: me.row.readOnly,
             fieldLabel: field.title,
             labelWidth: '50%',
             name: field.alias,
+            satellite: field.satellite,
             value: this.ti().row[field.alias],
             field: field,
             row: this.ti().row,
@@ -390,6 +391,20 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'textarea',
             grow: true,
             minHeight: 32
+        }
+    },
+
+    /**
+     * Radio-fields config adjuster. If field, that radio should represent
+     * is not enumset field - use combo instead radios
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXMulticheck: function(item) {
+        return {
+            xtype: 'multicheck',
+            cls: 'i-field-multicheck'
         }
     },
 

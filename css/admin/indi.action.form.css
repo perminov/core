@@ -13,8 +13,10 @@
 }
 .x-form-cb-label-after {
     margin-left: 2px;
-    position: relative;
-    top: -1px;
+    width: 84%;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
 }
 .i-field{
     border-top-width: 1px !important;
@@ -72,9 +74,21 @@
     height: 22px;
 }
 
-.i-field .x-checkboxgroup-form-item {
-    margin-bottom: 0;
+.i-field .x-form-radio-group .x-checkboxgroup-form-item {
+    margin-bottom: 1px;
+    width: 100%;
 }
+.i-field .x-form-check-group .x-checkboxgroup-form-item {
+    margin-bottom: 2px;
+    width: 100%;
+}
+.i-field.i-field-multicheck .x-form-checkboxgroup-body {
+    padding: 2px 0 0 0;
+}
+textarea.x-form-field {
+    color: inherit;
+}
+
 /* Style for action form topbar spinners*/
 .x-toolbar .x-form-trigger-wrap .x-form-spinner-down{
     background-position: 0 -11px;
