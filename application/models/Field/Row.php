@@ -373,6 +373,12 @@ class Field_Row extends Indi_Db_Table_Row {
                 // If $php is true - set $defaultValue as empty string
                 if ($php) $defaultValue = '';
 
+                // Else if store relation ability changed to 'many' and default value contains zeros
+                else if ($this->_modified['storeRelationAbility'] == 'many' && preg_match('/,0/', ',' . $defaultValue))
+
+                    // Strip zeros from both $defaultValue and $this->defaultValue
+                    $this->defaultValue = $defaultValue = ltrim(preg_replace('/,0/', '', ',' . $defaultValue), ',');
+
             // Else if column type is INT(11)
             } else if ($columnTypeR->type == 'INT(11)') {
 
@@ -546,6 +552,11 @@ class Field_Row extends Indi_Db_Table_Row {
 
             // Append sql DEFAULT expression to query
             $sql[] = 'DEFAULT "' . $defaultValue . '"';
+
+            // Check if field's column datatype is going to be changed, and if so - check whether there is a need
+            // to adjust existing values, to ensure that they will be compatiple with new datatype, and won't cause
+            // mysql error like 'Incorrect integer value ...'  during execution of a change-column-datatype sql query
+            $this->_enforceExistingValuesCompatibility($columnTypeR->type, $defaultValue);
         }
 
         // Implode the parts of sql query
@@ -570,10 +581,10 @@ class Field_Row extends Indi_Db_Table_Row {
         if (array_key_exists('storeRelationAbility', $this->_modified) && $this->_modified['storeRelationAbility'] == 'none') {
 
             // If control element was radio or multicheck - set it as string
-            if (preg_match('/^radio|multickeck$/', $this->foreign('elementId')->alias))
+            if (preg_match('/^radio|multicheck$/', $this->foreign('elementId')->alias))
                 $this->elementId = Indi::model('Element')->fetchRow('`alias` = "string"')->id;
 
-            // Else if control element was combo, and column type is not BOOLEAN - set control element as string
+            // Else if control element was combo, and column type is not BOOLEAN - set control element as string also
             else if ($this->foreign('elementId')->alias == 'combo' && $columnTypeR->type != 'BOOLEAN')
                 $this->elementId = Indi::model('Element')->fetchRow('`alias` = "string"')->id;
 
@@ -586,6 +597,25 @@ class Field_Row extends Indi_Db_Table_Row {
 
             // Setup `filter` as an empty string
             $this->filter = '';
+        }
+
+        // If store relation ability changed to  'many'
+        if ($this->_modified['storeRelationAbility'] == 'many') {
+
+            // If field had it's own column within database table, and still has
+            if ($this->_original['columnTypeId'] && $this->_modified['columnTypeId']) {
+
+                // If all these changes are performed within the same entity
+                if ($table && !array_key_exists('entityId', $this->_modified)) {
+
+                    // Remove zero-values from column, as zero-values are not allowed
+                    // for fields, that have storeRelationAbility = 'many'
+                    Indi::db()->query($sql = '
+                        UPDATE `' . $table . '` SET `' . $this->alias . '`
+                            = SUBSTR(REPLACE(CONCAT(",", `' . $this->alias . '`), ",0", ""), 2)
+                    ');
+                }
+            }
         }
 
         // If $deleteUploadedFiles flag is set to true - call deleteUploadedFiles()
@@ -678,6 +708,148 @@ class Field_Row extends Indi_Db_Table_Row {
                 $this->foreign('entityId')->save();
             }
         }
+    }
+
+    /**
+     * Check if field's column datatype is going to be changed, and if so - check whether there is a need
+     * to adjust existing values, to ensure that they will be compatiple with new datatype, and won't cause
+     * mysql error like 'Incorrect integer value ...'  during execution of a change-column-datatype sql query
+     *
+     * @param $newType
+     * @param $defaultValue
+     * @return mixed
+     */
+    protected function _enforceExistingValuesCompatibility($newType, $defaultValue) {
+
+        // If field's entityId was not changed, and field had and still has it's
+        // own database table column, but that column type is going to be changed
+        if (!($this->_original['columnTypeId'] && $this->_modified['columnTypeId'] && !$this->_modified['entityId'])) return;
+
+        // Get the column type row, representing field's column before type change (original column)
+        $curTypeR = Indi::model('ColumnType')->fetchRow('`id` = "' . $this->_original['columnTypeId'] . '"');
+
+        // Get the table name
+        $tbl = $this->foreign('entityId')->table;
+
+        // Get the field's column name
+        $col = $this->_original['alias'];
+
+        // Define array of rex-names, related to their mysql data types
+        $rex = array(
+            'VARCHAR(255)' => 'varchar255', 'INT(11)' => 'int11', 'DOUBLE(7,2)' => 'double72',
+            'DATE' => 'date', 'YEAR' => 'year', 'TIME' => 'time', 'DATETIME' => 'datetime',
+            'ENUM' => 'enum', 'SET' => 'set', 'BOOLEAN' => 'bool', 'VARCHAR(10)' => 'hrgb'
+        );
+
+        // Prepare regular expression for usage in WHERE clause in
+        // UPDATE query, for detecting and fixing incompatible values
+        $regexp = preg_replace('/\$$/', ')$', preg_replace('/^\^/', '^(', trim(Indi::rex($rex[$newType]), '/')));
+
+        // Setup double-quote variable, and WHERE usage flag
+        $q = '"'; $w = true;
+
+        if ($newType == 'INT(11)') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/DOUBLE\(7,2\)|YEAR|BOOLEAN/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
+            } else if (preg_match('/^DATE|TIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $this->storeRelationAbility == 'none' ? false : $defaultValue;
+            } else if (preg_match('/DATETIME/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0'; $q = '';
+            }
+        } else if ($newType == 'DOUBLE(7,2)') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/YEAR|BOOLEAN/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
+            } else if (preg_match('/^DATE|TIME|DATETIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0'; $q = '';
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            }
+        } else if ($newType == 'DATE') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0000-00-00';
+            } else if (preg_match('/ENUM/', $curTypeR->type)) {
+                $maxLen = 10;
+                foreach(Indi::model($tbl)->fields($this->id)->nested('enumset') as $enumsetR)
+                    if (strlen($enumsetR->alias) > $maxLen) $maxLen = strlen($enumsetR->alias);
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR('. $maxLen . ') NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00';
+            } else if (preg_match('/SET/', $curTypeR->type)) {
+                $shortestValue = '';
+                foreach(Indi::model($tbl)->fields($this->id)->nested('enumset') as $enumsetR)
+                    if (strlen($enumsetR->alias) < strlen($shortestValue)) $shortestValue = $enumsetR->alias;
+                Indi::db()->query('UPDATE TABLE `' . $tbl . '` SET `' . $col . '` = "' . $shortestValue . '"');
+                $minLen = ($svl = strlen($shortestValue)) > 10 ? $svl : 10;
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(' . $minLen . ') NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00';
+            } else if (preg_match('/YEAR/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = 'CONCAT(`' . $col .'`, IF(`' . $col . '` = "0000", "0000", "0101"))';
+                $q = ''; $w = false;
+            } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            } else if (preg_match('/^DATETIME|TIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`test` AS UNSIGNED)),
+                DATE_FORMAT(CAST(`test` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            }
+        } else if ($newType == 'YEAR') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0000';
+            }/* else if (preg_match('/ENUM/', $curTypeR->type)) {
+                $maxLen = 10;
+                foreach(Indi::model($tbl)->fields($this->id)->nested('enumset') as $enumsetR)
+                    if (strlen($enumsetR->alias) > $maxLen) $maxLen = strlen($enumsetR->alias);
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR('. $maxLen . ') NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00';
+            } else if (preg_match('/SET/', $curTypeR->type)) {
+                $shortestValue = '';
+                foreach(Indi::model($tbl)->fields($this->id)->nested('enumset') as $enumsetR)
+                    if (strlen($enumsetR->alias) < strlen($shortestValue)) $shortestValue = $enumsetR->alias;
+                Indi::db()->query('UPDATE TABLE `' . $tbl . '` SET `' . $col . '` = "' . $shortestValue . '"');
+                $minLen = ($svl = strlen($shortestValue)) > 10 ? $svl : 10;
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(' . $minLen . ') NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00';
+            } else if (preg_match('/YEAR/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = 'CONCAT(`' . $col .'`, IF(`' . $col . '` = "0000", "0000", "0101"))';
+                $q = ''; $w = false;
+            } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            } else if (preg_match('/^DATETIME|TIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`test` AS UNSIGNED)),
+                DATE_FORMAT(CAST(`test` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            }*/
+        }
+
+        // Adjust existing values, for them to be compatible with type, that field's column will be
+        // converted to. We should do it to aviod mysql error like 'Incorrect integer value ...'
+        if ($incompatibleValuesReplacement !== false)
+            Indi::db()->query('
+                UPDATE `' . $tbl . '`
+                SET `' . $col . '` = ' . $q . $incompatibleValuesReplacement . $q .
+                ($w ? ' WHERE `' . $col . '` NOT REGEXP "' . $regexp . '"' : '')
+            );
     }
 
     /**
