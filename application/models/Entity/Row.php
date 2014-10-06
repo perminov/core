@@ -15,7 +15,7 @@ class Entity_Row extends Indi_Db_Table_Row {
         parent::delete();
 
         // Delete database table if that table exists
-        if (Indi::db()->query('SHOW TABLES LIKE "' . $this->table . '"'))
+        if (Indi::db()->query('SHOW TABLES LIKE "' . $this->table . '"')->fetchColumn())
             Indi::db()->query('DROP TABLE `' . $this->table . '`');
 	}
 
