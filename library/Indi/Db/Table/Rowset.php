@@ -1240,4 +1240,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Return nesting-tree rowset
         return $rs;
     }
+
+    /**
+     * Alias for offsetGet()
+     * 
+     * @param $offset
+     * @return Indi_Db_Table_Row|null
+     */
+    public function at($offset) {
+        return $this->offsetGet($offset);
+    }
 }
