@@ -809,37 +809,27 @@ class Field_Row extends Indi_Db_Table_Row {
         } else if ($newType == 'YEAR') {
             if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '0000';
-            }/* else if (preg_match('/ENUM/', $curTypeR->type)) {
-                $maxLen = 10;
-                foreach(Indi::model($tbl)->fields($this->id)->nested('enumset') as $enumsetR)
-                    if (strlen($enumsetR->alias) > $maxLen) $maxLen = strlen($enumsetR->alias);
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR('. $maxLen . ') NOT NULL');
-                $incompatibleValuesReplacement = '0000-00-00';
-            } else if (preg_match('/SET/', $curTypeR->type)) {
-                $shortestValue = '';
-                foreach(Indi::model($tbl)->fields($this->id)->nested('enumset') as $enumsetR)
-                    if (strlen($enumsetR->alias) < strlen($shortestValue)) $shortestValue = $enumsetR->alias;
-                Indi::db()->query('UPDATE TABLE `' . $tbl . '` SET `' . $col . '` = "' . $shortestValue . '"');
-                $minLen = ($svl = strlen($shortestValue)) > 10 ? $svl : 10;
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(' . $minLen . ') NOT NULL');
-                $incompatibleValuesReplacement = '0000-00-00';
-            } else if (preg_match('/YEAR/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
-                $incompatibleValuesReplacement = 'CONCAT(`' . $col .'`, IF(`' . $col . '` = "0000", "0000", "0101"))';
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/DATETIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = 'SUBSTR(`' . $col .'`, 1, 4)';
                 $q = ''; $w = false;
+            } else if (preg_match('/DATE/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = 'SUBSTR(`' . $col .'`, 1, 4)';
+                $q = ''; $w = false;
+            } else if (preg_match('/^TIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
-                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
-            } else if (preg_match('/^DATETIME|TIME$/', $curTypeR->type)) {
-                $incompatibleValuesReplacement = false;
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(4) NOT NULL');
+                $incompatibleValuesReplacement = '0000'; $w = false;
             } else if (preg_match('/INT(11)/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
-                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`test` AS UNSIGNED)),
-                DATE_FORMAT(CAST(`test` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
+                $incompatibleValuesReplacement = '0';
             } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
-                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
-            }*/
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
+                $incompatibleValuesReplacement = '0'; $w = false;
+            }
         }
 
         // Adjust existing values, for them to be compatible with type, that field's column will be
