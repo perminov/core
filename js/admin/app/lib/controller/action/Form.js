@@ -623,7 +623,21 @@ Ext.define('Indi.lib.controller.action.Form', {
             });
 
             // Submit form
-            if (formCmp.getForm().isValid()) formCmp.submit({submitEmptyText: false}); else me.getMask().hide();
+            if (formCmp.getForm().isValid()) {
+
+                // If data-row, that current form is operating with - is an existing row, or is a new row, but has
+                // at least one property that had been changed using current form - submit (try to save) the form
+                if (parseInt(me.ti().row.id) || formCmp.getForm().isDirty()) formCmp.submit({submitEmptyText: false});
+
+                // Else if user is trying to create a new row, but didn't setup any data for that new row - show warning
+                else Ext.MessageBox.show({
+                    title: Indi.lang.I_ROWSAVE_ERROR_NOTDIRTY_TITLE,
+                    msg: Indi.lang.I_ROWSAVE_ERROR_NOTDIRTY_MSG,
+                    buttons: Ext.MessageBox.OK,
+                    icon: Ext.MessageBox.WARNING
+                });
+
+            } else me.getMask().hide();
 
         // Else
         } else {
