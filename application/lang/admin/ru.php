@@ -88,6 +88,8 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Значение "%s", ук
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Время "%s", указанное в поле "%s" - должно быть корректным');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Значение "%s" поля "%s" должно быть числом имеющим не более 5 разрядов в целочисленной части, и не более 2-х - в дробной');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Значение "%s" поля "%s" не является годом в формате ГГГГ');
+define('I_ROWSAVE_ERROR_NOTDIRTY_TITLE', 'Нечего сохранять');
+define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'Вы пока не сделали никаких изменений');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Текущая запись не может быть указана как родительская для самой себя в поле "%"');
 define('I_ROWFILE_ERROR_MKDIR', 'Создание директории "%s" в папке "%s" не удалось, несмотря на то что папка доступна для записи');
 define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Создание директории "%s" в папке "%s" не удалось, так как эта папка недоступна для записи');
