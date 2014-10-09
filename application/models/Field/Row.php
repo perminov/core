@@ -746,7 +746,7 @@ class Field_Row extends Indi_Db_Table_Row {
         $regexp = preg_replace('/\$$/', ')$', preg_replace('/^\^/', '^(', trim(Indi::rex($rex[$newType]), '/')));
 
         // Setup double-quote variable, and WHERE usage flag
-        $q = '"'; $w = true;
+        $q = '"'; $w = true; $incompatibleValuesReplacement = false;
 
         if ($newType == 'INT(11)') {
             if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
