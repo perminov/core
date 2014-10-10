@@ -121,6 +121,11 @@ Ext.define('Indi.lib.form.field.CkEditor', {
      */
     pickEditorCfgFromRowProps: function(config) {
         var me = this, picked = {}, rowProp;
+
+        // If config.row is not an object - return
+        if (!Ext.isObject(config.row)) return;
+
+        // Try pick props
         for (var i = 0; i < me.editorCfgPickFromRowProps.length; i++) {
             rowProp = config.name + Indi.ucfirst(me.editorCfgPickFromRowProps[i]);
 
@@ -132,6 +137,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
             if (config.row[rowProp]) picked[me.editorCfgPickFromRowProps[i]] = config.row[rowProp];
         }
 
+        // Merge existing editor config properties with picked properties
         Ext.Object.merge(me.editorCfg, picked);
     },
 

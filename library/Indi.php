@@ -1374,15 +1374,16 @@ class Indi {
      *
      * @static
      * @param null $arg
-     * @return mixed
+     * @param Indi_Controller $arg2
+     * @return Indi_Trail_Admin|Indi_Trail_Admin_Item
      */
-    public static function trail($arg = null) {
+    public static function trail($arg = null, Indi_Controller $arg2 = null) {
 
         // If $arg argument is an array, we assume that it's a route stack, so we create a new trail object and store
         // it into the registry
         if (is_array($arg)) {
             $class = 'Indi_Trail_' . ucfirst(Indi::uri()->module);
-            return Indi::registry('trail', new $class($arg));
+            return Indi::registry('trail', new $class($arg, $arg2));
         }
 
         // Else if $arg argument is boolean 'true', we return the whole trail object

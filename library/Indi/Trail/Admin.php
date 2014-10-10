@@ -18,7 +18,7 @@ class Indi_Trail_Admin {
     /**
      * Indi_Controller_Admin object, by reference
      *
-     * @var array
+     * @var Indi_Controller_Admin
      */
     public static $controller = null;
 
@@ -26,8 +26,12 @@ class Indi_Trail_Admin {
      * Constructor
      *
      * @param array $routeA Array of section ids, starting from current section and up to the top
+     * @param Indi_Controller_Admin $controller
      */
-    public function __construct($routeA) {
+    public function __construct($routeA, Indi_Controller_Admin &$controller) {
+
+        // Setup controller
+        self::$controller = &$controller;
 
         // Get all sections, starting from current and up to the most top
         $sectionRs = Indi::model('Section')->fetchAll(
@@ -124,13 +128,8 @@ class Indi_Trail_Admin {
 
     /**
      * Performs the last set auth checks, or, if no errors met - setup a row for each item within trail
-     *
-     * @param Indi_Controller_Admin $controller
      */
-    public function authLevel3(Indi_Controller_Admin &$controller) {
-
-        // Setup controller
-        self::$controller = &$controller;
+    public function authLevel3() {
 
         // If user is trying to create row, despite on it's restricted - raise up an error
         if (((Indi::uri('action') == 'form' && !(Indi::uri('combo') || Indi::uri('filter')))
@@ -230,8 +229,7 @@ class Indi_Trail_Admin {
      * @uses Indi_Trail_Item::toArray()
      * @return array
      */
-    public function toArray()
-    {
+    public function toArray() {
         $array = array();
         foreach (self::$items as $item) {
             $array[] = $item->toArray();

@@ -42,7 +42,9 @@ Ext.define('Indi.lib.controller.Controller', {
         if (!this.trail().action.view) this.trail().action.view = Indi.Controller.defaultView[action];
 
         // Build the action class name
-        a = 'Indi.Controller.Action.' + Indi.ucfirst(this.trail().action.mode) + '.' + Indi.ucfirst(this.trail().action.view);
+        a = 'Indi.Controller.Action';
+        if (this.trail().action.mode) a += '.' + Indi.ucfirst(this.trail().action.mode);
+        if (this.trail().action.view) a += '.' + Indi.ucfirst(this.trail().action.view.replace('_', '.'));
 
         // Setup `actions` property, for instantiated action classes storage
         this.actions = this.actions || {};

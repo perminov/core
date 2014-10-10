@@ -39,7 +39,6 @@ Ext.define('Indi.lib.controller.action.Row', {
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
-                    {alias: 'create'}, '-',
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
                 ]
@@ -200,7 +199,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                                     if (aix) me.goto(url += 'aix/' + aix + '/');
 
                                     // Otherwise we build an warning message, and display Ext.MessageBox
-                                    else me.onDetectionFailed(me, input);
+                                    else me.onDetectionFailed(input);
                                 }
                             });
                         }
@@ -623,7 +622,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     onDetectionFailed: function(input) {
 
         // Declare `smp` variable. SMP - mean Search Params Mention
-        var me = this, spm,
+        var me = this, spm = '',
             kind = (input ? input.id.replace(me.panelDockedInnerBid(), '') : 'offset').toUpperCase();
 
         // If no `input` argument given, we assume it's a 'Offset' item
@@ -688,5 +687,45 @@ Ext.define('Indi.lib.controller.action.Row', {
                 else me.onDetectionFailed(input);
             }
         });
+    },
+
+    /**
+     * Builds and return an array of panels, that will be used to represent the major UI contents.
+     * Currently is consists only from this.row form panel configuration
+     *
+     * @return {Array}
+     */
+    panelItemA: function() {
+        return [this.row];
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Setup id
+        me.id = me.bid();
+
+        // Setup row panel
+        me.row = Ext.merge({
+            id: me.id + '-row',
+            items: me.rowItemA(),
+            dockedItems: me.rowDockedA()
+        }, me.row);
+
+        // Setup main panel items
+        me.panel.items = me.panelItemA();
+
+        // Call parent
+        me.callParent();
+    },
+
+    /**
+     * Builder for row-panel items
+     *
+     * @return {Array}
+     */
+    rowItemA: function() {
+        return [];
     }
 });

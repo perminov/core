@@ -1947,16 +1947,16 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Align picker
         Ext.defer(me.alignPicker, 10, me);
 
-        // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
-        Ext.get(me.ctx().ti().bid() + '-form').select('.i-combo-info[satellite="'+name+'"]').each(function(el){
-            dComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
-            dCombo = Ext.getCmp(me.bid() + dComboName);
-            dCombo.setDisabled(false, true);
-            if (!dCombo.disabled) {
-                dCombo.remoteFetch({
-                    satellite: me.hiddenEl.val(),
-                    mode: 'refresh-children'
-                });
+        // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
+        if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
+            if (d.xtype == 'combo.form') {
+                d.setDisabled(false, true);
+                if (!d.disabled) {
+                    d.remoteFetch({
+                        satellite: me.hiddenEl.val(),
+                        mode: 'refresh-children'
+                    });
+                }
             }
         });
     },
