@@ -2782,4 +2782,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return
         return $file;
     }
+
+    /**
+     * Assign values to row properties in batch mode, but only for properties,
+     * which names are not starting with underscope ('_') sign,
+     * as this properties starting with that sign is used for internal features,
+     * so they are not allowed for assign and will be ignored if faced.
+     *
+     * Example: $row->assign(array('prop1' => 'val1', 'prop2' => 'val2'));
+     * is equal to: $row->prop1 = 'val1'; $row->prop2 = 'val2';
+     *
+     * @param array $assign
+     * @return Indi_Db_Table_Row
+     */
+    public function assign(array $assign) {
+
+        // Assign props in batch mode, but ignore ones starting with underscope
+        foreach ($assign as $k => $v) if (!preg_match('/^_/', trim($k))) $this->{trim($k)} = $v;
+
+        // Return row itself
+        return $this;
+    }
 }
