@@ -1,12 +1,9 @@
 <?php
-class Indi_View_Helper_Admin_RenderForm {
-    public function renderForm() {
+class Indi_View_Action_Admin_Row_Form extends Indi_View_Action_Admin_Row {
+    public function render() {
 
         // Start output buffering
         ob_start();
-
-        // Setup sibling combo
-        echo Indi::view()->siblingCombo();
 
         // Declare arrays that will store info about what fields should be excluded
         // from form, and what included, but disabled in form
@@ -25,9 +22,7 @@ class Indi_View_Helper_Admin_RenderForm {
                     echo Indi::view()->formCombo($fieldR->alias, null, 'extjs');
             }
 
-        ?><script>Indi.trail(true).apply(<?=json_encode(Indi::trail(true)->toArray())?>);</script><?
-
-        // Return buffered output
-        return ob_get_clean();
+        // Return buffered output with parent's return-value
+        return ob_get_clean() . parent::render();
     }
 }

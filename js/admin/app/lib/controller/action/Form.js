@@ -135,7 +135,7 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         me.id = me.bid();
         me.row = Ext.merge({
-            id: me.id + '-form',
+            id: me.id + '-row',
             items: me.formItemA(),
             dockedItems: me.rowDockedA(),
             url: me.ti().section.href + 'save'
@@ -144,16 +144,6 @@ Ext.define('Indi.lib.controller.action.Form', {
         }, me.row);
         me.panel.items = me.panelItemA();
         me.callParent();
-    },
-
-    /**
-     * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.row form panel configuration
-     *
-     * @return {Array}
-     */
-    panelItemA: function() {
-        return [this.row];
     },
 
     /**
@@ -604,7 +594,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         // Create shortcuts for involved components
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
             btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
-            formCmp = Ext.getCmp(me.bid() + '-form');
+            formCmp = Ext.getCmp(me.bid() + '-row');
 
         // If save button is toggled
         if (btnSave && !btnSave.disabled && (btnSave.pressed || btnSaveClick)) {

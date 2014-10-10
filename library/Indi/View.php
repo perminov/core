@@ -470,7 +470,7 @@ class Indi_View {
     public function exists($name) {
         foreach ($this->_path['script'] as $dir) {
             if (is_readable($dir . $name)) {
-                return true;
+                return $dir . $name;
             }
         }
         return false;

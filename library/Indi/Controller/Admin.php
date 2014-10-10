@@ -9,6 +9,25 @@ class Indi_Controller_Admin extends Indi_Controller {
     private $_routeA = array();
 
     /**
+     * Modes and views for typical actions. Can be adjusted with adjustActionCfg() method
+     *
+     * @var array
+     */
+    public $actionCfg = array(
+        'mode' => array(
+            'index' => 'rowset',
+            'form' => 'row',
+            'up' => 'row',
+            'down' => 'row',
+            'toggle' => 'row'
+        ),
+        'view' => array(
+            'index' => 'grid',
+            'form' => 'form'
+        )
+    );
+
+    /**
      * If the purpose of current request is to build an excel spreadsheet - this variable will be used
      * for collecting filters usage information, and retrieving that information in the process of building
      * spreadsheet
@@ -21,6 +40,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Init all general cms features
      */
     public function preDispatch() {
+
+        // Adjust action mode and view config.
+        $this->adjustActionCfg();
 
         // Perform authentication
         $this->auth();
@@ -1435,7 +1457,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (!is_array($data)) die($data);
 
                 // Else go further and perform last auth check, within Indi_Trail_Admin::__construct()
-                else Indi::trail($this->_routeA)->authLevel3($this);
+                else Indi::trail($this->_routeA, $this)->authLevel3();
             }
         }
 
@@ -1513,8 +1535,12 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Else, if we are doing something in a certain section
         } else {
 
-            // Render the contents
-            $out = Indi::view()->renderContent();
+            // Get the action
+            $action = Indi::trail()->view(true);
+
+            // If action is an object-instance of Indi_View_Action_Admin class, call render() method,
+            // otherwise assume that action is just a view script
+            $out = $action instanceof Indi_View_Action_Admin ? $action->render() : $action;
         }
 
         // Strip '/admin' from $out, if cms-only mode is enabled
@@ -1776,5 +1802,13 @@ class Indi_Controller_Admin extends Indi_Controller {
         return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
             ? 'FIND_IN_SET("' . $connectorValue . '", `' . $connectorAlias . '`)'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
+    }
+
+    /**
+     * Do custom actions configuration adjustments. This can be useful in case then there is a need in
+     * some new action, so this function is useful to specify mode and view for that new action/actions
+     */
+    public function adjustActionCfg() {
+
     }
 }

@@ -23,7 +23,15 @@ class Indi_Trail_Admin_Item {
      */
     public $level = null;
 
+    /**
+     * @var Indi_Db_Table_Row
+     */
     public $filtersSharedRow = null;
+
+    /**
+     * @var Indi_View_Action_Admin
+     */
+    public $view;
 
     /**
      * Getter. Currently declared only for getting 'model' property
@@ -94,6 +102,9 @@ class Indi_Trail_Admin_Item {
             foreach ($this->actions as $actionR)
                 if ($actionR->alias == Indi::uri('action'))
                     $this->action = $actionR;
+
+            // Setup view. This call will create an action-view object instance, especially for current trail item
+            $this->view();
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
             if (Indi::uri('action') == 'index') {
@@ -308,5 +319,134 @@ class Indi_Trail_Admin_Item {
 
         // Return base id
         return $bid;
+    }
+
+    /**
+     * Setup and/or return action-view object instance for trail item's action
+     *
+     * @param bool $render
+     * @return Indi_View_Action_Admin|string
+     */
+    public function view($render = false) {
+
+        // If action-view object is already set up - return it
+        if ($this->view instanceof Indi_View_Action_Admin && !$render) return $this->view;
+
+        // Setup shortcuts
+        $action = $this->action->alias;
+        $section = $this->section->alias;
+
+        // Construct filename of the template, that should be rendered by default
+        $script = $section . '/' . $action . '.php';
+
+        // Build action-view class name
+        $actionClass = 'Admin_' . ucfirst($section) . 'Controller' . ucfirst($action) . 'ActionView';
+
+        // Setup $actionClassDefined flag as `false`, initially
+        $actionClassDefinition = false;
+
+        // If template with such filename exists, render the template
+        if ($actionClassFile = Indi::view()->exists($script)) {
+
+            // If $render argument is set to `true`
+            if ($render) {
+
+                // If action-view class file is in the list of already included files - this will mean
+                // that we are sure about action-view class file definitely contains class declaration,
+                // and this fact assumes that there is no sense of this file to be rendered, as rendering
+                // won't and shouldn't give any plain output, so, instead of rendering, we return existing
+                // action-view class instance
+                if (in(str_replace('/', DIRECTORY_SEPARATOR, $actionClassFile), get_included_files()))
+                    return $this->view;
+
+                // Else, get the plain result of the rendered script, assignt it to `plain` property of
+                // already existing action-view object instance, and return that `plain` property value individually
+                else return $this->view->plain = Indi::view()->render($script);
+
+            // Else
+            } else {
+
+                // Get the action-view-file source
+                $lines = file($actionClassFile);
+
+                // If first line consists of '<?php' string
+                if (trim($lines[0]) == '<?php') {
+
+                    // Foreach remaining lines
+                    for ($i = 1; $i < count($lines); $i++) {
+
+                        // If no enclosing php-tag found yet
+                        if (!preg_match('/\?>/', trim($lines[$i]))) {
+
+                            // If current line contains action-view class definition signature
+                            if (preg_match('/class\s+' . $actionClass . '(\s|\{)/', trim($lines[$i]))) {
+
+                                // Setup $actionClassDefinition flag as `true`
+                                $actionClassDefinition = true;
+                                break;
+                            }
+
+                        // Else stop searching action-view class definition signature
+                        } else break;
+                    }
+                }
+
+                // If action-view class definition signature was found in action-view class file - include that file
+                if ($actionClassDefinition) include_once($actionClassFile);
+            }
+
+        // Else if action-view class instance already exists and $render argument is `true` - return instance
+        } else if ($this->view instanceof Indi_View_Action_Admin && $render) return $this->view;
+
+
+        // If such action class does not exist
+        if (!class_exists($actionClass, false)) {
+
+            // Setup default action-view parent class
+            $actionParentClass = 'Project_View_Action_Admin';
+
+            // Get modes and views config for actions
+            $actionCfg = Indi_Trail_Admin::$controller->actionCfg;
+
+            // Detect mode (rowset or row) and save into trail
+            if ($mode = ucfirst($actionCfg['mode'][$action])) {
+                $actionParentClass .= '_' . $mode;
+                $this->action->mode = $mode;
+            }
+
+            // Detect view and save into trail
+            if ($view = ucfirst($actionCfg['view'][$action])) {
+                $actionParentClass .= '_' . $view;
+                $this->action->view = $view;
+            }
+
+            // If such action parent class does not exist - replace 'Project' with 'Indi' within it's name
+            if (!class_exists($actionParentClass)) $actionParentClass = preg_replace('/^Project/', 'Indi', $actionParentClass);
+
+            // Auto-declare action-view class
+            eval('class ' . ucfirst($actionClass) . ' extends ' . $actionParentClass . '{}');
+
+        // Else
+        } else {
+
+            // Get action-view parent class name
+            $actionParentClass = get_parent_class($actionClass);
+
+            // If action-view parent class name contains mode definition
+            if (preg_match('/(Indi|Project)_View_Action_Admin_(Row|Rowset)/', $actionParentClass, $mode)) {
+
+                // Pick that mode and assing it as a property of trail item's action object
+                $this->action->mode = $mode[2];
+
+                // If action-view parent class name also contains view definition
+                if (preg_match('/' . $mode[0]. '_([A-Z][A-Za-z0-9_]*)/', $actionParentClass, $view))
+
+                    // Pick that view and also assign it as a property of trail item's action object
+                    $this->action->view = $view[1];
+            }
+        }
+
+        // Get the action-view instance
+        return $this->view = new $actionClass();
     }
 }
