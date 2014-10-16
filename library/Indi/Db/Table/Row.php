@@ -1491,6 +1491,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * control element requirements, mysql column type requirements and additional/user-defined requirements
      *
      * @param bool $check
+     * @param null|string $message
      * @return array
      */
     public function mismatch($check = false, $message = null) {
@@ -2802,5 +2803,15 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return row itself
         return $this;
+    }
+
+    /**
+     * Return Field_Row object for a given field/property within current row
+     *
+     * @param $alias
+     * @return Field_Row|Indi_Db_Table_Rowset
+     */
+    public function field($alias) {
+        return $this->model()->fields($alias);
     }
 }

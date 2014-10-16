@@ -48,7 +48,7 @@ class Indi_Db {
      * Initial database setup, if $config argument is provided, or just return the singleton instance otherwise
      *
      * @static
-     * @param array $config
+     * @param array $arg
      * @return null|Indi_Db
      */
     public static function factory($arg = array())
@@ -101,7 +101,7 @@ class Indi_Db {
             // Get info about existing column types
             $columnTypeA = self::$_instance->query('SELECT * FROM `columnType`')->fetchAll();
             $iColumnTypeA = array(); foreach ($columnTypeA as $columnTypeI)
-                $iColumnTypeA[$columnTypeI['id']] = new Indi_Db_Table_Row_Noeval(array(
+                $iColumnTypeA[$columnTypeI['id']] = new ColumnType_Row(array(
                     'table' => 'columnType',
                     'original' => $columnTypeI
                 ));
