@@ -274,7 +274,7 @@ class Indi_Trail_Admin_Item {
         if ($this->action) $array['action'] = $this->action->toArray();
         if ($this->actions) $array['actions'] = $this->actions->toArray();
         if ($this->row) {
-            $array['row'] = $this->row->toArray();
+            $array['row'] = $this->row->toArray('current', true, $this->action->alias);
             $array['row']['title'] = $this->row->title();
         }
         if ($this->model) $array['model'] = $this->model->toArray();

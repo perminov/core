@@ -1341,11 +1341,11 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param bool $deep
      * @return array
      */
-    public function toArray($type = 'current', $deep = true) {
+    public function toArray($type = 'current', $deep = true, $purp = null) {
         if ($type == 'current') {
 
             // Merge _original, _modified, _compiled and _temporary array of properties
-            $array = (array) array_merge($this->_original, $this->_modified, $this->_compiled, $this->_temporary);
+            $array = (array) array_merge($this->_original, $this->_modified, $purp == 'form' ? array() : $this->_compiled, $this->_temporary);
 
             // Setup filefields values
             foreach ($this->model()->getFileFields() as $fileField) $array[$fileField] = $this->$fileField;

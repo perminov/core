@@ -248,8 +248,8 @@ Ext.define('Indi.lib.form.field.Combo', {
             // If combo is running in multiple-values mode
             if (me.multiSelect) {
 
-                // Normalize me.value
-                me.value = me.value + '';
+                // Normalize me.value and `value` argument
+                me.value = me.value + ''; value = value + '';
 
                 // Detect difference between old value and new value
                 var was = me.value ? me.value.split(',') : [], now = value ? value.split(',') : [],

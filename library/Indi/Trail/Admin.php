@@ -33,6 +33,9 @@ class Indi_Trail_Admin {
         // Setup controller
         self::$controller = &$controller;
 
+        // Reset items
+        self::$items = array();
+
         // Get all sections, starting from current and up to the most top
         $sectionRs = Indi::model('Section')->fetchAll(
             '`id` IN (' . $route = implode(',', $routeA) . ')',
