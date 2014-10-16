@@ -1389,12 +1389,17 @@ class Indi {
         // Else if $arg argument is boolean 'true', we return the whole trail object
         else if ($arg === true) return Indi::registry('trail');
 
-        // Else if $arg argument is not set, we return current trail item object
-        else if ($arg == null) {/*d(debug_print_backtrace());*/return Indi::registry('trail')->item();}
+        // Else if registry contains valid trail object
+        else if (is_object(Indi::registry('trail')))
 
-        // Else we return item, that is at index, shifted from the last index by $arg number. The $arg argument will
-        // be casted as integer by '(int)' expression in 'item()' method call
-        else return Indi::registry('trail')->item($arg);
+            // If $arg argument is not set, we return current trail item object
+            // Else we return item, that is at index, shifted from the last index by $arg number. The $arg argument will
+            // be casted as integer by '(int)' expression in 'item()' method call
+            return $arg == null ? Indi::registry('trail')->item() : Indi::registry('trail')->item($arg);
+
+        // Else print backtrace, as the fact that we are here mean that we faced an attempt to call method item()
+        // on a non-object, and standard error message is not usefult here, as doesn't give any backtrace
+        else {debug_print_backtrace();die();}
     }
 
 
