@@ -58,16 +58,35 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (action.result.redirect) Indi.load(action.result.redirect);
             },
             actionfailed: function(form, action) {
-                var cmp, msg;
+                var cmp, certainFieldMsg, wholeFormMsg = [];
 
                 // The the info about invalid fields from the response, and mark the as invalid
                 Object.keys(action.result.mismatch).forEach(function(i, index, mismatch){
-                    if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
-                        msg = action.result.mismatch[i];
-                        msg = msg.replace(cmp.fieldLabel, '').replace(/""/g, '');
-                        cmp.markInvalid(msg);
+
+                    // If mismatch key starts with a '#' symbol, we assume that message, assigned
+                    // under such key - is not related to any certain field within form, so we
+                    // collect al such messages for them to be bit later displayed within Ext.MessageBox
+                    if (i.substring(0, 1) == '#') wholeFormMsg.push(action.result.mismatch[i]);
+
+                    // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
+                    // under such key - is related to some certain field within form, so we get that field's
+                    // component and mark it as invalid
+                    else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
+                        certainFieldMsg = action.result.mismatch[i];
+                        certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
+                        cmp.markInvalid(certainFieldMsg);
                     }
                 });
+
+                // If we collected at least one error message, that is related to the whole form rather than
+                // some certain field - use an Ext.MessageBox to display it
+                if (wholeFormMsg.length) Ext.MessageBox.show({
+                    title: Indi.lang.I_ERROR,
+                    msg: (wholeFormMsg.length > 1 ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; '),
+                    buttons: Ext.MessageBox.OK,
+                    icon: Ext.MessageBox.ERROR
+                });
+
 
                 // Reset value of the 'ID' master toolbar item to the last valid value
                 var idCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'id');

@@ -997,4 +997,14 @@ class Field_Row extends Indi_Db_Table_Row {
             }
         }
     }
+
+    /**
+     * Get zero-value for a column type, linked to current field, or boolean `false`,
+     * in case if current field has no related column within database table
+     *
+     * @return bool|string
+     */
+    public function zeroValue() {
+        return $this->columnTypeId ? $this->foreign('columnTypeId')->zeroValue() : false;
+    }
 }

@@ -457,11 +457,21 @@ if (!function_exists('http_parse_headers')) {
  * Shortcut for in_array() function, but takes $array argument not only as array, but as a string also.
  * In that case $array argument will be converted to array by splitting by comma.
  *
- * @param $value
+ * @param $item
  * @param $array
  * @return boolean
  */
 function in($item, $array) {
     if (!is_array($array)) $array = explode(',', $array);
     return in_array($item, $array);
+}
+
+/**
+ * Comma-separeted values to array converter
+ *
+ * @param $items
+ * @return array
+ */
+function ar($items) {
+    return is_array($items) ? $items : explode(',', $items);
 }

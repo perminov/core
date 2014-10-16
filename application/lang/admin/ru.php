@@ -49,6 +49,7 @@ define('I_ENUMSET_ERROR_VALUE_LAST', 'Значение "%s" - последнее
 
 define('I_YES', 'Да');
 define('I_NO', 'Нет');
+define('I_ERROR', 'Ошибка');
 
 define('I_HOME', 'Начало');
 define('I_LOGOUT', 'Выход');
