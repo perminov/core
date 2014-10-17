@@ -402,8 +402,7 @@ function grs($length = 15, $useSpecialChars = false) {
  */
 function ldate($format, $date) {
     $formatted = strftime($format, strtotime($date));
-    $encoding = mb_detect_encoding($formatted, 'windows-1251, utf-8');
-    return $encoding ? iconv($encoding, 'utf-8', $formatted) : $formatted;
+    return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
 }
 
 /**
