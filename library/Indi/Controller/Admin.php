@@ -1811,4 +1811,16 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function adjustActionCfg() {
 
     }
+
+    /**
+     * Do auth for selected row, assuming it is a row of `User` model
+     */
+    public function loginAction() {
+
+        // Force signin for selected user
+        if (Indi::trail()->model->table() == 'user') $_SESSION['user'] = $this->row->toArray();
+
+        // Redirect
+        $this->redirect();
+    }
 }
