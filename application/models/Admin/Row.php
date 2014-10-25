@@ -18,6 +18,6 @@ class Admin_Row extends Indi_Db_Table_Row {
         }
 
         // Standard save
-        parent::save();
+        return parent::save();
     }
 }

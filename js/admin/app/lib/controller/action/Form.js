@@ -73,7 +73,8 @@ Ext.define('Indi.lib.controller.action.Form', {
                     // component and mark it as invalid
                     else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
                         certainFieldMsg = action.result.mismatch[i];
-                        certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
+                        if (Ext.isString(certainFieldMsg))
+                            certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
                         cmp.markInvalid(certainFieldMsg);
                     }
                 });
