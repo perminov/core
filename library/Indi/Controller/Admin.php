@@ -41,6 +41,10 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function preDispatch() {
 
+        // Set locale
+        if (Indi::ini()->lang->admin == 'ru')
+            setlocale(LC_TIME, 'ru_RU.UTF-8', 'ru_utf8', 'Russian_Russia.UTF8', 'ru_RU', 'Russian');
+
         // Adjust action mode and view config.
         $this->adjustActionCfg();
 
