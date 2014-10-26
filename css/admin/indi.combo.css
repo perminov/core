@@ -22,6 +22,10 @@
     margin-left: 1px; background-color: #DFE8F6; padding: 0 2px 0px 2px; white-space: nowrap;
     margin-top: 1px; display: inline-block; font-size: 11px; line-height: 15px; float: left;
 }
+.x-form-readonly .i-combo .i-combo-multiple .i-combo-selected-item {
+    cursor: default;
+}
+
 .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     background-repeat: no-repeat; background-position: 0 0; width: 8px; height: 8px; display: inline-block;
     margin-left: 2px; cursor: pointer;background-image: url(/i/admin/combo-multiple-selected-item-delete.png);
@@ -121,6 +125,10 @@
 }
 .x-boundlist-item-disabled, .x-boundlist-item-disabled * {
     color: #cccccc;
+}
+
+.x-form-readonly .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
+    width: 0;
 }
 
 /* Disabled styling*/
