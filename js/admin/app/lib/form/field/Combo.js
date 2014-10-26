@@ -96,7 +96,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     '</td>',
                     '<td class="i-combo-keyword-cell">',
                         '<div class="i-combo-keyword-div">',
-                            '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
+                            '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"<tpl if="me.readOnly"> readonly="readonly"</tpl>/>',
                             '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}" <tpl if="me.boolean">boolean="true"</tpl>/>',
                         '</div>',
                     '</td>',
@@ -137,7 +137,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         '</td>',
                         '<td class="i-combo-keyword-cell">',
                             '<div class="i-combo-keyword-div">',
-                                '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"/>',
+                                '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"<tpl if="me.readOnly"> readonly="readonly"</tpl>/>',
                                 '<input id="{me.field.alias}" type="hidden" value="<tpl if="selected.value">{selected.value}</tpl>" name="{me.field.alias}"/>',
                             '</div>',
                         '</td>',
@@ -578,7 +578,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // If current combo is a filter-combo, and ctrl key is pressed - clear combo
-        if (arguments.length && arguments[0].ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
+        if (arguments.length && !me.readOnly && arguments[0].ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
             me.clearCombo();
             return;
         }
@@ -1295,6 +1295,9 @@ Ext.define('Indi.lib.form.field.Combo', {
     keyUpHandler: function (event) {
         var me = this, eo = Ext.EventObject, k = eo.getKey();
 
+        // If combo is read-only - return
+        if (me.readOnly) return;
+        
         // We will be fetching results with a timeout, so fetch requests will be
         // sent after keyword typing is finished (or seems to be finished)
         clearTimeout(me.timeout);
@@ -1553,6 +1556,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Setup 'code' and 'name' variables
         var me = this, name = me.name, code = Ext.isNumeric(evt) ? evt : evt.keyCode;
+
+        // If combo is read-only - return
+        if (me.readOnly) return;
 
         // Enter - select an option
         if (code == Ext.EventObject.ENTER) {

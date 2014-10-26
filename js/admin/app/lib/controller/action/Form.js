@@ -143,8 +143,10 @@ Ext.define('Indi.lib.controller.action.Form', {
         }
     },
 
-    // @inheritdoc
-    initComponent: function() {
+    /**
+     * Detect if all inputs within the row panel should be read-only
+     */
+    rowReadOnly: function() {
         var me = this;
 
         // Detect if readOnly mode should turned On
@@ -152,7 +154,18 @@ Ext.define('Indi.lib.controller.action.Form', {
         for (var i = 0; i < me.ti().actions.length; i++)
             if (me.ti().actions[i].alias == 'save')
                 me.row.readOnly = false;
+        
+        // Return auto-detected value for `readOnly` flag/prop
+        return me.row.readOnly;
+    },
 
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Detect if all inputs within the row panel should be read-only
+        me.rowReadOnly();
+        
         me.id = me.bid();
         me.row = Ext.merge({
             id: me.id + '-row',
@@ -336,6 +349,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'datefield',
             ariaTitle: '',
             cls: 'i-field-date',
+            startDay: 1,
             format: item.field.params.displayFormat
         };
     },
@@ -357,6 +371,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             xtype: 'datetimefield',
             cls: 'i-field-datetime',
+            startDay: 1,
             format: item.field.params.displayDateFormat
         };
     },

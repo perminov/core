@@ -43,11 +43,20 @@
 .i-field.i-field-date .x-form-trigger-wrap{
     width: 79px !important;
 }
+.i-field.i-field-date.x-form-readonly .x-form-trigger-wrap{
+    width: 63px !important;
+}
 .i-field.i-field-datetime .x-form-trigger-wrap{
     width: 126px !important;
 }
+.i-field.i-field-datetime.x-form-readonly .x-form-trigger-wrap{
+    width: 110px !important;
+}
 .i-field.i-field-number .x-form-trigger-wrap{
     width: 100px !important;
+}
+.i-field.i-field-number.x-form-readonly .x-form-trigger-wrap{
+    width: 84px !important;
 }
 .i-field.i-field-number .i-field-number-after {
     position: absolute; margin-top: -17px; margin-left: 104px; font-size: 11px;
