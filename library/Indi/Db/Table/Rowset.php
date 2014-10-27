@@ -157,8 +157,22 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Declare an array for return values, got by deep mode
         $array = array();
 
-        // Fulfil that array
-        foreach ($this as $row) $array[] = $row->toArray('current', $deep);
+        // If $deep argument is a boolean
+        if (is_bool($deep)) {
+
+            // Fulfil that array
+            foreach ($this as $row) $array[] = $row->toArray('current', $deep);
+
+        // Else if $deep argument is a string, we assume it's a comma-separated
+        // columns/properties list that each item of result array should consist of
+        } else if (is_string($deep)) {
+
+            // Get the column names
+            $columnA = explode(',', $deep);
+
+            // Fulfil that array
+            foreach ($this as $i => $row) foreach ($columnA as $columnI) $array[$i][$columnI] = $row->$columnI;
+        }
 
         // Return result
         return $array;
@@ -1088,6 +1102,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
         // Declare array for single column
         $valueA = array();
+
+
 
         // Collect column data
         foreach ($this as $r) $valueA[] = $r->$column;
