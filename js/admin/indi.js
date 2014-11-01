@@ -10,7 +10,7 @@ Ext.define('Indi', {
      */
     enableQuickTips: false,
     name: 'Indi',
-    appFolder: '../js/admin/app',
+    appFolder: './js/admin/app',
 
     /**
      * Static properties and methods
