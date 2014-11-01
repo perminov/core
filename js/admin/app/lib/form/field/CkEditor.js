@@ -31,7 +31,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
      */
     editorCfg: {
         toolbar: [
-            {items: ['Source', 'Preview']},
+            {items: ['Source', 'Print']},
             {items: [ 'Paste', 'PasteText', 'PasteFromWord', 'Table']},
             {items: [ 'Image', 'Flash', 'oembed','Link', 'Unlink']},
             {items: [ 'Bold', 'Italic', 'Underline']},
@@ -88,7 +88,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         if (!me.editorCfg.contentsCss) me.editorCfg.contentsCss = [];
         else if (!Array.isArray(me.editorCfg.contentsCss)) me.editorCfg.contentsCss = [me.editorCfg.contentsCss];
         if (me.editorCfg.style) me.editorCfg.contentsCss.push(me.editorCfg.style);
-        me.editorCfg.contentsCss.push('body{min-width: 100%;}');
+        me.editorCfg.contentsCss.push('body{min-width: 100%; margin: 0;}');
         for (i = 0; i < me.editorCfg.contentsCss.length; i++)
             if (me.editorCfg.contentsCss[i].match(/^\/.*\.css$/))
                 me.editorCfg.contentsCss[i] = Indi.std + me.editorCfg.contentsCss[i];
@@ -193,5 +193,12 @@ Ext.define('Indi.lib.form.field.CkEditor', {
 
         // Call parent
         me.callParent();
+    },
+
+    /**
+     * Display the browser's native print dialog for printing editor contents
+     */
+    print: function() {
+        CKEDITOR.tools.callFunction(9, this.getEditor());
     }
 });

@@ -13,6 +13,7 @@
         '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
         '/js/admin/app/override/Ext.tip.ToolTip.js',
         '/js/admin/app/override/Ext.Component.js',
+        '/js/admin/app/override/Ext.form.action.Submit.js',
         '/js/admin/app/override/Ext.form.field.Number.js',
         '/js/admin/app/override/Ext.picker.Date.js',
         '/js/admin/app/override/Ext.form.field.Checkbox.js',
@@ -45,7 +46,8 @@
         '/js/admin/app/lib/controller/action/Rowset.js',
         '/js/admin/app/lib/controller/action/Grid.js',
         '/js/admin/app/lib/controller/action/Row.js',
-        '/js/admin/app/lib/controller/action/Form.js'
+        '/js/admin/app/lib/controller/action/Form.js',
+        '/js/admin/app/lib/controller/action/Print.js'
     ));
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',

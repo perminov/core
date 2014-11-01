@@ -52,6 +52,13 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_nested = array();
 
     /**
+     * Array containing meta information about uploaded files
+     *
+     * @var array
+     */
+    protected $_files = array();
+
+    /**
      * Table name of table, that current row is related to
      *
      * @var string
@@ -210,6 +217,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             $return = $this->_original['id'];
         }
 
+        // Provide a changelog recording, if configured
+        if ($this->model()->changeLog('storage')) $this->changeLog($original);
+
         // Auto set `move` if need
         if ($orderAutoSet) {
 
@@ -242,6 +252,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Update cache if need
         if (Indi::ini('db')->cache && $this->model()->useCache()) Indi_Cache::update($this->model()->table());
+
+        // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
+        $this->files(true);
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
@@ -290,6 +303,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param string $direction (up|down)
      * @param string $within
+     * @return bool
      */
     public function move($direction = 'up', $within = '') {
 
@@ -815,13 +829,29 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // If some of selected rows are not presented in $dataRs, we do additional fetch to retrieve
                 // them from database and append these rows to $data array
-                if(count($selectedThatShouldBeAdditionallyFetched = array_diff($selected, $allFetchedIds))) {
+                if (count($selectedThatShouldBeAdditionallyFetched = array_diff($selected, $allFetchedIds))) {
                     $data = array_merge($data, $relatedM->fetchAll('
                         FIND_IN_SET(`id`, "' . implode(',', $selectedThatShouldBeAdditionallyFetched) . '")
                     ')->rows());
                 }
 
-                $dataRs->selected = $relatedM->createRowset(array('rows' => $data));
+                // Create unsorted rowset
+                $unsortedRs = $relatedM->createRowset(array('rows' => $data));
+
+                // Build array containing rows, that are ordered within that array
+                // in the same order as their ids in $selected comma-separated string
+                foreach (ar($selected) as $id) if ($row = $unsortedRs->select($id)->at(0)) $sorted[] = $row;
+
+                // Unset $unsorted
+                unset($unsortedRs);
+
+                // Setup `selected` property as a *_Rowset object, containing properly ordered rows
+                $dataRs->selected = $relatedM->createRowset(array('rows' => $sorted));
+
+                // Unset $sorted
+                unset($sorted);
+
+            // Else
             } else {
                 $dataRs->selected = $relatedM->createRowset(array('rows' => array()));
             }
@@ -967,7 +997,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                             : '= "' . $this->$key . '"');
 
                     // Fetch foreign row/rows
-                    $foreign = Indi::model($model)->{'fetch' . $methodType}($where);
+                    $foreign = Indi::model($model)->{'fetch' . $methodType}(
+                        $where,
+                        $fieldR->storeRelationAbility == 'many'
+                            ? 'FIND_IN_SET(`' . $col . '`, "' . $this->$key . '")'
+                            : null
+                    );
                 }
 
             // Else there is no such a field within current entity - throw an exception
@@ -2290,7 +2325,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function original() {
         if (func_num_args() == 0) return $this->_original;
-        else if (func_num_args() == 1) return $this->_original[func_get_arg(0)];
+        else if (func_num_args() == 1) return is_array(func_get_arg(0)) ? $this->_original = func_get_arg(0) : $this->_original[func_get_arg(0)];
         else return $this->_original[func_get_arg(0)] = func_get_arg(1);
     }
 
@@ -2316,7 +2351,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function modified() {
         if (func_num_args() == 0) return $this->_modified;
-        else if (func_num_args() == 1) return $this->_modified[func_get_arg(0)];
+        else if (func_num_args() == 1) return is_array(func_get_arg(0)) ? $this->_modified = func_get_arg(0) : $this->_modified[func_get_arg(0)];
         else return $this->_modified[func_get_arg(0)] = func_get_arg(1);
     }
 
@@ -2442,9 +2477,9 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Do all meintenance, related to file-uploads, e.g upload/replace/delete files and make copies if need
+     * Do all maintenance, related to file-uploads, e.g upload/replace/delete files and make copies if need
      *
-     * @param array $fields
+     * @param array|bool $fields
      * @return mixed
      */
     public function files($fields = array()) {
@@ -2453,7 +2488,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_string($fields)) $fields = explode(',', $fields);
 
         // If there is no file upload fields that should be taken into attention - exit
-        if (!count($fields)) return;
+        if (is_array($fields) && !count($fields)) return;
 
         // If value, got by $this->model()->dir() call, is not a directory name
         if (!preg_match(':^([A-Z][\:])?/.*/$:', $dir = $this->model()->dir())) {
@@ -2475,8 +2510,64 @@ class Indi_Db_Table_Row implements ArrayAccess
             return;
         }
 
+        // If $fields arguments is a boolean and is true we assume that there is already exists file-fields
+        // content modification info, that was set up earlier, so now we should apply file-upload fields contents
+        // modifications, according to that info
+        if ($fields === true) foreach ($this->_files as $field => $meta) {
+
+            // If $meta is an array, we assume it contains values (`name`, `tmp_name`, etc),
+            // picked from $_FILES variable, especially for a certain file-upload field
+            if (is_array($meta)) {
+
+                // Get the extension of the uploaded file
+                $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $meta['name']);
+
+                // Delete all of the possible files, uploaded using that field, and all their versions
+                $this->deleteFiles($field);
+
+                // Build the full filename into $dst variable
+                $dst = $dir . $this->id . '_' . $field . '.' . strtolower($ext);
+
+                // Move uploaded file to $dst destination, or copy, if move_uploaded_file() call failed
+                if (!move_uploaded_file($meta['tmp_name'], $dst)) copy($meta['tmp_name'], $dst);
+
+                // If uploaded file is an image in formats gif, jpg or png
+                if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
+
+                    // Check if there should be copies created for that image
+                    $resizeRs = Indi::model('Resize')->fetchAll('`fieldId` = "' . $this->model()->fields($field)->id . '"');
+
+                    // If should - create thmem
+                    foreach ($resizeRs as $resizeR) $this->resize($field, $resizeR, $dst);
+                }
+
+                // Remove meta info for current file-upload field
+                unset ($this->_files[$field]);
+
+            // If file, uploaded using $field field, should be deleted
+            } else if ($meta == 'd') {
+
+                // Get the file, and all it's versions
+                $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
+
+                // Delete them
+                foreach ($fileA as $fileI) @unlink($fileI);
+
+                // Remove meta info for current file-upload field
+                unset ($this->_files[$field]);
+
+            // If url was detected in $_POST data under key, assotiated with file-upload field
+            } else if (preg_match(Indi::rex('url'), $meta)) {
+
+                // Load that file by a given url
+                $this->wget($meta, $field);
+
+                // Remove meta info for current file-upload field
+                unset ($this->_files[$field]);
+            }
+
         // For each file upload field alias within $fields list
-        foreach ($fields as $field) {
+        } else foreach ($fields as $field) {
 
             // If there was a file uploaded a moment ago, we should move it to certain place
             if (Indi::post($field) == 'm') {
@@ -2501,40 +2592,20 @@ class Indi_Db_Table_Row implements ArrayAccess
                     continue;
                 }
 
-                // Get the extension of the uploaded file
-                $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $meta['name']);
-
-                // Delete all of the possible files, uploaded using that field, and all their versions
-                $this->deleteFiles($field);
-
-                // Build the full filename into $dst variable
-                $dst = $dir . $this->id . '_' . $field . '.' . strtolower($ext);
-
-                // Move uploaded file to $dst destination, or copy, if move_uploaded_file() call failed
-                if (!move_uploaded_file($meta['tmp_name'], $dst)) copy($meta['tmp_name'], $dst);
-
-                // If uploaded file is an image in formats gif, jpg or png
-                if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
-
-                    // Check if there should be copies created for that image
-                    $resizeRs = Indi::model('Resize')->fetchAll('`fieldId` = "' . $this->model()->fields($field)->id . '"');
-
-                    // If should - create thmem
-                    foreach ($resizeRs as $resizeR) $this->resize($field, $resizeR, $dst);
-                }
+                // Assign $meta under $field key within $this->_files array
+                $this->_files[$field] = $meta;
 
             // If file, uploaded using $field field, should be deleted
             } else if (Indi::post($field) == 'd') {
 
-                // Get the file, and all it's versions
-                $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
-
-                // Delete them
-                foreach ($fileA as $fileI) @unlink($fileI);
+                // Assign $meta under $field key within $this->_files array
+                $this->_files[$field] = Indi::post($field);
 
             // If url was detected in $_POST data under key, assotiated with file-upload field
             } else if (preg_match(Indi::rex('url'), Indi::post($field))) {
-                $this->wget(Indi::post($field), $field);
+
+                // Assign $meta under $field key within $this->_files array
+                $this->_files[$field] = Indi::post($field);
             }
         }
     }
@@ -2813,5 +2884,187 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function field($alias) {
         return $this->model()->fields($alias);
+    }
+
+    /**
+     * Provide the ability for changelog
+     *
+     * @param $original
+     * @return mixed
+     */
+    public function changelog($original) {
+
+        // Get changelog config
+        $cfg = $this->model()->changeLog();
+
+        // Get the state of modified fields, that they were in at the moment before current row was saved
+        $modified = array_diff_assoc($this->_original, $original);
+
+        // Unset fields, that should not be involved in logging
+        if ($cfg['ignore']) foreach(ar($cfg['ignore']) as $ignore) unset($modified[$ignore]);
+
+        // If no storage provided, or current row was a new row, ro wasn't, but had no modified properties - return
+        if (!$cfg['storage'] || !$original['id'] || !count($modified)) return;
+
+        // Get the id of current entity/model
+        $entityId = $this->model()->id();
+
+        // Get the foreign key names
+        $foreignA = $this->model()->fields()->select('one,many', 'storeRelationAbility')->column('alias');
+
+        // Get the list of foreign keys, that had modified values
+        $modifiedForeignA = array_intersect($foreignA, array_keys($modified));
+
+        // Setup $was object as a clone of $this object, but at a state
+        // that it had before it was saved, and even before it was modified
+        $was = clone $this; $was->original($original);
+
+        // Setup foreign data for $was object
+        $was->foreign(implode(',', $modifiedForeignA));
+
+        // Setup $now object as a clone of $this object, at it's current state
+        $now = clone $this; $now->foreign(implode(',', $modifiedForeignA));
+
+        // Get the storage model
+        $storageM = Indi::model($cfg['storage']);
+
+        // Get the rowset of modified fields
+        $modifiedFieldRs = Indi::model($entityId)->fields()->select(array_keys($modified), 'alias');
+
+        // Foreach modified field within the modified fields rowset
+        foreach ($modifiedFieldRs as $modifiedFieldR) {
+
+            // Create the changelog entry object
+            $storageR = $storageM->createRow();
+
+            // Setup a link to current row
+            $storageR->{$this->model()->table() . 'Id'} = $this->id;
+
+            // Setup a field, that was modified
+            $storageR->fieldId = $modifiedFieldR->id;
+
+            // If modified field is a foreign key
+            if (array_key_exists($modifiedFieldR->alias, $was->foreign())) {
+
+                // If modified field's foreign data was a rowset object
+                if ($was->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Rowset) {
+
+                    // Declare the array that will contain comma-imploded titles of all rows
+                    // within modified field's foreign data rowset
+                    $implodedWas = array();
+
+                    // Fulfil that array
+                    foreach ($was->foreign($modifiedFieldR->alias) as $r) $implodedWas[] = $r->title();
+
+                    // Convert that array to comma-separated string
+                    $storageR->was = implode(', ', $implodedWas);
+
+                // Else if modified field's foreign data was a row object
+                } else if ($now->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Row) {
+
+                    // Get that row's title
+                    $storageR->was = $was->foreign($modifiedFieldR->alias)->title();
+
+                }
+
+            // Else if modified field is not a foreign key
+            } else {
+
+                // Get it's value as is
+                $storageR->was = $was->{$modifiedFieldR->alias};
+            }
+
+            // If modified field is a foreign key
+            if (array_key_exists($modifiedFieldR->alias, $now->foreign())) {
+
+                // If modified field's foreign data was a rowset object
+                if ($now->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Rowset) {
+
+                    // Declare the array that will contain comma-imploded titles of all rows
+                    // within modified field's foreign data rowset
+                    $implodedNow = array();
+
+                    // Fulfil that array
+                    foreach ($now->foreign($modifiedFieldR->alias) as $r) $implodedNow[] = $r->title();
+
+                    // Convert that array to comma-separated string
+                    $storageR->now = implode(', ', $implodedNow);
+
+                // Else if modified field's foreign data was a row object
+                } else if ($now->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Row) {
+
+                    // Get that row's title
+                    $storageR->now = $now->foreign($modifiedFieldR->alias)->title();
+                }
+
+            // Else if modified field is not a foreign key
+            } else {
+
+                // Get it's value as is
+                $storageR->now = $now->{$modifiedFieldR->alias};
+            }
+
+            // Setup other properties
+            $storageR->datetime = date('Y-m-d H:i:s');
+            $storageR->changerType = Indi::model(Indi::admin()->alternate ? Indi::admin()->alternate : 'Admin')->id();
+            $storageR->profileId = Indi::admin()->profileId;
+            $storageR->changerId = Indi::admin()->id;
+            $storageR->save();
+        }
+    }
+
+    /**
+     * Determine whether field's value was changed from zero-value to non-zero-value
+     *
+     * @param $field
+     * @return bool
+     */
+    public function fieldIsUnzeroed($field) {
+        return array_key_exists($field, $this->_modified)
+            && (
+                $this->_original[$field] == $this->field($field)->zeroValue()
+                || (
+                    in_array($field, $this->model()->getEvalFields())
+                    && preg_match(Indi::rex('phpsplit'), $this->_original[$field])
+                )
+            ) && $this->_modified[$field] != $this->field($field)->zeroValue();
+    }
+
+    /**
+     * Determine whether field's value was changed from non-zero-value to zero-value
+     *
+     * @param $field
+     * @return bool
+     */
+    public function fieldIsZeroed($field) {
+        return array_key_exists($field, $this->_modified)
+            && $this->_original[$field] != $this->field($field)->zeroValue()
+            && $this->_modified[$field] == $this->field($field)->zeroValue();
+    }
+
+    /**
+     * Detect whether or not row's field currently has a zero-value
+     *
+     * @param $field
+     * @param $version
+     * @return bool
+     */
+    public function fieldIsZero($field, $version = null) {
+        if ($version == 'original') return $this->_original[$field] == $this->field($field)->zeroValue();
+        else if ($version == 'modified') return $this->_modified[$field] == $this->field($field)->zeroValue();
+        else return $this->$field == $this->field($field)->zeroValue();
+    }
+
+    /**
+     * Detect whether or not row's field currently has a non-zero-value
+     *
+     * @param $field
+     * @param $version
+     * @return bool
+     */
+    public function fieldIsNonZero($field, $version = null) {
+        if ($version == 'original') return $this->_original[$field] != $this->field($field)->zeroValue();
+        else if ($version == 'modified') return $this->_modified[$field] != $this->field($field)->zeroValue();
+        else return $this->$field != $this->field($field)->zeroValue();
     }
 }

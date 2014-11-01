@@ -863,10 +863,12 @@ class Indi {
 
             // If current cms user was found not in 'admin' database table,  we explicilty setup foreign
             // data for 'profileId' foreign key, despite on in that other table may be not such a foreign key
-            if ($table != 'admin')
+            if ($table != 'admin') {
                 $adminR->foreign('profileId', Indi::model('Profile')->fetchRow(
                     '`entityId` = "' . Indi::model($table)->id() . '"'
                 ));
+                $adminR->profileId = $adminR->foreign('profileId')->id;
+            }
 
             // Push $obj object in registry under 'uri' key
             Indi::store('admin', $adminR);

@@ -44,7 +44,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             default: {minHeight: 27},
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
-                master: [{alias: 'actions'}, '-', {alias: 'nested'}, '->', {alias: 'keyword'}]
+                master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
             }
         }
     },
@@ -504,6 +504,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'combo.filter',
             fieldLabel : fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
+            name: alias,
             field: field,
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
@@ -559,8 +560,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             hiddenName: alias,
+            name: alias,
             width: 80 + Indi.metrics.getWidth(fieldLabel),
-            margin: 0,
+            margin: '0 5 4 2',
             listeners: {
                 change: function(cmp){
                     if (!cmp.noReload) me.filterChange(cmp);
@@ -800,6 +802,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             if (actionItem) actionItemA.push(actionItem);
         }
 
+        // Push a separator
+        if (actionItemA.length) actionItemA.push('-');
+
         // Return
         return actionItemA;
     },
@@ -882,13 +887,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     // Run the handler
                     } else {
                         if (typeof this.javascript == 'function') this.javascript(); else {
-
-                            /*// Backwards compability
-                            this.javascript = this.javascript
-                                .replace(/indi\./g, 'Indi.')
-                                .replace(/Indi\.trail\.item\(/g, 'Indi.trail(');
-
-                            eval(this.javascript);*/
                             me.panelDockedInner$Actions_InnerHandler(action, row, aix);
                         }
                     }
@@ -1075,7 +1073,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeField_Default: function(field) {
         return {
             name: field.alias,
-            type: !parseInt(field.entityId) && [3,5].indexOf(field.columnTypeId) != -1 ? 'int' : 'string'
+            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 ? 'int' : 'string'
         }
     },
 

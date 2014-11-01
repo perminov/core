@@ -273,7 +273,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         } else if (Indi::trail()->disabledFields->count()) {
             Indi::trail()->disabledFields->foreign('fieldId');
-            foreach (Indi::trail()->disabledFields as $disabledFieldR) {
+            if (!$this->row->id) foreach (Indi::trail()->disabledFields as $disabledFieldR) {
                 if (strlen($disabledFieldR->defaultValue)) {
                     $this->row->{$disabledFieldR->foreign('fieldId')->alias} = $disabledFieldR->compiled('defaultValue');
                 }
@@ -1648,6 +1648,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         $possibleA = Indi::trail()->model->fields(null, 'columns');
 
         // Pick values from Indi::post()
+        $data = array();
         foreach ($possibleA as $possibleI)
             if (array_key_exists($possibleI, Indi::post()))
                 $data[$possibleI] = Indi::post($possibleI);
@@ -1688,15 +1689,11 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
 
-        // If current row is an existing row - perform the whole set of file upload maintenance right here
-        if (!$updateAix) $this->row->files($filefields);
+        // Prepare metadata, related to fileupload fields contents modifications
+        $this->row->files($filefields);
 
         // Save the row
         $this->row->save();
-
-        // If current row is a row, that was created a moment ago (e.g it was a new row)
-        // perform the whole set of file upload maintenance right here
-        if ($updateAix) $this->row->files($filefields);
 
         // If current row has been just successfully created
         if ($updateAix && $this->row->id) {

@@ -58,6 +58,9 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
             }
         }
 
+        // Execute javascript code, assigned as an additional handler for 'select' event
+        if (me.store.js) Indi.eval(me.store.js, me);
+
         // Call superclass setValue method to provide 'change' event firing
         me.getNative().setValue.call(me, me.hiddenEl.val());
 

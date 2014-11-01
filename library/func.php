@@ -471,8 +471,71 @@ function in($item, $array) {
  * Comma-separeted values to array converter
  *
  * @param $items
+ * @param $allowEmpty - If $items arg is an empty string, function will return an array containing that empty string
+ *                      as a first item, rather than returning empty array
  * @return array
  */
-function ar($items) {
-    return is_array($items) ? $items : explode(',', $items);
+function ar($items, $allowEmpty = false) {
+
+    // If $items arg is already an array - return it as is
+    if (is_array($items)) return $items;
+
+    // Else if $items arg is strict null - return array containing that null as a first item
+    if ($items === null) return array(null);
+
+    // Else if $items arg is a boolean value - return array containing that boolean value as a first item
+    if (is_bool($items)) return array($items);
+
+    // Else if $items arg is an object we either return result of toArray() call on that object,
+    // or return result, got by php's native '(array)' cast-prefix expression, depending whether
+    // or not $items object has 'toArray()' method
+    if (is_object($items)) return in_array('toArray', get_class_methods($items)) ? $items->toArray(): (array) $items;
+
+    // Else we assume $items is a string and return an array by comma-exploding $items arg
+    if (is_string($items)) {
+
+        // If $items is an empty string - return empty array
+        if (!strlen($items) && !$allowEmpty) return array();
+
+        // Explode $items arg by comma
+        foreach ($items = explode(',', $items) as $i => $item) {
+
+            // Convert strings 'null', 'true' and 'false' items to their proper types
+            if ($item == 'null') $items[$i] = null;
+            if ($item == 'true') $items[$i] = true;
+            if ($item == 'false') $items[$i] = false;
+        }
+
+        // Return normalized $items
+        return $items;
+    }
+
+    // Else return array, containing $items arg as a single item
+    return array($items);
+}
+
+/**
+ * Remove one or more items from the array
+ *
+ * @param mixed $array
+ * @param mixed $unset
+ * @param bool $strict
+ * @param bool $preserveKeys
+ * @return array
+ */
+function un($array, $unset, $strict = true, $preserveKeys = false) {
+
+    // Convert $array into an array in case if it is a comma-separated string
+    $array = ar($array);
+
+    // Convert $unset
+    $unset = ar($unset);
+
+    // Find all keys of a values, that should be removed from array, and remove them
+    foreach ($unset as $unsetI)
+        foreach (array_keys($array, $unsetI, $strict) as $key)
+            unset($array[$key]);
+
+    // Return filtered array
+    return $preserveKeys ? $array : array_values($array);
 }
