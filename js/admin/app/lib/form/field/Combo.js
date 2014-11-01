@@ -169,6 +169,15 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Provide getValue()'s return value to be used instead of keywordEl.value, in case if combo is multi-select
+     *
+     * @return {*}
+     */
+    getRawValue: function() {
+        return this.multiSelect ? this.getValue() + '' : this.callParent();
+    },
+
+    /**
      * Provide use of this.keywordEl as input element, that should be listened for focus/blur
      *
      * @return {*}
@@ -265,7 +274,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     // event listener firing (because those will be fired bit later) and do programmatically click
                     // on found .i-combo-selected-item-delete child, as there is already binded the listener that will
                     // do item deletion with all additional concomitant operations
-                    if (d) d.attr('no-change', 'true').dom.click();
+                    if (d) d.attr('no-change', 'true').click();
                 }
 
                 // Append items that should be appended
@@ -395,6 +404,11 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Call parent
         me.callParent(arguments);
+
+        // Setup `forceValidation` property. We should do this, because some combos may be dependent (have satellites)
+        // and there can be situations then combo is not allowed to be blank, but if it is disabled (due to several
+        // reasons, related to satellite-component's state) - validation won't run. So here we provide it to be forced
+        me.forceValidation = parseInt(me.satellite) ? true : false;
 
         // Setup noLookup property
         me.setupNoLookup();
@@ -1192,7 +1206,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // If combo is disabled, no selected item deletion should be performed
-        if (me.disabled) return;
+        if (me.disabled && !Ext.get(dom).attr('no-change')) return;
 
         // Get needed .i-combo-selected-item-delete element
         var deleteEl = Ext.get(dom).hasCls('i-combo-keyword')

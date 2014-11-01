@@ -109,6 +109,21 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 
 /* Grids default style adjustments */
+.x-column-header-inner{
+    -o-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding: 3px 3px 4px 6px;
+}
+.x-grid-row-summary .x-grid-cell {
+    color: null;
+    font: normal 11px/15px tahoma,arial,verdana,sans-serif;
+    background-color: white;
+    border-color: #ededed;
+    border-style: solid;
+    border-top-color: #fafafa;
+    border-width: 0;
+}
 .x-grid-with-row-lines .x-grid-row-selected td.x-grid-cell, .x-grid-row-selected .x-grid-rowwrap-div {
     background-color: #dfffdf !important;
     border-top: 1px solid #dfffdf;

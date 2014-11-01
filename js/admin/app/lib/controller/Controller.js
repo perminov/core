@@ -29,28 +29,32 @@ Ext.define('Indi.lib.controller.Controller', {
      * @param {String} uri The uri, that current action data was got by request to
      */
     dispatch: function(action, uri){
-        var me = this, a, aCfg;
+        var me = this, actionExtendCmpName, actionCmpName;
 
-        // Setup initial action config
-        aCfg = Ext.clone(this.actionsConfig[action]);
-        aCfg = aCfg || {};
-        aCfg.trailLevel = this.trailLevel;
-        aCfg.uri = Ext.clone(uri);
+        // Setup `actions` property, for being a storage for action classes instances
+        me.actions = me.actions || {};
 
         // Setup mode and view for current trail item action
-        if (!this.trail().action.mode) this.trail().action.mode = Indi.Controller.defaultMode[action];
-        if (!this.trail().action.view) this.trail().action.view = Indi.Controller.defaultView[action];
+        if (!me.trail().action.mode) me.trail().action.mode = Indi.Controller.defaultMode[action];
+        if (!me.trail().action.view) me.trail().action.view = Indi.Controller.defaultView[action];
 
-        // Build the action class name
-        a = 'Indi.Controller.Action';
-        if (this.trail().action.mode) a += '.' + Indi.ucfirst(this.trail().action.mode);
-        if (this.trail().action.view) a += '.' + Indi.ucfirst(this.trail().action.view.replace('_', '.'));
+        // Build the action parent component name
+        actionExtendCmpName = 'Indi.Controller.Action';
+        if (me.trail().action.mode) actionExtendCmpName += '.' + Indi.ucfirst(me.trail().action.mode);
+        if (me.trail().action.view) actionExtendCmpName += '.' + Indi.ucfirst(me.trail().action.view.replace('_', '.'));
 
-        // Setup `actions` property, for instantiated action classes storage
-        this.actions = this.actions || {};
+        // Build the action component name
+        actionCmpName = 'Indi.controller.' + me.trail().section.alias + '.action.' + me.trail().action.alias;
 
-        // Create an certain action class instance, related to current action
-        this.actions[action] = Ext.create(a, aCfg);
+        // Define the action component
+        Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsConfig[action]));
+
+        // Create action component instance, related to current action
+        me.actions[action] = Ext.create(actionCmpName, {
+            trailLevel: this.trailLevel,
+            uri: Ext.clone(uri),
+            clr: this
+        });
     },
 
     // @inheritdoc
@@ -64,7 +68,7 @@ Ext.define('Indi.lib.controller.Controller', {
     },
 
     /**
-     * Gets the current trail item, or one of it's parents - if `up` argumentis given
+     * Gets the current trail item, or one of it's parents - if `up` argument is given
      *
      * @param up
      * @return {Indi.lib.trail.Item}

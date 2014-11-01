@@ -147,16 +147,15 @@ Ext.define('Indi.lib.controller.action.Form', {
      * Detect if all inputs within the row panel should be read-only
      */
     rowReadOnly: function() {
-        var me = this;
+        var me = this, readOnly = true;
 
         // Detect if readOnly mode should turned On
-        me.row.readOnly = true;
         for (var i = 0; i < me.ti().actions.length; i++)
             if (me.ti().actions[i].alias == 'save')
-                me.row.readOnly = false;
+                readOnly = false;
         
         // Return auto-detected value for `readOnly` flag/prop
-        return me.row.readOnly;
+        return readOnly;
     },
 
     // @inheritdoc
@@ -164,7 +163,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         var me = this;
 
         // Detect if all inputs within the row panel should be read-only
-        me.rowReadOnly();
+        me.row.readOnly = me.rowReadOnly();
         
         me.id = me.bid();
         me.row = Ext.merge({
@@ -275,7 +274,13 @@ Ext.define('Indi.lib.controller.action.Form', {
             row: this.ti().row,
             listeners: {
                 validitychange: function(cmp, valid){
-                    if (!valid) me.toggleSaveAbility(valid);
+                    if (!valid) me.toggleSaveAbility(valid); else {
+                        var activeErrors = 0;
+                        cmp.up('form').getForm().getFields().each(function(field, index, length){
+                            if (field.hasActiveError()) activeErrors++;
+                        });
+                        if (!activeErrors) me.toggleSaveAbility(true);
+                    }
                 },
                 dirtychange: function(cmp, dirty) {
                     cmp.getDirtyIcon().alignTo(cmp.el, 'tl', [0, 1]);
@@ -572,7 +577,12 @@ Ext.define('Indi.lib.controller.action.Form', {
             disabled: true,
             tooltip: Indi.lang.I_NAVTO_RESET,
             handler: function() {
+
+                // Reset form
                 Ext.getCmp(me.row.id).getForm().reset();
+
+                // If save ability was turned On before reset, but now it is turned Off - turn it On back
+                me.toggleSaveAbility(true);
             }
         }
     },
@@ -590,7 +600,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: me.panelDockedInnerBid() + 'create',
             iconCls: 'i-btn-icon-create',
-            disabled: parseInt(me.ti().section.disableAdd) || me.row.readOnly ? true : false,
+            disabled: parseInt(me.ti().section.disableAdd) || (me.row.readOnly && !me.row.createOnly) ? true : false,
             tooltip: Indi.lang.I_NAVTO_CREATE,
             handler: function(){
 
@@ -643,16 +653,18 @@ Ext.define('Indi.lib.controller.action.Form', {
             else if (!btnSaveClick || btnSaveClick == -1) formCmp.add({
                 id: me.bid() + '-redirect-url',
                 xtype: 'hidden',
-                name: 'redirect-url',
-                value: url
-            });
+                name: 'redirect-url'
+            }).setValue(url)
 
             // Submit form
             if (formCmp.getForm().isValid()) {
 
                 // If data-row, that current form is operating with - is an existing row, or is a new row, but has
                 // at least one property that had been changed using current form - submit (try to save) the form
-                if (parseInt(me.ti().row.id) || formCmp.getForm().isDirty()) formCmp.submit({submitEmptyText: false});
+                if (parseInt(me.ti().row.id) || formCmp.getForm().isDirty()) formCmp.submit({
+                    submitEmptyText: false,
+                    dirtyOnly: true
+                });
 
                 // Else if user is trying to create a new row, but didn't setup any data for that new row - show warning
                 else Ext.MessageBox.show({

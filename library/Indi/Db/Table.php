@@ -80,6 +80,18 @@ class Indi_Db_Table
     protected $_rowsetClass = 'Indi_Db_Table_Rowset';
 
     /**
+     * Changelog config. Example:
+     *
+     * protected $_changeLog = array(
+     *      'storage' => 'adjustment',
+     *      'ignore' => 'ignoredField1,ignoredField2,etc'
+     * );
+     *
+     * @var array
+     */
+    protected $_changeLog = array();
+
+    /**
      * Construct the instance - setup table name, fields, and tree column if exists
      *
      * @param array $config
@@ -120,8 +132,8 @@ class Indi_Db_Table
      */
     public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order)) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // Build LIMIT clause
         if ($count !== null || $page !== null) {
@@ -447,7 +459,7 @@ class Indi_Db_Table
      */
     public function fetchRawTree($order = null, $where = null) {
         // ORDER clause
-        if (is_array($order) && count($order)) $order = implode(', ', $order);
+        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // Get tree column name
         $tc = $this->_table . 'Id';
@@ -488,7 +500,7 @@ class Indi_Db_Table
 
             // First we should find primary results
             $primary = array();
-            if (is_array($where) && count($where)) $where = implode(' AND ', $where);
+            if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
             $foundA = Indi::db()->query('SELECT `id` FROM `' . $this->_table . '` WHERE ' . $where)->fetchAll();
             foreach ($foundA as $foundI) {
                 $primary[$foundI['id']] = true;
@@ -591,8 +603,8 @@ class Indi_Db_Table
     public function detectOffset($where, $order, $id) {
 
         // Prepare WHERE and ORDER clauses
-        if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order)) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // If current model is a tree - use special approach for offset detection
         if ($this->treeColumn()) return ($this->fetchTree($where, $order, 1, null, null, $id, null, true) + 1) . '';
@@ -757,8 +769,8 @@ class Indi_Db_Table
     public function fetchColumn($column, $where = null, $order = null, $count = null, $page = null, $offset = null) {
 
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order)) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // Build LIMIT clause
         if ($count !== null || $page !== null) {
@@ -803,8 +815,8 @@ class Indi_Db_Table
      */
     public function fetchRow($where = null, $order = null, $offset = null) {
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order)) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // If we are trying to get row by offset, and current model is a tree - use special approach
         if ($offset !== null && $this->treeColumn())
@@ -1243,5 +1255,15 @@ class Indi_Db_Table
 
         // Return reloaded model
         return Indi::model($this->_id);
+    }
+
+    /**
+     * Return changelog config
+     *
+     * @param $arg
+     * @return array
+     */
+    public function changeLog($arg = null) {
+        return $arg ? $this->_changeLog[$arg] : $this->_changeLog;
     }
 }
