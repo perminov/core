@@ -650,4 +650,22 @@ class Indi_View {
         $file = str_replace('\\', '/', array_shift(array_shift(debug_backtrace(false))));
         include preg_replace('/\/[a-z0-9A-Z]+\.php/', '/' . $name . '.php', $file);
     }
+
+    /**
+     * Involve same-action view script located in some other sibling section-directory
+     * This is useful when we are in some view, and want to additionally/instead use some other view, by specifying
+     * that view's section name/folder/alias. Note that this function will use caller's view file
+     * location as the start point within the process of detecting sibling section directory where same view,
+     * would be tried to be found. Example: we have 'print' action for 'documents' section. But we also have
+     * another section also dealing with documents, but has different name/alias. However, we don't want to
+     * create an additional copy of a template file, what would be used to render the printable contents, as we
+     * already have that template file, because it was already created for previous section dealing with 'documents'.
+     * So, this function will just "redirect" (if we can say that way) the renderer
+     *
+     * @param $name
+     */
+    public function same($name) {
+        $file = str_replace('\\', '/', array_shift(array_shift(debug_backtrace(false))));
+        include preg_replace('/\/[a-z0-9A-Z]+\/([a-z0-9A-Z]+)\.php/', '/' . $name . '/$1.php', $file);
+    }
 }

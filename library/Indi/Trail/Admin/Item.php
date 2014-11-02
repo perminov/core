@@ -361,7 +361,14 @@ class Indi_Trail_Admin_Item {
 
                 // Else, get the plain result of the rendered script, assignt it to `plain` property of
                 // already existing action-view object instance, and return that `plain` property value individually
-                else return $this->view->plain = Indi::view()->render($script);
+                else {
+
+                    // Setup view's `plain` property
+                    $this->view->plain = Indi::view()->render($script);
+
+                    // Return the value, according to view mode
+                    return $this->view->mode == 'view' ? $this->view : $this->view->plain;
+                }
 
             // Else
             } else {
