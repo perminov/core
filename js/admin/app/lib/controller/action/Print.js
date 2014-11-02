@@ -54,13 +54,31 @@ Ext.define('Indi.lib.controller.action.Print', {
 
     // @inheritdoc
     formItemA: function() {
+        return [Ext.merge(this.formItemXSpan()), this.formItem$Print()];
+    },
+
+    /**
+     * Special form item, representing printable contents area
+     *
+     * @return {Object}
+     */
+    formItem$Print: function() {
         var me = this;
-        return [me.formItemXSpan(), {
+        return {
             xtype: 'ckeditor',
             name: 'document',
             cls: 'i-field',
-            value: me.ti().row.view('print'),
-            field: {}
-        }];
+            value: me.ti().row.view('#print'),
+            field: {
+                params: {
+                    wide: 'true'
+                }
+            },
+            height: 450,
+            editorCfg: {
+                height: 450,
+                width: 710
+            }
+        }
     }
 });

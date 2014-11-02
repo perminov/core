@@ -19,11 +19,13 @@ class Indi_Controller_Admin extends Indi_Controller {
             'form' => 'row',
             'up' => 'row',
             'down' => 'row',
-            'toggle' => 'row'
+            'toggle' => 'row',
+            'print' => 'row'
         ),
         'view' => array(
             'index' => 'grid',
-            'form' => 'form'
+            'form' => 'form',
+            'print' => 'print'
         )
     );
 
@@ -1823,5 +1825,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Redirect
         $this->redirect();
+    }
+
+    /**
+     * Default 'print' action
+     */
+    public function printAction() {
+        Indi::trail()->view->mode = 'view';
     }
 }
