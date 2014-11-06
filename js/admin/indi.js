@@ -561,6 +561,24 @@ Ext.define('Indi', {
          */
         fly: function(html) {
             return Ext.fly(Ext.query('> *:first-child', Ext.DomHelper.createDom({tag: 'div', html: html})).pop());
+        },
+
+        /**
+         * Convert integer value to file-size expression, e.g '10485760' => '10mb'
+         *
+         * @param size
+         * @return {Number}
+         */
+        size2str: function(size) {
+
+            // Setup auxiliary variables
+            var pow, str, postfix = {0: 'b', 1: 'kb', 2: 'mb', 3: 'gb', 4: 'tb', 5: 'pb'};
+
+            // Get the uploaded file size grade
+            pow = Math.floor(size.toString().length/3);
+
+            // Get the string representation of a filesize
+            return Math.floor((size/Math.pow(1024, pow))*100)/100 + postfix[pow];
         }
     },
 

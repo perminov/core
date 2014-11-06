@@ -50,6 +50,11 @@ define('I_ENUMSET_ERROR_VALUE_LAST', 'Value "%s" is the last remaining possible 
 define('I_YES', 'Yes');
 define('I_NO', 'No');
 define('I_ERROR', 'Error');
+define('I_OR', 'or');
+define('I_AND', 'and');
+define('I_BE', 'be');
+define('I_FILE', 'File');
+define('I_SHOULD', 'should');
 
 define('I_HOME', 'Home');
 define('I_LOGOUT', 'Logout');
@@ -106,6 +111,7 @@ define('I_UPLOAD_ERR_CANT_WRITE', 'Failed to write file, uploaded in field "%s",
 define('I_UPLOAD_ERR_EXTENSION', 'File upload in field "%s" stopped by one of the php extensions, running on server');
 define('I_UPLOAD_ERR_UNKNOWN', 'File upload in field "%s" failed due to unknown error');
 
+define('I_UPLOAD_ERR_REQUIRED', 'There is no file yet, you should pick one');
 define('I_WGET_ERR_ZEROSIZE', 'Web-url usage as file\'s source for field "%s" failed because that file is zero-size');
 
 define('I_FORM_UPLOAD_SAVETOHDD', 'Download');
@@ -119,6 +125,16 @@ define('I_FORM_UPLOAD_BROWSE', 'Browse');
 define('I_FORM_UPLOAD_MODE_TIP', 'Use a web-link to pick a file');
 define('I_FORM_UPLOAD_MODE_LOCAL_PLACEHOLDER', 'your local PC file..');
 define('I_FORM_UPLOAD_MODE_REMOTE_PLACEHOLDER', 'file at web-link..');
+
+define('I_FORM_UPLOAD_ASIMG', 'an image');
+define('I_FORM_UPLOAD_ASOFF', 'an office document');
+define('I_FORM_UPLOAD_ASDRW', 'a drawing');
+define('I_FORM_UPLOAD_ASARC', 'an archive');
+define('I_FORM_UPLOAD_OFEXT', 'have type');
+define('I_FORM_UPLOAD_INFMT', 'in format');
+define('I_FORM_UPLOAD_HSIZE', 'have size');
+define('I_FORM_UPLOAD_NOTGT', 'not greater than');
+define('I_FORM_UPLOAD_NOTLT', 'not less than');
 
 define('I_FORM_DATETIME_HOURS', 'hours');
 define('I_FORM_DATETIME_MINUTES', 'minutes');
