@@ -50,6 +50,11 @@ define('I_ENUMSET_ERROR_VALUE_LAST', 'Значение "%s" - последнее
 define('I_YES', 'Да');
 define('I_NO', 'Нет');
 define('I_ERROR', 'Ошибка');
+define('I_OR', 'или');
+define('I_AND', 'и');
+define('I_BE', 'быть');
+define('I_FILE', 'Файл');
+define('I_SHOULD', 'должен');
 
 define('I_HOME', 'Начало');
 define('I_LOGOUT', 'Выход');
@@ -106,6 +111,7 @@ define('I_UPLOAD_ERR_CANT_WRITE', 'Файл, выбранный для загр�
 define('I_UPLOAD_ERR_EXTENSION', 'Одно из PHP-расширений, работающих на сервере, остановило загрузку файла из поля "%s"');
 define('I_UPLOAD_ERR_UNKNOWN', 'Загрузка файла в поле "%s" не удалась из-за неизвестной ошибки');
 
+define('I_UPLOAD_ERR_REQUIRED', 'Вы должны выбрать файл');
 define('I_WGET_ERR_ZEROSIZE', 'Загрузка файла в поле "%s" с использованием веб-ссылки не удалась, так как этот файл пустой');
 
 define('I_FORM_UPLOAD_SAVETOHDD', 'Сохранить на диск');
@@ -119,6 +125,16 @@ define('I_FORM_UPLOAD_BROWSE', 'Выбрать');
 define('I_FORM_UPLOAD_MODE_TIP', 'Загрузить по веб-ссылке');
 define('I_FORM_UPLOAD_MODE_LOCAL_PLACEHOLDER', 'файл с вашего ПК..');
 define('I_FORM_UPLOAD_MODE_REMOTE_PLACEHOLDER', 'файл по веб-ссылке..');
+
+define('I_FORM_UPLOAD_ASIMG', 'изображением');
+define('I_FORM_UPLOAD_ASOFF', 'документом');
+define('I_FORM_UPLOAD_ASDRW', 'графическим макетом');
+define('I_FORM_UPLOAD_ASARC', 'архивом');
+define('I_FORM_UPLOAD_OFEXT', 'иметь расширение');
+define('I_FORM_UPLOAD_INFMT', 'в формате');
+define('I_FORM_UPLOAD_HSIZE', 'иметь размер');
+define('I_FORM_UPLOAD_NOTGT', 'не более');
+define('I_FORM_UPLOAD_NOTLT', 'не менее');
 
 define('I_FORM_DATETIME_HOURS', 'часов');
 define('I_FORM_DATETIME_MINUTES', 'минут');

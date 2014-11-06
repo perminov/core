@@ -7,6 +7,11 @@ Ext.define('Indi.lib.form.field.FilePanel', {
     extend: 'Ext.form.FieldContainer',
 
     // @inheritdoc
+    mixins: {
+        field: 'Ext.form.field.Field'
+    },
+
+    // @inheritdoc
     alternateClassName: 'Indi.form.FilePanel',
 
     // @inheritdoc
@@ -15,7 +20,63 @@ Ext.define('Indi.lib.form.field.FilePanel', {
     minHeight: 24,
 
     // @inheritdoc
+    allowBlank: true,
+
+    /**
+     * Groups of filetypes or custom list of extensions. Predefined values for filetype groups are:
+     * 'image', 'office', 'draw', 'archive'. If you want to specify custom extensions as allowed, you
+     * may can use "allowTypes: 'c++,html'". You can combine both group-types and exensions, by comma-enumeration,
+     * e.g allowTypes: 'image,office,html,js'
+     */
+    allowTypes: 'image',
+
+    /**
+     * Minimum size of file. This feature works only in browsers that have native built-in window.FileReader function.
+     * Initially this config is used to specify a number of bytes, but, hovewer, you can use following expressions:
+     * '1K', '2M' , '3G', assuming that 'K' - is kilobytes, 'M' - megabytes and 'G' - gigabytes
+     *
+     */
+    minSize: 0,
+
+    /**
+     * Maximum size of file. This feature works only in browsers that have native built-in window.FileReader function.
+     * Initially this config is used to specify a number of bytes, but, hovewer, you can use following expressions:
+     * '1K', '2.5M' , '3G', assuming that 'K' - is kilobytes, 'M' - megabytes and 'G' - gigabytes
+     */
+    maxSize: '10m',
+
+    /**
+     * Here we prevent marking for this component itself, as marking of one of the child components will be used instead
+     */
+    preventMark: true,
+
+    // @inheritdoc
+    blankText: Indi.lang.I_UPLOAD_ERR_REQUIRED,
+
+    // @inheritdoc
     statics: {
+
+        /**
+         * File types
+         */
+        types: {
+            image: {
+                txt: Indi.lang.I_FORM_UPLOAD_ASIMG,
+                ext: 'gif,png,jpeg,jpg'
+            },
+            office: {
+                txt: Indi.lang.I_FORM_UPLOAD_ASOFF,
+                ext: 'doc,pdf,docx,xls,xlsx,txt,odt,ppt,pptx'
+            },
+            draw: {
+                txt: Indi.lang.I_FORM_UPLOAD_ASDRW,
+                ext: 'psd,ai,cdr'
+            },
+            archive: {
+                txt: Indi.lang.I_FORM_UPLOAD_ASARC,
+                ext: 'zip,rar,7z,gz,tar'
+            }
+        },
 
         /**
          * Handler function, that will be placed as the value of 'onchange' file input element attribute,
@@ -32,8 +93,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             var ff, el;
             if (!dom.value){
                 el = Ext.get(dom);
-                ff = Ext.getCmp(el.up("table").up("table").attr("id"));
-                ff.fireEvent("change", ff, dom.value);
+                ff = Ext.getCmp(el.up('table').up('table').attr('id'));
+                ff.fireEvent('change', ff, dom.value);
             }
         }
     },
@@ -68,9 +129,10 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             alias: 'nochange',
             name: me.name,
             inputValue: 'r',
-            checked: true,
+            checked: !(!me.value && !me.allowBlank),
             margin: '0 5 0 0',
             style: me.value ? 'top: 4px !important;' : '',
+            disabled: !me.value && !me.allowBlank,
             boxLabel: me.value ? Indi.lang.I_FORM_UPLOAD_NOCHANGE : Indi.lang.I_FORM_UPLOAD_NOFILE,
             boxLabel: me.value ? '' : Indi.lang.I_FORM_UPLOAD_NOFILE,
             tooltip: me.value ? {html: Indi.lang.I_FORM_UPLOAD_NOCHANGE, anchor: 'bottom'} : null
@@ -95,6 +157,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             boxLabel: Indi.lang.I_FORM_UPLOAD_DELETE,
             style: 'top: 4px !important;',
             boxLabel: '',
+            disabled: !me.allowBlank,
             tooltip: {html: Indi.lang.I_FORM_UPLOAD_DELETE, anchor: 'bottom'}
 
         } : null;
@@ -115,6 +178,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             name: me.name,
             inputValue: 'm',
             style: 'top: 4px !important;',
+            checked: !me.value && !me.allowBlank,
+            value: !me.value && !me.allowBlank,
             margin: 0,
             tooltip: me.value ? {html: Indi.lang.I_FORM_UPLOAD_REPLACE, anchor: 'bottom'} : null,
             listeners: {
@@ -151,6 +216,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             xtype: 'textfield',
             alias: 'browsed',
             height: 17,
+            fp: me,
             fieldLabel: me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE_WITH : '',
             fieldLabel: '',
             readOnly: true,
@@ -159,8 +225,116 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             labelPad: 3,
             labelSeparator: '',
             emptyText: Indi.lang.I_FORM_UPLOAD_MODE_LOCAL_PLACEHOLDER,
+            allowBlank: me.allowBlank,
+            allowTypes: me.allowTypes,
+            minSize: me.minSize,
+            maxSize: me.maxSize,
+            blankText: me.blankText,
             style: {margin: '-1px 4px 0 0px !important'},
             padding: 0,
+            getErrors: function() {
+                // Setup auxiliary variables
+                var me = this, errors = [], file = me.fp.getValue(), rex, nativeFile, sizeType,
+                    sizeTypeO = {K: 1, M: 2, G: 3}, maxSize, minSize, d;
+
+                // If there wouldn't be any change, and `allowBlank` is `true` - return
+                if (me.fp.get('nochange').checked && (me.allowBlank || me.fp.value)) return [];
+
+                // If uploaded file is going to be deleted, and `allowBlank` is `true` - return
+                if (me.fp.get('delete') && me.fp.get('delete').checked && me.allowBlank) return [];
+
+                // Check if current value is not empty
+                if (!me.allowBlank && !file) return [me.blankText];
+
+                // Check file type
+                if (me.allowTypes && Ext.isString(me.allowTypes)) {
+
+                    // Get the array of type-groups, and declare auxilliary variables
+                    var aTypeA = me.allowTypes.split(','), aTypeI, aTypeIExt, aTypeAExt = [], msg = '', dTypeI,
+                        msgTypeA = [], msgTypeILast, aTypeAExtLast, customExtA = [], customExtILast;
+
+                    // Get the whole list of allowed extensions
+                    for (var i = 0; i < aTypeA.length; i++)
+                        if (!Ext.isObject(aTypeI = Indi.form.FilePanel.types[aTypeA[i]])) customExtA.push(aTypeA[i]);
+                        else if (Ext.isString(aTypeIExt = aTypeI.ext)) aTypeAExt = aTypeAExt.concat(aTypeIExt.split(','));
+
+                    // Setup regular expression for file extension check
+                    rex = new RegExp('\.(' + Indi.pregQuote(aTypeAExt.concat(customExtA).join(';')).split(';').join('|') + ')$', 'i');
+
+                    // Check the file extension
+                    if (!rex.test(file)) {
+
+                        // Build array, containing parts of error message, each mentioning a certain allowed type group
+                        for (i = 0; i < aTypeA.length; i++)
+                            if (Ext.isObject(dTypeI = Indi.form.FilePanel.types[aTypeA[i]]))
+                                msgTypeA.push(dTypeI.txt);
+
+                        // Prepare the part of the error message, containing abstract list of allowed extenstions
+                        if (customExtA.length) {
+                            msg += Indi.lang.I_FORM_UPLOAD_OFEXT + ' ';
+                            if (msgTypeA.length) msg += customExtA.join(', ').toUpperCase() + ' ' + Indi.lang.I_OR + ' '; else {
+                                customExtILast = customExtA.pop();
+                                msg += customExtA.length ? customExtA.join(', ').toUpperCase() + ' ' + Indi.lang.I_OR + ' ' : '';
+                                msg += customExtILast.toUpperCase();
+                            }
+                        }
+
+                        // Prepare the part of the error message, containing human-friendly file-type groups mentions
+                        if (msgTypeA.length) {
+                            msg += Indi.lang.I_BE + ' ';
+                            msgTypeILast = msgTypeA.pop();
+                            msg += msgTypeA.length ? msgTypeA.join(', ') + ' ' + Indi.lang.I_OR + ' ' : '';
+                            msg += msgTypeILast;
+
+                            msg += ' ' + Indi.lang.I_FORM_UPLOAD_INFMT + ' ';
+
+                            // Prepare the part of the error message, containing merged extension list for
+                            // all human-friendly file-type groups mentions
+                            aTypeAExtLast = aTypeAExt.pop();
+                            msg += aTypeAExt.length ? aTypeAExt.join(', ').toUpperCase() + ' ' + Indi.lang.I_OR + ' ' : '';
+                            msg += aTypeAExtLast.toUpperCase();
+                        }
+
+                        // Push the error message to the error messages array
+                        errors.push(msg);
+                    }
+                }
+
+                // If filepanel's mode is not 'get-by-url', and browser have native built-in FileReader function/object
+                if (!me.fp.get('mode').checked
+                    && window.FileReader
+                    && me.fp.get('browse')
+                    && me.fp.get('browse').fileInputEl
+                    && (nativeFile = me.fp.get('browse').fileInputEl.dom.files[0])) {
+
+                    // Check file size doesn't exceed `maxSize` requirement
+                    if (d = parseFloat(me.maxSize)) {
+                        sizeType = (me.maxSize + '').replace(d.toString(), '').toUpperCase();
+                        if (maxSize = d * Math.pow(1024, sizeTypeO.hasOwnProperty(sizeType) ? sizeTypeO[sizeType] : 0)) {
+                            if (nativeFile.size > maxSize) {
+                                errors.push(
+                                    Indi.lang.I_FORM_UPLOAD_HSIZE + ' ' + Indi.lang.I_FORM_UPLOAD_NOTGT + ' '
+                                        + Indi.size2str(maxSize).toUpperCase()
+                                );
+                            }
+                        }
+                    }
+
+                    // Check file size is not less than `minSize` requirement
+                    if (d = parseFloat(me.minSize)) {
+                        sizeType = (me.minSize + '').replace(d.toString(), '').toUpperCase();
+                        if (minSize = d * Math.pow(1024, sizeTypeO.hasOwnProperty(sizeType) ? sizeTypeO[sizeType] : 0)) {
+                            if (nativeFile.size > minSize) {
+                                errors.push(Indi.lang.I_FORM_UPLOAD_HSIZE + ' ' + Indi.lang.I_FORM_UPLOAD_NOTGT + ' '
+                                    + Indi.size2str(minSize).toUpperCase());
+                            }
+                        }
+                    }
+                }
+
+                // Return faced errors
+                return errors.length ? [Indi.lang.I_FILE + ' ' + Indi.lang.I_SHOULD + ' ' + errors.join(', ' + Indi.lang.I_AND +' ')] : [];
+            },
             listeners: {
                 afterrender: function() {
                     this.inputEl.setStyle({background: 'rgba(255, 255, 255, 0.5)'});
@@ -253,18 +427,13 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      * @return {Object}
      */
     toolbar$Master$Size: function () {
-
-        // Setup auxiliary variables
-        var me = this, pow, size, postfix = {0: 'b', 1: 'kb', 2: 'mb', 3: 'gb', 4: 'tb', 5: 'pb'};
+        var me = this, size;
 
         // If component have no info about uploaded file - return
         if (!me.data) return null;
 
-        // Get the uploaded file size grade
-        pow = Math.floor(me.data.size.toString().length/3);
-
         // Get the string representation of a filesize
-        size = Math.floor((me.data.size/Math.pow(1024, pow))*100)/100 + postfix[pow];
+        size = Indi.size2str(me.data.size);
 
         // 'Size' item config
         return {
@@ -342,7 +511,18 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         me.data = me.row.view(me.name);
         me.preview = me.getPreview();
         me.items = [me.toolbar$Master(), me.previewWrap()];
-        me.callParent(arguments);
+        me.callParent();
+        me.initField();
+    },
+
+    // @inheritdoc
+    initValue: function() {
+        var me = this,
+            valueCfg = me.value;
+        me.originalValue = me.lastValue = valueCfg || me.getValue();
+        if (valueCfg) {
+            me.setValue(valueCfg);
+        }
     },
 
     // @inheritdoc
@@ -480,7 +660,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
                         // 'Browse' item adjustments
                         browse.fileInputEl.removeAttr('disabled');
                         browse.fileInputEl.show();
-                        if (!browse.fileInputEl.dom.value) me.get('nochange').setValue(true);
+                        if (!browse.fileInputEl.dom.value && !me.get('nochange').disabled)
+                            me.get('nochange').setValue(true);
                     }
                 }
             }
@@ -566,5 +747,118 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             me.get('preview').el.setHeight(me.get('preview').maxHeight, true);
             me.embed.attr('expanded', 'false');
         }
+    },
+
+    // @inheritdoc
+    onFieldAdded: function(field) {
+        var me = this;
+        me.mon(field, 'change', me.checkChange, me);
+        me.callParent(arguments);
+    },
+
+    // @inheritdoc
+    checkChange: function() {
+        if (!this.suspendCheckChange) {
+            var me = this,
+                newAction = me.query('[isRadio][checked]')[0].alias,
+                oldAction = me.oldAction || 'nochange',
+                newBrowsed = me.get('browsed').value,
+                oldBrowsed = me.oldBrowsed || '',
+                newMode = me.get('mode').checked,
+                oldMode = me.oldMode || false;
+            if ((!me.isEqual(newAction, oldAction) || !me.isEqual(newBrowsed, oldBrowsed) || !me.isEqual(newMode, oldMode)) && !me.isDestroyed) {
+                me.lastValue = newBrowsed;
+                me.oldAction = me.query('[isRadio][checked]')[0].alias;
+                me.oldBrowsed = me.get('browsed').value;
+                me.oldMode = me.get('mode').checked;
+                me.fireEvent('change', me, newBrowsed, oldBrowsed);
+                me.onChange(newBrowsed, oldBrowsed);
+            }
+        }
+    },
+
+    // @inheritdoc
+    isDirty: function() {
+        return (!this.allowBlank && !this.value ? !this.get('modify').checked : !this.get('nochange').checked) || this.get('browsed').isDirty() || this.get('mode').isDirty();
+    },
+
+    // @inheritdoc
+    reset: function() {
+        var me = this, hadError = me.hasActiveError(), preventMark = me.preventMark;
+        me.preventMark = true;
+
+        // Reset all child components
+        me.batchChanges(function() {
+            var subs = me.query('*'), s, sLen  = subs.length;
+            for (s = 0; s < sLen; s++) if (typeof subs[s].reset == 'function') subs[s].reset();
+        });
+
+        // Restore value of `preventMark` property from backup
+        me.preventMark = preventMark;
+
+        // Unset errors and update layout
+        me.unsetActiveError();
+        if (hadError) me.updateLayout();
+    },
+
+    // @inheritdoc
+    getValue: function() {
+        var me = this;
+
+        return me.get('nochange').checked
+            ? me.value
+            : (me.get('delete') && me.get('delete').checked
+                ? ''
+                : (me.get('mode').checked
+                    ? me.get('browsed').value
+                    : (me.get('browse').fileInputEl
+                        ? me.get('browse').fileInputEl.dom.value
+                        : (me.value))));
+    },
+
+    // @inheritdoc
+    validate: function() {
+        var me = this, wasValid = !me.hasActiveError(), isValid = me.get('browsed').validate();
+        if (isValid !== wasValid) {
+            me.fireEvent('validitychange', me, isValid);
+            me.updateLayout();
+        }
+        return isValid;
+    },
+
+    /**
+     * Tunnel to [alias='browsed'] component's same method
+     *
+     * @return {Boolean}
+     */
+    hasActiveError: function() {
+        return this.get('browsed').hasActiveError();
+    },
+
+    /**
+     * Tunnel to [alias='browsed'] component's same method
+     *
+     * @return {Boolean}
+     */
+    isValid: function() {
+        return this.get('browsed').isValid();
+    },
+
+    /**
+     * Tunnel to [alias='browsed'] component's same method
+     *
+     * @return {Boolean}
+     */
+    markInvalid: function(msg) {
+        this.get('browsed').markInvalid(msg);
+    },
+
+    /**
+     * Tunnel to [alias='browsed'] component's same method
+     *
+     * @return {Boolean}
+     */
+    clearInvalid: function() {
+        this.get('browsed').clearInvalid();
     }
 });

@@ -283,8 +283,10 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 },
                 dirtychange: function(cmp, dirty) {
-                    cmp.getDirtyIcon().alignTo(cmp.el, 'tl', [0, 1]);
-                    cmp.getDirtyIcon().setVisible(dirty);
+                    if (cmp.el) {
+                        cmp.getDirtyIcon().alignTo(cmp.el, 'tl', [0, 1]);
+                        cmp.getDirtyIcon().setVisible(dirty);
+                    }
                 },
                 resize: function(cmp) {
                     if (cmp.dirtyIcon) cmp.dirtyIcon.alignTo(cmp.el, 'tl', [0, 1]);
