@@ -72,11 +72,22 @@ Ext.define('Indi.lib.controller.action.Form', {
                     // under such key - is related to some certain field within form, so we get that field's
                     // component and mark it as invalid
                     else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
+
+                        // Get the mismatch message
                         certainFieldMsg = action.result.mismatch[i];
+
+                        // If mismatch message is a string
                         if (Ext.isString(certainFieldMsg))
+
+                            // Cut off field title mention from message
                             certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
+
+                        // Mark field as invalid
                         cmp.markInvalid(certainFieldMsg);
-                    }
+
+                    // Else mismatch message is related to field, that currently, for some reason, is not available
+                    // within the form - push that message to the wholeFormMsg array
+                    } else wholeFormMsg.push(action.result.mismatch[i]);
                 });
 
                 // If we collected at least one error message, that is related to the whole form rather than
@@ -334,9 +345,20 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXString: function(item) {
-        return item.fieldLabel == 'Auto title'
-            ? null
-            : (item.name == 'alias' ? {allowBlank: false} : {});
+
+        // If this is an auto-created field - return
+        if (item.fieldLabel == 'Auto title') return null;
+
+        // Cfg object
+        var cfgO = {
+            maxLength: 255
+        }
+
+        // If field's name is 'alias' - setup `allowBlank` property as `false`
+        if (item.name == 'alias') cfgO.allowBlank = false;
+
+        // Return config
+        return cfgO
     },
 
     /**
