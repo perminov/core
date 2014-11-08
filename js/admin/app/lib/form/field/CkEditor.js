@@ -43,7 +43,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
             {items: [ 'TextColor', 'BGColor', '-', 'Blockquote', 'CreateDiv' ]},
             {items: [ 'Maximize', 'ShowBlocks', 'Find', '-', 'RemoveFormat'  ]}
         ],
-        enterMode: CKEDITOR.ENTER_BR,
+        enterMode: (typeof CKEDITOR == 'undefined') ? 2 : CKEDITOR.ENTER_BR,
         uiColor: '#B8D1F7',
         defaultWidth: 600,
         defaultHeight: 200,
