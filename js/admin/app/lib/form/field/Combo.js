@@ -1162,7 +1162,14 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // We do not setup widths for single-value combos
-        if (!me.multiSelect) return;
+        if (!me.multiSelect) {
+
+            // Restore default width for tableEl, as it may had been set up as '1px' previously
+            if (me.tableEl) me.tableEl.setStyle('width', '');
+
+            // Return
+            return;
+        }
 
         // Define auxiliary variables
         var staticDecrease = 0, dynamicDecrease = 0;
