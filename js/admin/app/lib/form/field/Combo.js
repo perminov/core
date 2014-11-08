@@ -2484,6 +2484,15 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Provide combo table fit each time layout was updated
+     */
+    updateLayout: function() {
+        this.tableEl.setWidth(1);
+        this.callParent();
+        this.comboTableFit();
+    },
+
+    /**
      * Do all look and feel adjustments for combo, that would happen
      * if some value would be assigned, but withoud actual assigning
      *

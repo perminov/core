@@ -113,6 +113,28 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // Hide mask
                 this.ctx().getMask().hide();
+            },
+
+            /**
+             * Provide the ability to fix scrollbar-overlap problem
+             */
+            resize: function(form, nw, nh) {
+
+                // Detect is there currently scrollbar appeared
+                var hasScroll = form.body.dom.scrollHeight > nh;
+
+                // If appeared, or dissapeared
+                if (form.hasScroll == undefined || hasScroll !== form.hasScroll) {
+
+                    // Update `anchor` property for each field
+                    form.query('> *').forEach(function(item){
+                        item.anchor = hasScroll ? '-16' : '100%';
+                        item.updateLayout();
+                    });
+
+                    // Remember `hasScroll` state
+                    form.hasScroll = hasScroll;
+                }
             }
         }
     },
