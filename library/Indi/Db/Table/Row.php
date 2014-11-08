@@ -2657,14 +2657,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Try to create a new Imagick object, and stop function execution, if imagick object creation failed
             try { $imagick = new Imagick($src); } catch (Exception $e) {return;}
 
-            // Pick the dimension values
-            if ($resizeR->masterDimensionAlias == 'width') {
-                $width = $resizeR->masterDimensionValue;
-                $height = $resizeR->slaveDimensionValue;
-            } else {
-                $height = $resizeR->masterDimensionValue;
-                $width = $resizeR->slaveDimensionValue;
-            }
+            // Get width and height
+            $width = $resizeR->masterDimensionValue;
+            $height = $resizeR->slaveDimensionValue;
 
             // If copy's proportions setting is 'c' - e.g. 'crop'
             if ($resizeR->proportions == 'c') {
@@ -2679,7 +2674,6 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // off evenly left and right. As a result, the thumbnail is usually a good representation
                 // of the source image.
                 $imagick->cropThumbnailImage($width, $height);
-
 
             // Else create a non-cropped thumbnail
             } else {
