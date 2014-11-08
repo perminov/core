@@ -213,6 +213,7 @@ class Indi_Controller {
     /**
      * Builds and returns a stack of WHERE clauses, that are representing grid's filters usage
      *
+     * @param $FROM string table/model/entity name. Current model will be used by default
      * @return array
      */
     public function filtersWHERE($FROM = '') {
