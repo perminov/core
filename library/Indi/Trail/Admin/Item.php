@@ -193,6 +193,12 @@ class Indi_Trail_Admin_Item {
                 // Create an empty row object
                 $this->row = $this->model->createRow();
 
+                // If current cms user is an alternate, and if there is corresponding column-field within current entity structure
+                if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $this->model->model->fields(null, 'columns')))
+
+                    // Force setup of that field value as id of current cms user
+                    $this->row->$aid = Indi::admin()->id;
+
                 // Setup several properties within the empty row, e.g if we are trying to create a 'City' row, and
                 // a moment ago we were browsing cities list within Canada - we should autosetup a proper `countryId`
                 // property for that empty 'City' row, for ability to save it as one of Canada's cities
