@@ -567,7 +567,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) Indi.eval(me.store.js, me);
+        if (me.store.js) {
+            if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
+        }
     },
 
     /**
@@ -1966,7 +1968,10 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) Indi.eval(me.store.js, me);
+        if (me.store.js) {
+            if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
+        }
+
 
         // If combo is running in multiple-values mode and is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
