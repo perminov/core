@@ -84,7 +84,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 return (column.storeRelationAbility == 'none' &&
                     [3,5].indexOf(parseInt(column.columnTypeId)) != -1) ? 'right' : 'left';
             }(),
-            hidden: !!(column.alias == 'move')
+            hidden: !!(column.alias == 'move'),
+            renderer: function (value) {
+                return String(value).match(/<?/) ? Ext.util.Format.htmlEncode(value) : value;
+            }
         }
     },
 
