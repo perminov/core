@@ -28,7 +28,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      * may can use "allowTypes: 'c++,html'". You can combine both group-types and exensions, by comma-enumeration,
      * e.g allowTypes: 'image,office,html,js'
      */
-    allowTypes: '',
+    allowTypes: 'image',
 
     /**
      * Minimum size of file. This feature works only in browsers that have native built-in window.FileReader function.
