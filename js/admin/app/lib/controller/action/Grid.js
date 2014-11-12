@@ -86,7 +86,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             }(),
             hidden: !!(column.alias == 'move'),
             renderer: function (value) {
-                return String(value).match(/<?/) ? Ext.util.Format.htmlEncode(value) : value;
+                return String(value).match(/<\?/) ? Ext.util.Format.htmlEncode(value) : value;
             }
         }
     },
