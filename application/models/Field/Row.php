@@ -556,7 +556,7 @@ class Field_Row extends Indi_Db_Table_Row {
             // Check if field's column datatype is going to be changed, and if so - check whether there is a need
             // to adjust existing values, to ensure that they will be compatiple with new datatype, and won't cause
             // mysql error like 'Incorrect integer value ...'  during execution of a change-column-datatype sql query
-            $this->_enforceExistingValuesCompatibility($columnTypeR->type, $defaultValue);
+            $this->_enforceExistingValuesCompatibility($columnTypeR->type, $defaultValue, $enumsetA);
         }
 
         // Implode the parts of sql query
@@ -719,7 +719,7 @@ class Field_Row extends Indi_Db_Table_Row {
      * @param $defaultValue
      * @return mixed
      */
-    protected function _enforceExistingValuesCompatibility($newType, $defaultValue) {
+    protected function _enforceExistingValuesCompatibility($newType, $defaultValue, $enumsetA) {
 
         // If field's entityId was not changed, and field had and still has it's
         // own database table column, but that column type is going to be changed
@@ -748,11 +748,17 @@ class Field_Row extends Indi_Db_Table_Row {
         // Setup double-quote variable, and WHERE usage flag
         $q = '"'; $w = true; $incompatibleValuesReplacement = false;
 
-        if ($newType == 'INT(11)') {
+        if ($newType == 'VARCHAR(255)') {
+            if (preg_match('/TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = 'SUBSTR(`' . $col . '`, 1, 255)'; $q = ''; $w = false;
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            }
+        } else if ($newType == 'INT(11)') {
             if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $defaultValue;
             } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
-                $incompatibleValuesReplacement = '0';
+                $incompatibleValuesReplacement = $defaultValue;
             } else if (preg_match('/DOUBLE\(7,2\)|YEAR|BOOLEAN/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = false;
             } else if (preg_match('/^DATE|TIME$/', $curTypeR->type)) {
@@ -830,10 +836,138 @@ class Field_Row extends Indi_Db_Table_Row {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
                 $incompatibleValuesReplacement = '0'; $w = false;
             }
+        } else if ($newType == 'TIME') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '00:00:00';
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/DATETIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = 'SUBSTR(`' . $col .'`, 12)';
+                $q = ''; $w = false;
+            } else if (preg_match('/DATE/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/^YEAR$/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            }
+        } else if ($newType == 'DATETIME') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00';
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/TIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/DATE/', $curTypeR->type)) {
+
+            } else if (preg_match('/^YEAR$/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = 'CONCAT(`' . $col . '`, "-", IF(`' . $col . '` = "0000", "00-00", "01-01"), " 00:00:00")';
+                $w = false; $q = '';
+            } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            }
+        } else if ($newType == 'BOOLEAN') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/DATETIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0000-00-00 00:00:00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/^YEAR$/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(4) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0000", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/DATE/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0000-00-00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/TIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "00:00:00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '1';
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.00", "0", "1")'; $w = false; $q = '';
+            }
+        } else if ($newType == 'ENUM' || $newType == 'SET') {
+            if (preg_match('/TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/VARCHAR\(255\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/SET/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . implode('|', $enumsetA) . '$';
+            } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DATETIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/^YEAR$/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DATE/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/TIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            }
+        } else if ($newType == 'VARCHAR(10)') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(' . $this->maxLength() . ') NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/DATETIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/^YEAR$/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DATE/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/TIME/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            }
         }
 
         // Adjust existing values, for them to be compatible with type, that field's column will be
-        // converted to. We should do it to aviod mysql error like 'Incorrect integer value ...'
+        // converted to. We should do it to aviod mysql error like 'Incorrect integer value ...' etc
         if ($incompatibleValuesReplacement !== false)
             Indi::db()->query('
                 UPDATE `' . $tbl . '`
@@ -1006,5 +1140,36 @@ class Field_Row extends Indi_Db_Table_Row {
      */
     public function zeroValue() {
         return $this->columnTypeId ? $this->foreign('columnTypeId')->zeroValue() : false;
+    }
+
+    /**
+     * Get field's maximum possible/allowed length, accroding to INFORMATION_SCHEMA metadata
+     *
+     * @return int|null
+     */
+    public function maxLength() {
+
+        // If (for some reason) current field's `entityId` property is empty/zero - return null
+        if (!$this->_original['entityId']) return null;
+
+        // Get the name of the table, that current field's entity is assotiated with
+        $table = Indi::model($this->_original['entityId'])->table();
+
+        // If (for some reason) current field's `alias` property is empty - return null
+        if (!$this->_original['alias']) return null;
+
+        // If (for some reason) current field's `columnTypeId` property is empty/zero - return null
+        if (!$this->_original['columnTypeId']) return null;
+
+        // Return the maximum possible length, that current field's value are allowed to have
+        // Such info is got from `INFORMATION_SCHEMA` pseudo-database
+        return (int) Indi::db()->query('
+            SELECT `CHARACTER_MAXIMUM_LENGTH`
+            FROM `INFORMATION_SCHEMA`.`COLUMNS`
+            WHERE `table_name` = "'. $table . '"
+                AND `table_schema` = "' . Indi::ini()->db->dbname . '"
+                AND `column_name` = "'. $this->_original['alias'] . '"
+            LIMIT 0 , 1
+        ')->fetchColumn();
     }
 }
