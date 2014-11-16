@@ -41,6 +41,61 @@ function autoloader($class) {
 }
 
 /**
+ * Custom handler for php fatal errors
+ */
+function fehandler() {
+
+    // Get last error, as we're sure that any fatal is the last error
+    $error = error_get_last();
+
+    // If last error is not null, and it's type is not E_NOTICE
+    if ($error !== null && $error["type"] != E_NOTICE)
+        echo jerror($error['type'], $error["message"], $error['file'], $error['line']);
+}
+
+/**
+ * Custom handler for php non-fatal errors, except notices
+ *
+ * @param $errno
+ * @param $errstr
+ * @param $errfile
+ * @param $errline
+ * @return mixed
+ */
+function oehandler($errno, $errstr, $errfile, $errline) {
+
+    // This error code is not included in error_reporting
+    if (!(error_reporting() & $errno)) return;
+
+    echo jerror( $errno, $errstr, $errfile, $errline);
+}
+
+/**
+ * Build and return a string, containing json-encoded error info, wrapped with
+ * '<error>' tag, for error to be easy pickable with javascript
+ *
+ * @param $errno
+ * @param $errstr
+ * @param $errfile
+ * @param $errline
+ * @return string
+ */
+function jerror($errno, $errstr, $errfile, $errline) {
+
+    // Build an array, containing error information
+    $error = array(
+        'code' => $errno,
+        'text' => $errstr,
+        'file' => $errfile,
+        'line' => $errline,
+        'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
+    );
+
+    // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
+    return '<error>' . json_encode($error) . '</error>';
+}
+
+/**
  * Displays formatted view of a given value
  *
  * @param mixed $value
