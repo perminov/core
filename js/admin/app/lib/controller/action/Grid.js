@@ -140,6 +140,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                             var cellWidth = Indi.metrics.getWidth(grid.getStore().data.items[j].data[hdi[k].dataIndex]) + fix;
                             if (cellWidth > columnWidths[i][k]) columnWidths[i][k] = cellWidth;
                         }
+                        if (hdi[k].maxWidth && columnWidths[i][k] > hdi[k].maxWidth) columnWidths[i][k] = hdi[k].maxWidth;
                         totalColumnsWidth += columnWidths[i][k];
                     }
                 } else if (grid.columns[i].dataIndex) {
@@ -151,6 +152,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         var cellWidth = Indi.metrics.getWidth(grid.getStore().data.items[j].data[grid.columns[i].dataIndex]) + fix;
                         if (cellWidth > columnWidths[i]) columnWidths[i] = cellWidth;
                     }
+                    if (grid.columns[i].maxWidth && columnWidths[i] > grid.columns[i].maxWidth)
+                        columnWidths[i] = grid.columns[i].maxWidth;
                     totalColumnsWidth += columnWidths[i];
                 }
             }
@@ -195,10 +198,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 }
             }
             var firstColumnWidth = Math.ceil(totalGridWidth*this.rowset.firstColumnWidthFraction);
-            if (totalColumnsWidth - firstColumnWidth < totalGridWidth) {
+            /*if (totalColumnsWidth - firstColumnWidth < totalGridWidth) {
                 firstColumnWidth = totalGridWidth - (totalColumnsWidth - (Ext.isArray(columnWidths[1]) ? columnWidths[1][0] : columnWidths[1]));
                 if (firstColumnWidth < 100) firstColumnWidth = 100;
-            }
+            }*/
             var percent = (totalGridWidth-firstColumnWidth-smallColumnsWidth)/(totalColumnsWidth-(Ext.isArray(columnWidths[1]) ? columnWidths[1][0] : columnWidths[1])-smallColumnsWidth);
             var first = true;
             for (i in columnWidths) {

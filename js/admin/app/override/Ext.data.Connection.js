@@ -4,6 +4,75 @@
 Ext.override(Ext.data.Connection, {
 
     /**
+     * @private
+     * Callback handler for the upload function. After we've submitted the form via the iframe this creates a bogus
+     * response object to simulate an XHR and populates its responseText from the now-loaded iframe's document body
+     * (or a textarea inside the body). We then clean up by removing the iframe
+     */
+    onUploadComplete: function(frame, options) {
+        var me = this,
+        // bogus response object
+            response = {
+                responseText: '',
+                responseXML: null
+            }, doc, contentNode,
+            phpErrors, responseHtml;
+
+        try {
+            doc = frame.contentWindow.document || frame.contentDocument || window.frames[frame.id].document;
+            if (doc) {
+                if (doc.body) {
+
+                    phpErrors = me.phpErrors(doc.body.innerHTML);
+                    if (phpErrors.length) {
+                        options.success = false;
+                        var err = me.errorExplorer(phpErrors);
+
+                        // Write php-errors to the console, additionally
+                        if (console && (console.log || console.error))
+                            for (var i in err) console[console.error ? 'error' : 'log'](err[i]);
+
+                        Ext.Msg.show({
+                            title: 'Server error',
+                            msg: err.join('<br><br>'),
+                            buttons: Ext.Msg.OK,
+                            icon: Ext.MessageBox.ERROR
+                        });
+                    }
+
+                    // Response sent as Content-Type: text/json or text/plain. Browser will embed in a <pre> element
+                    // Note: The statement below tests the result of an assignment.
+                    if ((contentNode = doc.body.firstChild) && /pre/i.test(contentNode.tagName)) {
+                        response.responseText = contentNode.innerText;
+                    }
+
+                    // Response sent as Content-Type: text/html. We must still support JSON response wrapped in textarea.
+                    // Note: The statement below tests the result of an assignment.
+                    else if (contentNode = doc.getElementsByTagName('textarea')[0]) {
+                        response.responseText = contentNode.value;
+                    }
+                    // Response sent as Content-Type: text/html with no wrapping. Scrape JSON response out of text
+                    else {
+                        response.responseText = doc.body.textContent || doc.body.innerText;
+                    }
+                }
+                //in IE the document may still have a body even if returns XML.
+                response.responseXML = doc.XMLDocument || doc;
+            }
+        } catch (e) {
+        }
+
+        me.fireEvent('requestcomplete', me, response, options);
+
+        Ext.callback(options.success, options.scope, [response, options]);
+        Ext.callback(options.callback, options.scope, [options, true, response]);
+
+        setTimeout(function() {
+            Ext.removeNode(frame);
+        }, 100);
+    },
+
+    /**
      * To be called when the request has come back from the server
      * @private
      * @param {Object} request
@@ -45,7 +114,7 @@ Ext.override(Ext.data.Connection, {
                 });*/
 
                 Ext.Msg.show({
-                    title: 'System error',
+                    title: 'Server error',
                     msg: err.join('<br><br>'),
                     buttons: Ext.Msg.OK,
                     icon: Ext.MessageBox.ERROR

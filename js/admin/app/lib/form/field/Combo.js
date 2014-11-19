@@ -2337,6 +2337,11 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Build html for options, and do all other things
                 me.afterFetchAdjustments(data, json);
+            },
+            failure: function() {
+
+                // Restore default visibility for countEl element
+                me.infoEl.removeCls('i-combo-info-loading');
             }
         })
     },
