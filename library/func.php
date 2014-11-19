@@ -49,7 +49,7 @@ function fehandler() {
     $error = error_get_last();
 
     // If last error is not null, and it's type is not E_NOTICE
-    if ($error !== null && $error["type"] != E_NOTICE)
+    if ($error !== null && $error["type"] != E_NOTICE && $error["type"] != E_DEPRECATED)
         echo jerror($error['type'], $error["message"], $error['file'], $error['line']);
 }
 
