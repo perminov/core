@@ -61,44 +61,46 @@ Ext.define('Indi.lib.controller.action.Form', {
                 var cmp, certainFieldMsg, wholeFormMsg = [];
 
                 // The the info about invalid fields from the response, and mark the as invalid
-                Object.keys(action.result.mismatch).forEach(function(i, index, mismatch){
+                if (Ext.isObject(action.result) && Ext.isObject(action.result.mismatch)) {
 
-                    // If mismatch key starts with a '#' symbol, we assume that message, assigned
-                    // under such key - is not related to any certain field within form, so we
-                    // collect al such messages for them to be bit later displayed within Ext.MessageBox
-                    if (i.substring(0, 1) == '#') wholeFormMsg.push(action.result.mismatch[i]);
+                    Object.keys(action.result.mismatch).forEach(function(i, index, mismatch){
 
-                    // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
-                    // under such key - is related to some certain field within form, so we get that field's
-                    // component and mark it as invalid
-                    else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
+                        // If mismatch key starts with a '#' symbol, we assume that message, assigned
+                        // under such key - is not related to any certain field within form, so we
+                        // collect al such messages for them to be bit later displayed within Ext.MessageBox
+                        if (i.substring(0, 1) == '#') wholeFormMsg.push(action.result.mismatch[i]);
 
-                        // Get the mismatch message
-                        certainFieldMsg = action.result.mismatch[i];
+                        // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
+                        // under such key - is related to some certain field within form, so we get that field's
+                        // component and mark it as invalid
+                        else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
 
-                        // If mismatch message is a string
-                        if (Ext.isString(certainFieldMsg))
+                            // Get the mismatch message
+                            certainFieldMsg = action.result.mismatch[i];
+
+                            // If mismatch message is a string
+                            if (Ext.isString(certainFieldMsg))
 
                             // Cut off field title mention from message
-                            certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
+                                certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
 
-                        // Mark field as invalid
-                        cmp.markInvalid(certainFieldMsg);
+                            // Mark field as invalid
+                            cmp.markInvalid(certainFieldMsg);
 
-                    // Else mismatch message is related to field, that currently, for some reason, is not available
-                    // within the form - push that message to the wholeFormMsg array
-                    } else wholeFormMsg.push(action.result.mismatch[i]);
-                });
+                            // Else mismatch message is related to field, that currently, for some reason, is not available
+                            // within the form - push that message to the wholeFormMsg array
+                        } else wholeFormMsg.push(action.result.mismatch[i]);
+                    });
 
-                // If we collected at least one error message, that is related to the whole form rather than
-                // some certain field - use an Ext.MessageBox to display it
-                if (wholeFormMsg.length) Ext.MessageBox.show({
-                    title: Indi.lang.I_ERROR,
-                    msg: (wholeFormMsg.length > 1 ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; '),
-                    buttons: Ext.MessageBox.OK,
-                    icon: Ext.MessageBox.ERROR
-                });
-
+                    // If we collected at least one error message, that is related to the whole form rather than
+                    // some certain field - use an Ext.MessageBox to display it
+                    if (wholeFormMsg.length) Ext.MessageBox.show({
+                        title: Indi.lang.I_ERROR,
+                        msg: (wholeFormMsg.length > 1 ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; '),
+                        buttons: Ext.MessageBox.OK,
+                        icon: Ext.MessageBox.ERROR
+                    });
+                }
 
                 // Reset value of the 'ID' master toolbar item to the last valid value
                 var idCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'id');
@@ -729,7 +731,11 @@ Ext.define('Indi.lib.controller.action.Form', {
             if (btnSave && btnSave.pressed && !formCmp.getForm().isValid()) return;
 
             // We just load required contents
-            Indi.load(url + (me.ti().scope.toggledSave ? '?stopAutosave=1' : ''));
+            Indi.load(url + (me.ti().scope.toggledSave ? '?stopAutosave=1' : ''), {
+                failure: function() {
+                    me.getMask().hide();
+                }
+            });
         }
     }
 });

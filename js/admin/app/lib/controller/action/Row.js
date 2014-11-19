@@ -200,6 +200,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                                     // Otherwise we build an warning message, and display Ext.MessageBox
                                     else me.onDetectionFailed(input);
+                                },
+                                failure: function() {
+                                    me.getMask().hide();
                                 }
                             });
                         }
@@ -685,6 +688,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                 // Otherwise we build an warning message, and display Ext.MessageBox
                 else me.onDetectionFailed(input);
+            },
+            failure: function() {
+                me.getMask().hide();
             }
         });
     },
