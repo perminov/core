@@ -152,6 +152,16 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     * Flush the json-encoded message, containing `status` property, and optional `data` subproperty
+     *
+     * @param $success
+     * @param $data
+     */
+    public function jflush($success, $data = array()) {
+        die(json_encode(array_merge(array('success' => $success), is_array($data) ? $data : array())));
+    }
+
+    /**
      * Gets $within param and call $row->move() method with that param.
      * This was created just for use in in $controller->downAction() and $controller->upAction()
      *
@@ -165,15 +175,26 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If row move was successful
         if ($this->row->move($direction, $within)) {
 
-            // Setup new index
-            Indi::uri()->aix += $direction == 'up' ? -1 : 1;
+            // Get the page of results, that we were at
+            $wasPage = Indi::trail()->scope->page;
+
+            // If current model has a tree-column, detect new row index by a special algorithm
+            if (Indi::trail()->model->treeColumn()) Indi::uri()->aix = Indi::trail()->model->detectOffset(
+                Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $this->row->id);
+
+            // Else just shift current row index by inc/dec-rementing
+            else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
 
             // Apply new index
             $this->setScopeRow();
+
+            // Flush json response, containing new page index, in case if now row
+            // index change is noticeable enough for rowset current page was shifted
+            $this->jflush(true, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
         }
 
-        // Redirect
-        $this->redirect();
+        // Flush json response
+        $this->jflush(false);
     }
 
     /**
@@ -185,20 +206,25 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->preDelete();
 
         // Delete row
-        $this->row->delete();
+        if ($deleted = $this->row->delete()) {
 
-        // Decrement row index. This line, and one line below - are required to provide an ability to shift
-        // the selection within rowset (grid, tile, etc) panel, after current row deletion
-        Indi::uri()->aix -= 1;
+            // Get the page of results, that we were at
+            $wasPage = Indi::trail()->scope->page;
 
-        // Apply new index
-        $this->setScopeRow();
+            // Decrement row index. This line, and one line below - are required to provide an ability to shift
+            // the selection within rowset (grid, tile, etc) panel, after current row deletion
+            Indi::uri()->aix -= 1;
+
+            // Apply new index
+            $this->setScopeRow();
+        }
 
         // Do post delete maintenance
-        $this->postDelete();
+        $this->postDelete($deleted);
 
-        // Redirect
-        if ($redirect) $this->redirect();
+        // Flush json response, containing new page index, in case if now row
+        // index change is noticeable enough for rowset current page was shifted
+        $this->jflush(!!$deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
     }
 
     /**
@@ -323,8 +349,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Remember all scope params in $_SESSION under a hash
-        $_SESSION['indi']['admin'][Indi::trail((int) $upper)->section->alias][Indi::uri()->ph]
-            = array_merge($original, $modified);
+        Indi::trail((int) $upper)->scope->apply($modified);
     }
 
     /**
@@ -1630,8 +1655,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
     /**
      * Do custom things after deleteAction() call
+     *
+     * @param $deleted
      */
-    public function postDelete() {
+    public function postDelete($deleted) {
 
     }
 
@@ -1757,11 +1784,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $_SESSION['indi']['admin'][Indi::uri()->section][$hash]['found']++;
 
                     // Replace the null id with id of newly created row
-                    $location = str_replace('null', Indi::trail()->row->id, $location);
+                    $location = str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
                 }
 
             // Replace the null id with id of newly created row
-            } else if (!Indi::uri()->id)  $location = str_replace('null', Indi::trail()->row->id, $location);
+            } else if (!Indi::uri()->id) str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
         }
 
         // Redirect
