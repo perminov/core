@@ -606,7 +606,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                             . $color[1] . ';"></span>#'. $color[1];
                     } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
-                            . $color[1] . ';"></span>'. $data[$pointer][$columnI];
+                            . $color[1] . ';"></span>';
                     }
                 }
             }

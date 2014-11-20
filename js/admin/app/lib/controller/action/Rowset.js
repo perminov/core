@@ -78,6 +78,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * This function provide batch-adjustment ability for each row within the store
+     */
+    storeLoadCallbackDataRowAdjust: Ext.emptyFn,
+
+    /**
      * Get store, that current action is dealing with
      *
      * @return {*}
@@ -92,9 +97,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param cmp Component, that fired filterChange
      */
     filterChange: function(cmp){
-
-        // Setup auxilliary variables/shortcuts
-        var me = this, fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset';
+        var me = this;
 
         // Declare and fulfil an array with properties, available for each row in the rowset
         var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
@@ -114,7 +117,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var usedFilterAliasesThatHasGridColumnRepresentedByA = [];
 
         // Get all filter components
-        var filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+        var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
@@ -369,6 +372,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     }
                 }
 
+                // Here we handle case, then we have keyword-search field injected into
+                // filters docked panel, rather than in master docked panel
+                var keywordCmp = Ext.getCmp(filterCmpIdPrefix.replace(/\$$/, '')).query('[isKeyword]')[0];
+                if (keywordCmp && keywordCmp.getValue()) {
+                    keywordCmp.setValue('');
+                    atLeastOneFilterIsUsed = true;
+                }
+
                 // Reload store for empty filter values to be picked up.
                 // We do reload only in case if at least one filter was emptied by reset filter tool
                 if (atLeastOneFilterIsUsed) me.filterChange({});
@@ -478,6 +489,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Setup default filter config, builded upon filter field's xtype
         itemIDefault = 'panelDocked$FilterX' + Indi.ucfirst(control);
         if (typeof me[itemIDefault] == 'function') itemI = me[itemIDefault](filter);
+
+        // Setup special `isFilter` property indicating that current component will be used as one of rowset filters
+        if (Ext.isObject(itemI)) itemI = Ext.merge({isFilter: true}, itemI);
 
         // Return default config
         return itemI;
@@ -618,6 +632,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'datefield',
             id: filterCmpId + '-gte',
             name: alias + '-gte',
+            isFilter: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 85 + Indi.metrics.getWidth(fieldLabel),
@@ -635,6 +650,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'datefield',
             id: filterCmpId + '-lte',
             name: alias + '-lte',
+            isFilter: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
             width: 85 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
@@ -1020,6 +1036,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return {
             id: me.bid() + '-toolbar-master-keyword',
             xtype: 'textfield',
+            isKeyword: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
@@ -1073,7 +1090,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeField_Default: function(field) {
         return {
             name: field.alias,
-            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 ? 'int' : 'string'
+            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 && !parseInt(field.satellite)? 'int' : 'string'
         }
     },
 
@@ -1137,7 +1154,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * Internal callback for store load/reload
      */
     storeLoadCallbackDefault: function() {
-        this.ti().scope = this.getStore().proxy.reader.jsonData.scope;
+        var me = this;
+
+        // Setup scope
+        me.ti().scope = me.getStore().proxy.reader.jsonData.scope;
+
+        // Adjust each data-row within the store
+        me.getStore().each(me.storeLoadCallbackDataRowAdjust);
     },
 
     /**
@@ -1305,8 +1328,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
 
         // Get all filter components
-        var fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset', value,
-            filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+        var value, filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
         // Foreach filter component
         for (i = 0; i < filterCmpA.length; i++) {

@@ -182,15 +182,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      * Detect if all inputs within the row panel should be read-only
      */
     rowReadOnly: function() {
-        var me = this, readOnly = true;
-
-        // Detect if readOnly mode should turned On
-        for (var i = 0; i < me.ti().actions.length; i++)
-            if (me.ti().actions[i].alias == 'save')
-                readOnly = false;
-        
-        // Return auto-detected value for `readOnly` flag/prop
-        return readOnly;
+        return this.ti().actions.r('save', 'alias') ? false : true;
     },
 
     // @inheritdoc
@@ -731,7 +723,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             if (btnSave && btnSave.pressed && !formCmp.getForm().isValid()) return;
 
             // We just load required contents
-            Indi.load(url + (me.ti().scope.toggledSave ? '?stopAutosave=1' : ''), {
+            Indi.load(url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : ''), {
                 failure: function() {
                     me.getMask().hide();
                 }
