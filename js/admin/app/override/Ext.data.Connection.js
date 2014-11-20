@@ -84,7 +84,8 @@ Ext.override(Ext.data.Connection, {
             result,
             success,
             response,
-            phpErrors;
+            phpErrors,
+            json;
 
         try {
             result = me.parseStatus(request.xhr.status);
@@ -119,9 +120,16 @@ Ext.override(Ext.data.Connection, {
                     buttons: Ext.Msg.OK,
                     icon: Ext.MessageBox.ERROR
                 });
+
+            // Else if responseText can possibly be a json-encoded string
+            } else if (request.xhr.responseText.substr(0, 1).match(/[{\[]/)
+                && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object'
+                && json.hasOwnProperty('success')) {
+                success = json.success;
             }
         }
 
+        // If still success
         if (success) {
             response = me.createResponse(request);
             me.fireEvent('requestcomplete', me, response, options);

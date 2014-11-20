@@ -255,6 +255,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-up{background-image: url('/i/admin/btn-icon-up.png');}
 .i-btn-icon-down{background-image: url('/i/admin/btn-icon-down.png');}
 .i-btn-icon-xls{background-image: url('/i/admin/btn-icon-xls.png');}
+.i-btn-icon-loading{background-image: url('/i/admin/btn-icon-loading.gif'); background-position: inherit;}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
