@@ -41,33 +41,39 @@ function autoloader($class) {
 }
 
 /**
- * Custom handler for php fatal errors
- */
-function fehandler() {
-
-    // Get last error, as we're sure that any fatal is the last error
-    $error = error_get_last();
-
-    // If last error is not null, and it's type is not E_NOTICE
-    if ($error !== null && $error["type"] != E_NOTICE && $error["type"] != E_DEPRECATED)
-        echo jerror($error['type'], $error["message"], $error['file'], $error['line']);
-}
-
-/**
- * Custom handler for php non-fatal errors, except notices
+ * Custom handler for php errors, except E_NOTICE and E_DEPRECATED
  *
- * @param $errno
- * @param $errstr
- * @param $errfile
- * @param $errline
+ * @param null $type
+ * @param null $message
+ * @param null $file
+ * @param null $line
  * @return mixed
  */
-function oehandler($errno, $errstr, $errfile, $errline) {
+function ehandler($type = null, $message = null, $file = null, $line = null) {
 
-    // This error code is not included in error_reporting
-    if (!(error_reporting() & $errno)) return;
+    // If arguments are given, we assume that we are here because of
+    // a set_error_handler() usage, e.g current error is not a fatal error
+    if (func_num_args()) {
 
-    echo jerror( $errno, $errstr, $errfile, $errline);
+        // If current error is not in a list of ignored errors - return
+        if(!(error_reporting() & $type)) return;
+
+    // Else if argument are not given, we assume that we are here because
+    // of a register_shutdown_function() usage, e.g current error is a fatal error
+    } else {
+
+        // Get the fatal error
+        $error = error_get_last();
+
+        //if ($error !== null && $error["type"] != E_NOTICE && $error["type"] != E_DEPRECATED) extract($error);
+        if ($error === null || in($error['type'], array(E_NOTICE, E_DEPRECATED))) return;
+
+        // Extract error info
+        extract($error);
+    }
+
+    // Flush json-encoded error info, wrapped by <error> tag
+    echo jerror($type, $message, $file, $line);
 }
 
 /**
