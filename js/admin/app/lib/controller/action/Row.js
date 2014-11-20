@@ -733,5 +733,19 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     rowItemA: function() {
         return [];
+    },
+
+    /**
+     * Build the uri of another action for same section and row, that can be used with `goto`
+     * function, for easier development of navigation from-one-action-to-another ability
+     *
+     * @param action
+     * @return {String}
+     */
+    other: function(action) {
+        var me = this; return me.uri.replace(
+            '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/',
+            '/' + me.ti().section.alias + '/' + action + '/'
+        );
     }
 });

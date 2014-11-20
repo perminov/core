@@ -86,7 +86,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
             }(),
             hidden: !!(column.alias == 'move'),
             renderer: function (value) {
-                return String(value).match(/<\?/) ? Ext.util.Format.htmlEncode(value) : value;
+                if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
+                if (String(value).match(/ class="i-color-box"/)) return '<div class="i-color-box-wrap">'+value+'</div>';
+                return value;
             }
         }
     },

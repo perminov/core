@@ -757,12 +757,13 @@ class Indi {
      *
      * @static
      * @param int|string $identifier
+     * @param bool $check
      * @return Indi_Db_Table object
      */
-    public static function model($identifier) {
+    public static function model($identifier, $check = false) {
 
         // Call same method within Indi_Db object
-        return Indi_Db::model($identifier);
+        return Indi_Db::model($identifier, $check);
     }
 
     /**

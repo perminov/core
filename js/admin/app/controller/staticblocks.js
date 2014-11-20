@@ -62,6 +62,9 @@ Ext.define('Indi.controller.staticblocks', {
                     listeners: {
                         afterrender: function(cmp){
                             cmp.hide();
+                        },
+                        beforeshow: function() {
+                            return false;
                         }
                     }
                 }
@@ -87,6 +90,9 @@ Ext.define('Indi.controller.staticblocks', {
                     listeners: {
                         afterrender: function(cmp){
                             cmp.hide();
+                        },
+                        beforeshow: function() {
+                            return false;
                         }
                     }
                 }

@@ -258,7 +258,12 @@ Ext.define('Indi', {
                     js = js.replace(ttrMMatch[i], ttrSReplace);
                 }
             }
-            eval(js);
+            try {
+                eval(js);
+            } catch (e) {
+                Ext.log(me.name);
+                Ext.log(js);
+            }
         },
 
         /**

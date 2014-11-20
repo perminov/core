@@ -1029,12 +1029,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Create the GD image
                     $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
                     imagefill($gdImage, 0, 0, imagecolorallocate(
-                            $gdImage, hexdec(substr($c[1], 0, 2)), hexdec(substr($c[1], 2, 2)), hexdec(substr($c[1], 4, 2)))
+                        $gdImage, hexdec(substr($c[1], 0, 2)), hexdec(substr($c[1], 2, 2)), hexdec(substr($c[1], 4, 2)))
                     );
 
-                    if (preg_match('/<span class="i-color-box" style="[^"]*margin-left: ([0-9]+)px/', $value, $o)) {
-                        $additionalOffsetX = $o[1] + 3;
-                    }
+                    // Setup additional x-offset for color-box, for it to be centered within the cell
+                    $additionalOffsetX = ceil(($columnI['width']-14)/2) - 2;
 
                     //  Add the image to a worksheet
                     $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
@@ -1044,15 +1043,15 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
                     $objDrawing->setHeight(11);
                     $objDrawing->setWidth(14);
-                    $objDrawing->setOffsetY(5)->setOffsetX(5 + $additionalOffsetX);
+                    $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
                     $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
                     // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
                     // because gd image will override cell value otherwise
                     $value = str_pad('', 6, ' ') . strip_tags($value);
 
-                    // Else if cell value contain a color definition within 'color' attribute,
-                    // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
+                // Else if cell value contain a color definition within 'color' attribute,
+                // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
                 } else if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $value, $c)) {
 
                     // If we find a hex equivalent for found color definition (if it's not already in hex format)
