@@ -18,7 +18,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
 
         /**
          * Provide store autoloading once panel panel is rendered
