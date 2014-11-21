@@ -922,7 +922,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             buttons: Ext.MessageBox.YESNO,
             icon: Ext.MessageBox.QUESTION,
             fn: function(answer) {
-                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix)
+                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix);
+                else Ext.getCmp(me.rowset.id).getView().focus();
             }
         });
     },
