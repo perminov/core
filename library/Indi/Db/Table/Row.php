@@ -2500,16 +2500,6 @@ class Indi_Db_Table_Row implements ArrayAccess
             return;
         }
 
-        // If current row does not have an id
-        if (!$this->id) {
-
-            // Assign an error
-            $this->_mismatch['#row'] = I_ROWFILE_ERROR_NONEXISTENT_ROW;
-
-            // Exit
-            return;
-        }
-
         // If $fields arguments is a boolean and is true we assume that there is already exists file-fields
         // content modification info, that was set up earlier, so now we should apply file-upload fields contents
         // modifications, according to that info

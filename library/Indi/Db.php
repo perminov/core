@@ -254,10 +254,11 @@ class Indi_Db {
      *
      * @static
      * @param int|string $identifier
+     * @param bool $check
      * @return Indi_Db_Table
      * @throws Exception
      */
-    public static function model($identifier) {
+    public static function model($identifier, $check = false) {
 
         // If $identifier argument is an entity id
         if (preg_match('/^[0-9]+$/', $identifier)) {
@@ -271,7 +272,8 @@ class Indi_Db {
             }
 
             // If was not found, throw exception
-            if ($identifier != $className) throw new Exception('Entity with id ' . $identifier . ' does not exist');
+            if ($identifier != $className)
+                if ($check) return null; else throw new Exception('Entity with id ' . $identifier . ' does not exist');
         }
 
         // Uppercase the first char, as keys in self::$_modelA and self::$_entityA arrays are capitalized
@@ -307,7 +309,7 @@ class Indi_Db {
         }
 
         // Throw exception
-        throw new Exception('Model "' . $identifier . '" does not exists');
+        if ($check) return null; else throw new Exception('Model "' . $identifier . '" does not exists');
     }
 
     /**

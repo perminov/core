@@ -23,6 +23,7 @@ Ext.define('Indi.lib.controller.action.Print', {
                     {alias: 'print'}, '-',
                     {alias: 'reset'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
+                    {alias: 'form'}, '-',
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
                 ]
@@ -50,6 +51,28 @@ Ext.define('Indi.lib.controller.action.Print', {
             },
             //iconCls: 'i-btn-icon-print'
         }
+    },
+
+    /**
+     * Master toolbar 'Form' item, for ability to go back to form
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Form: function() {
+
+        // Here we check if 'form' action is in the list of allowed actions
+        var me = this, action$Form = me.ti().actions.r('form', 'alias');
+
+        // 'Form' item config
+        return action$Form ? {
+            id: me.panelDockedInnerBid() + 'form',
+            tooltip: action$Form.title,
+            xtype: 'button',
+            handler: function() {
+                me.goto(me.other('form'));
+            },
+            iconCls: 'i-btn-icon-form'
+        } : null;
     },
 
     // @inheritdoc

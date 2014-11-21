@@ -200,6 +200,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                                     // Otherwise we build an warning message, and display Ext.MessageBox
                                     else me.onDetectionFailed(input);
+                                },
+                                failure: function() {
+                                    me.getMask().hide();
                                 }
                             });
                         }
@@ -228,7 +231,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 me.getMask().show();
 
                 // Build the url
-                url = me.ti().section.href + me.ti().action.alias + (parseInt(me.ti().row.id) ? '/id/'+ me.ti().row.id : '')
+                url = me.ti().section.href + me.ti().action.alias + '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
                     +'/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
                 // Reload the current uri
@@ -685,6 +688,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                 // Otherwise we build an warning message, and display Ext.MessageBox
                 else me.onDetectionFailed(input);
+            },
+            failure: function() {
+                me.getMask().hide();
             }
         });
     },
@@ -782,5 +788,19 @@ Ext.define('Indi.lib.controller.action.Row', {
                 scope: me
             }]
         });
+    },
+
+    /**
+     * Build the uri of another action for same section and row, that can be used with `goto`
+     * function, for easier development of navigation from-one-action-to-another ability
+     *
+     * @param action
+     * @return {String}
+     */
+    other: function(action) {
+        var me = this; return me.uri.replace(
+            '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/',
+            '/' + me.ti().section.alias + '/' + action + '/'
+        );
     }
 });

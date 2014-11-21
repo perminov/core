@@ -1,4 +1,5 @@
 <?php
+
 // Displays phpinfo if needed
 if(isset($_GET['info'])){phpinfo();die();}
 
@@ -39,6 +40,10 @@ require('func.php');
 
 // Register autoloader
 spl_autoload_register('autoloader');
+
+// Set up error handlers for fatal errors, and other errors
+register_shutdown_function('ehandler');
+set_error_handler('ehandler');
 
 // Performance detection. 'mt' mean 'microtime'
 $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $s + $mc; $ret = $n - $GLOBALS['last']; $GLOBALS['last'] = $n; return $ret;} mt();

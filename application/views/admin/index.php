@@ -9,6 +9,7 @@
         '/library/extjs4/ext-all.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
 
+        '/js/admin/app/override/Ext.data.Connection.js',
         '/js/admin/app/override/Ext.dom.Element.js',
         '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
         '/js/admin/app/override/Ext.tip.ToolTip.js',

@@ -34,17 +34,40 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         return $this->filter->foreign('fieldId');
     }
 
+    /**
+     * Detect whether or not WHERE clause part, related especially to current field's satellite value
+     * should be involved in the process of fetching data for current filter-combo
+     *
+     * @return bool
+     */
     public function noSatellite() {
+
+        // If current field has a satellite, we'll try to find satellite's value in several places
         if ($satelliteFieldId = $this->getField()->satellite) {
+
+            // Clone filters rowset, as iterating through same rowset will give an error
             $filters = clone Indi::trail()->filters;
+
+            // Lookup satellite within the available filters. If found - use it
             $availableFilterA = $filters->toArray();
             foreach ($availableFilterA as $availableFilterI)
                 if ($availableFilterI['fieldId'] == $satelliteFieldId)
                     return false;
+
+            // Lookup satellite within the filterSharedRow's props, that might hav been set up by
+            // trail items connections logic. If found - use it
+            $satelliteFieldAlias = $this->getField()->foreign('satellite')->alias;
+            if (array_key_exists($satelliteFieldAlias, $this->getRow()->modified())) return false;
+
+            // If current cms user is an alternate, and if there is corresponding column-field within current entity structure. If found - use it
+            if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', Indi::trail()->model->fields(null, 'columns')))
+                return false;
+
+            // No satellite should be used
             return true;
-        } else {
-            return true;
-        }
+
+        // No satellite should be used
+        } else return true;
     }
 
     /**
@@ -71,7 +94,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             $this->filter->defaultValue = $this->getRow()->{$this->field->alias} = $gotFromScope;
             return $gotFromScope;
         }
-        if ($this->filter->defaultValue || ($this->field->columnTypeId == 12 && $this->filter->defaultValue != '')) {
+        if (strlen($this->filter->defaultValue) || ($this->field->columnTypeId == 12 && $this->filter->defaultValue != '')) {
             Indi::$cmpTpl = $this->filter->defaultValue; eval(Indi::$cmpRun); $this->filter->defaultValue = Indi::cmpOut();
             $this->getRow()->{$this->field->alias} = $this->filter->defaultValue;
             return $this->filter->defaultValue;

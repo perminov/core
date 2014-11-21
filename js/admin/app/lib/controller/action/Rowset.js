@@ -18,7 +18,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
 
         /**
          * Provide store autoloading once panel panel is rendered
@@ -78,6 +78,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * This function provide batch-adjustment ability for each row within the store
+     */
+    storeLoadCallbackDataRowAdjust: Ext.emptyFn,
+
+    /**
      * Get store, that current action is dealing with
      *
      * @return {*}
@@ -92,9 +97,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param cmp Component, that fired filterChange
      */
     filterChange: function(cmp){
-
-        // Setup auxilliary variables/shortcuts
-        var me = this, fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset';
+        var me = this;
 
         // Declare and fulfil an array with properties, available for each row in the rowset
         var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
@@ -114,7 +117,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var usedFilterAliasesThatHasGridColumnRepresentedByA = [];
 
         // Get all filter components
-        var filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+        var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
@@ -369,6 +372,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     }
                 }
 
+                // Here we handle case, then we have keyword-search field injected into
+                // filters docked panel, rather than in master docked panel
+                var keywordCmp = Ext.getCmp(filterCmpIdPrefix.replace(/\$$/, '')).query('[isKeyword]')[0];
+                if (keywordCmp && keywordCmp.getValue()) {
+                    keywordCmp.setValue('');
+                    atLeastOneFilterIsUsed = true;
+                }
+
                 // Reload store for empty filter values to be picked up.
                 // We do reload only in case if at least one filter was emptied by reset filter tool
                 if (atLeastOneFilterIsUsed) me.filterChange({});
@@ -478,6 +489,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Setup default filter config, builded upon filter field's xtype
         itemIDefault = 'panelDocked$FilterX' + Indi.ucfirst(control);
         if (typeof me[itemIDefault] == 'function') itemI = me[itemIDefault](filter);
+
+        // Setup special `isFilter` property indicating that current component will be used as one of rowset filters
+        if (Ext.isObject(itemI)) itemI = Ext.merge({isFilter: true}, itemI);
 
         // Return default config
         return itemI;
@@ -618,6 +632,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'datefield',
             id: filterCmpId + '-gte',
             name: alias + '-gte',
+            isFilter: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 85 + Indi.metrics.getWidth(fieldLabel),
@@ -635,6 +650,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'datefield',
             id: filterCmpId + '-lte',
             name: alias + '-lte',
+            isFilter: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
             width: 85 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
@@ -859,7 +875,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 actionAlias: action.alias,
                 rowRequired: action.rowRequired,
                 javascript: action.javascript,
-                handler: function(){
+                handler: function(btn){
 
                     // Get selection
                     var selection = Ext.getCmp('i-center-center-wrapper')
@@ -869,7 +885,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                     // Get first selected row and it's index, if selected
                     if (selection.length) {
-                        var row = selection[0].data;
+                        var row = me.getStore().getById(selection[0].data.id);
                         var aix = selection[0].index + 1;
                     }
 
@@ -887,7 +903,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     // Run the handler
                     } else {
                         if (typeof this.javascript == 'function') this.javascript(); else {
-                            me.panelDockedInner$Actions_InnerHandler(action, row, aix);
+                            me.panelDockedInner$Actions_InnerHandler(action, row, aix, btn);
                         }
                     }
                 }
@@ -905,6 +921,35 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
     },
 
+    panelDockedInner$Actions$Toggle_InnerHandler: function(action, row, aix, btn) {
+        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+    },
+    panelDockedInner$Actions$Up_InnerHandler: function(action, row, aix, btn) {
+        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+    },
+    panelDockedInner$Actions$Down_InnerHandler: function(action, row, aix, btn) {
+        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+    },
+
+    /**
+     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandler,
+     * but it does not reload the whole panel - it just reload store only instead
+     *
+     * @param action
+     * @param row
+     * @param aix
+     * @param btn
+     */
+    panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn) {
+        var me = this; me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn, {
+            success: function(response) {
+                var json = Ext.JSON.decode(response.responseText, true), page;
+                if (Ext.isObject(json) && (page = json.page)) me.getStore().loadPage(page);
+                else me.getStore().load();
+            }
+        });
+    },
+
     /**
      * Inner handler function for 'Delete' action button
      *
@@ -912,7 +957,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param row
      * @param aix
      */
-    panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix) {
+    panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix, btn) {
         var me = this;
 
         // Show the deletion confirmation message box
@@ -922,7 +967,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             buttons: Ext.MessageBox.YESNO,
             icon: Ext.MessageBox.QUESTION,
             fn: function(answer) {
-                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix);
+                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn)
                 else Ext.getCmp(me.rowset.id).getView().focus();
             }
         });
@@ -935,12 +980,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param action
      * @param row
      * @param aix
+     * @param btn
      */
-    panelDockedInner$Actions_InnerHandler: function(action, row, aix) {
+    panelDockedInner$Actions_InnerHandler: function(action, row, aix, btn) {
         var me = this, fn;
         fn = 'panelDockedInner$Actions$' + Indi.ucfirst(action.alias) + '_InnerHandler';
-        if (typeof me[fn] == 'function') me[fn](action, row, aix);
-        else me.panelDockedInner$Actions_DefaultInnerHandler(action,row, aix);
+        if (typeof me[fn] == 'function') me[fn](action, row, aix, btn);
+        else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
 
     /**
@@ -950,12 +996,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param row
      * @param aix
      */
-    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix) {
+    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
         var me = this;
 
         // Build the url and load it
         Indi.load(me.ti().section.href + action.alias +
-            '/id/' + row.id + '/ph/' + Indi.trail().section.primaryHash + '/aix/' + aix + '/');
+            '/id/' + row.get('id') + '/ph/' + Indi.trail().section.primaryHash + '/aix/' + aix + '/', ajaxCfg);
     },
 
     /**
@@ -1021,6 +1067,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return {
             id: me.bid() + '-toolbar-master-keyword',
             xtype: 'textfield',
+            isKeyword: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
@@ -1074,7 +1121,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeField_Default: function(field) {
         return {
             name: field.alias,
-            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 ? 'int' : 'string'
+            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 && !parseInt(field.satellite)? 'int' : 'string'
         }
     },
 
@@ -1138,7 +1185,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * Internal callback for store load/reload
      */
     storeLoadCallbackDefault: function() {
-        this.ti().scope = this.getStore().proxy.reader.jsonData.scope;
+        var me = this;
+
+        // Setup scope
+        me.ti().scope = me.getStore().proxy.reader.jsonData.scope;
+
+        // Adjust each data-row within the store
+        me.getStore().each(me.storeLoadCallbackDataRowAdjust);
     },
 
     /**
@@ -1306,8 +1359,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
 
         // Get all filter components
-        var fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset', value,
-            filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+        var value, filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
         // Foreach filter component
         for (i = 0; i < filterCmpA.length; i++) {

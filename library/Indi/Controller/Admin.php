@@ -152,6 +152,16 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     * Flush the json-encoded message, containing `status` property, and optional `data` subproperty
+     *
+     * @param $success
+     * @param $data
+     */
+    public function jflush($success, $data = array()) {
+        die(json_encode(array_merge(array('success' => $success), is_array($data) ? $data : array())));
+    }
+
+    /**
      * Gets $within param and call $row->move() method with that param.
      * This was created just for use in in $controller->downAction() and $controller->upAction()
      *
@@ -165,15 +175,26 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If row move was successful
         if ($this->row->move($direction, $within)) {
 
-            // Setup new index
-            Indi::uri()->aix += $direction == 'up' ? -1 : 1;
+            // Get the page of results, that we were at
+            $wasPage = Indi::trail()->scope->page;
+
+            // If current model has a tree-column, detect new row index by a special algorithm
+            if (Indi::trail()->model->treeColumn()) Indi::uri()->aix = Indi::trail()->model->detectOffset(
+                Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $this->row->id);
+
+            // Else just shift current row index by inc/dec-rementing
+            else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
 
             // Apply new index
             $this->setScopeRow();
+
+            // Flush json response, containing new page index, in case if now row
+            // index change is noticeable enough for rowset current page was shifted
+            $this->jflush(true, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
         }
 
-        // Redirect
-        $this->redirect();
+        // Flush json response
+        $this->jflush(false);
     }
 
     /**
@@ -185,20 +206,25 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->preDelete();
 
         // Delete row
-        $this->row->delete();
+        if ($deleted = $this->row->delete()) {
 
-        // Decrement row index. This line, and one line below - are required to provide an ability to shift
-        // the selection within rowset (grid, tile, etc) panel, after current row deletion
-        Indi::uri()->aix -= 1;
+            // Get the page of results, that we were at
+            $wasPage = Indi::trail()->scope->page;
 
-        // Apply new index
-        $this->setScopeRow();
+            // Decrement row index. This line, and one line below - are required to provide an ability to shift
+            // the selection within rowset (grid, tile, etc) panel, after current row deletion
+            Indi::uri()->aix -= 1;
+
+            // Apply new index
+            $this->setScopeRow();
+        }
 
         // Do post delete maintenance
-        $this->postDelete();
+        $this->postDelete($deleted);
 
-        // Redirect
-        if ($redirect) $this->redirect();
+        // Flush json response, containing new page index, in case if now row
+        // index change is noticeable enough for rowset current page was shifted
+        $this->jflush(!!$deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
     }
 
     /**
@@ -323,8 +349,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Remember all scope params in $_SESSION under a hash
-        $_SESSION['indi']['admin'][Indi::trail((int) $upper)->section->alias][Indi::uri()->ph]
-            = array_merge($original, $modified);
+        Indi::trail((int) $upper)->scope->apply($modified);
     }
 
     /**
@@ -1024,35 +1049,38 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $value = $data[$i][$columnI['dataIndex']];
 
                 // If cell value contain a .i-color-box item, we replaced it with same-looking GD image box
-                if (preg_match('/<span class="i-color-box" style="[^"]*background: #([0-9A-Fa-f]{6});">/', $value, $c)) {
+                if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);">/', $value, $c)) {
 
-                    // Create the GD image
-                    $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
-                    imagefill($gdImage, 0, 0, imagecolorallocate(
-                            $gdImage, hexdec(substr($c[1], 0, 2)), hexdec(substr($c[1], 2, 2)), hexdec(substr($c[1], 4, 2)))
-                    );
+                    // If color was detected
+                    if ($h = trim(Indi::hexColor($c[1]), '#')) {
 
-                    if (preg_match('/<span class="i-color-box" style="[^"]*margin-left: ([0-9]+)px/', $value, $o)) {
-                        $additionalOffsetX = $o[1] + 3;
+                        // Create the GD image
+                        $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
+                        imagefill($gdImage, 0, 0, imagecolorallocate(
+                            $gdImage, hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2)))
+                        );
+
+                        // Setup additional x-offset for color-box, for it to be centered within the cell
+                        $additionalOffsetX = ceil(($columnI['width']-14)/2) - 2;
+
+                        //  Add the image to a worksheet
+                        $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
+                        $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                        $objDrawing->setImageResource($gdImage);
+                        $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
+                        $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
+                        $objDrawing->setHeight(11);
+                        $objDrawing->setWidth(14);
+                        $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
+                        $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+                        // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                        // because gd image will override cell value otherwise
+                        $value = str_pad('', 6, ' ') . strip_tags($value);
                     }
 
-                    //  Add the image to a worksheet
-                    $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
-                    $objDrawing->setCoordinates($columnL . $currentRowIndex);
-                    $objDrawing->setImageResource($gdImage);
-                    $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
-                    $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
-                    $objDrawing->setHeight(11);
-                    $objDrawing->setWidth(14);
-                    $objDrawing->setOffsetY(5)->setOffsetX(5 + $additionalOffsetX);
-                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
-
-                    // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
-                    // because gd image will override cell value otherwise
-                    $value = str_pad('', 6, ' ') . strip_tags($value);
-
-                    // Else if cell value contain a color definition within 'color' attribute,
-                    // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
+                // Else if cell value contain a color definition within 'color' attribute,
+                // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
                 } else if (preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $value, $c)) {
 
                     // If we find a hex equivalent for found color definition (if it's not already in hex format)
@@ -1631,8 +1659,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
     /**
      * Do custom things after deleteAction() call
+     *
+     * @param $deleted
      */
-    public function postDelete() {
+    public function postDelete($deleted) {
 
     }
 
@@ -1669,13 +1699,14 @@ class Indi_Controller_Admin extends Indi_Controller {
                     else $data[$fieldR->alias] = $disabledFieldR->compiled('defaultValue');
 
         // If current cms user is an alternate, and if there is corresponding field within current entity structure
-        if ($_SESSION['admin']['alternate'] && in_array($_SESSION['admin']['alternate'] . 'Id', $possibleA))
+        if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $possibleA))
 
-            // Force setup of that field value as id of current cms user
-            $data[$_SESSION['admin']['alternate'] . 'Id'] = $_SESSION['admin']['id'];
+            // Prevent alternate field to be set via POST, as it was already (properly)
+            // set at the stage of trail item row initialization
+            unset($data[$aid]);
 
         // Update current row properties with values from $data array
-        foreach ($data as $field => $value) $this->row->$field = $value;
+        $this->row->assign($data);
 
         // Get the list of ids of fields, that are disabled
         $disabledA = Indi::trail()->disabledFields->column('fieldId');
@@ -1757,11 +1788,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $_SESSION['indi']['admin'][Indi::uri()->section][$hash]['found']++;
 
                     // Replace the null id with id of newly created row
-                    $location = str_replace('null', Indi::trail()->row->id, $location);
+                    $location = str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
                 }
 
             // Replace the null id with id of newly created row
-            } else if (!Indi::uri()->id)  $location = str_replace('null', Indi::trail()->row->id, $location);
+            } else if (!Indi::uri()->id) str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
         }
 
         // Redirect
