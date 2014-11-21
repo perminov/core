@@ -718,6 +718,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Call parent
         me.callParent();
+
+        // Attach key map
+        me.keyMap();
     },
 
     /**
@@ -727,5 +730,57 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     rowItemA: function() {
         return [];
+    },
+
+    // Key map for grid body
+    keyMap: function() {
+        var me = this;
+
+        // Setup a focus on a row panel
+        Ext.getCmp(me.row.id).focus();
+
+        // Attach key map on a row panel
+        Ext.getCmp(me.row.id).getEl().addKeyMap({
+            eventName: "keyup",
+            binding: [{
+                key: Ext.EventObject.R,
+                shift: true,
+                alt: false,
+                fn:  function(keyCode, e){
+                    var tEl = Ext.get(e.target);
+                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$reload');
+                    if (btn && !btn.disabled) btn.handler();
+                },
+                scope: me
+            }, {
+                key: Ext.EventObject.RIGHT,
+                shift: true,
+                alt: false,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$next');
+                    if (btn && !btn.disabled) btn.handler(btn);
+                },
+                scope: me
+            }, {
+                key: Ext.EventObject.LEFT,
+                shift: true,
+                alt: false,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$prev');
+                    if (btn && !btn.disabled) btn.handler(btn);
+                },
+                scope: me
+            }, {
+                key: Ext.EventObject.BACKSPACE,
+                shift: true,
+                alt: false,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$back');
+                    if (btn && !btn.disabled) btn.handler(btn);
+                },
+                scope: me
+            }]
+        });
     }
 });

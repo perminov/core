@@ -247,8 +247,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
         }
 
+        // Attach key map
+        me.keyMap();
+
+        // Adjust grid column widths
+        me.gridColumnAFit();
+    },
+
+    // Key map for grid body
+    keyMap: function() {
+        var me = this;
+
         // Add keyboard event handelers
-        grid.body.addKeyMap({
+        Ext.getCmp(me.rowset.id).body.addKeyMap({
             eventName: "keyup",
             binding: [{
                 key: Ext.EventObject.ENTER,
@@ -256,11 +267,28 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     var btn = Ext.getCmp(me.bid() + '-toolbar-master-button-form'); if (btn) btn.handler();
                 },
                 scope: me
+            },{
+                key: Ext.EventObject.DELETE,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-toolbar-master-button-delete'); if (btn) btn.handler();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.E,
+                shift: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel'); if (btn) btn.handler();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.N,
+                shift: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-toolbar-master-button-create'); if (btn) btn.handler();
+                },
+                scope: me
             }]
         });
-
-        // Adjust grid column widths
-        me.gridColumnAFit();
     },
 
     /**
@@ -296,19 +324,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     rowsetInner$Excel: function() {
+        var me = this;
 
         // 'Excel' item cfg
         return {
-            text: '',
+            id: me.bid() + '-rowset-docked-inner$excel',
             iconCls: 'i-btn-icon-xls',
             tooltip: Indi.lang.I_EXPORT_EXCEL,
             handler: function(){
 
                 // Start preparing request string
-                var request = this.ctx().storeLastRequest().replace('json/1/', 'excel/1/');
+                var request = me.ctx().storeLastRequest().replace('json/1/', 'excel/1/');
 
                 // Get grid component id
-                var gridCmpId = this.ctx().bid() + '-rowset-grid';
+                var gridCmpId = me.ctx().bid() + '-rowset-grid';
 
                 // Get grid columns
                 var gridColumnA = Ext.getCmp(gridCmpId).columns;
@@ -350,10 +379,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
                 // property for each object, that is representing a color-filter in request
-                for (var i = 0; i < this.ctx().ti().filters.length; i++) {
-                    if (this.ctx().ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
-                        var reg = new RegExp('(%7B%22' + this.ctx().ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
-                        request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(this.ctx().ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
+                for (var i = 0; i < me.ti().filters.length; i++) {
+                    if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
+                        var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                        request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
                     }
                 }
 

@@ -717,7 +717,10 @@ Ext.define('Indi.lib.controller.action.Form', {
                     title: Indi.lang.I_ROWSAVE_ERROR_NOTDIRTY_TITLE,
                     msg: Indi.lang.I_ROWSAVE_ERROR_NOTDIRTY_MSG,
                     buttons: Ext.MessageBox.OK,
-                    icon: Ext.MessageBox.WARNING
+                    icon: Ext.MessageBox.WARNING,
+                    fn: function() {
+                        formCmp.focus();
+                    }
                 });
 
             } else me.getMask().hide();
@@ -731,5 +734,66 @@ Ext.define('Indi.lib.controller.action.Form', {
             // We just load required contents
             Indi.load(url + (me.ti().scope.toggledSave ? '?stopAutosave=1' : ''));
         }
+    },
+
+    // Key map for grid body
+    keyMap: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent();
+
+        // Attach key map on a row panel
+        Ext.getCmp(me.row.id).getEl().addKeyMap({
+            eventName: "keyup",
+            binding: [{
+                key: Ext.EventObject.N,
+                shift: true,
+                alt: false,
+                fn:  function(keyCode, e){
+                    var tEl = Ext.get(e.target);
+                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
+                    if (btn && !btn.disabled) btn.handler();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.N,
+                shift: true,
+                alt: true,
+                fn:  function(keyCode, e){
+                    var tEl = Ext.get(e.target);
+                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                    var ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
+
+                    if (ats && !ats.disabled) ats.val(!ats.val());
+                    if (btn && !btn.disabled) btn.handler();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.A,
+                shift: true,
+                alt: false,
+                fn:  function(keyCode, e){
+                    var tEl = Ext.get(e.target);
+                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                    var cb = Ext.getCmp(me.bid() + '-docked-inner$autosave');
+                    if (cb && !cb.disabled) cb.val(!cb.val());
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.S,
+                shift: true,
+                alt: false,
+                fn:  function(keyCode, e){
+                    var tEl = Ext.get(e.target);
+                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$save');
+                    if (btn && !btn.disabled) btn.handler();
+                },
+                scope: me
+            }]
+        });
     }
 });
