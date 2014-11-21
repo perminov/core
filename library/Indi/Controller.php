@@ -168,7 +168,7 @@ class Indi_Controller {
             if ($fieldR->foreign('columnTypeId')->type == 'ENUM') {
 
                 // Get a list of comma-imploded aliases, ordered by their titles
-                $set = $this->db->query($sql = '
+                $set = Indi::db()->query($sql = '
 
                     SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
                     FROM `enumset`
