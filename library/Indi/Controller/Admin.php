@@ -1049,31 +1049,35 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $value = $data[$i][$columnI['dataIndex']];
 
                 // If cell value contain a .i-color-box item, we replaced it with same-looking GD image box
-                if (preg_match('/<span class="i-color-box" style="[^"]*background: #([0-9A-Fa-f]{6});">/', $value, $c)) {
+                if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);">/', $value, $c)) {
 
-                    // Create the GD image
-                    $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
-                    imagefill($gdImage, 0, 0, imagecolorallocate(
-                        $gdImage, hexdec(substr($c[1], 0, 2)), hexdec(substr($c[1], 2, 2)), hexdec(substr($c[1], 4, 2)))
-                    );
+                    // If color was detected
+                    if ($h = trim(Indi::hexColor($c[1]), '#')) {
 
-                    // Setup additional x-offset for color-box, for it to be centered within the cell
-                    $additionalOffsetX = ceil(($columnI['width']-14)/2) - 2;
+                        // Create the GD image
+                        $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
+                        imagefill($gdImage, 0, 0, imagecolorallocate(
+                            $gdImage, hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2)))
+                        );
 
-                    //  Add the image to a worksheet
-                    $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
-                    $objDrawing->setCoordinates($columnL . $currentRowIndex);
-                    $objDrawing->setImageResource($gdImage);
-                    $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
-                    $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
-                    $objDrawing->setHeight(11);
-                    $objDrawing->setWidth(14);
-                    $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
-                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+                        // Setup additional x-offset for color-box, for it to be centered within the cell
+                        $additionalOffsetX = ceil(($columnI['width']-14)/2) - 2;
 
-                    // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
-                    // because gd image will override cell value otherwise
-                    $value = str_pad('', 6, ' ') . strip_tags($value);
+                        //  Add the image to a worksheet
+                        $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
+                        $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                        $objDrawing->setImageResource($gdImage);
+                        $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
+                        $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
+                        $objDrawing->setHeight(11);
+                        $objDrawing->setWidth(14);
+                        $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
+                        $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+                        // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                        // because gd image will override cell value otherwise
+                        $value = str_pad('', 6, ' ') . strip_tags($value);
+                    }
 
                 // Else if cell value contain a color definition within 'color' attribute,
                 // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
