@@ -41,6 +41,67 @@ function autoloader($class) {
 }
 
 /**
+ * Custom handler for php errors, except E_NOTICE and E_DEPRECATED
+ *
+ * @param null $type
+ * @param null $message
+ * @param null $file
+ * @param null $line
+ * @return mixed
+ */
+function ehandler($type = null, $message = null, $file = null, $line = null) {
+
+    // If arguments are given, we assume that we are here because of
+    // a set_error_handler() usage, e.g current error is not a fatal error
+    if (func_num_args()) {
+
+        // If current error is not in a list of ignored errors - return
+        if(!(error_reporting() & $type)) return;
+
+    // Else if argument are not given, we assume that we are here because
+    // of a register_shutdown_function() usage, e.g current error is a fatal error
+    } else {
+
+        // Get the fatal error
+        $error = error_get_last();
+
+        //if ($error !== null && $error["type"] != E_NOTICE && $error["type"] != E_DEPRECATED) extract($error);
+        if ($error === null || in($error['type'], array(E_NOTICE, E_DEPRECATED))) return;
+
+        // Extract error info
+        extract($error);
+    }
+
+    // Flush json-encoded error info, wrapped by <error> tag
+    echo jerror($type, $message, $file, $line);
+}
+
+/**
+ * Build and return a string, containing json-encoded error info, wrapped with
+ * '<error>' tag, for error to be easy pickable with javascript
+ *
+ * @param $errno
+ * @param $errstr
+ * @param $errfile
+ * @param $errline
+ * @return string
+ */
+function jerror($errno, $errstr, $errfile, $errline) {
+
+    // Build an array, containing error information
+    $error = array(
+        'code' => $errno,
+        'text' => $errstr,
+        'file' => $errfile,
+        'line' => $errline,
+        'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
+    );
+
+    // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
+    return '<error>' . json_encode($error) . '</error>';
+}
+
+/**
  * Displays formatted view of a given value
  *
  * @param mixed $value

@@ -258,7 +258,12 @@ Ext.define('Indi', {
                     js = js.replace(ttrMMatch[i], ttrSReplace);
                 }
             }
-            eval(js);
+            try {
+                eval(js);
+            } catch (e) {
+                Ext.log(me.name);
+                Ext.log(js);
+            }
         },
 
         /**
@@ -321,21 +326,25 @@ Ext.define('Indi', {
         /**
          * Load the contents got from `uri` param
          *
-         * @param uri
+         * @param {String} uri
+         * @param {Object} cfg Request config
          */
-        load: function(uri) {
+        load: function(uri, cfg) {
 
             // Push the given url to a story stack
             Indi.story.push(uri);
 
+            // Normalize `cfg` argument
+            cfg = cfg || {};
+
             // Make the request
-            Ext.Ajax.request({
+            Ext.Ajax.request(Ext.merge({
                 url: uri,
                 success: function(response){
                     Indi.clearCenter();
                     Ext.get('i-center-center-body').update(response.responseText, true);
                 }
-            });
+            }, cfg));
         },
 
         /**

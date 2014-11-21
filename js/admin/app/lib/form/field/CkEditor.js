@@ -189,7 +189,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         clearInterval(me.mirrorInterval);
 
         // Delete CKEDITOR instance
-        delete CKEDITOR.instances[me.inputId];
+        me.getEditor().destroy();
 
         // Call parent
         me.callParent();

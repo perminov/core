@@ -5,7 +5,7 @@
  * on all projects, that run on Indi Engine
  */
 class Admin_TemporaryController extends Indi_Controller {
-    public function titlesAction() {
+    public function titlesAction($project, $die = true) {
 
         // Add `titleFieldId` field within 'entity' entity, if there is no such a field yet
         if (!Indi::model('Entity')->fields('titleFieldId')) {
@@ -30,8 +30,6 @@ class Admin_TemporaryController extends Indi_Controller {
             'grid' => 'fieldId',
             'search' => 'fieldId'
         );
-
-        $project = 'empty';
 
         $projectTitleFieldAliasA = array(
             'picneon' => array(
@@ -102,10 +100,10 @@ class Admin_TemporaryController extends Indi_Controller {
             if (Indi::model($entityR->id)->fields('_title')) Indi::model($entityR->id)->fields('_title')->delete();
         }
 
-        die('ok');
+        if ($die) die('ok');
     }
 
-    public function deprecatedAction(){
+    public function deprecatedAction($die = true){
 
         if ($rppIdFieldR = Indi::model('Fsection')->fields('rppId')) $rppIdFieldR->delete();
         $tableA = array(
@@ -115,7 +113,7 @@ class Admin_TemporaryController extends Indi_Controller {
         $entityRs = Indi::model('Entity')->fetchAll('FIND_IN_SET(`table`, "' . implode(',', $tableA) . '")');
         foreach ($entityRs as $entityR) $entityR->delete();
 
-        die('ok');
+        if ($die) die('ok');
     }
 
 	public function emptyAction(){

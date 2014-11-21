@@ -45,15 +45,16 @@ class Indi {
         'htmleventattr' => 'on[a-zA-Z]+\s*=\s*"[^"]+"',
         'php' => '/<\?/',
         'phpsplit' => '/(<\?|\?>)/',
-        'int11' => '/^[1-9][0-9]{0,10}|0$/',
-        'int11lz' => '/^[0-9]{1,11}$/',
-        'int11list' => '/^[1-9][0-9]{0,10}(,[1-9][0-9]{0,10})*$/',
+        'int11' => '/^[1-9][0-9]{0,9}|0$/',
+        'int11lz' => '/^[0-9]{1,10}$/',
+        'int11list' => '/^[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*$/',
         'bool' => '/^0|1$/',
         'time' => '/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'double72' => '/^([1-9][0-9]{0,6}|0)(\.[0-9]{1,2})?$/',
         'datetime' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
-        'urichunk' => ''
+        'urichunk' => '',
+        'varchar255' => '/^[.\s]{0,255}$/'
     );
 
     protected static $_mime = array(
@@ -756,12 +757,13 @@ class Indi {
      *
      * @static
      * @param int|string $identifier
+     * @param bool $check
      * @return Indi_Db_Table object
      */
-    public static function model($identifier) {
+    public static function model($identifier, $check = false) {
 
         // Call same method within Indi_Db object
-        return Indi_Db::model($identifier);
+        return Indi_Db::model($identifier, $check);
     }
 
     /**
