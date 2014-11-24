@@ -845,7 +845,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Return cfg
             return {
-                id: me.bid() + '-toolbar-master-button-create',
+                id: me.bid() + '-docked-inner$create',
                 tooltip: Indi.lang.I_CREATE,
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
@@ -869,7 +869,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Basic action object
             var actionItem = {
-                id: this.bid() + '-toolbar-master-button-' + action.alias,
+                id: this.bid() + '-docked-inner$' + action.alias,
                 text: action.title,
                 action: action,
                 actionAlias: action.alias,
@@ -897,7 +897,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
                             msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
                             buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.WARNING
+                            icon: Ext.MessageBox.WARNING,
+                            fn: function() {
+                                Ext.defer(function(){Ext.getCmp(me.rowset.id).getView().focus();}, 100);
+                            }
                         });
 
                     // Run the handler
@@ -1014,7 +1017,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // 'Nested' item config
         return {
-            id: me.bid() + '-toolbar-master-nested',
+            id: me.bid() + '-docked-inner$nested',
             xtype: 'shrinklist',
             displayField: 'title',
             hidden: !me.ti().sections.length,
@@ -1042,8 +1045,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
                             msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
                             buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.WARNING
-
+                            icon: Ext.MessageBox.WARNING,
+                            fn: function() {
+                                Ext.defer(function(){Ext.getCmp(me.rowset.id).getView().focus();}, 100);
+                            }
                         });
 
                     // Else load the nested subsection contents

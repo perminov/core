@@ -354,7 +354,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background: #cbdaf0;
     border-color: #8eabe4;
 }*/
-.x-shrinklist-item:active {
+.x-shrinklist-item-active, .x-shrinklist-item:active {
     background-color: #bed6f5;
     background-image: -webkit-gradient(linear,50% 0,50% 100%,color-stop(0%,#bccfe5),color-stop(48%,#c5d6e7),color-stop(52%,#A7D2FD),color-stop(100%,#9fc9f5));
     background-image: -webkit-linear-gradient(top,#bccfe5,#c5d6e7 48%,#A7D2FD 52%,#9fc9f5);

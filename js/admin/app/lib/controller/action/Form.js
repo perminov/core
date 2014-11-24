@@ -748,34 +748,30 @@ Ext.define('Indi.lib.controller.action.Form', {
                 key: Ext.EventObject.N,
                 shift: true,
                 alt: false,
-                fn:  function(keyCode, e){
-                    var tEl = Ext.get(e.target);
-                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
-                    if (btn && !btn.disabled) btn.handler();
+                ignoreInputFields: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.N,
                 shift: true,
                 alt: true,
-                fn:  function(keyCode, e){
-                    var tEl = Ext.get(e.target);
-                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                ignoreInputFields: true,
+                fn:  function(){
                     var ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
 
                     if (ats && !ats.disabled) ats.val(!ats.val());
-                    if (btn && !btn.disabled) btn.handler();
+                    if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.A,
                 shift: true,
                 alt: false,
-                fn:  function(keyCode, e){
-                    var tEl = Ext.get(e.target);
-                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+                ignoreInputFields: true,
+                fn:  function(){
                     var cb = Ext.getCmp(me.bid() + '-docked-inner$autosave');
                     if (cb && !cb.disabled) cb.val(!cb.val());
                 },
@@ -784,11 +780,9 @@ Ext.define('Indi.lib.controller.action.Form', {
                 key: Ext.EventObject.S,
                 shift: true,
                 alt: false,
-                fn:  function(keyCode, e){
-                    var tEl = Ext.get(e.target);
-                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$save');
-                    if (btn && !btn.disabled) btn.handler();
+                ignoreInputFields: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$save'); if (btn) btn.press();
                 },
                 scope: me
             }]

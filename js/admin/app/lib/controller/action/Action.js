@@ -377,5 +377,35 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @param response
      */
     obarRequestCallback: function(response) {
+    },
+
+    /**
+     * Batch-attach key-map, for ability to navigate to subsections via keyboard, using Shift+1, Shift+2, etc
+     *
+     * @param target
+     */
+    attachNestedKeyMap: function(target) {
+        var me = this, keys = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'], binding = [],
+            nested = Ext.getCmp(me.bid() + '-docked-inner$nested');
+
+        // If there is no 'nested' docked inner item - return
+        if (!nested) return;
+
+        // Fulfil bindings array
+        for (var i = 0; i < keys.length; i++)
+            binding.push({
+                key: Ext.EventObject[keys[i]],
+                shift: true,
+                fn:  function(key){
+                    nested.press(key - 49);
+                },
+                scope: me
+            });
+
+        // Add keyboard event handelers
+        Ext.getCmp(target).getEl().addKeyMap({
+            eventName: 'keyup',
+            binding: binding
+        });
     }
 });

@@ -218,7 +218,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Object}
      */
     panelDockedInner$Reload: function() {
-        var me = this, url;
+        var me = this, url, ats;
 
         // 'Reload' item config
         return {
@@ -230,9 +230,13 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Show mask
                 me.getMask().show();
 
+                // Check is autosave ability exists and turned On
+                ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
+
                 // Build the url
-                url = me.ti().section.href + me.ti().action.alias + '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
-                    +'/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
+                url = me.ti().section.href + me.ti().action.alias;
+                url += ats && ats.checked ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : '';
+                url += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
                 // Reload the current uri
                 me.goto(url);
@@ -359,10 +363,11 @@ Ext.define('Indi.lib.controller.action.Row', {
             disabled: !enabled,
             tooltip: Indi.lang.I_NAVTO_PREV,
             iconCls: Ext.baseCSSPrefix + 'tbar-page-prev',
-            handler: function(btnPrev){
+            handler: function(){
                 var cmbSibling = Ext.getCmp(me.panelDockedInnerBid() + 'sibling'),
                     spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset'),
                     btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
+                    btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
                     btnPrevEnabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
                         && parseInt(me.ti().scope.aix) - 1 > 1;
 
@@ -496,10 +501,11 @@ Ext.define('Indi.lib.controller.action.Row', {
             disabled: !enabled,
             tooltip: Indi.lang.I_NAVTO_NEXT,
             iconCls: Ext.baseCSSPrefix + 'tbar-page-next',
-            handler: function(btnNext){
+            handler: function(){
                 var cmbSibling = Ext.getCmp(me.panelDockedInnerBid() + 'sibling'),
                     spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset'),
                     btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
+                    btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
                     btnNextEnabled = parseInt(me.ti().scope.found) && parseInt(me.ti().scope.aix)
                         && parseInt(me.ti().scope.aix) + 1 < parseInt(me.ti().scope.found);
 
@@ -738,7 +744,9 @@ Ext.define('Indi.lib.controller.action.Row', {
         return [];
     },
 
-    // Key map for grid body
+    /**
+     * Key map for row-panel body
+     */
     keyMap: function() {
         var me = this;
 
@@ -747,47 +755,51 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Attach key map on a row panel
         Ext.getCmp(me.row.id).getEl().addKeyMap({
-            eventName: "keyup",
+            eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.R,
                 shift: true,
                 alt: false,
-                fn:  function(keyCode, e){
-                    var tEl = Ext.get(e.target);
-                    if (tEl.is('input[type="text"]') || tEl.is('textarea')) return;
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$reload');
-                    if (btn && !btn.disabled) btn.handler();
+                ignoreInputFields: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$reload'); if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.RIGHT,
                 shift: true,
                 alt: false,
+                ignoreInputFields: false,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$next');
-                    if (btn && !btn.disabled) btn.handler(btn);
+                    if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.LEFT,
                 shift: true,
                 alt: false,
+                ignoreInputFields: false,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$prev');
-                    if (btn && !btn.disabled) btn.handler(btn);
+                    if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.BACKSPACE,
                 shift: true,
                 alt: false,
+                ignoreInputFields: false,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$back');
-                    if (btn && !btn.disabled) btn.handler(btn);
+                    if (btn) btn.press();
                 },
                 scope: me
             }]
         });
+
+        // Batch-attach key-map, for ability to navigate to subsections via keyboard
+        me.attachNestedKeyMap(me.row.id);
     },
 
     /**
