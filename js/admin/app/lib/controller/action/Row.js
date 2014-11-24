@@ -771,7 +771,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 key: Ext.EventObject.RIGHT,
                 shift: true,
                 alt: false,
-                ignoreInputFields: false,
+                ignoreInputFields: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$next');
                     if (btn) btn.press();
@@ -781,7 +781,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 key: Ext.EventObject.LEFT,
                 shift: true,
                 alt: false,
-                ignoreInputFields: false,
+                ignoreInputFields: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$prev');
                     if (btn) btn.press();
