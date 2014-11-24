@@ -235,7 +235,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
                 // Build the url
                 url = me.ti().section.href + me.ti().action.alias;
-                url += ats && ats.checked ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : '';
+                url += ats && ats.checked
+                    ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
+                    : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
                 url += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
                 // Reload the current uri
