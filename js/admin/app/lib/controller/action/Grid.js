@@ -52,7 +52,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-toolbar-master-button-form'); if (btn) btn.handler();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.handler();
             }
         }
     },
@@ -262,41 +262,50 @@ Ext.define('Indi.lib.controller.action.Grid', {
         me.gridColumnAFit();
     },
 
-    // Key map for grid body
+    /**
+     * Key map for gridpanel body
+     */
     keyMap: function() {
         var me = this;
 
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).body.addKeyMap({
-            eventName: "keyup",
+        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+            eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-toolbar-master-button-form'); if (btn) btn.handler();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$form');
+                    if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.DELETE,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-toolbar-master-button-delete'); if (btn) btn.handler();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$delete');
+                    if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.E,
                 shift: true,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel'); if (btn) btn.handler();
+                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel');
+                    if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.N,
                 shift: true,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-toolbar-master-button-create'); if (btn) btn.handler();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
+                    if (btn) btn.press();
                 },
                 scope: me
             }]
         });
+
+        // Batch-attach key-map, for ability to navigate to subsections via keyboard
+        me.attachNestedKeyMap(me.rowset.id);
     },
 
     /**

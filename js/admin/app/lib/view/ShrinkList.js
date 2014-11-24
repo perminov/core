@@ -378,5 +378,33 @@ Ext.define('Indi.lib.view.ShrinkList', {
         me.lastHoverTimeout = setTimeout(function(){
             me.adjustWidth(null);
         }, 100);
+    },
+
+    /**
+     * Ability to programmatically click on some of the items within current shrinklist,
+     * with forcing visual css clicked-styles to be in use
+     *
+     * @param index Zero-based index of the item within the shrinklist
+     */
+    press: function(index) {
+        var me = this, r, el;
+
+        // If shrinklist is disabled - return
+        if (me.disabled) return;
+
+        // If shrinklist's store does not contain a record, related to given index - return
+        if (!(r = me.store.getAt(index))) return;
+
+        // If shrinklist's current layout doe not have HTMLElement, related to given index - return
+        if (!(el = me.el.select('.x-shrinklist-item:nth('+(index+1)+')').first())) return;
+
+        // Assign 'clicked-style' css class
+        el.addCls('x-shrinklist-item-active');
+
+        // Provide 'clicked-style' css class autoremove after 300ms
+        Ext.defer(function(){try{el.removeCls('x-shrinklist-item-active')} catch(e){}}, 300);
+
+        // Fire 'itemclick' event
+        me.fireEvent('itemclick', me, r, el.dom, index);
     }
 });
