@@ -37,7 +37,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (row.raw._system && row.raw._system.disabled)
                     return 'i-grid-row-disabled';
             },
-            loadingText: Ext.LoadMask.prototype.msg
+            loadingText: Ext.LoadMask.prototype.msg,
+            listeners: {
+                beforeitemkeydown: function(view, r, d, i, e) {
+                    if (e.shiftKey) return false;
+                }
+            }
         },
         listeners: {
             beforeselect: function (selectionModel, row) {
@@ -255,9 +260,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
         }
 
-        // Attach key map
-        me.keyMap();
-
         // Adjust grid column widths
         me.gridColumnAFit();
     },
@@ -295,6 +297,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 shift: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.UP,
+                shift: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$up'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.DOWN,
+                shift: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$down'); if (btn) btn.press();
                 },
                 scope: me
             }]
@@ -457,5 +473,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Call parent
         me.callParent();
+
+        // Attach key map
+        me.keyMap();
     }
 });
