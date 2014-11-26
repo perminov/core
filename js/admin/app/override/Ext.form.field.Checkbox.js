@@ -154,5 +154,16 @@ Ext.override(Ext.form.field.Checkbox, {
 
         // Return colorBoxEl element
         return me.colorBoxEl;
+    },
+
+    /**
+     * Provide programmatical click ability, keeping css '(un)checked-style' in force
+     */
+    press: function() {
+        var me = this, tDom = Ext.EventObject.getTarget(), tEl = Ext.get(tDom);
+        if (!me.disabled) {
+            if (tEl && tEl.is && tEl.is('input[type="text"]') || tEl.is('textarea')) return;
+            me.val(!me.val());
+        }
     }
 });

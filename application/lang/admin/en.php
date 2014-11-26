@@ -50,6 +50,7 @@ define('I_ENUMSET_ERROR_VALUE_LAST', 'Value "%s" is the last remaining possible 
 define('I_YES', 'Yes');
 define('I_NO', 'No');
 define('I_ERROR', 'Error');
+define('I_MSG', 'Message');
 define('I_OR', 'or');
 define('I_AND', 'and');
 define('I_BE', 'be');

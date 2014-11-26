@@ -274,31 +274,27 @@ Ext.define('Indi.lib.controller.action.Grid', {
             binding: [{
                 key: Ext.EventObject.ENTER,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$form');
-                    if (btn) btn.press();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$form'); if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.DELETE,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$delete');
-                    if (btn) btn.press();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$delete'); if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.E,
                 shift: true,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel');
-                    if (btn) btn.press();
+                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel'); if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.N,
                 shift: true,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
-                    if (btn) btn.press();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
                 },
                 scope: me
             }]
