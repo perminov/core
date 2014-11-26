@@ -761,8 +761,6 @@ Ext.define('Indi.lib.controller.action.Row', {
             binding: [{
                 key: Ext.EventObject.R,
                 shift: true,
-                alt: false,
-                ignoreInputFields: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$reload'); if (btn) btn.press();
                 },
@@ -770,31 +768,23 @@ Ext.define('Indi.lib.controller.action.Row', {
             }, {
                 key: Ext.EventObject.RIGHT,
                 shift: true,
-                alt: false,
-                ignoreInputFields: true,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$next');
-                    if (btn) btn.press();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$next'); if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.LEFT,
                 shift: true,
-                alt: false,
-                ignoreInputFields: true,
-                fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$prev');
-                    if (btn) btn.press();
+                fn:  function(keyCode, e){
+                    e.preventDefault();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$prev'); if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.BACKSPACE,
                 shift: true,
-                alt: false,
-                ignoreInputFields: false,
                 fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$back');
-                    if (btn) btn.press();
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$back'); if (btn) btn.press();
                 },
                 scope: me
             }]

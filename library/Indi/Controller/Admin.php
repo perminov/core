@@ -1451,15 +1451,15 @@ class Indi_Controller_Admin extends Indi_Controller {
                 else $data = $this->_authLevel1(Indi::post()->username, Indi::post()->password);
 
                 // If $data is not an array, e.g some error there, output it as json with that error
-                if (!is_array($data)) die(json_encode(array('error' => $data)));
+                if (!is_array($data)) $this->jflush(false, $data);
 
                 // Else start a session for user and report that sing-in was ok
                 $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
                 foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
-                die(json_encode(array('ok' => '1')));
+                $this->jflush(true, array('ok' => '1'));
             }
 
-            // If user was thrown out from the system, assing a throwOutMsg to Indi::view() object, for this message
+            // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
             // to be available for picking up and usage as Ext.MessageBox message, as a reason of throw out
             if ($_SESSION['indi']['throwOutMsg']) {
                 Indi::view()->throwOutMsg = $_SESSION['indi']['throwOutMsg'];
@@ -1501,7 +1501,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Logout
                 if (Indi::uri()->section == 'index') die(header('Location: ' . PRE . '/logout/'));
                 else if (!Indi::uri()->json) die('<script>top.window.location="' . PRE .'/logout/"</script>');
-                else die(json_encode(array('trowOutMsg' => $data)));
+                else $this->jflush(false, array('trowOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
             } else if (Indi::uri()->section != 'index') {
@@ -1510,7 +1510,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $data = $this->_authLevel2(Indi::uri()->section, Indi::uri()->action);
 
                 // If $data is not an array, e.g some error there, output it as json with that error
-                if (!is_array($data)) die($data);
+                if (!is_array($data)) $this->jflush(false, $data);
 
                 // Else go further and perform last auth check, within Indi_Trail_Admin::__construct()
                 else Indi::trail($this->_routeA, $this)->authLevel3();
@@ -1769,22 +1769,15 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Here we should do check for row existence, because there can be situation when we have just created
             // a row, but values of some of it's properties do not match the requirements of current scope, and in that
             // case current scope 'aix' and/or 'page' params should not be adjusted
-            if ($R) {
-
-                // Setup new index
-                Indi::uri()->aix = Indi::trail()->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
-
-                // Apply new index
-                $this->setScopeRow();
-            }
+            if ($R) Indi::uri()->aix = Indi::trail()->model
+                ->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
         }
 
-        if ($this->row->mismatch()) {
-            die(json_encode(array(
-                'success' => false,
-                'mismatch' => $this->row->mismatch()
-            )));
-        }
+        // Setup row index
+        $this->setScopeRow();
+
+        // Flush mismatches
+        if ($this->row->mismatch()) $this->jflush(false, array('mismatch' => $this->row->mismatch()));
 
         // Do post-save operations
         $this->postSave();
@@ -1818,12 +1811,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Redirect
-        $response = array(
-            'success' => true,
-            'msg' => 'Data saved',
-        );
+        $response = array();
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
-        die(json_encode($response));
+        $this->jflush(true, $response);
     }
 
     /**

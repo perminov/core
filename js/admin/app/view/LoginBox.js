@@ -16,7 +16,8 @@ Ext.define('Indi.view.LoginBox', {
             fieldLabel: Indi.lang.I_LOGIN_BOX_USERNAME,
             labelWidth: 90,
             value: Ext.util.Cookies.get('i-username'),
-            width: 275
+            width: 275,
+            allowBlank: false
         },{
             xtype: 'textfield',
             id: 'i-login-box-password',
@@ -25,6 +26,7 @@ Ext.define('Indi.view.LoginBox', {
             value: Ext.util.Cookies.get('i-password'),
             labelWidth: 90,
             width: 246,
+            allowBlank: false,
             cls: 'i-inline-block'
         },{
             xtype: 'checkboxfield',
@@ -60,20 +62,11 @@ Ext.define('Indi.view.LoginBox', {
                     success: function(response){
 
                         // Parse response
-                        response = JSON.parse(response.responseText);
+                        response = Ext.JSON.decode(response.responseText, true);
 
-                        // If request returned an error, display a Ext.MessageBox
-                        if (response.error) {
-                            Ext.MessageBox.show({
-                                title: Indi.lang.I_LOGIN_ERROR_MSGBOX_TITLE,
-                                msg: response.error,
-                                buttons: Ext.MessageBox.OK,
-                                icon: Ext.MessageBox.ERROR
-                            });
-
-                            // Else signin was ok, we check if 'remember' checkbox was checked,
-                            // and if so - set the cookies. After that we do a page reload
-                        } else if (response.ok) {
+                        // Else signin was ok, we check if 'remember' checkbox was checked,
+                        // and if so - set the cookies. After that we do a page reload
+                        if (Ext.isObject(response) && response.ok) {
 
                             // Delete 'enter' property from 'data' object for it to be ready to
                             // set or remove cookies for it's all remaining properties
@@ -94,7 +87,7 @@ Ext.define('Indi.view.LoginBox', {
                                     );
 
                                 // Else we delete cookie
-                                else Ext.util.Cookies.clear(i, Indi.pre);
+                                else Ext.util.Cookies.clear('i-' + i, Indi.pre);
 
                             // Reload window contents
                             window.location.replace(Indi.pre + '/');
@@ -115,12 +108,29 @@ Ext.define('Indi.view.LoginBox', {
             }
         }
     ],
+
+    // @inheritdoc
     afterRender: function(){
-        this.callParent(arguments);
-        this.keyNav = Ext.create('Ext.util.KeyNav', this.el, {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Submit on ENTER key
+        me.keyNav = Ext.create('Ext.util.KeyNav', me.el, {
             enter: function(){
                 Ext.getCmp('i-login-box-submit').handler();
             }
         });
+
+        // Show throw-out message
+        if (Indi.throwOutMsg) Ext.defer(function(){
+            Ext.Msg.show({
+                title: Indi.lang.I_ERROR,
+                msg: Indi.throwOutMsg,
+                buttons: Ext.Msg.OK,
+                icon: Ext.MessageBox.ERROR
+            });
+        }, 500);
     }
 });

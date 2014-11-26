@@ -387,7 +387,7 @@ Ext.define('Indi.lib.view.ShrinkList', {
      * @param index Zero-based index of the item within the shrinklist
      */
     press: function(index) {
-        var me = this, r, el;
+        var me = this, r, el, tDom = Ext.EventObject.getTarget(), tEl = Ext.get(tDom);
 
         // If shrinklist is disabled - return
         if (me.disabled) return;
@@ -397,6 +397,9 @@ Ext.define('Indi.lib.view.ShrinkList', {
 
         // If shrinklist's current layout doe not have HTMLElement, related to given index - return
         if (!(el = me.el.select('.x-shrinklist-item:nth('+(index+1)+')').first())) return;
+
+        // Ensure that none of textfields or textareas are in focus
+        if (tEl && tEl.is && tEl.is('input[type="text"]') || tEl.is('textarea')) return;
 
         // Assign 'clicked-style' css class
         el.addCls('x-shrinklist-item-active');

@@ -123,8 +123,19 @@ Ext.override(Ext.Component, {
      * @param alias
      * @return {*}
      */
-    sbl: function(name) {
-        return this.ownerCt.query('[name="'+name+'"]')[0];
+    sbl: function(name, fn) {
+        var me = this,
+            selector = '[name="' + name.split(',').join('"], [name="') + '"]',
+            found = me.ownerCt.query(selector);
+
+        // Call the given `fn` function for each found component
+        if (fn) for (var i = 0; i < found.length; i++) {
+            if (typeof fn == 'function') fn.call(found[i]);
+            else if (typeof fn == 'string') found[i][fn]();
+        }
+
+        // Return first found component, or all found components, depending on comma presense in `name` arg
+        return name.match(/,/) ? found : found[0];
     },
     
     /**

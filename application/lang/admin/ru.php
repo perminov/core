@@ -50,6 +50,7 @@ define('I_ENUMSET_ERROR_VALUE_LAST', 'Значение "%s" - последнее
 define('I_YES', 'Да');
 define('I_NO', 'Нет');
 define('I_ERROR', 'Ошибка');
+define('I_MSG', 'Сообщение');
 define('I_OR', 'или');
 define('I_AND', 'и');
 define('I_BE', 'быть');

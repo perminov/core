@@ -55,10 +55,18 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (resetBtn) resetBtn.setDisabled(!dirty);
             },
             actioncomplete: function(form, action) {
-                if (action.result.redirect) Indi.load(action.result.redirect);
+
+                // Parse response text
+                action.result = Ext.JSON.decode(action.response.responseText, true);
+
+                // Redirect
+                if (Ext.isObject(action.result) && action.result.redirect) Indi.load(action.result.redirect);
             },
             actionfailed: function(form, action) {
                 var cmp, certainFieldMsg, wholeFormMsg = [];
+
+                // Parse response text
+                action.result = Ext.JSON.decode(action.response.responseText, true);
 
                 // The the info about invalid fields from the response, and mark the as invalid
                 if (Ext.isObject(action.result) && Ext.isObject(action.result.mismatch)) {
@@ -81,7 +89,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                             // If mismatch message is a string
                             if (Ext.isString(certainFieldMsg))
 
-                            // Cut off field title mention from message
+                                // Cut off field title mention from message
                                 certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
 
                             // Mark field as invalid
@@ -199,7 +207,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             dockedItems: me.rowDockedA(),
             url: me.ti().section.href + 'save'
                 + (me.ti().row.id ? '/id/' + me.ti().row.id : '')
-                + (me.ti().scope.hash ? '/ph/' + me.ti().scope.hash : '') + '/'
+                + (me.ti().scope.hash ? '/ph/' + me.ti().scope.hash : '')
+                + (me.ti().scope.aix ? '/aix/' + me.ti().scope.aix : '') + '/'
         }, me.row);
         me.panel.items = me.panelItemA();
         me.callParent();
@@ -747,40 +756,20 @@ Ext.define('Indi.lib.controller.action.Form', {
             binding: [{
                 key: Ext.EventObject.N,
                 shift: true,
-                alt: false,
-                ignoreInputFields: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
                 },
                 scope: me
             },{
-                key: Ext.EventObject.N,
-                shift: true,
-                alt: true,
-                ignoreInputFields: true,
-                fn:  function(){
-                    var ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create');
-
-                    if (ats && !ats.disabled) ats.val(!ats.val());
-                    if (btn) btn.press();
-                },
-                scope: me
-            },{
                 key: Ext.EventObject.A,
                 shift: true,
-                alt: false,
-                ignoreInputFields: true,
                 fn:  function(){
-                    var cb = Ext.getCmp(me.bid() + '-docked-inner$autosave');
-                    if (cb && !cb.disabled) cb.val(!cb.val());
+                    var cb = Ext.getCmp(me.bid() + '-docked-inner$autosave'); if (cb) cb.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.S,
                 shift: true,
-                alt: false,
-                ignoreInputFields: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$save'); if (btn) btn.press();
                 },
