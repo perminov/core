@@ -1180,58 +1180,11 @@ class Indi_Db_Table
             . '/' . $this->_table . '/'
             . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '');
 
-        // If $only argument is true
+        // If $mode argument is 'name'
         if ($mode == 'name') return $dir;
 
-        // Check if target directory exists, and if no
-        if (!is_dir($dir)) {
-
-            // If $mode argument is 'exists', it mean that directory is not exist, so we return boolean false
-            if ($mode == 'exists') return false;
-
-            // Foreach directories tree branches from the desired and up to the project root
-            do {
-
-                // Get the upper directory
-                $level = preg_replace(':[^/]+/$:', '', isset($level) ? $level : $dir);
-
-                // If upper directory exists
-                if (is_dir($level)) {
-
-                    // If upper directory is writable
-                    if (is_writable($level)){
-
-                        // If for some reason attempt to recursively create target directory,
-                        // starting from current level - was unsuccessful
-                        if (!@mkdir($dir, 0777, true)) {
-
-                            // Get the target directory part, that is relative to current level
-                            $rel = str_replace($level, '', $dir);
-
-                            // Return an error
-                            return sprintf(I_ROWFILE_ERROR_MKDIR, $rel, $level);
-                        }
-
-                        // Else if upper directory is not writable
-                    } else {
-
-                        // Get the target directory part, that is relative to current level
-                        $rel = str_replace($level, '', $dir);
-
-                        // Return an error
-                        return sprintf(I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE, $rel, $level);
-                    }
-
-                    // Break the loop
-                    break;
-                }
-            } while ($level != DOC . STD . '/');
-
-        // Else if target directory exists, but is not writable - return an error
-        } else if (!is_writable($dir)) return sprintf(I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE, $dir);
-
         // If all is ok - return directory name, as a proof
-        return $dir;
+        return Indi::dir($dir, $mode);
     }
 
     /**
