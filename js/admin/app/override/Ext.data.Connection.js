@@ -126,6 +126,15 @@ Ext.override(Ext.data.Connection, {
                 && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object'
                 && json.hasOwnProperty('success')) {
                 success = json.success;
+                if (json.hasOwnProperty('msg')) {
+                    Ext.Msg.show({
+                        title: Indi.lang.I_ERROR,
+                        msg: json.msg,
+                        buttons: Ext.Msg.OK,
+                        icon: Ext.Msg[json.success ? 'INFO' : 'WARNING'],
+                        modal: true
+                    });
+                }
             }
         }
 
