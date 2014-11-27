@@ -384,7 +384,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      *
      * @param target
      */
-    attachNestedKeyMap: function(target) {
+    setupSubsectionsAccessKeys: function(target) {
         var me = this, keys = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'], binding = [],
             nested = Ext.getCmp(me.bid() + '-docked-inner$nested');
 
@@ -395,7 +395,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         for (var i = 0; i < keys.length; i++)
             binding.push({
                 key: Ext.EventObject[keys[i]],
-                shift: true,
+                alt: true,
                 fn:  function(key){
                     nested.press(key - 49);
                 },
@@ -404,7 +404,7 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Add keyboard event handelers
         Ext.getCmp(target).getEl().addKeyMap({
-            eventName: 'keyup',
+            eventName: 'keydown',
             binding: binding
         });
     }

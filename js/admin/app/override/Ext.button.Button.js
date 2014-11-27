@@ -3,9 +3,8 @@
  */
 Ext.override(Ext.button.Button, {
     press: function() {
-        var me = this, tDom = Ext.EventObject.getTarget(), tEl = Ext.get(tDom);
+        var me = this;
         if (!me.disabled) {
-            if (tEl && tEl.is && tEl.is('input[type="text"]') || tEl.is('textarea')) return;
             me.onMouseDown({button: 0});
             Ext.defer(function(){try{me.onMouseUp({button: 0});} catch(e){}}, 300);
             me.handler();

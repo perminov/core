@@ -752,9 +752,16 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Attach key map on a row panel
         Ext.getCmp(me.row.id).getEl().addKeyMap({
-            eventName: "keyup",
+            eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.N,
+                alt: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.F4,
                 shift: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
@@ -762,14 +769,14 @@ Ext.define('Indi.lib.controller.action.Form', {
                 scope: me
             },{
                 key: Ext.EventObject.A,
-                shift: true,
+                alt: true,
                 fn:  function(){
                     var cb = Ext.getCmp(me.bid() + '-docked-inner$autosave'); if (cb) cb.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.S,
-                shift: true,
+                alt: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$save'); if (btn) btn.press();
                 },
