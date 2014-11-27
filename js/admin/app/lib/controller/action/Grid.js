@@ -40,7 +40,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             loadingText: Ext.LoadMask.prototype.msg,
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
-                    if (e.shiftKey) return false;
+                    if (e.altKey) return false;
                 }
             }
         },
@@ -272,6 +272,54 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Add keyboard event handelers
         Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+            eventName: 'keydown',
+            binding: [{
+                key: Ext.EventObject.F4,
+                shift: false,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$form'); if (btn) btn.press();
+                },
+                scope: me
+            }, {
+                key: Ext.EventObject.DELETE,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$delete'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.E,
+                alt: true,
+                fn:  function(keyCode, e){
+                    e.stopEvent();
+                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.N,
+                alt: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.T,
+                alt: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$toggle'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.F4,
+                shift: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
+                },
+                scope: me
+            }]
+        });
+
+        // Add keyboard event handelers
+        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,
@@ -280,35 +328,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 },
                 scope: me
             },{
-                key: Ext.EventObject.DELETE,
-                fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$delete'); if (btn) btn.press();
-                },
-                scope: me
-            },{
-                key: Ext.EventObject.E,
-                shift: true,
-                fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-rowset-docked-inner$excel'); if (btn) btn.press();
-                },
-                scope: me
-            },{
-                key: Ext.EventObject.N,
-                shift: true,
-                fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$create'); if (btn) btn.press();
-                },
-                scope: me
-            },{
                 key: Ext.EventObject.UP,
-                shift: true,
+                alt: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$up'); if (btn) btn.press();
                 },
                 scope: me
             },{
                 key: Ext.EventObject.DOWN,
-                shift: true,
+                alt: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$down'); if (btn) btn.press();
                 },
@@ -317,7 +345,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
 
         // Batch-attach key-map, for ability to navigate to subsections via keyboard
-        me.attachNestedKeyMap(me.rowset.id);
+        me.setupSubsectionsAccessKeys(me.rowset.id);
     },
 
     /**

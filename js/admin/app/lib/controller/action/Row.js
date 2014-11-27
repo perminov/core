@@ -757,33 +757,48 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Attach key map on a row panel
         Ext.getCmp(me.row.id).getEl().addKeyMap({
-            eventName: 'keyup',
+            eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.R,
-                shift: true,
+                alt: true,
+                fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$reload'); if (btn) btn.press();
+                },
+                scope: me
+            },{
+                key: Ext.EventObject.F5,
+                alt: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$reload'); if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.RIGHT,
-                shift: true,
-                fn:  function(){
+                alt: true,
+                fn:  function(keyCode, e){
+                    e.stopEvent();
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$next'); if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.LEFT,
-                shift: true,
+                alt: true,
                 fn:  function(keyCode, e){
-                    e.preventDefault();
+                    e.stopEvent();
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$prev'); if (btn) btn.press();
                 },
                 scope: me
             }, {
                 key: Ext.EventObject.BACKSPACE,
-                shift: true,
+                alt: true,
                 fn:  function(){
+                    var btn = Ext.getCmp(me.bid() + '-docked-inner$back'); if (btn) btn.press();
+                },
+                scope: me
+            }, {
+                key: Ext.EventObject.F10,
+                fn:  function(keyCode, e){
+                    e.stopEvent();
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$back'); if (btn) btn.press();
                 },
                 scope: me
@@ -791,7 +806,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         });
 
         // Batch-attach key-map, for ability to navigate to subsections via keyboard
-        me.attachNestedKeyMap(me.row.id);
+        me.setupSubsectionsAccessKeys(me.row.id);
     },
 
     /**
