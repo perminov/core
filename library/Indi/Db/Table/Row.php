@@ -495,7 +495,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
                     $v = $rowLinkedToSatellite->{$fieldR->alternative};
                     $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
-                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $v)
+                    $alternativeR = Indi::model($satelliteR->relation)->fields($fieldR->alternative);
+                    $where[] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
+                        && preg_match('/,/', $v)
                         ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
                         : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
 

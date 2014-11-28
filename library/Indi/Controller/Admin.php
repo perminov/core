@@ -228,7 +228,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->preDelete();
 
         // Delete row
-        if ($deleted = $this->row->delete()) {
+        if ($deleted = (int) $this->row->delete()) {
 
             // Get the page of results, that we were at
             $wasPage = Indi::trail()->scope->page;
@@ -246,7 +246,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Flush json response, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
-        $this->jflush(!!$deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
+        $this->jflush((bool) $deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
     }
 
     /**
