@@ -45,9 +45,17 @@ Ext.define('Indi.lib.controller.action.Grid', {
             }
         },
         listeners: {
-            beforeselect: function (selectionModel, row) {
-                if (row.raw._system && row.raw._system.disabled)
-                    return false;
+            beforeselect: function (selectionModel, row, index) {
+                var grid = this, keyCode = Ext.EventObject.getKey(), sm = grid.getSelectionModel(),
+                    firstNonDisabledIndex, prevNonDisabledIndex = -1;
+                if (row.raw._system && row.raw._system.disabled) {
+                    if (keyCode == Ext.EventObject.DOWN) {
+                        if ((firstNonDisabledIndex = grid.getStore().findBy(function(r){
+                            if (!r.raw._system || !r.raw._system.disabled) return true;
+                        }, null, index + 1)) != -1) Ext.defer(function(){sm.select(firstNonDisabledIndex)}, 10);
+                        else return false;
+                    } else return false;
+                }
             },
             selectionchange: function (selectionModel, selectedRows) {
                 if (selectedRows.length > 0)
@@ -339,6 +347,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 alt: true,
                 fn:  function(){
                     var btn = Ext.getCmp(me.bid() + '-docked-inner$down'); if (btn) btn.press();
+                },
+                scope: me
+            }, {
+                key: Ext.EventObject.DOWN,
+                alt: false,
+                fn:  function(){
+                    var grid = Ext.getCmp(me.rowset.id), sm = grid.getSelectionModel(), firstNonDisabledIndex;
+                    if (!sm.hasSelection() && (firstNonDisabledIndex = grid.getStore().findBy(function(r){
+                        if (!r.raw._system || !r.raw._system.disabled) return true;
+                    })) != -1) sm.select(firstNonDisabledIndex);
                 },
                 scope: me
             }]

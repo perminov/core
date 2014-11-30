@@ -878,8 +878,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 handler: function(btn){
 
                     // Get selection
-                    var selection = Ext.getCmp('i-center-center-wrapper')
-                        .getComponent(0)
+                    var selection = Ext.getCmp(me.rowset.id)
                         .getSelectionModel()
                         .getSelection();
 
