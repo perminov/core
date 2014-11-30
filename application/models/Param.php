@@ -6,4 +6,11 @@ class Param extends Indi_Db_Table {
      * @var array
      */
     protected $_evalFields = array('value');
+
+    /**
+     * Classname for row
+     *
+     * @var string
+     */
+    public $_rowClass = 'Indi_Db_Table_Row_Noeval';
 }

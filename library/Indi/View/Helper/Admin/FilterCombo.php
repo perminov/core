@@ -31,7 +31,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
     }
 
     public function getField() {
-        return $this->filter->foreign('fieldId');
+        return Indi::trail()->fields->select($this->filter->fieldId)->at(0);
     }
 
     /**

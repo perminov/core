@@ -283,7 +283,8 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemXUpload: function(item) {
         return {
-            xtype: 'filepanel'
+            xtype: 'filepanel',
+            allowBlank: true
         }
     },
 
@@ -306,6 +307,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
+            allowBlank: me.ti().section.type != 'p',
             field: field,
             row: this.ti().row,
             listeners: {
@@ -469,7 +471,8 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             xtype: 'textarea',
             grow: true,
-            minHeight: 32
+            minHeight: 32,
+            allowBlank: true
         }
     },
 
@@ -483,7 +486,8 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemXMulticheck: function(item) {
         return {
             xtype: 'multicheck',
-            cls: 'i-field-multicheck'
+            cls: 'i-field-multicheck',
+            allowBlank: true
         }
     },
 
@@ -541,7 +545,8 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemXHtml: function(item) {
         return {
-            xtype: 'ckeditor'
+            xtype: 'ckeditor',
+            allowBlank: true
         }
     },
 
