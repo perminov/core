@@ -279,6 +279,20 @@ class Indi_Trail_Admin_Item {
         if ($this->row) {
             $array['row'] = $this->row->toArray('current', true, $this->action->alias);
             $array['row']['title'] = $this->row->title();
+
+            // Collect aliases of all CKEditor-fields
+            $ckeFieldA = array();
+            foreach ($this->fields as $fieldR)
+                if ($fieldR->foreign('elementId')->alias == 'html')
+                    $ckeFieldA[] = $fieldR->alias;
+
+            // Get the aliases of fields, that are CKEditor-fields
+            $ckeDataA = array_intersect(array_keys($array['row']), $ckeFieldA);
+
+            // Left-trim the {STD . '/www'} from the values of 'href' and 'src' attributes
+            foreach ($ckeDataA as $ckeDataI) $array['row'][$ckeDataI]
+                = preg_replace(':(\s*(src|href)\s*=\s*[\'"])(/[^/]):', '$1' . STD . '$3', $array['row'][$ckeDataI]);
+
         }
         if ($this->model) $array['model'] = $this->model->toArray();
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
