@@ -3053,4 +3053,30 @@ class Indi_Db_Table_Row implements ArrayAccess
         else if ($version == 'modified') return $this->_modified[$field] != $this->field($field)->zeroValue();
         else return $this->$field != $this->field($field)->zeroValue();
     }
+
+    /**
+     * If some of the row's prop values are CKEditor-field values, we shoudl check whether they contain '<img>'
+     * and other tags having STD injections at the beginning of 'src' or other same-aim html attributes,
+     * and if found - trim it, for avoid problems while possible move from STD to non-STD, or other-STD directories
+     *
+     * @return Indi_Db_Table_Row
+     */
+    public function trimSTDfromCKEvalues() {
+
+        // Collect aliases of all CKEditor-fields
+        $ckeFieldA = array();
+        foreach ($this->model()->fields() as $fieldR)
+            if ($fieldR->foreign('elementId')->alias == 'html')
+                $ckeFieldA[] = $fieldR->alias;
+
+        // Get the aliases of fields, that are CKEditor-fields
+        $ckePropA = array_intersect(array_keys($this->_original), $ckeFieldA);
+
+        // Left-trim the {STD . '/www'} from the values of 'href' and 'src' attributes
+        foreach ($ckePropA as $ckePropI)
+            $this->$ckePropI = preg_replace(':(\s*(src|href)\s*=\s*[\'"])' . STD . '/www/:', '$1/', $this->$ckePropI);
+
+        // Return
+        return $this;
+    }
 }

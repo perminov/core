@@ -119,4 +119,13 @@ class Admin_TemporaryController extends Indi_Controller {
 	public function emptyAction(){
 		die('empty');
 	}
+
+    public function trimckestdAction() {
+        $ckeElementId = Indi::model('Element')->fetchRow('`alias` = "html"')->id;
+        $ckeEntityIdA = array_unique(Indi::model('Field')->fetchAll('`elementId` = "' . $ckeElementId . '"')->column('entityId'));
+        foreach ($ckeEntityIdA as $ckeEntityIdI) {
+            foreach (Indi::model($ckeEntityIdI)->fetchAll() as $r)
+                $r->trimSTDfromCKEvalues()->save();
+        }
+    }
 }

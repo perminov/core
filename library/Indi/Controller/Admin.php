@@ -1730,6 +1730,11 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Update current row properties with values from $data array
         $this->row->assign($data);
 
+        // If some of the fields are CKEditor-fields, we shoudl check whether they contain '<img>' and other tags
+        // having STD injections at the beginning of 'src' or other same-aim html attributes, and if found - trim
+        // it, for avoid problems while possible move from STD to non-STD, or other-STD directories
+        $this->row->trimSTDfromCKEvalues();
+
         // Get the list of ids of fields, that are disabled
         $disabledA = Indi::trail()->disabledFields->column('fieldId');
 
