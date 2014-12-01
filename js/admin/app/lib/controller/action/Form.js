@@ -406,7 +406,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             ariaTitle: '',
             cls: 'i-field-date',
             startDay: 1,
-            format: item.field.params.displayFormat
+            format: item.field.params.displayFormat,
+            submitFormat: 'Y-m-d'
         };
     },
 
@@ -428,7 +429,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'datetimefield',
             cls: 'i-field-datetime',
             startDay: 1,
-            format: item.field.params.displayDateFormat
+            format: item.field.params.displayDateFormat,
+            submitFormat: 'Y-m-d H:i:s'
         };
     },
 
