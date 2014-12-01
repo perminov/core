@@ -434,10 +434,10 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @return string
      */
     public function alternateWHERE($trailStepsUp = 0) {
-        if ($_SESSION['admin']['alternate'] && $alternateFieldR = Indi::trail($trailStepsUp)->model->fields($_SESSION['admin']['alternate'] . 'Id'))
+        if (Indi::admin()->alternate && $alternateFieldR = Indi::trail($trailStepsUp)->model->fields(Indi::admin()->alternate . 'Id'))
             return $alternateFieldR->storeRelationAbility == 'many'
-                ? 'FIND_IN_SET("' . $_SESSION['admin']['id'] . '", `' . $_SESSION['admin']['alternate'] . 'Id' . '`)'
-                : '`' . $_SESSION['admin']['alternate'] . 'Id' . '` = "' . $_SESSION['admin']['id'] . '"';
+                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . Indi::admin()->alternate . 'Id' . '`)'
+                : '`' . Indi::admin()->alternate . 'Id' . '` = "' . Indi::admin()->id . '"';
     }
 
     /**
