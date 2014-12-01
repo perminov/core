@@ -141,6 +141,7 @@ define('I_FORM_DATETIME_HOURS', 'часов');
 define('I_FORM_DATETIME_MINUTES', 'минут');
 define('I_FORM_DATETIME_SECONDS', 'секунд');
 define('I_COMBO_OF', 'из');
+define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количество выбранных опций -');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');

@@ -22,6 +22,11 @@ Ext.define('Indi.lib.form.field.Combo', {
     pickerOffset: [0, -1],
 
     /**
+     * The maximum allowed number of selected/chosed options. This config takes effect only if `multiSelect` is `true`
+     */
+    maxSelected: 0,
+
+    /**
      * We need this to be able to separate options list visibility after keyword was erased
      * At form combos options wont be hidden, but at Indi.combo.filter same param is set to true
      *
@@ -408,7 +413,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Setup `forceValidation` property. We should do this, because some combos may be dependent (have satellites)
         // and there can be situations then combo is not allowed to be blank, but if it is disabled (due to several
         // reasons, related to satellite-component's state) - validation won't run. So here we provide it to be forced
-        me.forceValidation = parseInt(me.satellite) ? true : false;
+        me.forceValidation = !!(me.satellite != '0' || Ext.JSON.encode(me.considerOn) != '[]');
 
         // Setup noLookup property
         me.setupNoLookup();
@@ -642,6 +647,19 @@ Ext.define('Indi.lib.form.field.Combo', {
     // @inheritdoc
     expand: function() {
         var me = this, selected;
+
+        // Prevent combo from being expanded, in case if number of currently selected options is greater or equal
+        // than `maxSelected` value
+        if (me.multiSelect && me.maxSelected && me.getValue() && me.maxSelected <= me.getValue().split(',').length) {
+            Ext.Msg.show({
+                title: Indi.lang.I_MSG,
+                msg: Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected,
+                icon: Ext.Msg.WARNING,
+                buttons: Ext.Msg.OK
+            });
+            return false;
+        }
+
         me.callParent(arguments);
         if (me.isInfoShowable()) me.infoEl.addCls('i-combo-info-expanded');
         if (selected = me.getPicker().body.select('.x-boundlist-item-over').first())
@@ -674,6 +692,10 @@ Ext.define('Indi.lib.form.field.Combo', {
         if ((me.keywordEl.attr('disabled') != 'disabled' && me.store.enumset && !me.multiSelect)) {
             me.keywordEl.attr('readonly', 'readonly');
         }
+    },
+
+    clearValue: function() {
+        this.clearCombo();
     },
 
     /**
@@ -1885,7 +1907,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Additional operations, that should be done after some option was selected
                 me.postSelect(li);
 
-                // Indicate that option can't be once more selected because it's already selected
+            // Indicate that option can't be once more selected because it's already selected
             } else {
                 var existing = me.el.select('.i-combo-selected-item[selected-id="'+li.attr(name)+'"] .i-combo-selected-item-delete').first();
                 if (existing) existing.fadeOut({opacity: 0.25, duration: 200}).fadeIn();
@@ -1930,7 +1952,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * dependent-combos reloading, javascript execution and others
      */
     onHiddenChange: function() {
-        var me = this, name = me.name, dComboName, dCombo;
+        var me = this;
 
         // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
         // We will need this fact in request data prepare process, because if at the moment of sending
@@ -1972,7 +1994,6 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
         }
 
-
         // If combo is running in multiple-values mode and is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
 
@@ -1992,6 +2013,16 @@ Ext.define('Indi.lib.form.field.Combo', {
             }
         });
     },
+
+    getErrors: function() {
+        var me = this, errorA = me.callParent(), v = me.getValue();
+
+        if (me.multiSelect && v && me.maxSelected && me.maxSelected < v.split(',').length)
+            errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected);
+
+        return errorA;
+    },
+
 
     /**
      * Builds html for new options list, bind events and do some more things
@@ -2254,19 +2285,18 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param data
      */
     remoteFetch: function(data){
-        var me = this;
+        var me = this, parts = me.xtype.split('.'), appendix = [];
 
         // Show loading pic
         me.infoEl.addCls('i-combo-info-loading');
 
         // Appendix
-        var parts = me.xtype.split('.'), appendix = [];
         for (var i = 0; i < parts.length; i++) appendix.push(parts[i], 1); appendix = appendix.join('/');
 
         // Fetch request
         Ext.Ajax.request({
             url: me.fetchRelativePath() + appendix+'/',
-            params: Ext.merge({field: me.name}, data),
+            params: Ext.merge({field: me.name}, data, {consider: Ext.JSON.encode(me.considerOnData())}),
             success: function(response) {
 
                 // Convert response.responseText to JSON object
@@ -2353,10 +2383,28 @@ Ext.define('Indi.lib.form.field.Combo', {
      */
     setDisabledOptions: function(disabledIds) {
         var me = this;
+
+        // Convert each item within `disabledIds` array to a string, for better conformance
+        for (var i = 0; i < disabledIds.length; i++) disabledIds[i] = String(disabledIds[i]);
+
+        // Enable/disable options
         for (var i in me.store.data) {
-            me.store.data[i].system.disabled = disabledIds.indexOf(me.store.ids[i]) != -1;
+            me.store.data[i].system.disabled = disabledIds.indexOf(String(me.store.ids[i])) != -1;
         }
+
+        // Update `found` property
         me.store.found = me.store.data.length - disabledIds.length;
+    },
+
+    /**
+     * Get the number of currently selected options. If combo has `multiSelect` = false, function will return 1
+     *
+     * @return {Number}
+     */
+    getSelectedCount: function() {
+        var me = this;
+        if (!me.multiSelect) return 1;
+        if (me.val()) return me.val().split(',').length;
     },
 
     /**
