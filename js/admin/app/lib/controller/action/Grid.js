@@ -17,6 +17,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         xtype: 'grid',
         multiSelect: false,
         firstColumnWidthFraction: 0.4,
+        smallColumnWidth: 100,
         border: 0,
 
         /**
@@ -84,20 +85,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Object}
      */
-    gridColumnDefault: function(column) {
+    gridColumnDefault: function(field) {
 
         // Default column config
         return {
-            id: this.bid() + '-rowset-grid-column-' + column.alias,
-            header: column.title,
-            dataIndex: column.alias,
+            id: this.bid() + '-rowset-grid-column-' + field.alias,
+            header: field.title,
+            dataIndex: field.alias,
             cls: 'i-grid-column-filtered',
             sortable: true,
             align: function(){
-                return (column.storeRelationAbility == 'none' &&
-                    [3,5].indexOf(parseInt(column.columnTypeId)) != -1) ? 'right' : 'left';
+                return (field.storeRelationAbility == 'none' &&
+                    [3,5].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
             }(),
-            hidden: !!(column.alias == 'move'),
             renderer: function (value) {
                 if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
                 if (String(value).match(/ class="i-color-box"/)) return '<div class="i-color-box-wrap">'+value+'</div>';
@@ -112,18 +112,35 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnA: function (){
-
-        // Id column
-        var columnA = [], column$Id = this.gridColumn$Id(), columnI, columnICustom;
+        var me = this, field, columnA = [], column$Id = me.gridColumn$Id(), columnI, columnX, fnColumnX, column$, fnColumn$;
 
         // Append Id column
         if (column$Id) columnA.push(column$Id);
 
         // Other columns
-        for (var i = 0; i < this.ti().gridFields.length; i++) {
-            columnI = this.gridColumnDefault(this.ti().gridFields[i]);
-            columnICustom = 'gridColumn$'+Indi.ucfirst(this.ti().gridFields[i].alias);
-            if (typeof this[columnICustom] == 'function') columnI = this[columnICustom](columnI);
+        for (var i = 0; i < me.ti().gridFields.length; i++) {
+
+            // Setup a shortcut for a grid field
+            field = me.ti().gridFields[i];
+
+            // Get default column config
+            columnI = me.gridColumnDefault(field);
+
+            // Apply specific control element config, as columns control elements/xtypes may be different
+            fnColumnX = 'gridColumnX' + Indi.ucfirst(me.ti().fields.r(field.id).foreign('elementId').alias);
+            if (typeof me[fnColumnX] == 'function') {
+                columnX = me[fnColumnX](columnI, field);
+                columnI = Ext.isObject(columnX) ? Ext.merge(columnI, columnX) : columnX;
+            }
+
+            // Apply column custom config
+            fnColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
+            if (typeof me[fnColumn$] == 'function') {
+                column$ = me[fnColumn$](columnI, field);
+                columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+            }
+
+            // Add column
             if (columnI) columnA.push(columnI);
         }
 
@@ -132,6 +149,24 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Return array
         return columnA;
+    },
+
+    gridColumnXNumber: function(column, field) {
+        return {
+            thousandSeparator: ' ',
+            decimalSeparator: ',',
+            decimalPrecision: 0,
+            renderer: function(v, m, r, i, c, s) {
+                var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
+                return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
+            }
+        }
+    },
+
+    gridColumnXMove: function(column, field) {
+        return {
+            hidden: true
+        }
     },
 
     /**
@@ -152,7 +187,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                             columnWidths[i][k] += fix;
                         }
                         for (var j = 0; j < grid.getStore().data.items.length; j++) {
-                            var cellWidth = Indi.metrics.getWidth(grid.getStore().data.items[j].data[hdi[k].dataIndex]) + fix;
+                            var cellWidth = Indi.metrics.getWidth(hdi[k].renderer(grid.getStore().data.items[j].data[hdi[k].dataIndex])) + fix;
                             if (cellWidth > columnWidths[i][k]) columnWidths[i][k] = cellWidth;
                         }
                         if (hdi[k].maxWidth && columnWidths[i][k] > hdi[k].maxWidth) columnWidths[i][k] = hdi[k].maxWidth;
@@ -164,7 +199,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         columnWidths[i] += fix;
                     }
                     for (var j = 0; j < grid.getStore().data.items.length; j++) {
-                        var cellWidth = Indi.metrics.getWidth(grid.getStore().data.items[j].data[grid.columns[i].dataIndex]) + fix;
+                        var cellWidth = Indi.metrics.getWidth(grid.columns[i].renderer(grid.getStore().data.items[j].data[grid.columns[i].dataIndex])) + fix;
                         if (cellWidth > columnWidths[i]) columnWidths[i] = cellWidth;
                     }
                     if (grid.columns[i].maxWidth && columnWidths[i] > grid.columns[i].maxWidth)
@@ -193,22 +228,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 }
             }
         } else {
+            var w = this.rowset.smallColumnWidth;
             var smallColumnsWidth = 0;
             var first = true;
             for(var i in columnWidths) {
                 if (first) {
                     if (Ext.isArray(columnWidths[i]))
                         for (var j in columnWidths[i])
-                            if (parseInt(j) > 0 && columnWidths[i][j] <= 100)
+                            if (parseInt(j) > 0 && columnWidths[i][j] <= w)
                                 smallColumnsWidth += columnWidths[i][j];
                     first = false;
                 } else if (Ext.isArray(columnWidths[i])) {
 
                     for (var j in columnWidths[i])
-                        if (columnWidths[i][j] <= 100)
+                        if (columnWidths[i][j] <= w)
                             smallColumnsWidth += columnWidths[i][j];
 
-                } else if (columnWidths[i] <= 100) {
+                } else if (columnWidths[i] <= w) {
                     smallColumnsWidth += columnWidths[i];
                 }
             }
@@ -231,8 +267,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     first = false;
                 } else if (Ext.isArray(columnWidths[i])) {
                     for (var j in columnWidths[i])
-                        grid.columns[i].getGridColumns()[j].setWidth(columnWidths[i][j] * (columnWidths[i][j] > 100 ? percent : 1));
-                } else if (columnWidths[i] > 100) {
+                        grid.columns[i].getGridColumns()[j].setWidth(columnWidths[i][j] * (columnWidths[i][j] > w ? percent : 1));
+                } else if (columnWidths[i] > w) {
                     grid.columns[i].setWidth(columnWidths[i] * percent);
                 } else {
                     grid.columns[i].setWidth(columnWidths[i]);
