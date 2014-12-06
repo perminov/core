@@ -82,7 +82,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
                     // constructed with usage of Indi::get('limit') and Indi::get('page') params
                     $this->rowset = Indi::trail()->model->{
-                    'fetch'. (Indi::trail()->model->treeColumn() ? 'Tree' : 'All')
+                    'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
                     }($finalWHERE, $finalORDER,
                         Indi::uri()->excel ? null : (int) Indi::get('limit'),
                         Indi::uri()->excel ? null : (int) Indi::get('page'));

@@ -61,6 +61,9 @@
 .i-field.i-field-number .i-field-number-after {
     position: absolute; margin-top: -17px; margin-left: 104px; font-size: 11px;
 }
+.i-field.i-field-number.x-form-readonly .i-field-number-after {
+    margin-left: 87px;
+}
 .i-field-time .x-form-text{
     text-align: right;
 }
