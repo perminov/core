@@ -616,6 +616,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Append system data
             $data[$pointer]['_system'] = $r->system();
 
+            // Append temporary data
+            $data[$pointer] = array_merge($data[$pointer], $r->temporary());
+
             // Implement indents if need
             if ($data[$pointer]['title'])
                 $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];
