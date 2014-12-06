@@ -27,6 +27,12 @@ Ext.define('Indi.lib.form.field.Combo', {
     maxSelected: 0,
 
     /**
+     * The text that will be displayed if the number of currently selected options is already reached the maximum
+     * allowed count. This config takes effect only if `multiSelect` is `true`
+     */
+    maxSelectedText: Indi.lang.I_COMBO_MISMATCH_MAXSELECTED,
+
+    /**
      * We need this to be able to separate options list visibility after keyword was erased
      * At form combos options wont be hidden, but at Indi.combo.filter same param is set to true
      *
@@ -244,7 +250,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     getValue: function() {
-        return this.value;
+        return this.value + '';
     },
 
     /**
@@ -653,13 +659,14 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.multiSelect && me.maxSelected && me.getValue() && me.maxSelected <= me.getValue().split(',').length) {
             Ext.Msg.show({
                 title: Indi.lang.I_MSG,
-                msg: Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected,
+                msg: me.maxSelectedText + ' ' + me.maxSelected,
                 icon: Ext.Msg.WARNING,
                 buttons: Ext.Msg.OK
             });
             return false;
         }
 
+        // Call parent
         me.callParent(arguments);
         if (me.isInfoShowable()) me.infoEl.addCls('i-combo-info-expanded');
         if (selected = me.getPicker().body.select('.x-boundlist-item-over').first())
@@ -1810,6 +1817,21 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.getNative().setValue.call(me, me.hiddenEl.val());
     },
 
+
+
+    /**
+     * Get the data item, related to currently selected value
+     */
+    r: function(id) {
+        var me = this, index;
+
+        // Get the index of selected option id in me.store.ids
+        index = me.store.ids.indexOf(me.store.enumset && !id.toString().match(/^[1-9][0-9]{0,9}$/) ? id : parseInt(id));
+
+        // Build the data-row object and return it
+        return Ext.merge({id: id}, me.store.data[index]);
+    },
+
     /**
      * Set some option as selected, autosets value for hidden field
      */
@@ -2014,15 +2036,38 @@ Ext.define('Indi.lib.form.field.Combo', {
         });
     },
 
+    /**
+     * Inject additional possible error check, related to conformance of current value to `maxSelected` property
+     *
+     * @return {*}
+     */
     getErrors: function() {
-        var me = this, errorA = me.callParent(), v = me.getValue();
-
+        var me = this, errorA = me.callParent(), v = me.getValue() + '';
         if (me.multiSelect && v && me.maxSelected && me.maxSelected < v.split(',').length)
             errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected);
-
         return errorA;
     },
 
+    /**
+     * This function retrieves the property, that was additionally passed within combo data. It's only usable in cases,
+     * when special param was set up for that combo. Such param cannot be set up within javascript-code, it's existence
+     * is provided by special data row within special mysql table, and is can be set there in a special cms section.
+     *
+     * Example: we have combo with cities, New York, Moscow, etc. Titles of these cities assumed to be got from `city`
+     * mysql table. So, if that table have some additional column, for example `population` INT(11), and combo settings
+     * are set up in a way that considers that this property should be available for each data-item within the combo. So,
+     * if we have 'New York' as current combo value, this function can return the value of `population` by
+     * Ext.getCmp('my-city-combo-id').prop('population'); If prop is an string, represinting an integer value - it will
+     * be converted to integer using javascript's parseInt() function, before returning
+     *
+     * Warning: Currently function is working properly only if combo's `multiSelect` property is not `true`
+     *
+     * @param name
+     */
+    prop: function(name) {
+        var me = this, prop = me.r(me.val()).attrs[name];
+        return me.store.enumset && !prop.toString().match(/^[1-9][0-9]{0,9}$/) ? prop : parseInt(prop);
+    },
 
     /**
      * Builds html for new options list, bind events and do some more things

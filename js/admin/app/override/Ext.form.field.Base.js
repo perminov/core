@@ -102,7 +102,7 @@ Ext.override(Ext.form.field.Base, {
     afterRender: function() {
         var me = this;
         me.callParent();
-        if (!me.disabled) me.disableBySatellites();
+        if (!me.disabled && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
     },
 
     /**
