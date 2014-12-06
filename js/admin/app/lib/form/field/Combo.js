@@ -2065,8 +2065,12 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param name
      */
     prop: function(name) {
-        var me = this, prop = me.r(me.val()).attrs[name];
-        return me.store.enumset && !prop.toString().match(/^[1-9][0-9]{0,9}$/) ? prop : parseInt(prop);
+        var me = this, r;
+        return Ext.isObject(r = me.r(me.val()))
+            ? (me.store.enumset && !r.attrs[name].toString().match(/^[1-9][0-9]{0,9}$/)
+                ? r.attrs[name]
+                : parseInt(r.attrs[name]))
+            : null;
     },
 
     /**
