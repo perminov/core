@@ -1198,15 +1198,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $alias
      * @param string $copy
      * @param bool $dc Whether or not to append modification timestamp, for disabling browser cache
+     * @param bool $std Whether or not to prepend returned value with STD
      * @return string|null
      */
-    public function src($alias, $copy = '', $dc = false) {
+    public function src($alias, $copy = '', $dc = false, $std = false) {
 
         // Get the filename with absolute path
         if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy))
 
             // Return path, relative to document root
-            return str_replace(DOC . STD, '', $abs) . ($dc ? '?' . filemtime($abs) : '');
+            return str_replace(DOC . ($std ? '' : STD), '', $abs) . ($dc ? '?' . filemtime($abs) : '');
     }
 
     /**
