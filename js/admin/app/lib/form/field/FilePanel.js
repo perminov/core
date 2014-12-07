@@ -681,7 +681,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         if (!me.value) preview = '';
 
         // If value type is 'image' - build and return image preview
-        else if (me.data.mime.split('/')[0] == 'image' && fakeimg.indexOf(me.data.mime.split('/')[1]) != -1)
+        else if (me.data.mime.split('/')[0] == 'image' && fakeimg.indexOf(me.data.mime.split('/')[1]) == -1)
             preview = me.previewImg();
 
         // If value extenion is 'swf' - build and return flash/swf preview
