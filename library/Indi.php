@@ -1814,4 +1814,13 @@ class Indi {
         // If all is ok - return directory name, as a proof
         return $dir;
     }
+    
+    /**
+     * Get the CKFinder absolute upload path
+     * 
+     * @return string
+     */
+    public function ckup() {
+        return DOC . STD . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
+    }
 }
