@@ -83,7 +83,7 @@ class Indi_Db_Table
      * Changelog config. Example:
      *
      * protected $_changeLog = array(
-     *      'storage' => 'adjustment',
+     *      'toggle' => true,
      *      'ignore' => 'ignoredField1,ignoredField2,etc'
      * );
      *
