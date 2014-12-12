@@ -48,6 +48,7 @@
         '/js/admin/app/lib/controller/action/Action.js',
         '/js/admin/app/lib/controller/action/Rowset.js',
         '/js/admin/app/lib/controller/action/Grid.js',
+        '/js/admin/app/lib/controller/action/ChangeLog.js',
         '/js/admin/app/lib/controller/action/Row.js',
         '/js/admin/app/lib/controller/action/Form.js',
         '/js/admin/app/lib/controller/action/Print.js'

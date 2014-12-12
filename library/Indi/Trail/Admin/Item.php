@@ -447,6 +447,9 @@ class Indi_Trail_Admin_Item {
             // If such action parent class does not exist - replace 'Project' with 'Indi' within it's name
             if (!class_exists($actionParentClass)) $actionParentClass = preg_replace('/^Project/', 'Indi', $actionParentClass);
 
+            // If such action parent class does not exist - roll it back to mode-naming only, without appending view-naming
+            if (!class_exists($actionParentClass)) $actionParentClass = preg_replace('/_' . $view . '$/', '', $actionParentClass);
+
             // Auto-declare action-view class
             eval('class ' . ucfirst($actionClass) . ' extends ' . $actionParentClass . '{}');
 
