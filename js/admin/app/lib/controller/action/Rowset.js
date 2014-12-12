@@ -256,7 +256,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: parseInt(me.ti().section.rowsOnPage),
             currentPage: me.storeCurrentPage(),
-            ctx: Ext.Component.prototype.ctx
+            ctx: Ext.Component.prototype.ctx,
+            trailLevel: me.trailLevel
         }, me.store);
 
         // Create store
