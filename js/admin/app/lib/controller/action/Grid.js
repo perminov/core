@@ -162,7 +162,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             colI = colA[i];
 
             // If current col - is a group col
-            if (colI._nested.grid.length) {
+            if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
 
                 columnI = {
                     text: colI.title,
