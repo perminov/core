@@ -675,13 +675,14 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      * @return {String}
      */
     getPreview: function() {
-        var me = this, preview;
+        var me = this, preview, fakeimg = ['vnd.djvu'];
 
         // If there is currently no value - return
         if (!me.value) preview = '';
 
         // If value type is 'image' - build and return image preview
-        else if (me.data.mime.split('/')[0] == 'image') preview = me.previewImg();
+        else if (me.data.mime.split('/')[0] == 'image' && fakeimg.indexOf(me.data.mime.split('/')[1]) == -1)
+            preview = me.previewImg();
 
         // If value extenion is 'swf' - build and return flash/swf preview
         else if (me.data.ext == 'swf') preview = me.previewSwf();

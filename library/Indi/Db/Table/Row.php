@@ -218,7 +218,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Provide a changelog recording, if configured
-        if ($this->model()->changeLog('storage')) $this->changeLog($original);
+        if ($this->model()->changeLog('toggle')) $this->changeLog($original);
 
         // Auto set `move` if need
         if ($orderAutoSet) {
@@ -1198,15 +1198,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $alias
      * @param string $copy
      * @param bool $dc Whether or not to append modification timestamp, for disabling browser cache
+     * @param bool $std Whether or not to prepend returned value with STD
      * @return string|null
      */
-    public function src($alias, $copy = '', $dc = false) {
+    public function src($alias, $copy = '', $dc = false, $std = false) {
 
         // Get the filename with absolute path
         if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy))
 
             // Return path, relative to document root
-            return str_replace(DOC . STD, '', $abs) . ($dc ? '?' . filemtime($abs) : '');
+            return str_replace(DOC . ($std ? '' : STD), '', $abs) . ($dc ? '?' . filemtime($abs) : '');
     }
 
     /**
@@ -2889,8 +2890,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Unset fields, that should not be involved in logging
         if ($cfg['ignore']) foreach(ar($cfg['ignore']) as $ignore) unset($modified[$ignore]);
 
-        // If no storage provided, or current row was a new row, ro wasn't, but had no modified properties - return
-        if (!$cfg['storage'] || !$original['id'] || !count($modified)) return;
+        // If no changes logging is not enabled, or current row was a new row, or wasn't, but had no modified properties - return
+        if (!$cfg['toggle'] || !$original['id'] || !count($modified)) return;
 
         // Get the id of current entity/model
         $entityId = $this->model()->id();
@@ -2912,7 +2913,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $now = clone $this; $now->foreign(implode(',', $modifiedForeignA));
 
         // Get the storage model
-        $storageM = Indi::model($cfg['storage']);
+        $storageM = Indi::model('ChangeLog');
 
         // Get the rowset of modified fields
         $modifiedFieldRs = Indi::model($entityId)->fields()->select(array_keys($modified), 'alias');
@@ -2924,7 +2925,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             $storageR = $storageM->createRow();
 
             // Setup a link to current row
-            $storageR->{$this->model()->table() . 'Id'} = $this->id;
+            $storageR->entityId = $entityId;
+            $storageR->key = $this->id;
 
             // Setup a field, that was modified
             $storageR->fieldId = $modifiedFieldR->id;

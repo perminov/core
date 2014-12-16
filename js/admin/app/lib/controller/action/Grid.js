@@ -111,45 +111,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Array}
      */
-    gridColumnA: function (){
-        var me = this, field, columnA = [], column$Id = me.gridColumn$Id(), columnI, columnX, fnColumnX, column$, fnColumn$;
+    gridColumnA: function() {
+        var me = this, columnA = [], column$Id = me.gridColumn$Id();
 
         // Append Id column
         if (column$Id) columnA.push(column$Id);
 
-        // Other columns
-        for (var i = 0; i < me.ti().gridFields.length; i++) {
+        // Recursively build the columns
+        columnA = columnA.concat(me.gridColumnADeep(me.ti().grid));
 
-            // Setup a shortcut for a grid field
-            field = me.ti().gridFields[i];
+        if (!columnA[1].columns) columnA[1].flex = 1;
 
-            // Get default column config
-            columnI = me.gridColumnDefault(field);
-
-            // Apply specific control element config, as columns control elements/xtypes may be different
-            fnColumnX = 'gridColumnX' + Indi.ucfirst(me.ti().fields.r(field.id).foreign('elementId').alias);
-            if (typeof me[fnColumnX] == 'function') {
-                columnX = me[fnColumnX](columnI, field);
-                columnI = Ext.isObject(columnX) ? Ext.merge(columnI, columnX) : columnX;
-            }
-
-            // Apply column custom config
-            fnColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
-            if (typeof me[fnColumn$] == 'function') {
-                column$ = me[fnColumn$](columnI, field);
-                columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
-            }
-
-            // Add column
-            if (columnI) columnA.push(columnI);
-        }
-
-        // Setup flex for first non-hidden column
-        columnA[1].flex = 1;
-
-        // Return array
         return columnA;
     },
+
 
     gridColumnXNumber: function(column, field) {
         return {
@@ -169,112 +144,165 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+
+    /**
+     * Build an array, representing grid columns for the given column level,
+     * so columns groupings will be taken into consideration
+     *
+     * @param colA
+     * @return {Array}
+     */
+    gridColumnADeep: function(colA) {
+        var me = this, colI, field, columnA = [], columnI, columnX, fnColumnX, column$, fnColumn$;
+
+        // Other columns
+        for (var i = 0; i < colA.length; i++) {
+
+            // Get current col
+            colI = colA[i];
+
+            // If current col - is a group col
+            if (colI._nested.grid.length) {
+
+                columnI = {
+                    text: colI.title,
+                    columns: me.gridColumnADeep(colI._nested.grid)
+                }
+
+                // Add column
+                columnA.push(columnI);
+
+            // Else
+            } else {
+
+                // Setup a shortcut for a grid field
+                field = me.ti().fields.r(colI.fieldId);
+
+                // Get default column config
+                columnI = me.gridColumnDefault(field);
+
+                // Apply specific control element config, as columns control elements/xtypes may be different
+                fnColumnX = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias);
+                if (typeof me[fnColumnX] == 'function') {
+                    columnX = me[fnColumnX](columnI, field);
+                    columnI = Ext.isObject(columnX) ? Ext.merge(columnI, columnX) : columnX;
+                }
+
+                // Apply column custom config
+                fnColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
+                if (typeof me[fnColumn$] == 'function') {
+                    column$ = me[fnColumn$](columnI, field);
+                    columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                }
+
+                // Add column
+                if (columnI) columnA.push(columnI);
+            }
+        }
+
+        // Return columns array
+        return columnA;
+    },
+
     /**
      * Adjust grid columns widths, for widths to match column contents
      */
     gridColumnAFit: function() {
-        var grid = Ext.getCmp(this.bid() + '-rowset-grid');
-        var columnWidths = {};
-        var totalColumnsWidth = 0;
-        var hdi; var fix = 18;
-        for(var i in grid.columns) {
-            if (grid.columns[i].hidden == false) {
-                if ((hdi = grid.columns[i].getGridColumns()).length) {
-                    for (var k in hdi) if (hdi[k].hidden == false) {
-                        columnWidths[i] = columnWidths[i] || [];
-                        columnWidths[i][k] = Indi.metrics.getWidth(hdi[k].text) + fix;
-                        if (hdi[k].dataIndex == this.ti().section.defaultSortFieldAlias) {
-                            columnWidths[i][k] += fix;
-                        }
-                        for (var j = 0; j < grid.getStore().data.items.length; j++) {
-                            var cellWidth = Indi.metrics.getWidth(hdi[k].renderer(grid.getStore().data.items[j].data[hdi[k].dataIndex])) + fix;
-                            if (cellWidth > columnWidths[i][k]) columnWidths[i][k] = cellWidth;
-                        }
-                        if (hdi[k].maxWidth && columnWidths[i][k] > hdi[k].maxWidth) columnWidths[i][k] = hdi[k].maxWidth;
-                        totalColumnsWidth += columnWidths[i][k];
-                    }
-                } else if (grid.columns[i].dataIndex) {
-                    columnWidths[i] = Indi.metrics.getWidth(grid.columns[i].text) + fix;
-                    if (grid.columns[i].dataIndex == this.ti().section.defaultSortFieldAlias) {
-                        columnWidths[i] += fix;
-                    }
-                    for (var j = 0; j < grid.getStore().data.items.length; j++) {
-                        var cellWidth = Indi.metrics.getWidth(grid.columns[i].renderer(grid.getStore().data.items[j].data[grid.columns[i].dataIndex])) + fix;
-                        if (cellWidth > columnWidths[i]) columnWidths[i] = cellWidth;
-                    }
-                    if (grid.columns[i].maxWidth && columnWidths[i] > grid.columns[i].maxWidth)
-                        columnWidths[i] = grid.columns[i].maxWidth;
-                    totalColumnsWidth += columnWidths[i];
-                }
+
+        // Suspend layouts
+        Ext.suspendLayouts();
+
+        // Setup auxiliary variables
+        var me = this, grid = Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
+            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, cellWidth,
+            visible = grid.getWidth(), scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction,
+            sctw = 0, fcw, hctw = 0, busy = 0, free;
+
+        // For each column, mapped to a store field
+        for (i = 0; i < columnA.length; i++) {
+
+            // Get initial column width, based on a column title metrics
+            widthA[i] = Indi.metrics.getWidth(columnA[i].text) + px.ellipsis;
+
+            // Increase the width of a column, that store is sorted by, to provide an additional amount
+            // of width for sort icon, that is displayed next after column title, within the same column
+            if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
+
+            // Increase the width, to fit data, rendered within any cell under current column
+            store.each(function(r){
+                cellWidth = Indi.metrics.getWidth(typeof columnA[i].renderer == 'function'
+                    ? columnA[i].renderer(r.get(columnA[i].dataIndex))
+                    : r.get(columnA[i].dataIndex)) + px.ellipsis;
+                if (cellWidth > widthA[i]) widthA[i] = cellWidth;
+            });
+
+            // Limit the maximum column width, if such a config was set
+            if (columnA[i].maxWidth && widthA[i] > columnA[i].maxWidth) widthA[i] = columnA[i].maxWidth;
+
+            // Increase the total width
+            total += widthA[i];
+
+            // If column is hidden - sum it's width into `hctw` variable
+            if (columnA[i].hidden) hctw += widthA[i];
+        }
+
+        // Exclude first non-hidden column width from total width
+        total -= widthA[1];
+
+        // Detect the first column's width, using it's fraction
+        widthA[1] = fcw = Math.ceil(visible * fcwf) || widthA[1];
+
+        // Include first non-hidden column width (regarding `firstColumnWidthFraction` cfg) to total width
+        total += widthA[1];
+
+        // If total width of all columns is less that available/visible width
+        // - set column widths without any additional calculations
+        if (total - hctw < visible) {
+
+            // For each column (except first non-hidden)
+            for (i = 2; i < widthA.length; i++) {
+
+                // Set width
+                columnA[i].setWidth(widthA[i]);
+
+                // Sum widths
+                busy += columnA[i].width;
             }
         }
-        var totalGridWidth = grid.getWidth();
-        if (totalColumnsWidth < totalGridWidth) {
-            var first = true;
-            for(i in columnWidths) {
-                if (first) {
 
-                    if (Ext.isArray(columnWidths[i]))
-                        for (var j in columnWidths[i]) {
-                            grid.columns[i].getGridColumns()[j].setWidth(columnWidths[i][j] + (parseInt(j) ? 0 : totalGridWidth - totalColumnsWidth));
-                        }
+        // Else if total width of all columns is greater than available/visible width - calculate
+        // the percent of column widths shrink, and apply it
+        else {
 
-                    first = false;
-                } else if (Ext.isArray(columnWidths[i])) {
-                    for (var j in columnWidths[i])
-                        grid.columns[i].getGridColumns()[j].setWidth(columnWidths[i][j]);
-                } else {
-                    grid.columns[i].setWidth(columnWidths[i]);
-                }
-            }
-        } else {
-            var w = this.rowset.smallColumnWidth;
-            var smallColumnsWidth = 0;
-            var first = true;
-            for(var i in columnWidths) {
-                if (first) {
-                    if (Ext.isArray(columnWidths[i]))
-                        for (var j in columnWidths[i])
-                            if (parseInt(j) > 0 && columnWidths[i][j] <= w)
-                                smallColumnsWidth += columnWidths[i][j];
-                    first = false;
-                } else if (Ext.isArray(columnWidths[i])) {
+            var over = total - hctw - visible, shrinkedWidth;
 
-                    for (var j in columnWidths[i])
-                        if (columnWidths[i][j] <= w)
-                            smallColumnsWidth += columnWidths[i][j];
+            // Calc the total width for all small columns
+            for (i = 2; i < widthA.length; i++) if (widthA[i] > scw) sctw += widthA[i];
 
-                } else if (columnWidths[i] <= w) {
-                    smallColumnsWidth += columnWidths[i];
-                }
-            }
-            var firstColumnWidth = Math.ceil(totalGridWidth*this.rowset.firstColumnWidthFraction);
-            /*if (totalColumnsWidth - firstColumnWidth < totalGridWidth) {
-                firstColumnWidth = totalGridWidth - (totalColumnsWidth - (Ext.isArray(columnWidths[1]) ? columnWidths[1][0] : columnWidths[1]));
-                if (firstColumnWidth < 100) firstColumnWidth = 100;
-            }*/
-            var percent = (totalGridWidth-firstColumnWidth-smallColumnsWidth)/(totalColumnsWidth-(Ext.isArray(columnWidths[1]) ? columnWidths[1][0] : columnWidths[1])-smallColumnsWidth);
-            var first = true;
-            for (i in columnWidths) {
-                if (first) {
-                    if (Ext.isArray(columnWidths[i])) {
-                        for (var j in columnWidths[i]){
-                            grid.columns[i].getGridColumns()[j].setWidth(parseInt(j) ? columnWidths[i][j] : firstColumnWidth);
-                        }
-                    } else {
-                        grid.columns[i].setWidth(firstColumnWidth);
-                    }
-                    first = false;
-                } else if (Ext.isArray(columnWidths[i])) {
-                    for (var j in columnWidths[i])
-                        grid.columns[i].getGridColumns()[j].setWidth(columnWidths[i][j] * (columnWidths[i][j] > w ? percent : 1));
-                } else if (columnWidths[i] > w) {
-                    grid.columns[i].setWidth(columnWidths[i] * percent);
-                } else {
-                    grid.columns[i].setWidth(columnWidths[i]);
-                }
+            busy = 0;
+
+            // For each column (except first non-hidden)
+            for (i = 2; i < widthA.length; i++) {
+
+                // If current column's width is greater than `smallColumnWidth` - calc shrinked width,
+                // and apply it if it, hovewer, still not less than `smallColumnWidth`
+                if (widthA[i] > scw) widthA[i] = (shrinkedWidth = widthA[i] - Math.ceil(widthA[i]/sctw * over)) < scw
+                    ? scw
+                    : shrinkedWidth;
+
+                // Set width
+                columnA[i].setWidth(widthA[i]);
+
+                // Sum widths
+                busy += columnA[i].width;
             }
         }
+
+        // Increase first non-hidden column's width, if free space is available
+        columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
+
+        // Resume layouts
+        Ext.resumeLayouts(true);
     },
 
     /**
