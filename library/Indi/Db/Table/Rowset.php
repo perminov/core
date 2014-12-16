@@ -200,7 +200,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * Reverse order of items in $this->_original array
      */
     public function reverse() {
+    
+        // Reverse rows
         $this->_rows = array_reverse($this->_rows);
+        
+        // Return rowset itself
+        return $this;
     }
 
     /**
@@ -615,6 +620,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Append system data
             $data[$pointer]['_system'] = $r->system();
+
+            // Append temporary data
+            $data[$pointer] = array_merge($data[$pointer], $r->temporary());
 
             // Implement indents if need
             if ($data[$pointer]['title'])
