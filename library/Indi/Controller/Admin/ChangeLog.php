@@ -30,7 +30,6 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
             : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id];
 
         // Return clause
-        i('`entityId` = "' . Indi::trail(1)->section->entityId . '" AND `' . $connectorAlias . '` = "' . $connectorValue . '"');
         return '`entityId` = "' . Indi::trail(1)->section->entityId . '" AND `' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
 }
