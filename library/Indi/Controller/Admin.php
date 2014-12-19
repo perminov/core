@@ -212,11 +212,11 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Flush json response, containing new page index, in case if now row
             // index change is noticeable enough for rowset current page was shifted
-            $this->jflush(true, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
+            jflush(true, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
         }
 
         // Flush json response
-        $this->jflush(false);
+        jflush(false);
     }
 
     /**
@@ -246,7 +246,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Flush json response, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
-        $this->jflush((bool) $deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
+        jflush((bool) $deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
     }
 
     /**
@@ -1451,12 +1451,12 @@ class Indi_Controller_Admin extends Indi_Controller {
                 else $data = $this->_authLevel1(Indi::post()->username, Indi::post()->password);
 
                 // If $data is not an array, e.g some error there, output it as json with that error
-                if (!is_array($data)) $this->jflush(false, $data);
+                if (!is_array($data)) jflush(false, $data);
 
                 // Else start a session for user and report that sing-in was ok
                 $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
                 foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
-                $this->jflush(true, array('ok' => '1'));
+                jflush(true, array('ok' => '1'));
             }
 
             // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
@@ -1501,7 +1501,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Logout
                 if (Indi::uri()->section == 'index') die(header('Location: ' . PRE . '/logout/'));
                 else if (!Indi::uri()->json) die('<script>top.window.location="' . PRE .'/logout/"</script>');
-                else $this->jflush(false, array('trowOutMsg' => $data));
+                else jflush(false, array('trowOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
             } else if (Indi::uri()->section != 'index') {
@@ -1510,7 +1510,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $data = $this->_authLevel2(Indi::uri()->section, Indi::uri()->action);
 
                 // If $data is not an array, e.g some error there, output it as json with that error
-                if (!is_array($data)) $this->jflush(false, $data);
+                if (!is_array($data)) jflush(false, $data);
 
                 // Else go further and perform last auth check, within Indi_Trail_Admin::__construct()
                 else Indi::trail($this->_routeA, $this)->authLevel3();
@@ -1782,7 +1782,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->setScopeRow();
 
         // Flush mismatches
-        if ($this->row->mismatch()) $this->jflush(false, array('mismatch' => $this->row->mismatch()));
+        if ($this->row->mismatch()) jflush(false, array('mismatch' => $this->row->mismatch()));
 
         // Do post-save operations
         $this->postSave();
@@ -1818,7 +1818,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Redirect
         $response = array();
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
-        $this->jflush(true, $response);
+        jflush(true, $response);
     }
 
     /**

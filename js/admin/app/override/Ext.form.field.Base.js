@@ -150,7 +150,7 @@ Ext.override(Ext.form.field.Base, {
      * Enable current field and fire 'enablebysatellite' event, passing an object containing all satellites values
      */
     enableBySatellites: function() {
-        var me = this, data = {};
+        var me = this;
 
         // Enable field
         me.enable().clearValue();

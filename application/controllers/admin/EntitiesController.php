@@ -11,13 +11,13 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
         if (!in($this->row->system, array_keys($repositoryDirA)))
 
             // Flush an error
-            $this->jflush(false, 'Can\'t detect the alias of repository, associated with a type of the chosen entity');
+            jflush(false, 'Can\'t detect the alias of repository, associated with a type of the chosen entity');
 
         // Build the dir name, that model's php-file will be created in
         $dir = Indi::dir(DOC . STD . '/' . $repositoryDirA[$this->row->system] . '/application/models/');
 
         // If that dir doesn't exist and can't be created - flush an error
-        if (!preg_match(Indi::rex('dir'), $dir)) $this->jflush(false, $dir);
+        if (!preg_match(Indi::rex('dir'), $dir)) jflush(false, $dir);
 
         // Get the model name with first letter upper-cased
         $model = ucfirst($this->row->table);
@@ -29,7 +29,7 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
             $tplModelFn = DOC. STD . '/core/application/models/{Model}.php';
 
             // If it is not exists - flush an error, as we have no template for creating a model file
-            if (!is_file($tplModelFn)) $this->jflush(false, 'No template-model file found');
+            if (!is_file($tplModelFn)) jflush(false, 'No template-model file found');
 
             // Get the template contents (source code)
             $emptyModelSc = file_get_contents($tplModelFn);
@@ -45,7 +45,7 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
         $modelDir = Indi::dir($dir . '/' . $model . '/');
 
         // If model's own dir doesn't exist and can't be created - flush an error
-        if (!preg_match(Indi::rex('dir'), $modelDir)) $this->jflush(false, $modelDir);
+        if (!preg_match(Indi::rex('dir'), $modelDir)) jflush(false, $modelDir);
 
         // If model's row-class file is not yet exist
         if (!is_file($modelRowFn = $dir . '/' . $model . '/Row.php')) {
@@ -54,7 +54,7 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
             $tplModelRowFn = DOC. STD . '/core/application/models/{Model}/Row.php';
 
             // If it is not exists - flush an error, as we have no template for creating a model's rowClass file
-            if (!is_file($tplModelRowFn)) $this->jflush(false, 'No template file for model\'s rowClass found');
+            if (!is_file($tplModelRowFn)) jflush(false, 'No template file for model\'s rowClass found');
 
             // Get the template contents (source code)
             $tplModelRowSc = file_get_contents($tplModelRowFn);
@@ -67,6 +67,6 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
         }
 
         // Flush success
-        $this->jflush(true);
+        jflush(true);
     }
 }

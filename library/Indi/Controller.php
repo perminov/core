@@ -51,8 +51,12 @@ class Indi_Controller {
         // Do the pre-dispatch maintenance
         $this->preDispatch();
 
+        // Here we provide an ability for an additional operations to be performed, before actual action call
+        if (preg_match('/^[A-Za-z_][A-Za-z_0-9]*$/', Indi::uri()->consider))
+            $this->{Indi::uri()->action . 'ActionI' . ucfirst(Indi::uri()->consider)}(Indi::post());
+
         // Call the desired action method
-        eval('$this->' . Indi::uri()->action . 'Action();');
+        $this->{Indi::uri()->action . 'Action'}();
 
         // Do the post-dispatch maintenance
         $this->postDispatch();
