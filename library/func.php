@@ -629,3 +629,35 @@ function num2str($num) {
     $unit[$uk][2]);}}else$out[]=$nul;$out[]=num2str_(intval($rub), $unit[1][0],$unit[1][1],$unit[1][2]);$out[]=$kop.' '.
     num2str_($kop,$unit[0][0],$unit[0][1],$unit[0][2]);return trim(preg_replace('/ {2,}/',' ',join(' ',$out)));
 }
+
+/**
+ * Flush the json-encoded message, containing `status` property, and other optional properties
+ *
+ * @param $success
+ * @param mixed $msg1
+ * @param mixed $msg2
+ */
+function jflush($success, $msg1 = null, $msg2 = null) {
+
+    // Start building data for flushing
+    $flush = array('success' => $success);
+
+    // Deal with first data-argument
+    if (func_num_args() > 1 && func_get_arg(1) != null)
+        $mrg1 = is_object($msg1)
+            ? (in('toArray', get_class_methods($msg1)) ? $msg1->toArray() : (array) $msg1)
+            : (is_array($msg1) ? $msg1 : array('msg' => $msg1));
+
+    // Deal with second data-argument
+    if (func_num_args() > 2 && func_get_arg(2) != null)
+        $mrg2 = is_object($msg2)
+            ? (in('toArray', get_class_methods($msg2)) ? $msg2->toArray() : (array) $msg2)
+            : (is_array($msg2) ? $msg2 : array('msg' => $msg2));
+
+    // Merge the additional data to the $flush array
+    if ($mrg1) $flush = array_merge($flush, $mrg1);
+    if ($mrg2) $flush = array_merge($flush, $mrg2);
+
+    // Flush
+    die(json_encode($flush));
+}

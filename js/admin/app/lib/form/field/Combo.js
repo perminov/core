@@ -22,6 +22,11 @@ Ext.define('Indi.lib.form.field.Combo', {
     pickerOffset: [0, -1],
 
     /**
+     * Array of option ids/keys, that should be disabled
+     */
+    disabledOptions: [],
+
+    /**
      * The maximum allowed number of selected/chosed options. This config takes effect only if `multiSelect` is `true`
      */
     maxSelected: 0,
@@ -169,6 +174,19 @@ Ext.define('Indi.lib.form.field.Combo', {
             '</div>',
         '</div>'
     ],
+
+    /**
+     * Init disabled options
+     */
+    initDisabledOptions: function() {
+        var me = this, i;
+
+        // If `disabledOptions` prop is not an array - setup it as empty array
+        if (!Ext.isArray(me.disabledOptions)) me.disabledOptions = [];
+
+        // Else convert each value within `disabledOptions` array to a string, for a better compatibility
+        else for (i = 0; i < me.disabledOptions.length; i++) me.disabledOptions[i] = String(me.disabledOptions[i]);
+    },
 
     /**
      * Provide usage of this.getValue() result as a way of getting submit value, instead of this.getRawValue
@@ -434,6 +452,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Setup `fetchedByPageUps` store property
         me.store.fetchedByPageUps = 0;
+
+        // Init disabled options feature
+        me.initDisabledOptions();
     },
 
     /**
@@ -822,7 +843,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this, name = me.name, items = [],
             groups = json.optgroup ? json.optgroup.groups : {none: {title: 'none'}},
             groupIndent = json.optgroup ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : '',
-            disabledCount = 0, color = {}, item, height = me.getOptionHeight('style'), css;
+            disabledCount = 0, color = {}, item, height = me.getOptionHeight('style'), css, disabledOptionsCount = 0;
 
         // Foreach options groups
         for (var j in groups) {
@@ -877,13 +898,17 @@ Ext.define('Indi.lib.form.field.Combo', {
                     }
 
                     // If data option is disabled
-                    if (json['data'][i].system && json['data'][i].system['disabled']) {
+                    if (json['data'][i].system && json['data'][i].system['disabled']
+                        || me.disabledOptions.indexOf(String(json['ids'][i])) != -1) {
 
                         // Append x-boundlist-item-disabled class to the css classes array
                         cls.push('x-boundlist-item-disabled');
 
                         // We are counting disabled options, to further valid calculations
                         disabledCount++;
+
+                        // Else if data option is in the internal list of disabled option
+                        if (me.disabledOptions.indexOf(String(json['ids'][i])) != -1) disabledOptionsCount++;
                     }
 
                     // If one this option is selected
@@ -953,11 +978,11 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Stat info
         me.countEl.removeCls('i-combo-count-visible').update(Indi.numberFormat(json['ids'].length - disabledCount));
-        me.foundEl.update(Indi.numberFormat(json['found']));
+        me.foundEl.update(Indi.numberFormat(json['found'] - disabledOptionsCount));
 
         // Check if all possible options are already exist in store
         // and append/remove .i-combo-info-fetched-all class
-        if (json['ids'].length - disabledCount == json['found']) {
+        if (json['ids'].length - disabledCount == json['found'] - disabledOptionsCount) {
             me.infoEl.addCls('i-combo-info-fetched-all');
         } else {
             me.infoEl.removeCls('i-combo-info-fetched-all');
@@ -2037,14 +2062,25 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
-     * Inject additional possible error check, related to conformance of current value to `maxSelected` property
+     * Inject additional possible error check, related to
+     * 1. Conformance of current value to `maxSelected` property (only if `multiSelect` is `true`)
+     * 2. None of currently selected values are in the `disabledOptions` list
      *
      * @return {*}
      */
     getErrors: function() {
         var me = this, errorA = me.callParent(), v = me.getValue() + '';
+
+        // Check for `maxSelected` conformance
         if (me.multiSelect && v && me.maxSelected && me.maxSelected < v.split(',').length)
             errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected);
+
+        // Check for value should not be/contain disabled value
+        if (me.disabledOptions)
+            if (!me.multiSelect) {
+                if (me.disabledOptions.indexOf(v) != -1) errorA.push(Indi.lang.I_COMBO_MISMATCH_DISABLED_VALUE);
+            }
+
         return errorA;
     },
 
@@ -2426,23 +2462,44 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * clearValue() call removed
+     */
+    enableBySatellites: function() {
+        var me = this, data = {};
+
+        // Enable field
+        me.enable();
+
+        // Fire 'enablebysatellite' event
+        me.fireEvent('enablebysatellite', me, me.considerOnData());
+    },
+
+    /**
      * Mark some options as disabled
      *
      * @param disabledIds
      */
     setDisabledOptions: function(disabledIds) {
-        var me = this;
+        var me = this, i;
+
+        // If `disabledIds` arg is not even an array - we assume that all options should be enabled
+        if (!Ext.isArray(disabledIds)) disabledIds = [];
 
         // Convert each item within `disabledIds` array to a string, for better conformance
-        for (var i = 0; i < disabledIds.length; i++) disabledIds[i] = String(disabledIds[i]);
+        for (i = 0; i < disabledIds.length; i++) disabledIds[i] = String(disabledIds[i]);
+
+        me.disabledOptions = disabledIds;
 
         // Enable/disable options
-        for (var i in me.store.data) {
+        for (i in me.store.data) {
             me.store.data[i].system.disabled = disabledIds.indexOf(String(me.store.ids[i])) != -1;
         }
 
         // Update `found` property
-        me.store.found = me.store.data.length - disabledIds.length;
+        //me.store.found = me.store.data.length - disabledIds.length;
+
+        // Check if current value is valid
+        if (!me.hasZeroValue()) me.isValid();
     },
 
     /**

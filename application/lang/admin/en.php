@@ -142,6 +142,7 @@ define('I_FORM_DATETIME_MINUTES', 'minutes');
 define('I_FORM_DATETIME_SECONDS', 'seconds');
 define('I_COMBO_OF', 'of');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected options is');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'The chosen option is not allowed as it is disabled');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'The current section\'s scope of available rows');

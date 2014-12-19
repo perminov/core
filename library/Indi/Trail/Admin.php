@@ -152,7 +152,7 @@ class Indi_Trail_Admin {
                     break;
 
         // Flush an error in json format, if error was met
-        if ($error) self::$controller->jflush(false, $error);
+        if ($error) jflush(false, $error);
 
         // Setup blank scope object for each trail item
         for ($i = 0; $i < count(self::$items) - 1; $i++)

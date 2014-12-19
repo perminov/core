@@ -18,6 +18,7 @@
         '/js/admin/app/override/Ext.form.action.Submit.js',
         '/js/admin/app/override/Ext.form.field.Base.js',
         '/js/admin/app/override/Ext.form.field.Number.js',
+        '/js/admin/app/override/Ext.form.field.Date.js',
         '/js/admin/app/override/Ext.picker.Date.js',
         '/js/admin/app/override/Ext.form.field.Checkbox.js',
 
