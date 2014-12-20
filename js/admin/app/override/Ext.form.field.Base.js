@@ -138,7 +138,7 @@ Ext.override(Ext.form.field.Base, {
         // Collect satellite values
         if (Ext.isArray(me.considerOn)) {
             me.considerOn.forEach(function(stl){
-                data[stl.name] = me.sbl(stl.name).getSubmitValue();
+                if (me.sbl(stl.name)) data[stl.name] = me.sbl(stl.name).getSubmitValue();
             });
         }
 

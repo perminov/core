@@ -42,7 +42,8 @@ Ext.define('Indi.lib.controller.action.Form', {
         // Fields will be arranged vertically, stretched to full width
         layout: 'anchor',
         defaults: {
-            anchor: '100%'
+            anchor: '100%',
+            labelWidth: '50%',
         },
 
         // @inheritdoc
@@ -337,7 +338,6 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'textfield',
             readOnly: me.row.readOnly,
             fieldLabel: field.title,
-            labelWidth: '50%',
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
