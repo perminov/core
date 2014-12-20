@@ -44,6 +44,25 @@ Ext.define('Indi', {
             }
         },
 
+        get: function(param) {
+
+            // Setup auxilliary variables
+            var pairA = document.location.search.substr(1).split('&'), pairI, getO = {};
+
+            // Build getO object
+            for (var i = 0; i < pairA.length; i++) {
+
+                // Get the param-value pair
+                pairI = pairA[i].split('=');
+
+                // Append to `getO` object as a value under certain property
+                getO[pairI[0]] = pairI[1];
+            }
+
+            // Return whole object or a certain param
+            return param ? getO[param] : getO;
+        },
+
         /**
          * Equivalent for php's strip_tags function. Source code got from http://phpjs.org/functions/strip_tags/
          *
