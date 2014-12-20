@@ -253,75 +253,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Provide form action
      */
     public function formAction() {
-
-        // If 'combo' uri param is set
-        if (Indi::uri()->combo) {
-
-            // If 'sibling' uri param is set
-            if (Indi::uri()->sibling) {
-
-                // Create pseudo field for sibling combo
-                $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
-                    Indi::post()->field,
-                    Indi::trail()->section->entityId,
-                    Indi::trail()->scope->WHERE
-                );
-                $this->row->{Indi::post()->field} = Indi::uri()->id;
-
-                $order = Indi::trail()->scope->ORDER;
-                $dir = array_pop(explode(' ', $order));
-                $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
-                if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
-
-            } else {
-                $field = Indi::trail()->model->fields(Indi::post()->field);
-            }
-
-            if (Indi::uri()->filter) {
-                foreach(Indi::trail()->filters as $filterR) {
-                    if ($filterR->fieldId == $field->id) {
-                        $where = $filterR->filter;
-                        break;
-                    }
-                }
-            }
-
-            // Get combo data rowset
-            if (Indi::post()->keyword) {
-                $comboDataRs = $this->row->getComboData(Indi::post()->field, Indi::post()->page, Indi::post()->keyword,
-                    true, Indi::post()->satellite, $where, false, $field, $order, $dir);
-            } else {
-                $comboDataRs = $this->row->getComboData(Indi::post()->field, Indi::post()->page,
-                    $this->row->{Indi::post()->field}, false, Indi::post()->satellite, $where, false, $field, $order,
-                    $dir, $offset);
-            }
-
-            // Prepare combo options data
-            $comboDataA = $comboDataRs->toComboData($field->params);
-
-            $options = $comboDataA['options'];
-            $titleMaxLength = $comboDataA['titleMaxLength'];
-
-            $options = array('ids' => array_keys($options), 'data' => array_values($options));
-
-            // Setup number of found rows
-            if ($comboDataRs->found()) $options['found'] = $comboDataRs->found();
-
-            // Setup tree flag
-            if ($comboDataRs->model()->treeColumn()) $options['tree'] = true;
-
-            // Setup groups for options
-            if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
-
-            // Setup additional attributes names list
-            if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
-
-            $options['titleMaxLength'] = $titleMaxLength;
-
-            // Output
-            die(json_encode($options));
-
-        } else if (Indi::trail()->disabledFields->count()) {
+        if (Indi::trail()->disabledFields->count()) {
             Indi::trail()->disabledFields->foreign('fieldId');
             if (!$this->row->id) foreach (Indi::trail()->disabledFields as $disabledFieldR) {
                 if (strlen($disabledFieldR->defaultValue)) {
@@ -1367,7 +1299,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 `a`.`toggle` = "y" AS `actionToggle`,
                 `sa`.`id` > 0 AS `section2actionExists`,
                 `sa`.`toggle` = "y" AS `section2actionToggle`,
-                FIND_IN_SET(' . $_SESSION['admin']['profileId'] . ', `sa`.`profileIds`) > 0 AS `granted`,
+                FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `sa`.`profileIds`) > 0 AS `granted`,
                 `s`.`sectionId` as `sectionId`
             FROM `section` `s`
                LEFT JOIN `action` `a` ON (`a`.`alias` = "' . $action . '")
@@ -1397,7 +1329,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else if (!$data['section2actionToggle']) $error = I_ACCESS_ERROR_ACTION_IS_OFF_IN_SUCH_SECTION;
 
         // 7. User have no rights on that action in that section
-        else if (!$data['granted']) $error = I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE;
+        else if (!$data['granted'] && !Indi::uri('consider')) $error = I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE;
 
         // 8. One of parent sections for current section - is switched off
         else {
@@ -1438,46 +1370,62 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If visitor is a visitor, e.g. he has not signed in yet
         if (!$_SESSION['admin']) {
 
-            // If he is trying to do that
-            if (Indi::post()->enter && Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
+            // If 'consider' param is passed within the uri
+            if (Indi::uri('consider')) {
 
-                // If no username given
-                if (!Indi::post()->username) $data = I_LOGIN_ERROR_ENTER_YOUR_USERNAME;
-
-                // Else if no password given
-                else if (!Indi::post()->password) $data = I_LOGIN_ERROR_ENTER_YOUR_PASSWORD;
-
-                // Else try to find user's data
-                else $data = $this->_authLevel1(Indi::post()->username, Indi::post()->password);
+                // Do the second level access check
+                $data = $this->_authLevel2(Indi::uri()->section, Indi::uri()->action);
 
                 // If $data is not an array, e.g some error there, output it as json with that error
                 if (!is_array($data)) jflush(false, $data);
 
-                // Else start a session for user and report that sing-in was ok
-                $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
-                foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
-                jflush(true, array('ok' => '1'));
+                // Else go further and perform last auth check, within Indi_Trail_Admin::__construct()
+                else Indi::trail($this->_routeA, $this)->authLevel3();
+
+            // Else do ordinary check
+            } else {
+
+                // If he is trying to do that
+                if (Indi::post()->enter && Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
+
+                    // If no username given
+                    if (!Indi::post()->username) $data = I_LOGIN_ERROR_ENTER_YOUR_USERNAME;
+
+                    // Else if no password given
+                    else if (!Indi::post()->password) $data = I_LOGIN_ERROR_ENTER_YOUR_PASSWORD;
+
+                    // Else try to find user's data
+                    else $data = $this->_authLevel1(Indi::post()->username, Indi::post()->password);
+
+                    // If $data is not an array, e.g some error there, output it as json with that error
+                    if (!is_array($data)) jflush(false, $data);
+
+                    // Else start a session for user and report that sing-in was ok
+                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
+                    foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
+                    jflush(true, array('ok' => '1'));
+                }
+
+                // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
+                // to be available for picking up and usage as Ext.MessageBox message, as a reason of throw out
+                if ($_SESSION['indi']['throwOutMsg']) {
+                    Indi::view()->throwOutMsg = $_SESSION['indi']['throwOutMsg'];
+                    unset($_SESSION['indi']['throwOutMsg']);
+                }
+
+                // Render login page
+                $out = Indi::view()->render('login.php');
+
+                // Do paths replacements, if current project runs within webroot subdirectory
+                if (STD) {
+                    $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                    $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                    $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                }
+
+                // Flush the login page
+                die($out);
             }
-
-            // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
-            // to be available for picking up and usage as Ext.MessageBox message, as a reason of throw out
-            if ($_SESSION['indi']['throwOutMsg']) {
-                Indi::view()->throwOutMsg = $_SESSION['indi']['throwOutMsg'];
-                unset($_SESSION['indi']['throwOutMsg']);
-            }
-
-            // Render login page
-            $out = Indi::view()->render('login.php');
-
-            // Do paths replacements, if current project runs within webroot subdirectory
-            if (STD) {
-                $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
-                $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
-                $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
-            }
-
-            // Flush the login page
-            die($out);
 
         // Else if user is already signed in, and is trying to perform some action in some section
         } else {

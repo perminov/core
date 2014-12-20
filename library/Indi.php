@@ -940,7 +940,7 @@ class Indi {
         $refresh = false;
 
         // Get filename of file, containing modification times for all files that are compiled
-        $mtime = DOC . STD . '/core/' . $rel . '/admin/indi.all' . ($alias ? '.' . $alias : '') . '.mtime';
+        $mtime = DOC . STD . '/core' . (Indi::uri()->module == 'front' ? 'f' : '') . '/' . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . '.mtime';
 
         // If this file does not exists, we set $refresh as true
         if (!file_exists($mtime)) {
@@ -953,22 +953,22 @@ class Indi {
             $json = json_decode(file_get_contents($mtime), true);
 
             // Append mirror files
+            $mirrorA = array();
             for($i = 0; $i < count($files); $i++)
-                if (is_file(DOC . STD . '/www' . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i])))
-                    array_splice($files, ++$i, 0, '/../www' . $files[$i-1]);
+                foreach (ar('core,coref,www') as $place)
+                    if (is_file(DOC . STD . '/' . $place . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i])))
+                        $mirrorA[] = '/' . $place . $files[$i];
 
-            // Prepare arrays containing file names with trimmed namespace definitions, for proper comparing
-            for ($i = 0; $i < count($files); $i++) $noNsFiles[$i] = preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i]);
-            if (is_array($json)) foreach ($json as $file => $time)
-                    $noNsJson[preg_replace('/:[a-zA-Z\.]+$/', '', $file)] = $time;
+            // Prepare array containing file names with trimmed namespace definitions, for proper comparing
+            for ($i = 0; $i < count($mirrorA); $i++) $noNsFiles[$i] = preg_replace('/:[a-zA-Z\.]+$/', '', $mirrorA[$i]);
+
+            if (is_array($json)) foreach ($json as $file => $time) $noNsJson[preg_replace('/:[a-zA-Z\.]+$/', '', $file)] = $time;
 
             // If $json is not an array, or is empty array, of files, mentioned in it do not match files in $files arg
-            if (!is_array($json) || !count($json) || count(array_diff($noNsFiles, array_keys($noNsJson)))
-                || count(array_diff(array_keys($noNsJson), $noNsFiles)))
+            if (!is_array($json) || !count($json) || count(array_diff($noNsFiles, array_keys($noNsJson))) || count(array_diff(array_keys($noNsJson), $noNsFiles)))
 
                 // We set $refresh as true
                 $refresh = true;
-
 
             // Else we do a final check:
             else
@@ -976,7 +976,7 @@ class Indi {
                 // If modification time  of at least one file in $files argument, is not equal to time,
                 // stored in $json for that file, we set $refresh as true
                 for ($i = 0; $i < count($noNsFiles); $i++)
-                    if (filemtime(DOC . STD . '/core' . $noNsFiles[$i]) != $noNsJson[$noNsFiles[$i]]) {
+                    if (filemtime(DOC . STD . $noNsFiles[$i]) != $noNsJson[$noNsFiles[$i]]) {
                         $refresh = true;
                         break;
                     }
@@ -992,17 +992,17 @@ class Indi {
             ob_start();
 
             // Foreach file in $files argument
-            for ($i = 0; $i < count($files); $i++) {
+            for ($i = 0; $i < count($mirrorA); $i++) {
 
                 // Get full file name
-                $file = DOC . STD . '/core' . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i]);
+                $file = DOC . STD . preg_replace('/:[a-zA-Z\.]+$/', '', $mirrorA[$i]);
 
                 // Collect info about that file's modification time
-                $json[$files[$i]] = filemtime($file);
+                $json[$mirrorA[$i]] = filemtime($file);
 
                 // If current file extension is 'php', we assume it's a file containing php constants definitions
                 // We we need to parse such file contents and make it javascript-compatible by converting to JSON
-                if (preg_match('/\.php(:[a-zA-Z\.]+|)$/', $files[$i], $ns)) {
+                if (preg_match('/\.php(:[a-zA-Z\.]+|)$/', $mirrorA[$i], $ns)) {
 
                     // Get the namespace. If no namespace defined - use 'window' by default
                     $ns = $ns[1] ? ltrim($ns[1], ':') : 'window';
@@ -1066,8 +1066,12 @@ class Indi {
             // Compress compilation
             $txt = gzencode($txt, 9);
 
+            // Build the filename
+            $gz = DOC . STD . '/core' . (Indi::uri()->module == 'front' ? 'f' : '')
+                . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . '.gz.' . $ext;
+
             // Refresh compilation file
-            $fp = fopen(DOC . STD . '/core' . $rel . '/admin/indi.all' . ($alias ? '.' . $alias : '') . '.gz.' . $ext, 'w');
+            $fp = fopen($gz , 'w');
             fwrite($fp, $txt);
             fclose($fp);
         }

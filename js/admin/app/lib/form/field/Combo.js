@@ -2369,19 +2369,24 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param data
      */
-    remoteFetch: function(data){
-        var me = this, parts = me.xtype.split('.'), appendix = [];
+    remoteFetch: function(data) {
+        var me = this, url = me.ctx().uri;
+
+        // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
+        // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
+        // name rather than as a separate param name within the axaj request url
+        if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+
+        // Append odata specification
+        url += 'odata/' + me.name + '/';
 
         // Show loading pic
         me.infoEl.addCls('i-combo-info-loading');
 
-        // Appendix
-        for (var i = 0; i < parts.length; i++) appendix.push(parts[i], 1); appendix = appendix.join('/');
-
         // Fetch request
         Ext.Ajax.request({
-            url: me.fetchRelativePath() + appendix+'/',
-            params: Ext.merge({field: me.name}, data, {consider: Ext.JSON.encode(me.considerOnData())}),
+            url: url,
+            params: Ext.merge(data, {consider: Ext.JSON.encode(me.considerOnData())}),
             success: function(response) {
 
                 // Convert response.responseText to JSON object
@@ -2494,9 +2499,6 @@ Ext.define('Indi.lib.form.field.Combo', {
         for (i in me.store.data) {
             me.store.data[i].system.disabled = disabledIds.indexOf(String(me.store.ids[i])) != -1;
         }
-
-        // Update `found` property
-        //me.store.found = me.store.data.length - disabledIds.length;
 
         // Check if current value is valid
         if (!me.hasZeroValue()) me.isValid();

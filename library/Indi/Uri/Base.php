@@ -192,7 +192,7 @@ class Indi_Uri_Base {
             else if ($key == 'module')
 
                 // If module is 'front' or is 'admin', but cms only mode is enabled - ignore it
-                if ($value == 'front' || COM) continue; else $_SERVER['REQUEST_URI'] .= '/' . $key;
+                if ($value == 'front' || COM) continue; else $_SERVER['REQUEST_URI'] .= '/' . $value;
 
             // Else if $key is 'section' - append section
             else if ($key == 'section') $_SERVER['REQUEST_URI'] .= '/' . $value;

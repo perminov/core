@@ -51,9 +51,28 @@ class Indi_Controller {
         // Do the pre-dispatch maintenance
         $this->preDispatch();
 
-        // Here we provide an ability for an additional operations to be performed, before actual action call
-        if (preg_match('/^[A-Za-z_][A-Za-z_0-9]*$/', Indi::uri()->consider))
+        // Here we provide an ability for operations, required for
+        // a certain item to be performed, instead actual action call
+        if (preg_match('/^[A-Za-z_][A-Za-z_0-9]*$/', Indi::uri()->consider)) {
+
+            // Call the function, that will do these operations
             $this->{Indi::uri()->action . 'ActionI' . ucfirst(Indi::uri()->consider)}(Indi::post());
+
+            // Force to stop the execution. Usually, execution won't reach this line, as in most cases
+            // jflush() is called earlier than here at this line
+            jflush(false, 'No consider');
+        }
+
+        // Here we provide an ability for a combo options data to be fetched instead of actual action call
+        if (preg_match('/^[A-Za-z_][A-Za-z_0-9]*$/', Indi::uri()->odata)) {
+
+            // Fetch the combo options data
+            $this->{Indi::uri()->action . 'ActionOdata'}(Indi::uri()->odata, Indi::post());
+
+            // Force to stop the execution. Usually, execution won't reach this line, as in most cases
+            // execution is stopped earlier than here at this line
+            jflush(false, 'No odata');
+        }
 
         // Call the desired action method
         $this->{Indi::uri()->action . 'Action'}();
@@ -390,5 +409,108 @@ class Indi_Controller {
 
         // Return WHERE clause
         return $where;
+    }
+
+    /**
+     * Prepare arguments for $this->_odata() function call, and call that function for fetching filter-combo options data.
+     * This function handles all cases, related to combo options data fetch, such as
+     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * combo when country was selected in first combo), and all this for filter combos
+     *
+     * @param string $for A name of field, that combo data should be fetched for
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     */
+    public function indexActionOdata($for, $post) {
+
+        // Get the field
+        $field = Indi::trail()->model->fields($for);
+
+        // Find a filter, representing the given field, and get it's WHERE clause
+        $where = ($filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0)) ? $filter->filter : null;
+
+        // Setup a row
+        $this->row = Indi::trail()->filtersSharedRow;
+
+        // Prepare and flush json-encoded combo options data
+        $this->_odata($for, $post, $field, $where);
+    }
+
+    /**
+     * Prepare arguments for $this->_odata() function call, and call that function for fetching combo options data.
+     * This function handles all cases, related to combo options data fetch, such as
+     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * combo when country was selected in first combo), and all this for form and sibling combos
+     *
+     * @param string $for A name of field, that combo data should be fetched for
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     */
+    public function formActionOdata($for, $post) {
+
+        // If options data is for sibling combo
+        if ($for == 'sibling') {
+
+            // Create pseudo field for sibling combo
+            $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
+                $for, Indi::trail()->section->entityId, Indi::trail()->scope->WHERE);
+            $this->row->$for = Indi::uri()->id;
+            $order = Indi::trail()->scope->ORDER;
+            $dir = array_pop(explode(' ', $order));
+            $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
+            if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
+
+            // Else if options data is for combo, associated with a existing form field
+        } else $field = Indi::trail()->model->fields($for);
+
+        // Prepare and flush json-encoded combo options data
+        $this->_odata($for, $post, $field, null, $order, $dir, $offset);
+    }
+
+    /**
+     * Fetch combo options data. This function handles all cases, related to combo options data fetch, such as
+     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * combo when country was selected in first combo), and all this for form, filter and sibling combos
+     *
+     * @param string $for A name of field, that combo data should be fetched for
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param Field_Row $field
+     * @param string $where
+     * @param string $order
+     * @param string $dir
+     * @param string $offset
+     */
+    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
+
+        // Get combo data rowset
+        $comboDataRs = $post->keyword
+            ? $this->row->getComboData(
+                $for, $post->page, $post->keyword, true, $post->satellite, $where, false, $field, $order, $dir)
+            : $this->row->getComboData(
+                $for, $post->page, $this->row->$for, false, $post->satellite, $where, false, $field, $order, $dir, $offset);
+
+        // Prepare combo options data
+        $comboDataA = $comboDataRs->toComboData($field->params);
+
+        $options = $comboDataA['options'];
+        $titleMaxLength = $comboDataA['titleMaxLength'];
+
+        $options = array('ids' => array_keys($options), 'data' => array_values($options));
+
+        // Setup number of found rows
+        if ($comboDataRs->found()) $options['found'] = $comboDataRs->found();
+
+        // Setup tree flag
+        if ($comboDataRs->model()->treeColumn()) $options['tree'] = true;
+
+        // Setup groups for options
+        if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
+
+        // Setup additional attributes names list
+        if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
+
+        // Setup `titleMaxLength` property
+        $options['titleMaxLength'] = $titleMaxLength;
+
+        // Flush
+        jflush(true, $options);
     }
 }
