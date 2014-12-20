@@ -10,14 +10,14 @@ Ext.define('Indi', {
      */
     enableQuickTips: false,
     name: 'Indi',
-    appFolder: '../js/admin/app',
+    appFolder: '/js/admin/app',
 
     // @inheritdoc
     constructor: function (cfg) {
         var me = this;
 
         // Normalize appFolder path
-        me.appFolder = me.appFolder.substr(cfg.statics.com ? 0: 1);
+        me.appFolder = cfg.statics.std + me.appFolder;
 
         // Call parent
         me.callParent(arguments);
