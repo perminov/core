@@ -108,15 +108,6 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         if (me.store.enumset) me.keywordEl.attr('no-lookup', 'true');
     },
 
-    /**
-     * Builds a path to make a fetch request to
-     *
-     * @return string
-     */
-    fetchRelativePath: function() {
-        return Indi.pre + '/' + this.ctx().ti().section.alias + '/form/';
-    },
-
     // @inheritdoc
     afterRender: function() {
         var me = this;

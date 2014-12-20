@@ -301,9 +301,9 @@ Ext.define('Indi.lib.trail.Trail', {
             } catch (e) {
                 console.log(e.stack);
             }
-        } catch (e){
+        } catch (e) {
             Ext.define('Indi.controller.' + Indi.trail().section.alias, {extend: 'Indi.Controller'});
-            Indi.app.getController(Indi.trail().section.alias).dispatch(Indi.trail().action.alias);
+            Indi.app.getController(Indi.trail().section.alias).dispatch(Indi.trail().action.alias, Indi.story[Indi.story.length-1]);
         }
     },
 

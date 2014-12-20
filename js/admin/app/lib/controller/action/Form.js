@@ -215,6 +215,16 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
+     * This config is to specify the only fields that should be displayed. This can be
+     * 1. A string, containing comma-separated list of ids/aliases
+     * 2. An array, containing ids/aliases
+     * 3. Function, returning values compatible to both upper points
+     *
+     * @var {Array/String/Function}
+     */
+    formItemOnlyA: [],
+
+    /**
      * Build and return array of form panel items
      *
      * @return {Array}
@@ -222,21 +232,44 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemA: function() {
 
         // Declare a number of auxiliary variables
-        var me = this, itemA = [], itemI, itemX, fnItemX, item$, fnItem$;
+        var me = this, itemA = [], itemI, itemX, fnItemX, item$, fnItem$, formItemOnlyA, build;
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
         var disabledA = me.ti().disabledFields.select('0', 'displayInForm').column('fieldId');
         var visibleA = me.ti().disabledFields.select('1', 'displayInForm').column('fieldId');
 
+        // If me.formItemOnlyA is a function - call it
+        formItemOnlyA = Ext.isFunction(me.formItemOnlyA) ? me.formItemOnlyA() : me.formItemOnlyA;
+
+        // If `formItemOnlyA` variable is an object - convert it to empty array
+        if (Ext.isObject(formItemOnlyA)) formItemOnlyA = [];
+
+        // If formItemOnlyA is a non-empty string - convert it to array by comma-splitting
+        if (Ext.isString(formItemOnlyA) && formItemOnlyA.length) formItemOnlyA = formItemOnlyA.split(',');
+
         // Header form item
         itemA.push(me.formItemXSpan());
 
         // Other form items (fields)
-        for (var i = 0; i < me.ti().fields.length; i++)
+        for (var i = 0; i < me.ti().fields.length; i++) {
+
+            // Reset `build` to `false`
+            build = false;
+
+            // Detect whether or not field should be presented in form
+            if (formItemOnlyA.length) {
+                if (formItemOnlyA.indexOf(me.ti().fields[i].id) != -1) {
+                    build = true;
+                } else if (formItemOnlyA.indexOf(me.ti().fields[i].alias) != -1) {
+                    build = true;
+                }
+            } else if (disabledA.indexOf(me.ti().fields[i].id) == -1) {
+                build = true;
+            }
 
             // If current field is not disabled, or disabled but visible
-            if (disabledA.indexOf(me.ti().fields[i].id) == -1) {
+            if (build) {
 
                 // Setup default config
                 itemI = me.formItemDefault(me.ti().fields[i]);
@@ -270,6 +303,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     itemA.push(itemI);
                 }
             }
+        }
 
         // Return form items (fields) array
         return itemA;

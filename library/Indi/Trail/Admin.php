@@ -72,7 +72,7 @@ class Indi_Trail_Admin {
         // Get accessible nested sections for each section within the trail
         $sectionRs->nested('section', array(
             'where' => array(
-                '`sectionId` IN (' . implode(',', $accessibleSectionIdA) . ')',
+                '`sectionId` IN ("' . implode('","', $accessibleSectionIdA) . '")',
                 '`toggle` = "y"'
             ),
             'order' => 'move'
