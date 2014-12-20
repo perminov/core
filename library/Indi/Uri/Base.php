@@ -68,9 +68,15 @@ class Indi_Uri_Base {
     }
 
     /**
-     * Dispatch the uri
+     * Dispatch the current uri. If $uri argument is given,
+     * the current uri will be replaced with given, and then dispatched
+     *
+     * @param string $uri
      */
-    public function dispatch(){
+    public function dispatch($uri = ''){
+
+        // If $uri argument is given - parse it
+        if ($uri) $this->parse($uri);
 
         // Do pre-dispatch operations
         $this->preDispatch();
