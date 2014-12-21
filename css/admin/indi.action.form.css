@@ -31,15 +31,6 @@
     width: 50% !important;
 }
 
-.i-field-dirty-icon {
-    background-image: url('/i/admin/dirty-orange.gif');
-    background-position: 0 0;
-    background-repeat: no-repeat;
-    width: 5px;
-    height: 5px;
-    position: absolute;
-}
-
 .i-field.i-field-date .x-form-trigger-wrap{
     width: 79px !important;
 }
@@ -99,9 +90,6 @@
 .i-field.i-field-multicheck .x-form-checkboxgroup-body {
     padding: 2px 0 0 0;
 }
-textarea.x-form-field {
-    color: inherit;
-}
 
 /* Style for action form topbar spinners*/
 .x-toolbar .x-form-trigger-wrap .x-form-spinner-down{
@@ -119,32 +107,6 @@ textarea.x-form-field {
 }
 
 .i-radio-color-box {width: 14px; height: 10px; display: inline-block; position: relative; top: 1px; margin-right: 4px;}
-
-/* Errors styling */
-.x-form-invalid-tip-default {
-    background-color: rgba(204, 51, 0, 0.8);
-    -moz-border-radius: 0;
-    -webkit-border-radius: 0;
-    -o-border-radius: 0;
-    -ms-border-radius: 0;
-    -khtml-border-radius: 0;
-    border-radius: 0;
-    border-width: 0;
-    padding: 4px 6px 4px 8px;
-}
-.x-form-invalid-tip {
-    -webkit-box-shadow: none;
-    -o-box-shadow: none;
-    box-shadow: none;
-}
-
-.x-form-invalid-tip-body {
-    background-image: none;
-    padding-left: 0;
-}
-.x-form-invalid-tip-body li {
-    color: white;
-}
 
 /* Browser fixes */
 .x-safari .x-form-cb-label.x-form-cb-label-after{

@@ -56,10 +56,13 @@
     ));
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',
+        '/css/admin/indi.all.css',
+        '/css/admin/indi.all.default.css',
         '/css/admin/indi.layout.css',
         '/css/admin/indi.action.form.css',
         '/css/admin/indi.trail.css',
-        '/css/admin/indi.combo.css'
+        '/css/admin/indi.combo.css',
+        '/css/admin/indi.combo.default.css'
     ));
     ?>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>

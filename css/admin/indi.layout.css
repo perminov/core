@@ -381,40 +381,6 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-shrinklist-above {border-top-width: 1px; border-bottom-width: 1px;}
 .x-shrinklist-list-ct {width: 200%;}
 
-/* Tooltip styles */
-
-.i-tip {
-    -moz-border-radius: 0px;
-    -webkit-border-radius: 0px;
-    -o-border-radius: 0px;
-    -ms-border-radius: 0px;
-    -khtml-border-radius: 0px;
-    border-radius: 0px;
-    padding: 1px 2px 2px 2px;
-    border-width: 1px;
-    border-style: solid;
-    background-image: none;
-    background-color: blue;
-    border-color: blue;
-    opacity: 0;
-}
-.x-nlg .x-tip-mc {
-    background-color: blue;
-    background-image: none;
-}
-.x-nbr .x-tip-tl, .x-nbr .x-tip-tc, .x-nbr .x-tip-tr, .x-nbr .x-tip-ml, .x-nbr .x-tip-mr, .x-nbr .x-tip-bl, .x-nbr .x-tip-bc, .x-nbr .x-tip-br{
-    background-color: blue;
-    background-image: none;
-}
-.x-ie-shadow{
-    background: none;
-}
-.i-tip .x-tip-body{color: white;}
-.i-tip .x-tip-anchor.x-tip-anchor-bottom{border-top-color: inherit;}
-.i-tip .x-tip-anchor.x-tip-anchor-top{border-bottom-color: inherit;}
-.i-tip .x-tip-anchor.x-tip-anchor-right{border-left-color: inherit;}
-.i-tip .x-tip-anchor.x-tip-anchor-left{border-right-color: inherit;}
-.i-tip .x-tip-anchor{ display: inherit !important;}
 .i-cb-autosave .x-form-cb-wrap{padding-top: 0;}
 .i-action-form-topbar-button-save.x-btn-default-toolbar-small .x-btn-inner{
     padding-right: 0px;
