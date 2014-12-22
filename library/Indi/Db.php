@@ -335,14 +335,8 @@ class Indi_Db {
             self::$queryCount++;
 
             // If no rows were affected and error reporting ($silence argument) is turned on
-            if ($affected === false && $silence == false) {
-
-                // Display error message, backtrace info and make the global stop
-                echo array_pop(self::$_pdo->errorInfo()) . '<br>';
-                echo "SQL query: " . $sql . '<br>';
-                d(debug_print_backtrace());
-                die();
-            }
+            // Display error message, backtrace info and make the global stop
+            if ($affected === false && $silence == false) $this->jerror($sql);
 
             // Return affected rows count as a result of query execution
             return $affected;
@@ -363,22 +357,39 @@ class Indi_Db {
             self::$queryCount++;
 
             // If query execition was not successful and mysql error reporting is on
-            if (!$stmt && $silence == false) {
-
-                // Display error message, backtrace info and make the global stop
-                echo array_pop(self::$_pdo->errorInfo()) . '<br>';
-                echo "SQL query: " . $sql . '<br>';
-                d(debug_print_backtrace());
-                die();
+            // Display error message, backtrace info and make the global stop
+            if (!$stmt && $silence == false) $this->jerror($sql);
 
             // Else if all was ok, setup fetch mode as PDO::FETCH_ASSOC
-            } else if ($stmt) {
-                $stmt->setFetchMode(PDO::FETCH_ASSOC);
-            }
+            else if ($stmt) $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
             // Return PDO statement
             return $stmt;
         }
+    }
+
+    /**
+     * Flush the special-formatted error in case if mysql query execution failed
+     *
+     * @param string $sql An SQL query, that coused an error
+     */
+    public function jerror($sql) {
+
+        // Get the native mysql error message
+        $errstr = array_pop(self::$_pdo->errorInfo());
+
+        // Prepend the sql query
+        $errstr = $sql . ' - ' . $errstr;
+
+        // Remove the useless shit
+        $errstr = str_replace('; check the manual that corresponds to your MySQL server version for the right syntax to use', '', $errstr);
+        $errstr = preg_replace('/at line [0-9]+/', '', $errstr);
+
+        // Get line and file
+        extract(array_pop(array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1, 1)));
+
+        // Flush an error
+        die(jerror(0, $errstr, $file, $line));
     }
 
     /**
