@@ -94,6 +94,7 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE', 'Дата "%s", ука
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Значение "%s", указанное в поле "%s" в качестве времени - не является временем');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Время "%s", указанное в поле "%s" - должно быть корректным');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Значение "%s" поля "%s" должно быть числом имеющим не более 5 разрядов в целочисленной части, и не более 2-х - в дробной');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Значение "%s" поля "%s" должно быть числом имеющим не более 8 разрядов в целочисленной части, и не более 2-х - в дробной');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Значение "%s" поля "%s" не является годом в формате ГГГГ');
 define('I_ROWSAVE_ERROR_NOTDIRTY_TITLE', 'Нечего сохранять');
 define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'Вы пока не сделали никаких изменений');

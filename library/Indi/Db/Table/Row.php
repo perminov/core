@@ -1638,6 +1638,18 @@ class Indi_Db_Table_Row implements ArrayAccess
                     continue;
                 }
 
+            } else if ($elementR->alias == 'price') {
+
+                // If $value is not a decimal
+                if (!preg_match(Indi::rex('decimal112'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
             // If element is 'radio', or element is 'combo' and field store relation ability is 'one'
             } else if ($elementR->alias == 'radio' || ($elementR->alias == 'combo' && $fieldR->storeRelationAbility == 'one')) {
 
@@ -2012,6 +2024,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // Push a error to errors stack
                         $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'DECIMAL(11,2)'
+                } else if ($columnTypeR->type == 'DECIMAL(11,2)') {
+
+                    // If $value is not a decimal, or more than 11-digit decimal
+                    if (!preg_match(Indi::rex('decimal112'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112, $value, $fieldR->title);
 
                         // Jump to checking the next column's value
                         continue;

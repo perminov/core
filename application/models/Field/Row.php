@@ -407,6 +407,20 @@ class Field_Row extends Indi_Db_Table_Row {
                     $defaultValue = '0';
                 }
 
+            // Else if column type is DECIMAL(11,2)
+            } else if ($columnTypeR->type == 'DECIMAL(11,2)') {
+
+                // If $php is true, or default value does not match the column type signature
+                if ($php || !preg_match(Indi::rex('decimal112'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a positive integer - we set field's `defaultValue` as '0'
+                    if (!$php) $this->defaultValue = '0';
+
+                    // Set $defaultValue as '0'
+                    $defaultValue = '0';
+                }
+
             // Else if column type is DATE
             } else if ($columnTypeR->type == 'DATE') {
 
@@ -1041,7 +1055,7 @@ class Field_Row extends Indi_Db_Table_Row {
                 // Setup an array with several column types and possible characters sets for each type.
                 $reg = array(
                     'YEAR' => '[0-9]', 'DATE' => '[0-9\-]', 'DATETIME' => '[0-9\- :]',
-                    'TIME' => '[0-9:]', 'INT' => '[0-9]', 'DOUBLE' => '[0-9\.]'
+                    'TIME' => '[0-9:]', 'INT' => '[\-0-9]', 'DOUBLE' => '[0-9\.]', 'DECIMAL' => '[\-0-9\.]'
                 );
 
                 // We check if db table column type is presented within a keys of $reg array, and if so, we check
