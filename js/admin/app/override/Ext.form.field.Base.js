@@ -26,6 +26,7 @@ Ext.override(Ext.form.field.Base, {
             textfield: '',
             datefield: '0000-00-00',
             numberfield: '0',
+            pricefield: '0.00',
             textarea: ''
         }
     },

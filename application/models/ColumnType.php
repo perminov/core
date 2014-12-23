@@ -11,6 +11,7 @@ class ColumnType extends Indi_Db_Table {
         'INT(11)' => '0',
         'TEXT' => '',
         'DOUBLE(7,2)' => '0.00',
+        'DECIMAL(11,2)' => '0.00',
         'DATE' => '0000-00-00',
         'YEAR' => '0000',
         'TIME' => '00:00:00',
