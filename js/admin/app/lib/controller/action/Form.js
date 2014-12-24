@@ -498,6 +498,23 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
+     * Price-fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXPrice: function(item) {
+        return {
+            xtype: 'numberfield',
+            cls: 'i-field-number',
+            afterSubTpl: '<span class="i-field-number-after">'+ (item.field.params && item.field.params.measure ? item.field.params.measure : '')+'</span>',
+            maxLength: 12,
+            minValue: 0,
+            precisionPad: true
+        };
+    },
+
+    /**
      * Textarea-fields config adjuster
      *
      * @param item

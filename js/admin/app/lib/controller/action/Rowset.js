@@ -1107,7 +1107,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Other fields
         for (var i = 0; i < me.ti().gridFields.length; i++) {
-            fieldI = me.storeField_Default(me.ti().gridFields[i]);
+            fieldI = me.storeField_Default(me.ti().fields.r(me.ti().gridFields[i].id));
             fieldICustom = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
             if (typeof me[fieldICustom] == 'function') fieldI = me[fieldICustom](fieldI);
             if (fieldI) fieldA.push(fieldI);
@@ -1125,7 +1125,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeField_Default: function(field) {
         return {
             name: field.alias,
-            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 && !parseInt(field.satellite)? 'int' : 'string'
+            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 && !parseInt(field.satellite)
+                ? (field.foreign('elementId').alias == 'price' ? 'float' : 'int') : 'string'
         }
     },
 

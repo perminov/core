@@ -2370,7 +2370,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param data
      */
     remoteFetch: function(data) {
-        var me = this, url = me.ctx().uri;
+        var me = this, url = me.ctx().uri.split('?')[0];
 
         // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
         // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action

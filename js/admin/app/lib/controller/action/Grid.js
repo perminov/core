@@ -129,7 +129,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXNumber: function(column, field) {
         return {
             thousandSeparator: ' ',
-            decimalSeparator: ',',
+            decimalSeparator: '.',
             decimalPrecision: 0,
             renderer: function(v, m, r, i, c, s) {
                 var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
@@ -138,12 +138,17 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+    gridColumnXPrice: function(column, field) {
+        return Ext.merge(this.gridColumnXNumber(column, field), {
+            decimalPrecision: 2
+        });
+    },
+
     gridColumnXMove: function(column, field) {
         return {
             hidden: true
         }
     },
-
 
     /**
      * Build an array, representing grid columns for the given column level,

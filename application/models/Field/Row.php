@@ -414,11 +414,11 @@ class Field_Row extends Indi_Db_Table_Row {
                 if ($php || !preg_match(Indi::rex('decimal112'), $defaultValue)) {
 
                     // If $defaultValue does not contain php expressions and
-                    // is not a positive integer - we set field's `defaultValue` as '0'
-                    if (!$php) $this->defaultValue = '0';
+                    // is not a positive integer - we set field's `defaultValue` as '0.00'
+                    if (!$php) $this->defaultValue = '0.00';
 
                     // Set $defaultValue as '0'
-                    $defaultValue = '0';
+                    $defaultValue = '0.00';
                 }
 
             // Else if column type is DATE
