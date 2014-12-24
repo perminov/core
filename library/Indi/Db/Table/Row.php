@@ -1482,7 +1482,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $tags
      * @return string
      */
-    public static function safeHtml($html, $tags = 'font,span') {
+    public static function safeHtml($html, $tags = 'font,span,br') {
 
         // Strip all tags, except tags, mentioned in $tags argument
         $html = strip_tags($html, '<' . preg_replace('/,/', '><', $tags) . '>');
