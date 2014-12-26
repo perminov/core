@@ -25,7 +25,7 @@ Ext.override(Ext.form.field.Number, {
         value = me.fixPrecision(value);
         value = Ext.isNumber(value) ? value : parseFloat(String(value).replace(decimalSeparator, '.'));
         value = isNaN(value) ? '' : String(value).replace('.', decimalSeparator);
-        if (me.precisionPad) value = Indi.numberFormat(value, me.decimalPrecision, decimalSeparator);
+        if (me.precisionPad) value = Indi.numberFormat(value, me.decimalPrecision, decimalSeparator, '');
         if (me.zeroPad && value.length)
             value = Ext.String.leftPad(value, me.zeroPad + (me.precisionPad ? me.decimalPrecision + 1 : 0), '0');
 

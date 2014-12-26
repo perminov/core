@@ -177,7 +177,21 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function save() {
 
         // Check conformance to all requirements
-        if (count($this->mismatch(true))) return false;
+        if (count($this->mismatch(true))) {
+
+            // Rollback changes
+            Indi::db()->rollback();
+
+            // Flush mismatch
+            jflush(false, array('mismatch' => array(
+                'entity' => array(
+                    'title' => $this->model()->title(),
+                    'entry' => $this->id
+                ),
+                'errors' => $this->_mismatch,
+                'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
+            )));
+        }
 
         // Backup original and modified data
         $original = $this->_original; $modified = $this->_modified;
@@ -1639,6 +1653,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
 
             } else if ($elementR->alias == 'price') {
+
+                // Round the value to 2 digits after floating point
+                if (is_numeric($value)) $value = ((int) round($value * 100))/100;
 
                 // If $value is not a decimal
                 if (!preg_match(Indi::rex('decimal112'), $value)) {
@@ -3105,5 +3122,16 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return $this;
+    }
+
+    /**
+     * Get the difference between modified and original values for a given property.
+     * This method is for use with only properties, that have numeric values
+     *
+     * @param $prop
+     * @return mixed
+     */
+    function moDelta($prop) {
+        return array_key_exists($prop, $this->_modified) ? $this->_modified[$prop] - $this->_original[$prop] : 0;
     }
 }

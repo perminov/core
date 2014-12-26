@@ -45,6 +45,13 @@ class Indi_Db {
     public static $queryCount = 0;
 
     /**
+     * Flag
+     *
+     * @var bool
+     */
+    protected static $_transactionLevel = 0;
+
+    /**
      * Initial database setup, if $config argument is provided, or just return the singleton instance otherwise
      *
      * @static
@@ -426,5 +433,44 @@ class Indi_Db {
 
         // Return false
         return false;
+    }
+
+    /**
+     * Begin the transaction, if it not had yet begun
+     */
+    public function begin() {
+
+        // Begin the transaction, if it not had yet begun
+        if (self::$_transactionLevel == 0) self::$_instance->query('START TRANSACTION');
+
+        // Increment the transaction level
+        self::$_transactionLevel ++;
+    }
+
+    /**
+     * Rollback the transaction
+     */
+    public function rollback() {
+
+        // Rollback
+        self::$_instance->query('ROLLBACK');
+
+        // Return `false`. Here we do it because we will be using 'return Indi::db()->rollback()' statements
+        return false;
+    }
+
+    /**
+     * Commit the transaction
+     */
+    public function commit() {
+
+        // Decrease the transaction level
+        self::$_transactionLevel --;
+
+        // if we a at the most top transaction level - commit the transaction,
+        if (self::$_transactionLevel == 0) self::$_instance->query('COMMIT');
+
+        // Return `false`. Here we do it because we will be using 'return Indi::db()->rollback()' statements
+        return true;
     }
 }
