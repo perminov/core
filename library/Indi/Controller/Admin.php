@@ -1812,6 +1812,51 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     * This function is an injection that allows to adjust disabled fields before they take effect,
+     * so if there is a need to add some fields to the list of disabled, or exclude some - this should
+     * be done within this function's body, using appendDisabledField() and excludeDisabledFields() methods
+     */
+    public function adjustDisabledFields() {
+
+    }
+
+    /**
+     * Append the field, identified by $alias, to the list of disabled fields
+     *
+     * @param string $alias Field name/alias
+     * @param bool $displayInForm Whether or not field should be totally disabled, or disabled but however visible
+     * @param string $defaultValue The default value for the disabled field
+     */
+    public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
+
+        // Append
+        Indi::trail()->disabledFields->append(array(
+            'id' => 0,
+            'sectionId' => Indi::trail()->section->id,
+            'fieldId' => Indi::trail()->model->fields($alias)->id,
+            'defaultValue' => $defaultValue,
+            'displayInForm' => $displayInForm ? 1 : 0,
+        ));
+    }
+
+    /**
+     * Exclude field/fields from the list of disabled fields by their aliases/names
+     *
+     * @param string $fields Comma-separated list of fields's aliases to be excluded from the list of disabled fields
+     */
+    public function excludeDisabledFields($fields) {
+
+        // Convert $fields argument into an array
+        $fieldA_alias = ar($fields);
+
+        // Get the ids
+        $fieldA_id = Indi::trail()->fields->select($fieldA_alias, 'alias')->column('id');
+
+        // Exclude
+        Indi::trail()->disabledFields->exclude($fieldA_id, 'fieldId');
+    }
+
+    /**
      * Do auth for selected row, assuming it is a row of `User` model
      */
     public function loginAction() {

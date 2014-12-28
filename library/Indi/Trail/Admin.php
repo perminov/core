@@ -160,6 +160,9 @@ class Indi_Trail_Admin {
                 Indi::trail($i)->scope = new Indi_Trail_Admin_Item_Scope($i);
                 Indi::trail($i)->filtersSharedRow($i);
             }
+
+        // Adjust disabled fields
+        self::$controller->adjustDisabledFields();
     }
 
     /**
