@@ -2253,10 +2253,10 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.store.ids = [];
 
         // Prepare regular expression for keyword search
-        var keywordReg = new RegExp('^'+Indi.pregQuote(data.keyword, '/'), 'i');
+        var keywordReg = new RegExp(Indi.pregQuote(data.keyword, '/'), 'i');
 
         // Prepare regular expression for keyword, if it was typed in wrong keyboard layout
-        var keywordRegWKL = new RegExp('^'+Indi.pregQuote(me.convertWKL(data.keyword), '/'), 'i');
+        var keywordRegWKL = new RegExp(Indi.pregQuote(me.convertWKL(data.keyword), '/'), 'i');
 
         // This variable will contain a title, which will be tested against a keyword
         var against;

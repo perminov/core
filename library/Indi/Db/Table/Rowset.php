@@ -1240,7 +1240,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @param array $original
      */
     public function append(array $original) {
-        $this->_rows[] = new $this->_rowClass(array('original' => $original));
+        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->model()->table()));
         $this->_count++;
         $this->_found++;
     }
