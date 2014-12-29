@@ -212,16 +212,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
     /**
      * Adjust grid columns widths, for widths to match column contents
      */
-    gridColumnAFit: function() {
+    gridColumnAFit: function(grid) {
 
         // Suspend layouts
         Ext.suspendLayouts();
 
         // Setup auxiliary variables
-        var me = this, grid = Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
+        var me = this, grid = grid || Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
             widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, cellWidth,
-            visible = grid.getWidth(), scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction,
-            sctw = 0, fcw, hctw = 0, busy = 0, free;
+            visible = grid.getWidth() - (grid.getView().hasScrollY() ? 16 : 0), scw = me.rowset.smallColumnWidth,
+            fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free;
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {

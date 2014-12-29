@@ -21,6 +21,7 @@
         '/js/admin/app/override/Ext.form.field.Date.js',
         '/js/admin/app/override/Ext.picker.Date.js',
         '/js/admin/app/override/Ext.form.field.Checkbox.js',
+        '/js/admin/app/override/Ext.grid.View.js',
 
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
