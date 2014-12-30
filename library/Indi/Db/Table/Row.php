@@ -189,7 +189,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     'entry' => $this->id
                 ),
                 'errors' => $this->_mismatch,
-                'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
+                'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
             )));
         }
 
@@ -3133,5 +3133,18 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     function moDelta($prop) {
         return array_key_exists($prop, $this->_modified) ? $this->_modified[$prop] - $this->_original[$prop] : 0;
+    }
+
+    /**
+     * This function assumes that $prop - is the name of the property, that contains date in a some format,
+     * so function convert it into timestamp and then convert it back to date, but in a custom format, provided
+     * by $format argument. Output format is 'Y-m-d' by default
+     *
+     * @param $prop
+     * @param string $format
+     * @return string
+     */
+    function date($prop, $format = 'Y-m-d') {
+        return date($format, strtotime($this->$prop));
     }
 }
