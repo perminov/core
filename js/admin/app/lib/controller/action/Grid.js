@@ -92,7 +92,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
             id: this.bid() + '-rowset-grid-column-' + field.alias,
             header: field.title,
             dataIndex: field.alias,
-            cls: 'i-grid-column-filtered',
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
@@ -124,7 +123,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         return columnA;
     },
-
 
     gridColumnXNumber: function(column, field) {
         return {
