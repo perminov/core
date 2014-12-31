@@ -3147,4 +3147,19 @@ class Indi_Db_Table_Row implements ArrayAccess
     function date($prop, $format = 'Y-m-d') {
         return date($format, strtotime($this->$prop));
     }
+
+    /**
+     * Calls the parent class's same function, passing same arguments.
+     * This is similar to ExtJs's callParent() function, except that agruments are
+     * FORCED to be passed (in extjs, if you call this.callParent() - no arguments would be passed,
+     * unless you use this.callParent(arguments) expression instead)
+     */
+    function callParent() {
+
+        // Get call info from backtrace
+        $call = array_pop(array_slice(debug_backtrace(), 1, 1));
+
+        // Make the call
+        call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], $call['args']);
+    }
 }

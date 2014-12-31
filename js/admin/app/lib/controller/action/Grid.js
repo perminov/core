@@ -21,6 +21,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         border: 0,
 
         /**
+         * Features
+         */
+        features: [{
+            ftype: 'summary'
+        }],
+
+        /**
          * Docked items special config
          */
         docked: {
@@ -156,7 +163,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, colI, field, columnA = [], columnI, columnX, fnColumnX, column$, fnColumn$;
+        var me = this, colI, field, columnA = [], columnI, columnX, fnColumnX, column$, fnColumn$, fnColumnSummaryX;
 
         // Other columns
         for (var i = 0; i < colA.length; i++) {
@@ -198,6 +205,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 }
 
+                // Apply string-summary, if column's non-empty `summaryText` property detected
+                if (Ext.isObject(columnI) && columnI.summaryText) {
+                    columnI.summaryRenderer = function(value, summaryData, dataIndex) {
+                        return this.grid.headerCt.getGridColumns().r(dataIndex, 'dataIndex').summaryText;
+                    }
+                }
+
+                // Apply column 'sum' summary renderer config
+                fnColumnSummaryX = 'gridColumnSummaryX' + Indi.ucfirst(field.foreign('elementId').alias);
+                if (Ext.isObject(columnI) && columnI.summaryType && typeof me[fnColumnSummaryX] == 'function') {
+                    column$ = me[fnColumnSummaryX](columnI, field);
+                    columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                }
+
                 // Add column
                 if (columnI) columnA.push(columnI);
             }
@@ -205,6 +226,32 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Return columns array
         return columnA;
+    },
+
+    /**
+     * Summary renderer for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnSummaryXNumber: function(column, field) {
+        return {
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                return this.grid.headerCt.getGridColumns().r(dataIndex, 'dataIndex').renderer(value);
+            }
+        }
+    },
+
+    /**
+     * Summary renderer for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnSummaryXPrice: function(column, field) {
+        return this.gridColumnSummaryXNumber(column, field);
     },
 
     /**

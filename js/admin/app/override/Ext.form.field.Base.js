@@ -150,11 +150,14 @@ Ext.override(Ext.form.field.Base, {
     /**
      * Enable current field and fire 'enablebysatellite' event, passing an object containing all satellites values
      */
-    enableBySatellites: function() {
+    enableBySatellites: function(cfg) {
         var me = this;
 
         // Enable field
-        me.enable().clearValue();
+        if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
+
+        // Clear value
+        me.clearValue();
 
         // Fire 'enablebysatellite' event
         me.fireEvent('enablebysatellite', me, me.considerOnData());
@@ -163,8 +166,8 @@ Ext.override(Ext.form.field.Base, {
     /**
      * Check whether or not current field's satellites are in state, that allows to enable/disable current field
      */
-    toggleBySatellites: function() {
-        var me = this; if (!me.disableBySatellites()) me.enableBySatellites();
+    toggleBySatellites: function(cfg) {
+        var me = this; if (!me.disableBySatellites(cfg)) me.enableBySatellites(cfg);
     },
 
     /**
@@ -176,8 +179,8 @@ Ext.override(Ext.form.field.Base, {
         // Lookup current field's satellites changes, and toggle it, depending on their state
         me.ownerCt.query('> [satellite]').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
-                sbl.considerOn.forEach(function(stl){
-                    if (stl.name == me.name) sbl.toggleBySatellites();
+                sbl.considerOn.forEach(function(considerOnStlCfg){
+                    if (considerOnStlCfg.name == me.name) sbl.toggleBySatellites(considerOnStlCfg);
                 });
             }
         });
