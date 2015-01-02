@@ -89,6 +89,21 @@ class Indi_Db {
                 'SELECT * FROM `entity`' . ($entityId ? ' WHERE `id` = "' . $entityId . '"' : '')
             )->fetchAll();
 
+            // Fix tablename case, if need
+            if (!$entityId && !preg_match('/^WIN/i', PHP_OS) && self::$_instance->query('SHOW TABLES LIKE "columntype"')->fetchColumn()) {
+            
+                // Build an sql-query, that will construct sql-queries that will 
+                // fix tablename confusion for each database table affected
+                $needQ = 'SELECT CONCAT("RENAME TABLE `", LOWER(`table`), "` TO `", `table`, "`") '
+                        .'FROM `entity` WHERE LOWER(`table`) COLLATE utf8_bin != `table` COLLATE utf8_bin';
+                
+                // Get RENAME queries
+                $renameQA = self::$_instance->query($needQ)->fetchAll(PDO::FETCH_COLUMN);
+                
+                // Execute RENAME queries
+                foreach ($renameQA as $renameQI) self::$_instance->query($renameQI);
+            }
+
             // Get info about fields, existing within all entities, or one certain entity
             $fieldA = self::$_instance->query(
                 'SELECT * FROM `field`'  .
