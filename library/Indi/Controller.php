@@ -75,10 +75,17 @@ class Indi_Controller {
         }
 
         // Call the desired action method
-        $this->{Indi::uri()->action . 'Action'}();
+        $this->call(Indi::uri()->action);
 
         // Do the post-dispatch maintenance
         $this->postDispatch();
+    }
+
+    /**
+     * Call the desired action method
+     */
+    public function call($action) {
+        $this->{$action . 'Action'}();
     }
 
     /**
@@ -124,7 +131,6 @@ class Indi_Controller {
     public function __isset($property) {
         if (preg_match('/^row(set|)$/i', $property)) return isset(Indi::trail()->$property);
     }
-
 
     /**
      * Does nothing. Declared for possibility to adjust primary WHERE clause
@@ -520,7 +526,7 @@ class Indi_Controller {
      * FORCED to be passed (in extjs, if you call this.callParent() - no arguments would be passed,
      * unless you use this.callParent(arguments) expression instead)
      */
-    function callParent() {
+    public function callParent() {
 
         // Get call info from backtrace
         $call = array_pop(array_slice(debug_backtrace(), 1, 1));

@@ -1655,7 +1655,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             } else if ($elementR->alias == 'price') {
 
                 // Round the value to 2 digits after floating point
-                if (is_numeric($value)) $value = ((int) round($value * 100))/100;
+                if (is_numeric($value)) $value = price($value);
 
                 // If $value is not a decimal
                 if (!preg_match(Indi::rex('decimal112'), $value)) {

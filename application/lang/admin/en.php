@@ -34,6 +34,7 @@ define('I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE', 'You have no rights on this ac
 define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'One of parent sections for current section - is switched off');
 define('I_ACCESS_ERROR_ROW_ADDING_DISABLED', 'Row adding is restricted in this section');
 define('I_ACCESS_ERROR_ROW_DOESNT_EXIST', 'Row with such an id does not exist in this section');
+define('I_ACCESS_ERROR_ACTION_IS_OFF_DUETO_CIRCUMSTANCES', 'Action "%s" is accessible, but current circumstances do not suit for it to be performed');
 
 define('I_DOWNLOAD_ERROR_NO_ID', 'Row identifier either is not specified, or is not a number');
 define('I_DOWNLOAD_ERROR_NO_FIELD', 'Field identifier either is not specified, or is not a number');
