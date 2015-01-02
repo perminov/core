@@ -131,7 +131,25 @@ Ext.override(Ext.data.Connection, {
                 && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object') {
                 if (json.hasOwnProperty('success')) success = json.success;
                 if (json.hasOwnProperty('msg')) {
-                    Ext.Msg.show({
+                    Ext.Msg.show(json.hasOwnProperty('confirm') ? {
+                        title: Indi.lang.I_MSG,
+                        msg: json.msg,
+                        buttons: Ext.Msg.OKCANCEL,
+                        icon: Ext.Msg.QUESTION,
+                        modal: true,
+                        fn: function(answer) {
+
+                            // Remove 'answer' param, if it exists within url
+                            request.options.url = request.options.url.replace(/\banswer=(ok|no|cancel)/, '');
+
+                            // Append new answer param
+                            request.options.url = request.options.url.split('?')[0] + '?answer=' + answer
+                                + (request.options.url.split('?')[1] ? '&' + request.options.url.split('?')[1] : '');
+
+                            // Make new request
+                            me.request(request.options);
+                        }
+                    } : {
                         title: Indi.lang[json.hasOwnProperty('success') && json.success ? 'I_MSG' : 'I_ERROR'],
                         msg: json.msg,
                         buttons: Ext.Msg.OK,

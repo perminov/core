@@ -152,38 +152,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Flush the json-encoded message, containing `status` property, and other optional properties
-     *
-     * @param $success
-     * @param mixed $msg1
-     * @param mixed $msg2
-     */
-    public function jflush($success, $msg1 = null, $msg2 = null) {
-
-        // Start building data for flushing
-        $flush = array('success' => $success);
-
-        // Deal with first data-argument
-        if (func_num_args() > 1 && func_get_arg(1) != null)
-            $mrg1 = is_object($msg1)
-                ? (in('toArray', get_class_methods($msg1)) ? $msg1->toArray() : (array) $msg1)
-                : (is_array($msg1) ? $msg1 : array('msg' => $msg1));
-
-        // Deal with second data-argument
-        if (func_num_args() > 2 && func_get_arg(2) != null)
-            $mrg2 = is_object($msg2)
-                ? (in('toArray', get_class_methods($msg2)) ? $msg2->toArray() : (array) $msg2)
-                : (is_array($msg2) ? $msg2 : array('msg' => $msg2));
-
-        // Merge the additional data to the $flush array
-        if ($mrg1) $flush = array_merge($flush, $mrg1);
-        if ($mrg2) $flush = array_merge($flush, $mrg2);
-
-        // Flush
-        die(json_encode($flush));
-    }
-
-    /**
      * Gets $within param and call $row->move() method with that param.
      * This was created just for use in in $controller->downAction() and $controller->upAction()
      *
@@ -1643,9 +1611,6 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function saveAction($redirect = true) {
 
-        // Do pre-save operations
-        $this->preSave();
-
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
 
@@ -1654,7 +1619,6 @@ class Indi_Controller_Admin extends Indi_Controller {
         foreach ($possibleA as $possibleI)
             if (array_key_exists($possibleI, Indi::post()))
                 $data[$possibleI] = Indi::post($possibleI);
-
 
         // Unset 'move' key from data, because 'move' is a system field, and it's value will be set up automatically
         unset($data['move']);
@@ -1700,6 +1664,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Prepare metadata, related to fileupload fields contents modifications
         $this->row->files($filefields);
 
+        // Do pre-save operations
+        $this->preSave();
+
         // Save the row
         $this->row->save();
 
@@ -1728,9 +1695,6 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup row index
         $this->setScopeRow();
-
-        // Flush mismatches
-        if ($this->row->mismatch()) jflush(false, array('mismatch' => $this->row->mismatch()));
 
         // Do post-save operations
         $this->postSave();
@@ -1873,5 +1837,44 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function printAction() {
         Indi::trail()->view->mode = 'view';
+    }
+
+    /**
+     * Call the desired action method
+     */
+    public function call($action) {
+
+        // If action was not excluded from the list of allowed actions - call it
+        if (!Indi::trail(true) || Indi::trail()->actions->select($action, 'alias')->at(0)) $this->{$action . 'Action'}();
+
+        // Else flush an error message
+        else jflush(false, sprintf(I_ACCESS_ERROR_ACTION_IS_OFF_DUETO_CIRCUMSTANCES, Indi::model('Action')->fetchRow('`alias` = "' . $action . '"')->title));
+    }
+
+    /**
+     * Deny actions, enumerated within $actions argument, from being called
+     *
+     * @param $actions
+     */
+    public function deny($actions) {
+
+        // If 'create' action is in the list of actions to be denied
+        if (in('create', $actions)) {
+
+            // Convert $actions arg to an array
+            $actions = ar($actions);
+
+            // Setup current section's `disableAdd` property as 1
+            Indi::trail()->section->disableAdd = 1;
+
+            // If we deal with a new row - ensure it wouldn't be saved, and creation form wouldn't even be displayed
+            if (Indi::trail()->row && !Indi::trail()->row->id) {
+                $actions[] = 'save';
+                $actions[] = 'form';
+            }
+        }
+
+        // Apply exclusions to the list of allowed actions
+        Indi::trail()->actions->exclude($actions, 'alias');
     }
 }

@@ -661,3 +661,27 @@ function jflush($success, $msg1 = null, $msg2 = null) {
     // Flush
     die(json_encode($flush));
 }
+
+/**
+ * Flush the json-encoded message, containing `status` property, and other optional properties, especially for confirm
+ *
+ * @param string $msg
+ */
+function jconfirm($msg) {
+
+    // Start building data for flushing
+    $flush = array('confirm' => true, 'msg' => $msg);
+
+    // Flush
+    die(json_encode($flush));
+}
+
+/**
+ * Normalize the price-value
+ *
+ * @param $price
+ * @return float
+ */
+function price($price) {
+    return ((int) round($price * 100))/100;
+}
