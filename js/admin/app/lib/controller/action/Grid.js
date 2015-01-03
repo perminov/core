@@ -136,8 +136,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
             thousandSeparator: ' ',
             decimalSeparator: '.',
             decimalPrecision: 0,
+            displayZeroes: true,
             renderer: function(v, m, r, i, c, s) {
                 var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
+                if (column.displayZeroes === false && parseFloat(v) == 0) return '';
                 return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
             }
         }
@@ -145,6 +147,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
     gridColumnXPrice: function(column, field) {
         return Ext.merge(this.gridColumnXNumber(column, field), {
+            displayZeroes: true,
             decimalPrecision: 2
         });
     },
