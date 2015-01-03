@@ -2101,12 +2101,22 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param name
      */
     prop: function(name) {
-        var me = this, r;
-        return Ext.isObject(r = me.r(me.val()))
-            ? (me.store.enumset && !r.attrs[name].toString().match(/^[1-9][0-9]{0,9}$/)
-                ? r.attrs[name]
-                : parseInt(r.attrs[name]))
-            : null;
+        var me = this, r = me.r(me.val()), propS;
+
+        // If data object, representing current value was not found, return null
+        if (!Ext.isObject(r)) return null;
+
+        // Setup prop shortcut
+        propS = r.attrs[name].toString();
+
+        // If propS is a string, representing an integer number - convert it into interger-type and return
+        if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
+
+        // If propS is a string, representing a floating-point number - convert it into float-type and return
+        if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
+
+        // Retun as is
+        return propS;
     },
 
     /**
