@@ -53,6 +53,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Perform authentication
         $this->auth();
 
+        // Jump, if need
+        $this->jump();
+
         // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
         if (Indi::trail(true) && Indi::trail()->model) {
 
@@ -1756,10 +1759,12 @@ class Indi_Controller_Admin extends Indi_Controller {
             ? Indi::trail()->section->foreign('parentSectionConnector')->alias
             : Indi::trail(1)->model->table() . 'Id';
 
-        // Get the connector value
+        // Get the connector value. For 'jump' uris, we we are getting it as is - from a certain row's prop
         $connectorValue = Indi::uri('action') == 'index'
             ? Indi::uri('id')
-            : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id];
+            : (Indi::uri('jump')
+                ? Indi::trail()->model->fetchRow('`id` = "' . Indi::uri('id') . '"')->$connectorAlias
+                : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
         // Return clause
         return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
@@ -1876,5 +1881,79 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Apply exclusions to the list of allowed actions
         Indi::trail()->actions->exclude($actions, 'alias');
+    }
+
+    /**
+     * This function is used in case if user wants to jump from to some location (within the interface), that is
+     * represented by a section, that can't be accessed via menu, and can only be accessed by step-by-step
+     * navigation to a certain level of deepness within the system. For example, we have countries, regions, and cities
+     * sections and each of them is a subsection within the previous. Usually, if user wants to go to the list of cities
+     * within 'Region 1', he should click on the 'Countries' menu item at first, then select 'Country 1' in the list of
+     * countries, then click 'Regions' (so all regions within 'Country 1' are displayed), then select 'Region 1',
+     * then click 'Cities' - and only after that user will be able to view all cities within 'Region 1'. At all points
+     * within this navigation history, system is remembering each list's parameters, such as sorting, index of a row for
+     * 'Country 1' and 'Region 1' within the list they were displayed', and a number of other params, for ability,
+     * for example, to highlight 'Country 1' if user occasionally will return back to countries list. But if user wants
+     * to go directly to cities list within 'Region 1', system doesn't remembering all mentioned bread-crumb trail params,
+     * because it usually do it separately at each of all those navigation steps, that are all skipped in our case. So,
+     * this function allows to simulate these steps wouldn't be skipped
+     *
+     * @return mixed
+     */
+    public function jump() {
+
+        // If uri has no 'jump' param - return
+        if (!Indi::uri('jump')) return;
+
+        // Backup current trail's items
+        $ti = Indi_Trail_Admin::$items;
+
+        // Get the navigation steps
+        $nav = Indi::trail(true)->nav();
+
+        // Set up $_GET 'jump' param, that will tell controllers to perform only preDispatch() call
+        Indi::get('jump', 1); $ph = ''; $aix = '';
+
+        // Walk through hierarchy, setup scopes for each step as if user would manually navigate to each uri subsequently
+        for ($i = 0; $i < count($nav); $i++) {
+
+            // Append primary hash and row index (none of them will be appended at first-iteration)
+            $nav[$i] .=  $ph . $aix;
+
+            // Simulate as if rowset panel was loaded
+            Indi::uri()->dispatch($nav[$i]);
+
+            // Setup sorting
+            if (Indi::trail()->section->defaultSortField)
+                Indi::get('sort', json_encode(array(array(
+                    'property' => Indi::trail()->section->foreign('defaultSortField')->alias,
+                    'direction' => Indi::trail()->section->defaultSortDirection
+                ))));
+
+            // Simulate as if rowset data was loaded into rowset panel. This provide
+            // Indi::trail()->scope's fulfilness with `found` and `ORDER` properties
+            Indi::uri()->dispatch($nav[$i]. 'json/1/');
+
+            // Get the id of a row, that we will be simulating navigation
+            // to subsection, there that row's nested entries are located
+            preg_match('~/id/([0-9]+)/~', $nav[$i+1], $m); $id = $m[1];
+
+            // If next url (within $nav) is related to non-same section
+            if ($ti[$i+1]) {
+
+                // Get row index
+                $aix = $ti[$i+1]->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $id);
+
+                // Use the primary hash and row index for building corresponding parts of the uri for the next iteration
+                $ph = 'ph/' . Indi::trail()->scope->hash . '/';
+                $aix = 'aix/' . $aix . '/';
+            }
+        }
+
+        // Remove 'jump' param from $_GET
+        Indi::get('jump', null);
+
+        // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
+        $this->redirect(array_pop($nav));
     }
 }

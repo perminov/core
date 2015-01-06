@@ -499,7 +499,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 'multiple' => array()
             ),
             'boolean' => array(),
-            'double' => array(),
+            'price' => array(),
             'date' => array(),
             'datetime' => array(),
             'other' => array('id' => true)
@@ -518,9 +518,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Boolean values
             else if ($gridFieldR->foreign('columnTypeId')->type == 'BOOLEAN') $typeA['boolean'][$gridFieldR->alias] = true;
 
-            // Double values (prices, etc)
-            else if (preg_match('/^DOUBLE\(\d+,(\d+)\)$/', $gridFieldR->foreign('columnTypeId')->type, $m))
-                $typeA['double'][$gridFieldR->alias] = $m[1];
+            // Decimal values (prices, etc)
+            else if (preg_match('/^DECIMAL\(\d+,(\d+)\)$/', $gridFieldR->foreign('columnTypeId')->type, $m))
+                $typeA['price'][$gridFieldR->alias] = $m[1];
 
             // Date and datetime values. Also we're getting additional params - display format at least
             else if ($gridFieldR->foreign('columnTypeId')->type == 'DATE')
@@ -547,6 +547,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Foreach row within $this rowset
         foreach ($this as $pointer => $r) {
 
+            // Append system data
+            $data[$pointer]['_system'] = $r->system();
+
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
 
@@ -554,12 +557,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 if (isset($typeA['other'][$columnI]))
                     $data[$pointer][$columnI] = $r->$columnI;
 
-                // If field column type is 'double', we right pad column value by certain precision length
+                // If field column type is 'decimal', we right pad column value by certain precision length
                 // so if current row's price is '30.5' - we convert it to '30.50'
-                if (isset($typeA['double'][$columnI]))
+                if (isset($typeA['price'][$columnI]))
                     $data[$pointer][$columnI] = count($parts = explode('.', $r->$columnI))
-                        ? $parts[0] . '.' . str_pad($parts[1], $typeA['double'][$columnI], '0', STR_PAD_RIGHT)
-                        : $data[$pointer][$columnI] . str_pad('.', $typeA['double'][$columnI] + 1, '0', STR_PAD_RIGHT);
+                        ? $parts[0] . '.' . str_pad($parts[1], $typeA['price'][$columnI], '0', STR_PAD_RIGHT)
+                        : $data[$pointer][$columnI] . str_pad('.', $typeA['price'][$columnI] + 1, '0', STR_PAD_RIGHT);
 
                 // If field column type is 'boolean', we replace actual value with localized 'Yes' or 'No' strings
                 if (isset($typeA['boolean'][$columnI]))
@@ -606,6 +609,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     || isset($typeA['foreign']['single'][$columnI])
                     || isset($typeA['foreign']['multiple'][$columnI])) {
 
+                    // Process color boxes
                     if (preg_match(Indi::rex('hrgb'), $data[$pointer][$columnI], $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>#'. $color[1];
@@ -616,10 +620,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         $data[$pointer][$columnI] = preg_replace('/(<\/span>).*$/', '$1', $data[$pointer][$columnI]);
                     }
                 }
-            }
 
-            // Append system data
-            $data[$pointer]['_system'] = $r->system();
+                // Include the original foreign keys data
+                if (isset($typeA['foreign']['single'][$columnI])
+                    || isset($typeA['foreign']['multiple'][$columnI])
+                    || isset($typeA['boolean'][$columnI]))
+                    $data[$pointer]['$keys'][$columnI] = $r->$columnI;
+            }
 
             // Append temporary data
             $data[$pointer] = array_merge($data[$pointer], $r->temporary());

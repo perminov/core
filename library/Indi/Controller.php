@@ -74,6 +74,9 @@ class Indi_Controller {
             jflush(false, 'No odata');
         }
 
+        // If $_GET's 'jump' param is given - skip all below operations
+        if (Indi::get('jump')) return;
+
         // Call the desired action method
         $this->call(Indi::uri()->action);
 
