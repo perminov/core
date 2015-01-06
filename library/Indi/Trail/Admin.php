@@ -176,6 +176,15 @@ class Indi_Trail_Admin {
     }
 
     /**
+     * Get trail items count
+     *
+     * @return int
+     */
+    public function count() {
+        return count(self::$items);
+    }
+
+    /**
      * Build and return a string representation of trail, e.g bread crumbs
      * Currently used in excel export
      *
@@ -244,5 +253,28 @@ class Indi_Trail_Admin {
         }
         end(self::$items);
         return $array;
+    }
+
+    /**
+     * Get the array of uris, that represent the navigation steps,
+     * as if user navigated to current location by step-by-step
+     *
+     * @return array
+     */
+    public function nav() {
+
+        // Declare $nav array
+        $nav = array();
+
+        // Build $nav array
+        for ($i = 1; $i < count(self::$items); $i++)
+            $nav[] = '/' . self::$items[$i]->section->alias . '/index/' . ($i == 1 ? '' : 'id/' . self::$items[$i-1]->row->id . '/');
+
+        // Append non-index action, as additional navigation step
+        if ($this->item()->action->alias != 'index')
+            $nav[] = '/' . $this->item()->section->alias . '/' . $this->item()->action->alias . '/id/' . $this->item()->row->id . '/';
+
+        // Return
+        return $nav;
     }
 }

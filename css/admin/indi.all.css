@@ -73,3 +73,6 @@ textarea.x-form-field {
 .i-tip .x-tip-anchor.x-tip-anchor-right{border-left-color: inherit;}
 .i-tip .x-tip-anchor.x-tip-anchor-left{border-right-color: inherit;}
 .i-tip .x-tip-anchor{ display: inherit !important;}
+
+[jump],[load]{cursor: pointer;}
+.x-grid-cell-inner [load],.x-grid-cell-inner [jump]{text-decoration: underline;}
