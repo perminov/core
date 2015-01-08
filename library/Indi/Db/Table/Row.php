@@ -563,7 +563,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If $order is not null, but is an empty string, we set is as 'id' for results being fetched in the order of
             // their physical appearance in database table, however, regarding $dir (ASC or DESC) param.
-        } else if (!strlen($order)) {
+        } else if (!is_array($order) && !strlen($order)) {
             $order = 'id';
         }
 
@@ -571,7 +571,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
         // So, if order is empty, the results will be retrieved in the order of their physical placement in
         // their database table
-        if (!preg_match('/\(/', $order)) $order = '`' . $order . '`';
+        if (!is_array($order) && !preg_match('/\(/', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
@@ -584,7 +584,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if ($order && !preg_match('/\(/', $order)) {
+            if (!is_array($order) && $order && !preg_match('/\(/', $order)) {
                 $keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
             }
         }
@@ -609,7 +609,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
             } else {
 
-                $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+                if (!is_array($order)) $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                 if (is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
