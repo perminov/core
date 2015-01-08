@@ -157,7 +157,7 @@ Ext.override(Ext.form.field.Base, {
         if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
 
         // Clear value
-        me.clearValue();
+        if (!cfg.hasOwnProperty('clear') || cfg.clear) me.clearValue();
 
         // Fire 'enablebysatellite' event
         me.fireEvent('enablebysatellite', me, me.considerOnData());

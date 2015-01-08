@@ -30,5 +30,9 @@ Ext.override(Ext.form.field.Number, {
             value = Ext.String.leftPad(value, me.zeroPad + (me.precisionPad ? me.decimalPrecision + 1 : 0), '0');
 
         return value;
+    },
+    
+    delta: function() {
+        return this.val() - (this.decimalPrecision ? parseFloat(this.originalValue) : parseInt(this.originalValue));
     }
 });
