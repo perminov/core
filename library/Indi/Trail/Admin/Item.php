@@ -151,7 +151,7 @@ class Indi_Trail_Admin_Item {
                     // Prepend an additional part to WHERE clause array, so if row would be found,
                     // it will mean that that row match all necessary requirements
                     array_unshift($where, '`id` = "' . Indi::uri('id') . '"');
-                    //d($where);
+                    //i($where, 'a');
 
                     // Try to find a row by given id, that, hovewer, also match all requirements,
                     // mentioned in all other WHERE clause parts
@@ -483,6 +483,7 @@ class Indi_Trail_Admin_Item {
      * Setup shared row object, that filters will be deal with
      * (same as usual row object, that form's combos are dealing with)
      *
+     * @param $start
      * @return null
      */
     public function filtersSharedRow($start) {

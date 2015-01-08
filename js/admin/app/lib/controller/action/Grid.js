@@ -387,6 +387,38 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Adjust grid column widths
         me.gridColumnAFit();
+
+        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'load' attibute
+        me.bindLoads(grid);
+
+        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'jump' attibute
+        me.bindJumps(grid);
+    },
+
+    /**
+     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'load' attibute
+     *
+     * @param root
+     */
+    bindLoads: function(root) {
+        root.getEl().select('[load]').each(function(el){
+            el.on('click', function(e, dom){
+                Indi.load(Indi.pre + Ext.get(dom).attr('load'));
+            });
+        });
+    },
+
+    /**
+     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'jump' attibute
+     *
+     * @param root
+     */
+    bindJumps: function(root) {
+        root.getEl().select('[jump]').each(function(el){
+            el.on('click', function(e, dom){
+                Indi.load(Indi.pre + Ext.get(dom).attr('jump') + 'jump/1/');
+            });
+        });
     },
 
     /**
