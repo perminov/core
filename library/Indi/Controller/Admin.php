@@ -1954,6 +1954,6 @@ class Indi_Controller_Admin extends Indi_Controller {
         Indi::get('jump', null);
 
         // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
-        $this->redirect(array_pop($nav));
+        $this->redirect(PRE . array_pop($nav));
     }
 }
