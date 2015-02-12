@@ -3162,4 +3162,23 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Make the call
         call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], $call['args']);
     }
+    
+    /**
+     * Retrieve width and height from the getimagesize/getflashsize call, for an image or swf file 
+     * linked to a curent row's $alias field, incapsulated within an instance of stdClass object
+     *
+     * @return stdClass
+     */
+    function dim($alias, $copy = '') {
+
+        // If image file exists
+        if ($abs = $this->abs($alias, $copy)) {
+
+            // Get the native result of getimagesize/getflashsize call
+            $dim = (preg_match('/\.swf$/', $abs) ? getflashsize($abs) : getimagesize($abs));
+            
+            // Return 
+            return (object) array('width' => $dim[0], 'height' => $dim[1]);
+        }
+    }
 }
