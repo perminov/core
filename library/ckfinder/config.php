@@ -34,11 +34,6 @@ function CheckAuthentication()
 	return $_SESSION['admin']['id'];
 }
 
-// LicenseKey : Paste your license key here. If left blank, CKFinder will be
-// fully functional, in demo mode.
-$config['LicenseName'] = '';
-$config['LicenseKey'] = '';
-
 /*
  Uncomment lines below to enable PHP error reporting and displaying PHP errors.
  Do not do this on a production server. Might be helpful when debugging why CKFinder does not work as expected.
@@ -71,6 +66,12 @@ foreach (array('www', 'core') as $p) {
 $baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
 
 if ($_SESSION['admin']['alternate']) $baseUrl .= $_SESSION['admin']['alternate'] . '/' . $_SESSION['admin']['id'] . '/';
+
+// LicenseKey : Paste your license key here. If left blank, CKFinder will be
+// fully functional, in demo mode.
+$config['LicenseName'] = $_SERVER['HTTP_HOST'];
+$config['LicenseKey'] = Indi::ini('ckeditor')->key;
+
 /*
 $baseDir : the path to the local directory (in the server) which points to the
 above $baseUrl URL. This is the path used by CKFinder to handle the files in
