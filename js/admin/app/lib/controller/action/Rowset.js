@@ -97,7 +97,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param cmp Component, that fired filterChange
      */
     filterChange: function(cmp){
-        var me = this;
+        var me = this, extraParams = {};
 
         // Declare and fulfil an array with properties, available for each row in the rowset
         var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
@@ -184,7 +184,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
 
         // Apply collected used filter alises and their values as a this.getStore().proxy.extraParams property
-        me.getStore().getProxy().extraParams = {search: JSON.stringify(paramA)};
+        extraParams.search = JSON.stringify(paramA);
 
         // Get id of the keyword component
         var keywordCmpId = me.bid() + '-toolbar-master-keyword';
@@ -194,7 +194,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             Ext.getCmp(keywordCmpId).getValue() ? Ext.getCmp(keywordCmpId).getValue() : '';
 
         // Append `keyword` property to the request extra params
-        if (keyword) me.getStore().getProxy().extraParams.keyword = keyword;
+        if (keyword) extraParams.keyword = keyword;
+
+        // Append summary definition
+        var summary = me.rowsetSummary(); if (Ext.isObject(summary) && Ext.Object.getSize(summary))
+            extraParams.summary = JSON.stringify(summary);
+
+        // Set extra params for store's proxy
+        me.getStore().getProxy().extraParams = extraParams;
 
         // Adjust an 'url' property of  this.getStore().proxy object, to apply keyword search usage
         me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/index/' +
@@ -238,6 +245,23 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
         }
     },
+
+    /**
+     * Function is to return an object, containing summaries definitions. Example:
+     *
+     * rowsetSummary: function() {
+     *     return {
+     *         sum: ['field1', 'field2'],
+     *         min: ['field3'],
+     *         max: ['field4', 'field5', 'field6']
+     *     }
+     * }
+     *
+     * Here, 'sum', 'min' and 'max' are aggregation types, and 'field1', 'field2' etc are fields, that aggregations
+     * should be performed and calculated on. This (- 'rowsetSummary') function is a part of a implementation for a
+     * server-side summaries/aggregations calculations abilities. This function is for overriding in child classes.
+     */
+    rowsetSummary: Ext.emptyFn,
 
     // @inheritdoc
     constructor: function(config) {
@@ -1145,15 +1169,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeLastRequest: function(){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, url = me.getStore().getProxy().url, get = [];
+        var me = this, url = me.getStore().getProxy().url, extra = me.getStore().getProxy().extraParams, get = [];
 
-        // If filters were used during last store request, we retrieve info about, encode and append it to 'get'
-        if (me.getStore().getProxy().extraParams.search)
-            get.push('search=' + encodeURIComponent(me.getStore().getProxy().extraParams.search));
-
-        // If keyword was used during last store request, we retrieve info about, encode and append it to 'get'
-        if (me.getStore().getProxy().extraParams.keyword)
-            get.push('keyword=' + encodeURIComponent(me.getStore().getProxy().extraParams.keyword));
+        // Append param-value pairs
+        ['search', 'keyword', 'summary'].forEach(function(r){
+            if (extra[r]) get.push(r + '=' + encodeURIComponent(extra[r]));
+        });
 
         // If sorters were used during last store request, we retrieve info about, encode and append it to 'get'
         if (me.getStore().getSorters().length)

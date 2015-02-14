@@ -21,6 +21,7 @@
         '/js/admin/app/override/Ext.form.field.Date.js',
         '/js/admin/app/override/Ext.picker.Date.js',
         '/js/admin/app/override/Ext.form.field.Checkbox.js',
+        '/js/admin/app/override/Ext.grid.feature.Summary.js',
         '/js/admin/app/override/Ext.grid.View.js',
         '/js/admin/app/override/Ext.data.Model.js',
 

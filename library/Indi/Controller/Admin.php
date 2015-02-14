@@ -1451,6 +1451,9 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Adjust rowset, before using it as a basement of grid data
             $this->adjustGridDataRowset();
 
+            // Get summary
+            $summary = $this->rowsetSummary();
+
             // Build the grid data, based on current rowset
             $data = $this->rowset->toGridData(Indi::trail());
 
@@ -1458,15 +1461,69 @@ class Indi_Controller_Admin extends Indi_Controller {
             $this->adjustGridData($data);
 
             // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
-            if (Indi::uri('json')) die(json_encode(array(
-                'totalCount' => $this->rowset->found(),
-                'blocks' => $data,
-                'scope' => Indi::trail()->scope->toArray()
-            )));
+            if (Indi::uri('json')) {
+
+                // Setup basic data
+                $json = array(
+                    'totalCount' => $this->rowset->found(),
+                    'blocks' => $data,
+                    'scope' => Indi::trail()->scope->toArray()
+                );
+
+                // Append summary data
+                if ($summary) $json['summary'] = $summary;
+
+                // Flush json
+                die(json_encode($json));
+            }
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (Indi::uri('excel')) $this->excel($data);
         }
+    }
+
+    /**
+     * Calculate summary data to be included in the json output
+     *
+     * @return mixed
+     */
+    function rowsetSummary() {
+
+        // If there is no 'summary' key within $_GET params - return
+        if (!$summary = Indi::get('summary')) return;
+
+        // If $summary is not json-decodable - return
+        if (!($summary = json_decode($summary, true))) return;
+
+        // If all possible results are already fetched, and if section view type is grid - return,
+        // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
+        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found)
+            if ($this->actionCfg['view']['index'] == 'grid') return;
+
+        // Define an array containing extjs summary types and their sql representatives
+        $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');
+
+        // Get grid columns aliases
+        $cols = Indi::trail()->gridFields->column('alias');
+
+        // Build an array containing sql-function calls for each column, that have a summary to be retrieved for
+        foreach ($js2sql as $type => $fn)
+            if ($summary[$type])
+                foreach ($summary[$type] as $col)
+                    if (in($col, $cols))
+                        $sql[] = $fn . '(`' . $col . '`) AS `' . $col .'`';
+
+        // If no sql-function calls collected - return
+        if (!$sql) return;
+
+        // Build basic sql query for summaries calculation
+        $sql = 'SELECT ' . implode(', ', $sql) . ' FROM `' . Indi::trail()->model->table() . '`';
+
+        // Append WHERE clause to that query
+        if (Indi::trail()->scope->WHERE) $sql .= ' WHERE ' . Indi::trail()->scope->WHERE;
+
+        // Fetch and return calculated summaries
+        return Indi::db()->query($sql)->fetchObject();
     }
 
     /**

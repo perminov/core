@@ -112,10 +112,14 @@ class Indi_Trail_Admin_Item {
                             $gridFieldI = $fieldR;
                             if ($gridR->alterTitle) $gridFieldI->title = $gridR->alterTitle;
                             $gridFieldA[] = $gridFieldI;
+                            $gridFieldAliasA[] = $gridFieldI->alias;
                         }
                     }
                 }
-                $this->gridFields = Indi::model('Field')->createRowset(array('rows' => $gridFieldA));
+                $this->gridFields = Indi::model('Field')->createRowset(array(
+                    'rows' => $gridFieldA,
+                    'aliases' => $gridFieldAliasA
+                ));
                 $this->grid = $sectionR->nested('grid');
             }
 

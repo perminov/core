@@ -24,7 +24,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
          * Features
          */
         features: [{
-            ftype: 'summary'
+            ftype: 'summary',
+            remoteRoot: 'summary'
         }],
 
         /**
@@ -66,6 +67,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 }
             },
             selectionchange: function (selectionModel, selectedRows) {
+
+                // Refresh summary row
+                if (this.multiSelect && selectionModel.view.getFeature(0).ftype == 'summary')
+                    selectionModel.view.getFeature(0).refresh();
+
                 if (selectedRows.length > 0)
                     Ext.Array.each(selectedRows, function (row) {
                         if (row.raw._system && row.raw._system.disabled)
@@ -166,7 +172,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, colI, field, columnA = [], columnI, columnX, fnColumnX, column$, fnColumn$, fnColumnSummaryX;
+        var me = this, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
 
         // Other columns
         for (var i = 0; i < colA.length; i++) {
@@ -195,16 +201,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 columnI = me.gridColumnDefault(field);
 
                 // Apply specific control element config, as columns control elements/xtypes may be different
-                fnColumnX = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias);
-                if (typeof me[fnColumnX] == 'function') {
-                    columnX = me[fnColumnX](columnI, field);
+                eColumnX = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias);
+                if (Ext.isFunction(me[eColumnX]) || Ext.isObject(me[eColumnX])) {
+                    columnX = Ext.isFunction(me[eColumnX]) ? me[eColumnX](columnI, field) : me[eColumnX];
                     columnI = Ext.isObject(columnX) ? Ext.merge(columnI, columnX) : columnX;
                 }
 
                 // Apply column custom config
-                fnColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
-                if (typeof me[fnColumn$] == 'function') {
-                    column$ = me[fnColumn$](columnI, field);
+                eColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
+                if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
+                    column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 }
 
@@ -216,9 +222,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 }
 
                 // Apply column 'sum' summary renderer config
-                fnColumnSummaryX = 'gridColumnSummaryX' + Indi.ucfirst(field.foreign('elementId').alias);
-                if (Ext.isObject(columnI) && columnI.summaryType && typeof me[fnColumnSummaryX] == 'function') {
-                    column$ = me[fnColumnSummaryX](columnI, field);
+                eColumnSummaryX = 'gridColumnSummaryX' + Indi.ucfirst(field.foreign('elementId').alias);
+                if (Ext.isObject(columnI) && columnI.summaryType && typeof me[eColumnSummaryX] == 'function') {
+                    column$ = me[eColumnSummaryX](columnI, field);
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 }
 
@@ -241,7 +247,32 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnSummaryXNumber: function(column, field) {
         return {
             summaryRenderer: function(value, summaryData, dataIndex) {
-                return this.grid.headerCt.getGridColumns().r(dataIndex, 'dataIndex').renderer(value);
+                var me = this, grid = me.grid, selectedRows = grid.getSelectionModel().selected,
+                    column = grid.headerCt.getGridColumns().r(dataIndex, 'dataIndex'), columnData = [],
+                    type = column.summaryType, tr, td;
+
+                // If there is currently selected more than 1 row in the grid,
+                // force summary to be calculated for selected rows only
+                if (selectedRows.getCount() > 1 && !column.summaryText) {
+
+                    // Get tr
+                    tr = grid.view.el.down('tr.x-grid-row-summary');
+
+                    // Apply summary cell style
+                    Ext.defer(function(){
+                        td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
+                        td.addCls('x-grid-cell-selected');
+                    }, 1);
+
+                    // Get column data
+                    selectedRows.each(function(r){columnData.push(r.get(dataIndex));});
+
+                    // If summary type is 'sum'
+                    if (['sum', 'min', 'max'].indexOf(type) != -1) value = Ext.Array[type](columnData);
+                }
+
+                // Return
+                return column.renderer(value);
             }
         }
     },
@@ -641,6 +672,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     rowsetPanel: function() {
         return this.rowset;
+    },
+
+    // @inheritdoc
+    rowsetSummary: function() {
+        var me = this, grid = Ext.getCmp(me.rowset.id), summary = {};
+
+        // Pick summary definition from grid columns's summaries types definitions, if used
+        grid.headerCt.getGridColumns().forEach(function(r, i){
+            if (r.summaryType && !r.summaryText)
+                summary[r.summaryType] = Ext.isArray(summary[r.summaryType])
+                    ? summary[r.summaryType].concat([r.dataIndex])
+                    : [r.dataIndex];
+
+        });
+
+        // Return
+        return summary;
     },
 
     // @inheritdoc
