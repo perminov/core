@@ -966,14 +966,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      * @param btn
      */
-    panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn) {
-        var me = this; me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn, {
+    panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn, ajaxCfg) {
+        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn, Ext.merge({
             success: function(response) {
                 var json = Ext.JSON.decode(response.responseText, true), page;
                 if (Ext.isObject(json) && (page = json.page)) me.getStore().loadPage(page);
                 else me.getStore().load();
             }
-        });
+        }, ajaxCfg));
     },
 
     /**
