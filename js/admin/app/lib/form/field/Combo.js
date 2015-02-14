@@ -722,8 +722,13 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
     },
 
+    /**
+     * Alias for clearCombo(), for compatibility.
+     *
+     * @return {*}
+     */
     clearValue: function() {
-        this.clearCombo();
+        return this.clearCombo();
     },
 
     /**
@@ -733,19 +738,26 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // If current combo is not clearable - return
-        if (!me.isClearable()) return;
+        if (!me.isClearable()) return me;
 
-        // Remove color-box
-        me.colorDiv.setHTML('');
+        // If combo is rendered
+        if (me.rendered) {
 
-        // Remove color
-        me.keywordEl.setStyle({color: ''});
+            // Remove color-box
+            me.colorDiv.setHTML('');
+
+            // Remove color
+            me.keywordEl.setStyle({color: ''});
+        }
 
         // Erase keyword
         me.setRawValue('');
 
         // Clear combo hidden value
         me.clearComboValue();
+
+        // Return
+        return me;
     },
 
     /**
@@ -766,15 +778,21 @@ Ext.define('Indi.lib.form.field.Combo', {
     clearComboValue: function() {
         var me = this;
 
-        // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
-        // value will be cleared automatically
-        if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
+        // If combo is already rendered
+        if (me.rendered) {
 
-        // Else if combo is single and is not boolean, we set it's value to 0, '' otherwise
-        else me.hiddenEl.val(0);
+            // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
+            // value will be cleared automatically
+            if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
 
-        // Call setValue
-        me.getNative().setValue.call(me, me.hiddenEl.val());
+            // Else if combo is single and is not boolean, we set it's value to 0, '' otherwise
+            else me.hiddenEl.val(0);
+
+            // Call setValue
+            me.getNative().setValue.call(me, me.hiddenEl.val());
+
+        // Else
+        } else me.getNative().setValue.call(me, me.multiSelect ? '' : 0);
     },
 
     /**

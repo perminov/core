@@ -18,6 +18,11 @@ Ext.define('Indi.lib.controller.Controller', {
     },
 
     /**
+     * See docs at same Ext.Component class property
+     */
+    mcopwso: ['actionsConfig'],
+
+    /**
      * Actions configuration. This config is for use in subclasses of current class
      */
     actionsConfig: {},
@@ -51,20 +56,24 @@ Ext.define('Indi.lib.controller.Controller', {
 
         // Create action component instance, related to current action
         me.actions[action] = Ext.create(actionCmpName, {
-            trailLevel: this.trailLevel,
+            trailLevel: me.trailLevel,
             uri: Ext.clone(uri),
-            clr: this
+            clr: me
         });
     },
 
     // @inheritdoc
     constructor: function(config){
+        var me = this;
 
         // Setup trail level
-        this.trailLevel = Indi.trail().level;
+        me.trailLevel = Indi.trail().level;
+
+        // Merge parent
+        me.mergeParent(config);
 
         // Call parent
-        this.callParent(arguments);
+        me.callParent(arguments);
     },
 
     /**
@@ -76,4 +85,9 @@ Ext.define('Indi.lib.controller.Controller', {
     trail: function(up) {
         return Indi.trail(this.trailLevel - (Indi.trail(true).store.length - 1) + (up ? up : 0));
     }
+
+}, function() {
+
+    // Borrow 'mergeParent' method from Ext.Component class
+    this.borrow(Ext.Component, ['mergeParent']);
 });

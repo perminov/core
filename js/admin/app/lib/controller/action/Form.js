@@ -259,7 +259,7 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemA: function() {
 
         // Declare a number of auxiliary variables
-        var me = this, itemA = [], itemI, itemX, fnItemX, item$, fnItem$, formItemOnlyA, build;
+        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, build;
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
@@ -302,18 +302,18 @@ Ext.define('Indi.lib.controller.action.Form', {
                 itemI = me.formItemDefault(me.ti().fields[i]);
 
                 // Apply specific control element config, as fields control elements/xtypes may be different
-                fnItemX = 'formItemX' + Indi.ucfirst(me.ti().fields[i].foreign('elementId').alias);
-                if (typeof me[fnItemX] == 'function') {
-                    itemX = me[fnItemX](itemI);
+                eItemX = 'formItemX' + Indi.ucfirst(me.ti().fields[i].foreign('elementId').alias);
+                if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
+                    itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI) : me[eItemX];
                     itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
                 } else Ext.merge(itemI, {
                     fieldLabel: '!!! ' + me.ti().fields[i].foreign('elementId').alias
                 });
 
                 // Apply field custom config
-                fnItem$ = 'formItem$' + Indi.ucfirst(me.ti().fields[i].alias);
-                if (typeof me[fnItem$] == 'function') {
-                    item$ = me[fnItem$](itemI);
+                eItem$ = 'formItem$' + Indi.ucfirst(me.ti().fields[i].alias);
+                if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                    item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
                     itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
                 }
 
