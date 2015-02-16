@@ -1211,10 +1211,15 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * Internal callback for store load/reload
      */
     storeLoadCallbackDefault: function() {
-        var me = this;
+        var me = this, fo = me.getStore().proxy.reader.jsonData.filter, f;
 
         // Setup scope
         me.ti().scope = me.getStore().proxy.reader.jsonData.scope;
+
+        // Update combo-filter contents, if need
+        if (Ext.isObject(fo) && Ext.Object.getSize(fo)) Ext.Object.each(fo, function(name, store){
+            if (f = Ext.getCmp(me.panel.id).query('[isFilter][name='+name+']')[0]) f.store = store;
+        });
 
         // Adjust each data-row within the store
         me.getStore().each(me.storeLoadCallbackDataRowAdjust);

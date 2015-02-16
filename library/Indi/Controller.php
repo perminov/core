@@ -434,8 +434,29 @@ class Indi_Controller {
         // Get the field
         $field = Indi::trail()->model->fields($for);
 
-        // Find a filter, representing the given field, and get it's WHERE clause
-        $where = ($filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0)) ? $filter->filter : null;
+        // Get filter
+        $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
+
+        // Declare WHERE array
+        $where = array();
+
+        // Append statiс WHERE, defined for filter
+        if (strlen($filter->filter)) $where[] = $filter->filter;
+
+        // Append special part to WHERE clause, responsible for filter combo to do not contain inconsistent options
+        if ($relation = $field->relation) {
+
+            // Get table name
+            $tbl = Indi::trail()->model->table();
+
+            // Setup a shortcut for scope WHERE
+            $sw = Indi::trail()->scope->WHERE;
+
+            // Append part of WHERE clause, that will be involved in the process of fetching filter combo data
+            $where[] = '`id` IN (' . (($in = Indi::db()->query('
+                SELECT DISTINCT `'. $for . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
+            )->fetchAll(PDO::FETCH_COLUMN)) ? implode(',', $in) : 0) . ')';
+        }
 
         // Setup a row
         $this->row = Indi::trail()->filtersSharedRow;

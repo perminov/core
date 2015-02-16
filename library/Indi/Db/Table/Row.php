@@ -393,11 +393,12 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param null $order
      * @param string $dir
      * @param null $offset
+     * @param null $consistence
      * @return Indi_Db_Table_Rowset_Combo
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
                                  $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
-                                 $order = null, $dir = 'ASC', $offset = null) {
+                                 $order = null, $dir = 'ASC', $offset = null, $consistence = null) {
 
         // Basic info
         $entityM = Indi::model('Entity');
@@ -423,6 +424,14 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Use existing enumset data, already nested for current field, instead of additional db fetch
             $dataRs = $fieldR->nested('enumset');
 
+            // If $consistence argument is given, and it's an array, we assume it's an explicit definition of
+            // a number of combo data items, that should ONLY be displayed. ONLY here mean combo items will be
+            // exact as in $consistence array, not less and not greater. This feature is used for rowset filters,
+            // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
+            // for data-options, that will have at least one matching row within rowset, in case of their selection
+            // as a part of a rowset search criteria.
+            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
             $dataRs->enumset = true;
@@ -447,9 +456,31 @@ class Indi_Db_Table_Row implements ArrayAccess
                 )
             );
 
+            // If $consistence argument is given, and it's an array, we assume it's an explicit definition of
+            // a number of combo data items, that should ONLY be displayed. ONLY here mean combo items will be
+            // exact as in $consistence array, not less and not greater. This feature is used for rowset filters,
+            // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
+            // for data-options, that will have at least one matching row within rowset, in case of their selection
+            // as a part of a rowset search criteria.
+            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+
+            // Setup `enumset` prop as `true`
             $dataRs->enumset = true;
+
+            // Return
             return $dataRs;
-        }
+
+        // Else if combo data is being prepared for an usual (non-boolean and non-enumset) combo
+        } else
+
+            // If $consistence argument is given, and it's an array, we assume it's an explicit definition of
+            // a number of combo data items, that should ONLY be displayed. ONLY here mean combo items will be
+            // exact as in $consistence array, not less and not greater. This feature is used for rowset filters,
+            // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
+            // for data-options, that will have at least one matching row within rowset, in case of their selection
+            // as a part of a rowset search criteria. The $consistence array is being taken into consideration even
+            // if it constains no elements ( - zero-length array), in this case
+            if (is_string($consistence) && strlen($consistence)) $where[] = $consistence;
 
         // Setup filter by satellite
         if ($fieldR->satellite && $noSatellite != true) {

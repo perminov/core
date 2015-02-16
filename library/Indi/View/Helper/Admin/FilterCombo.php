@@ -19,11 +19,56 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         // there dependent combo can get that value.
         $this->filter = $filter;
 
-        $this->getRow()->{$this->getField()->alias} = null;
+        // Get field's alias
+        $alias = $this->getField()->alias;
 
-        $this->where = $this->filter->filter;
+        // Reset filterSharedRow's property value, representing current filter
+        $this->getRow()->$alias = null;
+
+        // Declare WHERE array
+        $this->where = array();
+
+        // Append statiс WHERE, defined for filter
+        if (strlen($this->filter->filter)) $this->where[] = $this->filter->filter;
+
+        // Setup ignoreTemplate property
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
+
+        // Do stuff
         ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias, null, $mode); return ob_get_clean();
+    }
+
+    /**
+     * It's purpose is to define an explicit definition of a number of combo data items, that should ONLY be displayed.
+     * ONLY here  mean combo items will be exact as in $consistence array, not less and not greater. This feature is used
+     * for rowset filters, and is a part of a number of tricks, that provide the availability of filter-combo
+     * data-options only for data-options, that will have at least one matching row within rowset, in case of
+     * their selection as a part of a rowset search criteria. The $consistence array is being taken into
+     * consideration even if it constains no elements ( - zero-length array), in this case filter-combo will contain
+     * no options, and therefore will be disabled
+     */
+    public function getConsistence() {
+
+        // If filter is non-boolean
+        if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && Indi::uri('json')) {
+
+            // Get field's alias
+            $alias = $this->getField()->alias;
+
+            // Get table name
+            $tbl = Indi::trail()->model->table();
+
+            // Setup a shortcut for scope's WHERE
+            $sw = Indi::trail()->scope->WHERE;
+
+            // Get the distinct list of possibilities
+            $in = Indi::db()->query('
+                SELECT DISTINCT `'. $alias . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            // Return
+            return in($relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : 0) . ')';
+        }
     }
 
     public function getSelected() {

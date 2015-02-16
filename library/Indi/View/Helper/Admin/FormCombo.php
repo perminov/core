@@ -135,7 +135,7 @@ class Indi_View_Helper_Admin_FormCombo {
         // Get initial combo options rowset
         $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
             $this->where, $this->noSatellite(), $this->field, $this->comboDataOrderColumn,
-            $this->comboDataOrderDirection, $this->comboDataOffset);
+            $this->comboDataOrderDirection, $this->comboDataOffset, $this->getConsistence());
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $this->ignoreTemplate);
@@ -280,6 +280,14 @@ class Indi_View_Helper_Admin_FormCombo {
             // Get and return buffered output
             return ob_get_clean();
         }*/
+    }
+
+    /**
+     * Empty function here, but non-empty in child class Indi_View_Helper_Admin_FilterCombo.
+     * Look for description/purposes in that child class
+     */
+    public function getConsistence() {
+
     }
 
     public function extjs($options) {
