@@ -1473,6 +1473,14 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Append summary data
                 if ($summary) $json['summary'] = $summary;
 
+                // Provide combo filters consistency
+                foreach (Indi::trail()->filters as $filter)
+                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
+                        $alias = $filter->foreign('fieldId')->alias;
+                        Indi::view()->filterCombo($filter, 'extjs');
+                        $json['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
+                    }
+
                 // Flush json
                 die(json_encode($json));
             }
