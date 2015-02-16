@@ -478,7 +478,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Get the columns, that need to be presented in a spreadsheet
         $columnA = json_decode(Indi::get()->columns, true);
 
-        // Setup a row index, which is data rows starting from
+        // Setup a row index, which data rows are starting from
         $currentRowIndex = 1;
 
         // Calculate last row index
@@ -488,7 +488,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 (is_array($this->_excelA) && count($this->_excelA) ? count($this->_excelA) + 1 : 0) /* filters count */ +
                 (bool) (Indi::get()->keyword || (is_array($this->_excelA) && count($this->_excelA) > 1)) +
                 1 /* data header row */+
-                count($data);
+                count($data) + /* data rows*/
+                (Indi::get()->summary ? 1 : 0);
 
         // Set default row height
         $objPHPExcel->getActiveSheet()->getDefaultRowDimension()->setRowHeight(15.75);
@@ -520,7 +521,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Capture last column letter(s)
         $lastColumnLetter = $columnL;
 
-        // Merge all cell at first row, and place as bread crumbs will be placed here
+        // Merge all cell at first row, as bread crumbs will be placed here
         $objPHPExcel->getActiveSheet()->mergeCells('A1:' . $lastColumnLetter . '1');
 
         // Write bread crumbs, where current spreadsheet was got from
@@ -580,7 +581,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If filters were used
         if (is_array($this->_excelA) && count($this->_excelA)) {
 
-            // We shift current row index to provide a empty row for visual separation bread crubms row and filters rows
+            // We shift current row index to provide a empty row for visual separation between bread crumbs row and filters rows
             $currentRowIndex++;
 
             // Info about filters was prepared to $this->filtersWHERE() method, as an array of used filters
@@ -1112,11 +1113,34 @@ class Indi_Controller_Admin extends Indi_Controller {
             )
         );
 
+        // Append summary row
+        if ($summary = $this->rowsetSummary()) {
+
+            // Foreach column
+            foreach ($columnA as $n => $columnI) {
+
+                // Convert the column index to excel column letter
+                $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
+
+                // Get the value
+                $value = $summary->{$columnI['dataIndex']};
+
+                // Set cell value
+                $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
+            }
+
+            // Increment current row index
+            $currentRowIndex++;
+        }
+
         // Rename sheet
         $objPHPExcel->getActiveSheet()->setTitle(Indi::trail()->section->title);
 
         // Freeze header
         $objPHPExcel->getActiveSheet()->freezePane('A' . ($dataStartAtRowIndex));
+
+        // Excel document custom adjustments
+        $this->adjustExcel($objPHPExcel);
 
         // Output
         $file = Indi::trail()->section->title . '.xlsx';
@@ -1126,6 +1150,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save('php://output');
         die();
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an excel document adjustments
+     *
+     * @param $objPHPExcel
+     */
+    public function adjustExcel(&$objPHPExcel) {
+
     }
 
     /**
@@ -1451,9 +1484,6 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Adjust rowset, before using it as a basement of grid data
             $this->adjustGridDataRowset();
 
-            // Get summary
-            $summary = $this->rowsetSummary();
-
             // Build the grid data, based on current rowset
             $data = $this->rowset->toGridData(Indi::trail());
 
@@ -1471,7 +1501,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 );
 
                 // Append summary data
-                if ($summary) $json['summary'] = $summary;
+                if ($summary = $this->rowsetSummary()) $json['summary'] = $summary;
 
                 // Provide combo filters consistency
                 foreach (Indi::trail()->filters as $filter)
@@ -1506,7 +1536,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
         if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found)
-            if ($this->actionCfg['view']['index'] == 'grid') return;
+            if ($this->actionCfg['view']['index'] == 'grid' && !Indi::uri('excel')) return;
 
         // Define an array containing extjs summary types and their sql representatives
         $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');
