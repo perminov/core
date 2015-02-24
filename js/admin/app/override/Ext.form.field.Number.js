@@ -4,6 +4,11 @@
 Ext.override(Ext.form.field.Number, {
 
     /**
+     * Force any existing value to be selected once field get focused
+     */
+    selectOnFocus: true,
+
+    /**
      * The number of '0' (zero) characters, that should be appended to value while converting value to rawValue
      */
     zeroPad: 0,
