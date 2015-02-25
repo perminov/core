@@ -29,6 +29,8 @@ Ext.define('Indi.lib.trail.Trail', {
      */
     store: [],
 
+    tree: {},
+
     /**
      * Prepare trail item row title for use at a part of bread crumbs
      *
@@ -107,7 +109,8 @@ Ext.define('Indi.lib.trail.Trail', {
     /**
      * Build the breadcrumbs
      */
-    breadCrumbs: function(){
+    breadCrumbs: function(route){
+        this.store = route;
 
         // Define an array for crumbs items
         var crumbA = [];
@@ -284,26 +287,31 @@ Ext.define('Indi.lib.trail.Trail', {
      *
      * @param store
      */
-    apply: function(store){
+    apply: function(route){
 
-        // Reset store
-        this.store = [];
+        // Set up auxilliary variables
+        var me = this, section = route.last().section.alias, action = route.last().action.alias;
 
-        // Update store
-        for (var i = 0; i < store.length; i++)
-            this.store.push(Ext.create('Indi.trail.Item', Ext.merge({level: i}, store[i])));
+        // Remember the levels of each section within trail
+        route.forEach(function(r, i, a) {
+            r.level = i;
+            me.tree[r.section.alias] = {
+                title: r.section.title,
+                level: r.level
+            }
+        });
 
         // Run
         try {
-            var controller = Indi.app.getController(Indi.trail().section.alias);
+            var controller = Indi.app.getController(section);
             try {
-                controller.dispatch(Indi.trail().action.alias, Indi.story[Indi.story.length-1]);
+                controller.dispatch(action, Indi.story.last(), route);
             } catch (e) {
                 console.log(e.stack);
             }
         } catch (e) {
-            Ext.define('Indi.controller.' + Indi.trail().section.alias, {extend: 'Indi.Controller'});
-            Indi.app.getController(Indi.trail().section.alias).dispatch(Indi.trail().action.alias, Indi.story[Indi.story.length-1]);
+            Ext.define('Indi.controller.' + section, {extend: 'Indi.Controller'});
+            Indi.app.getController(section).dispatch(action, Indi.story.last(), route);
         }
     },
 
@@ -316,5 +324,5 @@ Ext.define('Indi.lib.trail.Trail', {
     item: function(stepsUp) {
         if (typeof stepsUp == 'undefined') stepsUp = 0;
         return this.store[this.store.length - 1 - stepsUp];
-    }
+    },
 });

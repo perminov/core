@@ -312,19 +312,14 @@ Ext.define('Indi', {
         },
 
         /**
-         * Returns the Ext center region component
-         *
-         * @return {*}
-         */
-        getCenter: function() {
-            return Ext.getCmp('i-center');
-        },
-
-        /**
          * Destroy the contents of center panel, and all objects related to it
          */
         clearCenter: function() {
-            if (Ext.getCmp('i-center-center-wrapper')) Ext.getCmp('i-center-center-wrapper').destroy();
+            var center = Ext.getCmp(Indi.centerId);
+            //console.log(Indi.centerId);
+            if (center) {
+                Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy()}, 1);
+            }
         },
 
         /**
@@ -350,18 +345,23 @@ Ext.define('Indi', {
          */
         load: function(uri, cfg) {
 
-            // Push the given url to a story stack
-            Indi.story.push(uri);
-
             // Normalize `cfg` argument
             cfg = cfg || {};
+
+            if (!Indi.loadInto || cfg.into) Indi.loadInto = cfg.into;
 
             // Make the request
             Ext.Ajax.request(Ext.merge({
                 url: uri,
                 success: function(response){
-                    Indi.clearCenter();
-                    Ext.get('i-center-center-body').update(response.responseText, true);
+
+                    // Push the given url to a story stack
+                    Indi.story.push(uri);
+
+                    if (!Indi.loadInto) Indi.clearCenter();
+
+                    // Run response
+                    Ext.get('i-response-html').update(response.responseText, true);
                 }
             }, cfg));
         },
@@ -586,6 +586,22 @@ Ext.define('Indi', {
 
                         // Return array itself
                         return this;
+                    }
+                });
+            },
+
+            /**
+             * Get the las item of the array
+             *
+             * @param i {Number}
+             * @return {*}
+             */
+            'Array.prototype.last': function() {
+                Object.defineProperty(Array.prototype, 'last', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(i) {
+                        return this[this.length - 1 - (isNaN(i) ? 0 : i)];
                     }
                 });
             }

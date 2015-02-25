@@ -10,7 +10,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     extend: 'Indi.Controller.Action',
 
     // @inheritdoc
-    mcopwso: ['row', 'panel'],
+    mcopwso: ['row', 'panel', 'south'],
 
     // @inheritdoc
     panel: {
@@ -18,7 +18,9 @@ Ext.define('Indi.lib.controller.action.Row', {
         closable: false,
         listeners: {
             afterrender: function(me){
-                Indi.trail(true).breadCrumbs();
+                Ext.defer(function(){
+                    Indi.trail(true).breadCrumbs(me.ctx().route);
+                }, 1);
             }
         },
 
@@ -50,7 +52,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      * Main panel's row inner panel config
      */
     row: {
-        border: 0
+        border: 0,
+        height: '50%'
     },
 
     /**
@@ -703,6 +706,57 @@ Ext.define('Indi.lib.controller.action.Row', {
         });
     },
 
+    southItemA: function() {
+        var me = this, nested = me.ti().sections, itemA = [], i;
+        for (i = 0; i < nested.length; i++) {
+            itemA.push({
+                nested: nested[i],
+                title: nested[i].title,
+                id: 'i-section-' + nested[i].alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+                isWrapper: true,
+                isTab: true,
+                border: 0,
+                layout: 'fit',
+                trailLevel: me.trailLevel + 1,
+                toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
+                listeners: {
+                    activate: function(c) {
+                        if (!c.loaded) {
+                            var uri = Indi.pre + '/' + c.nested.alias + '/index/id/' + me.ti().row.id
+                                + '/ph/' + me.ti().scope.hash + '/aix/' + me.ti().scope.aix + '/';
+
+                            Indi.load(uri, {into: c.id});
+                            c.loaded = true;
+                        }
+                    },
+                    afterrender: function(me){
+                        setTimeout(function(){
+                            if (me.ctx()) me.ctx().getStore().load();
+                        });
+                    }
+                },
+                tools: [{alias: 'reset'}],
+                docked: {
+                    default: {minHeight: 20},
+                    items: [{alias: 'filter'}, {alias: 'master', height: 20}],
+                    inner: {
+                        master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
+                    }
+                },
+                ctx: function() {
+                    return Ext.getCmp(this.id.replace('-wrapper', ''))
+                },
+                onDestroy: function() {
+                    var me = this;
+                    if (me.ctx()) me.ctx().destroy();
+                    me.callParent();
+                }
+            })
+        }
+
+        return itemA;
+    },
+
     /**
      * Builds and return an array of panels, that will be used to represent the major UI contents.
      * Currently is consists only from this.row form panel configuration
@@ -710,7 +764,21 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Array}
      */
     panelItemA: function() {
-        return [this.row];
+
+        // Panels array
+        var me = this, itemA = [], rowItem = me.row, southItem = me.south, southItemItemA = me.southItemA();
+
+        // Append row panel
+        if (rowItem) itemA.push(rowItem);
+
+        // Append south panel only if it's consistent
+        if (southItemItemA.length)
+            itemA.push(Ext.merge(southItem, {
+                items: southItemItemA
+            }));
+
+        // Return panels array
+        return itemA;
     },
 
     // @inheritdoc
@@ -821,5 +889,22 @@ Ext.define('Indi.lib.controller.action.Row', {
             '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/',
             '/' + me.ti().section.alias + '/' + action + '/'
         );
+    },
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this;
+
+        // Setup trailLevel property
+        if (config.trailLevel) me.trailLevel = config.trailLevel;
+
+        // Setup `route` property
+        if (config.route) me.route = config.route;
+
+        // Merge configs
+        me.mergeParent(config);
+
+        // Call parent
+        me.callParent(arguments);
     }
 });

@@ -1,3 +1,10 @@
+Ext.override(Ext.tab.Bar, {
+    onClick: function(e) {
+        this.fireClickEvent('click', e);
+        this.callParent(arguments);
+    }
+});
+
 /**
  * Base class for all controller actions instances
  */
@@ -16,12 +23,11 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Wrapper-panel config
      */
     panel: {
-        id: 'i-center-center-wrapper',
-        renderTo: 'i-center-center-body',
         border: 0,
         height: '100%',
         closable: true,
-        layout: 'fit',
+        layout: 'border',
+        isWrapper: true,
         docked: {
             default: {
                 xtype: 'toolbar',
@@ -30,6 +36,14 @@ Ext.define('Indi.lib.controller.action.Action', {
             },
             items: [],
             inner: {}
+        },
+        ctx: function() {
+            return Ext.getCmp(this.id.replace('-wrapper', ''))
+        },
+        onDestroy: function() {
+            var me = this;
+            if (me.ctx()) me.ctx().destroy();
+            me.callParent();
         }
     },
 
@@ -37,6 +51,9 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Rowset-panel config
      */
     rowset: {
+        region: 'center',
+        layout: 'fit',
+        height: '70%',
         docked: {
             default: {
                 xtype: 'toolbar',
@@ -53,6 +70,9 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Row-panel config
      */
     row: {
+        region: 'center',
+        layout: 'fit',
+        height: '40%',
         docked: {
             default: {
                 xtype: 'toolbar',
@@ -66,13 +86,52 @@ Ext.define('Indi.lib.controller.action.Action', {
     },
 
     /**
+     * South-panel config
+     */
+    south: {
+        xtype: 'tabpanel',
+        bubbleEvents: ['add', 'remove', 'click'],
+        minHeight: 25,
+        tabBar: {
+            listeners: {
+                click: function(c, e) {
+                    if (c.up('tabpanel').getHeight() != c.up('tabpanel').minHeight) {
+                        if (e.getTarget('.x-tab')) return;
+                        c.up('tabpanel').setHeight(c.up('tabpanel').minHeight);
+                    } else {
+                        c.up('tabpanel').height = c.up('tabpanel').pHeight;
+                        c.up('tabpanel').setHeight();
+                    }
+                }
+            }
+        },
+        resizable: {
+            handles: 'n',
+            transparent: true
+        },
+        border: 0,
+        region: 'south',
+        height: '60%',
+        layout: 'fit',
+        listeners: {
+            resize: function(c) {
+                if (Ext.EventObject.getTarget('.x-resizable-proxy'))
+                    c.height = c.pHeight = Math.ceil(c.getHeight()/c.up('[isWrapper]').body.getHeight() * 100) + '%';
+            },
+            boxready: function(c) {
+                c.pHeight = c.height;
+            }
+        }
+    },
+
+    /**
      * Get the current trail item, or upper trail item - if `up` argument is given
      *
      * @param up
      * @return {Indi.lib.Trail.Item}
      */
     ti: function(up) {
-        return Indi.trail(this.trailLevel - (Indi.trail(true).store.length - 1) + (up ? up : 0));
+        return this.route.last(up);
     },
 
     /**
@@ -83,25 +142,43 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @return {String}
      */
     bid: function(up) {
-        return this.ti(up).bid();
+        var me = this, s = 'i-section-' + me.ti(up).section.alias + '-action-' + me.ti(up).action.alias;
+        up = isNaN(up) ? 0 : up;
+        if (me.ti(up).row) {
+            s += '-row-' + (me.ti(up).row.id || 0);
+        } else if (me.ti(up + 1).row) {
+            s += '-parentrow-' + me.ti(up + 1).row.id;
+        }
+        return s;
     },
 
     // @inheritdoc
     initComponent: function() {
         var me = this;
 
-        // Append tools and toolbars to the main panel
-        Ext.merge(me.panel, {
-            dockedItems: me.panelDockedA(),
-            tools: me.panelToolA()
-        });
+        if (Indi.loadInto) {
+            var tab = Ext.getCmp(Indi.loadInto);
+            tab.addDocked(me.panelDockedA());
+            tab.add(me.panel.items);
+            tab.fireEvent('afterrender', tab);
+            Indi.loadInto = null;
+        } else {
 
-        // Setup main panel title, contents and trailLevel property
-        Ext.create('Ext.Panel', Ext.merge({
-            title: me.ti().section.title,
-            items: me.panel.items,
-            trailLevel: me.trailLevel
-        }, me.panel));
+            // Append tools and toolbars to the main panel
+            Ext.merge(me.panel, {
+                dockedItems: me.panelDockedA(),
+                renderTo: 'i-center-center-body',
+                tools: me.panelToolA()
+            });
+
+            // Setup main panel title, contents and trailLevel property
+            Ext.create('Ext.Panel', Ext.merge({
+                items: me.panel.items,
+                trailLevel: me.trailLevel
+            }, me.panel));
+
+            Indi.centerId = me.panel.id;
+        }
 
         // Call parent
         me.callParent();
@@ -403,9 +480,21 @@ Ext.define('Indi.lib.controller.action.Action', {
             });
 
         // Add keyboard event handelers
-        Ext.getCmp(target).getEl().addKeyMap({
+        if (Ext.getCmp(target)) Ext.getCmp(target).getEl().addKeyMap({
             eventName: 'keydown',
             binding: binding
         });
+    },
+
+    constructor: function(config) {
+        var me = this;
+
+        // Set up an id for wrapper panel
+        Ext.merge(me.panel, {
+            id: me.bid() + '-wrapper'
+        });
+
+        // Call parent
+        me.callParent(arguments);
     }
 });
