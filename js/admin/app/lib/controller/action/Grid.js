@@ -19,6 +19,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         firstColumnWidthFraction: 0.4,
         smallColumnWidth: 100,
         border: 0,
+        layout: 'fit',
 
         /**
          * Features
@@ -79,7 +80,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.handler();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
             }
         }
     },
@@ -457,9 +458,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     keyMap: function() {
         var me = this;
-
+return;
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.F4,
@@ -507,7 +508,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
 
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,
@@ -676,6 +677,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
     // @inheritdoc
     rowsetSummary: function() {
+
         var me = this, grid = Ext.getCmp(me.rowset.id), summary = {};
 
         // Pick summary definition from grid columns's summaries types definitions, if used
@@ -695,18 +697,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
     initComponent: function() {
         var me = this;
 
-        // Setup id
-        me.id = me.bid();
-
         // Setup rowset panel config
         me.rowset = Ext.merge({
             id: me.id + '-rowset-grid',
             columns: me.gridColumnA(),
-            store: me.getStore(),
+            //store: me.getStore(),
+            store: Ext.StoreMgr.get(me.id + '-store'),
+            getStore: function() {
+                return Ext.StoreManager.get(this.id.replace('-rowset-grid', '-store'));
+            },
             dockedItems: me.rowsetDockedA(),
             listeners: {
                 boxready: function() {
-                    me.gridColumnAFit();
+                    //me.gridColumnAFit();
                 }
             }
         }, me.rowset);

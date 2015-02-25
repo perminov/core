@@ -17,11 +17,11 @@ Ext.define('Indi.lib.trail.Item', {
      * @return {String}
      */
     bid: function() {
-        var s = 'i-section-' + this.section.alias + '-action-' + this.action.alias;
-        if (this.row) {
-            s += '-row-' + (this.row.id || 0);
-        } else if (this.parent().row) {
-            s += '-parentrow-' + this.parent().row.id;
+        var me = this, s = 'i-section-' + me.section.alias + '-action-' + me.action.alias;
+        if (me.row) {
+            s += '-row-' + (me.row.id || 0);
+        } else if (me.parent().row) {
+            s += '-parentrow-' + me.parent().row.id;
         }
         return s;
     },

@@ -26,9 +26,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         listeners: {
             afterrender: function(me){
                 setTimeout(function(){
+                    Indi.trail(true).breadCrumbs(me.ctx().route);
                     me.ctx().getStore().load();
                 });
-                Indi.trail(true).breadCrumbs();
             }
         },
 
@@ -57,15 +57,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     store: {
         method: 'POST',
         remoteSort: true,
-        proxy:  new Ext.data.HttpProxy({
-            method: 'POST',
-            reader: {
-                type: 'json',
-                root: 'blocks',
-                totalProperty: 'totalCount',
-                idProperty: 'id'
-            }
-        }),
         listeners: {
             beforeload: function(){
                 this.ctx().filterChange({noReload: true});
@@ -74,6 +65,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 this.ctx().storeLoadCallbackDefault();
                 this.ctx().storeLoadCallback();
             }
+        },
+        ctx: function() {
+            return Ext.getCmp(this.storeId.replace('-store', ''));
         }
     },
 
@@ -270,6 +264,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Setup trailLevel property
         if (config.trailLevel) me.trailLevel = config.trailLevel;
 
+        // Setup `route` property
+        if (config.route) me.route = config.route;
+
+        // Append tools and toolbars to the main panel
+        Ext.merge(me.panel, {
+            title: me.ti().section.title
+        });
+
         // Merge configs
         me.mergeParent(config);
 
@@ -280,13 +282,21 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: parseInt(me.ti().section.rowsOnPage),
             currentPage: me.storeCurrentPage(),
-            ctx: Ext.Component.prototype.ctx
+            proxy:  new Ext.data.HttpProxy({
+                method: 'POST',
+                reader: {
+                    type: 'json',
+                    root: 'blocks',
+                    totalProperty: 'totalCount',
+                    idProperty: 'id'
+                }
+            })
         }, me.store);
 
         // Create store
         Ext.create('Ext.data.Store', me.store);
 
-        // Call panret
+        // Call parent
         me.callParent(arguments);
     },
 
@@ -1023,11 +1033,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
-        var me = this;
+        var me = this, uri;
+
+        uri = me.ti().section.href + action.alias +
+            '/id/' + row.get('id') + '/ph/' + me.ti().section.primaryHash + '/aix/' + aix + '/';
 
         // Build the url and load it
-        Indi.load(me.ti().section.href + action.alias +
-            '/id/' + row.get('id') + '/ph/' + Indi.trail().section.primaryHash + '/aix/' + aix + '/', ajaxCfg);
+        Indi.load(uri, ajaxCfg);
     },
 
     /**
@@ -1060,7 +1072,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 itemclick: function(sl, row) {
 
                     // Get selection
-                    var selection = Ext.getCmp('i-center-center-wrapper').getComponent(0).getSelectionModel().getSelection();
+                    var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection();
 
                     // If no selection - show a message box
                     if (selection.length == 0) {

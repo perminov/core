@@ -90,6 +90,9 @@ Ext.create('Indi', {
     }
 });
 </script>
-<div style="display: none;"><div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div></div>
+<div style="display: none;">
+    <div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div>
+    <div id="i-response-html"></div>
+</div>
 </body>
 </html>

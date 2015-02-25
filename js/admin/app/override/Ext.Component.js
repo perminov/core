@@ -9,8 +9,7 @@ Ext.override(Ext.Component, {
      * @return {*}
      */
     ctx: function() {
-        var trailLevel = this.trailLevel != undefined ? this.trailLevel : Ext.getCmp('i-center-center-wrapper').trailLevel;
-        var trailItem = Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
+        var me = this, wrapper = me.isWrapper ? me : me.up('[isWrapper]'), aCmp = wrapper.ctx(), trailItem = aCmp.ti();
         return Indi.app.getController(trailItem.section.alias).actions[trailItem.action.alias];
     },
 
@@ -19,8 +18,8 @@ Ext.override(Ext.Component, {
      * @return {*}
      */
     ti: function(){
-        var trailLevel = this.trailLevel != undefined ? this.trailLevel : Ext.getCmp('i-center-center-wrapper').trailLevel;
-        return Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
+        var me = this, wrapper = me.up('[isWrapper]'), aCmp = wrapper.ctx();
+        return aCmp.ti();
     },
 
     // @inheritdoc
@@ -31,12 +30,6 @@ Ext.override(Ext.Component, {
         me.getToolTip = function() {
             return Ext.getCmp(me.id + '-tooltip');
         };
-
-        /*me.ctx = function() {
-            var trailLevel = Ext.getCmp('i-center-center-wrapper').trailLevel;
-            var trailItem = Indi.trail(trailLevel - (Indi.trail(true).store.length - 1));
-            return Indi.app.getController(trailItem.section.alias).actions[trailItem.action.alias];
-        }*/
 
         // If 'tooltip' property was defined, create the tooltip object
         if (me.tooltip) Ext.tip.ToolTip.create(me);
