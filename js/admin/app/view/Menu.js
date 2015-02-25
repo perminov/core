@@ -79,6 +79,9 @@ Ext.define('Indi.view.Menu', {
 
     // @inheritdoc
     listeners: {
+        afterrender: function(c) {
+            c.expandAll();
+        },
         itemclick: function(view, rec, item, index, eventObj) {
             if (rec.get('leaf') == false) {
                 if (rec.data.expanded) rec.collapse();
