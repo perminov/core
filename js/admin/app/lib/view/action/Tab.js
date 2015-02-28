@@ -13,6 +13,12 @@ Ext.define('Indi.lib.view.action.Tab', {
         var me = this;
 
         // Provide Indi.load() call to be performed once the box for component is ready
-        me.on('boxready', function() { if (me.load) Indi.load(me.load, {into: me.id});});
+        me.on('activate', function() {
+
+            if (me.load && me.up('tabpanel').height != 25 && !me.loaded) {
+                Indi.load(me.load, {into: me.id});
+                me.loaded = true;
+            }
+        });
     }
 });

@@ -53,5 +53,12 @@ Ext.define('Indi.lib.view.action.Panel', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    /**
+     * This is for override in child classes
+     */
+    forScope: function() {
+        return {}
     }
 });

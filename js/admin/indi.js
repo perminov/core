@@ -309,7 +309,8 @@ Ext.define('Indi', {
          * Destroy the contents of center panel, and all objects related to it
          */
         clearCenter: function() {
-            if (Ext.getCmp(Indi.centerId)) Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy()}, 1);
+            //if (Ext.getCmp(Indi.centerId)) Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy();}, 1);
+            if (Ext.getCmp(Indi.centerId)) Ext.getCmp(Indi.centerId).destroy();
         },
 
         /**
@@ -329,32 +330,41 @@ Ext.define('Indi', {
          * @param {Object} cfg Request config
          */
         load: function(uri, cfg) {
+            var centerPnl = Ext.getCmp(Indi.centerId);
 
             // Normalize `cfg` argument
             cfg = cfg || {};
 
-            // Clear center region
-            if (!cfg.into) Indi.clearCenter();
+            // Get data for remember
+            if (centerPnl) Ext.merge(cfg, {params: {forScope: Ext.JSON.encode(centerPnl.forScope())}});
 
             // Make the request
             Ext.Ajax.request(Ext.merge({
                 url: Indi.pre + uri,
                 success: function(response, request){
 
-                    // Try to convert responseText to json-object
-                    var json = response.responseText.json();
+                    // Destroy center panel
+                    if (!cfg.into) Indi.clearCenter();
 
-                    // If responseText converstion to json-object was successful
-                    if (json) {
+                    // Process response
+                    Ext.defer(function(){
 
-                        // If `json` has `trail` property, apply/dispatch it
-                        if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+                        // Try to convert responseText to json-object
+                        var json = response.responseText.json();
 
-                        // Else if
-                        else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+                        // If responseText converstion to json-object was successful
+                        if (json) {
 
-                    // Run response
-                    } else Ext.get('i-center-center-body').update(response.responseText, true);
+                            // If `json` has `trail` property, apply/dispatch it
+                            if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+
+                            // Else if
+                            else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+
+                            // Run response
+                        } else Ext.get('i-center-center-body').update(response.responseText, true);
+
+                    }, 10);
                 }
             }, cfg));
         },

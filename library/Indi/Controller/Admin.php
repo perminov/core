@@ -56,6 +56,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Jump, if need
         $this->jump();
 
+        // Adjust params of certain scope, if $_REQUEST['forScope'] param exists
+        $this->adjustCertainScope();
+
         // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
         if (Indi::trail(true) && Indi::trail()->model) {
 
@@ -2050,5 +2053,34 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
         $this->redirect(PRE . array_pop($nav));
+    }
+
+    /**
+     * This function is for adjusting params of a scope, identified by it's section and hash
+     *
+     * @return mixed
+     */
+    public function adjustCertainScope() {
+
+        // If no `forScope` param exists within request data - return
+        if (!$apply = Indi::post('forScope')) return;
+
+        // If try to json-decode the value of the $apply variable has no success - return
+        if (!$apply = json_decode($apply, true)) return;
+
+        // If $apply object does not have either `section` or `hash` properties - return
+        if (!$apply['section'] || !$apply['hash']) return;
+
+        // If there is no such a scope - return
+        if (!$_SESSION['indi']['admin'][$apply['section']][$apply['hash']]) return;
+
+        // Preliminary unset 'section' and 'hash' params from $merge array, before merging with $_SESSION[...]
+        $merge = $apply; unset($merge['section'], $merge['hash']);
+
+        // Adjust scope, according to params
+        $_SESSION['indi']['admin'][$apply['section']][$apply['hash']] = array_merge(
+            $_SESSION['indi']['admin'][$apply['section']][$apply['hash']],
+            $merge
+        );
     }
 }
