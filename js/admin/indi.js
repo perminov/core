@@ -338,21 +338,31 @@ Ext.define('Indi', {
             // Normalize `cfg` argument
             cfg = cfg || {};
 
-            if (!Indi.loadInto || cfg.into) Indi.loadInto = cfg.into;
+            // Clear center region
+            if (!cfg.into) Indi.clearCenter();
 
             // Make the request
             Ext.Ajax.request(Ext.merge({
                 url: Indi.pre + uri,
-                success: function(response){
+                success: function(response, request){
+
+                    // Try to convert responseText to json-object
+                    var json = response.responseText.json();
 
                     // Push the given url to a story stack
                     Indi.story.push(uri);
 
-                    // Clear center region
-                    if (!Indi.loadInto) Indi.clearCenter();
+                    // If responseText converstion to json-object was successful
+                    if (json) {
+
+                        // If `json` has `trail` property, apply/dispatch it
+                        if (json.trail) Indi.trail(true).apply(json.trail, cfg);
+
+                        // Else if
+                        else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
 
                     // Run response
-                    Ext.get('i-response-html').update(response.responseText, true);
+                    } else Ext.get('i-center-center-body').update(response.responseText, true);
                 }
             }, cfg));
         },
@@ -593,6 +603,22 @@ Ext.define('Indi', {
                     configurable: false,
                     value: function(i) {
                         return this[this.length - 1 - (isNaN(i) ? 0 : i)];
+                    }
+                });
+            },
+
+            /**
+             * Get the las item of the array
+             *
+             * @param i {Number}
+             * @return {*}
+             */
+            'String.prototype.json': function() {
+                Object.defineProperty(String.prototype, 'json', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function() {
+                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = JSON.parse(this)) ? r : false
                     }
                 });
             }

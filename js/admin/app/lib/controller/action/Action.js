@@ -146,13 +146,21 @@ Ext.define('Indi.lib.controller.action.Action', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this;
+        var me = this, intoCmp;
 
-        if (Indi.loadInto) {
-            var tab = Ext.getCmp(Indi.loadInto);
-            tab.addDocked(me.panelDockedA());
-            tab.add(me.panel.items);
-            Indi.loadInto = null;
+        // If all contents should be added to existing panel
+        if (me.cfg.into) {
+
+            // Get that panel
+            intoCmp = Ext.getCmp(me.cfg.into);
+
+            // Add docked item to it
+            intoCmp.addDocked(me.panelDockedA());
+
+            // Add regular items
+            intoCmp.add(me.panel.items);
+
+        // Else
         } else {
 
             // Append tools and toolbars to the main panel
