@@ -589,7 +589,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
                 },
                 itemclick: function(cmp, row) {
-                    me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
+                    me.goto('/' + row.get('alias') + '/index/id/'+ me.ti().row.id
                         +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
                 }
             }

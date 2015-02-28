@@ -1073,7 +1073,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         });
 
                     // Else load the nested subsection contents
-                    } else if (row.get('alias')) Indi.load(Indi.pre + '/' + row.get('alias') + '/index/id/'
+                    } else if (row.get('alias')) Indi.load('/' + row.get('alias') + '/index/id/'
                         + selection[0].data.id + '/' + 'ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
                 }
             }
