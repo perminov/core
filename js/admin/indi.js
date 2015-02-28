@@ -342,7 +342,7 @@ Ext.define('Indi', {
 
             // Make the request
             Ext.Ajax.request(Ext.merge({
-                url: uri,
+                url: Indi.pre + uri,
                 success: function(response){
 
                     // Push the given url to a story stack

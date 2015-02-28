@@ -435,7 +435,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     bindLoads: function(root) {
         root.getEl().select('[load]').each(function(el){
             el.on('click', function(e, dom){
-                Indi.load(Indi.pre + Ext.get(dom).attr('load'));
+                Indi.load(Ext.get(dom).attr('load'));
             });
         });
     },
@@ -448,7 +448,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     bindJumps: function(root) {
         root.getEl().select('[jump]').each(function(el){
             el.on('click', function(e, dom){
-                Indi.load(Indi.pre + Ext.get(dom).attr('jump') + 'jump/1/');
+                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
             });
         });
     },

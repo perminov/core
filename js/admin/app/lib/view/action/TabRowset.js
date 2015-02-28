@@ -10,14 +10,14 @@ Ext.define('Indi.lib.view.action.TabRowset', {
     alternateClassName: 'Indi.View.Action.TabRowset',
 
     // @inheritdoc
-    mixins: ['Indi.lib.view.action.Tab'],
+    mixins: {tab: 'Indi.lib.view.action.Tab'},
 
     // @inheritdoc
     initComponent: function() {
         var me = this;
 
-        // Provide Indi.load() call to be performed once the box for component is ready
-        me.on('boxready', function() { if (me.load) Indi.load(Indi.pre + me.load, {into: me.id});});
+        // Call tab mixin initComponent method
+        me.mixins.tab.initComponent.call(me);
 
         // Call parent
         me.callParent();
