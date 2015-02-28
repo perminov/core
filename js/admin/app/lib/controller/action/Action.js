@@ -1,10 +1,3 @@
-Ext.override(Ext.tab.Bar, {
-    onClick: function(e) {
-        this.fireClickEvent('click', e);
-        this.callParent(arguments);
-    }
-});
-
 /**
  * Base class for all controller actions instances
  */
@@ -23,11 +16,10 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Wrapper-panel config
      */
     panel: {
-        border: 0,
+        xtype: 'actionpanel',
         height: '100%',
         closable: true,
         layout: 'border',
-        isWrapper: true,
         docked: {
             default: {
                 xtype: 'toolbar',
@@ -36,14 +28,6 @@ Ext.define('Indi.lib.controller.action.Action', {
             },
             items: [],
             inner: {}
-        },
-        ctx: function() {
-            return Ext.getCmp(this.id.replace('-wrapper', ''))
-        },
-        onDestroy: function() {
-            var me = this;
-            if (me.ctx()) me.ctx().destroy();
-            me.callParent();
         }
     },
 
@@ -90,7 +74,6 @@ Ext.define('Indi.lib.controller.action.Action', {
      */
     south: {
         xtype: 'tabpanel',
-        bubbleEvents: ['add', 'remove', 'click'],
         minHeight: 25,
         tabBar: {
             listeners: {
@@ -137,18 +120,27 @@ Ext.define('Indi.lib.controller.action.Action', {
     /**
      * Get the base id for all components, created while controller's action execution
      * If `up` argument is given, function will return base id of upper-level controller's action
+     * Actually, there is no need to call this method with `up` argument not passed or passed as zero,
+     * because the return value will be exact the same as `id` property, which is available initially.
+     * So this method should be used if upper-level base ids are needed to be got
      *
      * @param up
      * @return {String}
      */
     bid: function(up) {
         var me = this, s = 'i-section-' + me.ti(up).section.alias + '-action-' + me.ti(up).action.alias;
+
+        // Normalize `up` argument
         up = isNaN(up) ? 0 : up;
+
+        // Build the tail part of base id
         if (me.ti(up).row) {
             s += '-row-' + (me.ti(up).row.id || 0);
         } else if (me.ti(up + 1).row) {
             s += '-parentrow-' + me.ti(up + 1).row.id;
         }
+
+        // Return
         return s;
     },
 
@@ -160,7 +152,6 @@ Ext.define('Indi.lib.controller.action.Action', {
             var tab = Ext.getCmp(Indi.loadInto);
             tab.addDocked(me.panelDockedA());
             tab.add(me.panel.items);
-            tab.fireEvent('afterrender', tab);
             Indi.loadInto = null;
         } else {
 
@@ -171,12 +162,10 @@ Ext.define('Indi.lib.controller.action.Action', {
                 tools: me.panelToolA()
             });
 
-            // Setup main panel title, contents and trailLevel property
-            Ext.create('Ext.Panel', Ext.merge({
-                items: me.panel.items,
-                trailLevel: me.trailLevel
-            }, me.panel));
+            // Create panel instance
+            Ext.widget(me.panel);
 
+            // Update id of the main panel (temporary)
             Indi.centerId = me.panel.id;
         }
 
@@ -486,13 +475,12 @@ Ext.define('Indi.lib.controller.action.Action', {
         });
     },
 
+    // @inheritdoc
     constructor: function(config) {
         var me = this;
 
         // Set up an id for wrapper panel
-        Ext.merge(me.panel, {
-            id: me.bid() + '-wrapper'
-        });
+        me.panel.id = config.id + '-wrapper';
 
         // Call parent
         me.callParent(arguments);

@@ -14,15 +14,12 @@ Ext.define('Indi.lib.controller.action.Row', {
 
     // @inheritdoc
     panel: {
+
+        // @inheritdoc
+        xtype: 'actionrow',
+
         title: '',
         closable: false,
-        listeners: {
-            afterrender: function(me){
-                Ext.defer(function(){
-                    Indi.trail(true).breadCrumbs(me.ctx().route);
-                }, 1);
-            }
-        },
 
         /**
          * Here we separate docked items on items-level1 and items-level2, e.g items-level1 are
@@ -53,7 +50,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     row: {
         border: 0,
-        height: '50%'
+        height: '40%'
     },
 
     /**
@@ -706,76 +703,74 @@ Ext.define('Indi.lib.controller.action.Row', {
         });
     },
 
-    southItemA: function() {
-        var me = this, nested = me.ti().sections, itemA = [], i;
-        for (i = 0; i < nested.length; i++) {
-            itemA.push({
-                nested: nested[i],
-                title: nested[i].title,
-                id: 'i-section-' + nested[i].alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
-                isWrapper: true,
-                isTab: true,
-                border: 0,
-                layout: 'fit',
-                trailLevel: me.trailLevel + 1,
-                toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
-                listeners: {
-                    activate: function(c) {
-                        if (!c.loaded) {
-                            var uri = Indi.pre + '/' + c.nested.alias + '/index/id/' + me.ti().row.id
-                                + '/ph/' + me.ti().scope.hash + '/aix/' + me.ti().scope.aix + '/';
+    /**
+     * Default config for south region panel items
+     *
+     * @param src
+     * @return {Object}
+     */
+    southItemIDefault: function(src) {
+        var me = this, scope = me.ti().scope;
 
-                            Indi.load(uri, {into: c.id});
-                            c.loaded = true;
-                        }
-                    },
-                    afterrender: function(me){
-                        setTimeout(function(){
-                            if (me.ctx()) me.ctx().getStore().load();
-                        });
-                    }
-                },
-                tools: [{alias: 'reset'}],
-                docked: {
-                    default: {minHeight: 20},
-                    items: [{alias: 'filter'}, {alias: 'master', height: 20}],
-                    inner: {
-                        master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
-                    }
-                },
-                ctx: function() {
-                    return Ext.getCmp(this.id.replace('-wrapper', ''))
-                },
-                onDestroy: function() {
-                    var me = this;
-                    if (me.ctx()) me.ctx().destroy();
-                    me.callParent();
-                }
-            })
+        // Config
+        return {
+            xtype: 'actiontabrowset',
+            id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+            load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
+            title: src.title,
+            name: src.alias
+        }
+    },
+
+    /**
+     * Build and return the array of components configs, that will be used as inner items within south region panel
+     *
+     * @return {Array}
+     */
+    southItemA: function() {
+        var me = this, srcA = me.ti().sections, itemA = [], itemI, item$, eItem$, i;
+
+        // Foreach item within srcA
+        for (i = 0; i < srcA.length; i++) {
+
+            // Get item default config
+            itemI = me.southItemIDefault(srcA[i]);
+
+            // Apply item custom config
+            eItem$ = 'southItem$' + Indi.ucfirst(srcA[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI, srcA[i]) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (Ext.isDefined(me[eItem$])) {
+                itemI = null;
+                continue;
+            }
+
+            // Add item
+            if (itemI) itemA.push(itemI);
         }
 
+        // Return
         return itemA;
     },
 
     /**
      * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.row form panel configuration
+     * Currently is consists from this.row (form panel configuration) and from this.south
+     * (if has non-zero-length `items` property)
      *
      * @return {Array}
      */
     panelItemA: function() {
 
         // Panels array
-        var me = this, itemA = [], rowItem = me.row, southItem = me.south, southItemItemA = me.southItemA();
+        var me = this, itemA = [], rowItem = me.row, southItem = me.south;
 
-        // Append row panel
+        // Append row (center region) panel
         if (rowItem) itemA.push(rowItem);
 
-        // Append south panel only if it's consistent
-        if (southItemItemA.length)
-            itemA.push(Ext.merge(southItem, {
-                items: southItemItemA
-            }));
+        // Append tab (south region) panel only if it's consistent
+        if (southItem && (southItem.items = me.southItemA()).length) itemA.push(southItem);
 
         // Return panels array
         return itemA;
@@ -784,9 +779,6 @@ Ext.define('Indi.lib.controller.action.Row', {
     // @inheritdoc
     initComponent: function() {
         var me = this;
-
-        // Setup id
-        me.id = me.bid();
 
         // Setup row panel
         me.row = Ext.merge({
@@ -894,9 +886,6 @@ Ext.define('Indi.lib.controller.action.Row', {
     // @inheritdoc
     constructor: function(config) {
         var me = this;
-
-        // Setup trailLevel property
-        if (config.trailLevel) me.trailLevel = config.trailLevel;
 
         // Setup `route` property
         if (config.route) me.route = config.route;

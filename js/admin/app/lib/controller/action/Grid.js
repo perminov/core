@@ -458,7 +458,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     keyMap: function() {
         var me = this;
-return;
+
         // Add keyboard event handelers
         if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keydown',
@@ -677,7 +677,6 @@ return;
 
     // @inheritdoc
     rowsetSummary: function() {
-
         var me = this, grid = Ext.getCmp(me.rowset.id), summary = {};
 
         // Pick summary definition from grid columns's summaries types definitions, if used
@@ -701,15 +700,11 @@ return;
         me.rowset = Ext.merge({
             id: me.id + '-rowset-grid',
             columns: me.gridColumnA(),
-            //store: me.getStore(),
-            store: Ext.StoreMgr.get(me.id + '-store'),
-            getStore: function() {
-                return Ext.StoreManager.get(this.id.replace('-rowset-grid', '-store'));
-            },
+            store: me.getStore(),
             dockedItems: me.rowsetDockedA(),
             listeners: {
                 boxready: function() {
-                    //me.gridColumnAFit();
+                    me.gridColumnAFit();
                 }
             }
         }, me.rowset);

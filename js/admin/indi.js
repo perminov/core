@@ -29,21 +29,46 @@ Ext.define('Indi', {
     statics: {
 
         /**
-         * Shortcut to trail data
+         * A list of function names, that are declared within Indi object, but should be accessible within global scope
+         * @type {Array}
+         */
+        share: ['alias', 'hide', 'show', 'number'],
+
+        /**
+         * Uri history
+         */
+        story: [],
+
+        /**
+         * Global fields storage. Contains all fields that were even initialised
+         */
+        fields: {},
+
+        /**
+         * Get field by id, from fields storage
          *
-         * Indi.trail(true) - return Indi.Trail.instance object
-         * Indi.trail([0-9]*) - return Indi.Trail.instance.item($1) object
-         *
+         * @param id
          * @return {*}
          */
-        trail: function() {
-            if (arguments[0] === true) {
-                return Indi.Trail;
-            } else {
-                return Indi.Trail.item(arguments.length ? parseInt(arguments[0]) : 0);
-            }
+        field: function(id) {
+            return this.fields[id];
         },
 
+        /**
+         * Shortcut to trail singleton instance
+         *
+         * @return {Indi.lib.trail.Trail}
+         */
+        trail: function() {
+            return Indi.Trail;
+        },
+
+        /**
+         * Retrieve query string ($_GET) any param, identified by `param` key
+         *
+         * @param param
+         * @return {*}
+         */
         get: function(param) {
 
             // Setup auxilliary variables
@@ -148,32 +173,6 @@ Ext.define('Indi', {
         urldecode: function(str){
             return decodeURIComponent((str + '').replace(/\+/g, '%20'));
         },
-
-        /**
-         * Callbacks store
-         *
-         * @type {Object}
-         */
-        callbacks: {},
-
-        /**
-         * Collect callbacks, for further execution
-         *
-         * @param callback Callback function
-         * @param component Component name, which initialization should fire all stored callbacks
-         */
-        ready: function(callback, component, context) {
-            if (typeof context == 'undefined') context = window;
-            context.Indi.callbacks = Indi.callbacks || {};
-            context.Indi.callbacks[component] = Indi.callbacks[component] || [];
-            context.Indi.callbacks[component].push(callback);
-        },
-
-        /**
-         * A list of function names, that are declared within Indi object, but should be accessible within global scope
-         * @type {Array}
-         */
-        share: ['alias', 'hide', 'show', 'number'],
 
         /**
          * Converts passed string to it's url equivalent
@@ -315,11 +314,7 @@ Ext.define('Indi', {
          * Destroy the contents of center panel, and all objects related to it
          */
         clearCenter: function() {
-            var center = Ext.getCmp(Indi.centerId);
-            //console.log(Indi.centerId);
-            if (center) {
-                Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy()}, 1);
-            }
+            if (Ext.getCmp(Indi.centerId)) Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy()}, 1);
         },
 
         /**
@@ -331,11 +326,6 @@ Ext.define('Indi', {
         ucfirst: function(str) {
             return str.charAt(0).toUpperCase() + str.substr(1);
         },
-
-        /**
-         * Uri history
-         */
-        story: [],
 
         /**
          * Load the contents got from `uri` param
@@ -358,6 +348,7 @@ Ext.define('Indi', {
                     // Push the given url to a story stack
                     Indi.story.push(uri);
 
+                    // Clear center region
                     if (!Indi.loadInto) Indi.clearCenter();
 
                     // Run response

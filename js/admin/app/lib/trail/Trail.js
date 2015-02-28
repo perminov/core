@@ -22,16 +22,6 @@ Ext.define('Indi.lib.trail.Trail', {
     },
 
     /**
-     * The data array, that indi.trail will be operating with.
-     * Data will be set by php's json_encode($this->trail->toArray()) call
-     *
-     * @type Array
-     */
-    store: [],
-
-    tree: {},
-
-    /**
      * Prepare trail item row title for use at a part of bread crumbs
      *
      * @param item
@@ -110,17 +100,14 @@ Ext.define('Indi.lib.trail.Trail', {
      * Build the breadcrumbs
      */
     breadCrumbs: function(route){
-        this.store = route;
-
-        // Define an array for crumbs items
-        var crumbA = [];
+        var me = this, crumbA = [], sd, i, item;
 
         // Prepend trail bread crumbs with 'Home' link, if needed
-        if (this.options.crumbs.home)
+        if (me.options.crumbs.home)
             crumbA.push('<a href="' + Indi.pre + '/"><img src="' + Indi.std + '/i/admin/trl-icon-home.gif"/></a>');
 
         // If no trail items exist yet
-        if (this.store.length == 0) {
+        if (route.length == 0) {
 
             // Replace the current contents of #i-center-north-trail DOM node with 'Home' link
             Ext.get('i-center-north-trail').setHTML(crumbA[0]);
@@ -130,19 +117,19 @@ Ext.define('Indi.lib.trail.Trail', {
         }
 
         // Push the first item - section group
-        crumbA.push('<span class="i-trail-section-group">' + this.store[0].section.title + '</span>');
+        crumbA.push('<span class="i-trail-section-group">' + route[0].section.title + '</span>');
 
         // For each remaining trail items
-        for (var i = 1; i < this.store.length; i++) {
+        for (i = 1; i < route.length; i++) {
 
             // Define a shortcut for current trail item
-            var item = this.store[i];
+            item = route[i];
 
             // Define a shortcut for previous trail item
-            if (i > 1) var prev = this.store[i-1];
+            if (i > 1) var prev = route[i-1];
 
             // Define an array for html-nodes, for representing current trail item siblings
-            var sd = [];
+            sd = [];
 
             // If this is at least second iteration within current 'for' loop, and item, that was current at
             // first iteration ( - previous item, actually) has > 1 nested sections, we start building
@@ -150,7 +137,7 @@ Ext.define('Indi.lib.trail.Trail', {
             if (i > 1 && prev.sections.length > 1) {
 
                 // Append opening '<div>' and '<ul>' tags
-                var sd = ['<div class="i-trail-item-sections">'];
+                sd = ['<div class="i-trail-item-sections">'];
                 sd.push('<ul>');
 
                 // Foreach nested sections, within previous trail item
@@ -165,7 +152,7 @@ Ext.define('Indi.lib.trail.Trail', {
                     if (sibling.id != item.section.id) {
                         sd.push(
                             '<li>' +
-                                '<a page-href="' + this._crumbHref(sibling.alias, prev) + '">' +
+                                '<a page-href="' + me._crumbHref(sibling.alias, prev) + '">' +
                                 '&raquo; ' + sibling.title +
                                 '</a>' +
                                 '</li>'
@@ -181,7 +168,7 @@ Ext.define('Indi.lib.trail.Trail', {
             // We append a section name (with link) as a crumb item, prepending it with html of builded
             // siblings div
             crumbA.push(sd.join('') +
-                '<a page-href="'+this._crumbHref(item.section.alias, prev)+'" class="i-trail-item-section">' +
+                '<a page-href="'+me._crumbHref(item.section.alias, prev)+'" class="i-trail-item-section">' +
                 item.section.title +
                 '</a>'
             );
@@ -198,7 +185,7 @@ Ext.define('Indi.lib.trail.Trail', {
                         if (item.actions[a].alias == 'form') formActionIsAllowed = true;
 
                     // If current trail item is not a last item
-                    if (this.store[i+1]) {
+                    if (route[i+1]) {
 
                         // If 'form' action is allowed, we append an 'a' tag, pointing to 'form' action for
                         // current trail item row
@@ -206,7 +193,7 @@ Ext.define('Indi.lib.trail.Trail', {
                             crumbA.push(
                                 '<a page-href="' + this._crumbHref(item.section.alias, item) + '" ' +
                                     'class="i-trail-item-row-title">' +
-                                    this.breadCrumbsRowTitle(item) +
+                                    me.breadCrumbsRowTitle(item) +
                                     '</a>'
                             );
 
@@ -215,7 +202,7 @@ Ext.define('Indi.lib.trail.Trail', {
                         } else {
                             crumbA.push(
                                 '<span class="i-trail-item-row-title">' +
-                                    this.breadCrumbsRowTitle(item) +
+                                    me.breadCrumbsRowTitle(item) +
                                     '</span>'
                             );
                         }
@@ -227,7 +214,7 @@ Ext.define('Indi.lib.trail.Trail', {
                         // item action title, by the same way
                         crumbA.push(
                             '<span class="i-trail-item-row-title">' +
-                                this.breadCrumbsRowTitle(item) +
+                                me.breadCrumbsRowTitle(item) +
                                 '</span>'
                         );
                         crumbA.push('<span>' + item.action.title + '</span>');
@@ -244,12 +231,10 @@ Ext.define('Indi.lib.trail.Trail', {
         }
 
         // If this.options.crumbs.pop is a positive integer - we pop N items from the crumbA array
-        if (this.options.crumbs.pop)
-            for (var i = 0; i < this.options.crumbs.pop; i++)
-                crumbA.pop();
+        if (me.options.crumbs.pop) for (i = 0; i < me.options.crumbs.pop; i++) crumbA.pop();
 
         // Reset this.options.crumbs.pop to '0'
-        this.options.crumbs.pop = 0;
+        me.options.crumbs.pop = 0;
 
         // Replace the current contents of #i-center-north-trail DOM node with imploded crumbA array
         Ext.get('i-center-north-trail').setHTML(crumbA.join('<span> &raquo; </span>'));
@@ -285,44 +270,38 @@ Ext.define('Indi.lib.trail.Trail', {
     /**
      * Apply the store
      *
-     * @param store
+     * @param route
      */
     apply: function(route){
+        var section = route.last().section.alias, action = route.last().action.alias, controller;
 
-        // Set up auxilliary variables
-        var me = this, section = route.last().section.alias, action = route.last().action.alias;
-
-        // Remember the levels of each section within trail
+        // Fulfil global fields storage
         route.forEach(function(r, i, a) {
-            r.level = i;
-            me.tree[r.section.alias] = {
-                title: r.section.title,
-                level: r.level
-            }
+            if (r.fields) r.fields.forEach(function(fr, fi, fa){
+                Indi.fields[fr.id] = new Indi.lib.dbtable.Row.prototype(fr);
+            });
         });
 
-        // Run
+        // Try to pick up loaded controller and dispatch it's certain action
         try {
-            var controller = Indi.app.getController(section);
-            try {
-                controller.dispatch(action, Indi.story.last(), route);
-            } catch (e) {
-                console.log(e.stack);
-            }
+
+            // Get controller
+            controller = Indi.app.getController(section);
+
+            // Try dispatch needed action
+            try {controller.dispatch(action, Indi.story.last(), route);}
+
+            // If dispatch failed - write the stack to the console
+            catch (e) {console.log(e.stack);}
+
+        // If failed
         } catch (e) {
+
+            // Define needed controller on-the-fly
             Ext.define('Indi.controller.' + section, {extend: 'Indi.Controller'});
+
+            // Instantiate it, and dispatch needed action
             Indi.app.getController(section).dispatch(action, Indi.story.last(), route);
         }
-    },
-
-    /**
-     * Get the trail item
-     *
-     * @param stepsUp
-     * @return {*}
-     */
-    item: function(stepsUp) {
-        if (typeof stepsUp == 'undefined') stepsUp = 0;
-        return this.store[this.store.length - 1 - stepsUp];
-    },
+    }
 });

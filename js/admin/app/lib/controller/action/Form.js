@@ -43,7 +43,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         layout: 'anchor',
         defaults: {
             anchor: '100%',
-            labelWidth: '50%',
+            labelWidth: '50%'
         },
 
         // @inheritdoc
@@ -827,7 +827,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         }
     },
 
-    // Key map for grid body
+    // Key map for row body
     keyMap: function() {
         var me = this;
 
