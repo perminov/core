@@ -38,6 +38,6 @@ class Indi_View_Action_Admin implements Indi_View_Action_Interface {
     public function render() {
 
         // Return json-encoded trail data
-        return json_encode(array('trail' =>Indi::trail(true)->toArray(), 'plain' => $this->plain));
+        return json_encode(array('route' =>Indi::trail(true)->toArray(), 'plain' => $this->plain));
     }
 }

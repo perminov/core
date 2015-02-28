@@ -35,11 +35,6 @@ Ext.define('Indi', {
         share: ['alias', 'hide', 'show', 'number'],
 
         /**
-         * Uri history
-         */
-        story: [],
-
-        /**
          * Global fields storage. Contains all fields that were even initialised
          */
         fields: {},
@@ -349,14 +344,11 @@ Ext.define('Indi', {
                     // Try to convert responseText to json-object
                     var json = response.responseText.json();
 
-                    // Push the given url to a story stack
-                    Indi.story.push(uri);
-
                     // If responseText converstion to json-object was successful
                     if (json) {
 
                         // If `json` has `trail` property, apply/dispatch it
-                        if (json.trail) Indi.trail(true).apply(json.trail, cfg);
+                        if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
 
                         // Else if
                         else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);

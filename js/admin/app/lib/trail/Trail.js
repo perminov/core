@@ -272,11 +272,11 @@ Ext.define('Indi.lib.trail.Trail', {
      *
      * @param route
      */
-    apply: function(route, cfg){
-        var section = route.last().section.alias, action = route.last().action.alias, controller;
+    apply: function(scope){
+        var section = scope.route.last().section.alias, action = scope.route.last().action.alias, controller;
 
         // Fulfil global fields storage
-        route.forEach(function(r, i, a) {
+        scope.route.forEach(function(r, i, a) {
             if (r.fields) r.fields.forEach(function(fr, fi, fa){
                 Indi.fields[fr.id] = new Indi.lib.dbtable.Row.prototype(fr);
             });
@@ -289,7 +289,7 @@ Ext.define('Indi.lib.trail.Trail', {
             controller = Indi.app.getController(section);
 
             // Try dispatch needed action
-            try {controller.dispatch(action, Indi.story.last(), route, cfg);}
+            try {controller.dispatch(scope);}
 
             // If dispatch failed - write the stack to the console
             catch (e) {console.log(e.stack);}
@@ -301,7 +301,7 @@ Ext.define('Indi.lib.trail.Trail', {
             Ext.define('Indi.controller.' + section, {extend: 'Indi.Controller'});
 
             // Instantiate it, and dispatch needed action
-            Indi.app.getController(section).dispatch(action, Indi.story.last(), route, cfg);
+            Indi.app.getController(section).dispatch(scope);
         }
     }
 });
