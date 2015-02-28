@@ -33,7 +33,7 @@ Ext.define('Indi.lib.controller.Controller', {
      * @param {String} action Action name/alias
      * @param {String} uri The uri, that current action data was got by request to
      */
-    dispatch: function(action, uri, route) {
+    dispatch: function(action, uri, route, cfg) {
         var me = this, actionExtendCmpName, actionCmpName;
 
         // Setup `actions` property, for being a storage for action classes instances
@@ -71,7 +71,8 @@ Ext.define('Indi.lib.controller.Controller', {
         me.actions[action] = Ext.create(actionCmpName, {
             id: id,
             route: route,
-            uri: Ext.clone(uri)
+            uri: Ext.clone(uri),
+            cfg: Ext.clone(cfg)
         });
     },
 

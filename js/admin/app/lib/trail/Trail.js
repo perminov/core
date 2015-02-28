@@ -272,7 +272,7 @@ Ext.define('Indi.lib.trail.Trail', {
      *
      * @param route
      */
-    apply: function(route){
+    apply: function(route, cfg){
         var section = route.last().section.alias, action = route.last().action.alias, controller;
 
         // Fulfil global fields storage
@@ -289,7 +289,7 @@ Ext.define('Indi.lib.trail.Trail', {
             controller = Indi.app.getController(section);
 
             // Try dispatch needed action
-            try {controller.dispatch(action, Indi.story.last(), route);}
+            try {controller.dispatch(action, Indi.story.last(), route, cfg);}
 
             // If dispatch failed - write the stack to the console
             catch (e) {console.log(e.stack);}
@@ -301,7 +301,7 @@ Ext.define('Indi.lib.trail.Trail', {
             Ext.define('Indi.controller.' + section, {extend: 'Indi.Controller'});
 
             // Instantiate it, and dispatch needed action
-            Indi.app.getController(section).dispatch(action, Indi.story.last(), route);
+            Indi.app.getController(section).dispatch(action, Indi.story.last(), route, cfg);
         }
     }
 });
