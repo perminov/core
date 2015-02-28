@@ -70,20 +70,14 @@ Ext.define('Indi.lib.controller.Controller', {
         // Create action component instance, related to current action
         me.actions[action] = Ext.create(actionCmpName, {
             id: id,
-            trailLevel: me.trailLevel,
             route: route,
-            uri: Ext.clone(uri),
-            clr: me,
-            //panel: Indi.trail(true).wrapper
+            uri: Ext.clone(uri)
         });
     },
 
     // @inheritdoc
-    constructor: function(config){
+    constructor: function(config) {
         var me = this;
-
-        // Setup trail level
-        me.trailLevel = Indi.trail(true).tree[config.id].level;
 
         // Merge parent
         me.mergeParent(config);

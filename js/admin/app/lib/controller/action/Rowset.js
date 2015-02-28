@@ -15,22 +15,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     // @inheritdoc
     panel: {
 
+        // @inheritdoc
+        xtype: 'actionrowset',
+
         /**
          * Array of action-button aliases, that have special icons
          */
         toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
-
-        /**
-         * Provide store autoloading once panel panel is rendered
-         */
-        listeners: {
-            afterrender: function(me){
-                setTimeout(function(){
-                    Indi.trail(true).breadCrumbs(me.ctx().route);
-                    me.ctx().getStore().load();
-                });
-            }
-        },
 
         /**
          * Tools special config
@@ -261,16 +252,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     constructor: function(config) {
         var me = this;
 
-        // Setup trailLevel property
-        if (config.trailLevel) me.trailLevel = config.trailLevel;
-
         // Setup `route` property
         if (config.route) me.route = config.route;
 
-        // Append tools and toolbars to the main panel
-        Ext.merge(me.panel, {
-            title: me.ti().section.title
-        });
+        // Setup main panel title as current secion title
+        me.panel.title = me.ti().section.title;
 
         // Merge configs
         me.mergeParent(config);
@@ -282,7 +268,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: parseInt(me.ti().section.rowsOnPage),
             currentPage: me.storeCurrentPage(),
-            proxy:  new Ext.data.HttpProxy({
+            proxy: new Ext.data.HttpProxy({
                 method: 'POST',
                 reader: {
                     type: 'json',
@@ -1033,12 +1019,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
-        var me = this, uri;
+        var me = this, uri, section = me.ti().section;
 
-        uri = me.ti().section.href + action.alias +
-            '/id/' + row.get('id') + '/ph/' + me.ti().section.primaryHash + '/aix/' + aix + '/';
+        // Build the uri
+        uri = section.href + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
 
-        // Build the url and load it
+        // Load it
         Indi.load(uri, ajaxCfg);
     },
 

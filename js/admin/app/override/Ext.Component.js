@@ -5,21 +5,28 @@
 Ext.override(Ext.Component, {
 
     /**
+     * This property's name is an abbreviation that stands for 'Merge Config Object-Properties With Superclass Ones'.
+     * Property represents the list of properties, that should be merged through all superclass hierarchy, starting
+     * from current component instance and up to it's most top superclass, instead of simple overwriting that properties
+     */
+    mcopwso: [],
+
+    /**
      * Get the context of a component. Context here mean the current action object fired within certain controller object
-     * @return {*}
+     *
+     * @return {Indi.lib.controller.action.Action}
      */
     ctx: function() {
-        var me = this, wrapper = me.isWrapper ? me : me.up('[isWrapper]'), aCmp = wrapper.ctx(), trailItem = aCmp.ti();
-        return Indi.app.getController(trailItem.section.alias).actions[trailItem.action.alias];
+        var me = this, wrapper = me.isWrapper ? me : me.up('[isWrapper]'); return wrapper.ctx();
     },
 
     /**
-     * Get the current trail item, that was in power at the monent of component instantiation
-     * @return {*}
+     * Get the current trail item, that was in power at the moment of component instantiation
+     *
+     * @return {Indi.lib.trail.Item}
      */
     ti: function(){
-        var me = this, wrapper = me.up('[isWrapper]'), aCmp = wrapper.ctx();
-        return aCmp.ti();
+        return this.ctx().ti();
     },
 
     // @inheritdoc
@@ -35,20 +42,11 @@ Ext.override(Ext.Component, {
         if (me.tooltip) Ext.tip.ToolTip.create(me);
 
         // Call parent
-        me.callParent();
+        me.callParent(arguments);
 
         // Set position on the page
-        if (!(me.x && me.y) && (me.pageX || me.pageY)) {
-            me.setPagePosition(me.pageX, me.pageY);
-        }
+        if (!(me.x && me.y) && (me.pageX || me.pageY)) me.setPagePosition(me.pageX, me.pageY);
     },
-
-    /**
-     * This property's name is an abbreviation that stands for 'Merge Config Object-Properties With Superclass Ones'.
-     * Property represents the list of properties, that should be merged through all superclass hierarchy, starting
-     * from current component instance and up to it's most top superclass, instead of simple overwriting that properties
-     */
-    mcopwso: [],
 
     /**
      * Provide taking in effect for `mcopwso` property
