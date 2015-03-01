@@ -18,6 +18,7 @@ Ext.define('Indi.lib.controller.action.Action', {
     panel: {
         id: 'i-center-center-wrapper',
         renderTo: 'i-center-center-body',
+        isWrapper: true,
         border: 0,
         height: '100%',
         closable: true,
@@ -140,13 +141,14 @@ Ext.define('Indi.lib.controller.action.Action', {
                 if (typeof me[fnItemI] == 'function') itemI = me[fnItemI]();
 
                 // If config is an object, merge itemI with it
-                if (Ext.isObject(itemCfgA[i])) Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
+                if (Ext.isObject(itemCfgA[i]) && (itemI || typeof me[fnItemI] != 'function'))
+                    Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
 
             // Else use as is
             } else itemI = itemCfgA[i];
 
             // Adjust item
-            if (typeof adjust == 'function') itemI = adjust(itemI);
+            if (itemI && typeof adjust == 'function') itemI = adjust(itemI);
 
             // If itemI become consistent - push it to items array
             if (itemI && ((Ext.isObject(itemI) && JSON.stringify(Object.keys(itemI)) != '["alias"]') || allowNaO))
