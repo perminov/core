@@ -1653,7 +1653,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             if (Indi::uri()->ph) $scope = $_SESSION['indi']['admin'][Indi::uri('section')][Indi::uri()->ph];
 
             // Build uri location for redirect
-            $location = Indi::trail()->section->href  . '/' .
+            $location = '/' . Indi::trail()->section->alias  . '/' .
                 ($id ? 'index/id/' . $id . '/' : ($scope ? 'index/' : '')) .
                 ($scope['upperHash'] ? 'ph/' . $scope['upperHash'] . '/aix/' . $scope['upperAix'] . '/' : '');
 
