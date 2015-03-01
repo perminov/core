@@ -738,7 +738,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             handler: function(){
 
                 // Create shortcuts for involved components
-                var url = me.ti().section.href + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
+                var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
                     tfID = Ext.getCmp(me.panelDockedInnerBid() + 'id'),
                     btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
                     btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),

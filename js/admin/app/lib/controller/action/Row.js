@@ -102,7 +102,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelDockedInner$Back: function(urlonly) {
 
         // Build the url for goto
-        var me = this, url = me.ti().section.href;
+        var me = this, url = '/' + me.ti().section.alias + '/';
         if (me.ti(1).row) url += 'index/id/' + me.ti(1).row.id + '/' +
             (me.ti().scope.upperHash ? 'ph/'+me.ti().scope.upperHash+'/' : '') +
             (me.ti().scope.upperAix ? 'aix/'+me.ti().scope.upperAix+'/' : '');
@@ -179,13 +179,13 @@ Ext.define('Indi.lib.controller.action.Row', {
                             me.getMask().show();
 
                             // Build the request uri and setup save button shortcut
-                            var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                            var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
                                 input.getValue() + '/ph/'+ me.ti().section.primaryHash+'/';
 
                             // We should ensure that row that user wants to retrieve
                             // - is exists within a current section scope
                             Ext.Ajax.request({
-                                url: url + 'check/1/',
+                                url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
                                 params: {forceOffsetDetection: true},
                                 success: function(response){
 
@@ -234,7 +234,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
 
                 // Build the url
-                url = me.ti().section.href + me.ti().action.alias;
+                url = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
                 url += ats && ats.checked
                     ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
                     : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
@@ -450,7 +450,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                         me.getMask().show();
 
                         // Build the request uri and setup save button shortcut
-                        var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                        var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
                             value + '/ph/'+ me.ti().section.primaryHash + '/';
 
                         // If value was selected without combo lookup usage
@@ -672,7 +672,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     gotoOffset: function(offset, input) {
 
         // Build the request uri
-        var me = this, url = me.ti().section.href + me.ti().action.alias + '/aix/' +
+        var me = this, url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/aix/' +
                 offset + '/ph/'+ me.ti().section.primaryHash+'/',
             spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
 
@@ -682,7 +682,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         // We should ensure that row that user wants to retrieve
         // - is exists within a current section scope
         Ext.Ajax.request({
-            url: url + 'check/1/',
+            url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
             success: function(response){
 
                 // Get the result of row id detection from the response
