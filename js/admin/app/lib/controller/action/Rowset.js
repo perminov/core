@@ -870,7 +870,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
                 handler: function(){
-                    Indi.load(me.ti().section.href + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
+                    Indi.load('/' + me.ti().section.alias + '/' + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
                 }
             }
         }
@@ -1022,7 +1022,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
-        uri = section.href + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
 
         // Load it
         Indi.load(uri, ajaxCfg);

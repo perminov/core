@@ -78,7 +78,7 @@ Ext.define('Indi.lib.trail.Trail', {
     _crumbHref: function(section, hero) {
 
         // All hrefs start from project's root, concatenated with a current section alias
-        var href = Indi.pre + '/' + section + '/';
+        var href = '/' + section + '/';
 
         // If source of a scope of additional info is provided
         if (hero) {
