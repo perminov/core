@@ -19,6 +19,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         firstColumnWidthFraction: 0.4,
         smallColumnWidth: 100,
         border: 0,
+        layout: 'fit',
 
         /**
          * Features
@@ -79,7 +80,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.handler();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
             }
         }
     },
@@ -434,7 +435,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     bindLoads: function(root) {
         root.getEl().select('[load]').each(function(el){
             el.on('click', function(e, dom){
-                Indi.load(Indi.pre + Ext.get(dom).attr('load'));
+                Indi.load(Ext.get(dom).attr('load'));
             });
         });
     },
@@ -447,7 +448,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     bindJumps: function(root) {
         root.getEl().select('[jump]').each(function(el){
             el.on('click', function(e, dom){
-                Indi.load(Indi.pre + Ext.get(dom).attr('jump') + 'jump/1/');
+                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
             });
         });
     },
@@ -459,7 +460,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var me = this;
 
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.F4,
@@ -507,7 +508,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
 
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,
@@ -694,9 +695,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
     // @inheritdoc
     initComponent: function() {
         var me = this;
-
-        // Setup id
-        me.id = me.bid();
 
         // Setup rowset panel config
         me.rowset = Ext.merge({

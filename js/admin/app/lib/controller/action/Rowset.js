@@ -15,22 +15,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     // @inheritdoc
     panel: {
 
+        // @inheritdoc
+        xtype: 'actionrowset',
+
         /**
          * Array of action-button aliases, that have special icons
          */
         toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
-
-        /**
-         * Provide store autoloading once panel panel is rendered
-         */
-        listeners: {
-            afterrender: function(me){
-                setTimeout(function(){
-                    me.ctx().getStore().load();
-                });
-                Indi.trail(true).breadCrumbs();
-            }
-        },
 
         /**
          * Tools special config
@@ -57,15 +48,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     store: {
         method: 'POST',
         remoteSort: true,
-        proxy:  new Ext.data.HttpProxy({
-            method: 'POST',
-            reader: {
-                type: 'json',
-                root: 'blocks',
-                totalProperty: 'totalCount',
-                idProperty: 'id'
-            }
-        }),
         listeners: {
             beforeload: function(){
                 this.ctx().filterChange({noReload: true});
@@ -74,6 +56,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 this.ctx().storeLoadCallbackDefault();
                 this.ctx().storeLoadCallback();
             }
+        },
+        ctx: function() {
+            return Ext.getCmp(this.storeId.replace('-store', ''));
         }
     },
 
@@ -274,8 +259,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     constructor: function(config) {
         var me = this;
 
-        // Setup trailLevel property
-        if (config.trailLevel) me.trailLevel = config.trailLevel;
+        // Setup `route` property
+        if (config.route) me.route = config.route;
+
+        // Setup main panel title as current secion title
+        me.panel.title = me.ti().section.title;
 
         // Merge configs
         me.mergeParent(config);
@@ -287,13 +275,21 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: parseInt(me.ti().section.rowsOnPage),
             currentPage: me.storeCurrentPage(),
-            ctx: Ext.Component.prototype.ctx
+            proxy: new Ext.data.HttpProxy({
+                method: 'POST',
+                reader: {
+                    type: 'json',
+                    root: 'blocks',
+                    totalProperty: 'totalCount',
+                    idProperty: 'id'
+                }
+            })
         }, me.store);
 
         // Create store
         Ext.create('Ext.data.Store', me.store);
 
-        // Call panret
+        // Call parent
         me.callParent(arguments);
     },
 
@@ -881,7 +877,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
                 handler: function(){
-                    Indi.load(me.ti().section.href + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
+                    Indi.load('/' + me.ti().section.alias + '/' + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
                 }
             }
         }
@@ -1030,11 +1026,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
-        var me = this;
+        var me = this, uri, section = me.ti().section;
 
-        // Build the url and load it
-        Indi.load(me.ti().section.href + action.alias +
-            '/id/' + row.get('id') + '/ph/' + Indi.trail().section.primaryHash + '/aix/' + aix + '/', ajaxCfg);
+        // Build the uri
+        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+
+        // Load it
+        Indi.load(uri, ajaxCfg);
     },
 
     /**
@@ -1067,7 +1065,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 itemclick: function(sl, row) {
 
                     // Get selection
-                    var selection = Ext.getCmp('i-center-center-wrapper').getComponent(0).getSelectionModel().getSelection();
+                    var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection();
 
                     // If no selection - show a message box
                     if (selection.length == 0) {
@@ -1082,7 +1080,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         });
 
                     // Else load the nested subsection contents
-                    } else if (row.get('alias')) Indi.load(Indi.pre + '/' + row.get('alias') + '/index/id/'
+                    } else if (row.get('alias')) Indi.load('/' + row.get('alias') + '/index/id/'
                         + selection[0].data.id + '/' + 'ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
                 }
             }

@@ -43,7 +43,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         layout: 'anchor',
         defaults: {
             anchor: '100%',
-            labelWidth: '50%',
+            labelWidth: '50%'
         },
 
         // @inheritdoc
@@ -738,7 +738,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             handler: function(){
 
                 // Create shortcuts for involved components
-                var url = me.ti().section.href + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
+                var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
                     tfID = Ext.getCmp(me.panelDockedInnerBid() + 'id'),
                     btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
                     btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
@@ -827,7 +827,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         }
     },
 
-    // Key map for grid body
+    // Key map for row body
     keyMap: function() {
         var me = this;
 

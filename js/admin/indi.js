@@ -29,21 +29,41 @@ Ext.define('Indi', {
     statics: {
 
         /**
-         * Shortcut to trail data
+         * A list of function names, that are declared within Indi object, but should be accessible within global scope
+         * @type {Array}
+         */
+        share: ['alias', 'hide', 'show', 'number'],
+
+        /**
+         * Global fields storage. Contains all fields that were even initialised
+         */
+        fields: {},
+
+        /**
+         * Get field by id, from fields storage
          *
-         * Indi.trail(true) - return Indi.Trail.instance object
-         * Indi.trail([0-9]*) - return Indi.Trail.instance.item($1) object
-         *
+         * @param id
          * @return {*}
          */
-        trail: function() {
-            if (arguments[0] === true) {
-                return Indi.Trail;
-            } else {
-                return Indi.Trail.item(arguments.length ? parseInt(arguments[0]) : 0);
-            }
+        field: function(id) {
+            return this.fields[id];
         },
 
+        /**
+         * Shortcut to trail singleton instance
+         *
+         * @return {Indi.lib.trail.Trail}
+         */
+        trail: function() {
+            return Indi.Trail;
+        },
+
+        /**
+         * Retrieve query string ($_GET) any param, identified by `param` key
+         *
+         * @param param
+         * @return {*}
+         */
         get: function(param) {
 
             // Setup auxilliary variables
@@ -148,32 +168,6 @@ Ext.define('Indi', {
         urldecode: function(str){
             return decodeURIComponent((str + '').replace(/\+/g, '%20'));
         },
-
-        /**
-         * Callbacks store
-         *
-         * @type {Object}
-         */
-        callbacks: {},
-
-        /**
-         * Collect callbacks, for further execution
-         *
-         * @param callback Callback function
-         * @param component Component name, which initialization should fire all stored callbacks
-         */
-        ready: function(callback, component, context) {
-            if (typeof context == 'undefined') context = window;
-            context.Indi.callbacks = Indi.callbacks || {};
-            context.Indi.callbacks[component] = Indi.callbacks[component] || [];
-            context.Indi.callbacks[component].push(callback);
-        },
-
-        /**
-         * A list of function names, that are declared within Indi object, but should be accessible within global scope
-         * @type {Array}
-         */
-        share: ['alias', 'hide', 'show', 'number'],
 
         /**
          * Converts passed string to it's url equivalent
@@ -312,19 +306,11 @@ Ext.define('Indi', {
         },
 
         /**
-         * Returns the Ext center region component
-         *
-         * @return {*}
-         */
-        getCenter: function() {
-            return Ext.getCmp('i-center');
-        },
-
-        /**
          * Destroy the contents of center panel, and all objects related to it
          */
         clearCenter: function() {
-            if (Ext.getCmp('i-center-center-wrapper')) Ext.getCmp('i-center-center-wrapper').destroy();
+            //if (Ext.getCmp(Indi.centerId)) Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy();}, 1);
+            if (Ext.getCmp(Indi.centerId)) Ext.getCmp(Indi.centerId).destroy();
         },
 
         /**
@@ -338,30 +324,47 @@ Ext.define('Indi', {
         },
 
         /**
-         * Uri history
-         */
-        story: [],
-
-        /**
          * Load the contents got from `uri` param
          *
          * @param {String} uri
          * @param {Object} cfg Request config
          */
         load: function(uri, cfg) {
-
-            // Push the given url to a story stack
-            Indi.story.push(uri);
+            var centerPnl = Ext.getCmp(Indi.centerId);
 
             // Normalize `cfg` argument
             cfg = cfg || {};
 
+            // Get data for remember
+            if (centerPnl) Ext.merge(cfg, {params: {forScope: Ext.JSON.encode(centerPnl.forScope())}});
+
             // Make the request
             Ext.Ajax.request(Ext.merge({
-                url: uri,
-                success: function(response){
-                    Indi.clearCenter();
-                    Ext.get('i-center-center-body').update(response.responseText, true);
+                url: Indi.pre + uri,
+                success: function(response, request){
+
+                    // Destroy center panel
+                    if (!cfg.into) Indi.clearCenter();
+
+                    // Process response
+                    Ext.defer(function(){
+
+                        // Try to convert responseText to json-object
+                        var json = response.responseText.json();
+
+                        // If responseText converstion to json-object was successful
+                        if (json) {
+
+                            // If `json` has `trail` property, apply/dispatch it
+                            if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+
+                            // Else if
+                            else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+
+                            // Run response
+                        } else Ext.get('i-center-center-body').update(response.responseText, true);
+
+                    }, 10);
                 }
             }, cfg));
         },
@@ -586,6 +589,38 @@ Ext.define('Indi', {
 
                         // Return array itself
                         return this;
+                    }
+                });
+            },
+
+            /**
+             * Get the las item of the array
+             *
+             * @param i {Number}
+             * @return {*}
+             */
+            'Array.prototype.last': function() {
+                Object.defineProperty(Array.prototype, 'last', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(i) {
+                        return this[this.length - 1 - (isNaN(i) ? 0 : i)];
+                    }
+                });
+            },
+
+            /**
+             * Get the las item of the array
+             *
+             * @param i {Number}
+             * @return {*}
+             */
+            'String.prototype.json': function() {
+                Object.defineProperty(String.prototype, 'json', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function() {
+                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = JSON.parse(this)) ? r : false
                     }
                 });
             }

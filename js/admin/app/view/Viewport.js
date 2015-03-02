@@ -87,7 +87,7 @@ Ext.define('Indi.view.Viewport', {
             region: 'center',
             id: 'i-center-center',
             border: 1,
-            contentEl: 'i-section-index-action-index-content'
+            //contentEl: 'i-section-index-action-index-content'
         }]
     },
 
@@ -104,9 +104,7 @@ Ext.define('Indi.view.Viewport', {
             Indi.metrics = new Ext.util.TextMetrics();
         },
         afterlayout: function(){
-            if (Ext.getCmp('i-center-center-wrapper')) {
-                Ext.getCmp('i-center-center-wrapper').doComponentLayout();
-            }
+            if (Ext.getCmp(Indi.centerId)) Ext.getCmp(Indi.centerId).doComponentLayout();
         }
     }
 });
