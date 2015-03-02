@@ -556,6 +556,6 @@ class Indi_Controller {
         $call = array_pop(array_slice(debug_backtrace(), 1, 1));
 
         // Make the call
-        call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], $call['args']);
+        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], $call['args']);
     }
 }
