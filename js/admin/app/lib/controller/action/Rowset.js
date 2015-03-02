@@ -1225,7 +1225,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Update combo-filter contents, if need
         if (Ext.isObject(fo) && Ext.Object.getSize(fo)) Ext.Object.each(fo, function(name, store){
-            if (f = Ext.getCmp(me.panel.id).query('[isFilter][name='+name+']')[0]) f.store = store;
+            if (f = Ext.getCmp(me.panel.id).query('[isFilter][name='+name+']')[0]) {
+                f.store = store; f[f.store.ids.length ? 'enable' : 'disable']();
+            }
         });
 
         // Adjust each data-row within the store
