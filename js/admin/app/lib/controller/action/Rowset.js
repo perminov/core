@@ -305,6 +305,112 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Reset all rowset filters
+     */
+    filterReset: function() {
+        var me = this;
+
+        // Prepare a prefix for filter component ids
+        var filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
+
+        // Setup a flag, what will
+        var atLeastOneFilterIsUsed = false;
+
+        // We define an array of functions, first within which will check if at least one filter is used
+        // and if so, second will do a store reload
+        var loopA = [function(cmp, control){
+            if (control == 'color') {
+                if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
+            } else {
+                if ([null, ''].indexOf(cmp.getValue()) == -1) {
+                    if (JSON.stringify(cmp.getValue()) != '[""]') {
+                        atLeastOneFilterIsUsed = true;
+                    }
+                }
+            }
+        }, function(cmp, control){
+            if (control == 'color') {
+                cmp.setValue(0, 0, false);
+                cmp.setValue(1, 360, false);
+            } else {
+                cmp.setValue('');
+            }
+        }];
+
+        // We iterate throgh filter twice - for each function within loopA array
+        for (var l = 0; l < loopA.length; l++) {
+
+            // We prevent unsetting filters values if they are already empty
+            if (l == 1 && atLeastOneFilterIsUsed == false) break;
+
+            // For each filter
+            for (var i = 0; i < me.ti().filters.length; i++) {
+
+                // Define a shortcut for filter field alias
+                var alias =  me.ti().filters[i].foreign('fieldId').alias;
+
+                // Shortcut for control element, assigned to filter field
+                var control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
+
+                // If current filter is a range-filter, we reset values for two filter components, that
+                // are representing min and max values
+                if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
+
+                    // Range filters limits's postfixes
+                    var limits = ['gte', 'lte'];
+
+                    // Setup empty values for range filters
+                    for (var j = 0; j < limits.length; j++) {
+                        Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
+                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
+                        Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
+                    }
+
+                    // Else we reset one filter component
+                } else if (control == 'color') {
+
+                    // Resetted values for color multislider filter
+                    var v = [0, 360];
+
+                    // Set a value for each multislider thumb
+                    for (var j = 0; j < v.length; j++) {
+                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
+                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                    }
+
+                    // Else set by original way
+                } else {
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                    loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                }
+            }
+        }
+
+        // Here we handle case, then we have keyword-search field injected into
+        // filters docked panel, rather than in master docked panel
+        var keywordCmp = Ext.getCmp(filterCmpIdPrefix.replace(/\$$/, '')).query('[isKeyword]')[0];
+        if (keywordCmp && keywordCmp.getValue()) {
+            keywordCmp.setValue('');
+            atLeastOneFilterIsUsed = true;
+        }
+
+        // Reload store for empty filter values to be picked up.
+        // We do reload only in case if at least one filter was emptied by reset filter tool
+        if (atLeastOneFilterIsUsed) me.filterChange({});
+
+        // Otherwise we display a message box saying that filters cannot be emptied because
+        // they are already empty
+        else Ext.MessageBox.show({
+            title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
+            msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
+            buttons: Ext.MessageBox.OK,
+            icon: Ext.MessageBox.INFO
+        });
+    },
+
+    /**
      * Filters reset tool config builder
      *
      * @return {Object}
@@ -319,106 +425,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return {
             type: 'search',
             cls: 'i-tool-search-reset',
-            handler: function(event, target, owner, tool){
-
-                // Prepare a prefix for filter component ids
-                var filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
-
-                // Setup a flag, what will
-                var atLeastOneFilterIsUsed = false;
-
-                // We define an array of functions, first within which will check if at least one filter is used
-                // and if so, second will do a store reload
-                var loopA = [function(cmp, control){
-                    if (control == 'color') {
-                        if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
-                    } else {
-                        if ([null, ''].indexOf(cmp.getValue()) == -1) {
-                            if (JSON.stringify(cmp.getValue()) != '[""]') {
-                                atLeastOneFilterIsUsed = true;
-                            }
-                        }
-                    }
-                }, function(cmp, control){
-                    if (control == 'color') {
-                        cmp.setValue(0, 0, false);
-                        cmp.setValue(1, 360, false);
-                    } else {
-                        cmp.setValue('');
-                    }
-                }];
-
-                // We iterate throgh filter twice - for each function within loopA array
-                for (var l = 0; l < loopA.length; l++) {
-
-                    // We prevent unsetting filters values if they are already empty
-                    if (l == 1 && atLeastOneFilterIsUsed == false) break;
-
-                    // For each filter
-                    for (var i = 0; i < me.ti().filters.length; i++) {
-
-                        // Define a shortcut for filter field alias
-                        var alias =  me.ti().filters[i].foreign('fieldId').alias;
-
-                        // Shortcut for control element, assigned to filter field
-                        var control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
-
-                        // If current filter is a range-filter, we reset values for two filter components, that
-                        // are representing min and max values
-                        if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
-
-                            // Range filters limits's postfixes
-                            var limits = ['gte', 'lte'];
-
-                            // Setup empty values for range filters
-                            for (var j = 0; j < limits.length; j++) {
-                                Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
-                                loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
-                                Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
-                            }
-
-                            // Else we reset one filter component
-                        } else if (control == 'color') {
-
-                            // Resetted values for color multislider filter
-                            var v = [0, 360];
-
-                            // Set a value for each multislider thumb
-                            for (var j = 0; j < v.length; j++) {
-                                Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                                loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
-                                Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
-                            }
-
-                        // Else set by original way
-                        } else {
-                            Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                            loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
-                            Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
-                        }
-                    }
-                }
-
-                // Here we handle case, then we have keyword-search field injected into
-                // filters docked panel, rather than in master docked panel
-                var keywordCmp = Ext.getCmp(filterCmpIdPrefix.replace(/\$$/, '')).query('[isKeyword]')[0];
-                if (keywordCmp && keywordCmp.getValue()) {
-                    keywordCmp.setValue('');
-                    atLeastOneFilterIsUsed = true;
-                }
-
-                // Reload store for empty filter values to be picked up.
-                // We do reload only in case if at least one filter was emptied by reset filter tool
-                if (atLeastOneFilterIsUsed) me.filterChange({});
-
-                // Otherwise we display a message box saying that filters cannot be emptied because
-                // they are already empty
-                else Ext.MessageBox.show({
-                    title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
-                    msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
-                    buttons: Ext.MessageBox.OK,
-                    icon: Ext.MessageBox.INFO
-                });
+            handler: function() {
+                me.filterReset();
             }
         }
     },
