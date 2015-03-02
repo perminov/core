@@ -84,6 +84,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     filterChange: function(cmp){
         var me = this, extraParams = {};
 
+        me.onFilterChange(cmp);
+
         // Declare and fulfil an array with properties, available for each row in the rowset
         var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
 
@@ -230,6 +232,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
         }
     },
+
+    /**
+     * Empty function
+     */
+    onFilterChange: Ext.emptyFn,
 
     /**
      * Function is to return an object, containing summaries definitions. Example:
@@ -1216,7 +1223,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Update combo-filter contents, if need
         if (Ext.isObject(fo) && Ext.Object.getSize(fo)) Ext.Object.each(fo, function(name, store){
-            if (f = Ext.getCmp(me.panel.id).query('[isFilter][name='+name+']')[0]) f.store = store;
+            if (f = Ext.getCmp(me.panel.id).query('[isFilter][name='+name+']')[0]) {
+                f.store = store; f[f.store.ids.length ? 'enable' : 'disable']();
+            }
         });
 
         // Adjust each data-row within the store
