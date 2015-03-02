@@ -112,8 +112,8 @@ Ext.define('Indi.lib.form.field.Combo', {
                     '</td>',
                     '<td class="i-combo-keyword-cell">',
                         '<div class="i-combo-keyword-div">',
-                            '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"<tpl if="me.readOnly"> readonly="readonly"</tpl>/>',
-                            '<input id="{me.field.alias}" type="hidden" value="{selected.value}" name="{me.field.alias}" <tpl if="me.boolean">boolean="true"</tpl>/>',
+                            '<input id="{me.id}-keyword" class="i-combo-keyword" autocomplete="off" {selected.style} type="text" lookup="{me.field.alias}" value="{selected.keyword}" no-lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"<tpl if="me.readOnly"> readonly="readonly"</tpl>/>',
+                            '<input id="{me.id}-value" type="hidden" value="{selected.value}" name="{me.field.alias}" <tpl if="me.boolean">boolean="true"</tpl>/>',
                         '</div>',
                     '</td>',
                     '<td class="i-combo-infoCell">',
@@ -153,8 +153,8 @@ Ext.define('Indi.lib.form.field.Combo', {
                         '</td>',
                         '<td class="i-combo-keyword-cell">',
                             '<div class="i-combo-keyword-div">',
-                                '<input id="{me.field.alias}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"<tpl if="me.readOnly"> readonly="readonly"</tpl>/>',
-                                '<input id="{me.field.alias}" type="hidden" value="<tpl if="selected.value">{selected.value}</tpl>" name="{me.field.alias}"/>',
+                                '<input id="{me.id}-keyword" class="i-combo-keyword" autocomplete="off" type="text" lookup="{me.field.alias}" value="" lookup="{me.field.params.noLookup}" placeholder="{me.field.params.placeholder}"<tpl if="me.readOnly"> readonly="readonly"</tpl>/>',
+                                '<input id="{me.id}-value" type="hidden" value="<tpl if="selected.value">{selected.value}</tpl>" name="{me.field.alias}"/>',
                             '</div>',
                         '</td>',
                         '<td class="i-combo-infoCell">',
@@ -408,7 +408,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * Returns the input id for this field.
      */
     getInputId: function() {
-        return this.inputId || (this.inputId = this.field.alias + '-keyword');
+        return this.inputId || (this.inputId = this.id + '-keyword');
     },
 
     /**
@@ -468,7 +468,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.field.params = me.field.params || {};
 
         // Setup noLookup property, if it was not set within me.field.params object
-        me.field.params.noLookup = me.field.params.noLookup || me.store.enumset.toString()
+        me.field.params.noLookup = me.field.params.noLookup || me.store.enumset.toString();
     },
 
     /**

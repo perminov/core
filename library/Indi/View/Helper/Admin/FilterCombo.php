@@ -66,8 +66,11 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
                 SELECT DISTINCT `'. $alias . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
             )->fetchAll(PDO::FETCH_COLUMN);
 
+            // Unset zero-length values
+            foreach ($in as $i => $inI) if (!strlen($inI)) unset($in[$i]);
+
             // Return
-            return in($relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : 0) . ')';
+            return in($relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : '0') . ')';
         }
     }
 
