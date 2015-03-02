@@ -2413,7 +2413,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Fetch request
         Ext.Ajax.request({
-            url: url,
+            url: Indi.pre.replace(/\/$/, '') + url,
             params: Ext.merge(data, {consider: Ext.JSON.encode(me.considerOnData())}),
             success: function(response) {
 

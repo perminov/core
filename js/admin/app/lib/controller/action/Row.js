@@ -10,17 +10,16 @@ Ext.define('Indi.lib.controller.action.Row', {
     extend: 'Indi.Controller.Action',
 
     // @inheritdoc
-    mcopwso: ['row', 'panel'],
+    mcopwso: ['row', 'panel', 'south'],
 
     // @inheritdoc
     panel: {
+
+        // @inheritdoc
+        xtype: 'actionrow',
+
         title: '',
         closable: false,
-        listeners: {
-            afterrender: function(me){
-                Indi.trail(true).breadCrumbs();
-            }
-        },
 
         /**
          * Here we separate docked items on items-level1 and items-level2, e.g items-level1 are
@@ -50,7 +49,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      * Main panel's row inner panel config
      */
     row: {
-        border: 0
+        border: 0,
+        height: '40%'
     },
 
     /**
@@ -102,7 +102,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelDockedInner$Back: function(urlonly) {
 
         // Build the url for goto
-        var me = this, url = me.ti().section.href;
+        var me = this, url = '/' + me.ti().section.alias + '/';
         if (me.ti(1).row) url += 'index/id/' + me.ti(1).row.id + '/' +
             (me.ti().scope.upperHash ? 'ph/'+me.ti().scope.upperHash+'/' : '') +
             (me.ti().scope.upperAix ? 'aix/'+me.ti().scope.upperAix+'/' : '');
@@ -179,13 +179,13 @@ Ext.define('Indi.lib.controller.action.Row', {
                             me.getMask().show();
 
                             // Build the request uri and setup save button shortcut
-                            var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                            var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
                                 input.getValue() + '/ph/'+ me.ti().section.primaryHash+'/';
 
                             // We should ensure that row that user wants to retrieve
                             // - is exists within a current section scope
                             Ext.Ajax.request({
-                                url: url + 'check/1/',
+                                url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
                                 params: {forceOffsetDetection: true},
                                 success: function(response){
 
@@ -234,7 +234,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                 ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
 
                 // Build the url
-                url = me.ti().section.href + me.ti().action.alias;
+                url = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
                 url += ats && ats.checked
                     ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
                     : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
@@ -450,7 +450,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                         me.getMask().show();
 
                         // Build the request uri and setup save button shortcut
-                        var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                        var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
                             value + '/ph/'+ me.ti().section.primaryHash + '/';
 
                         // If value was selected without combo lookup usage
@@ -589,7 +589,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
                 },
                 itemclick: function(cmp, row) {
-                    me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
+                    me.goto('/' + row.get('alias') + '/index/id/'+ me.ti().row.id
                         +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
                 }
             }
@@ -672,7 +672,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     gotoOffset: function(offset, input) {
 
         // Build the request uri
-        var me = this, url = me.ti().section.href + me.ti().action.alias + '/aix/' +
+        var me = this, url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/aix/' +
                 offset + '/ph/'+ me.ti().section.primaryHash+'/',
             spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
 
@@ -682,7 +682,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         // We should ensure that row that user wants to retrieve
         // - is exists within a current section scope
         Ext.Ajax.request({
-            url: url + 'check/1/',
+            url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
             success: function(response){
 
                 // Get the result of row id detection from the response
@@ -704,21 +704,89 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
+     * Default config for south region panel items
+     *
+     * @param src
+     * @return {Object}
+     */
+    southItemIDefault: function(src) {
+        var me = this, scope = me.ti().scope;
+
+        // Config
+        return {
+            xtype: 'actiontabrowset',
+            id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+            load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
+            title: src.title,
+            name: src.alias
+        }
+    },
+
+    /**
+     * Build and return the array of components configs, that will be used as inner items within south region panel
+     *
+     * @return {Array}
+     */
+    southItemA: function() {
+        var me = this, srcA = me.ti().sections, itemA = [], itemI, item$, eItem$, i;
+
+        // Foreach item within srcA
+        for (i = 0; i < srcA.length; i++) {
+
+            // Get item default config
+            itemI = me.southItemIDefault(srcA[i]);
+
+            // Apply item custom config
+            eItem$ = 'southItem$' + Indi.ucfirst(srcA[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI, srcA[i]) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (Ext.isDefined(me[eItem$])) {
+                itemI = null;
+                continue;
+            }
+
+            // Add item
+            if (itemI) itemA.push(itemI);
+        }
+
+        // Return
+        return itemA;
+    },
+
+    /**
      * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.row form panel configuration
+     * Currently is consists from this.row (form panel configuration) and from this.south
+     * (if has non-zero-length `items` property)
      *
      * @return {Array}
      */
     panelItemA: function() {
-        return [this.row];
+
+        // Panels array
+        var me = this, itemA = [], rowItem = me.row, southItem = me.south;
+
+        // Append row (center region) panel
+        if (rowItem) itemA.push(rowItem);
+
+        // Append tab (south region) panel only if it's consistent
+        if (southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
+
+            if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
+                southItem.height = me.ti().scope.actionrow.south.height;
+                southItem.activeTab = me.ti().sections.column('alias').indexOf(me.ti().scope.actionrow.south.activeTab);
+            }
+
+            itemA.push(southItem);
+        }
+
+        // Return panels array
+        return itemA;
     },
 
     // @inheritdoc
     initComponent: function() {
         var me = this;
-
-        // Setup id
-        me.id = me.bid();
 
         // Setup row panel
         me.row = Ext.merge({
@@ -821,5 +889,19 @@ Ext.define('Indi.lib.controller.action.Row', {
             '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/',
             '/' + me.ti().section.alias + '/' + action + '/'
         );
+    },
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this;
+
+        // Setup `route` property
+        if (config.route) me.route = config.route;
+
+        // Merge configs
+        me.mergeParent(config);
+
+        // Call parent
+        me.callParent(arguments);
     }
 });
