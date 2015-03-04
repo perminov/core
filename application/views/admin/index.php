@@ -38,6 +38,7 @@
         '/js/admin/app/lib/view/action/Row.js',
         '/js/admin/app/lib/view/action/Tab.js',
         '/js/admin/app/lib/view/action/TabRowset.js',
+        '/js/admin/app/lib/view/action/TabRow.js',
         '/js/admin/app/lib/trail/Trail.js',
         '/js/admin/app/lib/trail/Item.js',
         '/js/admin/app/lib/dbtable/Row.js',

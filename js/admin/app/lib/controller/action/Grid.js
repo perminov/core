@@ -81,6 +81,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
             },
             itemdblclick: function() {
                 var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+            },
+
+            itemclick: function() {
+                if (Ext.EventObject.ctrlKey) {
+                    var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+                }
             }
         }
     },
@@ -562,6 +568,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     rowsetDocked$Paging: function() {
+        var me = this;
+
+        try {
+            if (me.ti().scope.actionrowset.south.tabs.length) return false;
+        } catch(e) {
+
+        }
 
         // Paging toolbar cfg
         return {
@@ -646,33 +659,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 window.location = request + '&' + columns;
             }
         }
-    },
-
-    /**
-     * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.rowset form panel configuration
-     *
-     * @return {Array}
-     */
-    panelItemA: function() {
-
-        // Panels array
-        var itemA = [], rowsetItem = this.rowsetPanel();
-
-        // Append rowset panel
-        if (rowsetItem) itemA.push(rowsetItem);
-
-        // Return panels array
-        return itemA;
-    },
-
-    /**
-     * Build an return main panel's rowset panel config object
-     *
-     * @return {*}
-     */
-    rowsetPanel: function() {
-        return this.rowset;
     },
 
     // @inheritdoc

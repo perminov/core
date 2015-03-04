@@ -75,9 +75,11 @@ Ext.define('Indi.lib.controller.action.Action', {
     south: {
         xtype: 'tabpanel',
         minHeight: 25,
+        maxHeight: 400,
         tabBar: {
             listeners: {
                 click: function(c, e) {
+                    if (e.getTarget('.x-tab-close-btn') || e.getTarget('.x-box-scroller')) return;
                     if (c.up('tabpanel').getHeight() != c.up('tabpanel').minHeight) {
                         if (e.getTarget('.x-tab')) return;
                         c.up('tabpanel').setHeight(c.up('tabpanel').minHeight);
@@ -98,25 +100,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         border: 0,
         region: 'south',
         height: '60%',
-        layout: 'fit',
-        listeners: {
-            render: function(c) {
-                var center = c.up('[isWrapper]').down('[region="center"]'), centerUsedHeight = 20;
-                center.query('> *').forEach(function(r){centerUsedHeight += r.getHeight();});
-                var onePercentPixels = (c.up('[isWrapper]').getHeight() - 27) / 100;
-                var useless = parseInt((onePercentPixels * parseInt(center.height) - centerUsedHeight) / onePercentPixels);
-                var fitHeight = (100 - parseInt(center.height) + useless) + '%';
-                if (useless > 0 && c.height != 25) c.pHeight = c.height = fitHeight;
-                else if (useless > 0) c.pHeight = fitHeight;
-                else if (c.height != 25) c.pHeight = c.height;
-                else c.pHeight = '60%';
-            },
-            resize: function(c) {
-                if (Ext.EventObject.getTarget('.x-resizable-proxy'))
-                    c.height = c.pHeight = Math.ceil(c.getHeight()/c.up('[isWrapper]').body.getHeight() * 100) + '%';
-                Ext.defer(function(){c.getActiveTab().fireEvent('activate');}, 100);
-            }
-        }
+        layout: 'fit'
     },
 
     /**
@@ -165,6 +149,15 @@ Ext.define('Indi.lib.controller.action.Action', {
 
             // Get that panel
             intoCmp = Ext.getCmp(me.cfg.into);
+
+            console.log(me.cfg.into);
+            if (!intoCmp) {
+            }
+
+            // Remove existing docked items
+            intoCmp.getDockedItems().forEach(function(r){
+                intoCmp.removeDocked(r, true);
+            });
 
             // Add docked item to it
             intoCmp.addDocked(me.panelDockedA());

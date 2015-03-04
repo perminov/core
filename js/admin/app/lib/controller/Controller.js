@@ -65,7 +65,7 @@ Ext.define('Indi.lib.controller.Controller', {
         }
 
         // Create action component instance, related to current action
-        me.actions[action] = Ext.create(actionCmpName, scope);
+        Ext.create(actionCmpName, scope);
     },
 
     // @inheritdoc

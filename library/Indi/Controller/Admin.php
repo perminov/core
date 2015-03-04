@@ -1496,11 +1496,17 @@ class Indi_Controller_Admin extends Indi_Controller {
             // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
             if (Indi::uri('json')) {
 
+                // Get scope
+                $scope = Indi::trail()->scope->toArray();
+
+                // Unset tabs definitions from json-encoded scope data, as we'd already got it previously
+                unset($scope['actionrowset']['south']['tabs']);
+
                 // Setup basic data
                 $json = array(
                     'totalCount' => $this->rowset->found(),
                     'blocks' => $data,
-                    'scope' => Indi::trail()->scope->toArray()
+                    'scope' => $scope
                 );
 
                 // Append summary data

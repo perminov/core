@@ -1283,4 +1283,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     public function at($offset) {
         return $this->offsetGet($offset);
     }
+
+    /**
+     * Get a row from rowset, by the value of some property, which is 'id' by default
+     *
+     * @param $value
+     * @param string $key
+     * @return Indi_Db_Table_Row
+     */
+    public function gb($value, $key = 'id') {
+        foreach ($this->_rows as $r) if ($r->$key == $value) return $r;
+    }
 }

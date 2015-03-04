@@ -29,5 +29,36 @@ Ext.define('Indi.lib.view.action.Rowset', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    /**
+     * Return and object containing the height of tab panel, and the active tab name
+     *
+     * @return {Object}
+     */
+    forScope: function() {
+        var me = this, tp, ctx, section, o = {};
+
+        // If there is no tabpanel - return
+        if (!(tp = me.down('tabpanel'))) return o;
+
+        // If context does not exists - return
+        if (!(ctx = me.ctx())) return o;
+
+        // Set up section shortcut
+        section = me.ctx().route.last().section;
+
+        // Return
+        return {
+            section: section.alias,
+            hash: section.primaryHash,
+            actionrowset: {
+                south: tp.items.getCount() ? {
+                    activeTab: tp.getActiveTab().name,
+                    tabs: tp.items.collect('name').join(','),
+                    height: tp.height
+                } : {}
+            }
+        };
     }
 });
