@@ -818,12 +818,16 @@ Ext.define('Indi.lib.controller.action.Form', {
             // If `forceValidate` arg is given we check form validity before loading required contents
             if (btnSave && btnSave.pressed && !formCmp.getForm().isValid()) return;
 
-            // We just load required contents
-            Indi.load(url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : ''), {
+            var cfg = {
                 failure: function() {
                     me.getMask().hide();
                 }
-            });
+            }
+
+            if (Ext.getCmp(me.panel.id).isTab) cfg.into = me.panel.id;
+
+            // We just load required contents
+            Indi.load(url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : ''), cfg);
         }
     },
 

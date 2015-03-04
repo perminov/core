@@ -53,6 +53,27 @@ Ext.define('Indi.lib.controller.action.Row', {
         height: '40%'
     },
 
+    south: {
+        listeners: {
+            render: function(c) {
+                var center = c.up('[isWrapper]').down('[region="center"]'), centerUsedHeight = 20;
+                center.query('> *').forEach(function(r){centerUsedHeight += r.getHeight();});
+                var onePercentPixels = (c.up('[isWrapper]').getHeight() - 27) / 100;
+                var useless = parseInt((onePercentPixels * parseInt(center.height) - centerUsedHeight) / onePercentPixels);
+                var fitHeight = (100 - parseInt(center.height) + useless) + '%';
+                if (useless > 0 && c.height != 25) c.pHeight = c.height = fitHeight;
+                else if (useless > 0) c.pHeight = fitHeight;
+                else if (c.height != 25) c.pHeight = c.height;
+                else c.pHeight = '60%';
+            },
+            resize: function(c) {
+                if (Ext.EventObject.getTarget('.x-resizable-proxy'))
+                    c.height = c.pHeight = Math.ceil(c.getHeight()/c.up('[isWrapper]').body.getHeight() * 100) + '%';
+                Ext.defer(function(){c.getActiveTab().fireEvent('activate');}, 100);
+            }
+        }
+    },
+
     /**
      * Build and return array of row-panel toolbars
      *
@@ -764,13 +785,13 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelItemA: function() {
 
         // Panels array
-        var me = this, itemA = [], rowItem = me.row, southItem = me.south;
+        var me = this, itemA = [], rowItem = me.row, southItem = me.south, panel = Ext.getCmp(me.panel.id);
 
         // Append row (center region) panel
         if (rowItem) itemA.push(rowItem);
 
         // Append tab (south region) panel only if it's consistent
-        if (southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
+        if ((!panel || !panel.isTab) && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
 
             if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
                 southItem.height = me.ti().scope.actionrow.south.height;

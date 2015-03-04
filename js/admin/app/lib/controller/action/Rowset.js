@@ -10,7 +10,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     extend: 'Indi.Controller.Action',
 
     // @inheritdoc
-    mcopwso: ['store', 'rowset'],
+    mcopwso: ['store', 'rowset', 'south', 'panel'],
 
     // @inheritdoc
     panel: {
@@ -885,7 +885,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
                 handler: function(){
-                    Indi.load('/' + me.ti().section.alias + '/' + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
+                    if (Ext.EventObject.ctrlKey) {
+                        var tp = Ext.getCmp(me.panel.id).down('[region="south"]');
+                        tp.show();
+                        tp.add({
+                            xtype: 'actiontabrow',
+                            id: 'i-section-' + me.ti().section.alias + '-action-form-row-0-wrapper',
+                            load: '/' + me.ti().section.alias + '/form/ph/' + me.ti().scope.hash + '/',
+                            title: Indi.lang.I_CREATE,
+                            name: '0'
+                        }).setActive(true);
+                    } else {
+                        Indi.load('/' + me.ti().section.alias + '/' + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
+                    }
                 }
             }
         }
@@ -1024,6 +1036,27 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         fn = 'panelDockedInner$Actions$' + Indi.ucfirst(action.alias) + '_InnerHandler';
         if (typeof me[fn] == 'function') me[fn](action, row, aix, btn);
         else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
+    },
+
+    panelDockedInner$Actions$Form_InnerHandler: function(action, row, aix, btn) {
+        var me = this, uri, section = me.ti().section, tp = Ext.getCmp(me.panel.id).down('[region="south"]');
+
+        // Build the uri
+        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+
+        if (Ext.EventObject.ctrlKey && tp) {
+            tp.add({
+                xtype: 'actiontabrow',
+                id: 'i-section-' + me.ti().section.alias + '-action-form-row-' + row.get('id') + '-wrapper',
+                load: uri,
+                title: row.get('title'),
+                name: row.get('id'),
+                closable: true,
+                collapsible: true
+            });
+            tp.show();
+
+        } else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
 
     /**
@@ -1227,7 +1260,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, fo = me.getStore().proxy.reader.jsonData.filter, f;
 
         // Setup scope
-        me.ti().scope = me.getStore().proxy.reader.jsonData.scope;
+        Ext.merge(me.ti().scope, me.getStore().proxy.reader.jsonData.scope);
 
         // Update combo-filter contents, if need
         if (Ext.isObject(fo) && Ext.Object.getSize(fo)) Ext.Object.each(fo, function(name, store){
@@ -1430,5 +1463,150 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      */
     rowsetDockedA: function() {
         return this._docked('rowset');
+    },
+
+    /**
+     * Builds and return an array of panels, that will be used to represent the major UI contents.
+     * Currently is consists only from this.rowset form panel configuration
+     *
+     * @return {Array}
+     */
+    panelItemA: function() {
+
+        // Panels array
+        var me = this, itemA = [], rowsetItem = me.rowsetPanel(), southItem = me.south;
+
+        // Append rowset (center region) panel
+        if (rowsetItem) itemA.push(rowsetItem);
+
+        // Append tab (south region) panel only if it's consistent
+        if (southItem) {
+
+            // Init tabs within tab panel, and set height and active tab
+            if ((southItem.items = me.southItemA()).length) {
+
+                // Set up tabpanel height
+                southItem.height = me.ti().scope.actionrowset.south.height;
+
+                // Set up active tab
+                southItem.activeTab = me.ti().scope.actionrowset.south.tabs.column('id').indexOf(me.ti().scope.actionrowset.south.activeTab.toString());
+            } else {
+                southItem.hidden = true;
+            }
+
+            // Push tabpanel as south region within main panel
+            itemA.push(southItem);
+        }
+
+        // Return panels array
+        return itemA;
+    },
+
+    /**
+     * South-panel config
+     */
+    south: {
+        listeners: {
+            add: function(tabpanel, tab) {
+                if (tab.xtype == 'actiontabrow' && !tab.isFromScope) {
+                    var wrp = tabpanel.up('[isWrapper]'), ctx = wrp.ctx();
+                    var rowset = Ext.getCmp(ctx.rowset.id);
+                    var paging = rowset.down('[alias="paging"]');
+                    if (paging) rowset.removeDocked(paging);
+                    tabpanel.setActiveTab(tab);
+                }
+            },
+            remove: function(container, tab) {
+                if (tab.xtype == 'actiontabrow') {
+                    var tabs = container.up('[isWrapper]').ctx().ti().scope.actionrowset.south.tabs;
+
+                    // Erase mention from me.ti().scope.actionrowset.south.tabs;
+                    Ext.Array.erase(tabs, tabs.column('id').indexOf(tab.name), 1);
+
+                    if (!container.items.getCount()) {
+                        container.hide();
+                        var wrp = container.up('[isWrapper]'), ctx = wrp.ctx();
+                        var rowset = Ext.getCmp(ctx.rowset.id);
+                        rowset.addDocked(ctx.rowsetDockedA());
+                    }
+                }
+            },
+            render: function(c) {
+                if (c.height != 25) c.pHeight = c.height; else c.pHeight = '60%';
+            },
+            resize: function(c) {
+                if (Ext.EventObject.getTarget('.x-resizable-proxy'))
+                    c.height = c.pHeight = Math.ceil(c.getHeight()/c.up('[isWrapper]').body.getHeight() * 100) + '%';
+                Ext.defer(function(){c.getActiveTab().fireEvent('activate');}, 100);
+            }
+        }
+    },
+
+    /**
+     * Build an return main panel's rowset panel config object
+     *
+     * @return {*}
+     */
+    rowsetPanel: function() {
+        return this.rowset;
+    },
+
+    /**
+     * Default config for south region panel items
+     *
+     * @param src
+     * @return {Object}
+     */
+    southItemIDefault: function(src) {
+        var me = this, section = me.ti().section, scope = me.ti().scope;
+
+        // Config
+        return {
+            xtype: 'actiontabrow',
+            id: 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
+            load: '/' + section.alias + '/form'
+                + (parseInt(src.id) ? '/id/' + src.id : '')
+                + '/ph/' + scope.hash + '/'
+                + (parseInt(src.id) ? 'aix/' + src.aix + '/' : ''),
+            title: src.title,
+            name: src.id
+        }
+    },
+
+    /**
+     * Build and return the array of components configs, that will be used as inner items within south region panel
+     *
+     * @return {Array}
+     */
+    southItemA: function() {
+        var me = this, south, srcA, itemA = [], itemI, i;
+
+        // If namespace 'me.ti().scope.actionrowset.south.tabs' does not exists - return
+        try {
+            south = me.ti().scope.actionrowset.south;
+            srcA = south.tabs;
+        } catch(e) {
+            return itemA;
+        }
+
+        if (!Ext.isArray(srcA)) return itemA;
+
+        // Foreach item within srcA
+        for (i = 0; i < srcA.length; i++) {
+
+            // Get item default config
+            itemI = me.southItemIDefault(srcA[i]);
+
+            // Setup special `isFromScope` flag, for detecting if tab was initialised
+            // automatically rather than was added manually by user a moment ago, because
+            // tabs added by user won't have such a flag
+            itemI.isFromScope = true;
+
+            // Add item
+            if (itemI) itemA.push(itemI);
+        }
+
+        // Return
+        return itemA;
     }
 });
