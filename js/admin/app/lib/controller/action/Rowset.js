@@ -1507,36 +1507,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * South-panel config
      */
     south: {
-        xtype: 'rowsetactionsouth',
-        listeners: {
-            add: function(tabpanel, tab) {
-                if (tab.xtype == 'panel' && !tab.isFromScope) {
-                    var wrp = tabpanel.up('[isWrapper]'), ctx = wrp.ctx();
-                    var rowset = Ext.getCmp(ctx.rowset.id);
-                    var paging = rowset.down('[alias="paging"]');
-                    if (paging) rowset.removeDocked(paging);
-                    tabpanel.show();
-                    tabpanel.setActiveTab(tab);
-                }
-            },
-            remove: function(tabpanel, tab) {
-                if (tab.xtype == 'panel') {
-                    var tabs = tabpanel.up('[isWrapper]').ctx().ti().scope.actionrowset.south.tabs;
-
-                    // Erase mention from me.ti().scope.actionrowset.south.tabs;
-                    if (Ext.isArray(tabs)) Ext.Array.erase(tabs, tabs.column('id').indexOf(tab.name), 1);
-
-                    if (!tabpanel.items.getCount()) {
-                        tabpanel.hide();
-                        var wrp = tabpanel.up('[isWrapper]'), ctx = wrp.ctx();
-                        Ext.getCmp(ctx.rowset.id).addDocked(ctx.rowsetDockedA());
-                    }
-                }
-            },
-            render: function(c) {
-                if (c.height != 25) c.heightPercent = c.height; else c.heightPercent = '60%';
-            }
-        }
+        xtype: 'rowsetactionsouth'
     },
 
     /**
@@ -1560,6 +1531,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Config
         return {
             xtype: 'panel',
+            isTabpanelItem: true,
             title: src.title,
             name: src.id,
             closable: true,

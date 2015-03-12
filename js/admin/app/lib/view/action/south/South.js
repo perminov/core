@@ -66,6 +66,17 @@ Ext.define('Indi.lib.view.action.south.South', {
         me.callParent();
     },
 
+    // @inheritdoc
+    onRender: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Init height
+        me.initHeight();
+    },
+
     /**
      * This function is a handler for tab bar click, and it's purpose is to determine whether south region panel's
      * height should be minimized or restored back to normal, or do nothing with that height, depending on current
@@ -119,5 +130,10 @@ Ext.define('Indi.lib.view.action.south.South', {
 
         // Return
         return me;
-    }
+    },
+
+    /**
+     * Empty function. To be overridden in child classes
+     */
+    initHeight: Ext.emptyFn
 });
