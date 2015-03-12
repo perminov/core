@@ -570,11 +570,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
     rowsetDocked$Paging: function() {
         var me = this;
 
-        try {
-            if (me.ti().scope.actionrowset.south.tabs.length) return false;
-        } catch(e) {
-
-        }
+        // If scope contains tab info return, as both paging toolbar and tabs toolbar looks bad one under another
+        try {if (me.ti().scope.actionrowset.south.tabs.length) return false;} catch(e) {}
 
         // Paging toolbar cfg
         return {

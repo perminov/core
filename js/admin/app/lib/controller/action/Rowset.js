@@ -1592,6 +1592,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             return itemA;
         }
 
+        // If `srcA` is not an array - return empty array
         if (!Ext.isArray(srcA)) return itemA;
 
         // Foreach item within srcA
