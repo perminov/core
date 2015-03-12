@@ -32,7 +32,12 @@ Ext.define('Indi', {
          * A list of function names, that are declared within Indi object, but should be accessible within global scope
          * @type {Array}
          */
-        share: ['alias', 'hide', 'show', 'number'],
+        share: ['alias', 'hide', 'show', 'number', 'mt'],
+
+        /**
+         * Microtime
+         */
+        _mt: 0,
 
         /**
          * Global fields storage. Contains all fields that were even initialised
@@ -343,10 +348,21 @@ Ext.define('Indi', {
                 url: Indi.pre + uri,
                 success: function(response, request){
 
-                    // Destroy center panel
+                    // In no 'into' property given within `cfg` object - destroy center panel
                     if (!cfg.into) Indi.clearCenter();
 
-                    // Process response
+                    // Else if 'insteadOf' property is additionally given within `cfg` object
+                    else if (cfg.insteadOf) {
+
+                        // Set title for a container, that results will be injected in
+                        Ext.getCmp(cfg.into).setTitle(cfg.title);
+
+                        // Destroy the component, that will have a one to replace it
+                        Ext.getCmp(cfg.insteadOf).destroy();
+                    }
+
+                    // Process response. Here we use Ext.defer to provide a visual
+                    // 'white-blink' effect between destroying old and creating new
                     Ext.defer(function(){
 
                         // Try to convert responseText to json-object
@@ -361,7 +377,7 @@ Ext.define('Indi', {
                             // Else if
                             else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
 
-                            // Run response
+                        // Run response
                         } else Ext.get('i-center-center-body').update(response.responseText, true);
 
                     }, 10);
@@ -653,6 +669,56 @@ Ext.define('Indi', {
 
             // Get the string representation of a filesize
             return Math.floor((size/Math.pow(1024, pow))*100)/100 + postfix[pow];
+        },
+
+        /**
+         * Parse get given uri and convert it into plain object, containing section, action and all othe params
+         *
+         * @param uri
+         * @return {Object}
+         */
+        parseUri: function(uri) {
+            var o = {}, i, uriA = Ext.String.trim(uri).replace(/^\//, '').replace('/\/$/', '').split('/');
+
+            // Setup all params
+            for (i = 0; i < uriA.length; i++)
+
+                // Setup section
+                if (i == 0 && uriA[i]) o.section = uriA[i];
+
+                // Setup action
+                else if (i == 1) o.action = uriA[i];
+
+                // Setup all other params
+                else if (uriA.length > i && uriA[i].length) {
+                    o[uriA[i]] = uriA[i + 1];
+                    i++;
+                }
+
+            // Return object containing section, action and all other params
+            return o;
+        },
+
+        /**
+         *  Equivalent to PHP's microtime(). Got from http://phpjs.org/functions/microtime/
+         *
+         * @param get_as_float
+         * @return {Number}
+         */
+        microtime: function (get_as_float) {
+            var now = new Date().getTime() / 1000, s = parseInt(now, 10);
+            return (get_as_float) ? now : (Math.round((now - s) * 1000) / 1000) + ' ' + s;
+        },
+
+        /**
+         * Measure the count of milliseconds, passed from the last call of this function.
+         * This function is useful for checking how much time any operation takes
+         *
+         * @return {Number}
+         */
+        mt: function(msg) {
+            var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
+            Indi._mt = m; if (msg) console.log(msg, d); return d;
         }
     },
 

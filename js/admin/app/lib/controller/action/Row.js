@@ -54,24 +54,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     south: {
-        listeners: {
-            render: function(c) {
-                var center = c.up('[isWrapper]').down('[region="center"]'), centerUsedHeight = 20;
-                center.query('> *').forEach(function(r){centerUsedHeight += r.getHeight();});
-                var onePercentPixels = (c.up('[isWrapper]').getHeight() - 27) / 100;
-                var useless = parseInt((onePercentPixels * parseInt(center.height) - centerUsedHeight) / onePercentPixels);
-                var fitHeight = (100 - parseInt(center.height) + useless) + '%';
-                if (useless > 0 && c.height != 25) c.pHeight = c.height = fitHeight;
-                else if (useless > 0) c.pHeight = fitHeight;
-                else if (c.height != 25) c.pHeight = c.height;
-                else c.pHeight = '60%';
-            },
-            resize: function(c) {
-                if (Ext.EventObject.getTarget('.x-resizable-proxy'))
-                    c.height = c.pHeight = Math.ceil(c.getHeight()/c.up('[isWrapper]').body.getHeight() * 100) + '%';
-                Ext.defer(function(){c.getActiveTab().fireEvent('activate');}, 100);
-            }
-        }
+        xtype: 'rowactionsouth'
     },
 
     /**
@@ -210,14 +193,15 @@ Ext.define('Indi.lib.controller.action.Row', {
                                 params: {forceOffsetDetection: true},
                                 success: function(response){
 
-                                    // Get the result of row offset detection from the response
-                                    var aix = response.responseText.match(/^[0-9]+$/)
-                                        ? parseInt(response.responseText)
-                                        : false;
+                                    // Convert response to json object
+                                    var json = response.responseText.json(), aix;
 
                                     // If offset was successfully detected,
                                     // append 'aix' param to the url, and load that url
-                                    if (aix) me.goto(url += 'aix/' + aix + '/');
+                                    if (Ext.isObject(json) && !isNaN(aix = parseInt(json.aix)))
+                                        me.goto(url += 'aix/' + aix + '/', undefined, {
+                                            title: json.title
+                                        });
 
                                     // Otherwise we build an warning message, and display Ext.MessageBox
                                     else me.onDetectionFailed(input);
@@ -262,7 +246,9 @@ Ext.define('Indi.lib.controller.action.Row', {
                 url += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
                 // Reload the current uri
-                me.goto(url);
+                me.goto(url, undefined, {
+                    title: me.ti().row.id ? me.ti().row.title : Indi.lang.I_CREATE
+                });
             }
         }
     },
@@ -501,7 +487,9 @@ Ext.define('Indi.lib.controller.action.Row', {
                         }
 
                         // Goto url
-                        me.goto(url);
+                        me.goto(url, undefined, {
+                            title: cmb.r(value).title
+                        });
                     }
                 }
             }
@@ -642,8 +630,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @param url
      */
-    goto: function(url) {
-        Indi.load(url);
+    goto: function(url, btnSaveClick, cfg) {
+        Indi.load(url, cfg);
     },
 
     /**
@@ -706,14 +694,15 @@ Ext.define('Indi.lib.controller.action.Row', {
             url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
             success: function(response){
 
-                // Get the result of row id detection from the response
-                var rowId = response.responseText.match(/^[0-9]+$/)
-                    ? parseInt(response.responseText)
-                    : false;
+                // Convert response to json object
+                var json = response.responseText.json(), rowId;
 
                 // If row id was successfully detected,
                 // append 'id' param to the url, and load that url
-                if (rowId) me.goto(url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1'));
+                if (Ext.isObject(json) && !isNaN(rowId = parseInt(json.id)))
+                    me.goto(url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1'), undefined, {
+                        title: json.title
+                    });
 
                 // Otherwise we build an warning message, and display Ext.MessageBox
                 else me.onDetectionFailed(input);
@@ -733,13 +722,19 @@ Ext.define('Indi.lib.controller.action.Row', {
     southItemIDefault: function(src) {
         var me = this, scope = me.ti().scope;
 
-        // Config
         return {
-            xtype: 'actiontabrowset',
-            id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
-            load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
+            xtype: 'panel',
+            id: me.id + '-tab$' + src.alias,
             title: src.title,
-            name: src.alias
+            name: src.alias,
+            border: 0,
+            layout: 'fit',
+            items: [{
+                xtype: 'actiontabrowset',
+                id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+                load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
+                name: src.alias
+            }]
         }
     },
 
@@ -785,14 +780,13 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelItemA: function() {
 
         // Panels array
-        var me = this, itemA = [], rowItem = me.row, southItem = me.south, panel = Ext.getCmp(me.panel.id);
+        var me = this, itemA = [], rowItem = me.row, southItem = me.south;
 
         // Append row (center region) panel
         if (rowItem) itemA.push(rowItem);
 
         // Append tab (south region) panel only if it's consistent
-        if ((!panel || !panel.isTab) && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
-
+        if (me.panel.xtype != 'actiontabrow' && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
             if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
                 southItem.height = me.ti().scope.actionrow.south.height;
                 southItem.activeTab = me.ti().sections.column('alias').indexOf(me.ti().scope.actionrow.south.activeTab);

@@ -13,16 +13,13 @@ Ext.define('Indi.lib.view.action.TabRow', {
     mixins: {tab: 'Indi.lib.view.action.Tab'},
 
     // @inheritdoc
-    closable: true,
-
-    // @inheritdoc
-    initComponent: function() {
+    afterRender: function() {
         var me = this;
 
-        // Call tab mixin initComponent method
-        me.mixins.tab.initComponent.call(me);
-
         // Call parent
-        me.callParent();
+        me.callParent(arguments);
+
+        // Call tab mixin initComponent method
+        me.mixins.tab.afterRender.call(me);
     }
 });

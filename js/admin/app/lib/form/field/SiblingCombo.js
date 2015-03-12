@@ -53,7 +53,7 @@ Ext.define('Indi.lib.form.field.SiblingCombo', {
      * Adjust combo width, so all involved things are taken into consideration while calculating least combo width
      */
     fitWidth: function() {
-        var me = this, width = 0, optionContentsMaxWidth = 0, optionContentsWidth, color;
+        var me = this, width = 0, maxPseudoTitle = '', pseudoTitle = '', color, optionContentsMaxWidth;
 
         // Append labelWidth
         width += me.labelCell.getWidth();
@@ -67,22 +67,24 @@ Ext.define('Indi.lib.form.field.SiblingCombo', {
         // If optgroups are used - append optgroup indent
         if (me.store.optgroup) width += 15;
 
-        // Detect maximum option contents width
+        // Detect maximum option contents length
         for (var i = 0; i < me.store.data.length; i++) {
 
             // Get current option indent width
-            optionContentsWidth = Indi.metrics.getWidth(me.store.data[i].system.indent);
+            pseudoTitle = me.store.data[i].system.indent ? me.store.data[i].system.indent.replace('&nbsp;', ' ') : '';
 
-            // Detect color box and non-html title for current option, and append their widths to current option width
+            // Detect color box and non-html title for current option,
             color = me.color(me.store.data[i], me.store.ids[i]);
-            optionContentsWidth += (color.box ? 14 : 0) + Indi.metrics.getWidth(color.title);
 
-            // If current value of 'optionContentsMaxWidth' variable is less
-            // than current option contents width - increase it
-            if (optionContentsWidth > optionContentsMaxWidth) optionContentsMaxWidth = optionContentsWidth;
+            // And append their length to current option width, assuming that color box is equal to '---' by width
+            pseudoTitle += (color.box ? '---' : '') + color.title;
+
+            // If length 'pseudoTitle' variable is less than length of 'maxPseudoTitle' - renew las one
+            if (pseudoTitle.length > maxPseudoTitle.length) maxPseudoTitle = pseudoTitle;
         }
 
-        if (me.store.data.length == 0) optionContentsMaxWidth = 23;
+        // Find actual width of longest option, using Indi.metrics.getWidth() call, or set up default if store is empty
+        optionContentsMaxWidth = me.store.data.length == 0 ? 23 : Indi.metrics.getWidth(maxPseudoTitle);
 
         // Prevent possible width decrease
         if (optionContentsMaxWidth > me.optionContentsMaxWidth) me.optionContentsMaxWidth = optionContentsMaxWidth;

@@ -4,13 +4,33 @@ Ext.define('Indi.lib.view.action.Rowset', {
     extend: 'Indi.lib.view.action.Panel',
 
     // @inheritdoc
-    alias: 'widget.actionrowset',
-
-    // @inheritdoc
     alternateClassName: 'Indi.View.Action.Rowset',
 
     // @inheritdoc
+    alias: 'widget.actionrowset',
+
+    /**
+     * Whether or not automatically start trying to load the store once component is rendered
+     */
+    autoLoadStore: true,
+
+    // @inheritdoc
     afterRender: function() {
+        var me = this;
+
+        // Load store
+        if (me.autoLoadStore) me.loadStore();
+
+        // Call parent
+        me.callParent(arguments);
+    },
+
+    /**
+     * Start trying to load the store. 'Trying' here mean that function will try to do it until success,
+     * because the environment may be not sufficient at the early stages of initialization, so function will check
+     * it for sufficiency each 100ms, and once sufficiency detected - will load the store
+     */
+    loadStore: function() {
         var me = this, interval;
 
         // Provide store to be loaded once panel context is ready
@@ -26,9 +46,6 @@ Ext.define('Indi.lib.view.action.Rowset', {
                 clearInterval(interval);
             }
         }, 100);
-
-        // Call parent
-        me.callParent(arguments);
     },
 
     /**
@@ -46,7 +63,7 @@ Ext.define('Indi.lib.view.action.Rowset', {
         if (!(ctx = me.ctx())) return o;
 
         // Set up section shortcut
-        section = me.ctx().route.last().section;
+        section = ctx.route.last().section;
 
         // Return
         return {
