@@ -131,7 +131,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 Indi::trail()->scope->apply($applyA);
 
                 // If we are here for just check of row availability, do it
-                if (Indi::uri()->check) die($this->checkRowIsInScope());
+                if (Indi::uri()->check) jflush(true, $this->checkRowIsInScope());
 
                 // Set last accessed row
                 $this->setScopeRow();
@@ -425,29 +425,46 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function checkRowIsInScope(){
 
-        if (Indi::uri()->aix && !Indi::uri()->id)
+        // If row should be detected by it's index, within the current scope
+        if (Indi::uri()->aix && !Indi::uri()->id) {
 
-            return Indi::trail()->model->fetchRow(
-                Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, Indi::uri()->aix - 1
-            )->id;
+            // Get row by it's index
+            $R = Indi::trail()->model->fetchRow(
+                Indi::trail()->scope->WHERE,
+                Indi::trail()->scope->ORDER,
+                Indi::uri()->aix - 1
+            );
 
-        else if (Indi::uri()->id) {
+            // Return basic data
+            return array('id' => $R->id, 'title' => $R->title);
 
-            // Prepare WHERE clause
-            $where  = '`id` = "' . Indi::uri()->id . '"';
-            if (Indi::trail()->scope->WHERE)  $where .= ' AND ' . Indi::trail()->scope->WHERE;
+        // Else if row index should be found by it's id within the current scope
+        } else if (Indi::uri()->id) {
 
-            // Check that row exists
+            // Prepare checking-WHERE clause (for checking the row existence)
+            $where = array('`id` = "' . Indi::uri()->id . '"');
+
+            // Append current scope's WHERE clause to checking-WHERE clause
+            if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
+
+            // Check that row exists with such an id within the current scope
             $R = Indi::trail()->model->fetchRow($where);
 
-            // Get the offest, if needed
-            if (Indi::post()->forceOffsetDetection && $R) {
-                return Indi::trail()->model->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
+            // If row index should be additionally detected
+            if (Indi::post()->forceOffsetDetection && $R)
+
+                // Get that offset and return it along with row title
+                return array(
+                    'aix' => Indi::trail()->model->detectOffset(
+                        Indi::trail()->scope->WHERE,
+                        Indi::trail()->scope->ORDER,
+                        $R->id
+                    ),
+                    'title' => $R->title()
+                );
 
             // Or just return the id, as an ensurement, that such row exists
-            } else {
-                return $R ? $R->id : null;
-            }
+            else return $R ? array('id' => $R->id, 'title' => $R->title()) : array();
         }
     }
 

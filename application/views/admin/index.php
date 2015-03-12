@@ -33,6 +33,9 @@
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
 
+        '/js/admin/app/lib/view/action/south/South.js',
+        '/js/admin/app/lib/view/action/south/Row.js',
+        '/js/admin/app/lib/view/action/south/Rowset.js',
         '/js/admin/app/lib/view/action/Panel.js',
         '/js/admin/app/lib/view/action/Rowset.js',
         '/js/admin/app/lib/view/action/Row.js',

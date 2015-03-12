@@ -868,7 +868,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDockedInner$Actions$Create: function(){
 
         // Check if 'save' and 'form' actions are allowed
-        var me = this, canSave = false, canForm = false, canAdd = me.ti().section.disableAdd == '0';
+        var me = this, section = me.ti().section, canSave = false, canForm = false, canAdd = section.disableAdd == '0';
         for (var i = 0; i < me.ti().actions.length; i++) {
             if (me.ti().actions[i].alias == 'save') canSave = true;
             if (me.ti().actions[i].alias == 'form') canForm = true;
@@ -885,19 +885,18 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
                 handler: function(){
-                    if (Ext.EventObject.ctrlKey) {
-                        var tp = Ext.getCmp(me.panel.id).down('[region="south"]');
-                        tp.show();
-                        tp.add({
-                            xtype: 'actiontabrow',
-                            id: 'i-section-' + me.ti().section.alias + '-action-form-row-0-wrapper',
-                            load: '/' + me.ti().section.alias + '/form/ph/' + me.ti().scope.hash + '/',
-                            title: Indi.lang.I_CREATE,
-                            name: '0'
-                        }).setActive(true);
-                    } else {
-                        Indi.load('/' + me.ti().section.alias + '/' + this.actionAlias + '/ph/' + me.ti().section.primaryHash + '/');
-                    }
+
+                    // If Ctrl-key is pressed
+                    if (Ext.EventObject.ctrlKey)
+
+                        // Add new tab within south panel
+                        Ext.getCmp(me.panel.id).down('[isSouth]').add(me.southItemIDefault({
+                            id: 0,
+                            title: Indi.lang.I_CREATE
+                        }));
+
+                    // Else proceed standard behaviour
+                    else Indi.load('/' + section.alias + '/' + this.actionAlias + '/ph/' + section.primaryHash + '/');
                 }
             }
         }
@@ -1038,25 +1037,29 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
 
+
+    /**
+     * Inner handler function for form-action button
+     *
+     * @param action
+     * @param row
+     * @param aix
+     */
     panelDockedInner$Actions$Form_InnerHandler: function(action, row, aix, btn) {
-        var me = this, uri, section = me.ti().section, tp = Ext.getCmp(me.panel.id).down('[region="south"]');
+        var me = this;
 
-        // Build the uri
-        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+        // If Ctrl-key is pressed
+        if (Ext.EventObject.ctrlKey)
 
-        if (Ext.EventObject.ctrlKey && tp) {
-            tp.add({
-                xtype: 'actiontabrow',
-                id: 'i-section-' + me.ti().section.alias + '-action-form-row-' + row.get('id') + '-wrapper',
-                load: uri,
+            // Add new tab within south panel
+            Ext.getCmp(me.panel.id).down('[isSouth]').add(me.southItemIDefault({
+                id: row.get('id'),
                 title: row.get('title'),
-                name: row.get('id'),
-                closable: true,
-                collapsible: true
-            });
-            tp.show();
+                aix: aix
+            }));
 
-        } else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
+        // Else proceed standard behaviour
+        else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
 
     /**
@@ -1472,8 +1475,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Array}
      */
     panelItemA: function() {
-
-        // Panels array
         var me = this, itemA = [], rowsetItem = me.rowsetPanel(), southItem = me.south;
 
         // Append rowset (center region) panel
@@ -1490,9 +1491,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                 // Set up active tab
                 southItem.activeTab = me.ti().scope.actionrowset.south.tabs.column('id').indexOf(me.ti().scope.actionrowset.south.activeTab.toString());
-            } else {
-                southItem.hidden = true;
-            }
+
+            // Else set up south item as hidden
+            } else southItem.hidden = true;
 
             // Push tabpanel as south region within main panel
             itemA.push(southItem);
@@ -1506,38 +1507,34 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * South-panel config
      */
     south: {
+        xtype: 'rowsetactionsouth',
         listeners: {
             add: function(tabpanel, tab) {
-                if (tab.xtype == 'actiontabrow' && !tab.isFromScope) {
+                if (tab.xtype == 'panel' && !tab.isFromScope) {
                     var wrp = tabpanel.up('[isWrapper]'), ctx = wrp.ctx();
                     var rowset = Ext.getCmp(ctx.rowset.id);
                     var paging = rowset.down('[alias="paging"]');
                     if (paging) rowset.removeDocked(paging);
+                    tabpanel.show();
                     tabpanel.setActiveTab(tab);
                 }
             },
-            remove: function(container, tab) {
-                if (tab.xtype == 'actiontabrow') {
-                    var tabs = container.up('[isWrapper]').ctx().ti().scope.actionrowset.south.tabs;
+            remove: function(tabpanel, tab) {
+                if (tab.xtype == 'panel') {
+                    var tabs = tabpanel.up('[isWrapper]').ctx().ti().scope.actionrowset.south.tabs;
 
                     // Erase mention from me.ti().scope.actionrowset.south.tabs;
-                    Ext.Array.erase(tabs, tabs.column('id').indexOf(tab.name), 1);
+                    if (Ext.isArray(tabs)) Ext.Array.erase(tabs, tabs.column('id').indexOf(tab.name), 1);
 
-                    if (!container.items.getCount()) {
-                        container.hide();
-                        var wrp = container.up('[isWrapper]'), ctx = wrp.ctx();
-                        var rowset = Ext.getCmp(ctx.rowset.id);
-                        rowset.addDocked(ctx.rowsetDockedA());
+                    if (!tabpanel.items.getCount()) {
+                        tabpanel.hide();
+                        var wrp = tabpanel.up('[isWrapper]'), ctx = wrp.ctx();
+                        Ext.getCmp(ctx.rowset.id).addDocked(ctx.rowsetDockedA());
                     }
                 }
             },
             render: function(c) {
-                if (c.height != 25) c.pHeight = c.height; else c.pHeight = '60%';
-            },
-            resize: function(c) {
-                if (Ext.EventObject.getTarget('.x-resizable-proxy'))
-                    c.height = c.pHeight = Math.ceil(c.getHeight()/c.up('[isWrapper]').body.getHeight() * 100) + '%';
-                Ext.defer(function(){c.getActiveTab().fireEvent('activate');}, 100);
+                if (c.height != 25) c.heightPercent = c.height; else c.heightPercent = '60%';
             }
         }
     },
@@ -1562,14 +1559,20 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Config
         return {
-            xtype: 'actiontabrow',
-            id: 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
-            load: '/' + section.alias + '/form'
-                + (parseInt(src.id) ? '/id/' + src.id : '')
-                + '/ph/' + scope.hash + '/'
-                + (parseInt(src.id) ? 'aix/' + src.aix + '/' : ''),
+            xtype: 'panel',
             title: src.title,
-            name: src.id
+            name: src.id,
+            closable: true,
+            border: 0,
+            layout: 'fit',
+            items: [{
+                xtype: 'actiontabrow',
+                id: 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
+                load: '/' + section.alias + '/form'
+                    + (parseInt(src.id) ? '/id/' + src.id : '')
+                    + '/ph/' + scope.hash + '/'
+                    + (parseInt(src.id) ? 'aix/' + src.aix + '/' : '')
+            }]
         }
     },
 

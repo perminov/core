@@ -73,34 +73,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      * South-panel config
      */
     south: {
-        xtype: 'tabpanel',
-        minHeight: 25,
-        maxHeight: 400,
-        tabBar: {
-            listeners: {
-                click: function(c, e) {
-                    if (e.getTarget('.x-tab-close-btn') || e.getTarget('.x-box-scroller')) return;
-                    if (c.up('tabpanel').getHeight() != c.up('tabpanel').minHeight) {
-                        if (e.getTarget('.x-tab')) return;
-                        c.up('tabpanel').setHeight(c.up('tabpanel').minHeight);
-                    } else {
-                        c.up('tabpanel').height = c.up('tabpanel').pHeight;
-                        c.up('tabpanel').setHeight();
-                        Ext.defer(function(){
-                            c.up('tabpanel').getActiveTab().fireEvent('activate');
-                        }, 10);
-                    }
-                }
-            }
-        },
-        resizable: {
-            handles: 'n',
-            transparent: true
-        },
-        border: 0,
-        region: 'south',
-        height: '60%',
-        layout: 'fit'
+        xtype: 'actionsouth'
     },
 
     /**
@@ -142,45 +115,32 @@ Ext.define('Indi.lib.controller.action.Action', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this, intoCmp;
+        var me = this;
+
+        // Set up docked items
+        me.panel.dockedItems = me.panelDockedA();
 
         // If all contents should be added to existing panel
-        if (me.cfg.into) {
-
-            // Get that panel
-            intoCmp = Ext.getCmp(me.cfg.into);
-
-            console.log(me.cfg.into);
-            if (!intoCmp) {
-            }
-
-            // Remove existing docked items
-            intoCmp.getDockedItems().forEach(function(r){
-                intoCmp.removeDocked(r, true);
-            });
-
-            // Add docked item to it
-            intoCmp.addDocked(me.panelDockedA());
-
-            // Add regular items
-            intoCmp.add(me.panel.items);
-
-        // Else
-        } else {
+        if (me.cfg.into) me.panel.header = false; else {
 
             // Append tools and toolbars to the main panel
             Ext.merge(me.panel, {
-                dockedItems: me.panelDockedA(),
                 renderTo: 'i-center-center-body',
                 tools: me.panelToolA()
             });
 
-            // Create panel instance
-            Ext.widget(me.panel);
-
             // Update id of the main panel (temporary)
             Indi.centerId = me.panel.id;
         }
+
+        // Create panel instance
+        var panel = Ext.widget(me.panel);
+
+        // If created instance should be inserted as a tab - do it
+        if (me.cfg.into) Ext.getCmp(me.cfg.into).insert(0, panel);
+
+        // If special `onLoad` callback is provided within me.cfg - call it
+        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, [me]);
 
         // Call parent
         me.callParent();
@@ -495,6 +455,9 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Set up an id for wrapper panel
         me.panel.id = config.id + '-wrapper';
+
+        // Set up and xtype for wrapper panel
+        if (config.cfg.into) me.panel.xtype = 'actiontab' + config.route.last().action.mode.toLowerCase();
 
         // Call parent
         me.callParent(arguments);

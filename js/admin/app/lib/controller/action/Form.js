@@ -226,18 +226,17 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Detect if all inputs within the row panel should be read-only
         me.row.readOnly = me.rowReadOnly();
-        
-        me.id = me.bid();
+
+        // Setup row panel
         me.row = Ext.merge({
-            id: me.id + '-row',
             items: me.formItemA(),
-            dockedItems: me.rowDockedA(),
             url: me.ti().section.href + 'save'
                 + (me.ti().row.id ? '/id/' + me.ti().row.id : '')
                 + (me.ti().scope.hash ? '/ph/' + me.ti().scope.hash : '')
                 + (me.ti().scope.aix ? '/aix/' + me.ti().scope.aix : '') + '/'
         }, me.row);
-        me.panel.items = me.panelItemA();
+
+        // Call parent
         me.callParent();
     },
 
@@ -756,7 +755,9 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (spnOffset) spnOffset.setValue('');
 
                 // Goto the url
-                me.goto(url);
+                me.goto(url, undefined, {
+                    title: Indi.lang.I_CREATE
+                });
             }
         }
     },
@@ -767,7 +768,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      *
      * @param url
      */
-    goto: function(url, btnSaveClick) {
+    goto: function(url, btnSaveClick, cfg) {
 
         // Create shortcuts for involved components
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
@@ -818,16 +819,34 @@ Ext.define('Indi.lib.controller.action.Form', {
             // If `forceValidate` arg is given we check form validity before loading required contents
             if (btnSave && btnSave.pressed && !formCmp.getForm().isValid()) return;
 
-            var cfg = {
+            // Append request failure callback to the load config
+            Ext.merge({
                 failure: function() {
                     me.getMask().hide();
                 }
+            }, cfg);
+
+            // Parse request url
+            var gotoO = Indi.parseUri(url);
+
+            // Append autosave flag to the query string of the uri, if needed
+            var uri = url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : '');
+
+            // If current wrapper is placed within a tab, and we gonna go to same-type wrapper
+            if (Ext.getCmp(me.panel.id).isTab && gotoO.section == me.ti().section.alias) {
+
+                // Provide current wrapper to be replaced by new same-type wrapper panel
+                Ext.merge(cfg, {
+                    insteadOf: me.panel.id,
+                    into: Ext.getCmp(me.panel.id).up('panel').id
+                });
+
+                // Set up title
+                if (!me.ti().row.id) cfg.title = Indi.lang.I_CREATE;
             }
 
-            if (Ext.getCmp(me.panel.id).isTab) cfg.into = me.panel.id;
-
-            // We just load required contents
-            Indi.load(url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : ''), cfg);
+            // Load required contents
+            Indi.load(uri, cfg);
         }
     },
 
