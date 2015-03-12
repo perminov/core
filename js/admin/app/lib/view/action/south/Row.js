@@ -9,24 +9,13 @@ Ext.define('Indi.lib.view.action.south.Row', {
     // @inheritdoc
     alternateClassName: 'Indi.View.Action.South.Row',
 
-    // @inheritdoc
-    onRender: function() {
-        var me = this;
-
-        // Call parent
-        me.callParent(arguments);
-
-        // Init height
-        me.initHeight();
-    },
-
     /**
      * Set up initial height for this component. The key feature is that this function will try to detect if
      * height of this component can be greater than the default. As long as this component represents the south
      * region panel within the main action panel, function takes a look at the contents of center region panel
      * (within main action panel), and if height, used by that contents is less than center region panel actually
      * have, function will increase south region panel (south region panel - is `this` component) for it to
-     * additionally use that blank/unused height. Also, this function
+     * additionally use that blank/unused height.
      */
     initHeight: function() {
         var me = this, wPanel = me.up('[isWrapper]'), cPanel = wPanel.down('[region="center"]'), cUsedHeight = 0,
