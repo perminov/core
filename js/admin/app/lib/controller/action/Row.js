@@ -722,8 +722,10 @@ Ext.define('Indi.lib.controller.action.Row', {
     southItemIDefault: function(src) {
         var me = this, scope = me.ti().scope;
 
+        // Config
         return {
             xtype: 'panel',
+            isSouthItem: true,
             id: me.id + '-tab$' + src.alias,
             title: src.title,
             name: src.alias,

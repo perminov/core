@@ -1531,7 +1531,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Config
         return {
             xtype: 'panel',
-            isTabpanelItem: true,
+            isSouthItem: true,
             title: src.title,
             name: src.id,
             closable: true,

@@ -44,7 +44,7 @@ Ext.define('Indi.lib.view.action.Tab', {
         if (me.up('tabpanel').height == me.up('tabpanel').minHeight) return;
 
         // Load
-        Indi.load(me.load, {into: me.up('panel').id, insteadOf: me.insteadOf, onLoad: me.onLoad});
+        Indi.load(me.load, {into: me.up('[isSouthItem]').id, insteadOf: me.insteadOf});
 
         // Setup is loading
         me.isLoading = true;

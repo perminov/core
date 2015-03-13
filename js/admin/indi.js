@@ -355,7 +355,7 @@ Ext.define('Indi', {
                     else if (cfg.insteadOf) {
 
                         // Set title for a container, that results will be injected in
-                        Ext.getCmp(cfg.into).setTitle(cfg.title);
+                        if (cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
 
                         // Destroy the component, that will have a one to replace it
                         Ext.getCmp(cfg.insteadOf).destroy();

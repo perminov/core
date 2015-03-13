@@ -17,7 +17,7 @@ Ext.define('Indi.lib.view.action.south.Rowset', {
         me.on('add', function(container, component) {
 
             // If added component is not a tabpanel item, or is, but has `isFromScope` property set to `true` - return
-            if (!component.isTabpanelItem || component.isFromScope) return;
+            if (!component.isSouthItem || component.isFromScope) return;
 
             // Setup shortcuts
             var ctx = container.up('[isWrapper]').ctx(), rowset = Ext.getCmp(ctx.rowset.id), paging = rowset.down('[alias="paging"]');
@@ -34,7 +34,7 @@ Ext.define('Indi.lib.view.action.south.Rowset', {
         me.on('remove', function(container, component) {
 
             // If removed component is a tabpanel item
-            if (!component.isTabpanelItem) return;
+            if (!component.isSouthItem) return;
 
             // Setup shortcuts for wrapper panel and for tabs array within scope's settings
             var wrp = container.up('[isWrapper]'), tabs = wrp.ctx().ti().scope.actionrowset.south.tabs;
