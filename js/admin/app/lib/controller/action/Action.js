@@ -137,10 +137,13 @@ Ext.define('Indi.lib.controller.action.Action', {
         var panel = Ext.widget(me.panel);
 
         // If created instance should be inserted as a tab - do it
-        if (me.cfg.into) Ext.getCmp(me.cfg.into).insert(0, panel);
+        if (me.cfg.into) Ext.getCmp(me.cfg.into).add(panel);
+
+        // If panel has `onLoad` property, and it's a function - call it
+        if (Ext.isFunction(panel.onLoad)) panel.onLoad(me);
 
         // If special `onLoad` callback is provided within me.cfg - call it
-        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, [me]);
+        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, me);
 
         // Call parent
         me.callParent();

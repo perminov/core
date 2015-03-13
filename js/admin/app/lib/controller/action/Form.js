@@ -833,17 +833,13 @@ Ext.define('Indi.lib.controller.action.Form', {
             var uri = url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : '');
 
             // If current wrapper is placed within a tab, and we gonna go to same-type wrapper
-            if (Ext.getCmp(me.panel.id).isTab && gotoO.section == me.ti().section.alias) {
+            if (Ext.getCmp(me.panel.id).isTab && gotoO.section == me.ti().section.alias)
 
                 // Provide current wrapper to be replaced by new same-type wrapper panel
                 Ext.merge(cfg, {
                     insteadOf: me.panel.id,
                     into: Ext.getCmp(me.panel.id).up('panel').id
                 });
-
-                // Set up title
-                if (!me.ti().row.id) cfg.title = Indi.lang.I_CREATE;
-            }
 
             // Load required contents
             Indi.load(uri, cfg);

@@ -19,7 +19,21 @@ Ext.define('Indi.lib.view.action.TabRow', {
         // Call parent
         me.callParent(arguments);
 
+        // Setup `insteadOf` property the same as `id`
+        me.insteadOf = me.id;
+
         // Call tab mixin initComponent method
         me.mixins.tab.afterRender.call(me);
+    },
+
+    // @inheritdoc
+    onLoad: function(ctx) {
+        var me = this;
+
+        // Call tab mixin initComponent method
+        me.mixins.tab.onLoad.call(me, ctx);
+
+        // Update `name` property for the tab, to provide tabs remember at it's most recent state
+        me.up('[isSouthItem]').name = parseInt(ctx.ti().row.id) || 0;
     }
 });

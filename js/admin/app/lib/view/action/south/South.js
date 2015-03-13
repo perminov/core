@@ -113,13 +113,13 @@ Ext.define('Indi.lib.view.action.south.South', {
     setSize: function() {
         var me = this, tab;
 
+        // Call parent
+        me.callParent(arguments);
+
         // Force `height` property to be expressed in percents rather than in pixels,
         // if new size was applied using Ext.resizer.Resizer
         if (Ext.EventObject.getTarget('.x-resizable-proxy'))
             me.height = me.heightPercent = Math.ceil(arguments[1]/me.up('[isWrapper]').body.getHeight() * 100) + '%';
-
-        // Call parent
-        me.callParent(arguments);
 
         // Try to load the contents of tab. Try will be successful only in case if
         // a numder of conditions are in place. NOTE: The check if they are in place or not
