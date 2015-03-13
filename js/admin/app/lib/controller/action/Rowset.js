@@ -868,7 +868,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDockedInner$Actions$Create: function(){
 
         // Check if 'save' and 'form' actions are allowed
-        var me = this, canSave = false, canForm = false, canAdd = me.ti().section.disableAdd == '0';
+        var me = this, canSave = false, canForm = false, canAdd = parseInt(me.ti().section.disableAdd) != 1;
         for (var i = 0; i < me.ti().actions.length; i++) {
             if (me.ti().actions[i].alias == 'save') canSave = true;
             if (me.ti().actions[i].alias == 'form') canForm = true;
