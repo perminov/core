@@ -1947,11 +1947,28 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function call($action) {
 
+        // If no trail - call action and return
+        if (!Indi::trail(true)) return $this->{$action . 'Action'}();
+
+        // Adjust access rights ()
+        $this->adjustAccess();
+
+        // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
+        if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
+
         // If action was not excluded from the list of allowed actions - call it
-        if (!Indi::trail(true) || Indi::trail()->actions->select($action, 'alias')->at(0)) $this->{$action . 'Action'}();
+        if (Indi::trail()->actions->select($action, 'alias')->at(0)) $this->{$action . 'Action'}();
 
         // Else flush an error message
         else jflush(false, sprintf(I_ACCESS_ERROR_ACTION_IS_OFF_DUETO_CIRCUMSTANCES, Indi::model('Action')->fetchRow('`alias` = "' . $action . '"')->title));
+    }
+
+    /**
+     * Empty function. To be overridden in child classes, if there is a need to adjust
+     * access mode consider to certain circumstances
+     */
+    public function adjustAccess() {
+
     }
 
     /**
