@@ -2128,10 +2128,12 @@ Ext.define('Indi.lib.form.field.Combo', {
         propS = r.attrs[name].toString();
 
         // If propS is a string, representing an integer number - convert it into interger-type and return
-        if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
+        //if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
+        if (propS.match(/^-?[1-9][0-9]{0,9}|0$/)) return parseInt(propS);
 
         // If propS is a string, representing a floating-point number - convert it into float-type and return
-        if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
+        //if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
+        if (propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
 
         // Retun as is
         return propS;

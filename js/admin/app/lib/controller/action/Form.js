@@ -732,7 +732,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: me.panelDockedInnerBid() + 'create',
             iconCls: 'i-btn-icon-create',
-            disabled: parseInt(me.ti().section.disableAdd) || (me.row.readOnly && !me.row.createOnly) ? true : false,
+            disabled: parseInt(me.ti().section.disableAdd) == 1 || (me.row.readOnly && !me.row.createOnly && parseInt(me.ti().section.disableAdd) != 2) ? true : false,
             tooltip: Indi.lang.I_NAVTO_CREATE,
             handler: function(){
 
