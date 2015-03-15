@@ -1046,20 +1046,26 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions$Form_InnerHandler: function(action, row, aix, btn) {
-        var me = this;
+        var me = this, south, already;
 
         // If Ctrl-key is pressed
-        if (Ext.EventObject.ctrlKey)
+        if (Ext.EventObject.ctrlKey) {
 
-            // Add new tab within south panel
-            Ext.getCmp(me.panel.id).down('[isSouth]').add(me.southItemIDefault({
+            // Get south region panel
+            south = Ext.getCmp(me.panel.id).down('[isSouth]');
+
+            // If tab, that we want to add - is already exists within south region panel - set it active
+            if (already = south.down('[isSouthItem][name="' + row.get('id') + '"]')) south.setActiveTab(already);
+
+            // Else add new tab within south panel
+            else south.add(me.southItemIDefault({
                 id: row.get('id'),
                 title: row.get('title'),
                 aix: aix
             }));
 
         // Else proceed standard behaviour
-        else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
+        } else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
 
     /**

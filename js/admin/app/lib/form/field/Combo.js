@@ -317,6 +317,13 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Detect option color (style or box) and apply it
                 me.color(data, value).apply();
+
+                // Set up 'selectedIndex' attribute for keywordEl
+                if (value !== null)me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)')
+                    .each(function(el, c, index){
+                        if (el.attr(me.name) == value.toString()) me.keywordEl.attr('selectedIndex', index+1);
+                    });
+                else me.keywordEl.attr('selectedIndex', '0');
             }
 
             // Setup value for hiddenEl element

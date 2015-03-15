@@ -446,11 +446,16 @@ Ext.define('Indi.lib.controller.action.Action', {
             });
 
         // Add keyboard event handelers
-        if (Ext.getCmp(target)) Ext.getCmp(target).getEl().addKeyMap({
+        if (Ext.getCmp(target).rendered) Ext.getCmp(target).getEl().addKeyMap({
             eventName: 'keydown',
             binding: binding
         });
     },
+
+    /**
+     * Empty function
+     */
+    keyMap: Ext.emptyFn,
 
     // @inheritdoc
     constructor: function(config) {

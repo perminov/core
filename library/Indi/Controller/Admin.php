@@ -1851,9 +1851,13 @@ class Indi_Controller_Admin extends Indi_Controller {
             } else if (!Indi::uri()->id) str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
         }
 
-        // Redirect
-        $response = array();
+        // Prepare response. Here we mention a number of properties, related to saved row, as a proof that row saved ok
+        $response = array('title' => $this->row->title(), 'aix' => Indi::uri()->aix, 'id' => $this->row->id);
+
+        // If redirect should be performed, include the location address under 'redirect' key within $response array
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
+
+        // Flush response
         jflush(true, $response);
     }
 
