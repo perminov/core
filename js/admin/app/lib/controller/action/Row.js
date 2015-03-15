@@ -34,7 +34,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, '-',
+                    {alias: 'back'}, {alias: 'backSeparator'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
@@ -106,13 +106,13 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelDockedInner$Back: function(urlonly) {
 
         // Build the url for goto
-        var me = this, url = '/' + me.ti().section.alias + '/';
+        var me = this, isTab = me.panel.xtype == 'actiontabrow', url = '/' + me.ti().section.alias + '/';
         if (me.ti(1).row) url += 'index/id/' + me.ti(1).row.id + '/' +
             (me.ti().scope.upperHash ? 'ph/'+me.ti().scope.upperHash+'/' : '') +
             (me.ti().scope.upperAix ? 'aix/'+me.ti().scope.upperAix+'/' : '');
 
         // Return builded url, if `geturl` arg is given, or return 'Back' button config otherwise
-        return urlonly ? url : {
+        return urlonly ? url : (isTab ? null : {
             id: me.panelDockedInnerBid() + 'back',
             text: '',
             iconCls: 'i-btn-icon-back',
@@ -125,7 +125,16 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Goto url
                 me.goto(url);
             }
-        }
+        })
+    },
+
+    /**
+     * Master toolbar 'Back' button right-side separator
+     *
+     * @return {Object}
+     */
+    panelDockedInner$BackSeparator: function() {
+        var me = this; return me.panel.xtype == 'actiontabrow' ? null : {xtype: 'tbseparator'}
     },
 
     /**
@@ -164,7 +173,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             width: getMaxWidth(me.ti().row),
             lastValidValue: me.ti().row.id,
             margin: '0 3 0 3',
-            disabled: parseInt(me.ti().scope.found) > 1 ? false : true,
+            disabled: parseInt(me.ti().scope.found) <= 1,
             errorMsgCls: '',
             minValue: 1,
             listeners: {
@@ -218,12 +227,31 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
+     * Build the uri for making reload request
+     *
+     * @param autosave {Boolean}
+     * @return {String}
+     */
+    panelDockedInner$Reload_uri: function (autosave) {
+        var me = this, uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
+
+        // Append 'id' param to the uri
+        uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
+
+        // Append 'ph' and 'aix' params
+        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
+
+        // Return
+        return uri;
+    },
+
+    /**
      * Master toolbar 'Reload' item, for ability to reload the current row
      *
      * @return {Object}
      */
     panelDockedInner$Reload: function() {
-        var me = this, url, ats;
+        var me = this, ats;
 
         // 'Reload' item config
         return {
@@ -235,18 +263,11 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Show mask
                 me.getMask().show();
 
-                // Check is autosave ability exists and turned On
+                // Get the autosave-checkbox
                 ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
 
-                // Build the url
-                url = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
-                url += ats && ats.checked
-                    ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
-                    : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
-                url += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
-
                 // Reload the current uri
-                me.goto(url, undefined, {
+                me.goto(me.panelDockedInner$Reload_uri(ats && ats.checked), undefined, {
                     title: me.ti().row.id ? me.ti().row.title : Indi.lang.I_CREATE
                 });
             }
@@ -454,7 +475,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     if (parseInt(value)) {
 
                         // Show mask
-                        me.getMask().show();
+                        if (!me.noGoto) me.getMask().show();
 
                         // Build the request uri and setup save button shortcut
                         var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
@@ -631,7 +652,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @param url
      */
     goto: function(url, btnSaveClick, cfg) {
-        Indi.load(url, cfg);
+        if (!this.noGoto) Indi.load(url, cfg);
     },
 
     /**
@@ -841,7 +862,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         Ext.getCmp(me.row.id).focus();
 
         // Attach key map on a row panel
-        Ext.getCmp(me.row.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.row.id).rendered) Ext.getCmp(me.row.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.R,
