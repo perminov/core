@@ -50,7 +50,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
     public function getConsistence() {
 
         // If filter is non-boolean
-        if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && Indi::uri('json')) {
+        if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && Indi::uri('format')) {
 
             // Get field's alias
             $alias = $this->getField()->alias;
