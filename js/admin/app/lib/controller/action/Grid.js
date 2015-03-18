@@ -35,7 +35,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         docked: {
             items: [{alias: 'paging'}],
             inner: {
-                paging: ['-', {alias: 'excel'}]
+                paging: ['-', {alias: 'excel'}, {alias: 'pdf'}]
             }
         },
 
@@ -588,63 +588,121 @@ Ext.define('Indi.lib.controller.action.Grid', {
             iconCls: 'i-btn-icon-xls',
             tooltip: Indi.lang.I_EXPORT_EXCEL,
             handler: function(){
-
-                // Start preparing request string
-                var request = me.storeLastRequest().replace('json/1/', 'excel/1/');
-
-                // Get grid component id
-                var gridCmpId = me.bid() + '-rowset-grid';
-
-                // Get grid columns
-                var gridColumnA = Ext.getCmp(gridCmpId).columns;
-
-                // Define and array for storing column info, required for excel columns building
-                var excelColumnA = [];
-
-                // Setup a multiplier, for proper column width calculation
-                var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
-
-                // Collect needed data about columns
-                for (var i = 0; i < gridColumnA.length; i++) {
-                    if (gridColumnA[i].hidden == false) {
-
-                        // Prepare the data object for excel column
-                        var excelColumnI = {
-                            title: gridColumnA[i].text,
-                            dataIndex: gridColumnA[i].dataIndex,
-                            align: gridColumnA[i].align,
-                            width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
-                        };
-
-                        // If current grid column - is column, currently used for sorting,
-                        // we pick sorting direction, and column title width
-                        if (gridColumnA[i].sortState)
-                            Ext.merge(excelColumnI, {
-                                sortState: gridColumnA[i].sortState.toLowerCase(),
-                                titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
-                            })
-
-                        // Push the data object to array
-                        excelColumnA.push(excelColumnI);
-                    }
-                }
-
-                // Set column info as a request variable
-                var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
-
-                // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
-                // property for each object, that is representing a color-filter in request
-                for (var i = 0; i < me.ti().filters.length; i++) {
-                    if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
-                        var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
-                        request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
-                    }
-                }
-
-                // Do request
-                window.location = request + '&' + columns;
+                window.location = me.rowsetExportQuery$Excel();
             }
         }
+    },
+
+    /**
+     * Rowset panel paging toolbar 'PDF' button-item, for ability to make an advanced PDF-export
+     * within the currently available rows scope
+     *
+     * @return {Object}
+     */
+    rowsetInner$Pdf: function() {
+        var me = this;
+
+        // 'Excel' item cfg
+        return {
+            id: me.bid() + '-rowset-docked-inner$pdf',
+            iconCls: 'i-btn-icon-pdf',
+            tooltip: Indi.lang.I_EXPORT_PDF,
+            handler: function(){
+                window.location = me.rowsetExportQuery$Pdf();
+            }
+        }
+    },
+
+    /**
+     * Builds full request string (uri + query string) for retrieving current rowset in a format,
+     * identified by `format` argument. Currently 'excel' and 'pdf' values of that argument are supported
+     *
+     * @param format
+     * @return {String}
+     */
+    rowsetExportQuery: function(format) {
+        var me = this;
+
+        // Start preparing request string
+        var request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/');
+
+        // Get grid component id
+        var gridCmpId = me.bid() + '-rowset-grid';
+
+        // Get grid columns
+        var gridColumnA = Ext.getCmp(gridCmpId).columns;
+
+        // Define and array for storing column info, required for excel columns building
+        var excelColumnA = [];
+
+        // Setup a multiplier, for proper column width calculation
+        var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
+
+        // Collect needed data about columns
+        for (var i = 0; i < gridColumnA.length; i++) {
+            if (gridColumnA[i].hidden == false) {
+
+                // Prepare the data object for excel column
+                var excelColumnI = {
+                    title: gridColumnA[i].text,
+                    dataIndex: gridColumnA[i].dataIndex,
+                    align: gridColumnA[i].align,
+                    width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
+                };
+
+                // If current grid column - is column, currently used for sorting,
+                // we pick sorting direction, and column title width
+                if (gridColumnA[i].sortState)
+                    Ext.merge(excelColumnI, {
+                        sortState: gridColumnA[i].sortState.toLowerCase(),
+                        titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
+                    })
+
+                // Push the data object to array
+                excelColumnA.push(excelColumnI);
+            }
+        }
+
+        // Set column info as a request variable
+        var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
+
+        // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
+        // property for each object, that is representing a color-filter in request
+        for (var i = 0; i < me.ti().filters.length; i++) {
+            if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
+                var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
+            }
+        }
+
+        // Return request string
+        return request + '&' + columns;
+    },
+
+    /**
+     * This is an function that allows to modify the request string,
+     * responsible for retrieving current rowset represented as an Excel spreadsheet
+     *
+     * @return {String}
+     */
+    rowsetExportQuery$Excel: function() {
+        var me = this, query = me.rowsetExportQuery('excel');
+
+        // Return query
+        return query;
+    },
+
+    /**
+     * This is an function that allows to modify the request string,
+     * responsible for retrieving current rowset represented as an PDF document
+     *
+     * @return {String}
+     */
+    rowsetExportQuery$Pdf: function() {
+        var me = this, query = me.rowsetExportQuery('pdf');
+
+        // Return query
+        return query;
     },
 
     /**

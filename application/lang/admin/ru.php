@@ -66,6 +66,7 @@ define('I_BACK', 'Вернуться');
 define('I_SAVE', 'Сохранить');
 define('I_TOTAL', 'Всего');
 define('I_EXPORT_EXCEL', 'Экспортировать в Excel');
+define('I_EXPORT_PDF', 'Экспортировать в PDF');
 define('I_NAVTO_ROWSET', 'Вернуться к списку');
 define('I_NAVTO_ID', 'Перейти к записи по ID');
 define('I_NAVTO_RELOAD', 'Обновить');
