@@ -37,7 +37,12 @@ Ext.define('Indi.lib.view.action.south.Rowset', {
             if (!component.isSouthItem) return;
 
             // Setup shortcuts for wrapper panel and for tabs array within scope's settings
-            var wrp = container.up('[isWrapper]'), tabs = wrp.ctx().ti().scope.actionrowset.south.tabs;
+            var wrp = container.up('[isWrapper]'), tabs = [];
+            
+            // Try to set up a shortcut to wrp.ctx().ti().scope.actionrowset.south.tabs
+            try {
+                tabs = wrp.ctx().ti().scope.actionrowset.south.tabs;
+            } catch (e) {}
 
             // Erase mention from me.ti().scope.actionrowset.south.tabs array, because that array is the place
             // there system takes info for deciding whether or not to create paging toolbar for wrapper's rowset panel
