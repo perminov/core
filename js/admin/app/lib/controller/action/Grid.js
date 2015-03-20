@@ -608,7 +608,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             iconCls: 'i-btn-icon-pdf',
             tooltip: Indi.lang.I_EXPORT_PDF,
             handler: function(){
-                window.location = me.rowsetExportQuery$Pdf();
+                window.location =
+                    me.rowsetExportQuery$Pdf();
             }
         }
     },
@@ -620,7 +621,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param format
      * @return {String}
      */
-    rowsetExportQuery: function(format) {
+    rowsetExportQuery: function(format, multiplier) {
         var me = this;
 
         // Start preparing request string
@@ -634,9 +635,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Define and array for storing column info, required for excel columns building
         var excelColumnA = [];
-
-        // Setup a multiplier, for proper column width calculation
-        var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
 
         // Collect needed data about columns
         for (var i = 0; i < gridColumnA.length; i++) {
@@ -668,7 +666,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
         // property for each object, that is representing a color-filter in request
-        for (var i = 0; i < me.ti().filters.length; i++) {
+        for (i = 0; i < me.ti().filters.length; i++) {
             if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
                 var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
                 request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
@@ -686,7 +684,18 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {String}
      */
     rowsetExportQuery$Excel: function() {
-        var me = this, query = me.rowsetExportQuery('excel');
+        var me = this, gridCmpId, multiplier, query;
+
+        // Get grid component id
+        gridCmpId = me.bid() + '-rowset-grid';
+
+        // Get multiplier, for adjusting column widths, because width, that grid columns have currently
+        // have - can be greater in excel spreadsheet, because it does not have Menu at the left hand side,
+        // unlike Indi Engine Interface
+        multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
+
+        // Get query
+        query = me.rowsetExportQuery('excel', multiplier);
 
         // Return query
         return query;
@@ -699,10 +708,74 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {String}
      */
     rowsetExportQuery$Pdf: function() {
-        var me = this, query = me.rowsetExportQuery('pdf');
+        var me = this, multiplier, i, format = 'pdf';
 
-        // Return query
-        return query;
+        // Start preparing request string
+        var request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/');
+
+        // Get grid component id
+        var gridCmpId = me.bid() + '-rowset-grid';
+
+        // Get grid columns
+        var gridColumnA = Ext.getCmp(gridCmpId).columns;
+
+        // Define and array for storing column info, required for excel columns building
+        var excelColumnA = [], totalColumnWidthExceptFirstColumn = 0, firstColumnWidth = 0;
+
+        // Collect needed data about columns
+        for (i = 0; i < gridColumnA.length; i++) {
+            if (gridColumnA[i].hidden == false) {
+                if (firstColumnWidth == 0) {
+                    firstColumnWidth = gridColumnA[i].getWidth();
+                } else {
+                    totalColumnWidthExceptFirstColumn += gridColumnA[i].getWidth();
+                }
+            }
+        }
+
+        var pdfWidth = 720, pdfFirstColumnWidth = pdfWidth - totalColumnWidthExceptFirstColumn, width;
+
+        // Collect needed data about columns
+        for (i = 0; i < gridColumnA.length; i++) {
+            if (gridColumnA[i].hidden == false) {
+
+                width = excelColumnA.length ? 1 : pdfFirstColumnWidth;
+
+                // Prepare the data object for excel column
+                var excelColumnI = {
+                    title: gridColumnA[i].text,
+                    dataIndex: gridColumnA[i].dataIndex,
+                    align: gridColumnA[i].align,
+                    width: excelColumnA.length ? gridColumnA[i].getWidth() : pdfFirstColumnWidth
+                };
+
+                // If current grid column - is column, currently used for sorting,
+                // we pick sorting direction, and column title width
+                if (gridColumnA[i].sortState)
+                    Ext.merge(excelColumnI, {
+                        sortState: gridColumnA[i].sortState.toLowerCase(),
+                        titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
+                    })
+
+                // Push the data object to array
+                excelColumnA.push(excelColumnI);
+            }
+        }
+console.log(excelColumnA);
+        // Set column info as a request variable
+        var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
+
+        // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
+        // property for each object, that is representing a color-filter in request
+        for (var i = 0; i < me.ti().filters.length; i++) {
+            if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
+                var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
+            }
+        }
+
+        // Return request string
+        return request + '&' + columns;
     },
 
     /**
