@@ -526,7 +526,8 @@ class DOMPDF {
    * @param string $encoding Not used yet
    */
   function load_html($str, $encoding = null) {
-    $this->save_locale();
+      $str = preg_replace('/(<td style="[^"]*); width:[0-9]+[\.0-9]*pt([^"]*" colspan="[0-9]+">)/', '$1$2', $str);
+      $this->save_locale();
 
     // FIXME: Determine character encoding, switch to UTF8, update meta tag. Need better http/file stream encoding detection, currently relies on text or meta tag.
     mb_detect_order('auto');

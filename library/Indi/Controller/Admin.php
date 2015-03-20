@@ -892,6 +892,16 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
             $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
 
+            // Set no-border style
+            if (Indi::uri()->format == 'pdf') {
+
+                // Merge all cell within that separator-row before no-border-style apply
+                $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+
+                // Apply no-border style
+                $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
+            }
+
             // Increment current row index
             $currentRowIndex++;
         }
@@ -906,7 +916,8 @@ class Indi_Controller_Admin extends Indi_Controller {
             $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
             // Setup column width
-            $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/8.43));
+            $m = Indi::uri()->format == 'excel' ? 8.43 : 6.4;
+            $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/$m));
 
             // Replace &nbsp;
             $columnI['title'] = str_replace('&nbsp;', ' ', $columnI['title']);
