@@ -508,6 +508,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Setup foreign rows for `columnType` property for each field row within $ti->gridFields rowset
         $ti->gridFields->foreign('columnTypeId');
 
+        // Set up $titleProp variable as an indicator of that titleColumn is within grid fields
+        if (in($titleColumn = $ti->model->titleColumn(), $columnA)) $titleProp = $titleColumn;
+
         // Setup actual info about types of columns, that we will have to deal with
         foreach ($ti->gridFields as $gridFieldR) {
 
@@ -631,9 +634,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Append temporary data
             $data[$pointer] = array_merge($data[$pointer], $r->temporary());
 
+            // Setup special 'title' property within '_system' property. This is for having proper title
+            // for each grid data row, event if grid does not have `title` property at all, or have, but
+            // affected by indents or some other manipulations
+            $data[$pointer]['_system']['title'] = $titleProp ? $data[$pointer][$titleProp] : $r->title();
+
             // Implement indents if need
-            if ($data[$pointer]['title'])
-                $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];
+            if ($data[$pointer]['title']) $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];
         }
 
         // Return grid data
