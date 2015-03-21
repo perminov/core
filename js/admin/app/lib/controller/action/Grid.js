@@ -624,14 +624,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
     rowsetExportQuery: function(format, multiplier) {
         var me = this;
 
-        // Start preparing request string
-        var request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/');
-
         // Get grid component id
-        var gridCmpId = me.bid() + '-rowset-grid';
+        var gridCmpId = me.bid() + '-rowset-grid', grid = Ext.getCmp(gridCmpId);
 
         // Get grid columns
-        var gridColumnA = Ext.getCmp(gridCmpId).columns;
+        var gridColumnA = grid.headerCt.getGridColumns().select(false, 'hidden');
+
+        // Start preparing request string
+        var request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/');
 
         // Define and array for storing column info, required for excel columns building
         var excelColumnA = [];
@@ -647,6 +647,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     align: gridColumnA[i].align,
                     width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
                 };
+
+                // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
+                if (gridColumnA[i].align == 'right')
+                    Ext.merge(excelColumnI, {
+                        displayZeroes: gridColumnA[i].displayZeroes
+                    });
 
                 // If current grid column - is column, currently used for sorting,
                 // we pick sorting direction, and column title width
@@ -714,10 +720,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/');
 
         // Get grid component id
-        var gridCmpId = me.bid() + '-rowset-grid';
+        var gridCmpId = me.bid() + '-rowset-grid', grid = Ext.getCmp(gridCmpId);
 
         // Get grid columns
-        var gridColumnA = Ext.getCmp(gridCmpId).columns;
+        var gridColumnA = grid.headerCt.getGridColumns().select(false, 'hidden');
 
         // Define and array for storing column info, required for excel columns building
         var excelColumnA = [], totalColumnWidthExceptFirstColumn = 0, firstColumnWidth = 0;
@@ -748,6 +754,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     align: gridColumnA[i].align,
                     width: excelColumnA.length ? gridColumnA[i].getWidth() : pdfFirstColumnWidth
                 };
+
+                // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
+                if (gridColumnA[i].align == 'right')
+                    Ext.merge(excelColumnI, {
+                        displayZeroes: gridColumnA[i].displayZeroes
+                    });
 
                 // If current grid column - is column, currently used for sorting,
                 // we pick sorting direction, and column title width
