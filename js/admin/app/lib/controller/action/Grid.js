@@ -593,16 +593,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 var request = me.storeLastRequest().replace('json/1/', 'excel/1/');
 
                 // Get grid component id
-                var gridCmpId = me.bid() + '-rowset-grid';
+                var gridCmpId = me.bid() + '-rowset-grid', grid = Ext.getCmp(gridCmpId);
 
                 // Get grid columns
-                var gridColumnA = Ext.getCmp(gridCmpId).columns;
+                var gridColumnA = grid.headerCt.getGridColumns().select(false, 'hidden');
 
                 // Define and array for storing column info, required for excel columns building
                 var excelColumnA = [];
 
                 // Setup a multiplier, for proper column width calculation
-                var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
+                var multiplier = screen.availWidth/grid.getWidth();
 
                 // Collect needed data about columns
                 for (var i = 0; i < gridColumnA.length; i++) {
@@ -622,6 +622,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
                             Ext.merge(excelColumnI, {
                                 sortState: gridColumnA[i].sortState.toLowerCase(),
                                 titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
+                            })
+
+
+                        // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
+                        if (gridColumnA[i].align == 'right')
+                            Ext.merge(excelColumnI, {
+                                displayZeroes: gridColumnA[i].displayZeroes
                             })
 
                         // Push the data object to array
