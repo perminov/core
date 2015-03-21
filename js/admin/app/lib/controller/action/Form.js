@@ -864,6 +864,9 @@ Ext.define('Indi.lib.controller.action.Form', {
                     // Show mask if form is within tab
                     if (isTab) me.getMask().show();
 
+                    // Prevent duplicate save request
+                    btnSave.setDisabled(true);
+
                     // Submit form
                     formCmp.submit({
                         submitEmptyText: false,
