@@ -1211,8 +1211,39 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Get the value
                 $value = $summary->{$columnI['dataIndex']};
 
+                // Get the control element
+                $el = Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
+
+                // If control element is 'price' or 'number'
+                if (in($el, 'price,number')) {
+
+                    // Display zero-values only if `displayZeroes` flag for current column is `true`
+                    if ($value == 0 && !$columnI['displayZeroes']) $value = '';
+
+                    // Set format
+                    if ($el == 'price') $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getNumberFormat()
+                        ->setFormatCode('#,##0.00');
+                    else $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                }
+
                 // Set cell value
                 $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
+
+                // Set up no-border style
+                if (Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle($columnL . (count($data) + $dataStartAtRowIndex - 1 + 1))
+                    ->applyFromArray($noBorder)
+                    ->applyFromArray(array(
+                    'borders' => array(
+                        'bottom' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => 'ffffff'
+                            )
+                        )
+                    )
+                ));
             }
 
             // Increment current row index
@@ -1682,7 +1713,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
         if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found)
-            if ($this->actionCfg['view']['index'] == 'grid' && !Indi::uri('excel')) return;
+            if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
 
         // Define an array containing extjs summary types and their sql representatives
         $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');
