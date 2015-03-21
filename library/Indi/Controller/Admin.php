@@ -77,7 +77,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 Indi::trail()->scope->apply($applyA);
 
                 // If a rowset should be fetched
-                if (Indi::uri()->json || Indi::uri()->excel) {
+                if (Indi::uri()->format) {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
@@ -90,8 +90,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $this->rowset = Indi::trail()->model->{
                     'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
                     }($finalWHERE, $finalORDER,
-                        Indi::uri()->excel ? null : (int) Indi::get('limit'),
-                        Indi::uri()->excel ? null : (int) Indi::get('page'));
+                        Indi::uri()->format == 'json' ? (int) Indi::get('limit') : null,
+                        Indi::uri()->format == 'json' ? (int) Indi::get('page') : null);
 
                     /**
                      * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
@@ -472,17 +472,15 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Provide a download of a excel spreadsheet
      *
      * @param $data
+     * @param $format
      */
-    public function excel($data){
+    public function export($data, $format = 'excel'){
 
         /** Include path **/
         ini_set('include_path', ini_get('include_path').';../Classes/');
 
         /** PHPExcel */
         include 'PHPExcel.php';
-
-        /** PHPExcel_Writer_Excel2007 */
-        include 'PHPExcel/Writer/Excel2007.php';
 
         // Create new PHPExcel object
         $objPHPExcel = new PHPExcel();
@@ -491,6 +489,13 @@ class Indi_Controller_Admin extends Indi_Controller {
         $objPHPExcel->getProperties()->setCreator($_SESSION['admin']['title']);
         $objPHPExcel->getProperties()->setLastModifiedBy($_SESSION['admin']['title']);
         $objPHPExcel->getProperties()->setTitle(Indi::trail()->section->title);
+
+        $font = 'Tahoma';
+
+        // Set up $noBorder variable, containing style definition to be used as an argument while applyFromArray() calls
+        // in cases then no borders should be displayed
+        $_noBorder = array('style' => PHPExcel_Style_Border::BORDER_THIN, 'color' => array('rgb' => 'ffffff'));
+        $noBorder = array('borders' => array('right' => $_noBorder, 'left' => $_noBorder, 'top' => $_noBorder));
 
         // Set active sheet by index
         $objPHPExcel->setActiveSheetIndex(0);
@@ -526,7 +531,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 ->applyFromArray(array(
                     'font' => array(
                         'size' => 8,
-                        'name' => 'Tahoma',
+                        'name' => $font,
                         'color' => array(
                             'rgb' => '04408C'
                         )
@@ -555,7 +560,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Set font name, size and color
             $objSelfStyled = $objRichText->createTextRun(strip_tags($crumbA[$i]));
-            $objSelfStyled->getFont()->setName('Tahoma')->setSize('9')->getColor()->setRGB('04408C');
+            $objSelfStyled->getFont()->setName($font)->setSize('9')->getColor()->setRGB('04408C');
 
             // Check if crubs contains html-code
             if (mb_strlen($crumbA[$i], 'utf-8') != mb_strlen(strip_tags($crumbA[$i]), 'utf-8')) {
@@ -577,13 +582,14 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Append separator
             if ($i < count($crumbA) -1) {
                 $objSelfStyled = $objRichText->createTextRun(' » ');
-                $objSelfStyled->getFont()->setName('Tahoma')->setSize('9');
+                $objSelfStyled->getFont()->setName($font)->setSize('9');
                 $objSelfStyled->getFont()->getColor()->setRGB('04408C');
             }
         }
 
         // Write prepared rich text object to first row
         $objPHPExcel->getActiveSheet()->SetCellValue('A1', $objRichText);
+        if (Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
 
         // Here we set row height, because OpenOffice Writer (unlike Microsoft Excel)
         // ignores previously set default height definition
@@ -593,15 +599,32 @@ class Indi_Controller_Admin extends Indi_Controller {
         $currentRowIndex++;
 
         // Set total number of $data items
-        $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, I_TOTAL . ': ' . count($data));
+        $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, 'Всего: ' . count($data));
         $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+        if (Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
         $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
         $currentRowIndex++;
 
         // If filters were used
         if (is_array($this->_excelA) && count($this->_excelA)) {
 
-            // We shift current row index to provide a empty row for visual separation between bread crumbs row and filters rows
+            // Before shifting current row index to provide a empty row for visual separation between bread
+            // crumbs row and filters rows, we check if export type is 'pdf', and if so
+            if (Indi::uri()->format == 'pdf') {
+
+                // Insert a whitespace into first cell of that visual-separator-row, as DomPDF ignores height
+                // definition for empty row, and makes it tiny, so, by inserting a whitespace - we ensure that
+                // visual separation will be properly displayed
+                $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, ' ');
+
+                // Merge all cell within that separator-row before no-border-style apply
+                $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+
+                // Apply no-border style
+                $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
+            }
+
+            // We shift current row index to provide a empty row for visual separation between bread crumbs row and filters rows,
             $currentRowIndex++;
 
             // Info about filters was prepared to $this->filtersWHERE() method, as an array of used filters
@@ -616,7 +639,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // Write a filter title and setup a font name, size and color for it
                 $objSelfStyled = $objRichText->createTextRun($excelI['title'] . ' -» ');
-                $objSelfStyled->getFont()->setName('Tahoma')->setSize('8')->getColor()->setRGB('04408C');
+                $objSelfStyled->getFont()->setName($font)->setSize('8')->getColor()->setRGB('04408C');
 
                 // If filter type is 'date' (or 'datetime'. There is no difference at this case)
                 if ($excelI['type'] == 'date') {
@@ -633,7 +656,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write the 'from ' string before actual filter date
                         $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_DATE_FROM . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
                         // Deal with date converstion
@@ -648,7 +671,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write the converted date
                         $objSelfStyled = $objRichText->createTextRun($excelI['value']['gte'] . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                     }
 
@@ -657,7 +680,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write the 'until ' string before actual filter date
                         $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
                         // Deal with date converstion
@@ -672,7 +695,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write the converted date
                         $objSelfStyled = $objRichText->createTextRun($excelI['value']['lte'] . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                     }
 
@@ -684,12 +707,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write the 'from ' string before actual filter value
                         $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_FROM . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
                         // Write the actual filter start point value
                         $objSelfStyled = $objRichText->createTextRun($excelI['value']['gte'] . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                     }
 
@@ -698,12 +721,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write the 'to ' string before actual filter value
                         $objSelfStyled = $objRichText->createTextRun(I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
                         // Write the actual filter end point value
                         $objSelfStyled = $objRichText->createTextRun($excelI['value']['lte'] . ' ');
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                     }
 
@@ -768,13 +791,13 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write row title
                         $objSelfStyled = $objRichText->createTextRun($rs[$i]['title']);
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB($color);
 
                         // Write separator, if needed
                         if ($i < count($rs) - 1) {
                             $objSelfStyled = $objRichText->createTextRun(', ');
-                            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                            $objSelfStyled->getFont()->setName($font)->setSize('8');
                             $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                         }
                     }
@@ -813,13 +836,13 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Write row title
                         $objSelfStyled = $objRichText->createTextRun($rs[$i]['title']);
-                        $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                        $objSelfStyled->getFont()->setName($font)->setSize('8');
                         $objSelfStyled->getFont()->getColor()->setRGB($color);
 
                         // Write separator, if needed
                         if ($i < count($rs) - 1) {
                             $objSelfStyled = $objRichText->createTextRun(', ');
-                            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                            $objSelfStyled->getFont()->setName($font)->setSize('8');
                             $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                         }
                     }
@@ -829,12 +852,13 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                     // Write the filter value
                     $objSelfStyled = $objRichText->createTextRun($excelI['value']);
-                    $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+                    $objSelfStyled->getFont()->setName($font)->setSize('8');
                     $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
                 }
 
                 // Set rich text object as a cell value
                 $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, $objRichText);
+                if (Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
 
                 // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
                 $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
@@ -857,16 +881,19 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Write the keyword search method title, with a separator
             $objSelfStyled = $objRichText->createTextRun('Искать -» ');
-            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+            $objSelfStyled->getFont()->setName($font)->setSize('8');
             $objSelfStyled->getFont()->getColor()->setRGB('04408C');
 
             // Write used keyword
             $objSelfStyled = $objRichText->createTextRun(urldecode(Indi::get()->keyword));
-            $objSelfStyled->getFont()->setName('Tahoma')->setSize('8');
+            $objSelfStyled->getFont()->setName($font)->setSize('8');
             $objSelfStyled->getFont()->getColor()->setRGB('7EAAE2');
 
             // Set rich text object as cell value
             $objPHPExcel->getActiveSheet()->SetCellValue('A' . $currentRowIndex, $objRichText);
+
+            // Set no-border style
+            if (Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
 
             // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
             $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
@@ -882,6 +909,16 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
             $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
 
+            // Set no-border style
+            if (Indi::uri()->format == 'pdf') {
+
+                // Merge all cell within that separator-row before no-border-style apply
+                $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+
+                // Apply no-border style
+                $objPHPExcel->getActiveSheet()->getStyle('A' . $currentRowIndex)->applyFromArray($noBorder);
+            }
+
             // Increment current row index
             $currentRowIndex++;
         }
@@ -896,7 +933,8 @@ class Indi_Controller_Admin extends Indi_Controller {
             $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
             // Setup column width
-            $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/8.43));
+            $m = Indi::uri()->format == 'excel' ? 8.43 : 6.4;
+            $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/$m));
 
             // Replace &nbsp;
             $columnI['title'] = str_replace('&nbsp;', ' ', $columnI['title']);
@@ -946,7 +984,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                             'color' => array(
                                 'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'A7C7EE':'c5c5c5')
                             )
-                        )
+                        ),
                     ),
                     'fill' => array(
                         'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
@@ -956,6 +994,20 @@ class Indi_Controller_Admin extends Indi_Controller {
                         ),
                         'endcolor' => array(
                             'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'd9e8fb' : 'E3E4E6'),
+                        ),
+                    )
+                )
+            );
+
+            // Apply style for first cell within header row
+            if (!$n && Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)
+                ->applyFromArray(array(
+                    'borders' => array(
+                        'left' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'BDD5F1':'d5d5d5')
+                            )
                         ),
                     )
                 )
@@ -1085,6 +1137,20 @@ class Indi_Controller_Admin extends Indi_Controller {
                     )
                 );
 
+                // Apply style for first cell within header row
+                if (!$n && Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)
+                    ->applyFromArray(array(
+                        'borders' => array(
+                            'left' => array(
+                                'style' => PHPExcel_Style_Border::BORDER_THIN,
+                                'color' => array(
+                                    'rgb' => 'c5c5c5'
+                                )
+                            ),
+                        )
+                    )
+                );
+
                 // Get the control element
                 $el = Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
 
@@ -1162,8 +1228,39 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Get the value
                 $value = $summary->{$columnI['dataIndex']};
 
+                // Get the control element
+                $el = Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
+
+                // If control element is 'price' or 'number'
+                if (in($el, 'price,number')) {
+
+                    // Display zero-values only if `displayZeroes` flag for current column is `true`
+                    if ($value == 0 && !$columnI['displayZeroes']) $value = '';
+
+                    // Set format
+                    if ($el == 'price') $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getNumberFormat()
+                        ->setFormatCode('#,##0.00');
+                    else $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                }
+
                 // Set cell value
                 $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
+
+                // Set up no-border style
+                if (Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle($columnL . (count($data) + $dataStartAtRowIndex - 1 + 1))
+                    ->applyFromArray($noBorder)
+                    ->applyFromArray(array(
+                    'borders' => array(
+                        'bottom' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => 'ffffff'
+                            )
+                        )
+                    )
+                ));
             }
 
             // Increment current row index
@@ -1176,25 +1273,85 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Freeze header
         $objPHPExcel->getActiveSheet()->freezePane('A' . ($dataStartAtRowIndex));
 
-        // Excel document custom adjustments
-        $this->adjustExcel($objPHPExcel);
+        // Primary Excel document custom adjustments
+        $this->adjustExport($objPHPExcel);
+
+        // Apply adjustments, especially for a given kind of format
+        if (in(Indi::uri()->format, 'pdf,excel')) $this->{'adjust' . ucfirst(Indi::uri()->format) . 'Export'}($objPHPExcel);
+
+        // Possible formats details
+        $formatCfg = array(
+            'excel' => array(
+                'ext' => 'xlsx',
+                'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'writer' => 'Excel2007'
+            ),
+            'pdf' => array(
+                'ext' => 'pdf',
+                'mime' => 'application/pdf',
+                'writer' => 'PDF_DomPDF',
+                'renderer' => array(
+                    'name' => PHPExcel_Settings::PDF_RENDERER_DOMPDF,
+                    'path' => 'dompdf'
+                )
+            ),
+        );
 
         // Output
-        $file = Indi::trail()->section->title . '.xlsx';
+        $file = Indi::trail()->section->title . '.' . $formatCfg[$format]['ext'];
         if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) $file = iconv('utf-8', 'windows-1251', $file);
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Type: ' . $formatCfg[$format]['mime']);
         header('Content-Disposition: attachment; filename="' . $file . '"');
-        $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+
+        // Load PHPExcel's IO Factory class
+        require_once 'PHPExcel/IOFactory.php';
+
+        // If export format is 'pdf'
+        if ($format == 'pdf') {
+
+            // Setup $rName and $rPath
+            $rName = $formatCfg[$format]['renderer']['name'];
+            $rPath = DOC . STD . '/core/library/' . $formatCfg[$format]['renderer']['name'];
+
+            // Try to set up pdf renderer
+            if (!PHPExcel_Settings::setPdfRenderer($rName, $rPath))
+                jflush(false, 'Can\'t set up pdf renderer with such name and/or path');
+        }
+
+        // Create writer
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, $formatCfg[$format]['writer']);
+
+        // Write
         $objWriter->save('php://output');
+
+        // Exit
         die();
     }
 
     /**
-     * Empty function. To be redeclared in child classes in case of a need for an excel document adjustments
+     * Empty function. To be redeclared in child classes in case of a need for an export document adjustments
      *
      * @param $objPHPExcel
      */
-    public function adjustExcel(&$objPHPExcel) {
+    public function adjustExport(&$objPHPExcel) {
+
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an excel-export document adjustments
+     *
+     * @param $objPHPExcel
+     */
+    public function adjustExcelExport(&$objPHPExcel) {
+
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an pdf-export document adjustments
+     *
+     * @param $objPHPExcel
+     */
+    public function adjustPdfExport(&$objPHPExcel) {
 
     }
 
@@ -1489,7 +1646,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // Logout
                 if (Indi::uri()->section == 'index') die(header('Location: ' . PRE . '/logout/'));
-                else if (!Indi::uri()->json) die('<script>top.window.location="' . PRE .'/logout/"</script>');
+                else if (!Indi::uri()->format) die('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else jflush(false, array('trowOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
@@ -1516,7 +1673,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function indexAction() {
 
         // If data should be got as json or excel
-        if (Indi::uri('json') || Indi::uri('excel')) {
+        if (Indi::uri('format')) {
 
             // Adjust rowset, before using it as a basement of grid data
             $this->adjustGridDataRowset();
@@ -1528,7 +1685,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $this->adjustGridData($data);
 
             // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
-            if (Indi::uri('json')) {
+            if (Indi::uri('format') == 'json') {
 
                 // Get scope
                 $scope = Indi::trail()->scope->toArray();
@@ -1559,7 +1716,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             }
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
-            if (Indi::uri('excel')) $this->excel($data);
+            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
         }
     }
 
@@ -1579,7 +1736,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
         if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found)
-            if ($this->actionCfg['view']['index'] == 'grid' && !Indi::uri('excel')) return;
+            if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
 
         // Define an array containing extjs summary types and their sql representatives
         $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');

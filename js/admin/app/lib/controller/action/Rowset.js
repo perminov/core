@@ -192,7 +192,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Adjust an 'url' property of  this.getStore().proxy object, to apply keyword search usage
         me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/index/' +
-            (me.ti(1).row ? 'id/' + me.ti(1).row.id + '/' : '') + 'json/1/';
+            (me.ti(1).row ? 'id/' + me.ti(1).row.id + '/' : '') + 'format/json/';
 
         // Disable keyword component, if all available properties are already involved in search by
         // corresponding filters usage

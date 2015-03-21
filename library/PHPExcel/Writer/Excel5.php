@@ -2,7 +2,7 @@
 /**
  * PHPExcel
  *
- * Copyright (c) 2006 - 2013 PHPExcel
+ * Copyright (c) 2006 - 2014 PHPExcel
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,9 +20,9 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Writer_Excel5
- * @copyright  Copyright (c) 2006 - 2013 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2014 PHPExcel (http://www.codeplex.com/PHPExcel)
  * @license	http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
- * @version	1.7.9, 2013-06-02
+ * @version	##VERSION##, ##DATE##
  */
 
 
@@ -31,7 +31,7 @@
  *
  * @category   PHPExcel
  * @package    PHPExcel_Writer_Excel5
- * @copyright  Copyright (c) 2006 - 2013 PHPExcel (http://www.codeplex.com/PHPExcel)
+ * @copyright  Copyright (c) 2006 - 2014 PHPExcel (http://www.codeplex.com/PHPExcel)
  */
 class PHPExcel_Writer_Excel5 extends PHPExcel_Writer_Abstract implements PHPExcel_Writer_IWriter
 {
@@ -518,12 +518,12 @@ class PHPExcel_Writer_Excel5 extends PHPExcel_Writer_Abstract implements PHPExce
 					$bstoreContainer->addBSE($BSE);
 
 				} else if ($drawing instanceof PHPExcel_Worksheet_MemoryDrawing) {
+
 					switch ($drawing->getRenderingFunction()) {
 
 					case PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG:
 						$blipType = PHPExcel_Shared_Escher_DggContainer_BstoreContainer_BSE::BLIPTYPE_JPEG;
 						$renderingFunction = 'imagejpeg';
-                        $quality = 100;
 						break;
 
 					case PHPExcel_Worksheet_MemoryDrawing::RENDERING_GIF:
@@ -531,13 +531,12 @@ class PHPExcel_Writer_Excel5 extends PHPExcel_Writer_Abstract implements PHPExce
 					case PHPExcel_Worksheet_MemoryDrawing::RENDERING_DEFAULT:
 						$blipType = PHPExcel_Shared_Escher_DggContainer_BstoreContainer_BSE::BLIPTYPE_PNG;
 						$renderingFunction = 'imagepng';
-                        $quality = 0;
-                        break;
+						break;
 
 					}
 
 					ob_start();
-					call_user_func($renderingFunction, $drawing->getImageResource(), null, $quality);
+					call_user_func($renderingFunction, $drawing->getImageResource());
 					$blipData = ob_get_contents();
 					ob_end_clean();
 
