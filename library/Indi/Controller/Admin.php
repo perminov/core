@@ -1225,8 +1225,11 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Freeze header
         $objPHPExcel->getActiveSheet()->freezePane('A' . ($dataStartAtRowIndex));
 
-        // Excel document custom adjustments
-        $this->adjustExcel($objPHPExcel);
+        // Primary Excel document custom adjustments
+        $this->adjustExport($objPHPExcel);
+
+        // Apply adjustments, especially for a given kind of format
+        if (in(Indi::uri()->format, 'pdf,excel')) $this->{'adjust' . ucfirst(Indi::uri()->format) . 'Export'}($objPHPExcel);
 
         // Possible formats details
         $formatCfg = array(
@@ -1278,11 +1281,29 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Empty function. To be redeclared in child classes in case of a need for an excel document adjustments
+     * Empty function. To be redeclared in child classes in case of a need for an export document adjustments
      *
      * @param $objPHPExcel
      */
-    public function adjustExcel(&$objPHPExcel) {
+    public function adjustExport(&$objPHPExcel) {
+
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an excel-export document adjustments
+     *
+     * @param $objPHPExcel
+     */
+    public function adjustExcelExport(&$objPHPExcel) {
+
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an pdf-export document adjustments
+     *
+     * @param $objPHPExcel
+     */
+    public function adjustPdfExport(&$objPHPExcel) {
 
     }
 
