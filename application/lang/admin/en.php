@@ -66,6 +66,7 @@ define('I_BACK', 'Back');
 define('I_SAVE', 'Save');
 define('I_TOTAL', 'Total');
 define('I_EXPORT_EXCEL', 'Export as an Excel spreadsheet');
+define('I_EXPORT_PDF', 'Export as an PDF document');
 define('I_NAVTO_ROWSET', 'Go back to rowset');
 define('I_NAVTO_ID', 'Goto row by ID');
 define('I_NAVTO_RELOAD', 'Refresh');

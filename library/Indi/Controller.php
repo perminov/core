@@ -414,7 +414,7 @@ class Indi_Controller {
 
         // If the purpose of current request is to build an excel spreadsheet -
         // setup filters usage information in $this->_excelA property
-        if (Indi::uri()->excel) $this->_excelA = $excelA;
+        if (in(Indi::uri()->format, 'excel,pdf')) $this->_excelA = $excelA;
 
         // Return WHERE clause
         return $where;

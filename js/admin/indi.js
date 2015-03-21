@@ -600,7 +600,7 @@ Ext.define('Indi', {
                             // that have value of 'key' prop in exclusion list
                             for (var i = 0; i < this.length; i++)
                                 if (val.indexOf(this[i][key]+'') != -1)
-                                    this.splice(i, 1);
+                                        this.splice(i--, 1);
                         }
 
                         // Return array itself
