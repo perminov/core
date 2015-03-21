@@ -1011,7 +1011,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Show the deletion confirmation message box
         Ext.MessageBox.show({
             title: Indi.lang.I_ACTION_DELETE_CONFIRM_TITLE,
-            msg: Indi.lang.I_ACTION_DELETE_CONFIRM_MSG,
+            msg: Indi.lang.I_ACTION_DELETE_CONFIRM_MSG + ' "' + row.raw._system.title + '"?',
             buttons: Ext.MessageBox.YESNO,
             icon: Ext.MessageBox.QUESTION,
             fn: function(answer) {
