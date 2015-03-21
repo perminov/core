@@ -1060,7 +1060,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Else add new tab within south panel
             else south.add(me.southItemIDefault({
                 id: row.get('id'),
-                title: row.get('title'),
+                title: row.raw._system.title,
                 aix: aix
             }));
 
