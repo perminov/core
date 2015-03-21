@@ -600,19 +600,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
             handler: function(){
 
                 // Start preparing request string
-                var request = me.ctx().storeLastRequest().replace('json/1/', 'excel/1/');
+                var request = me.storeLastRequest().replace('json/1/', 'excel/1/');
 
                 // Get grid component id
-                var gridCmpId = me.ctx().bid() + '-rowset-grid';
+                var gridCmpId = me.bid() + '-rowset-grid', grid = Ext.getCmp(gridCmpId);
 
                 // Get grid columns
-                var gridColumnA = Ext.getCmp(gridCmpId).columns;
+                var gridColumnA = grid.headerCt.getGridColumns().select(false, 'hidden');
 
                 // Define and array for storing column info, required for excel columns building
                 var excelColumnA = [];
 
                 // Setup a multiplier, for proper column width calculation
-                var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
+                var multiplier = screen.availWidth/grid.getWidth();
 
                 // Collect needed data about columns
                 for (var i = 0; i < gridColumnA.length; i++) {
@@ -628,12 +628,18 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                         // If current grid column - is column, currently used for sorting,
                         // we pick sorting direction, and column title width
-                        if (gridColumnA[i].sortState) {
-                            excelColumnI = $.extend(excelColumnI, {
+                        if (gridColumnA[i].sortState)
+                            Ext.merge(excelColumnI, {
                                 sortState: gridColumnA[i].sortState.toLowerCase(),
                                 titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
                             })
-                        }
+
+
+                        // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
+                        if (gridColumnA[i].align == 'right')
+                            Ext.merge(excelColumnI, {
+                                displayZeroes: gridColumnA[i].displayZeroes
+                            })
 
                         // Push the data object to array
                         excelColumnA.push(excelColumnI);

@@ -1085,6 +1085,23 @@ class Indi_Controller_Admin extends Indi_Controller {
                     )
                 );
 
+                // Get the control element
+                $el = Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
+
+                // If control element is 'price' or 'number'
+                if (in($el, 'price,number')) {
+
+                    // Display zero-values only if `displayZeroes` flag for current column is `true`
+                    if ($value == 0 && !$columnI['displayZeroes']) $value = '';
+
+                    // Set format
+                    if ($el == 'price') $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getNumberFormat()
+                        ->setFormatCode('#,##0.00');
+                    else $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getNumberFormat()
+                        ->setFormatCode('#,##0');
+
+                }
+
                 // Set cell value
                 $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
 
