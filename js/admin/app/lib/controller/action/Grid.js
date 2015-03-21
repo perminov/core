@@ -773,7 +773,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 excelColumnA.push(excelColumnI);
             }
         }
-console.log(excelColumnA);
+
         // Set column info as a request variable
         var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
 
