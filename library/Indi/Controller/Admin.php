@@ -1290,10 +1290,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'ext' => 'pdf',
                 'mime' => 'application/pdf',
                 'writer' => 'PDF_DomPDF',
-                'renderer' => array(
-                    'name' => PHPExcel_Settings::PDF_RENDERER_DOMPDF,
-                    'path' => 'dompdf'
-                )
+                'renderer' => PHPExcel_Settings::PDF_RENDERER_DOMPDF
             ),
         );
 
@@ -1310,8 +1307,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         if ($format == 'pdf') {
 
             // Setup $rName and $rPath
-            $rName = $formatCfg[$format]['renderer']['name'];
-            $rPath = DOC . STD . '/core/library/' . $formatCfg[$format]['renderer']['name'];
+            $rName = $formatCfg[$format]['renderer'];
+            $rPath = DOC . STD . '/core/library/' . $rName;
 
             // Try to set up pdf renderer
             if (!PHPExcel_Settings::setPdfRenderer($rName, $rPath))
