@@ -8,6 +8,8 @@
         '/js/jquery-1.9.1.min.js',
         '/library/extjs4/ext-all.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
+        '/library/extjs4/examples/ux/BoxReorderer.js',
+        '/library/extjs4/examples/ux/TabReorderer.js',
 
         '/js/admin/app/override/Ext.data.Connection.js',
         '/js/admin/app/override/Ext.dom.Element.js',

@@ -64,6 +64,7 @@ define('I_MENU', 'Menu');
 define('I_CREATE', 'Create new item');
 define('I_BACK', 'Back');
 define('I_SAVE', 'Save');
+define('I_CLOSE', 'Close');
 define('I_TOTAL', 'Total');
 define('I_EXPORT_EXCEL', 'Export as an Excel spreadsheet');
 define('I_EXPORT_PDF', 'Export as an PDF document');
