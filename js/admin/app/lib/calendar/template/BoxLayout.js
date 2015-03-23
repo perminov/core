@@ -4,7 +4,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
     requires: ['Ext.Date'],
     
     constructor: function(config){
-        
+
         Ext.apply(this, config);
     
         var weekLinkTpl = this.showWeekLinks ? '<div id="{weekLinkId}" class="ext-cal-week-link">{weekNum}</div>' : '';
@@ -44,9 +44,9 @@ Ext.define('Ext.calendar.template.BoxLayout', {
     },
 
     applyTemplate : function(o){
-        
+
         Ext.apply(this, o);
-        
+
         var w = 0, title = '', first = true, isToday = false, showMonth = false, prevMonth = false, nextMonth = false,
             weeks = [[]],
             dt = Ext.Date.clone(this.viewStart),
@@ -70,17 +70,33 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                     weeks[w].weekNum = this.showWeekNumbers ? Ext.Date.format(dt, 'W') : '&#160;';
                     weeks[w].weekLinkId = 'ext-cal-week-'+Ext.Date.format(dt, 'Ymd');
                 }
-                
+
                 if(showMonth){
                     if(isToday){
                         title = this.getTodayText();
                     }
                     else{
-                        title = Ext.Date.format(dt, this.dayCount == 1 ? 'l, F j, Y' : (first ? 'M j, Y' : 'M j'));
+                        title = Ext.Date.format(dt,
+                            this.dayCount == 1
+                                ? 'l, F j, Y'
+                                : (first
+                                    ? (this.format && this.format.calFirstDate
+                                        ? this.format.calFirstDate
+                                        : 'M j, Y')
+                                    : (this.format && this.format.monthFirstDate
+                                        ? this.format.monthFirstDate
+                                        : 'M j'))
+                        );
                     }
                 }
                 else{
-                    var dayFmt = (w == 0 && this.showHeader !== true) ? 'D j' : 'j';
+                    var dayFmt = (w == 0 && this.showHeader !== true)
+                        ? (this.format && this.format.dayShowHeaderFalse
+                            ? this.format.dayShowHeaderFalse
+                            : 'D j')
+                        : (this.format && this.format.day
+                            ? this.format.day
+                            : 'j');
                     title = isToday ? this.getTodayText() : Ext.Date.format(dt, dayFmt);
                 }
                 
@@ -109,10 +125,15 @@ Ext.define('Ext.calendar.template.BoxLayout', {
     getTodayText : function(){
         var dt = Ext.Date.format(new Date(), 'l, F j, Y'),
             todayText = this.showTodayText !== false ? this.todayText : '',
-            timeText = this.showTime !== false ? ' <span id="'+this.id+'-clock" class="ext-cal-dtitle-time">' + 
-                    Ext.Date.format(new Date(), 'g:i a') + '</span>' : '',
+            timeText = this.showTime !== false
+                ? ' <span id="'+this.id+'-clock" class="ext-cal-dtitle-time">' +
+                    Ext.Date.format(new Date(), this.format && this.format.todayTime
+                        ? this.format.todayTime
+                        : 'g:i a')
+                    + '</span>'
+                : '',
             separator = todayText.length > 0 || timeText.length > 0 ? ' &mdash; ' : '';
-        
+
         if(this.dayCount == 1){
             return dt + separator + todayText + timeText;
         }

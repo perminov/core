@@ -125,7 +125,10 @@ Ext.define('Ext.calendar.view.DayBody', {
                 dayCount: this.dayCount,
                 showTodayText: this.showTodayText,
                 todayText: this.todayText,
-                showTime: this.showTime
+                showTime: this.showTime,
+                format: this.format,
+                fromHour: this.fromHour,
+                tillHour: this.tillHour
             });
         }
         this.tpl.compile();

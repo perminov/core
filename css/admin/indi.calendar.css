@@ -59,7 +59,7 @@
     left:0;
     position:absolute;
     table-layout:fixed;
-    top:0;
+    top:1px;
     width:100%;
 }
 
@@ -75,7 +75,8 @@
 }
 
 .ext-cal-month-hd .ext-cal-hd-days-tbl {
-    border-top: 1px solid #e0eeff;
+    /*border-top: 1px solid #e0eeff;*/
+    background: #f6f9fc;
 }
 .x-calendar-nonav .ext-cal-month-hd .ext-cal-hd-days-tbl {
     border-top: 0;
@@ -83,9 +84,14 @@
 .ext-cal-month-hd .ext-cal-hd-day {
     border-left: 1px solid #e0eeff;
 }
-
+.ext-cal-month-hd .ext-cal-hd-day:hover {
+    background: #ecffeb;
+}
+.ext-cal-month-hd .ext-cal-hd-day.ext-cal-day-first{
+    border-left: 0;
+}
 .ext-cal-hd-ct {
-    border-bottom: 1px solid #e0eeff;
+    /*border-bottom: 1px solid #e0eeff;*/
 }
 .ext-cal-hd-day {
     text-align: center;
@@ -99,7 +105,7 @@
 .ext-cal-dayview .ext-cal-hd-days-tbl {
     table-layout: fixed;
     width: 100%;
-    background-color: #D3E1F1;
+    background-color: #f6f9fc;
     overflow: hidden;
     font-size: 11px;
     line-height: 14px;
@@ -167,10 +173,10 @@
     line-height: normal;
 }
 .ext-cal-dayview .ext-cal-body-ct .ext-cal-bg-tbl {
-    height: 1008px;
+    /*height: 1008px;*/
 }
 .ext-cal-dayview .ext-cal-bg-tbl {
-    background-color: #fff;
+    /*background-color: #f6f9fc;*/
     margin-top: 0;
     border-bottom: 1px solid #e0eeff;
     border-right: 1px solid #e0eeff;
@@ -224,7 +230,7 @@
 .ext-cal-day-col-gutter {
     position: relative;
     margin-right: 15px;
-    height: 1008px;
+    /*height: 1008px;*/
 }
 .x-ie .ext-cal-day-col-gutter,
 .x-opera .ext-cal-day-col-gutter {
@@ -244,6 +250,7 @@
     width: 100%;
 }
 .ext-cal-monthview .ext-cal-body-ct {
+    /*border-top: 1px solid #e0eeff !important;*/
     background: #fff;
     bottom: 0;
     left: 0;
@@ -269,7 +276,7 @@
     left: 0;
     top: 0;
     height: 100%;
-    background: #EFEFEF;
+    background: #f6f9fc;
     border-top: 1px solid #e0eeff;
     border-right: 1px solid #e0eeff;
     font-size: 10px;
@@ -278,6 +285,14 @@
     text-align: center;
     cursor: pointer;
 }
+.ext-cal-monthview .ext-cal-week-link:hover,
+.ext-cal-monthview .ext-cal-week-link-hd:hover {
+    background: #ecffeb;
+}
+.ext-cal-monthview .ext-cal-week-link-hd:first-child{
+    border-top: 0;
+}
+
 .ext-cal-monthview .ext-cal-week-link-hd {
     border-top: 1px solid #e0eeff;
 }
@@ -356,7 +371,7 @@ td.ext-cal-dtitle {
     padding-left: 1px;
 }
 td.ext-cal-dtitle-first {
-    border-top: 0;
+    /*border-top: 0;*/
 }
 td.ext-cal-dtitle div {
     padding: 2px 4px 1px;

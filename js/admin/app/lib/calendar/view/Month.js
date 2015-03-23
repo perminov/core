@@ -130,7 +130,8 @@ Ext.define('Ext.calendar.view.Month', {
                 showTime: this.showTime,
                 showHeader: this.showHeader,
                 showWeekLinks: this.showWeekLinks,
-                showWeekNumbers: this.showWeekNumbers
+                showWeekNumbers: this.showWeekNumbers,
+                format: this.format
             });
         }
         this.tpl.compile();
@@ -178,7 +179,7 @@ Ext.define('Ext.calendar.view.Month', {
 
                     if (t.getDay() == this.prevClockDay) {
                         if (el) {
-                            el.update(Ext.Date.format(t, 'g:i a'));
+                            el.update(Ext.Date.format(t, this.format && this.format.todayTime ? this.format.todayTime : 'g:i a'));
                         }
                     }
                     else {

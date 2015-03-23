@@ -15,12 +15,12 @@ Ext.define('Ext.calendar.template.Month', {
     requires: ['Ext.calendar.template.BoxLayout'],
     
     constructor: function(config){
-        
+
         Ext.apply(this, config);
-    
+
         this.weekTpl = new Ext.calendar.template.BoxLayout(config);
         this.weekTpl.compile();
-        
+
         var weekLinkTpl = this.showWeekLinks ? '<div class="ext-cal-week-link-hd">&#160;</div>' : '';
         
         this.callParent([
@@ -31,7 +31,7 @@ Ext.define('Ext.calendar.template.Month', {
                         '<tbody>',
                             '<tr>',
                                 '<tpl for="days">',
-                                    '<th class="ext-cal-hd-day{[xindex==1 ? " ext-cal-day-first" : ""]}" title="{.:date("l, F j, Y")}">{.:date("D")}</th>',
+                                    '<th class="ext-cal-hd-day{[xindex==1 ? " ext-cal-day-first" : ""]}" title="{.:date(this.format.headerWeekDayTitle)}">{.:date(this.format.headerWeekDay)}</th>',
                                 '</tpl>',
                             '</tr>',
                         '</tbody>',

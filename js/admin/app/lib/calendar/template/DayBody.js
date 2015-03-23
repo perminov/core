@@ -13,7 +13,7 @@ Ext.define('Ext.calendar.template.DayBody', {
     extend: 'Ext.XTemplate',
     
     constructor: function(config){
-        
+
         Ext.apply(this, config);
 
         this.callParent([
@@ -70,12 +70,12 @@ Ext.define('Ext.calendar.template.DayBody', {
 
         // use a fixed DST-safe date so times don't get skipped on DST boundaries
         dt = Ext.Date.clearTime(new Date('5/26/1972'));
-        
-        for(i=0; i<24; i++){
-            times.push(Ext.Date.format(dt, 'ga'));
+        dt = Ext.calendar.util.Date.add(dt, {hours: this.fromHour || 0});
+
+        for(i=this.fromHour || 0; i< this.tillHour; i++){
+            times.push(Ext.Date.format(dt, this.format.time));
             dt = Ext.calendar.util.Date.add(dt, {hours: 1});
         }
-        
         return this.applyOut({
             days: days,
             dayCount: days.length,

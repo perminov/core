@@ -39,7 +39,8 @@ Ext.define('Ext.calendar.view.DayHeader', {
                 id: this.id,
                 showTodayText: this.showTodayText,
                 todayText: this.todayText,
-                showTime: this.showTime
+                showTime: this.showTime,
+                format: this.format
             });
         }
         this.tpl.compile();
