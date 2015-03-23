@@ -34,7 +34,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, {alias: 'backSeparator'},
+                    {alias: 'back'}, {alias: 'close'}, '-',
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
@@ -126,6 +126,28 @@ Ext.define('Indi.lib.controller.action.Row', {
                 me.goto(url);
             }
         })
+    },
+
+    /**
+     * Master toolbar 'Close' button
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Close: function() {
+        var me = this, isTab = me.panel.xtype == 'actiontabrow';
+
+        if (!isTab) return null;
+
+        // Return 'Close' button config
+        return {
+            id: me.panelDockedInnerBid() + 'close',
+            text: '',
+            iconCls: 'i-btn-icon-close',
+            tooltip: Indi.lang.I_CLOSE,
+            handler: function() {
+                Ext.getCmp(me.panel.id).up('[isSouth]').getActiveTab().close();
+            }
+        }
     },
 
     /**

@@ -64,6 +64,7 @@ define('I_MENU', 'Меню');
 define('I_CREATE', 'Создать новую запись');
 define('I_BACK', 'Вернуться');
 define('I_SAVE', 'Сохранить');
+define('I_CLOSE', 'Закрыть');
 define('I_TOTAL', 'Всего');
 define('I_EXPORT_EXCEL', 'Экспортировать в Excel');
 define('I_EXPORT_PDF', 'Экспортировать в PDF');

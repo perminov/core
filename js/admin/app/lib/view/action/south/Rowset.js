@@ -13,6 +13,9 @@ Ext.define('Indi.lib.view.action.south.Rowset', {
     initComponent: function() {
         var me = this;
 
+        // Make tabs reorderable
+        me.plugins = [Ext.create('Ext.ux.TabReorderer', {})];
+
         // Provide rowset panel's paging toolbar to be removed once new tab added to tabpanel
         me.on('add', function(container, component) {
 
