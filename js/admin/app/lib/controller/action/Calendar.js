@@ -21,7 +21,44 @@ Ext.define('Indi.lib.controller.action.Calendar', {
          * View config
          */
         viewConfig: {
-            loadingText: Ext.LoadMask.prototype.msg,
+            loadingText: Ext.LoadMask.prototype.msg
+        },
+
+        monthViewCfg: {
+            format: {
+                calFirstDate: 'F j, o',
+                headerWeekDay: 'l',
+                headerWeekDayTitle: 'l, F j, Y',
+                monthFirstDate: 'F, j',
+                day: 'j',
+                dayShowHeaderFalse: 'l, j',
+                todayTime: 'H:i'
+            },
+            showWeekLinks: true,
+            showHeader: true,
+            showWeekNumbers: true,
+            todayText: 'Сегодня',
+            startDay: 1
+        },
+
+        weekViewCfg: {
+            format: {
+                calFirstDate: 'F j, o',
+                dayShowHeaderFalse: 'l, j',
+                todayTime: 'H:i',
+                time: 'H:i'
+            },
+            fromHour: 3,
+            tillHour: 20,
+            todayText: 'Сегодня',
+            startDay: 1
+        },
+        dayViewCfg: {
+            fromHour: 4,
+            tillHour: 22,
+            format: {
+                time: 'H:i'
+            }
         }
     },
 

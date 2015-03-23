@@ -57,24 +57,27 @@ Ext.define('Ext.calendar.view.Day', {
     initComponent : function(){
         // rendering more than 7 days per view is not supported
         this.dayCount = this.dayCount > 7 ? 7 : this.dayCount;
-        
+
         var cfg = Ext.apply({}, this.initialConfig);
         cfg.showTime = this.showTime;
         cfg.showTodatText = this.showTodayText;
         cfg.todayText = this.todayText;
         cfg.dayCount = this.dayCount;
-        cfg.wekkCount = 1; 
-        
+        cfg.wekkCount = 1;
+        cfg.format = this.format;
+        cfg.fromHour = this.fromHour;
+        cfg.tillHour = this.tillHour;
+
         var header = Ext.applyIf({
             xtype: 'dayheaderview',
             id: this.id+'-hd'
         }, cfg);
-        
+
         var body = Ext.applyIf({
             xtype: 'daybodyview',
             id: this.id+'-bd'
         }, cfg);
-        
+
         this.items = [header, body];
         this.addCls('ext-cal-dayview ext-cal-ct');
         
