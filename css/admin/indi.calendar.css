@@ -20,6 +20,12 @@
     padding: 0 3px;
 }
 
+.ext-cal-dayview .ext-cal-hd-ad-inner .ext-cal-bg-tbl {
+    border-left: 1px solid #e0eeff;
+    border-bottom: 1px solid #e0eeff;
+    background: white;
+}
+
 .ext-cal-ct {
     position: relative;
     font-family: helvetica, arial, sans-serif;
@@ -59,7 +65,7 @@
     left:0;
     position:absolute;
     table-layout:fixed;
-    top:1px;
+    /*top:1px;*/
     width:100%;
 }
 
@@ -92,6 +98,19 @@
 }
 .ext-cal-hd-ct {
     /*border-bottom: 1px solid #e0eeff;*/
+}
+.ext-cal-dayview .ext-cal-wk-ct .ext-cal-dtitle{
+    padding: 1px 1px 1px 1px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.ext-cal-dayview .ext-cal-wk-ct .ext-cal-dtitle .ext-cal-dtitle-time {
+    font-size: 12px;
+}
+
+.ext-cal-dayview .ext-cal-hd-ct {
+    border-bottom: 1px solid #e0eeff;
 }
 .ext-cal-hd-day {
     text-align: center;
@@ -178,13 +197,13 @@
 .ext-cal-dayview .ext-cal-bg-tbl {
     /*background-color: #f6f9fc;*/
     margin-top: 0;
-    border-bottom: 1px solid #e0eeff;
+    /*border-bottom: 1px solid #e0eeff;*/
     border-right: 1px solid #e0eeff;
 }
 .ext-cal-dayview .ext-cal-bg-rows {
     position: relative;
     margin-left: 1px;
-    top: 1px;
+    top: 0;
 }
 .ext-cal-dayview .ext-cal-bg-rows-inner {
     position: absolute;
