@@ -48,28 +48,34 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                 todayTime: 'H:i',
                 time: 'H:i'
             },
-            fromHour: 3,
+            fromHour: 4,
             tillHour: 20,
             todayText: 'Сегодня',
             startDay: 1
         },
         dayViewCfg: {
             fromHour: 4,
-            tillHour: 22,
+            tillHour: 20,
             format: {
                 time: 'H:i'
             }
         }
     },
 
-
     store: {
-        beforeload: function(){
-            //this.ctx().filterChange({noReload: true});
+        listeners: {
+            beforeload: function(){
+                return false;
+                console.log(Ext.getCmp(this.storeId.replace('-store', '')));
+                this.ctx().filterChange({noReload: true});
+            },
+            load: function(){
+                //this.ctx().storeLoadCallbackDefault();
+                //this.ctx().storeLoadCallback();
+            }
         },
-        load: function(){
-            //this.ctx().storeLoadCallbackDefault();
-            //this.ctx().storeLoadCallback();
+        ctx: function() {
+            return Ext.getCmp(this.storeId.replace('-store', ''));
         }
     },
 

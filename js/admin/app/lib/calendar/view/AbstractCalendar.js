@@ -294,6 +294,7 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
         this.allDayGrid = [[]];
         this.evtMaxCount = [];
 
+
         var evtsInView = this.store.queryBy(function(rec) {
             return this.isEventVisible(rec.data);
         },
@@ -641,6 +642,12 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
 
     // private
     onDataChanged: function(store) {
+        //evtStartDate = Ext.Date.parse(data.calendarStart, "Y-m-d H:i:s", true);
+        //evtEndDate = Ext.Date.parse(data.calendarEnd, "Y-m-d H:i:s", true);
+        store.each(function(r){
+            r.data.calendarStart = Ext.Date.parse(r.raw._system.start, "Y-m-d H:i:s", true);
+            r.data.calendarEnd = Ext.Date.parse(r.raw._system.end, "Y-m-d H:i:s", true);
+        })
         this.refresh();
     },
 
@@ -713,12 +720,13 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     setStartDate: function(start, refresh) {
         this.startDate = Ext.Date.clearTime(start);
         this.setViewBounds(start);
-        this.store.load({
+
+        /*this.store.load({
             params: {
                 start: Ext.Date.format(this.viewStart, 'm-d-Y'),
                 end: Ext.Date.format(this.viewEnd, 'm-d-Y')
             }
-        });
+        });*/
         if (refresh === true) {
             this.refresh();
         }
