@@ -19,7 +19,7 @@ Ext.define('Ext.calendar.template.DayBody', {
         this.callParent([
             '<table class="ext-cal-bg-tbl" cellspacing="0" cellpadding="0">',
                 '<tbody>',
-                    '<tr height="1">',
+                    '<tr height="0">',
                         '<td class="ext-cal-gutter"></td>',
                         '<td colspan="{dayCount}">',
                             '<div class="ext-cal-bg-rows">',
