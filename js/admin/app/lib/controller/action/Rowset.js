@@ -21,7 +21,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'mark4delete'],
 
         /**
          * Tools special config
