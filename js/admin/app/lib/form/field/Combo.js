@@ -1900,7 +1900,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Get the index of selected option id in me.store.ids
         if (me.store.enumset) {
-            if (!li.attr(name).toString().match(/^[1-9][0-9]{0,9}$/)) {
+            if (!li.attr(name).toString().match(/^[1-9][0-9]{0,9}$/) && !me.boolean) {
                 index = me.store.ids.indexOf(li.attr(name));
             } else {
                 index = me.store.ids.indexOf(parseInt(li.attr(name)));
