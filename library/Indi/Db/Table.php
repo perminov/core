@@ -52,6 +52,13 @@ class Indi_Db_Table
     protected $_treeColumn = '';
 
     /**
+     * Store column name, which is used as chronology-property
+     *
+     * @var string
+     */
+    protected $_dateColumn = 'date';
+
+    /**
      * Store array of aliases, related to fields, that can contain evaluable php expressions.
      *
      * @var array
@@ -112,6 +119,9 @@ class Indi_Db_Table
 
         // Detect tree column name
         $this->_treeColumn = $config['fields']->field($this->_table . 'Id') ? $this->_table . 'Id' : '';
+
+        // Check column that is responsible for chronology
+        if (!$config['fields']->field($this->_dateColumn)) $this->_dateColumn = null;
 
         // Setup title field id
         $this->_titleFieldId = $config['titleFieldId'] ? $config['titleFieldId'] : 0;
@@ -750,8 +760,9 @@ class Indi_Db_Table
      * @return array
      */
     public function toArray() {
-        $array['tableName'] = $this->_table;
+        $array['table'] = $this->_table;
         $array['title'] = $this->_title;
+        $array['dateColumn'] = $this->_dateColumn;
         return $array;
     }
 
@@ -987,6 +998,15 @@ class Indi_Db_Table
      */
     public function treeColumn() {
         return $this->_treeColumn;
+    }
+
+    /**
+     * Return chronology column name
+     *
+     * @return string
+     */
+    public function dateColumn() {
+        return $this->_dateColumn;
     }
 
     /**

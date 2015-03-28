@@ -110,7 +110,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         for (var i = 0; i < filterCmpA.length; i++) {
 
             // We do not involve values of hidden or disabled filter components in request query building
-            if (filterCmpA[i].hidden || filterCmpA[i].disabled) continue;
+            if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || filterCmpA[i].disabled) continue;
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpA[i].name;
@@ -668,6 +668,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: filterCmpId + '-gte',
             name: alias + '-gte',
             isFilter: true,
+            isFrom: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 85 + Indi.metrics.getWidth(fieldLabel),
@@ -686,6 +687,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: filterCmpId + '-lte',
             name: alias + '-lte',
             isFilter: true,
+            isTill: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
             width: 85 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),

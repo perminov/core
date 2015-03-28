@@ -24,6 +24,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             loadingText: Ext.LoadMask.prototype.msg
         },
 
+        /**
+         * Month-view config
+         */
         monthViewCfg: {
             format: {
                 calFirstDate: 'F j, o',
@@ -41,6 +44,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             startDay: 1
         },
 
+        /**
+         * Week-view config
+         */
         weekViewCfg: {
             format: {
                 calFirstDate: 'F j, o',
@@ -53,6 +59,10 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             todayText: 'Сегодня',
             startDay: 1
         },
+
+        /**
+         * Day-view config
+         */
         dayViewCfg: {
             fromHour: 4,
             tillHour: 20,
@@ -62,57 +72,42 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         }
     },
 
-    store: {
-        listeners: {
-            beforeload: function(){
-                return false;
-                console.log(Ext.getCmp(this.storeId.replace('-store', '')));
-                this.ctx().filterChange({noReload: true});
-            },
-            load: function(){
-                //this.ctx().storeLoadCallbackDefault();
-                //this.ctx().storeLoadCallback();
-            }
-        },
-        ctx: function() {
-            return Ext.getCmp(this.storeId.replace('-store', ''));
-        }
-    },
-
     /**
-     * Rowset panel toolbars array builder
-     *
-     * @return {Array}
+     * Here we force date-filter value to be picked from calendar panel active view's bounds
      */
-    rowsetDockedA: function() {
-        return this._docked('rowset');
+    filterChange: function() {
+        var me = this, card = Ext.getCmp(me.rowset.id).getActiveView(), bounds = card.getViewBounds(),
+            query = '[isFilter][isImportantDespiteHidden]', from = Ext.getCmp(me.panel.id).down(query + '[isFrom]'),
+            till = Ext.getCmp(me.panel.id).down(query + '[isTill]');
+
+        // Pick values from calendar's active view's bounds
+        from.noReload = true; from.setValue(bounds.start); from.noReload = false;
+        till.noReload = true; till.setValue(bounds.end); till.noReload = false;
+
+        // Call parent
+        me.callParent(arguments);
     },
 
     /**
-     * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.rowset form panel configuration
+     * Here we set up `hidden` and `isImportantDespiteHidden` props for date-bounds filters
      *
-     * @return {Array}
-     */
-    panelItemA: function() {
-
-        // Panels array
-        var itemA = [], rowsetItem = this.rowsetPanel();
-
-        // Append rowset panel
-        if (rowsetItem) itemA.push(rowsetItem);
-
-        // Return panels array
-        return itemA;
-    },
-
-    /**
-     * Build an return main panel's rowset panel config object
-     *
+     * @param filter
      * @return {*}
      */
-    rowsetPanel: function() {
-        return this.rowset;
+    panelDocked$FilterXCalendar: function(filter) {
+        var me = this, fA = me.callParent(arguments);
+
+        // If current filter is not a special filter added for calendar panel system purposes - return as is
+        if (me.ti().model.dateColumn != filter.foreign('fieldId').alias) return fA;
+
+        // If gte/lte filters are special filters added for calendar panel system purposes
+        // - set up both `hidden` and `isImportantDespiteHidden` props to `true`
+        fA.forEach(function(r, i, a){
+            r.hidden = r.isImportantDespiteHidden = true;
+        });
+
+        // Return
+        return fA;
     },
 
     // @inheritdoc
@@ -126,16 +121,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         me.rowset = Ext.merge({
             id: me.id + '-rowset-calendar',
             store: me.getStore(),
-            dayViewCfg: {
-                store: me.getStore()
-            },
-            weekViewCfg: {
-                store: me.getStore()
-            },
-            monthViewCfg: {
-                store: me.getStore()
-            },
-            dockedItems: me.rowsetDockedA()
+            dayViewCfg: {store: me.getStore()},
+            weekViewCfg: {store: me.getStore()},
+            monthViewCfg: {store: me.getStore()}
         }, me.rowset);
 
         // Setup main panel items
