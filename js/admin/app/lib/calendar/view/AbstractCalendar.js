@@ -721,15 +721,12 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
         this.startDate = Ext.Date.clearTime(start);
         this.setViewBounds(start);
 
-        /*this.store.load({
-            params: {
-                start: Ext.Date.format(this.viewStart, 'm-d-Y'),
-                end: Ext.Date.format(this.viewEnd, 'm-d-Y')
-            }
-        });*/
-        if (refresh === true) {
-            this.refresh();
+        if (this.up('calendarpanel') && !this.store.isLoading()) {
+            this.store.removeAll();
+            this.store.load();
         }
+
+        if (refresh === true) this.refresh();
         this.fireEvent('datechange', this, this.startDate, this.viewStart, this.viewEnd);
     },
 

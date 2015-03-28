@@ -326,13 +326,13 @@ Ext.define('Indi.lib.controller.action.Action', {
     filterChange: function(cmp){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset';
+        var me = this;
 
         // Declare an array for params, which will be fulfiled with filters's values
         var paramA = [];
 
         // Get all filter components
-        var filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+        var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {

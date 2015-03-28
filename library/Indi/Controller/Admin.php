@@ -62,6 +62,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
         if (Indi::trail(true) && Indi::trail()->model) {
 
+            // Custom trail's adjustments
+            $this->adjustTrail();
+
             // If action is 'index'
             if (Indi::uri('action') == 'index') {
 
@@ -2166,6 +2169,14 @@ class Indi_Controller_Admin extends Indi_Controller {
      * access mode consider to certain circumstances
      */
     public function adjustAccess() {
+
+    }
+
+    /**
+     * Empty function. To be overridden in child classes, if there is a need to adjust
+     * trail object's properties before any operation to be performed
+     */
+    public function adjustTrail() {
 
     }
 
