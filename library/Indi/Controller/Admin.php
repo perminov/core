@@ -1732,7 +1732,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
-        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found)
+        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !Indi::trail()->model->treeColumn())
             if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
 
         // Define an array containing extjs summary types and their sql representatives
@@ -1754,8 +1754,19 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Build basic sql query for summaries calculation
         $sql = 'SELECT ' . implode(', ', $sql) . ' FROM `' . Indi::trail()->model->table() . '`';
 
+        // Declare array for WHERE clauses stack
+        $where = array();
+
+        // If current model has a tree column, and it is not forced to be ignored - append special
+        // clause to WHERE-clauses stack for summaries to be calculated only for top-level entries
+        if (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'])
+            $where[] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
+
+        // Append scope's WHERE clause to the stack
+        if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
+
         // Append WHERE clause to that query
-        if (Indi::trail()->scope->WHERE) $sql .= ' WHERE ' . Indi::trail()->scope->WHERE;
+        if ($where) $sql .= ' WHERE ' . im($where, ' AND ');
 
         // Fetch and return calculated summaries
         return Indi::db()->query($sql)->fetchObject();
