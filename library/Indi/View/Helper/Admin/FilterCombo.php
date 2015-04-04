@@ -58,8 +58,14 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             // Get table name
             $tbl = Indi::trail()->model->table();
 
-            // Setup a shortcut for scope's WHERE
-            $sw = Indi::trail()->scope->WHERE;
+            // Get finalWHERE as array
+            $sw = Indi_Trail_Admin::$controller->finalWHERE(Indi::trail()->scope->primary, null, false);
+
+            // Exclude WHERE clause part, related to current filter
+            unset($sw['filters'][$alias]);
+
+            // Force $finalWHERE to be single-dimension array
+            foreach ($sw as $p => $w) if (is_array($w)) $sw[$p] = im($w, ' AND '); $sw = implode(' AND ', $sw);
 
             // Get the distinct list of possibilities
             $in = Indi::db()->query('
