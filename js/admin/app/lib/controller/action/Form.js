@@ -658,7 +658,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             layout: 'hbox',
             value: Ext.isNumeric(item.row[item.name]) ? parseInt(item.row[item.name]) : item.row[item.name],
             subTplData: item.row.view(item.name).subTplData,
-            store: item.row.view(item.name).store
+            store: item.row.view(item.name).store,
+            multiSelect: item.field.storeRelationAbility == 'many'
         }
     },
 

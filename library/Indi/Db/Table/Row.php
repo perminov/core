@@ -398,7 +398,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
                                  $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
-                                 $order = null, $dir = 'ASC', $offset = null, $consistence = null) {
+                                 $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
 
         // Basic info
         $entityM = Indi::model('Entity');
@@ -417,6 +417,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         for($i = 0; $i < count($where); $i++) {
             Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::cmpOut();
         }
+
+        // If $multiSelect argument is not given - detect it automatically
+        if ($multiSelect === null) $multiSelect = $fieldR->storeRelationAbility == 'many';
 
         // If current field column type is ENUM or SET
         if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
@@ -437,8 +440,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $dataRs->enumset = true;
 
             // If current field store relation ability is 'many' - we setup selected as rowset object
-            if ($fieldR->storeRelationAbility == 'many')
-                $dataRs->selected = $dataRs->select($selected, 'alias');
+            if ($multiSelect) $dataRs->selected = $dataRs->select($selected, 'alias');
 
             // Return combo data
             return $dataRs;
