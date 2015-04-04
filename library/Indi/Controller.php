@@ -370,9 +370,26 @@ class Indi_Controller {
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
                     }
 
-                    // Else if $found field is able to store only one foreign key, use '=' clause
+                // Else if $found field is able to store only one foreign key, use '=' clause
                 } else if ($found->storeRelationAbility == 'one') {
-                    $where[$found->alias] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+
+                    // Set $any as `false`
+                    $any = false;
+
+                    // Try to find filter
+                    if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
+
+                        // Get filter row
+                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+
+                        // If filter is multiple (desipite field is singe) set up $mode as `any`
+                        if ($filterR->any) $any = true;
+                    }
+
+                    // Set up WHERE clause according to value of $any flag
+                    $where[$found->alias] = $any
+                        ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, "' . $filterSearchFieldValue . '")'
+                        : '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
@@ -383,11 +400,24 @@ class Indi_Controller {
                         $excelA[$found->alias]['table'] = $found->relation;
                     }
 
-                    // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
+                // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
                 } else if ($found->storeRelationAbility == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();
+
+                    // Set $any as `false`
+                    $any = false;
+
+                    // Try to find filter
+                    if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
+
+                        // Get filter row
+                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+
+                        // If filter should search any match rather than all matches
+                        if ($filterR->any) $any = true;
+                    }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array
                     if (is_string($filterSearchFieldValue) && strlen($filterSearchFieldValue))
@@ -398,7 +428,7 @@ class Indi_Controller {
                         $fisA[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
 
                     // Implode array of FIND_IN_SET clauses with AND, and enclose by round brackets
-                    $where[$found->alias] = '(' . implode(' AND ', $fisA) . ')';
+                    $where[$found->alias] = '(' . implode(' ' . ($any ? 'OR' : 'AND') . ' ', $fisA) . ')';
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
