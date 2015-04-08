@@ -19,6 +19,7 @@ Ext.calendar.data.EventMappings = {
     },
     Title: {
         name: 'Title',
+        name: 'title',
         mapping: 'title',
         type: 'string'
     },
