@@ -8,6 +8,7 @@ Ext.ns('Ext.calendar.data');
 Ext.calendar.data.EventMappings = {
     EventId: {
         name: 'EventId',
+        name: 'id',
         mapping: 'id',
         type: 'int'
     },

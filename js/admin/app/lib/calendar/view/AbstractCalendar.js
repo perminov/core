@@ -319,7 +319,6 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
                         return startsOnDate || spansFromPrevView;
                     },
                     this);
-
                     this.sortEventRecordsForDay(evts);
                     this.prepareEventGrid(evts, w, d);
                 }
@@ -640,14 +639,21 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
         return this.viewStart.getTime() <= today && this.viewEnd.getTime() >= today;
     },
 
+    getCard: function() {
+        return this.up('[isCalendarCard]') || this;
+    },
+
+    isCardActive: function() {
+        return this.getCard().xtype == this.up('calendarpanel').getActiveView().xtype;
+    },
+
     // private
     onDataChanged: function(store) {
-        //evtStartDate = Ext.Date.parse(data.calendarStart, "Y-m-d H:i:s", true);
-        //evtEndDate = Ext.Date.parse(data.calendarEnd, "Y-m-d H:i:s", true);
+        if (!this.isCardActive()) return;
         store.each(function(r){
             r.data.calendarStart = Ext.Date.parse(r.raw._system.start, "Y-m-d H:i:s", true);
             r.data.calendarEnd = Ext.Date.parse(r.raw._system.end, "Y-m-d H:i:s", true);
-        })
+        });
         this.refresh();
     },
 

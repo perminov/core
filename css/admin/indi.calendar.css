@@ -955,3 +955,9 @@ td.ext-cal-dtitle-today div {
 .ext-color-4-x dl {
     border-color: #980000;
 }
+
+.ext-cal-day-col .ext-color-0 {
+    background: rgba(239, 253, 255, 0.5);
+    border-color: #71BDE5;
+    border-radius: 5px;
+}

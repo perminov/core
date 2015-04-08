@@ -319,6 +319,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // We define an array of functions, first within which will check if at least one filter is used
         // and if so, second will do a store reload
         var loopA = [function(cmp, control){
+            if (cmp.isImportantDespiteHidden) return;
             if (control == 'color') {
                 if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
             } else {
@@ -329,6 +330,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 }
             }
         }, function(cmp, control){
+            if (cmp.isImportantDespiteHidden) return;
             if (control == 'color') {
                 cmp.setValue(0, 0, false);
                 cmp.setValue(1, 360, false);

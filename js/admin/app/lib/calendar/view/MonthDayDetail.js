@@ -79,6 +79,8 @@ Ext.define('Ext.calendar.view.MonthDayDetail', {
         },
         this);
 
+        this.view.sortEventRecordsForDay(evts);
+
         evts.each(function(evt) {
             var item = evt.data,
             M = Ext.calendar.data.EventMappings;
