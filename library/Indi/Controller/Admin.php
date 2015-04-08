@@ -653,7 +653,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Get the format
                     foreach (Indi::trail()->fields as $fieldR) {
                         if ($fieldR->alias == $alias) {
-                            $format = $fieldR->params['display' . ($fieldR->elementId == 12 ? '' : 'Date') . 'Format'];
+                            $dformat = $fieldR->params['display' . ($fieldR->elementId == 12 ? '' : 'Date') . 'Format'];
                         }
                     }
 
@@ -667,10 +667,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Deal with date converstion
                         if (preg_match(Indi::rex('date'), $excelI['value']['gte'])) {
-                            if ($excelI['value']['gte'] == '0000-00-00' && $format == 'd.m.Y') {
+                            if ($excelI['value']['gte'] == '0000-00-00' && $dformat == 'd.m.Y') {
                                 $excelI['value']['gte'] = '00.00.0000';
                             } else if ($excelI['value']['gte'] != '0000-00-00'){
-                                $excelI['value']['gte'] = date($format, strtotime($excelI['value']['gte']));
+                                $excelI['value']['gte'] = date($dformat, strtotime($excelI['value']['gte']));
                                 if ($excelI['value']['gte'] == '30.11.-0001') $excelI['value']['gte'] = '00.00.0000';
                             }
                         }
@@ -691,10 +691,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                         // Deal with date converstion
                         if (preg_match(Indi::rex('date'), $excelI['value']['lte'])) {
-                            if ($excelI['value']['lte'] == '0000-00-00' && $format == 'd.m.Y') {
+                            if ($excelI['value']['lte'] == '0000-00-00' && $dformat == 'd.m.Y') {
                                 $excelI['value']['lte'] = '00.00.0000';
                             } else if ($excelI['value']['gte'] != '0000-00-00'){
-                                $excelI['value']['lte'] = date($format, strtotime($excelI['value']['lte']));
+                                $excelI['value']['lte'] = date($dformat, strtotime($excelI['value']['lte']));
                                 if ($excelI['value']['lte'] == '30.11.-0001') $excelI['value']['lte'] = '00.00.0000';
                             }
                         }
