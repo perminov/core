@@ -21,7 +21,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'mark4delete'],
 
         /**
          * Tools special config
@@ -557,7 +557,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             field: field,
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
-            store: row.view(field.alias).store
+            store: row.view(field.alias).store,
+            multiSelect: parseInt(filter.any) ? true : false
         }
     },
 

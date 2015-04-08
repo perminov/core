@@ -212,14 +212,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (Ext.isFunction(me[eColumnX]) || Ext.isObject(me[eColumnX])) {
                     columnX = Ext.isFunction(me[eColumnX]) ? me[eColumnX](columnI, field) : me[eColumnX];
                     columnI = Ext.isObject(columnX) ? Ext.merge(columnI, columnX) : columnX;
-                }
+                } else if (me[eColumnX] === false) columnI = me[eColumnX];
 
                 // Apply column custom config
                 eColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
                 if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
                     column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
-                }
+                } else if (me[eColumn$] === false) columnI = me[eColumn$];
 
                 // Apply string-summary, if column's non-empty `summaryText` property detected
                 if (Ext.isObject(columnI) && columnI.summaryText) {

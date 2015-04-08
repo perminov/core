@@ -305,10 +305,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         $where = array();
 
         // Append a childs-by-parent clause to primaryWHERE stack
-        if ($parentWHERE = $this->parentWHERE()) $where[] = $parentWHERE;
+        if ($parentWHERE = $this->parentWHERE()) $where['parent'] = $parentWHERE;
 
         // If a special section's primary filter was defined, add it to primary WHERE clauses stack
-        if (strlen(Indi::trail()->section->compiled('filter'))) $where[] = Indi::trail()->section->compiled('filter');
+        if (strlen(Indi::trail()->section->compiled('filter'))) $where['static'] = Indi::trail()->section->compiled('filter');
 
         // Owner control. There can be a situation when some cms users are not stored in 'admin' db table - these users
         // called 'alternates'. Example: we have 'Experts' cms section (rows are fetched from 'expert' db table) and
@@ -318,7 +318,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // So we can create a 'Questions' section within cms, and if `question` table will contain `expertId` column
         // (it will contain - we will create it for that purpose) - the only questions, addressed to curently logged-in
         // expert will be available for view and answer.
-        if ($alternateWHERE = $this->alternateWHERE()) $where[] =  $alternateWHERE;
+        if ($alternateWHERE = $this->alternateWHERE()) $where['alternate'] =  $alternateWHERE;
 
         // Adjust primary WHERE clauses stack - apply some custom adjustments
         $where = $this->adjustPrimaryWHERE($where);
@@ -379,15 +379,19 @@ class Indi_Controller_Admin extends Indi_Controller {
      *
      * @param string|array $primaryWHERE
      * @param string|array $customWHERE
-     * @return null|string
+     * @param bool $merge
+     * @return null|string|array
      */
-    public function finalWHERE($primaryWHERE, $customWHERE = null) {
+    public function finalWHERE($primaryWHERE, $customWHERE = null, $merge = true) {
+
+        // Empty array yet
+        $finalWHERE = array();
 
         // If there was a primaryHash passed instead of $primaryWHERE param - then we extract all scope params from
         if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
 
             // Prepare $primaryWHERE
-            $primaryWHERE = Indi::trail()->scope->primary ? array(Indi::trail()->scope->primary) : array();
+            $primaryWHERE = Indi::trail()->scope->primary;
 
             // Prepare search data for $this->filtersWHERE()
             Indi::get()->search = Indi::trail()->scope->filters;
@@ -399,28 +403,30 @@ class Indi_Controller_Admin extends Indi_Controller {
             Indi::get()->sort = Indi::trail()->scope->order;
         }
 
-        // Final WHERE stack
-        $finalWHERE = is_array($primaryWHERE)
-            ? $primaryWHERE
-            : (strlen($primaryWHERE)
-                ? array($primaryWHERE)
-                : array());
+        // Push primary part
+        if ($primaryWHERE || $primaryWHERE == '0') $finalWHERE['primary'] = $primaryWHERE;
 
-        // Get a WHERE stack of clauses, related to filters search and merge it with $primaryWHERE
-        if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE = array_merge($finalWHERE, $filtersWHERE);
+        // Get a WHERE stack of clauses, related to filters search and push it into $finalWHERE under 'filters' key
+        if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE['filters'] = $filtersWHERE;
 
-        // Get a WHERE clause, related to keyword search and append it to $primaryWHERE
-        if ($keywordWHERE = $this->keywordWHERE()) $finalWHERE[] = $keywordWHERE;
+        // Get a WHERE clause, related to keyword search and push it into $finalWHERE under 'keyword' key
+        if ($keywordWHERE = $this->keywordWHERE()) $finalWHERE['keyword'] = $keywordWHERE;
 
-        // Prepend a custom WHERE clause
-        if (is_array($customWHERE) && count($customWHERE)) {
-            $finalWHERE = array_merge($finalWHERE, $customWHERE);
-        } else if ($customWHERE) {
-            $finalWHERE[] = $customWHERE;
+        // Append custom WHERE
+        if ($customWHERE || $customWHERE == '0') $finalWHERE['custom'] = $customWHERE;
+
+        // If WHERE clause should be a string
+        if ($merge) {
+
+            // Force $finalWHERE to be single-dimension array
+            foreach ($finalWHERE as $part => $where) if (is_array($where)) $finalWHERE[$part] = im($where, ' AND ');
+
+            // Stringify
+            $finalWHERE = implode(' AND ', $finalWHERE);
         }
 
-        // Return imploded $finalWHERE, or null is there is no items in $finalWHERE stack
-        return count($finalWHERE) ? implode(' AND ', $finalWHERE) : null;
+        // Return
+        return $finalWHERE;
     }
 
     /**
@@ -1735,7 +1741,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
-        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found)
+        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !Indi::trail()->model->treeColumn())
             if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
 
         // Define an array containing extjs summary types and their sql representatives
@@ -1757,8 +1763,19 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Build basic sql query for summaries calculation
         $sql = 'SELECT ' . implode(', ', $sql) . ' FROM `' . Indi::trail()->model->table() . '`';
 
+        // Declare array for WHERE clauses stack
+        $where = array();
+
+        // If current model has a tree column, and it is not forced to be ignored - append special
+        // clause to WHERE-clauses stack for summaries to be calculated only for top-level entries
+        if (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'])
+            $where[] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
+
+        // Append scope's WHERE clause to the stack
+        if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
+
         // Append WHERE clause to that query
-        if (Indi::trail()->scope->WHERE) $sql .= ' WHERE ' . Indi::trail()->scope->WHERE;
+        if ($where) $sql .= ' WHERE ' . im($where, ' AND ');
 
         // Fetch and return calculated summaries
         return Indi::db()->query($sql)->fetchObject();
@@ -2278,7 +2295,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         Indi::get('jump', null);
 
         // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
-        $this->redirect(PRE . array_pop($nav));
+        $this->redirect(array_pop($nav));
     }
 
     /**

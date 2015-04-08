@@ -1,10 +1,17 @@
 <?php
 class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormCombo{
+
+    public $filter = null;
+
     /**
      * This var is used for html elements css class names building
      * @var string
      */
     public $type = 'filter';
+
+    public function isMultiSelect() {
+        return $this->filter->any;
+    }
 
     /**
      * Builds the combo for grid filter
@@ -58,8 +65,14 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
             // Get table name
             $tbl = Indi::trail()->model->table();
 
-            // Setup a shortcut for scope's WHERE
-            $sw = Indi::trail()->scope->WHERE;
+            // Get finalWHERE as array
+            $sw = Indi_Trail_Admin::$controller->finalWHERE(Indi::trail()->scope->primary, null, false);
+
+            // Exclude WHERE clause part, related to current filter
+            unset($sw['filters'][$alias]); if (!count($sw['filters'])) unset($sw['filters']);
+
+            // Force $finalWHERE to be single-dimension array
+            foreach ($sw as $p => $w) if (is_array($w)) $sw[$p] = im($w, ' AND '); $sw = implode(' AND ', $sw);
 
             // Get the distinct list of possibilities
             $in = Indi::db()->query('
@@ -136,7 +149,7 @@ class Indi_View_Helper_Admin_FilterCombo extends Indi_View_Helper_Admin_FormComb
         $gotFromScope = Indi::trail()->scope->filter($this->field->alias);
 
         if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
-            if ($this->field->storeRelationAbility == 'many')
+            if ($this->isMultiSelect())
                 if(is_array($gotFromScope))
                     $gotFromScope = implode(',', $gotFromScope);
             $this->filter->defaultValue = $this->getRow()->{$this->field->alias} = $gotFromScope;
