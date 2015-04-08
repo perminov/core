@@ -117,6 +117,10 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     overflow: hidden;
     padding: 3px 3px 4px 6px;
 }
+
+.x-column-header-last {
+    border-right-width: 0 !important;
+}
 .x-grid-group-title {font-weight: normal;}
 .x-grid-row-summary .x-grid-cell {
     color: null;
@@ -248,6 +252,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-create{background-image: url('/i/admin/btn-icon-create.png');}
 .i-btn-icon-form{background-image: url('/i/admin/btn-icon-form.png');}
 .i-btn-icon-delete{background-image: url('/i/admin/btn-icon-delete.png');}
+.i-btn-icon-mark4delete{background-image: url('/i/admin/btn-icon-mark4delete.png');}
 .i-btn-icon-back{background-image: url('/i/admin/btn-icon-back.png');}
 .i-btn-icon-save{background-image: url('/i/admin/btn-icon-save.png');}
 .i-btn-icon-toggle{background-image: url('/i/admin/btn-icon-toggle.png');}

@@ -72,6 +72,7 @@
         '/js/admin/app/lib/dbtable/Row.js',
         '/js/admin/app/lib/view/ShrinkList.js',
         '/js/admin/app/lib/form/field/Combo.js',
+        '/js/admin/app/lib/toolbar/Info.js',
         '/js/admin/app/lib/form/field/SiblingCombo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
