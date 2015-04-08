@@ -261,7 +261,7 @@ Ext.define('Ext.calendar.view.DayBody', {
         data._isRecurring = evt.Recurrence && evt.Recurrence != '';
         data._isReminder = evt[M.Reminder.name] && evt[M.Reminder.name] != '';
         var title = evt[M.Title.name];
-        data.Title = (evt[M.IsAllDay.name] ? '': Ext.Date.format(evt[M.StartDate.name], 'g:ia ')) + (!title || title.length == 0 ? '(No title)': title);
+        data.Title = (evt[M.IsAllDay.name] ? '': Ext.Date.format(evt[M.StartDate.name], 'H:i ')) + (!title || title.length == 0 ? '(No title)': title);
 
         return Ext.applyIf(data, evt);
     },
@@ -273,11 +273,12 @@ Ext.define('Ext.calendar.view.DayBody', {
             end = evt[Ext.calendar.data.EventMappings.EndDate.name],
             startMins = start.getHours() * 60 + start.getMinutes(),
             endMins = end.getHours() * 60 + end.getMinutes(),
-            diffMins = endMins - startMins;
+            diffMins = endMins - startMins,
+            startHoursShift = !this.getCard().hasOwnProperty('fromHour') ? 0 : this.getCard().fromHour * 60;
 
         evt._left = 0;
         evt._width = 100;
-        evt._top = Math.round(startMins * heightFactor);
+        evt._top = Math.round((startMins - startHoursShift) * heightFactor);
         evt._height = Math.max((diffMins * heightFactor), 15);
     },
 

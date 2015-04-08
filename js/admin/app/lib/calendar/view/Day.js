@@ -19,7 +19,9 @@ Ext.define('Ext.calendar.view.Day', {
         'Ext.calendar.view.DayHeader',
         'Ext.calendar.view.DayBody'
     ],
-    
+
+    isCalendarCard: true,
+
     /**
      * @cfg {Boolean} showTime
      * True to display the current time in today's box in the calendar, false to not display it (defautls to true)

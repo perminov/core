@@ -10,7 +10,9 @@
 Ext.define('Ext.calendar.view.Week', {
     extend: 'Ext.calendar.view.Day',
     alias: 'widget.weekview',
-    
+
+    isCalendarCard: true,
+
     /**
      * @cfg {Number} dayCount
      * The number of days to display in the view (defaults to 7)
