@@ -538,6 +538,17 @@ function in($item, $array) {
 }
 
 /**
+ * Shortcut for implode() function, but with the reversed order of arguments
+ *
+ * @param $array
+ * @param string $separator
+ * @return string
+ */
+function im(array $array, $separator = ',') {
+    return implode($separator, $array);
+}
+
+/**
  * Comma-separeted values to array converter
  *
  * @param $items

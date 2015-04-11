@@ -30,62 +30,54 @@ Ext.define('Indi.lib.controller.Controller', {
     /**
      * Action dispatcher function
      *
-     * @param {String} action Action name/alias
-     * @param {String} uri The uri, that current action data was got by request to
+     * @param {Object} scope Object, containing `route`, `plain`, `uri` and `cfg` properties
      */
-    dispatch: function(action, uri){
-        var me = this, actionExtendCmpName, actionCmpName;
+    dispatch: function(scope) {
+        var me = this, action = scope.route.last().action.alias, actionExtendCmpName, actionCmpName;
 
         // Setup `actions` property, for being a storage for action classes instances
         me.actions = me.actions || {};
 
+        // Convert route items to Indi.trail.Item instances
+        scope.route.forEach(function(r, i, a) {a[i] = Ext.create('Indi.trail.Item', r);});
+
         // Setup mode and view for current trail item action
-        if (!me.trail().action.mode) me.trail().action.mode = Indi.Controller.defaultMode[action];
-        if (!me.trail().action.view) me.trail().action.view = Indi.Controller.defaultView[action];
+        if (!scope.route.last().action.mode) scope.route.last().action.mode = Indi.Controller.defaultMode[action];
+        if (!scope.route.last().action.view) scope.route.last().action.view = Indi.Controller.defaultView[action];
 
         // Build the action parent component name
         actionExtendCmpName = 'Indi.Controller.Action';
-        if (me.trail().action.mode) actionExtendCmpName += '.' + Indi.ucfirst(me.trail().action.mode);
-        if (me.trail().action.view) actionExtendCmpName += '.' + Indi.ucfirst(me.trail().action.view.replace('_', '.'));
+        if (scope.route.last().action.mode) actionExtendCmpName += '.' + Indi.ucfirst(scope.route.last().action.mode);
+        if (scope.route.last().action.view) actionExtendCmpName += '.' + Indi.ucfirst(scope.route.last().action.view.replace('_', '.'));
 
         // Build the action component name
-        actionCmpName = 'Indi.controller.' + me.trail().section.alias + '.action.' + me.trail().action.alias;
+        actionCmpName = 'Indi.controller.' + scope.route.last().section.alias + '.action.' + scope.route.last().action.alias;
 
         // Define the action component
         Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsConfig[action]));
 
+        // Build the id for action object
+        scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;
+        if (scope.route.last().row) {
+            scope.id += '-row-' + (scope.route.last().row.id || 0);
+        } else if (scope.route.last(1).row) {
+            scope.id += '-parentrow-' + scope.route.last(1).row.id;
+        }
+
         // Create action component instance, related to current action
-        me.actions[action] = Ext.create(actionCmpName, {
-            trailLevel: me.trailLevel,
-            uri: Ext.clone(uri),
-            clr: me
-        });
+        Ext.create(actionCmpName, scope);
     },
 
     // @inheritdoc
-    constructor: function(config){
+    constructor: function(config) {
         var me = this;
-
-        // Setup trail level
-        me.trailLevel = Indi.trail().level;
 
         // Merge parent
         me.mergeParent(config);
 
         // Call parent
         me.callParent(arguments);
-    },
-
-    /**
-     * Gets the current trail item, or one of it's parents - if `up` argument is given
-     *
-     * @param up
-     * @return {Indi.lib.trail.Item}
-     */
-    trail: function(up) {
-        return Indi.trail(this.trailLevel - (Indi.trail(true).store.length - 1) + (up ? up : 0));
     }
-
 }, function() {
 
     // Borrow 'mergeParent' method from Ext.Component class

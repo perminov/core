@@ -317,6 +317,13 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Detect option color (style or box) and apply it
                 me.color(data, value).apply();
+
+                // Set up 'selectedIndex' attribute for keywordEl
+                if (value !== null)me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)')
+                    .each(function(el, c, index){
+                        if (el.attr(me.name) == value.toString()) me.keywordEl.attr('selectedIndex', index+1);
+                    });
+                else me.keywordEl.attr('selectedIndex', '0');
             }
 
             // Setup value for hiddenEl element
@@ -420,7 +427,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // Setup multiSelect and fieldSubTpl properties depending on config.field.storeRelationAbility value
-        if (config.field.storeRelationAbility == 'many') {
+        if (config.field.storeRelationAbility == 'many' || config.multiSelect) {
             me.multiSelect = true;
             me.fieldSubTpl = me.tplMultiple;
             if (!config.hasOwnProperty('hideTrigger')) me.hideTrigger = true;
@@ -1893,7 +1900,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Get the index of selected option id in me.store.ids
         if (me.store.enumset) {
-            if (!li.attr(name).toString().match(/^[1-9][0-9]{0,9}$/)) {
+            if (!li.attr(name).toString().match(/^[1-9][0-9]{0,9}$/) && !me.boolean) {
                 index = me.store.ids.indexOf(li.attr(name));
             } else {
                 index = me.store.ids.indexOf(parseInt(li.attr(name)));
@@ -2128,10 +2135,12 @@ Ext.define('Indi.lib.form.field.Combo', {
         propS = r.attrs[name].toString();
 
         // If propS is a string, representing an integer number - convert it into interger-type and return
-        if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
+        //if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
+        if (propS.match(/^-?[1-9][0-9]{0,9}|0$/)) return parseInt(propS);
 
         // If propS is a string, representing a floating-point number - convert it into float-type and return
-        if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
+        //if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
+        if (propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
 
         // Retun as is
         return propS;
@@ -2413,7 +2422,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Fetch request
         Ext.Ajax.request({
-            url: url,
+            url: Indi.pre.replace(/\/$/, '') + url,
             params: Ext.merge(data, {consider: Ext.JSON.encode(me.considerOnData())}),
             success: function(response) {
 

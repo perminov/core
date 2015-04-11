@@ -8,6 +8,8 @@
         '/js/jquery-1.9.1.min.js',
         '/library/extjs4/ext-all.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
+        '/library/extjs4/examples/ux/BoxReorderer.js',
+        '/library/extjs4/examples/ux/TabReorderer.js',
 
         '/js/admin/app/override/Ext.data.Connection.js',
         '/js/admin/app/override/Ext.dom.Element.js',
@@ -24,6 +26,7 @@
         '/js/admin/app/override/Ext.grid.feature.Summary.js',
         '/js/admin/app/override/Ext.grid.View.js',
         '/js/admin/app/override/Ext.data.Model.js',
+        '/js/admin/app/override/Ext.tab.Bar.js',
 
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
@@ -32,11 +35,21 @@
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
 
+        '/js/admin/app/lib/view/action/south/South.js',
+        '/js/admin/app/lib/view/action/south/Row.js',
+        '/js/admin/app/lib/view/action/south/Rowset.js',
+        '/js/admin/app/lib/view/action/Panel.js',
+        '/js/admin/app/lib/view/action/Rowset.js',
+        '/js/admin/app/lib/view/action/Row.js',
+        '/js/admin/app/lib/view/action/Tab.js',
+        '/js/admin/app/lib/view/action/TabRowset.js',
+        '/js/admin/app/lib/view/action/TabRow.js',
         '/js/admin/app/lib/trail/Trail.js',
         '/js/admin/app/lib/trail/Item.js',
         '/js/admin/app/lib/dbtable/Row.js',
         '/js/admin/app/lib/view/ShrinkList.js',
         '/js/admin/app/lib/form/field/Combo.js',
+        '/js/admin/app/lib/toolbar/Info.js',
         '/js/admin/app/lib/form/field/SiblingCombo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
@@ -90,6 +103,9 @@ Ext.create('Indi', {
     }
 });
 </script>
-<div style="display: none;"><div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div></div>
+<div style="display: none;">
+    <div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div>
+    <div id="i-response-html"></div>
+</div>
 </body>
 </html>

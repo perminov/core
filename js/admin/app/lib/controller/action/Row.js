@@ -10,17 +10,16 @@ Ext.define('Indi.lib.controller.action.Row', {
     extend: 'Indi.Controller.Action',
 
     // @inheritdoc
-    mcopwso: ['row', 'panel'],
+    mcopwso: ['row', 'panel', 'south'],
 
     // @inheritdoc
     panel: {
+
+        // @inheritdoc
+        xtype: 'actionrow',
+
         title: '',
         closable: false,
-        listeners: {
-            afterrender: function(me){
-                Indi.trail(true).breadCrumbs();
-            }
-        },
 
         /**
          * Here we separate docked items on items-level1 and items-level2, e.g items-level1 are
@@ -35,7 +34,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, '-',
+                    {alias: 'back'}, {alias: 'close'}, '-',
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
@@ -50,7 +49,12 @@ Ext.define('Indi.lib.controller.action.Row', {
      * Main panel's row inner panel config
      */
     row: {
-        border: 0
+        border: 0,
+        height: '40%'
+    },
+
+    south: {
+        xtype: 'rowactionsouth'
     },
 
     /**
@@ -102,13 +106,13 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelDockedInner$Back: function(urlonly) {
 
         // Build the url for goto
-        var me = this, url = me.ti().section.href;
+        var me = this, isTab = me.panel.xtype == 'actiontabrow', url = '/' + me.ti().section.alias + '/';
         if (me.ti(1).row) url += 'index/id/' + me.ti(1).row.id + '/' +
             (me.ti().scope.upperHash ? 'ph/'+me.ti().scope.upperHash+'/' : '') +
             (me.ti().scope.upperAix ? 'aix/'+me.ti().scope.upperAix+'/' : '');
 
         // Return builded url, if `geturl` arg is given, or return 'Back' button config otherwise
-        return urlonly ? url : {
+        return urlonly ? url : (isTab ? null : {
             id: me.panelDockedInnerBid() + 'back',
             text: '',
             iconCls: 'i-btn-icon-back',
@@ -121,7 +125,38 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Goto url
                 me.goto(url);
             }
+        })
+    },
+
+    /**
+     * Master toolbar 'Close' button
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Close: function() {
+        var me = this, isTab = me.panel.xtype == 'actiontabrow';
+
+        if (!isTab) return null;
+
+        // Return 'Close' button config
+        return {
+            id: me.panelDockedInnerBid() + 'close',
+            text: '',
+            iconCls: 'i-btn-icon-close',
+            tooltip: Indi.lang.I_CLOSE,
+            handler: function() {
+                Ext.getCmp(me.panel.id).up('[isSouth]').getActiveTab().close();
+            }
         }
+    },
+
+    /**
+     * Master toolbar 'Back' button right-side separator
+     *
+     * @return {Object}
+     */
+    panelDockedInner$BackSeparator: function() {
+        var me = this; return me.panel.xtype == 'actiontabrow' ? null : {xtype: 'tbseparator'}
     },
 
     /**
@@ -160,7 +195,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             width: getMaxWidth(me.ti().row),
             lastValidValue: me.ti().row.id,
             margin: '0 3 0 3',
-            disabled: parseInt(me.ti().scope.found) > 1 ? false : true,
+            disabled: parseInt(me.ti().scope.found) <= 1,
             errorMsgCls: '',
             minValue: 1,
             listeners: {
@@ -179,24 +214,25 @@ Ext.define('Indi.lib.controller.action.Row', {
                             me.getMask().show();
 
                             // Build the request uri and setup save button shortcut
-                            var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                            var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
                                 input.getValue() + '/ph/'+ me.ti().section.primaryHash+'/';
 
                             // We should ensure that row that user wants to retrieve
                             // - is exists within a current section scope
                             Ext.Ajax.request({
-                                url: url + 'check/1/',
+                                url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
                                 params: {forceOffsetDetection: true},
                                 success: function(response){
 
-                                    // Get the result of row offset detection from the response
-                                    var aix = response.responseText.match(/^[0-9]+$/)
-                                        ? parseInt(response.responseText)
-                                        : false;
+                                    // Convert response to json object
+                                    var json = response.responseText.json(), aix;
 
                                     // If offset was successfully detected,
                                     // append 'aix' param to the url, and load that url
-                                    if (aix) me.goto(url += 'aix/' + aix + '/');
+                                    if (Ext.isObject(json) && !isNaN(aix = parseInt(json.aix)))
+                                        me.goto(url += 'aix/' + aix + '/', undefined, {
+                                            title: json.title
+                                        });
 
                                     // Otherwise we build an warning message, and display Ext.MessageBox
                                     else me.onDetectionFailed(input);
@@ -213,12 +249,31 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
+     * Build the uri for making reload request
+     *
+     * @param autosave {Boolean}
+     * @return {String}
+     */
+    panelDockedInner$Reload_uri: function (autosave) {
+        var me = this, uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
+
+        // Append 'id' param to the uri
+        uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
+
+        // Append 'ph' and 'aix' params
+        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
+
+        // Return
+        return uri;
+    },
+
+    /**
      * Master toolbar 'Reload' item, for ability to reload the current row
      *
      * @return {Object}
      */
     panelDockedInner$Reload: function() {
-        var me = this, url, ats;
+        var me = this, ats;
 
         // 'Reload' item config
         return {
@@ -230,18 +285,13 @@ Ext.define('Indi.lib.controller.action.Row', {
                 // Show mask
                 me.getMask().show();
 
-                // Check is autosave ability exists and turned On
+                // Get the autosave-checkbox
                 ats = Ext.getCmp(me.bid() + '-docked-inner$autosave');
 
-                // Build the url
-                url = me.ti().section.href + me.ti().action.alias;
-                url += ats && ats.checked
-                    ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '')
-                    : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
-                url += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
-
                 // Reload the current uri
-                me.goto(url);
+                me.goto(me.panelDockedInner$Reload_uri(ats && ats.checked), undefined, {
+                    title: me.ti().row.id ? me.ti().row.title : Indi.lang.I_CREATE
+                });
             }
         }
     },
@@ -447,10 +497,10 @@ Ext.define('Indi.lib.controller.action.Row', {
                     if (parseInt(value)) {
 
                         // Show mask
-                        me.getMask().show();
+                        if (!me.noGoto) me.getMask().show();
 
                         // Build the request uri and setup save button shortcut
-                        var url = me.ti().section.href + me.ti().action.alias + '/id/' +
+                        var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/id/' +
                             value + '/ph/'+ me.ti().section.primaryHash + '/';
 
                         // If value was selected without combo lookup usage
@@ -480,7 +530,9 @@ Ext.define('Indi.lib.controller.action.Row', {
                         }
 
                         // Goto url
-                        me.goto(url);
+                        me.goto(url, undefined, {
+                            title: cmb.r(value).title
+                        });
                     }
                 }
             }
@@ -589,7 +641,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
                 },
                 itemclick: function(cmp, row) {
-                    me.goto(Indi.pre + '/' + row.get('alias') + '/index/id/'+ me.ti().row.id
+                    me.goto('/' + row.get('alias') + '/index/id/'+ me.ti().row.id
                         +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
                 }
             }
@@ -621,8 +673,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      *
      * @param url
      */
-    goto: function(url) {
-        Indi.load(url);
+    goto: function(url, btnSaveClick, cfg) {
+        if (!this.noGoto) Indi.load(url, cfg);
     },
 
     /**
@@ -672,7 +724,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     gotoOffset: function(offset, input) {
 
         // Build the request uri
-        var me = this, url = me.ti().section.href + me.ti().action.alias + '/aix/' +
+        var me = this, url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/aix/' +
                 offset + '/ph/'+ me.ti().section.primaryHash+'/',
             spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
 
@@ -682,17 +734,18 @@ Ext.define('Indi.lib.controller.action.Row', {
         // We should ensure that row that user wants to retrieve
         // - is exists within a current section scope
         Ext.Ajax.request({
-            url: url + 'check/1/',
+            url: Indi.pre.replace(/\/$/, '') + url + 'check/1/',
             success: function(response){
 
-                // Get the result of row id detection from the response
-                var rowId = response.responseText.match(/^[0-9]+$/)
-                    ? parseInt(response.responseText)
-                    : false;
+                // Convert response to json object
+                var json = response.responseText.json(), rowId;
 
                 // If row id was successfully detected,
                 // append 'id' param to the url, and load that url
-                if (rowId) me.goto(url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1'));
+                if (Ext.isObject(json) && !isNaN(rowId = parseInt(json.id)))
+                    me.goto(url.replace(/(\/aix\/[0-9]+\/)/, '/id/' + rowId+ '$1'), undefined, {
+                        title: json.title
+                    });
 
                 // Otherwise we build an warning message, and display Ext.MessageBox
                 else me.onDetectionFailed(input);
@@ -704,21 +757,96 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
+     * Default config for south region panel items
+     *
+     * @param src
+     * @return {Object}
+     */
+    southItemIDefault: function(src) {
+        var me = this, scope = me.ti().scope;
+
+        // Config
+        return {
+            xtype: 'panel',
+            isSouthItem: true,
+            id: me.id + '-tab$' + src.alias,
+            title: src.title,
+            name: src.alias,
+            border: 0,
+            layout: 'fit',
+            items: [{
+                xtype: 'actiontabrowset',
+                id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+                load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
+                name: src.alias
+            }]
+        }
+    },
+
+    /**
+     * Build and return the array of components configs, that will be used as inner items within south region panel
+     *
+     * @return {Array}
+     */
+    southItemA: function() {
+        var me = this, srcA = me.ti().sections, itemA = [], itemI, item$, eItem$, i;
+
+        // Foreach item within srcA
+        for (i = 0; i < srcA.length; i++) {
+
+            // Get item default config
+            itemI = me.southItemIDefault(srcA[i]);
+
+            // Apply item custom config
+            eItem$ = 'southItem$' + Indi.ucfirst(srcA[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI, srcA[i]) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (Ext.isDefined(me[eItem$])) {
+                itemI = null;
+                continue;
+            }
+
+            // Add item
+            if (itemI) itemA.push(itemI);
+        }
+
+        // Return
+        return itemA;
+    },
+
+    /**
      * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.row form panel configuration
+     * Currently is consists from this.row (form panel configuration) and from this.south
+     * (if has non-zero-length `items` property)
      *
      * @return {Array}
      */
     panelItemA: function() {
-        return [this.row];
+
+        // Panels array
+        var me = this, itemA = [], rowItem = me.row, southItem = me.south;
+
+        // Append row (center region) panel
+        if (rowItem) itemA.push(rowItem);
+
+        // Append tab (south region) panel only if it's consistent
+        if (me.panel.xtype != 'actiontabrow' && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
+            if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
+                southItem.height = me.ti().scope.actionrow.south.height;
+                southItem.activeTab = me.ti().sections.column('alias').indexOf(me.ti().scope.actionrow.south.activeTab);
+            }
+
+            itemA.push(southItem);
+        }
+
+        // Return panels array
+        return itemA;
     },
 
     // @inheritdoc
     initComponent: function() {
         var me = this;
-
-        // Setup id
-        me.id = me.bid();
 
         // Setup row panel
         me.row = Ext.merge({
@@ -756,7 +884,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         Ext.getCmp(me.row.id).focus();
 
         // Attach key map on a row panel
-        Ext.getCmp(me.row.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.row.id).rendered) Ext.getCmp(me.row.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.R,
@@ -821,5 +949,19 @@ Ext.define('Indi.lib.controller.action.Row', {
             '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/',
             '/' + me.ti().section.alias + '/' + action + '/'
         );
+    },
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this;
+
+        // Setup `route` property
+        if (config.route) me.route = config.route;
+
+        // Merge configs
+        me.mergeParent(config);
+
+        // Call parent
+        me.callParent(arguments);
     }
 });
