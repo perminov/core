@@ -725,7 +725,7 @@ function alias($title){
 
     // Find a replacement for each char of title and append it to alias
     for ($i = 0; $i < mb_strlen($title, 'utf-8'); $i++) {
-        $c = mb_substr($title, $i, 1);
+        $c = mb_substr($title, $i, 1, 'utf-8');
         if (($j = array_search($c, $s)) !== false) $alias .= $r[$j];
     }
 
