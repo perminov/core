@@ -135,7 +135,7 @@ class Indi_View_Helper_Admin_FormCombo {
         // Get initial combo options rowset
         $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
             $this->where, $this->noSatellite(), $this->field, $this->comboDataOrderColumn,
-            $this->comboDataOrderDirection, $this->comboDataOffset, $this->getConsistence());
+            $this->comboDataOrderDirection, $this->comboDataOffset, $this->getConsistence(), $this->isMultiSelect());
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $this->ignoreTemplate);
@@ -152,7 +152,7 @@ class Indi_View_Helper_Admin_FormCombo {
         // If current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
-        if ($this->field->storeRelationAbility == 'one') {
+        if ($this->field->storeRelationAbility == 'one' && !$this->filter->any) {
 
             // Setup a key
             if (($this->getRow()->id && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
@@ -190,7 +190,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
         // Else if combo is mulptiple
-        } else if ($this->field->storeRelationAbility == 'many') {
+        } else if ($this->field->storeRelationAbility == 'many' || $this->filter->any) {
             // Set value for hidden input
             $selected = array('value' => $selected);
 
@@ -290,6 +290,10 @@ class Indi_View_Helper_Admin_FormCombo {
 
     }
 
+    public function isMultiSelect() {
+        return $this->field->storeRelationAbility == 'many';
+    }
+
     public function extjs($options) {
 
         $view = array(
@@ -301,7 +305,7 @@ class Indi_View_Helper_Admin_FormCombo {
             'store' => $options
         );
 
-        if ($this->field->storeRelationAbility == 'many') {
+        if ($this->isMultiSelect()) {
             $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
                 $item = self::detectColor(array('title' => $selectedR->title));

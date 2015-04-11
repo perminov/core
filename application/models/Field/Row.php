@@ -750,7 +750,7 @@ class Field_Row extends Indi_Db_Table_Row {
 
         // Define array of rex-names, related to their mysql data types
         $rex = array(
-            'VARCHAR(255)' => 'varchar255', 'INT(11)' => 'int11', 'DOUBLE(7,2)' => 'double72',
+            'VARCHAR(255)' => 'varchar255', 'INT(11)' => 'int11', 'DECIMAL(11,2)' => 'decimal112',
             'DATE' => 'date', 'YEAR' => 'year', 'TIME' => 'time', 'DATETIME' => 'datetime',
             'ENUM' => 'enum', 'SET' => 'set', 'BOOLEAN' => 'bool', 'VARCHAR(10)' => 'hrgb'
         );
@@ -780,7 +780,7 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/DATETIME/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '0'; $q = '';
             }
-        } else if ($newType == 'DOUBLE(7,2)') {
+        } else if ($newType == 'DECIMAL(11,2)') {
             if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $defaultValue;
             } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {

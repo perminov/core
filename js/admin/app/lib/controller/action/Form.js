@@ -18,7 +18,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, '-',
+                    {alias: 'back'}, {alias: 'close'}, '-',
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'save'}, {alias: 'autosave'}, '-',
@@ -43,7 +43,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         layout: 'anchor',
         defaults: {
             anchor: '100%',
-            labelWidth: '50%',
+            labelWidth: '50%'
         },
 
         // @inheritdoc
@@ -56,12 +56,57 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (resetBtn) resetBtn.setDisabled(!dirty);
             },
             actioncomplete: function(form, action) {
+                var me = this, json = action.response.responseText.json(), gotoO, uri, cfg = {},
+                    wrp = me.up('[isWrapper]'), isTab = wrp.isTab, sth = wrp.up('[isSouth]'),
+                    sthItm = wrp.up('[isSouthItem]'), found;
 
-                // Parse response text
-                action.result = Ext.JSON.decode(action.response.responseText, true);
+                // If response text is not json-convertable, or does not have `redirect` property - return
+                if (!Ext.isObject(json) || !(uri = json.redirect).length) return;
 
-                // Redirect
-                if (Ext.isObject(action.result) && action.result.redirect) Indi.load(action.result.redirect);
+                // Parse request url
+                gotoO = Indi.parseUri(uri);
+
+                // If current wrapper is placed within a tab, and we gonna go to same-type wrapper
+                if (isTab && gotoO.section == me.ti().section.alias && gotoO.action == 'form') {
+
+                    // If tab, that we are gonna goto - is already exists
+                    if (sthItm.name != gotoO.id && (found = sth.down('[isSouthItem][name="' + gotoO.id + '"]'))) {
+
+                        // Hide mask
+                        me.ctx().getMask().hide();
+
+                        // Reset master toolbar controls
+                        me.ctx().noGoto = true;
+                        Ext.getCmp(me.ctx().panelDockedInnerBid() + 'id').reset();
+                        Ext.getCmp(me.ctx().panelDockedInnerBid() + 'sibling').reset();
+                        Ext.getCmp(me.ctx().panelDockedInnerBid() + 'offset').reset();
+                        me.ctx().noGoto = false;
+
+                        // Set found tab as active
+                        sth.setActiveTab(found);
+
+                        // Provide current wrapper to be replaced by new same-type wrapper panel
+                        cfg.title = gotoO.id ? json.title : Indi.lang.I_CREATE;
+
+                        // Setup a new uri for use in Indi.load() call, for current row to be refreshed rather redirection
+                        uri = '/' + me.ti().section.alias + '/' + gotoO.action
+                            + '/id/' + json.id + '/ph/' + me.ti().scope.hash
+                            + '/aix/' + json.aix + '/';
+
+                    // Else provide current wrapper to be replaced by new same-type wrapper panel
+                    } else cfg.onLoad = function(ctx) {
+                        this.up('[isSouthItem]').setTitle(ctx.ti().row.id ? ctx.ti().row.title : Indi.lang.I_CREATE);
+                    }
+
+                    // Provide current wrapper to be replaced by new same-type wrapper panel
+                    Ext.merge(cfg, {
+                        insteadOf: wrp.id,
+                        into: sthItm.id
+                    });
+                }
+
+                // Load required contents
+                Indi.load(uri, cfg);
             },
             actionfailed: function(form, action) {
                 var cmp, certainFieldMsg, wholeFormMsg = [], mismatch, errorByFieldO, trigger, msg;
@@ -226,18 +271,17 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Detect if all inputs within the row panel should be read-only
         me.row.readOnly = me.rowReadOnly();
-        
-        me.id = me.bid();
+
+        // Setup row panel
         me.row = Ext.merge({
-            id: me.id + '-row',
             items: me.formItemA(),
-            dockedItems: me.rowDockedA(),
             url: me.ti().section.href + 'save'
                 + (me.ti().row.id ? '/id/' + me.ti().row.id : '')
                 + (me.ti().scope.hash ? '/ph/' + me.ti().scope.hash : '')
                 + (me.ti().scope.aix ? '/aix/' + me.ti().scope.aix : '') + '/'
         }, me.row);
-        me.panel.items = me.panelItemA();
+
+        // Call parent
         me.callParent();
     },
 
@@ -519,7 +563,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-number',
             afterSubTpl: '<span class="i-field-number-after">'+item.field.params.measure+'</span>',
             maxLength: item.field.params.maxlength,
-            minValue: 0
+            minValue: 0,
+            maxValue: Math.pow(2, 32) - 1
         };
     },
 
@@ -536,6 +581,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             afterSubTpl: '<span class="i-field-number-after">'+ (item.field.params && item.field.params.measure ? item.field.params.measure : '')+'</span>',
             maxLength: 12,
             minValue: 0,
+            maxValue: Math.pow(10, 9) - 0.01,
             precisionPad: true
         };
     },
@@ -612,7 +658,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             layout: 'hbox',
             value: Ext.isNumeric(item.row[item.name]) ? parseInt(item.row[item.name]) : item.row[item.name],
             subTplData: item.row.view(item.name).subTplData,
-            store: item.row.view(item.name).store
+            store: item.row.view(item.name).store,
+            multiSelect: item.field.storeRelationAbility == 'many'
         }
     },
 
@@ -645,7 +692,14 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'button',
             text: Indi.lang.I_SAVE,
             handler: function() {
-                me.goto(me.panelDockedInner$Back(true), true);
+
+                // If we're within a tab, button click should lead to saving the form, and to redirect
+                // back to that form, so if an existing row was saved, we should return to it, or if
+                // new row was saved - we should return to that newly created row
+                if (this.up('[isWrapper]').isTab) me.goto(me.panelDockedInner$Reload_uri(true), true);
+
+                // Else follow ordinary behaviour
+                else me.goto(me.panelDockedInner$Back(true), true);
             },
             disabled: me.row.readOnly,
             iconCls: 'i-btn-icon-save',
@@ -668,7 +722,6 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'checkbox',
             tooltip: {html: Indi.lang.I_AUTOSAVE, staticOffset: [0, 4]},
             disabled: me.row.readOnly,
-            iconCls: 'i-btn-icon-save',
             cls: 'i-cb-autosave',
             checked: me.ti().scope.toggledSave,
             margin: '0 6 0 3',
@@ -733,12 +786,12 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: me.panelDockedInnerBid() + 'create',
             iconCls: 'i-btn-icon-create',
-            disabled: parseInt(me.ti().section.disableAdd) || (me.row.readOnly && !me.row.createOnly) ? true : false,
+            disabled: parseInt(me.ti().section.disableAdd) == 1 || (me.row.readOnly && !me.row.createOnly && parseInt(me.ti().section.disableAdd) != 2) ? true : false,
             tooltip: Indi.lang.I_NAVTO_CREATE,
             handler: function(){
 
                 // Create shortcuts for involved components
-                var url = me.ti().section.href + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
+                var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
                     tfID = Ext.getCmp(me.panelDockedInnerBid() + 'id'),
                     btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
                     btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
@@ -756,7 +809,9 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (spnOffset) spnOffset.setValue('');
 
                 // Goto the url
-                me.goto(url);
+                me.goto(url, undefined, {
+                    title: Indi.lang.I_CREATE
+                });
             }
         }
     },
@@ -767,40 +822,62 @@ Ext.define('Indi.lib.controller.action.Form', {
      *
      * @param url
      */
-    goto: function(url, btnSaveClick) {
+    goto: function(url, btnSaveClick, cfg) {
+
+        // If `noGoto` flag is turned on - return
+        if (this.noGoto) return;
 
         // Create shortcuts for involved components
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
             btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
-            formCmp = Ext.getCmp(me.bid() + '-row');
+            cbAutosave = Ext.getCmp(me.panelDockedInnerBid() + 'autosave'),
+            formCmp = Ext.getCmp(me.bid() + '-row'), gotoO, isTab = Ext.getCmp(me.panel.id).isTab, found;
 
         // If save button is toggled
         if (btnSave && !btnSave.disabled && (btnSave.pressed || btnSaveClick)) {
 
-            // "-1" - is a special value that means that after save, this form should be displayed again
-            if (btnSaveClick == -1) url += '?stopAutosave=1';
+            // "-1" - is a special value that means that after save, this form should not be displayed again
+            // The same concept is when form is in tab and autosave-checkbox is not checked
+            if (btnSaveClick == -1 || (isTab && !cbAutosave.checked)) url += '?stopAutosave=1';
 
             // Update value of the 'redirect-url' field, or, if it's not
             // yet exists - create it and assign `url` as it's value
             if (hidden) hidden.setValue(url);
-            else if (!btnSaveClick || btnSaveClick == -1) formCmp.add({
-                id: me.bid() + '-redirect-url',
-                xtype: 'hidden',
-                name: 'redirect-url'
-            }).setValue(url)
 
-            // Submit form
+            // Else there is no hidden field (for redirect), yes but it should be created
+            else if (!btnSaveClick || btnSaveClick == -1 || isTab)
+
+                // Create it
+                formCmp.add({
+                    id: me.bid() + '-redirect-url',
+                    xtype: 'hidden',
+                    name: 'redirect-url'
+                })
+
+                // Set a value to it, so field become dirty
+                .setValue(url);
+
+            // If form is valid
             if (formCmp.getForm().isValid()) {
 
                 // If data-row, that current form is operating with - is an existing row, or is a new row, but has
                 // at least one property that had been changed using current form - submit (try to save) the form
-                if (parseInt(me.ti().row.id) || formCmp.getForm().isDirty()) formCmp.submit({
-                    submitEmptyText: false,
-                    dirtyOnly: true
-                });
+                if (parseInt(me.ti().row.id) || formCmp.getForm().isDirty()) {
+
+                    // Show mask if form is within tab
+                    if (isTab) me.getMask().show();
+
+                    // Prevent duplicate save request
+                    btnSave.setDisabled(true);
+
+                    // Submit form
+                    formCmp.submit({
+                        submitEmptyText: false,
+                        dirtyOnly: true
+                    });
 
                 // Else if user is trying to create a new row, but didn't setup any data for that new row - show warning
-                else Ext.MessageBox.show({
+                } else Ext.MessageBox.show({
                     title: Indi.lang.I_ROWSAVE_ERROR_NOTDIRTY_TITLE,
                     msg: Indi.lang.I_ROWSAVE_ERROR_NOTDIRTY_MSG,
                     buttons: Ext.MessageBox.OK,
@@ -810,6 +887,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 });
 
+            // Else hide mask
             } else me.getMask().hide();
 
         // Else
@@ -818,24 +896,67 @@ Ext.define('Indi.lib.controller.action.Form', {
             // If `forceValidate` arg is given we check form validity before loading required contents
             if (btnSave && btnSave.pressed && !formCmp.getForm().isValid()) return;
 
-            // We just load required contents
-            Indi.load(url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : ''), {
+            // Append request failure callback to the load config
+            Ext.merge({
                 failure: function() {
                     me.getMask().hide();
                 }
-            });
+            }, cfg);
+
+            // Parse request url
+            gotoO = Indi.parseUri(url);
+
+            // Append autosave flag to the query string of the uri, if needed
+            var uri = url + (me.ti().scope.toggledSave && me.ti().action.alias == 'form' ? '?stopAutosave=1' : ''),
+                wrp = Ext.getCmp(me.panel.id), sth = wrp.up('[isSouth]'), sthItm = wrp.up('[isSouthItem]');
+
+            // If current wrapper is placed within a tab, and we gonna go to same-type wrapper
+            if (isTab && gotoO.section == me.ti().section.alias && gotoO.action == 'form') {
+
+                // If tab, that we are gonna goto - is already exists
+                if (sthItm.name != gotoO.id && (found = sth.down('[isSouthItem][name="' + gotoO.id + '"]'))) {
+
+                    // Hide mask
+                    me.getMask().hide();
+
+                    // Reset master toolbar controls
+                    me.noGoto = true;
+                    Ext.getCmp(me.panelDockedInnerBid() + 'id').reset();
+                    Ext.getCmp(me.panelDockedInnerBid() + 'sibling').reset();
+                    Ext.getCmp(me.panelDockedInnerBid() + 'offset').reset();
+                    me.noGoto = false;
+
+                    // Set found tab as active
+                    sth.setActiveTab(found);
+
+                    // Force function stop, so nothing will be loaded, unless 'setActiveTab(found)' call will load something
+                    return;
+                }
+
+                // Ensure current wrapper to be replaced by new same-type wrapper
+                Ext.merge(cfg, {
+                    insteadOf: me.panel.id,
+                    into: sthItm.id
+                });
+            }
+
+            // Load required contents into the main panel
+            Indi.load(uri, cfg);
         }
     },
 
-    // Key map for grid body
+    // Key map for row body
     keyMap: function() {
         var me = this;
+
+        // Set up focus
+        Ext.getCmp(me.row.id).focus();
 
         // Call parent
         me.callParent();
 
         // Attach key map on a row panel
-        Ext.getCmp(me.row.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.row.id).rendered) Ext.getCmp(me.row.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.N,

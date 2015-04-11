@@ -7,12 +7,8 @@ Ext.define('Indi.controller.entities', {
             }
         },
         form: {
-            formItem$Table: function(item) {
-                return {allowBlank: false}
-            },
-            formItem$Title: function(field, item) {
-                return {allowBlank: false}
-            }
+            formItem$Title: {allowBlank: false},
+            formItem$Table: {allowBlank: false}
         }
     }
 });

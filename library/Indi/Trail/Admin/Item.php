@@ -306,7 +306,34 @@ class Indi_Trail_Admin_Item {
         if ($this->disabledFields) $array['disabledFields'] = $this->disabledFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray();
         if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
-        if ($this->scope) $array['scope'] = $this->scope->toArray();
+        if ($this->scope) {
+            $array['scope'] = $this->scope->toArray();
+            if (strlen($tabs = $array['scope']['actionrowset']['south']['tabs'])) {
+                $tabA = array_unique(ar($tabs));
+                if ($tabIdA = array_filter($tabA)) {
+                    $where = array('`id` IN (' . implode(',', $tabIdA) . ')');
+                    if (strlen($array['scope']['WHERE'])) $where[] = $array['scope']['WHERE'];
+                    $tabRs = $this->model->fetchAll($where);
+                }
+                foreach ($tabA as $i => $id) {
+                    if ($id) {
+                        if ($tabRs && $r = $tabRs->gb($id)) {
+                            $tabA[$i] = array(
+                                'id' => $id,
+                                'title' => $r->title(),
+                                'aix' => $this->model->detectOffset(
+                                    $array['scope']['WHERE'], $array['scope']['ORDER'], $id
+                                )
+                            );
+                        } else {
+                            unset($tabA[$i]);
+                        }
+                    } else if ($id == '0') $tabA[$i] = array('id' => $id, 'title' => I_CREATE);
+                    else unset($tabA[$i]);
+                }
+                $array['scope']['actionrowset']['south']['tabs'] = $tabA;
+            }
+        }
         $array['level'] = $this->level;
         return $array;
     }

@@ -64,8 +64,10 @@ define('I_MENU', 'Меню');
 define('I_CREATE', 'Создать новую запись');
 define('I_BACK', 'Вернуться');
 define('I_SAVE', 'Сохранить');
+define('I_CLOSE', 'Закрыть');
 define('I_TOTAL', 'Всего');
 define('I_EXPORT_EXCEL', 'Экспортировать в Excel');
+define('I_EXPORT_PDF', 'Экспортировать в PDF');
 define('I_NAVTO_ROWSET', 'Вернуться к списку');
 define('I_NAVTO_ID', 'Перейти к записи по ID');
 define('I_NAVTO_RELOAD', 'Обновить');
@@ -177,4 +179,4 @@ define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE', 'Сброс всех ф
 define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Фильтры уже сброшены или на текущий момент не используются вовсе');
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Подтверждение');
-define('I_ACTION_DELETE_CONFIRM_MSG', 'Вы уверены?');
+define('I_ACTION_DELETE_CONFIRM_MSG', 'Вы уверены что хотите удалить запись');

@@ -137,7 +137,7 @@ class Indi_Trail_Admin {
         // If user is trying to create row, despite on it's restricted - raise up an error
         if (((Indi::uri('action') == 'form' && !(Indi::uri('combo') || Indi::uri('filter')))
             || Indi::uri('action') == 'save') && !Indi::uri('id') && !Indi::uri('aix')
-            && !Indi::uri('check') && $this->item()->section->disableAdd) {
+            && !Indi::uri('check') && $this->item()->section->disableAdd == 1) {
             $error = I_ACCESS_ERROR_ROW_ADDING_DISABLED;
 
         // Else if 'id' param is mentioned in uri, but it's value either not specified,
