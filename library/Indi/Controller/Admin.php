@@ -1295,7 +1295,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         );
 
         // Output
-        $file = Indi::trail()->section->title . '.' . $formatCfg[$format]['ext'];
+        $file = $this->exportFname() . '.' . $formatCfg[$format]['ext'];
         if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) $file = iconv('utf-8', 'windows-1251', $file);
         header('Content-Type: ' . $formatCfg[$format]['mime']);
         header('Content-Disposition: attachment; filename="' . $file . '"');
@@ -1323,6 +1323,27 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Exit
         die();
+    }
+
+    /**
+     * Default export file name builder
+     */
+    public function exportFname() {
+        return Indi::trail()->section->title;
+    }
+
+    /**
+     * Export file name builder for excel spreadsheets
+     */
+    public function exportFnameExcel() {
+        return $this->exportFname();
+    }
+
+    /**
+     * Export file name builder for pdf documents
+     */
+    public function exportFnamePdf() {
+        return $this->exportFname();
     }
 
     /**
