@@ -156,7 +156,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
 
         // If combo is multiple, we fire 'click' event on each .i-combo-selected-item-delete item, so hidden
         // value will be cleared automatically
-        if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').attr('no-change').click();
+        if (me.multiSelect) me.el.select('.i-combo-selected-item-delete').attr('no-change', 'true').click();
 
         // Else if combo is single and is not boolean, we set it's value to 0, '' otherwise
         else me.hiddenEl.val('');

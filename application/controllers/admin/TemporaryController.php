@@ -128,4 +128,14 @@ class Admin_TemporaryController extends Indi_Controller {
                 $r->trimSTDfromCKEvalues()->save();
         }
     }
+    
+    public function title2aliasAction() {
+        $materialRs = Indi::model('Material')->fetchAll();
+        foreach ($materialRs as $materialR) {
+            $materialR->alias = alias($materialR->title);
+            $materialR->save();
+            d($materialR->alias);
+        }
+        die('ok');
+    }
 }

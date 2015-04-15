@@ -563,7 +563,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-number',
             afterSubTpl: '<span class="i-field-number-after">'+item.field.params.measure+'</span>',
             maxLength: item.field.params.maxlength,
-            minValue: 0
+            minValue: 0,
+            maxValue: Math.pow(2, 32) - 1
         };
     },
 
@@ -580,6 +581,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             afterSubTpl: '<span class="i-field-number-after">'+ (item.field.params && item.field.params.measure ? item.field.params.measure : '')+'</span>',
             maxLength: 12,
             minValue: 0,
+            maxValue: Math.pow(10, 9) - 0.01,
             precisionPad: true
         };
     },
@@ -656,7 +658,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             layout: 'hbox',
             value: Ext.isNumeric(item.row[item.name]) ? parseInt(item.row[item.name]) : item.row[item.name],
             subTplData: item.row.view(item.name).subTplData,
-            store: item.row.view(item.name).store
+            store: item.row.view(item.name).store,
+            multiSelect: item.field.storeRelationAbility == 'many'
         }
     },
 
