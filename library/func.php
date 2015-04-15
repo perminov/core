@@ -696,3 +696,44 @@ function jconfirm($msg) {
 function price($price) {
     return ((int) round($price * 100))/100;
 }
+
+/**
+ * Converts passed string to it's url equivalent
+ *
+ * @param $title
+ * @return string
+ */
+function alias($title){
+
+    // Symbols
+    $s = array('а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
+        'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+        't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
+        'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&', '/');
+
+    // Replacements
+    $r = array('a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
+        '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+        't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
+        'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-');
+
+    // Declare variable for alias
+    $alias = '';
+
+    // Convert passed title to loweк case and trim whitespaces
+    $title = trim(mb_strtolower($title, 'utf-8'));
+
+    // Find a replacement for each char of title and append it to alias
+    for ($i = 0; $i < mb_strlen($title, 'utf-8'); $i++) {
+        $c = mb_substr($title, $i, 1, 'utf-8');
+        if (($j = array_search($c, $s)) !== false) $alias .= $r[$j];
+    }
+
+    // Strip '-' symbols from alias beginning, ending and replace multiple '-' symbol occurence with single occurence
+    $alias = preg_replace('/^\-+/', '', $alias);
+    $alias = preg_replace('/\-+$/', '', $alias);
+    $alias = preg_replace('/\-{2,}/', '-', $alias);
+
+    // Got as we need
+    return $alias;
+}

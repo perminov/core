@@ -427,7 +427,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // Setup multiSelect and fieldSubTpl properties depending on config.field.storeRelationAbility value
-        if (config.field.storeRelationAbility == 'many') {
+        if (config.field.storeRelationAbility == 'many' || config.multiSelect) {
             me.multiSelect = true;
             me.fieldSubTpl = me.tplMultiple;
             if (!config.hasOwnProperty('hideTrigger')) me.hideTrigger = true;

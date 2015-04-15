@@ -308,11 +308,11 @@ class Indi_Controller {
                         // else if $hueTo < $hueFrom, use '>=' and '<=' clauses, or else if $hueTo = $hueFrom, use '='
                         // clause
                         if ($hueTo > $hueFrom) {
-                            $where[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) BETWEEN "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" AND "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '"';
+                            $where[$found->alias] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) BETWEEN "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" AND "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '"';
                         } else if ($hueTo < $hueFrom) {
-                            $where[] = '(SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) >= "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" OR SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) <= "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '")';
+                            $where[$found->alias] = '(SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) >= "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" OR SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) <= "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '")';
                         } else {
-                            $where[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
+                            $where[$found->alias] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
                         }
 
                         // Pick the current filter value and field type to $excelA
@@ -322,14 +322,14 @@ class Indi_Controller {
 
                         // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
                     } else if ($found->elementId == 9 || $found->elementId == 23) {
-                        $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue ? I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES : I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO;
 
                         // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
                     } else if ($found->elementId == 1) {
-                        $where[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
+                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
@@ -357,22 +357,39 @@ class Indi_Controller {
                             $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
                         // Use a '>=' or '<=' clause, according to specified range border's type
-                        $where[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
+                        $where[$found->alias][$matches[2]] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
 
                         // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
 
                         // Use 'MATCH AGAINST' clause
-                        $where[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
+                        $where[$found->alias] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
                             '*" IN BOOLEAN MODE)';
 
                         // Pick the current filter value and field type to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
                     }
 
-                    // Else if $found field is able to store only one foreign key, use '=' clause
+                // Else if $found field is able to store only one foreign key, use '=' clause
                 } else if ($found->storeRelationAbility == 'one') {
-                    $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+
+                    // Set $any as `false`
+                    $any = false;
+
+                    // Try to find filter
+                    if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
+
+                        // Get filter row
+                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+
+                        // If filter is multiple (desipite field is singe) set up $mode as `any`
+                        if ($filterR->any) $any = true;
+                    }
+
+                    // Set up WHERE clause according to value of $any flag
+                    $where[$found->alias] = $any
+                        ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, "' . $filterSearchFieldValue . '")'
+                        : '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
@@ -383,11 +400,24 @@ class Indi_Controller {
                         $excelA[$found->alias]['table'] = $found->relation;
                     }
 
-                    // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
+                // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
                 } else if ($found->storeRelationAbility == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();
+
+                    // Set $any as `false`
+                    $any = false;
+
+                    // Try to find filter
+                    if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
+
+                        // Get filter row
+                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+
+                        // If filter should search any match rather than all matches
+                        if ($filterR->any) $any = true;
+                    }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array
                     if (is_string($filterSearchFieldValue) && strlen($filterSearchFieldValue))
@@ -398,7 +428,7 @@ class Indi_Controller {
                         $fisA[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
 
                     // Implode array of FIND_IN_SET clauses with AND, and enclose by round brackets
-                    $where[] = '(' . implode(' AND ', $fisA) . ')';
+                    $where[$found->alias] = '(' . implode(' ' . ($any ? 'OR' : 'AND') . ' ', $fisA) . ')';
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
@@ -415,6 +445,9 @@ class Indi_Controller {
         // If the purpose of current request is to build an excel spreadsheet -
         // setup filters usage information in $this->_excelA property
         if (in(Indi::uri()->format, 'excel,pdf')) $this->_excelA = $excelA;
+
+        // Force $where array to be single-dimension
+        foreach ($where as $filter => $clause) if (is_array($clause)) $where[$filter] = '(' . im($clause, ' AND ') . ')';
 
         // Return WHERE clause
         return $where;
