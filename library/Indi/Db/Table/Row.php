@@ -168,16 +168,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Saves row into database table. But.
-     * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
-     * (but is going to be inserted), and if so - autoset value for `move` column after row save
+     * Flush a special-formatted json error message, in case if current row has mismatches
      *
-     * @return int affected rows|last_insert_id
+     * @param bool $check If this param is omitted or `false` (by default) - function will look at existing mismatches.
+     *                    Otherwise, it will run a distinct mismatch check-up, and then behave on results
      */
-    public function save() {
+    public function mflush($check = false) {
 
-        // Check conformance to all requirements
-        if (count($this->mismatch(true))) {
+        // Check conformance to all requirements / Ensure that there are no mismatches
+        if (count($this->mismatch($check))) {
 
             // Rollback changes
             Indi::db()->rollback();
@@ -192,6 +191,19 @@ class Indi_Db_Table_Row implements ArrayAccess
                 'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
             )));
         }
+    }
+
+    /**
+     * Saves row into database table. But.
+     * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
+     * (but is going to be inserted), and if so - autoset value for `move` column after row save
+     *
+     * @return int affected rows|last_insert_id
+     */
+    public function save() {
+
+        // If current row has any mismatches - flush that mismatches
+        $this->mflush(true);
 
         // Backup original and modified data
         $original = $this->_original; $modified = $this->_modified;
