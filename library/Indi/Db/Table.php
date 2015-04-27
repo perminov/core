@@ -211,9 +211,9 @@ class Indi_Db_Table
                 $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
 
             // Else
-            } else $where[] = ($keyword2 = Indi::kl($keyword))
-                ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
-                : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+            } else $where[] = ($keyword2 = str_replace('"', '\"', Indi::kl($keyword)))
+                ? '(`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
+                : '`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%"';
 
             // Fetch rows that match $where clause, ant set foundRows
             $foundRs = $this->fetchAll($where, $order, $count, $page);
