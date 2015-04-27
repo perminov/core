@@ -413,7 +413,6 @@ class Indi_Db_Table_Row implements ArrayAccess
                                  $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
 
         // Basic info
-        $entityM = Indi::model('Entity');
         $fieldM = Indi::model('Field');
         $fieldR = $fieldR ? $fieldR : Indi::model($this->_table)->fields($field);
         $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
@@ -620,9 +619,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
-            $keyword = str_replace('"','\"', $selected);
+            //$keyword = str_replace('"','\"', $selected);
+            $keyword = $selected;
 
-            // Else if fetch-mode is 'no-keyword'
+        // Else if fetch-mode is 'no-keyword'
         } else {
 
             // Get selected row
@@ -630,7 +630,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Setup current value of a sorting field as start point
             if (!is_array($order) && $order && !preg_match('/\(/', $order)) {
-                $keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
+                //$keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
+                $keyword = $selectedR->{trim($order, '`')};
             }
         }
 
@@ -686,9 +687,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                         $where['lookup'] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
 
                     // Else
-                    } else $where['lookup'] = ($keyword2 = Indi::kl($keyword))
-                        ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
-                        : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+                    } else $where['lookup'] = ($keyword2 = str_replace('"', '\"', Indi::kl($keyword)))
+                        ? '(`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
+                        : '`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%"';
 
                 // We should get results started from selected value only if we have no $satellite argument passed
                 } else if (is_null(func_get_arg(4))) {
@@ -696,7 +697,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // If $order is a name of a column, and not an SQL expression, we setup results start point as
                     // current row's column's value
                     if (!preg_match('/\(/', $order)) {
-                        $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . $keyword . '"';
+                        $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . str_replace('"', '\"', $keyword) . '"';
                     }
 
                     // We set this flag to true, because the fact that we are in the body of current 'else if' operator
