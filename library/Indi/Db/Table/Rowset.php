@@ -1120,17 +1120,21 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      *
      * @param string $column
      * @param bool|string $imploded
+     * @param bool $unique
      * @return array
      */
-    public function column($column, $imploded = false) {
+    public function column($column, $imploded = false, $unique = false) {
 
         // Declare array for single column
         $valueA = array();
 
+        // Strip duplicate values from $valueA array, if $unique argument is `true`
+        if ($unique) {
+            foreach ($this as $r) $valueA[$r->$column] = true;
+            $valueA = array_keys($valueA);
 
-
-        // Collect column data
-        foreach ($this as $r) $valueA[] = $r->$column;
+        // Else simply collect column data
+        } else foreach ($this as $r) $valueA[] = $r->$column;
 
         // Return column data
         return $imploded ? implode(is_string($imploded) ? $imploded : ',', $valueA) : $valueA;
