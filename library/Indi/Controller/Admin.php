@@ -1324,8 +1324,14 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Create writer
         $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, $formatCfg[$format]['writer']);
 
-        // Write
-        $objWriter->save('php://output');
+        // Buffer raw data
+        ob_start(); $objWriter->save('php://output'); $raw = ob_get_clean();
+
+        // Flush Content-Length header
+        header('Content-Length: ' . strlen($raw));
+
+        // Flush raw
+        echo $raw;
 
         // Exit
         die();
