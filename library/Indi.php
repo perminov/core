@@ -1601,6 +1601,12 @@ class Indi {
      */
     public static function probe($url) {
 
+        // Check if $url's host name is same as $_SERVER['HTTP_HOST']
+        $purl = parse_url($url); $isOwnUrl = $purl['host'] == $_SERVER['HTTP_HOST'] || !$purl['host'];
+
+        // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
+        if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+
         // Create curl resource
         $ch = curl_init($url);
 
@@ -1610,8 +1616,21 @@ class Indi {
         curl_setopt($ch, CURLOPT_NOBODY, TRUE);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
 
+        // If so
+        if ($isOwnUrl) {
+
+            // Setup cookie
+            curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=' . session_id());
+
+            // Write session data and end session, to prevent execution freeze
+            session_write_close();
+        }
+
         // Execute
         $response = curl_exec($ch);
+
+        // Restart session
+        if ($isOwnUrl) session_start();
 
         // Get size and mime-type
         $size = curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);

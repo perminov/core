@@ -2805,13 +2805,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->deleteFiles($field);
 
         // Get the extension of the uploaded file
-        preg_match('/[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+\/[^?#]*\.([a-zA-Z0-9+]+)$/', $url, $m); $ext = $m[1];
+        preg_match('/[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+\/[^?#]*\.([a-zA-Z0-9+]+)$/', $url, $m); $uext = $m[1];
 
         // Try to detect remote file props using cURL request
-        list($size, $mime, $cext) = each(Indi::probe($url));
+        $p = Indi::probe($url); $size = $p['size']; $mime = $p['mime']; $cext = $p['ext'];
 
         // If simple extension detection failed - use one that curl detected
-        if (!$ext) $ext = $cext;
+        $ext = $uext ? $uext : $cext;
 
         // If no size, or zero-size detected
         if (!$size) {
@@ -2823,11 +2823,43 @@ class Indi_Db_Table_Row implements ArrayAccess
             return false;
         }
 
+        // Check is $url's host name is same as $_SERVER['HTTP_HOST']
+        $purl = parse_url($url); $isOwnUrl = $purl['host'] == $_SERVER['HTTP_HOST'] || !$purl['host'];
+
         // If no extension was got from the given url
-        if (!$ext) {
+        if (!$ext || ($isOwnUrl && !$uext)) {
+
+            // If $url's hostname is same as $_SERVER['HTTP_HOST']
+            if ($isOwnUrl) {
+
+                // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
+                if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+
+                // Get request headers, and declare $hrdS variable for collecting strigified headers list
+                $hdrA = apache_request_headers(); $hdrS = '';
+
+                // Unset headers, that may (for some unknown-by-me reasons) cause freeze execution
+                unset($hdrA['Connection'], $hdrA['Content-Length'], $hdrA['Content-length'], $hdrA['Accept-Encoding']);
+
+                // Build headers list
+                foreach ($hdrA as $n => $v) $hdrS .= $n . ': ' . $v . "\r\n";
+
+                // Prepare context options
+                $opt = array('http'=> array('method'=> 'GET', 'header'=> $hdrS));
+
+                // Create context, for passing as a third argument within file_get_contents() call
+                $ctx = stream_context_create($opt);
+
+                // Write session data and suspend session, so session file, containing serialized session data
+                // will be temporarily unlocked, to prevent caused-by-lockness execution freeze
+                session_write_close();
+            }
 
             // Get the contents from url, and if some error occured then
-            ob_start(); $raw = file_get_contents($url); if ($error = ob_get_clean()) {
+            ob_start(); $raw = file_get_contents($url, false, $ctx); if ($error = ob_get_clean()) {
+
+                // Resume session
+                if ($isOwnUrl) session_start();
 
                 // Save that error to $this->_mismatch array, under $field key
                 $this->_mismatch[$field] = $error;
@@ -2836,17 +2868,24 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
             }
 
+            // Resume session
+            if ($isOwnUrl) session_start();
+
             // Create the temporary file, and place the url contents to it
             $tmp = tempnam(sys_get_temp_dir(), "indi-wget");
             $fp = fopen($tmp, 'wb'); fwrite($fp, $raw); fclose($fp);
 
-            // Get the mime type
-            $fi = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($fi, $tmp);
-            finfo_close($fi);
+            // If no extension yet detected
+            if (!$ext) {
 
-            // Get the extension
-            $ext = Indi::ext($mime);
+                // Get the mime type
+                $fi = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($fi, $tmp);
+                finfo_close($fi);
+
+                // Get the extension
+                $ext = Indi::ext($mime);
+            }
         }
 
         // Build the full filename into $dst variable
