@@ -166,6 +166,20 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background-position: -15px -360px;
 }
 
+/* Grid editor styles adjustments */
+.x-grid-editor .x-form-text {
+    padding: 0 2px;
+}
+.x-border-box .x-grid-editor .x-form-text, .x-border-box .x-grid-row-editor .x-form-text {
+    height: 19px;
+}
+.x-editor.x-small-editor.x-grid-editor.x-layer.x-editor-default {
+    margin-top: 1px;
+}
+.x-grid-dirty-cell {
+    background-image: url('/i/admin/dirty-orange.gif');
+}
+
 /* Indi combos default style adjustments - for cases, when indi combos are used as an ext components*/
 .i-filter-combo .x-panel-body-default{
     background: transparent;
