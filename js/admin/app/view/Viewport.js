@@ -65,7 +65,8 @@ Ext.define('Indi.view.Viewport', {
         items: [{
             id: 'i-center-north',
             region: 'north',
-            tpl:
+            xtype: 'taskbar',
+            /*tpl:
                 '<div>' +
                     '<div id="i-center-north-date">{date}</div>' +
                     '<div id="i-center-north-admin">{admin} <a href="{pre}/logout/">{logout}</a></div>' +
@@ -82,7 +83,7 @@ Ext.define('Indi.view.Viewport', {
                     logout: Indi.lang.I_LOGOUT
                 });
                 this.superclass.afterRender.apply(this, arguments);
-            }
+            }*/
         }, {
             region: 'center',
             id: 'i-center-center',

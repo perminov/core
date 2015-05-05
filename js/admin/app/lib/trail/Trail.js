@@ -237,7 +237,7 @@ Ext.define('Indi.lib.trail.Trail', {
         me.options.crumbs.pop = 0;
 
         // Replace the current contents of #i-center-north-trail DOM node with imploded crumbA array
-        Ext.get('i-center-north-trail').setHTML(crumbA.join('<span> &raquo; </span>'));
+        //Ext.get('i-center-north-trail').setHTML(crumbA.join('<span> &raquo; </span>'));
 
         // Bind a click event listener to all 'a' items within imploded crumbs
         top.window.$('#i-center-north-trail a').click(function(){
