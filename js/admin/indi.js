@@ -12,6 +12,8 @@ Ext.define('Indi', {
     name: 'Indi',
     appFolder: '/js/admin/app',
 
+    lastActiveWindow: null,
+
     // @inheritdoc
     constructor: function (cfg) {
         var me = this;
@@ -349,7 +351,7 @@ Ext.define('Indi', {
                 success: function(response, request){
 
                     // In no 'into' property given within `cfg` object - destroy center panel
-                    if (!cfg.into) Indi.clearCenter();
+                    if (!cfg.into) void(0); //Indi.clearCenter();
 
                     // Else if 'insteadOf' property is additionally given within `cfg` object
                     else if (cfg.insteadOf) {
@@ -723,6 +725,62 @@ Ext.define('Indi', {
     },
 
     /**
+     * Windows storage
+     */
+    windows: new Ext.util.MixedCollection(),
+
+    getActiveWindow: function () {
+        var win = null, zmgr = Indi.app.getDesktopZIndexManager();
+
+        if (zmgr) {
+            // We cannot rely on activate/deactive because that fires against non-Window
+            // components in the stack.
+
+            zmgr.eachTopDown(function (comp) {
+                if (comp.isWindow && !comp.hidden) {
+                    win = comp;
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        return win;
+    },
+
+    getDesktopZIndexManager: function () {
+        var windows = this.windows;
+        // TODO - there has to be a better way to get this...
+        return (windows.getCount() && windows.getAt(0).zIndexManager) || null;
+    },
+
+
+    updateActiveWindow: function () {
+        var me = this, activeWindow = me.getActiveWindow(), last = me.lastActiveWindow;
+
+        if (activeWindow === last) return;
+
+        if (last) {
+            if (last.el.dom) {
+                last.addCls(me.inactiveWindowCls);
+                last.removeCls(me.activeWindowCls);
+            }
+            last.active = false;
+        }
+
+        me.lastActiveWindow = activeWindow;
+
+        if (activeWindow) {
+            activeWindow.addCls(me.activeWindowCls);
+            activeWindow.removeCls(me.inactiveWindowCls);
+            activeWindow.minimized = false;
+            activeWindow.active = true;
+        }
+
+        me.taskbar.setActiveButton(activeWindow && activeWindow.taskButton);
+    },
+
+    /**
      * Launch callback
      */
     launch: function() {
@@ -737,6 +795,7 @@ Ext.define('Indi', {
         }
 
         Indi.app = this;
+        Indi.app.taskbar = Ext.getCmp('i-center-north');
     }
 }, function() {
 

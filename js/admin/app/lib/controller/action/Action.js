@@ -121,14 +121,22 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Set up docked items
         me.panel.dockedItems = me.panelDockedA();
 
-        // If all contents should be added to existing panel
-        if (me.cfg.into) me.panel.header = false; else {
+        // Remove panel header
+        me.panel.header = false;
 
-            // Append tools and toolbars to the main panel
-            Ext.merge(me.panel, {
-                renderTo: 'i-center-center-body',
+        // If all contents should be added to existing panel
+        if (!me.cfg.into) {
+
+            var windowId = me.panel.id.replace(/-wrapper$/, '-window');
+            var window = Ext.widget({
+                id: windowId,
+                xtype: 'desktopwindow',
+                title: me.panel.title,
                 tools: me.panelToolA()
             });
+
+            // Append tools and toolbars to the main panel
+            me.panel.renderTo = window.getTargetEl();
 
             // Update id of the main panel (temporary)
             Indi.centerId = me.panel.id;
