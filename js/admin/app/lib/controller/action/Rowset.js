@@ -32,7 +32,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
          * Docked items special config
          */
         docked: {
-            default: {minHeight: 27},
+            default: {minHeight: 26},
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
                 master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
