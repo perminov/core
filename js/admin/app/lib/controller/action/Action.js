@@ -132,7 +132,8 @@ Ext.define('Indi.lib.controller.action.Action', {
                 id: windowId,
                 xtype: 'desktopwindow',
                 title: me.panel.title,
-                tools: me.panelToolA()
+                tools: me.panelToolA(),
+                ctx: me
             });
 
             // Append tools and toolbars to the main panel

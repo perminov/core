@@ -958,6 +958,9 @@ Ext.define('Indi.lib.controller.action.Row', {
         // Setup `route` property
         if (config.route) me.route = config.route;
 
+        // Setup main panel title as current secion title
+        me.panel.title = me.ti().row.id ? me.ti().row.title : Indi.lang.I_CREATE;
+
         // Merge configs
         me.mergeParent(config);
 
