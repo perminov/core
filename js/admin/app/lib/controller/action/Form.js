@@ -195,6 +195,9 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // Hide mask
                 this.ctx().getMask().hide();
+                
+                // Turn `isLoading` flag back to `false`
+                form.isLoading = false;
             },
 
             /**
@@ -824,14 +827,14 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     goto: function(url, btnSaveClick, cfg) {
 
-        // If `noGoto` flag is turned on - return
-        if (this.noGoto) return;
-
         // Create shortcuts for involved components
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
             btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
             cbAutosave = Ext.getCmp(me.panelDockedInnerBid() + 'autosave'),
             formCmp = Ext.getCmp(me.bid() + '-row'), gotoO, isTab = Ext.getCmp(me.panel.id).isTab, found;
+
+        // If `noGoto` flag is turned on, or previous save request is not yet completed - return
+        if (me.noGoto || formCmp.getForm().isLoading) return;
 
         // If save button is toggled
         if (btnSave && !btnSave.disabled && (btnSave.pressed || btnSaveClick)) {
@@ -868,7 +871,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     if (isTab) me.getMask().show();
 
                     // Prevent duplicate save request
-                    btnSave.setDisabled(true);
+                    formCmp.getForm().isLoading = true;
 
                     // Submit form
                     formCmp.submit({
