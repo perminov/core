@@ -11,6 +11,7 @@
         '/library/extjs4/examples/ux/BoxReorderer.js',
         '/library/extjs4/examples/ux/TabReorderer.js',
 
+        '/js/admin/app/override/Ext.Base.js',
         '/js/admin/app/override/Ext.data.Connection.js',
         '/js/admin/app/override/Ext.dom.Element.js',
         '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
@@ -44,6 +45,7 @@
         '/js/admin/app/lib/view/action/Tab.js',
         '/js/admin/app/lib/view/action/TabRowset.js',
         '/js/admin/app/lib/view/action/TabRow.js',
+
         '/js/admin/app/lib/trail/Trail.js',
         '/js/admin/app/lib/trail/Item.js',
         '/js/admin/app/lib/dbtable/Row.js',
