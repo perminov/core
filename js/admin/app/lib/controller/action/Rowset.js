@@ -199,6 +199,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         if (Ext.getCmp(keywordCmpId))
             Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
 
+        // Ensure page size to be fully dependent on me.ti().section.rowsOnPage
+        me.getStore().pageSize = me.getStore().lastOptions.limit = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage;
+
         // If there is no noReload flag turned on
         if (!cmp.noReload) {
 
@@ -213,7 +216,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             me.getStore().currentPage = 1;
             me.getStore().lastOptions.page = 1;
             me.getStore().lastOptions.start = 0;
-
+            
             // If used filter is a combobox or multislider, we reload store data immideatly
             if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
                 me.preventViewFocus = true;
@@ -273,7 +276,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.bid() + '-store',
             fields: me.storeFieldA(),
             sorters: me.storeSorters(),
-            pageSize: parseInt(me.ti().section.rowsOnPage),
+            pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
             proxy: new Ext.data.HttpProxy({
                 method: 'POST',
