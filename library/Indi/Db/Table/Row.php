@@ -2389,19 +2389,52 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->$column = $value;
         }
 
-        // If current model has a tree-column, and current row is not an existing new row, and tree column value was
-        // modified, and it is going to be same as current row id
-        if ($this->model()->treeColumn() && $this->id && $this->_modified[$this->model()->treeColumn()] == $this->id) {
+        // Get tree-column name
+        $tc = $this->model()->treeColumn();
 
-            // Define a shortcut for tree column field alias
-            $treeColumn = $this->model()->treeColumn();
+        // If current model has a tree-column, and current row is an existing row and tree column value was modified
+        if ($tc && $this->id && ($parentId_new = $this->_modified[$tc])) {
 
-            // Get the tree column field
-            $fieldR = $this->model()->fields($treeColumn);
+            // Get the tree column field row object
+            $fieldR = $this->model()->fields($tc);
 
-            // Push a error to errors stack
-            $this->_mismatch[$treeColumn] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID, $fieldR->title);
+            // If tree-column's value it is going to be same as current row id
+            if ($parentId_new == $this->id) {
 
+                // Push a error to errors stack
+                $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF, $fieldR->title);
+
+            // Else if there is actually no parent row got by such a parent id
+            } else if (!$parentR = $this->foreign($tc)) {
+
+                // Push a error to errors stack
+                $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404, $parentId_new, $fieldR->title);
+
+            // Else if parent row, got by given parent id, has a non-zero parent row id (mean non-zero grandparent row id for current row)
+            } else if ($parentR->$tc) {
+
+                // Backup $parentR
+                $_parentR = $parentR;
+
+                // Here we ensure that id, that we gonna set up as parent-row id for a current row - is not equal
+                // to current row id, and, even more, ensure that ids of all parent-row's ancestor rows are not
+                // equal to current row id too
+                do {
+
+                    // If ancestor row id is equal to current row id
+                    if ($parentR->$tc == $this->id) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD, $_parentR->title(), $fieldR->title, $this->title());
+
+                        // Break the loop
+                        break;
+
+                    // Else get the upper-level ancestor
+                    } else $parentR = $parentR->foreign($tc);
+
+                } while ($parentR->$tc);
+            }
         }
 
         // Return array of errors
