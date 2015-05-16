@@ -101,7 +101,9 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Значение "%s" по
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Значение "%s" поля "%s" не является годом в формате ГГГГ');
 define('I_ROWSAVE_ERROR_NOTDIRTY_TITLE', 'Нечего сохранять');
 define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'Вы пока не сделали никаких изменений');
-define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Текущая запись не может быть указана как родительская для самой себя в поле "%"');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Текущая запись не может быть указана как родительская для самой себя в поле "%s"');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Запись с идентификатором "%s", указанным в поле "%s", - не существует, и поэтому не может быть выбрана в качестве родительской');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Запись "%s", указанная в поле "%s", является дочерней/подчиненной по отношению к текущей записи "%s", и поэтому не может быть выбрана в качестве родительской');
 define('I_ROWFILE_ERROR_MKDIR', 'Создание директории "%s" в папке "%s" не удалось, несмотря на то что папка доступна для записи');
 define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Создание директории "%s" в папке "%s" не удалось, так как эта папка недоступна для записи');
 define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Директория "%s", необходимая для загрузки, - существует, но недоступна для записи');
