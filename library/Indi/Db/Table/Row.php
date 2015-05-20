@@ -1575,8 +1575,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Strip event attributes, using a callback function
         $html = preg_replace_callback('/(<[a-zA-Z0-9]+)((\s+[a-zA-Z0-9]+\s*=\s*("|\')[^\4>]+\4)*)\s*(\/?>)/', 'safeAttrsCallback', $html);
 
-        // Restore double and single quotes that were prepended with a backslash
-        $html = preg_replace('/&quot;/', '\"', $html); $html = preg_replace('/&#039;/', "\'", $html);
+        // Restore double and single quotes
+        $html = preg_replace('/&quot;/', '"', $html); $html = preg_replace('/&#039;/', "'", $html);
 
         // Return result
         return $html;
