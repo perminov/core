@@ -929,8 +929,8 @@ class Indi_Controller_Admin extends Indi_Controller {
             $currentRowIndex++;
         }
 
-        // Get the order column alias
-        $orderColumnAlias = @array_shift(json_decode(Indi::get()->sort))->property;
+        // Get the order column alias and direction
+        $order = @array_shift(json_decode(Indi::get()->sort));
 
         // For each column
         foreach ($columnA as $n => $columnI) {
@@ -948,14 +948,14 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Write header title of a certain column to a header cell
             $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $columnI['title']);
 
-            if ($columnI['dataIndex'] == $orderColumnAlias) {
+            if ($columnI['dataIndex'] == $order->property) {
 
                 // Create the GD canvas image for hue background and thumbs to be placed there
                 $canvasIm = imagecreatetruecolor(13, 5);
                 imagecolortransparent($canvasIm, imagecolorallocate($canvasIm, 0, 0, 0));
 
                 // Pick hue bg and place it on canvas
-                $iconFn = DOC . STD . '/core/library/extjs4/resources/themes/images/default/grid/sort_' . $columnI['sortState'] . '.gif';
+                $iconFn = DOC . STD . '/core/library/extjs4/resources/themes/images/default/grid/sort_' . strtolower($order->direction) . '.gif';
                 $iconIm = imagecreatefromgif($iconFn);
                 imagecopy($canvasIm, $iconIm, 0, 0, 0, 0, 13, 5);
 
@@ -976,19 +976,19 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'right' => array(
                             'style' => PHPExcel_Style_Border::BORDER_THIN,
                             'color' => array(
-                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'aaccf6':'c5c5c5')
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'aaccf6':'c5c5c5')
                             )
                         ),
                         'top' => array(
                             'style' => PHPExcel_Style_Border::BORDER_THIN,
                             'color' => array(
-                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'BDD5F1':'d5d5d5')
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'BDD5F1':'d5d5d5')
                             )
                         ),
                         'bottom' => array(
                             'style' => PHPExcel_Style_Border::BORDER_THIN,
                             'color' => array(
-                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'A7C7EE':'c5c5c5')
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'A7C7EE':'c5c5c5')
                             )
                         ),
                     ),
@@ -996,10 +996,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
                         'rotation' => 90,
                         'startcolor' => array(
-                            'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'ebf3fd' : 'F9F9F9'),
+                            'rgb' => ($columnI['dataIndex'] == $order->property ? 'ebf3fd' : 'F9F9F9'),
                         ),
                         'endcolor' => array(
-                            'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'd9e8fb' : 'E3E4E6'),
+                            'rgb' => ($columnI['dataIndex'] == $order->property ? 'd9e8fb' : 'E3E4E6'),
                         ),
                     )
                 )
@@ -1012,7 +1012,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'left' => array(
                             'style' => PHPExcel_Style_Border::BORDER_THIN,
                             'color' => array(
-                                'rgb' => ($columnI['dataIndex'] == $orderColumnAlias ? 'BDD5F1':'d5d5d5')
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'BDD5F1':'d5d5d5')
                             )
                         ),
                     )

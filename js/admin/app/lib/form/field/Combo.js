@@ -949,6 +949,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                         }
                     }
 
+                    // Color detection
+                    color = json['data'][i].option ? null : me.color(json['data'][i], json['ids'][i]);
+
                     // Append css classes list as 'class' attribute for an option
                     if (cls.length) item += ' class="' + cls.join(' ') + '"';
 
@@ -957,9 +960,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     // <span style="color: red">Some title</span>. At such cases, php code which is preparing
                     // combo data, strips that html from option, but detect defined color and
                     // store it in ...['data'][i].system['color'] property
-                    if (json['data'][i].system && json['data'][i].system['color']
-                        && typeof json['data'][i].system['color'] == 'string')
-                        css.push('color: ' + json['data'][i].system['color']);
+                    if (color && color.src == 'color' && color.color) css.push('color: ' + color.color);
 
                     // Prepend option title with indent if needed
                     if (json['data'][i].system && json['data'][i].system['indent']
@@ -983,7 +984,6 @@ Ext.define('Indi.lib.form.field.Combo', {
                     if (json['data'][i].option) {
                         item += json['data'][i].option;
                     } else {
-                        color = me.color(json['data'][i], json['ids'][i]);
                         item += color.box;
                         item += color.title;
                     }
@@ -1058,6 +1058,18 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Special function for implementing (if need) a custom logic of how options should be coloured
+     *
+     * @param data
+     * @param value
+     * @param info
+     * @return {*}
+     */
+    getOptionColor: function(data, value, info) {
+        return info;
+    },
+
+    /**
      * Try to find a color declaration in option title or option value or option.system.boxColor,
      * and if found, get that color and build .i-combo-color-box element
      *
@@ -1077,24 +1089,22 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Check if `title` or `value` contain a color definition
         if (color = value.toString().match(this.colorReg)) {
-            info.src = 'value';
+            info.src = 'value'; info.color = color[1];
         } else if (color = info.title.match(this.colorReg)) {
-            info.src = 'title';
+            info.src = 'title'; info.color = color[1];
         } else if (data.system) {
             if (data.system['boxColor'] && typeof data.system['boxColor'] == 'string') {
-                info.src = 'boxColor';
-                color = [true, data.system['boxColor']];
+                info.src = 'boxColor'; info.color = data.system['boxColor'];
             } else if (data.system['color'] && typeof data.system['color'] == 'string') {
-                info.src = 'color';
-                color = [true, data.system['color']];
+                info.src = 'color'; info.color = data.system['color'];
             }
         }
 
-        // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
-        if (color && color.length && color[1]) {
+        // Apply custom logic
+        info = me.getOptionColor(data, value, info);
 
-            // Setup color
-            info.color = color[1];
+        // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
+        if (info.color) {
 
             // Build color box
             if (['boxColor', 'value'].indexOf(info.src) != -1)
