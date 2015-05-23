@@ -2277,8 +2277,17 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Append primary hash and row index (none of them will be appended at first-iteration)
             $nav[$i] .=  $ph . $aix;
 
+            // If current step is not a rowset step, and is the last step
+            if (!preg_match('~/index/~', $nav[$i]) && $i == count($nav) - 1) {
+
+                // Remove 'jump' param from $_GET
+                Indi::get('jump', null);
+
+                // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
+                $this->redirect(array_pop($nav));
+
             // Simulate as if rowset panel was loaded
-            Indi::uri()->dispatch($nav[$i]);
+            } else Indi::uri()->dispatch($nav[$i]);
 
             // Setup sorting
             if (Indi::trail()->section->defaultSortField)
@@ -2289,7 +2298,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Simulate as if rowset data was loaded into rowset panel. This provide
             // Indi::trail()->scope's fulfilness with `found` and `ORDER` properties
-            Indi::uri()->dispatch($nav[$i]. 'json/1/');
+            if (preg_match('~/index/~', $nav[$i])) Indi::uri()->dispatch($nav[$i]. 'format/json/');
 
             // Get the id of a row, that we will be simulating navigation
             // to subsection, there that row's nested entries are located
