@@ -454,7 +454,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: this.bid() + (item ? '-field$' + item.field.alias : '-header'),
             xtype: 'displayfield',
-            cls: (item ? '' : 'i-field ') + 'i-field-span',
+            cls: (item ? '' : 'i-field ') + 'i-field-span' + (item ? '' : ' i-field-span-title'),
             fieldLabel: '',
             value: (item ? item.field.title : this.ti().model.title),
             align: 'center'

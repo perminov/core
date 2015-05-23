@@ -67,6 +67,9 @@
 .i-field .x-field-label-cell, .i-field .x-form-item-body{
     vertical-align: middle;
 }
+.i-field.i-field-span.i-field-span-title .x-form-display-field{
+    font-size: 12px;
+}
 .i-field.i-field-span .x-form-display-field{
     text-align: center;
     padding-top: 0;
