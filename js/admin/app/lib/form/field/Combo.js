@@ -1885,6 +1885,9 @@ Ext.define('Indi.lib.form.field.Combo', {
     r: function(id) {
         var me = this, index;
 
+        // Setup default value of `id` argument
+        if (!id) id = me.val().split(',')[0];
+
         // Get the index of selected option id in me.store.ids
         index = me.store.ids.indexOf(me.store.enumset && !id.toString().match(/^[1-9][0-9]{0,9}$/) ? id : parseInt(id));
 
@@ -2146,7 +2149,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // If propS is a string, representing an integer number - convert it into interger-type and return
         //if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
-        if (propS.match(/^-?[1-9][0-9]{0,9}|0$/)) return parseInt(propS);
+        if (propS.match(/^(-?[1-9][0-9]{0,9}|0)$/)) return parseInt(propS);
 
         // If propS is a string, representing a floating-point number - convert it into float-type and return
         //if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);

@@ -1437,6 +1437,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param string $type current|original|modified|temporary
      * @param bool $deep
+     * @param null $purp
      * @return array
      */
     public function toArray($type = 'current', $deep = true, $purp = null) {
@@ -1618,6 +1619,18 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Else we assume that $check argument is field name, so the mismatch for especially that field will be returned
         } else return $this->_mismatch[$check];
 
+        // Return array of errors
+        return $this->validate();
+    }
+
+    /**
+     * Validate all modified fields, collect their errors in $this->_mismatch array, with field names as keys
+     * and return it
+     *
+     * @return array
+     */
+    public function validate() {
+
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
 
@@ -1681,8 +1694,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                         } else  $value .= self::safeHtml($chunk[$i]);
                     }
 
-                    // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
-                    // and by stripping event attributes from allowed tags
+                // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
+                // and by stripping event attributes from allowed tags
                 } else $value = self::safeHtml($value);
 
             // If element is 'move'
@@ -1848,7 +1861,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         // Try to get a unix-timestamp of a date stored in $value variable
                         $utime = strtotime($value);
 
-                        // If date, builded from $utime and formatted according to 'displayFormat' param
+                        // If date, built from $utime and formatted according to 'displayFormat' param
                         // is equal to initial value of $value variable - this will mean that date, stored
                         // in $value is a valid date, so we
                         if (date($fieldR->params['displayFormat'], $utime) == $value) {
@@ -2437,7 +2450,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
-        // Return array of errors
+        // Return found mismatches
         return $this->_mismatch;
     }
 
