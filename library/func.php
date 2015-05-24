@@ -690,11 +690,17 @@ function jconfirm($msg) {
 /**
  * Normalize the price-value
  *
- * @param $price
- * @return float
+ * @param float|int $price
+ * @param bool $formatted
+ * @return float|string
  */
-function price($price) {
-    return ((int) round($price * 100))/100;
+function price($price, $formatted = false) {
+
+    // Get price
+    $float = ((int) round($price * 100))/100;
+
+    // Return that price as float value or as formatted string
+    return $formatted ? number_format($float, 2, '.', ' ') : $float;
 }
 
 /**
