@@ -11,6 +11,9 @@ Ext.define('Indi.lib.form.field.Radios', {
     alternateClassName: 'Indi.form.Radios',
 
     // @inheritdoc
+    mixins: {fieldBase: 'Ext.form.field.Base'},
+
+    // @inheritdoc
     alias: 'widget.radios',
 
     // @inheritdoc
@@ -19,11 +22,21 @@ Ext.define('Indi.lib.form.field.Radios', {
     // @inheritdoc
     vertical: true,
 
+    /**
+     * Append `zeroValue` property initialisation
+     */
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+        me.mixins.fieldBase._constructor.call(this, arguments);
+    },
+
     // @inheritdoc
     initComponent: function() {
         var me = this;
         me.items = me.itemA();
         me.callParent();
+        me.mixins.fieldBase._initComponent.call(this, arguments);
     },
 
     /**
@@ -83,6 +96,9 @@ Ext.define('Indi.lib.form.field.Radios', {
 
         // Call parent
         me.callParent();
+
+        // Fire `enablebysatellite` event
+        me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
     /**
@@ -112,6 +128,9 @@ Ext.define('Indi.lib.form.field.Radios', {
                 }
             }
         });
+
+        // Call mixin's _onChange() method
+        me.mixins.fieldBase._onChange.call(this, arguments);
     },
 
     /**
@@ -124,6 +143,14 @@ Ext.define('Indi.lib.form.field.Radios', {
         return this.callParent(arguments)[this.name];
     },
 
+    /**
+     * This function is declared here, because it was not declared in parent class
+     *
+     * @return {*}
+     */
+    getSubmitValue: function() {
+        return this.getValue();
+    },
 
     /**
      * Override native {xtype:radiogroup}'s checkChange() method, and use {Ext.form.field.Field}'s one directly,
