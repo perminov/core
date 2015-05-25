@@ -138,4 +138,13 @@ class Admin_TemporaryController extends Indi_Controller {
         }
         die('ok');
     }
+    
+    /*public function accessAction() {
+        Indi::db()->query('
+            UPDATE `section2action`
+            SET `profileIds` = CONCAT(`profileIds`, ",18")
+            WHERE FIND_IN_SET("12", `profileIds`) AND CONCAT(",", `profileIds`, ",") NOT LIKE ",18,"
+        ');
+        die('ok');
+    }*/
 }
