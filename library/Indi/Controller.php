@@ -167,12 +167,12 @@ class Indi_Controller {
         // Find a field, that column is linked to
         foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
 
-        // If there is no grid field with such a name, return null
-        if ($fieldR->alias !== $column) return null;
-
         // If no direction - set as ASC by default
         if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
 
+        // If there is no grid field with such a name, return null
+        if ($fieldR->alias !== $column) return $column == 'id' ? '`' . $column . '` ' . $direction : null;
+        
         // Setup a foreign rows for $fieldR's foreign keys
         $fieldR->foreign('columnTypeId');
 
