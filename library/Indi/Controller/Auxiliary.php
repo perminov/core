@@ -52,7 +52,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         //if ($fieldR->params['prependEntityTitle'] == 'true') $title[] = Indi::model($fieldR->entityId)->title() . ',';
 
         // Append row title to filename parts array
-        if ($fieldR->params['rowTitle'] != 'false') $title[] = $r->title;
+        if ($fieldR->params['rowTitle'] != 'false') $title[] = $r->title();
 
         // Append entity title to filename parts array, if needed
         if ($fieldR->params['appendFieldTitle'] != 'false') $title[] = '- ' . $fieldR->title;
@@ -89,6 +89,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // Start download
         header('Content-Type: ' . $type);
         header('Content-Disposition: attachment; filename="' . $title . '";');
+        header('Content-Length: ' . filesize($abs));
         readfile($abs);
         die();
     }
