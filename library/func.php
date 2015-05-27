@@ -282,7 +282,7 @@ function ago($datetime, $postfix = 'назад') {
 function tbq($q = 2, $versions = '', $showNumber = true) {
 
     // Distribute quantity measure spell versions
-    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(explode(',', $versions));
+    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions));
 
     // Foreach format
     foreach ($formatA as $formatK => $formatV) {
