@@ -382,14 +382,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     /**
      * Reset all rowset filters and keyword
      */
-    filterReset: function() {
+    filterReset: function(noReload) {
         var me = this, resetFn, keywordC, filterCmpIdPrefix, v, limits, control, alias, i, j;
 
         // If filter/keyword search is not currently used
         if (!me.atLeastOneFilterIsUsed()) {
 
             // Show message box
-            Ext.MessageBox.show({
+            if (!noReload) Ext.MessageBox.show({
                 title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
                 msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
                 buttons: Ext.MessageBox.OK,
@@ -464,7 +464,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         if (keywordC && keywordC.getValue()) keywordC.setValue('');
 
         // Reload store for empty filter values to be picked up.
-        me.filterChange({});
+        if (!noReload) me.filterChange({});
     },
 
     /**
