@@ -307,7 +307,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
             widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
             visible = grid.getWidth() - (grid.getView().hasScrollY() ? 16 : 0), scw = me.rowset.smallColumnWidth,
-            fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free, longest;
+            fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free, longest, summaryData,
+            summaryFeature = grid.getView().getFeature(0);
+
+        // Get summary data
+        if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
@@ -329,6 +333,17 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     : r.get(columnA[i].dataIndex);
                 if (cell.length > longest.length) longest = cell;
             });
+
+            // Don't forgot about summaries
+            if (columnA[i].summaryType) {
+                cell = typeof columnA[i].renderer == 'function'
+                    ? columnA[i].renderer(summaryData[columnA[i].id])
+                    : summaryData[columnA[i].id];
+                if (cell.length > longest.length) longest = cell;
+            } else if (columnA[i].summaryText) {
+                cell = columnA[i].summaryText;
+                if (cell.length > longest.length) longest = cell;
+            }
 
             // Get width of the longest cell
             longestWidth = Indi.metrics.getWidth(longest);
