@@ -335,7 +335,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             });
 
             // Don't forgot about summaries
-            if (columnA[i].summaryType) {
+            if (columnA[i].summaryType && Ext.isObject(summaryData)) {
                 cell = typeof columnA[i].renderer == 'function'
                     ? columnA[i].renderer(summaryData[columnA[i].id])
                     : summaryData[columnA[i].id];
