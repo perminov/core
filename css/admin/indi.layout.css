@@ -121,6 +121,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-column-header-last {
     border-right-width: 0 !important;
 }
+.i-grid-column-span-right {
+    border-right-style: dashed;
+}
 .x-grid-group-title {font-weight: normal;}
 .x-grid-row-summary .x-grid-cell {
     color: null;
