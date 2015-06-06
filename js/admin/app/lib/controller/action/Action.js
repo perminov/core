@@ -114,51 +114,6 @@ Ext.define('Indi.lib.controller.action.Action', {
         return s;
     },
 
-    // @inheritdoc
-    initComponent: function() {
-        var me = this;
-
-        // Set up docked items
-        me.panel.dockedItems = me.panelDockedA();
-
-        // Remove panel header
-        me.panel.header = false;
-
-        // If all contents should be added to existing panel
-        if (!me.cfg.into) {
-
-            var windowId = me.panel.id.replace(/-wrapper$/, '-window');
-            var window = Ext.widget({
-                id: windowId,
-                xtype: 'desktopwindow',
-                title: me.panel.title,
-                tools: me.panelToolA(),
-                ctx: me
-            });
-
-            // Append tools and toolbars to the main panel
-            me.panel.renderTo = window.getTargetEl();
-
-            // Update id of the main panel (temporary)
-            Indi.centerId = me.panel.id;
-        }
-
-        // Create panel instance
-        var panel = Ext.widget(me.panel);
-
-        // If created instance should be inserted as a tab - do it
-        if (me.cfg.into) Ext.getCmp(me.cfg.into).add(panel);
-
-        // If panel has `onLoad` property, and it's a function - call it
-        if (Ext.isFunction(panel.onLoad)) panel.onLoad(me);
-
-        // If special `onLoad` callback is provided within me.cfg - call it
-        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, me);
-
-        // Call parent
-        me.callParent();
-    },
-
     /**
      * Builder for items arrays. Used for toolbars, items within each toolbar, etc
      *
@@ -479,5 +434,207 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Set up docked items
+        me.panel.dockedItems = me.panelDockedA();
+
+        // Remove panel header
+        me.panel.header = false;
+
+        // If all contents should be added to existing panel
+        if (!me.cfg.into) {
+
+            // Append tools and toolbars to the main panel
+            me.panel.renderTo = me.getWindow().getTargetEl();
+
+            // Update id of the main panel (temporary)
+            Indi.centerId = me.panel.id;
+        }
+
+        // Create panel instance
+        var panel = Ext.widget(me.panel);
+
+        // If created instance should be inserted as a tab - do it
+        if (me.cfg.into) Ext.getCmp(me.cfg.into).add(panel);
+
+        // If panel has `onLoad` property, and it's a function - call it
+        if (Ext.isFunction(panel.onLoad)) panel.onLoad(me);
+
+        // If special `onLoad` callback is provided within me.cfg - call it
+        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, me);
+
+        // Call parent
+        me.callParent();
+    },
+
+    getWindow: function() {
+        var me = this, app = Indi.app, window, active = app.getActiveWindow(), create = false, a = {}, n = {}, i, cfg;
+
+        // If we have no windows yet - set `create` as `true`, else
+        if (!active) create = true; else {
+
+            // Get info about active window
+            a.section = active.ctx.ti().section.alias;
+            a.action = active.ctx.ti().action.alias;
+            a.mode = active.ctx.ti().action.mode.toLowerCase();
+            a.row =  active.ctx.ti().row ? active.ctx.ti().row.id : null;
+
+            // Get info about new-window-candidate
+            n.section = me.ti().section.alias;
+            n.action = me.ti().action.alias;
+            n.mode = me.ti().action.mode.toLowerCase();
+            n.row =  me.ti().row ? me.ti().row.id : null;
+
+            // If we're going to create same-section panel
+            if (a.section == n.section) {
+
+                // If active window's panel is a rowset-panel
+                if (a.mode == 'rowset') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+
+                    // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `false`
+                        create = false;
+                    }
+
+                // Else if active window's panel is a row-panel
+                } else if (a.mode == 'row') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // If active window's panel is a same-action panel as the panel we're going to create
+                        create = a.action != n.action;
+
+                        // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `false`
+                        create = true;
+                    }
+                }
+
+            // Else if we're going to create panel, that have section,
+            // that is a child section for active window's section
+            } else if (me.isChildOf(a.section)) {
+
+                // If active window's panel is a rowset-panel
+                if (a.mode == 'rowset') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+
+                    // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `false`
+                        create = true;
+                    }
+
+                    // Else if active window's panel is a row-panel
+                } else if (a.mode == 'row') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+
+                        // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+                    }
+                }
+
+            // Else if we're going to create panel, that have section,
+            // that is a parent section for active window's section
+            } else if (active.ctx.isChildOf(n.section)) {
+
+                // If we're going to create a row-panel
+                if (n.mode == 'row') {
+
+                    // Set up `create` flag as `false`
+                    create = false;
+
+                    // Else iа we're going to create a rowset-panel
+                } else if (n.mode == 'rowset') {
+
+                    // Set up `create` flag as `false`
+                    create = false;
+                }
+
+            // Else if we're going to create panel, that have section,
+            // that is not a parent or child for active window's section
+            } else {
+
+                // Set up `create` flag as `true`
+                create = true;
+            }
+        }
+
+        // Set up window partial cfg
+        cfg = {
+            wrapperId: me.panel.id,
+            title: me.panel.title,
+            ctx: me
+        }
+
+        // If new window should be created
+        if (create) {
+
+            // Try to check if current windows collection already contains a window that we're going to create
+            i = app.windows.collect('wrapperId').indexOf(me.panel.id);
+
+            // Id not contains - create that window
+            if (i == -1)
+                window = Ext.widget(Ext.merge({
+                    xtype: 'desktopwindow',
+                    tools: me.panelToolA(),
+                }, cfg));
+
+            // Else use existing window
+            else window = app.windows.getAt(i).apply(cfg).toFront();
+
+        // Else set up active window usage as a place for new panel
+        } else window = active.apply(cfg);
+
+        // Return
+        return window;
+    },
+
+    /**
+     * Check whether or not current section is child for `parent` section
+     *
+     * @param parent
+     * @return {Boolean}
+     */
+    isChildOf: function(parent) {
+        var me = this, i;
+
+        // Check all parent trail items and investigate whether or not
+        // some of them has section.alias equal to `parent` argument
+        for (i = me.route.length - 2; i > 0; i--)
+            if (me.route[i].section.alias == parent)
+                return true;
+
+        // Return
+        return false;
     }
 });
