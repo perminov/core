@@ -486,7 +486,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     public function toGridData(Indi_Trail_Admin_Item $ti) {
 
         // If there are no rows in $this argument - return
-        if ($this->_count == 0) return;
+        if ($this->_count == 0) return array();
 
         // Declare an array for aliases of grid fields
         $columnA = array('id');

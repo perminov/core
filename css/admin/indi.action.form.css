@@ -94,6 +94,10 @@
     padding: 2px 0 0 0;
 }
 
+.i-field textarea.x-form-field {
+    padding: 2px;
+}
+
 /* Style for action form topbar spinners*/
 .x-toolbar .x-form-trigger-wrap .x-form-spinner-down{
     background-position: 0 -11px;
