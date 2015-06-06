@@ -52,10 +52,15 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         //if ($fieldR->params['prependEntityTitle'] == 'true') $title[] = Indi::model($fieldR->entityId)->title() . ',';
 
         // Append row title to filename parts array
-        $title[] = $r->title;
+        if ($fieldR->params['rowTitle'] != 'false') $title[] = $r->title();
 
         // Append entity title to filename parts array, if needed
         if ($fieldR->params['appendFieldTitle'] != 'false') $title[] = '- ' . $fieldR->title;
+
+        // Append entity title to filename parts array, if needed
+        if (strlen($fieldR->params['postfix'])) {
+            Indi::$cmpTpl = $fieldR->params['postfix']; eval(Indi::$cmpRun); $title[] = Indi::cmpOut();
+        }
 
         // Get the extension of the file
         $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $abs);
@@ -78,9 +83,13 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // Close the fileinfo resource
         finfo_close($finfo);
 
-        // Start donwload
+        // Replace " with ', as browsers replaces " with _ or - or, maybe, with something else
+        $title = str_replace('"', "'", $title);
+        
+        // Start download
         header('Content-Type: ' . $type);
         header('Content-Disposition: attachment; filename="' . $title . '";');
+        header('Content-Length: ' . filesize($abs));
         readfile($abs);
         die();
     }

@@ -199,6 +199,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         if (Ext.getCmp(keywordCmpId))
             Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
 
+        // Ensure page size to be fully dependent on me.ti().section.rowsOnPage
+        me.getStore().pageSize = me.getStore().lastOptions.limit = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage;
+
         // If there is no noReload flag turned on
         if (!cmp.noReload) {
 
@@ -213,7 +216,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             me.getStore().currentPage = 1;
             me.getStore().lastOptions.page = 1;
             me.getStore().lastOptions.start = 0;
-
+            
             // If used filter is a combobox or multislider, we reload store data immideatly
             if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
                 me.preventViewFocus = true;
@@ -273,7 +276,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.bid() + '-store',
             fields: me.storeFieldA(),
             sorters: me.storeSorters(),
-            pageSize: parseInt(me.ti().section.rowsOnPage),
+            pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
             proxy: new Ext.data.HttpProxy({
                 method: 'POST',
@@ -305,109 +308,163 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Reset all rowset filters
+     * Check whether filter/keyword search is currently used.
+     *
+     * @return {Boolean}
      */
-    filterReset: function() {
-        var me = this;
+    atLeastOneFilterIsUsed: function() {
+        var me = this, filterCmpIdPrefix, j, l, i, v, alias, control, atLeastOneFilterIsUsed = false,
+            loopA, limits, keywordC;
 
         // Prepare a prefix for filter component ids
-        var filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
-
-        // Setup a flag, what will
-        var atLeastOneFilterIsUsed = false;
+        filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
 
         // We define an array of functions, first within which will check if at least one filter is used
         // and if so, second will do a store reload
-        var loopA = [function(cmp, control){
+        loopA = [function(cmp, control){
             if (control == 'color') {
                 if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
             } else {
                 if ([null, ''].indexOf(cmp.getValue()) == -1) {
-                    if (JSON.stringify(cmp.getValue()) != '[""]') {
-                        atLeastOneFilterIsUsed = true;
-                    }
+                    if (JSON.stringify(cmp.getValue()) != '[""]') atLeastOneFilterIsUsed = true;
                 }
-            }
-        }, function(cmp, control){
-            if (control == 'color') {
-                cmp.setValue(0, 0, false);
-                cmp.setValue(1, 360, false);
-            } else {
-                cmp.setValue('');
             }
         }];
 
         // We iterate throgh filter twice - for each function within loopA array
-        for (var l = 0; l < loopA.length; l++) {
+        for (l = 0; l < loopA.length; l++) {
 
             // We prevent unsetting filters values if they are already empty
             if (l == 1 && atLeastOneFilterIsUsed == false) break;
 
             // For each filter
-            for (var i = 0; i < me.ti().filters.length; i++) {
+            for (i = 0; i < me.ti().filters.length; i++) {
 
                 // Define a shortcut for filter field alias
-                var alias =  me.ti().filters[i].foreign('fieldId').alias;
+                alias =  me.ti().filters[i].foreign('fieldId').alias;
 
                 // Shortcut for control element, assigned to filter field
-                var control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
+                control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
 
                 // If current filter is a range-filter, we reset values for two filter components, that
                 // are representing min and max values
                 if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
 
                     // Range filters limits's postfixes
-                    var limits = ['gte', 'lte'];
+                    limits = ['gte', 'lte'];
 
                     // Setup empty values for range filters
-                    for (var j = 0; j < limits.length; j++) {
-                        Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
-                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
-                        Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
-                    }
+                    for (j = 0; j < limits.length; j++) loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
 
                     // Else we reset one filter component
                 } else if (control == 'color') {
 
                     // Resetted values for color multislider filter
-                    var v = [0, 360];
+                    v = [0, 360];
 
                     // Set a value for each multislider thumb
-                    for (var j = 0; j < v.length; j++) {
-                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
-                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
-                    }
+                    for (j = 0; j < v.length; j++) loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
 
                     // Else set by original way
-                } else {
-                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                    loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
-                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
-                }
+                } else loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
             }
         }
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        var keywordCmp = Ext.getCmp(filterCmpIdPrefix.replace(/\$$/, '')).query('[isKeyword]')[0];
-        if (keywordCmp && keywordCmp.getValue()) {
-            keywordCmp.setValue('');
-            atLeastOneFilterIsUsed = true;
+        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
+        if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+
+        // Return
+        return atLeastOneFilterIsUsed;
+    },
+
+    /**
+     * Reset all rowset filters and keyword
+     */
+    filterReset: function(noReload) {
+        var me = this, resetFn, keywordC, filterCmpIdPrefix, v, limits, control, alias, i, j;
+
+        // If filter/keyword search is not currently used
+        if (!me.atLeastOneFilterIsUsed()) {
+
+            // Show message box
+            if (!noReload) Ext.MessageBox.show({
+                title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
+                msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
+                buttons: Ext.MessageBox.OK,
+                icon: Ext.MessageBox.INFO
+            });
+
+            // Return
+            return;
         }
 
-        // Reload store for empty filter values to be picked up.
-        // We do reload only in case if at least one filter was emptied by reset filter tool
-        if (atLeastOneFilterIsUsed) me.filterChange({});
+        // Prepare a prefix for filter component ids
+        filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
 
-        // Otherwise we display a message box saying that filters cannot be emptied because
-        // they are already empty
-        else Ext.MessageBox.show({
-            title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
-            msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
-            buttons: Ext.MessageBox.OK,
-            icon: Ext.MessageBox.INFO
-        });
+        // We define an array of functions, first within which will check if at least one filter is used
+        // and if so, second will do a store reload
+        resetFn = function(cmp, control){
+            if (control == 'color') {
+                cmp.setValue(0, 0, false);
+                cmp.setValue(1, 360, false);
+            } else {
+                cmp.setValue('');
+            }
+        };
+
+        // For each filter
+        for (i = 0; i < me.ti().filters.length; i++) {
+
+            // Define a shortcut for filter field alias
+            alias =  me.ti().filters[i].foreign('fieldId').alias;
+
+            // Shortcut for control element, assigned to filter field
+            control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
+
+            // If current filter is a range-filter, we reset values for two filter components, that
+            // are representing min and max values
+            if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
+
+                // Range filters limits's postfixes
+                limits = ['gte', 'lte'];
+
+                // Setup empty values for range filters
+                for (j = 0; j < limits.length; j++) {
+                    Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
+                    Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
+                }
+
+                // Else we reset one filter component
+            } else if (control == 'color') {
+
+                // Resetted values for color multislider filter
+                v = [0, 360];
+
+                // Set a value for each multislider thumb
+                for (j = 0; j < v.length; j++) {
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias), control);
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                }
+
+            // Else set by original way
+            } else {
+                Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                resetFn(Ext.getCmp(filterCmpIdPrefix + alias));
+                Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+            }
+        }
+
+        // Here we handle case, then we have keyword-search field injected into
+        // filters docked panel, rather than in master docked panel
+        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
+        if (keywordC && keywordC.getValue()) keywordC.setValue('');
+
+        // Reload store for empty filter values to be picked up.
+        if (!noReload) me.filterChange({});
     },
 
     /**

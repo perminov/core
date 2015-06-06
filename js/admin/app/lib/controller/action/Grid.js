@@ -305,27 +305,54 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
-            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, cellWidth,
+            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
             visible = grid.getWidth() - (grid.getView().hasScrollY() ? 16 : 0), scw = me.rowset.smallColumnWidth,
-            fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free;
+            fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free, longest, summaryData,
+            summaryFeature = grid.getView().getFeature(0);
+
+        // Get summary data
+        if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
 
             // Get initial column width, based on a column title metrics
-            widthA[i] = Indi.metrics.getWidth(columnA[i].text) + px.ellipsis;
+            widthA[i] = Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
 
             // Increase the width of a column, that store is sorted by, to provide an additional amount
             // of width for sort icon, that is displayed next after column title, within the same column
             if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
 
-            // Increase the width, to fit data, rendered within any cell under current column
+            // Reset length
+            longest = '';
+
+            // Get the longest (within current column) cell contents
             store.each(function(r){
-                cellWidth = Indi.metrics.getWidth(typeof columnA[i].renderer == 'function'
+                cell = typeof columnA[i].renderer == 'function'
                     ? columnA[i].renderer(r.get(columnA[i].dataIndex))
-                    : r.get(columnA[i].dataIndex)) + px.ellipsis;
-                if (cellWidth > widthA[i]) widthA[i] = cellWidth;
+                    : r.get(columnA[i].dataIndex);
+                if (cell.length > longest.length) longest = cell;
             });
+
+            // Don't forgot about summaries
+            if (columnA[i].summaryType && Ext.isObject(summaryData)) {
+                cell = typeof columnA[i].renderer == 'function'
+                    ? columnA[i].renderer(summaryData[columnA[i].id])
+                    : summaryData[columnA[i].id];
+                if (cell.length > longest.length) longest = cell;
+            } else if (columnA[i].summaryText) {
+                cell = columnA[i].summaryText;
+                if (cell.length > longest.length) longest = cell;
+            }
+
+            // Get width of the longest cell
+            longestWidth = Indi.metrics.getWidth(longest);
+
+            // Update widthA[i] if need
+            if (longestWidth > widthA[i]) widthA[i] = longestWidth;
+
+            // Append ellipsis space
+            widthA[i] += px.ellipsis;
 
             // Limit the maximum column width, if such a config was set
             if (columnA[i].maxWidth && widthA[i] > columnA[i].maxWidth) widthA[i] = columnA[i].maxWidth;
