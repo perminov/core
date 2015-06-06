@@ -124,7 +124,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     errorByFieldO = mismatch.errors;
 
                     // Detect are error related to current form fields, or related to fields of some other entry,
-                    // that is set up to be automatically updated (as an trigger operation, queuing after the primary one)
+                    // that is set up to be automatically updated (as a trigger operation, queuing after the primary one)
                     trigger = mismatch.entity.title != this.ctx().ti().model.title || mismatch.entity.entry != this.ctx().ti().row.id;
 
                     Object.keys(errorByFieldO).forEach(function(i){
@@ -146,7 +146,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                             if (Ext.isString(certainFieldMsg))
 
                                 // Cut off field title mention from message
-                                certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
+                                certainFieldMsg = certainFieldMsg.replace('"' + cmp.fieldLabel + '"', '').replace(/""/g, '');
 
                             // Mark field as invalid
                             cmp.markInvalid(certainFieldMsg);
@@ -454,7 +454,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: this.bid() + (item ? '-field$' + item.field.alias : '-header'),
             xtype: 'displayfield',
-            cls: (item ? '' : 'i-field ') + 'i-field-span',
+            cls: (item ? '' : 'i-field ') + 'i-field-span' + (item ? '' : ' i-field-span-title'),
             fieldLabel: '',
             value: (item ? item.field.title : this.ti().model.title),
             align: 'center'
@@ -585,7 +585,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             maxLength: 12,
             minValue: 0,
             maxValue: Math.pow(10, 9) - 0.01,
-            precisionPad: true
+            precisionPad: true,
+            value: parseFloat(item.value) || item.value
         };
     },
 
@@ -599,7 +600,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             xtype: 'textarea',
             grow: true,
-            minHeight: 32,
+            growMin: 30,
             allowBlank: true
         }
     },

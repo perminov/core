@@ -1437,6 +1437,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param string $type current|original|modified|temporary
      * @param bool $deep
+     * @param null $purp
      * @return array
      */
     public function toArray($type = 'current', $deep = true, $purp = null) {
@@ -1575,8 +1576,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Strip event attributes, using a callback function
         $html = preg_replace_callback('/(<[a-zA-Z0-9]+)((\s+[a-zA-Z0-9]+\s*=\s*("|\')[^\4>]+\4)*)\s*(\/?>)/', 'safeAttrsCallback', $html);
 
-        // Restore double and single quotes that were prepended with a backslash
-        $html = preg_replace('/&quot;/', '\"', $html); $html = preg_replace('/&#039;/', "\'", $html);
+        // Restore double and single quotes
+        $html = preg_replace('/&quot;/', '"', $html); $html = preg_replace('/&#039;/', "'", $html);
 
         // Return result
         return $html;
@@ -1617,6 +1618,18 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Else we assume that $check argument is field name, so the mismatch for especially that field will be returned
         } else return $this->_mismatch[$check];
+
+        // Return array of errors
+        return $this->validate();
+    }
+
+    /**
+     * Validate all modified fields, collect their errors in $this->_mismatch array, with field names as keys
+     * and return it
+     *
+     * @return array
+     */
+    public function validate() {
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
@@ -1681,8 +1694,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                         } else  $value .= self::safeHtml($chunk[$i]);
                     }
 
-                    // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
-                    // and by stripping event attributes from allowed tags
+                // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
+                // and by stripping event attributes from allowed tags
                 } else $value = self::safeHtml($value);
 
             // If element is 'move'
@@ -1848,7 +1861,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         // Try to get a unix-timestamp of a date stored in $value variable
                         $utime = strtotime($value);
 
-                        // If date, builded from $utime and formatted according to 'displayFormat' param
+                        // If date, built from $utime and formatted according to 'displayFormat' param
                         // is equal to initial value of $value variable - this will mean that date, stored
                         // in $value is a valid date, so we
                         if (date($fieldR->params['displayFormat'], $utime) == $value) {
@@ -2389,22 +2402,55 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->$column = $value;
         }
 
-        // If current model has a tree-column, and current row is not an existing new row, and tree column value was
-        // modified, and it is going to be same as current row id
-        if ($this->model()->treeColumn() && $this->id && $this->_modified[$this->model()->treeColumn()] == $this->id) {
+        // Get tree-column name
+        $tc = $this->model()->treeColumn();
 
-            // Define a shortcut for tree column field alias
-            $treeColumn = $this->model()->treeColumn();
+        // If current model has a tree-column, and current row is an existing row and tree column value was modified
+        if ($tc && $this->id && ($parentId_new = $this->_modified[$tc])) {
 
-            // Get the tree column field
-            $fieldR = $this->model()->fields($treeColumn);
+            // Get the tree column field row object
+            $fieldR = $this->model()->fields($tc);
 
-            // Push a error to errors stack
-            $this->_mismatch[$treeColumn] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID, $fieldR->title);
+            // If tree-column's value it is going to be same as current row id
+            if ($parentId_new == $this->id) {
 
+                // Push a error to errors stack
+                $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF, $fieldR->title);
+
+            // Else if there is actually no parent row got by such a parent id
+            } else if (!$parentR = $this->foreign($tc)) {
+
+                // Push a error to errors stack
+                $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404, $parentId_new, $fieldR->title);
+
+            // Else if parent row, got by given parent id, has a non-zero parent row id (mean non-zero grandparent row id for current row)
+            } else if ($parentR->$tc) {
+
+                // Backup $parentR
+                $_parentR = $parentR;
+
+                // Here we ensure that id, that we gonna set up as parent-row id for a current row - is not equal
+                // to current row id, and, even more, ensure that ids of all parent-row's ancestor rows are not
+                // equal to current row id too
+                do {
+
+                    // If ancestor row id is equal to current row id
+                    if ($parentR->$tc == $this->id) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD, $_parentR->title(), $fieldR->title, $this->title());
+
+                        // Break the loop
+                        break;
+
+                    // Else get the upper-level ancestor
+                    } else $parentR = $parentR->foreign($tc);
+
+                } while ($parentR->$tc);
+            }
         }
 
-        // Return array of errors
+        // Return found mismatches
         return $this->_mismatch;
     }
 
@@ -3245,7 +3291,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $call = array_pop(array_slice(debug_backtrace(), 1, 1));
 
         // Make the call
-        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], $call['args']);
+        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
     }
     
     /**

@@ -282,7 +282,7 @@ function ago($datetime, $postfix = 'назад') {
 function tbq($q = 2, $versions = '', $showNumber = true) {
 
     // Distribute quantity measure spell versions
-    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(explode(',', $versions));
+    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions));
 
     // Foreach format
     foreach ($formatA as $formatK => $formatV) {
@@ -690,11 +690,17 @@ function jconfirm($msg) {
 /**
  * Normalize the price-value
  *
- * @param $price
- * @return float
+ * @param float|int $price
+ * @param bool $formatted
+ * @return float|string
  */
-function price($price) {
-    return ((int) round($price * 100))/100;
+function price($price, $formatted = false) {
+
+    // Get price
+    $float = ((int) round($price * 100))/100;
+
+    // Return that price as float value or as formatted string
+    return $formatted ? number_format($float, 2, '.', ' ') : $float;
 }
 
 /**
@@ -709,13 +715,13 @@ function alias($title){
     $s = array('а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
         'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
         't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
-        'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&', '/');
+        'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&', '/', '_');
 
     // Replacements
     $r = array('a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
         '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
         't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
-        'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-');
+        'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-', '_');
 
     // Declare variable for alias
     $alias = '';
