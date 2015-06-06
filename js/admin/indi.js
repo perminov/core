@@ -732,10 +732,7 @@ Ext.define('Indi', {
     getActiveWindow: function () {
         var win = null, zmgr = Indi.app.getDesktopZIndexManager();
 
-        if (zmgr) {
-            // We cannot rely on activate/deactive because that fires against non-Window
-            // components in the stack.
-
+        if (zmgr)
             zmgr.eachTopDown(function (comp) {
                 if (comp.isWindow && !comp.hidden) {
                     win = comp;
@@ -743,14 +740,12 @@ Ext.define('Indi', {
                 }
                 return true;
             });
-        }
 
         return win;
     },
 
     getDesktopZIndexManager: function () {
         var windows = this.windows;
-        // TODO - there has to be a better way to get this...
         return (windows.getCount() && windows.getAt(0).zIndexManager) || null;
     },
 
