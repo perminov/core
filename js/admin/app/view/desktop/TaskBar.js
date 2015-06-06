@@ -14,36 +14,13 @@ Ext.define('Ext.ux.desktop.TaskBar', {
             html: '<div id="i-center-north-admin">' + Indi.user + ' <a href="' + Indi.pre + '/logout/">' + Indi.lang.I_LOGOUT + '</a></div>',
             padding: 0,
             border: 0,
-            margin: '0 5 0 0'
-        };
-        me.ubar1 = {
-            xtype: 't',
-            /*height: 20,
-            width: 300,
-            style: {
-                fontSize: '12px'
-            },
-            tpl:
-                '<div>' +
-  //                  '<div id="i-center-north-date">{date}</div>' +
-                    '<div id="i-center-north-admin">{admin} <a href="{pre}/logout/">{logout}</a></div>' +
-//                    '<div id="i-center-north-trail"></div>' +
-                '</div>',
-            //minHeight: 36,
-            border: 0,
-            afterRender: function() {
-                this.tpl.overwrite(this.el, {
-//                    date: Ext.Date.format(new Date(Indi.time * 1000), Indi.view.Viewport.dateUpdaterFormat),
-                    admin: Indi.user,
-                    pre: Indi.pre,
-                    logout: Indi.lang.I_LOGOUT
-                });
-                this.superclass.afterRender.apply(this, arguments);
-            }*/
+            margin: '0 5 0 0',
+            flex: 1,
         };
         me.wbar = Ext.widget({
             xtype: 'toolbar',
-            flex: 1,
+            enableOverflow: true,
+            //flex: 1,
             border: 0,
             padding: 0,
             margin: 0,
@@ -53,16 +30,24 @@ Ext.define('Ext.ux.desktop.TaskBar', {
             style: {
                 background: 'none'
             },
+            width: '70%',
             defaults: {
                 toggleGroup: 'all',
+                textAlign: 'left',
+                //minWidth: 100,
                 height: 21,
+                height: 16,
+                shrinkWrap: 1,
+                //maxWidth: 100,
                 padding: '0 0 0 3',
+                cls: 'i-taskbar-btn',
+                pressedCls: 'pressed',
                 //margin: 0
                 //padding: 0
             }
         });
 
-        me.items = [me.wbar, me.ubar];
+        me.items = [me.ubar, me.wbar];
 
         me.callParent();
     },
@@ -70,6 +55,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
     setActiveButton: function(btn) {
         if (btn) {
             btn.toggle(true);
+            Ext.get('i-center-north-trail-panel-body').setHTML(Indi.trail(true).breadCrumbs(btn.window.ctx.route));
         } else {
             this.wbar.items.each(function (item) {
                 if (item.isButton) {

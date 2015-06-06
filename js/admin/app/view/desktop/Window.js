@@ -28,17 +28,19 @@ Ext.define('Indi.view.desktop.Window', {
             enableToggle: true,
             pressed: true,
             window: me,
-            iconCls: me.getIconCls(),
+            //iconCls: me.getIconCls(),
             listeners: {
                 click: function(btn) {
                     var win = btn.window;
                     if (win.minimized || win.hidden) win.show();
                     else if (win.active) win.minimize();
-                    else win.toFront();
+                    else {
+                        win.toFront();
+                    }
                 }
             }
         });
-        me.iconCls = me.taskButton.iconCls;
+        me.iconCls = me.getIconCls();
         me.callParent();
     },
 
@@ -143,6 +145,7 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Set title
         me.setTitle(cfg.title);
+        me.taskButton.setText(cfg.title);
 
         // Destroy existing wrapper
         me.getWrapper().destroy();
@@ -155,7 +158,8 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Set icons
         me.setIconCls(me.getIconCls());
-        me.taskButton.setIconCls(me.getIconCls());
+        //me.getHeader().hide();
+        //me.taskButton.setIconCls(me.getIconCls());
 
         // Return
         return me;

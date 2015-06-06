@@ -516,7 +516,12 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 .i-wbar .x-btn-inner {
     padding-left: 18px;
+    padding-left: 0px;
+    line-height: 14px !important;
 }
 .i-wbar .x-btn-center {
     height: 17px !important;
+}
+#i-center-north-trail-panel-body {
+    padding-left: 1px;
 }

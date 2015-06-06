@@ -65,25 +65,12 @@ Ext.define('Indi.view.Viewport', {
         items: [{
             id: 'i-center-north',
             region: 'north',
-            xtype: 'taskbar',
-            /*tpl:
-                '<div>' +
-                    '<div id="i-center-north-date">{date}</div>' +
-                    '<div id="i-center-north-admin">{admin} <a href="{pre}/logout/">{logout}</a></div>' +
-                    '<div id="i-center-north-trail"></div>' +
-                    '</div>',
-            minHeight: 36,
-            border: 0,
-            afterRender: function() {
-                setInterval(Indi.view.Viewport.dateUpdater, 1000);
-                this.tpl.overwrite(this.el, {
-                    date: Ext.Date.format(new Date(Indi.time * 1000), Indi.view.Viewport.dateUpdaterFormat),
-                    admin: Indi.user,
-                    pre: Indi.pre,
-                    logout: Indi.lang.I_LOGOUT
-                });
-                this.superclass.afterRender.apply(this, arguments);
-            }*/
+            xtype: 'taskbar'
+        }, {
+            id: 'i-center-north-trail-panel',
+            region: 'north',
+            minHeight: 17,
+            border: 1
         }, {
             region: 'center',
             id: 'i-center-center',

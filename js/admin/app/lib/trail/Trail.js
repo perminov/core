@@ -237,10 +237,30 @@ Ext.define('Indi.lib.trail.Trail', {
         me.options.crumbs.pop = 0;
 
         // Replace the current contents of #i-center-north-trail DOM node with imploded crumbA array
+        /*Indi.app.getActiveWindow().getWrapper().addDocked({
+            id: Indi.app.getActiveWindow().wrapperId + '-crumbs',
+            xtype: 'toolbar',
+            items: {
+                xtype: 'panel',
+                html: '<div style="padding-right: 1px; padding-left: 1px;">' + crumbA.join('<span> &raquo; </span>') + '</div>',
+                width: '100%',
+                height: 17
+            }
+        }, 0);*/
+
+        //Indi.app.getActiveWindow().setTitle(crumbA.join('<span> &raquo; </span>'));
+        //Indi.app.getActiveWindow().setTitle('<div style="border: 1px solid #99BCE8; height: 16px; font-size: 12px; line-height: 13px; padding-right: 1px; padding-left: 1px; background: white;">' + crumbA.join('<span> &raquo; </span>') + '</div>');
+        Ext.get('i-center-north-trail-panel-body').setHTML(crumbA.join('<span> &raquo; </span>'));
+        return crumbA.join('<span> &raquo; </span>');
+        //if (w.maximized) {
+            ;
+        //} else {
+          //  w.setTitle(crumbA.join('<span> &raquo; </span>'));
+        //}
         //Ext.get('i-center-north-trail').setHTML(crumbA.join('<span> &raquo; </span>'));
 
         // Bind a click event listener to all 'a' items within imploded crumbs
-        top.window.$('#i-center-north-trail a').click(function(){
+        /*top.window.$('#' + Indi.app.getActiveWindow().wrapperId + '-crumbs  a').click(function(){
             if ($(this).attr('page-href')) {
                 top.window.Indi.load($(this).attr('page-href'));
                 return false;
@@ -264,7 +284,7 @@ Ext.define('Indi.lib.trail.Trail', {
         });
         top.window.$('.i-trail-item-sections').mouseleave(function(){
             top.window.$(this).hide();
-        });
+        });*/
     },
 
     /**
