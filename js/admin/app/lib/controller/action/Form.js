@@ -600,7 +600,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             xtype: 'textarea',
             grow: true,
-            minHeight: 32,
+            growMin: 30,
             allowBlank: true
         }
     },
