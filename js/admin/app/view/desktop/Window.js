@@ -11,35 +11,25 @@ Ext.define('Indi.view.desktop.Window', {
     autoRender: true,
     autoShow: true,
 
+    // @inheritdoc
     initComponent: function() {
         var me = this, icon = me.ctx.route.last().action.view.toLowerCase();
 
+        // Positioning
         me.x = Math.random() * 400;
         me.y = Math.random() * 100;
+
+        // Sizing
         me.maximized = me.ctx.route.last().action.mode.toLowerCase() == 'rowset';
         if (me.ctx.route.last().action.mode.toLowerCase() == 'row') {
             me.width = '60%';
             me.height = 150;
         }
-        Indi.app.taskbar.wbar.query('> [pressed]').forEach(function(btn){btn.toggle();});
 
-        me.taskButton = Indi.app.taskbar.wbar.add({
-            text: me.title,
-            enableToggle: true,
-            pressed: true,
-            window: me,
-            //iconCls: me.getIconCls(),
-            listeners: {
-                click: function(btn) {
-                    var win = btn.window;
-                    if (win.minimized || win.hidden) win.show();
-                    else if (win.active) win.minimize();
-                    else {
-                        win.toFront();
-                    }
-                }
-            }
-        });
+        // Create taskbar button
+        Indi.app.taskbar.wbar.query('> [pressed]').forEach(function(btn){btn.toggle();});
+        me.taskButton = Indi.app.taskbar.wbar.add({window: me});
+
         me.iconCls = me.getIconCls();
         me.callParent();
     },

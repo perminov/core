@@ -3,30 +3,9 @@
  */
 Ext.define('Indi.view.Viewport', {
     extend: 'Ext.container.Viewport',
-    layout: {type: 'border', padding: 5},
+    layout: {type: 'border', padding: '0 5 5 5'},
     defaults: {split: true},
     alternateClassName: 'Indi.Viewport',
-    statics: {
-
-        /**
-         * Format of date, that is displayed at the top right corner
-         *
-         * @type {String}
-         */
-        dateUpdaterFormat: '<b>l</b>, d.m.Y [H:i] \\G\\M\\TP',
-
-        /**
-         * Date updater, updates the top right date
-         */
-        dateUpdater: function() {
-            Ext.get('i-center-north-date').setHTML(
-                Ext.Date.format(
-                    new Date(Indi.time * 1000),
-                    Indi.view.Viewport.dateUpdaterFormat
-                )
-            );
-        }
-    },
 
     /**
      * Logo small panel
@@ -36,7 +15,7 @@ Ext.define('Indi.view.Viewport', {
     logo: {
         id: 'i-logo',
         width: 200,
-        height: 45,
+        height: 50,
         border: 0,
         tpl: new Ext.XTemplate('<img src="{std}/i/admin/logo.png"/>'),
         afterRender: function() {
@@ -62,15 +41,17 @@ Ext.define('Indi.view.Viewport', {
         border: 1,
         layout: {type: 'border', padding: '0 0 0 0'},
         id: 'i-center',
+        padding: 0,
         items: [{
             id: 'i-center-north',
             region: 'north',
-            xtype: 'taskbar'
+            xtype: 'taskbar',
         }, {
             id: 'i-center-north-trail-panel',
             region: 'north',
             minHeight: 17,
-            border: 1
+            border: 1,
+            margin: '-1 0 0 0'
         }, {
             region: 'center',
             id: 'i-center-center',

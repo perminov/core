@@ -2,7 +2,9 @@ Ext.define('Ext.ux.desktop.TaskBar', {
     extend: 'Ext.toolbar.Toolbar',
     alias: 'widget.taskbar',
     border: 0,
+    height: 20,
     padding: 0,
+    margin: 0,
     style: {
         background: 'none'
     },
@@ -14,37 +16,11 @@ Ext.define('Ext.ux.desktop.TaskBar', {
             html: '<div id="i-center-north-admin">' + Indi.user + ' <a href="' + Indi.pre + '/logout/">' + Indi.lang.I_LOGOUT + '</a></div>',
             padding: 0,
             border: 0,
-            margin: '0 5 0 0',
-            flex: 1,
+            margin: '10 20 0 0'
         };
+
         me.wbar = Ext.widget({
-            xtype: 'toolbar',
-            enableOverflow: true,
-            //flex: 1,
-            border: 0,
-            padding: 0,
-            margin: 0,
-            //height: 22,
-            //height: 20,
-            cls: 'i-wbar',
-            style: {
-                background: 'none'
-            },
-            width: '70%',
-            defaults: {
-                toggleGroup: 'all',
-                textAlign: 'left',
-                //minWidth: 100,
-                height: 21,
-                height: 16,
-                shrinkWrap: 1,
-                //maxWidth: 100,
-                padding: '0 0 0 3',
-                cls: 'i-taskbar-btn',
-                pressedCls: 'pressed',
-                //margin: 0
-                //padding: 0
-            }
+            xtype: 'windowbar'
         });
 
         me.items = [me.ubar, me.wbar];
