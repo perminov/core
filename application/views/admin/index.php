@@ -36,6 +36,8 @@
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
         '/js/admin/app/view/desktop/Window.js',
+        '/js/admin/app/view/desktop/WindowButton.js',
+        '/js/admin/app/view/desktop/WindowBar.js',
         '/js/admin/app/view/desktop/TaskBar.js',
 
         '/js/admin/app/lib/view/action/south/South.js',

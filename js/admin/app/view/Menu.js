@@ -12,7 +12,7 @@ Ext.define('Indi.view.Menu', {
     region: 'west',
     width: 200,
     collapsible: true,
-    padding: '50 0 0 0',
+    padding: '55 0 0 0',
     weight: 300,
 
     /**
