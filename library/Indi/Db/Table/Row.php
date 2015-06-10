@@ -688,8 +688,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                     // Else
                     } else $where['lookup'] = ($keyword2 = str_replace('"', '\"', Indi::kl($keyword)))
-                        ? '(`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
-                        : '`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%"';
+                        ? '(`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "%' . $keyword2 . '%")'
+                        : '`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%"';
 
                 // We should get results started from selected value only if we have no $satellite argument passed
                 } else if (is_null(func_get_arg(4))) {
