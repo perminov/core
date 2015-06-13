@@ -32,6 +32,8 @@
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
 
+        '/js/admin/app/util/Shrinkable.js',
+
         '/js/admin/app/view/LoginBox.js',
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
