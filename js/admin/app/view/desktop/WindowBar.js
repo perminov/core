@@ -9,7 +9,6 @@ Ext.define('Indi.view.desktop.WindowBar', {
     margin: '-4 2 0 0',
     padding: 0,
     defaults: {xtype: 'windowbutton'},
-    //shrinkWrap: 0,
     minWidth: 0,
 
     // @inheritdoc
@@ -30,13 +29,5 @@ Ext.define('Indi.view.desktop.WindowBar', {
 
         // Call mixin's initComponent
         me.mixins.shrink.initComponent.apply(this, arguments);
-    },
-
-    updateMaxWidth: function() {
-        var me = this;
-        if (Indi.viewport) {
-            //me.maxWidth = Indi.viewport.getWidth() - me.getBox().x - 6;
-            //me.updateLayout();
-        }
     }
 });
