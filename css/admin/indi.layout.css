@@ -546,8 +546,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     border-left-width: 1px !important;
 }
 .x-windowbar .x-windowbar-btn {
-    position: relative !important;
-    left: 0 !important;
+    /*position: relative !important;
+    left: 0 !important;*/
 
     border-top-width: 0 !important;
     border-right-width: 1px !important;
