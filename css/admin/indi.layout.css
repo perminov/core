@@ -71,8 +71,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 /* North subregion of center region */
 #i-center-north{
-    height: auto !important;
-    overflow: visible;
+    /*height: auto !important;*/
+    overflow: hidden;
     z-index: 101;
 }
 #i-center-north .x-panel-body {
@@ -521,12 +521,38 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     top: 0 !important;
     z-index: 0;
 }
-.x-windowbar {background: white; border-color: #b5b8c8; margin-top: -4px !important; box-shadow: 0 0 5px gray;}
 
-.x-windowbar .x-windowbar-btn .x-btn-inner{line-height: 14px;}
-.x-windowbar .x-windowbar-btn.x-closable {padding-right: 20px;}
-.x-windowbar .x-windowbar-btn.x-closable em{display: inline-block;}
+#i-center-north-trail-panel-body {
+    padding-left: 1px;
+}
+
+/* Window bar and button */
+.x-windowbar {background: white; border-color: #b5b8c8; margin-top: -4px !important; margin-right: 2px !important; box-shadow: 0 0 5px gray; height: 16px; overflow: hidden;}
+
+.x-windowbar .x-windowbar-btn .x-btn-inner{
+    line-height: 14px !important;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 0 4 0 4px;
+}
+.x-windowbar .x-windowbar-btn.i-btn-ellipsis .x-btn-inner{
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+}
+.x-windowbar .x-windowbar-btn em { line-height: 1; display: block; overflow: hidden;}
+.x-windowbar .x-windowbar-btn.x-closable em { padding-right: 10px; }
+.x-windowbar .x-windowbar-btn:first-child {
+    border-left-width: 1px !important;
+}
 .x-windowbar .x-windowbar-btn {
+    position: relative !important;
+    left: 0 !important;
+
+    border-top-width: 0 !important;
+    border-right-width: 1px !important;
+    border-bottom-width: 1px !important;
+    border-left-width: 0 !important;
     height: 16px;
     background-image: -webkit-gradient(linear,50% 0,50% 100%,color-stop(0%,#dbeeff),color-stop(48%,#d0e7ff),color-stop(52%,#BBF0EE),color-stop(100%,#bed6f5));
     background-image: -webkit-linear-gradient(top,#dbeeff,#d0e7ff 48%,#BBF0EE 52%,#bed6f5);
@@ -545,25 +571,17 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background-image: -ms-linear-gradient(top,#bccfe5,#c5d6e7 48%,#A7D2FD 52%,#9fc9f5);
     background-image: linear-gradient(top,#bccfe5,#c5d6e7 48%,#A7D2FD 52%,#9fc9f5);
 }
-#i-center-north-trail-panel-body {
-    padding-left: 1px;
-}
-.x-windowbar-btn .x-btn-close-btn{
-    width: 10px;
-    height: 14px;
-    vertical-align: top;
+.x-windowbar-btn .x-btn-close-btn {
     background-repeat: no-repeat;
     background-image: url(/i/admin/wbtn-icon-close-gray.png);
-    display: inline-block;
     background-position: 0 4px;
+    width: 10px;
+    height: 14px;
+    position: absolute;
+    top: 0;
+    right: 0;
 }
-.x-windowbar-btn .x-btn-close-btn:hover{
-    background-image: url(/i/admin/wbtn-icon-close-red-dark.png);
-    background-position: 0 4px;
-}
-.x-windowbar-btn.x-pressed .x-btn-close-btn:hover,
-.x-windowbar-btn.x-over .x-btn-close-btn:hover{
+.x-windowbar-btn.x-pressed .x-btn-close-btn:hover, .x-windowbar-btn.x-over .x-btn-close-btn:hover {
     background-image: url(/i/admin/wbtn-icon-close-white.png);
-    background-position: 0 4px;
 }
 

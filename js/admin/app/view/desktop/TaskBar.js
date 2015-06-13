@@ -6,8 +6,10 @@ Ext.define('Ext.ux.desktop.TaskBar', {
     padding: 0,
     margin: 0,
     style: {
-        background: 'none'
+        background: 'none',
+        //verticalAlign: 'top'
     },
+    //layout: 'auto',
     initComponent: function () {
         var me = this;
 
