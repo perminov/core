@@ -182,7 +182,8 @@ Ext.define('Indi.util.Shrinkable', {
             constant = 0, ignoreA = [], avgItemWidth = 0, itemTitleRequiredWidth, lost, itemWidth,
             itemTitleWidth, noTitle, noDots, hoverItemTitleRequiredWidth, hoverOverflow = 0;
 
-            me.clearInlineWidth();
+        // Clear inline widths
+        me.clearInlineWidth();
 
         // Setup 'constant' variable for collecting width, that should not be involved
         // in the process of width adjustment amount calculation
