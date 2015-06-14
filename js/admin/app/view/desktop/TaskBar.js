@@ -6,10 +6,8 @@ Ext.define('Ext.ux.desktop.TaskBar', {
     padding: 0,
     margin: 0,
     style: {
-        background: 'none',
-        //verticalAlign: 'top'
+        background: 'none'
     },
-    //layout: 'auto',
     initComponent: function () {
         var me = this;
 
@@ -22,7 +20,8 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         };
 
         me.wbar = Ext.widget({
-            xtype: 'windowbar'
+            xtype: 'windowbar',
+            maxWindows: 15
         });
 
         me.items = [me.ubar, me.wbar];
