@@ -262,4 +262,12 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
             }
         });
     }
+}, function(){
+    var me = this;
+
+    // Borrow `getInputWidthUsage` detection function from Indi.lib.form.field.Radios
+    me.borrow(Indi.lib.form.field.Radios, ['getInputWidthUsage']);
+
+    // Borrow other dimension-usage-detection functions from Ext.form.field.Base
+    me.borrow(Ext.form.field.Base, ['getHeightUsage', 'getWidthUsage', 'getLabelWidthUsage']);
 });

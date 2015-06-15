@@ -503,7 +503,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
                 me.toolbar$Master$Modify(),
                 me.toolbar$Master$Browse(),
                 me.toolbar$Master$Browsed(),
-                me.toolbar$Master$Mode()
+                me.toolbar$Master$Mode(),
+                '->'
             ]
         }
     },
@@ -865,5 +866,22 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      */
     clearInvalid: function() {
         this.get('browsed').clearInvalid();
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, tb = me.get('toolbar'), cb = me.get('mode');
+
+        // Return
+        return tb.getWidth() - tb.down('tbfill').getWidth() + Indi.metrics.getWidth(cb.tooltip.html)/2 + 10;
     }
+
+}, function(){
+
+    // Borrow dimension-usage-detection functions from Ext.form.field.Base
+    this.borrow(Ext.form.field.Base, ['getHeightUsage', 'getWidthUsage', 'getLabelWidthUsage']);
 });

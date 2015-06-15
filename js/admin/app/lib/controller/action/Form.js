@@ -456,8 +456,11 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'displayfield',
             cls: (item ? '' : 'i-field ') + 'i-field-span' + (item ? '' : ' i-field-span-title'),
             fieldLabel: '',
-            value: (item ? item.field.title : this.ti().model.title),
-            align: 'center'
+            value: '<span>' + (item ? item.field.title : this.ti().model.title) + '</span>',
+            align: 'center',
+            getInputWidthUsage: function() {
+                return this.inputEl.down('span').getWidth() + this.getEl().getBorderWidth('rl');
+            }
         }
     },
 
@@ -601,7 +604,10 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'textarea',
             grow: true,
             growMin: 30,
-            allowBlank: true
+            allowBlank: true,
+            getInputWidthUsage: function() {
+                return this.getLabelWidthUsage();
+            }
         }
     },
 
@@ -646,6 +652,9 @@ Ext.define('Indi.lib.controller.action.Form', {
             checked: item.row[item.name] == '1',
             getSubmitValue: function() {
                 return this.checked ? 1 : 0;
+            },
+            getInputWidthUsage: function() {
+                return this.inputEl.getWidth();
             }
         }
     },
