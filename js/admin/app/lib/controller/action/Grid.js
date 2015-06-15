@@ -364,6 +364,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (columnA[i].hidden) hctw += widthA[i];
         }
 
+        // Remember width, best suitable for grid if it was no width limitations
+        grid.widthUsage = parseInt(total);
+
         // Exclude first non-hidden column width from total width
         total -= widthA[1];
 

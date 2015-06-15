@@ -13,9 +13,14 @@ Ext.override(Ext.tab.Bar, {
      * @return {Number}
      */
     getWidthUsage: function() {
-        var me = this;
+        var me = this, width = 0;
 
-        // Return todo: redo
-        return 200;
+        // Walk through tabs an sum their widths
+        me.items.each(function(item){
+            width += item.getWidth() + 5 * 2;
+        });
+
+        // Return
+        return width;
     }
 });
