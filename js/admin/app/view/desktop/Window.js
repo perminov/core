@@ -4,8 +4,8 @@ Ext.define('Indi.view.desktop.Window', {
     //renderTo: 'i-center-center-body',
     //constrainTo: 'body',
     //constrain: true,
-    width: '80%',
-    height: '80%',
+    width: '100%',
+    height: '100%',
     maximizable: true,
     minimizable: true,
     autoRender: true,
@@ -21,10 +21,6 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Sizing
         me.maximized = me.ctx.route.last().action.mode.toLowerCase() == 'rowset';
-        if (me.ctx.route.last().action.mode.toLowerCase() == 'row') {
-            me.width = '60%';
-            me.height = 150;
-        }
 
         // Create taskbar button
         Indi.app.taskbar.wbar.query('> [pressed]').forEach(function(btn){btn.toggle();});

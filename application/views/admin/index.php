@@ -28,6 +28,11 @@
         '/js/admin/app/override/Ext.grid.View.js',
         '/js/admin/app/override/Ext.data.Model.js',
         '/js/admin/app/override/Ext.tab.Bar.js',
+        '/js/admin/app/override/Ext.panel.Panel.js',
+        '/js/admin/app/override/Ext.toolbar.Toolbar.js',
+        '/js/admin/app/override/Ext.form.Panel.js',
+        '/js/admin/app/override/Ext.grid.Panel.js',
+        '/js/admin/app/override/Ext.tab.Panel.js',
 
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',

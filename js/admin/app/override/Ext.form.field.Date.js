@@ -62,5 +62,26 @@ Ext.override(Ext.form.field.Date, {
 
         // Check if current value is valid
         if (!me.hasZeroValue()) me.isValid();
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, picker = me.getPicker(), pickerWidth;
+
+        // Set picker visibility as 'hidden'
+        picker.getEl().setStyle('visibility', 'hidden');
+
+        // Get picker width
+        pickerWidth = picker.show().getWidth();
+
+        // Restore picker visibility
+        picker.hide().getEl().setStyle('visibility', null);
+
+        // Return either pickerWidth or triggerWrap width, depends on what's greater
+        return Math.max(pickerWidth, me.triggerWrap.getWidth());
     }
 });

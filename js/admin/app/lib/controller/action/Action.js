@@ -450,7 +450,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         if (!me.cfg.into) {
 
             // Append tools and toolbars to the main panel
-            me.panel.renderTo = me.getWindow().getTargetEl();
+            me.panel.renderTo = me.prepareWindow().getTargetEl();
 
             // Update id of the main panel (temporary)
             Indi.centerId = me.panel.id;
@@ -472,7 +472,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         me.callParent();
     },
 
-    getWindow: function() {
+    prepareWindow: function() {
         var me = this, app = Indi.app, window, active = app.getActiveWindow(), create = false, a = {}, n = {}, i, cfg;
 
         // If we have no windows yet - set `create` as `true`, else
@@ -610,10 +610,28 @@ Ext.define('Indi.lib.controller.action.Action', {
                 }, cfg));
 
             // Else use existing window
-            else window = app.windows.getAt(i).apply(cfg).toFront();
+            else {
+
+                // Close active window
+                //if (app.windows.getAt(i).id != active.id) active.close();
+
+                // Apply new contents to existing window
+                window = app.windows.getAt(i).apply(cfg).toFront();
+                //window = app.windows.getAt(i).toFront();
+            }
 
         // Else set up active window usage as a place for new panel
-        } else window = active.apply(cfg);
+        } else {
+
+            // Try to check if current windows collection already contains a window that we're going to create
+            i = app.windows.collect('wrapperId').indexOf(me.panel.id);
+
+            // If contains - close that existing window
+            if (i != -1 && app.windows.getAt(i).id != active.id) app.windows.getAt(i).close();
+
+            // Apply new contents to active window
+            window = active.apply(cfg);
+        }
 
         // Return
         return window;

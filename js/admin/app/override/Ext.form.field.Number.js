@@ -36,8 +36,22 @@ Ext.override(Ext.form.field.Number, {
 
         return value;
     },
-    
+
+    /**
+     * Get the difference between current and original values
+     *
+     * @return {Number}
+     */
     delta: function() {
         return this.val() - (this.decimalPrecision ? parseFloat(this.originalValue) : parseInt(this.originalValue));
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this; return me.triggerWrap.getWidth();
     }
 });

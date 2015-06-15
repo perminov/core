@@ -192,5 +192,27 @@ Ext.define('Indi.lib.form.field.Radios', {
 
         // Return normalized value
         return normalized;
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, width = 0, cbLabelWidth;
+
+        // Walk through radio buttons
+        me.items.each(function(item){
+
+            // Get item's label
+            cbLabelWidth = item.getEl().down('.x-form-cb-label').getWidth();
+
+            // Get width
+            width = Math.max(width, item.inputEl.getWidth() + cbLabelWidth);
+        });
+
+        // Return
+        return width;
     }
 });

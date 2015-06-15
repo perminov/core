@@ -200,5 +200,26 @@ Ext.define('Indi.lib.form.field.CkEditor', {
      */
     print: function() {
         CKEDITOR.tools.callFunction(9, this.getEditor());
+    },
+
+    /**
+     * Get this field's input actual height usage
+     *
+     * @return {Number}
+     */
+    getHeightUsage: function() {
+
+        // Here we return just a fixed value, as ckEditor is rendered bit later that all other fields,
+        // so there is no ability to detect it when detected usually runs
+        return this.editorCfg.defaultHeight + 75 /* CKE Top */ + 27 /* CKE Bottom */ + 25 /* No idea why, but */;
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        return this.getLabelWidthUsage() * 2;
     }
 });

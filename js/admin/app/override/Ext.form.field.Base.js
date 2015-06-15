@@ -236,5 +236,44 @@ Ext.override(Ext.form.field.Base, {
                 });
             }
         });
+    },
+
+    /**
+     * By default, assume height usage is equal to actual height
+     *
+     * @return {*}
+     */
+    getHeightUsage: function() {
+        return this.getHeight();
+    },
+
+    /**
+     * Get this field's actual width usage, separately for label and input
+     *
+     * @return {Object}
+     */
+    getWidthUsage: function() {
+        return {label: this.getLabelWidthUsage(), input: this.getInputWidthUsage()}
+    },
+
+    /**
+     * Get this field's label's actual width usage
+     *
+     * @return {Number}
+     */
+    getLabelWidthUsage: function() {
+        var me = this, label = me.labelEl; return label.getTextWidth() + label.getPadding('lr') + label.getMargin('lr');
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, input = me.inputEl;
+
+        // Return
+        return Indi.metrics.getWidth(me.getValue()) + input.getPadding('lr') + input.getMargin('lr') + input.getBorderWidth('lr');
     }
 });
