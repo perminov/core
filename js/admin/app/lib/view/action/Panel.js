@@ -93,31 +93,40 @@ Ext.define('Indi.lib.view.action.Panel', {
      *
      */
     fitWindow: function() {
-        var me = this, window = me.getWindow(), windowFrameHeight, windowFrameWidth, height, width;
+        var me = this, window = me.getWindow(), windowFrameHeight, windowFrameWidth, height, width,
+            center = Ext.getCmp('i-center-center'), maxWidth = center.getWidth(), maxHeight = center.getHeight();
 
         // If window exists
         if (window && !window.maximized) {
 
-            // Get real height usage
-            width = me.getWidthUsage();
-
             // Get window's frame height usage
             windowFrameWidth = me.getWindow().getWidth() - me.getWidth();
 
-            // Set window's height to fit actual content's height
-            window.setWidth(windowFrameWidth + width);
-
             // Get real height usage
-            height = me.getHeightUsage();
+            width = me.getWidthUsage() + windowFrameWidth;
+
+            // Set window's height to fit actual content's height
+            window.setWidth(width);
 
             // Get window's frame height usage
             windowFrameHeight = me.getWindow().getHeight() - me.getHeight();
 
-            // Set window's height to fit actual content's height
-            window.setHeight(windowFrameHeight + height + 1);
+            // Get real height usage
+            height = me.getHeightUsage() + windowFrameHeight + 1;
 
-            // Center window
-            window.center();
+            // Decide whether to maximize window or make it fit-sized
+            if (height > maxHeight * 0.9) {
+                window.setHeight(maxHeight * 0.9);
+                window.center();
+                window.maximize();
+            } else {
+                window.setHeight(height);
+                if (width > maxWidth) {
+                    window.setWidth(maxWidth);
+                    window.maximize();
+                }
+                window.center();
+            }
         }
     }
 });

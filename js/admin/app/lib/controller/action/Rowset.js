@@ -50,11 +50,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         remoteSort: true,
         listeners: {
             beforeload: function(){
-                this.ctx().filterChange({noReload: true});
+                if (!this.rawDataRightHere) this.$ctx.filterChange({noReload: true});
             },
             load: function(){
-                this.ctx().storeLoadCallbackDefault();
-                this.ctx().storeLoadCallback();
+                this.$ctx.storeLoadCallbackDefault();
+                this.$ctx.storeLoadCallback();
             }
         },
         ctx: function() {
@@ -200,7 +200,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
 
         // Ensure page size to be fully dependent on me.ti().section.rowsOnPage
-        me.getStore().pageSize = me.getStore().lastOptions.limit = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage;
+        me.getStore().pageSize = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage;
+        if (me.getStore().lastOptions) me.getStore().lastOptions.limit = me.getStore().pageSize;
 
         // If there is no noReload flag turned on
         if (!cmp.noReload) {
@@ -214,9 +215,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // matched our keyword/filters search, to at least 1 row to be displayed, but there is no guarantee
             // that there will be such number of results, that match our search criteria
             me.getStore().currentPage = 1;
-            me.getStore().lastOptions.page = 1;
-            me.getStore().lastOptions.start = 0;
-            
+            if (me.getStore().lastOptions) {
+                me.getStore().lastOptions.page = 1;
+                me.getStore().lastOptions.start = 0;
+            }
+
             // If used filter is a combobox or multislider, we reload store data immideatly
             if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
                 me.preventViewFocus = true;
@@ -278,6 +281,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
+            $ctx: me,
             proxy: new Ext.data.HttpProxy({
                 method: 'POST',
                 reader: {
@@ -1580,7 +1584,23 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {*}
      */
     rowsetPanel: function() {
-        return this.rowset;
+        var me = this;
+
+        // Return
+        return Ext.merge({
+            id: me.id + '-rowset',
+            dockedItems: me.rowsetDockedA(),
+            store: me.getStore(),
+            listeners: {
+                boxready: function() {
+                    if (me.ti().store) {
+                        me.getStore().rawDataRightHere = true;
+                        me.getStore().loadRawData(me.ti().store);
+                        me.getStore().rawDataRightHere = false;
+                    } else me.getStore().load();
+                }
+            }
+        }, this.rowset);
     },
 
     /**

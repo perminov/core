@@ -7,6 +7,17 @@ Ext.override(Ext.grid.Panel, {
     emptyTableHeightUsage: 300,
 
     /**
+     * Get inner items summary width usage. Here we assume that at the moment of this function call,
+     * gridColumnAFit was already called, so grid has `widthUsage` prop, containing best width,
+     * that was calculated regarding a lot of params
+     *
+     * @return {Number}
+     */
+    getInnerItemsWidthUsage: function() {
+        return this.widthUsage;
+    },
+
+    /**
      * Get inner items summary height usage
      *
      * @return {Number}
