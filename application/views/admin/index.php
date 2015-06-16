@@ -31,6 +31,7 @@
         '/js/admin/app/override/Ext.panel.Panel.js',
         '/js/admin/app/override/Ext.toolbar.Toolbar.js',
         '/js/admin/app/override/Ext.form.Panel.js',
+        '/js/admin/app/override/Ext.grid.header.Container.js',
         '/js/admin/app/override/Ext.grid.Panel.js',
         '/js/admin/app/override/Ext.tab.Panel.js',
 

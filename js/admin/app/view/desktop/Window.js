@@ -1,9 +1,6 @@
 Ext.define('Indi.view.desktop.Window', {
     extend: 'Ext.window.Window',
     alias: 'widget.desktopwindow',
-    //renderTo: 'i-center-center-body',
-    //constrainTo: 'body',
-    //constrain: true,
     width: '100%',
     height: '100%',
     maximizable: true,
@@ -13,20 +10,18 @@ Ext.define('Indi.view.desktop.Window', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this, icon = me.ctx.route.last().action.view.toLowerCase();
+        var me = this;
 
-        // Positioning
-        me.x = Math.random() * 400;
-        me.y = Math.random() * 100;
-
-        // Sizing
-        me.maximized = me.ctx.route.last().action.mode.toLowerCase() == 'rowset';
-
-        // Create taskbar button
+        // Depress currently pressed windowbutton(s)
         Indi.app.taskbar.wbar.query('> [pressed]').forEach(function(btn){btn.toggle();});
+
+        // Add new windowbutton
         me.taskButton = Indi.app.taskbar.wbar.add({window: me});
 
+        // Set iconCls
         me.iconCls = me.getIconCls();
+
+        // Call parent
         me.callParent();
     },
 
@@ -129,7 +124,7 @@ Ext.define('Indi.view.desktop.Window', {
     apply: function(cfg) {
         var me = this;
 
-        // Set title
+        // Set window-title and windowbutton-text
         me.setTitle(cfg.title);
         me.taskButton.setText(cfg.title);
 
@@ -144,8 +139,6 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Set icons
         me.setIconCls(me.getIconCls());
-        //me.getHeader().hide();
-        //me.taskButton.setIconCls(me.getIconCls());
 
         // Return
         return me;
