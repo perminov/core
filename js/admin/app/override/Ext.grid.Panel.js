@@ -1,6 +1,11 @@
 Ext.override(Ext.grid.Panel, {
 
     /**
+     * Default width usage
+     */
+    widthUsage: 0,
+
+    /**
      * This value will be involved in the process of real width
      * usage detection in case if there is currently no rows in grid
      */
