@@ -50,11 +50,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         remoteSort: true,
         listeners: {
             beforeload: function(){
-                if (!this.rawDataRightHere) this.$ctx.filterChange({noReload: true});
+                this.ctx().filterChange({noReload: true});
             },
             load: function(){
-                this.$ctx.storeLoadCallbackDefault();
-                this.$ctx.storeLoadCallback();
+                this.ctx().storeLoadCallbackDefault();
+                this.ctx().storeLoadCallback();
             }
         },
         ctx: function() {
@@ -281,7 +281,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
-            $ctx: me,
+            //$ctx: me,
             proxy: new Ext.data.HttpProxy({
                 method: 'POST',
                 reader: {
@@ -1589,7 +1589,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Return
         return Ext.merge({
             id: me.id + '-rowset',
-            dockedItems: me.rowsetDockedA(),
+            /*dockedItems: me.rowsetDockedA(),
             store: me.getStore(),
             listeners: {
                 boxready: function() {
@@ -1599,7 +1599,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         me.getStore().rawDataRightHere = false;
                     } else me.getStore().load();
                 }
-            }
+            }*/
         }, this.rowset);
     },
 
