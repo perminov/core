@@ -50,11 +50,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         remoteSort: true,
         listeners: {
             beforeload: function(){
-                this.ctx().filterChange({noReload: true});
+                this.$ctx.filterChange({noReload: true});
             },
             load: function(){
-                this.ctx().storeLoadCallbackDefault();
-                this.ctx().storeLoadCallback();
+                this.$ctx.storeLoadCallbackDefault();
+                this.$ctx.storeLoadCallback();
             }
         },
         ctx: function() {
@@ -281,7 +281,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             sorters: me.storeSorters(),
             pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
-            //$ctx: me,
+            $ctx: me,
             proxy: new Ext.data.HttpProxy({
                 method: 'POST',
                 reader: {
@@ -1590,7 +1590,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return Ext.merge({
             id: me.id + '-rowset',
             dockedItems: me.rowsetDockedA(),
-            store: me.getStore()
+            store: me.getStore(),
         }, this.rowset);
     },
 
