@@ -14,7 +14,7 @@ Ext.override(Ext.grid.Panel, {
      * @return {Number}
      */
     getInnerItemsWidthUsage: function() {
-         return this.widthUsage;
+        return this.widthUsage;
     },
 
     /**

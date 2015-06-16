@@ -12,7 +12,7 @@ Ext.define('Indi.lib.view.action.Rowset', {
     /**
      * Whether or not automatically start trying to load the store once component is rendered
      */
-    autoLoadStore: true,
+    autoLoadStore: false,
 
     // @inheritdoc
     afterRender: function() {
@@ -33,19 +33,8 @@ Ext.define('Indi.lib.view.action.Rowset', {
     loadStore: function() {
         var me = this, interval;
 
-        // Provide store to be loaded once panel context is ready
-        interval = setInterval(function(){
-
-            // If context is ready
-            if (me.ctx()) {
-
-                // Load the store
-                me.ctx().getStore().load();
-
-                // Clear interval
-                clearInterval(interval);
-            }
-        }, 100);
+        // Load the store
+        me.$ctx.getStore().load();
     },
 
     /**
