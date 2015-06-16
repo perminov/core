@@ -250,7 +250,7 @@ Ext.define('Indi.lib.trail.Trail', {
 
         //Indi.app.getActiveWindow().setTitle(crumbA.join('<span> &raquo; </span>'));
         //Indi.app.getActiveWindow().setTitle('<div style="border: 1px solid #99BCE8; height: 16px; font-size: 12px; line-height: 13px; padding-right: 1px; padding-left: 1px; background: white;">' + crumbA.join('<span> &raquo; </span>') + '</div>');
-        Ext.get('i-center-north-trail-panel-body').setHTML(crumbA.join('<span> &raquo; </span>'));
+        //Ext.get('i-center-north-trail-panel-body').setHTML(crumbA.join('<span> &raquo; </span>'));
         return crumbA.join('<span> &raquo; </span>');
         //if (w.maximized) {
             ;

@@ -31,6 +31,6 @@ Ext.override(Ext.grid.Panel, {
         var me = this, el = me.items.getAt(0).getEl(), table = el.down('.x-grid-table');
 
         // Return
-        return table ? table.getHeight() : me.emptyTableHeightUsage;
+        return table ? table.getHeight() + 3 : me.emptyTableHeightUsage;
     }
 });
