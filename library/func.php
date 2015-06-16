@@ -670,6 +670,7 @@ function jflush($success, $msg1 = null, $msg2 = null) {
     if ($mrg2) $flush = array_merge($flush, $mrg2);
 
     // Flush
+    header('Content-Type: application/json');
     die(json_encode($flush));
 }
 
@@ -684,6 +685,7 @@ function jconfirm($msg) {
     $flush = array('confirm' => true, 'msg' => $msg);
 
     // Flush
+    header('Content-Type: application/json');
     die(json_encode($flush));
 }
 
