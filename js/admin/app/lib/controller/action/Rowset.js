@@ -1591,7 +1591,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.id + '-rowset',
             dockedItems: me.rowsetDockedA(),
             store: me.getStore(),
-        }, this.rowset);
+            onBoxReady: function() {
+
+                // If store raw data is available right now
+                if (me.ti().scope.pageData) {
+
+                    // Prevent separate autoload
+                    Ext.getCmp(me.panel.id).autoLoadStore = false;
+
+                    // Load raw data straight into the store
+                    me.getStore().loadRawData(me.ti().scope.pageData);
+                }
+            }
+        }, me.rowset);
     },
 
     /**

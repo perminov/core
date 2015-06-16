@@ -334,7 +334,6 @@ class Indi_Trail_Admin_Item {
                 $array['scope']['actionrowset']['south']['tabs'] = $tabA;
             }
         }
-        if ($this->store) $array['store'] = $this->store;
         $array['level'] = $this->level;
         return $array;
     }

@@ -2,6 +2,14 @@
 class Indi_Controller_Admin extends Indi_Controller {
 
     /**
+     * Flag for set up whether rowset data should be fetched ONLY 
+     * as a result of a separate http request
+     * 
+     * @var bool
+     */
+    protected $_isRowsetSeparate = false;
+
+    /**
      * Array of section ids, starting from current section and up to the top.
      *
      * @var array
@@ -76,8 +84,30 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
                 Indi::trail()->scope->apply($applyA);
 
-                // If a rowset should be fetched
-                if (Indi::uri()->format) {
+                // If there was no 'format' param passed within the uri
+                // we extract all fetch params from current scope
+                if (!Indi::uri()->format && !$this->_isRowsetSeparate) {
+
+                    // Prepare search data for $this->filtersWHERE()
+                    Indi::get()->search = Indi::trail()->scope->filters;
+
+                    // Prepare search data for $this->keywordWHERE()
+                    Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
+
+                    // Prepare sort params for $this->finalORDER()
+                    Indi::get()->sort = Indi::trail()->scope->order == '[]'
+                        ? Indi::trail()->section->jsonSort()
+                        : Indi::trail()->scope->order;
+
+                    // Prepare sort params for $this->finalORDER()
+                    Indi::get()->page = Indi::trail()->scope->page ? Indi::trail()->scope->page : 1;
+
+                    // Prepare sort params for $this->finalORDER()
+                    Indi::get()->limit = Indi::trail()->section->rowsOnPage;
+                }
+
+                // If 'format' uri's param was specified
+                if (Indi::uri()->format || !$this->_isRowsetSeparate) {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
@@ -90,8 +120,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $this->rowset = Indi::trail()->model->{
                     'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
                     }($finalWHERE, $finalORDER,
-                        Indi::uri()->format == 'json' ? (int) Indi::get('limit') : null,
-                        Indi::uri()->format == 'json' ? (int) Indi::get('page') : null);
+                        Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('limit') : null,
+                        Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('page') : null);
 
                     /**
                      * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
@@ -1712,7 +1742,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function indexAction() {
 
         // If data should be got as json or excel
-        if (Indi::uri('format')) {
+        if (Indi::uri('format') || (!$this->_isRowsetSeparate && Indi::trail(true))) {
 
             // Adjust rowset, before using it as a basement of grid data
             $this->adjustGridDataRowset();
@@ -1723,8 +1753,11 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Adjust grid data
             $this->adjustGridData($data);
 
-            // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
-            if (Indi::uri('format') == 'json') {
+            // If data is gonna be used in the excel spreadsheet building process, pass it to a special function
+            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
+
+            // Else if data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
+            else {
 
                 // Get scope
                 $scope = Indi::trail()->scope->toArray();
@@ -1733,33 +1766,32 @@ class Indi_Controller_Admin extends Indi_Controller {
                 unset($scope['actionrowset']['south']['tabs']);
 
                 // Setup basic data
-                $json = array(
+                $pageData = array(
                     'totalCount' => $this->rowset->found(),
                     'blocks' => $data,
                     'scope' => $scope
                 );
 
                 // Append summary data
-                if ($summary = $this->rowsetSummary()) $json['summary'] = $summary;
+                if ($summary = $this->rowsetSummary()) $pageData['summary'] = $summary;
 
                 // Provide combo filters consistency
                 foreach (Indi::trail()->filters as $filter)
                     if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
                         $alias = $filter->foreign('fieldId')->alias;
                         Indi::view()->filterCombo($filter, 'extjs');
-                        $json['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
+                        $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
                     }
 
                 // Adjust json export
-                $this->adjustJsonExport($json);
+                $this->adjustJsonExport($pageData);
 
-                // Flush json
-                header('Content-Type: application/json');
-                die(json_encode($json));
+                // If uri's 'format' param is specified, and it is 'json' - flush json-encoded $pageData
+                if (Indi::uri('format') == 'json') jflush(true, $pageData); 
+                
+                // Else assign that data into scope's `pageData` prop
+                else Indi::trail()->scope->pageData = $pageData;
             }
-
-            // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
-            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
         }
     }
 
@@ -1879,8 +1911,15 @@ class Indi_Controller_Admin extends Indi_Controller {
             $out = preg_replace('/(<form[^>]+)(action)=("|\')\//', '$1$2=$3' . STD . '/', $out);
         }
 
-        // If $return argument is true, return builded data, or flush it otherwise
-        if ($return) return $out; else die($out);
+        // If $return argument is true, return builded data, else
+        if ($return) return $out; else {
+
+            // If $out is a json-encoded data - flush content-type header
+            if (preg_match('/^[\[{]/', $out)) header('Content-Type: application/json');
+
+            // Flush output
+            die($out);
+        }
     }
 
     /**
@@ -1891,6 +1930,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Or redirect to custom location, if $location argument is given
      *
      * @param string $location
+     * @param bool $return
+     * @return string
      */
     public function redirect($location = '', $return = false){
 
