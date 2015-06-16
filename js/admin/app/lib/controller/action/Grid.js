@@ -331,7 +331,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 cell = typeof columnA[i].renderer == 'function'
                     ? columnA[i].renderer(r.get(columnA[i].dataIndex))
                     : r.get(columnA[i].dataIndex);
-                if (cell.length > longest.length) longest = cell;
+                if (cell && cell.length > longest.length) longest = cell;
             });
 
             // Don't forgot about summaries
