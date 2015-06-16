@@ -94,4 +94,23 @@ class Section_Row_Base extends Indi_Db_Table_Row {
             } else return parent::save();
         } else return parent::save();
     }
+
+    /**
+     * Convert values of `defaultSortField` and `defaultSortDirection`
+     * into a special kind of json-encoded array, suitable for usage
+     * with ExtJS
+     *
+     * @return string
+     */
+    public function jsonSort() {
+
+        // If no default sort - return empty json array
+        if (!$this->foreign('defaultSortField')) return '[]';
+
+        // Return json-encoded sort params
+        return json_encode(array(array(
+            'property' => $this->foreign('defaultSortField')->alias,
+            'direction' => $this->defaultSortDirection,
+        )));
+    }
 }

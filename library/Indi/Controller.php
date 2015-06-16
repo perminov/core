@@ -155,8 +155,9 @@ class Indi_Controller {
      * @return null|string
      */
     public function finalORDER($finalWHERE, $json = '') {
+
         // If no sorting params provided - ORDER clause won't be built
-        if (!$json) return null;
+        if (!$json || $json == '[]') return null;
 
         // Extract column name and direction from json param
         list($column, $direction) = array_values(current(json_decode($json, 1)));
