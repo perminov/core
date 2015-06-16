@@ -814,7 +814,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Setup rowset panel config
         me.rowset = Ext.merge({
             id: me.id + '-rowset-grid',
-            columns: me.gridColumnA()
+            columns: me.gridColumnA(),
+            store: me.getStore(),
+            dockedItems: me.rowsetDockedA(),
+            listeners: {
+                boxready: function() {
+                    me.gridColumnAFit();
+                }
+            }
         }, me.rowset);
 
         // Setup main panel items
