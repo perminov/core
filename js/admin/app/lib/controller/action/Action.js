@@ -446,6 +446,9 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Remove panel header
         me.panel.header = false;
 
+        // Set up context to be available as panel's `$ctx` prop
+        me.panel.$ctx = me;
+
         // If all contents should be added to existing panel
         if (!me.cfg.into) {
 
