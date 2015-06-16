@@ -3,6 +3,7 @@ Ext.define('Indi.view.desktop.Window', {
     alias: 'widget.desktopwindow',
     width: '100%',
     height: '100%',
+    maximized: false,
     maximizable: true,
     minimizable: true,
     autoRender: true,
@@ -111,6 +112,9 @@ Ext.define('Indi.view.desktop.Window', {
         me.on('beforeshow', Indi.app.updateActiveWindow, Indi.app);
         me.on('deactivate', Indi.app.updateActiveWindow, Indi.app);
         me.on('minimize', Indi.app.updateActiveWindow, Indi.app);
+        me.on('maximize', Indi.app.updateTrail, Indi.app);
+        me.on('restore', Indi.app.updateTrail, Indi.app);
+        me.on('close', Indi.app.updateTrail, Indi.app);
 
         // Set window to be centered
         me.center();

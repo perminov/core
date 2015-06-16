@@ -29,30 +29,49 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         me.callParent();
     },
 
+    /**
+     * Set active button
+     *
+     * @param btn
+     */
     setActiveButton: function(btn) {
+
+        // If `btn` argument given
         if (btn) {
+
+            // Toggle given button
             btn.toggle(true);
-            Ext.get('i-center-north-trail-panel-body').setHTML(Indi.trail(true).breadCrumbs(btn.window.ctx.route));
-        } else {
-            this.wbar.items.each(function (item) {
-                if (item.isButton) {
-                    item.toggle(false);
-                }
-            });
-        }
+
+            // Update bread crumb trail contents
+            Indi.app.updateTrail();
+
+        // Else depress all buttons
+        } else this.wbar.items.each(function (item) {
+            item.toggle(false);
+        });
     },
 
+    /**
+     * Remove window button from
+     *
+     * @param btn
+     * @return {*}
+     */
     removeTaskButton: function (btn) {
         var found, me = this;
+
+        // Find
         me.wbar.items.each(function (item) {
             if (item === btn) {
                 found = item;
             }
             return !found;
         });
-        if (found) {
-            me.wbar.remove(found);
-        }
+
+        // Remove, if found
+        if (found) me.wbar.remove(found);
+
+        // Return removed
         return found;
     }
 });

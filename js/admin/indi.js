@@ -729,74 +729,144 @@ Ext.define('Indi', {
      */
     windows: new Ext.util.MixedCollection(),
 
+    /**
+     * Get active window
+     *
+     * @return {*}
+     */
     getActiveWindow: function () {
         var win = null, zmgr = Indi.app.getDesktopZIndexManager();
 
+        // Walk through z-indexed windows and find the top one
+        if (zmgr) zmgr.eachTopDown(function (comp) {
+            if (comp.isWindow && !comp.hidden) {
+                win = comp;
+                return false;
+            }
+            return true;
+        });
+
+        // Return
+        return win;
+    },
+
+    /**
+     * Get active window
+     *
+     * @return {*}
+     */
+    getTopMaximizedWindow: function () {
+        var win = null, zmgr = Indi.app.getDesktopZIndexManager();
+
+        // Walk through z-indexed windows and find the top one that is maximized
         if (zmgr)
             zmgr.eachTopDown(function (comp) {
-                if (comp.isWindow && !comp.hidden) {
+                if (comp.isWindow && !comp.hidden && comp.maximized) {
                     win = comp;
                     return false;
                 }
                 return true;
             });
 
+        // Return
         return win;
     },
 
+    /**
+     * Get windows zIndex manager
+     *
+     * @return {*}
+     */
     getDesktopZIndexManager: function () {
         var windows = this.windows;
+
+        // Return
         return (windows.getCount() && windows.getAt(0).zIndexManager) || null;
     },
 
-
+    /**
+     * This function does all things, that are required to be done each time focus moves from one window to another
+     */
     updateActiveWindow: function () {
+
         var me = this, activeWindow = me.getActiveWindow(), last = me.lastActiveWindow;
 
-        if (activeWindow === last) return;
+        // If currently active window - is the last focused - update bread crumb trail and return
+        if (activeWindow === last) return Indi.app.updateTrail();
 
+        // If we previously had active window, and that window is still exists
         if (last) {
+
+            // Remove active style and add inactive style
             if (last.el.dom) {
                 last.addCls(me.inactiveWindowCls);
                 last.removeCls(me.activeWindowCls);
             }
+
+            // Set up `active` prop as false`
             last.active = false;
         }
 
+        // Set up currently active window as last active window
         me.lastActiveWindow = activeWindow;
 
+        // Misc things
         if (activeWindow) {
+
+            // Remove active style and add inactive style
             activeWindow.addCls(me.activeWindowCls);
             activeWindow.removeCls(me.inactiveWindowCls);
+
+            // Set up window as non-mimimized, and set it's `active` flag to On
             activeWindow.minimized = false;
             activeWindow.active = true;
         }
 
+        // Make button, likned to window, as active, too
         me.taskbar.setActiveButton(activeWindow && activeWindow.taskButton);
+    },
+
+    /**
+     * Update bread crumb trail contents to represent current window
+     */
+    updateTrail: function() {
+        var me = this, topMaximized = me.getTopMaximizedWindow();
+
+        // If we've found window that is the top most within maximized window
+        // set up bread crumb trail to represent it's location within the system,
+        // or erase bread crumb trail contents
+        Ext.get('i-center-north-trail-panel-body').setHTML(
+            topMaximized ? Indi.trail(true).breadCrumbs(topMaximized.ctx.route) : ''
+        );
     },
 
     /**
      * Launch callback
      */
     launch: function() {
+        var me = this;
 
         // Merge static properties, passed within construction, with prototype's static properties
-        this.self = Ext.merge(this.self, this.statics);
+        me.self = Ext.merge(me.self, me.statics);
 
-        if (Ext.get('i-login-box')) {
-            Ext.create('Indi.view.LoginBox', {title: Indi.title});
-        } else {
-            Indi.viewport = Ext.create('Indi.view.Viewport');
-        }
+        // If we are welcomed by a log-in panel - set up it's title
+        if (Ext.get('i-login-box')) Ext.create('Indi.view.LoginBox', {title: Indi.title});
 
+        // Else create a viewport instance
+        else Indi.viewport = Ext.create('Indi.view.Viewport');
+
+        // Static shortcut to this app
         Indi.app = this;
+
+        // Static shortcut to this app's taskbar
         Indi.app.taskbar = Ext.getCmp('i-center-north');
     }
 }, function() {
+    var me = this;
 
     // Apply system object's additional prototype functions, because some browsers do not have it as built-in
-    for (var i in this.modernizer) this.modernizer[i]();
+    for (var i in me.modernizer) me.modernizer[i]();
 
     // Share some Indi's functions with window object
-    this.shareWith(window);
+    me.shareWith(window);
 });

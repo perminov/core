@@ -1286,7 +1286,17 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeLastRequest: function(){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, url = me.getStore().getProxy().url, extra = me.getStore().getProxy().extraParams, get = [];
+        var me = this, url, extra, get = [];
+
+        // If first store data was got not by separate request - make filterChange() call,
+        // that will set up `url` and `extraParams` props within proxy
+        if (!me.getStore().lastOptions) me.filterChange({noReload: true});
+
+        // Get url
+        url = me.getStore().getProxy().url;
+
+        // Extra
+        extra = me.getStore().getProxy().extraParams;
 
         // Append param-value pairs
         ['search', 'keyword', 'summary'].forEach(function(r){
