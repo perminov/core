@@ -1589,17 +1589,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Return
         return Ext.merge({
             id: me.id + '-rowset',
-            /*dockedItems: me.rowsetDockedA(),
-            store: me.getStore(),
-            listeners: {
-                boxready: function() {
-                    if (me.ti().store) {
-                        me.getStore().rawDataRightHere = true;
-                        me.getStore().loadRawData(me.ti().store);
-                        me.getStore().rawDataRightHere = false;
-                    } else me.getStore().load();
-                }
-            }*/
+            dockedItems: me.rowsetDockedA(),
+            store: me.getStore()
         }, this.rowset);
     },
 
