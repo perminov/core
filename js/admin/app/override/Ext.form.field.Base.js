@@ -271,9 +271,12 @@ Ext.override(Ext.form.field.Base, {
      * @return {Number}
      */
     getInputWidthUsage: function() {
-        var me = this, input = me.inputEl;
+        var me = this, input = me.inputEl, inputValueWidth = Indi.metrics.getWidth(me.getValue()), lim = 0;
+
+        // Prevent inputValueWidth to be too great
+        if (inputValueWidth > (lim = Ext.getCmp('i-center-center').getWidth()/2 * 0.8)) inputValueWidth = lim;
 
         // Return
-        return Indi.metrics.getWidth(me.getValue()) + input.getPadding('lr') + input.getMargin('lr') + input.getBorderWidth('lr');
+        return inputValueWidth + input.getPadding('lr') + input.getMargin('lr') + input.getBorderWidth('lr');
     }
 });
