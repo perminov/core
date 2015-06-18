@@ -410,3 +410,6 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-action-form-topbar-button-save.x-btn-default-toolbar-small .x-btn-inner{
     padding-right: 0px;
 }
+.x-trigger-noedit {
+    cursor: default;
+}
