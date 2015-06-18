@@ -1254,13 +1254,19 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Append row to current rowset, using $original argument as the base data for
      * construction of a row, that will be appended
-     *
+     * 
      * @param array $original
+     * @return Indi_Db_Table_Rowset
      */
     public function append(array $original) {
-        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->model()->table()));
+        
+        // Append
+        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
         $this->_count++;
         $this->_found++;
+        
+        // Return rowset itself
+        return $this;
     }
 
     /**
@@ -1304,5 +1310,24 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function gb($value, $key = 'id') {
         foreach ($this->_rows as $r) if ($r->$key == $value) return $r;
+    }
+
+    /**
+     * Merge current rowset with same-type rowset
+     * 
+     * @param Indi_Db_Table_Rowset $rowset
+     * @return Indi_Db_Table_Rowset
+     */
+    public function merge(Indi_Db_Table_Rowset $rowset) {
+        
+        // Append
+        foreach ($rowset as $row) {
+            $this->_rows[] = $row;
+            $this->_count++;
+            $this->_found++;
+        }
+        
+        // Return rowset itself
+        return $this;
     }
 }
