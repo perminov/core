@@ -1600,8 +1600,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                     // Load raw data straight into the store
                     me.getStore().loadRawData(me.ti().scope.pageData);
-                    me.getStore().each(function(r, i, l) {
+                    me.getStore().each(function(r, i) {
                         r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
+                    });
+
+                    // Ensure column widths will be recalculated each time grid width was changed
+                    this.on('resize', function(grid, w, h, ow, oh) {
+                        if (w != ow) me.gridColumnAFit();
                     });
                 }
             }
