@@ -380,23 +380,50 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function exclude($keys, $type = 'id', $inverse = false){
 
-        // If $ids argument is not an array, we convert it to it by exploding by comma
-        if (!is_array($keys)) $keys = explode(',', $keys);
+        // If $keys argument is a string
+        if (is_string($keys) || is_integer($keys)) {
 
-        // Flip array
-        $keys = array_flip($keys);
+            // Check if it contains a match expression
+            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
+
+            // If $keys argument is not an array, we convert it to it by exploding by comma
+            else if (!is_array($keys)) $keys = explode(',', $keys);
+        }
+
+        // Flip $keys array
+        if (is_array($keys)) $keys = array_flip($keys);
 
         // For each item in $this->_original array
         foreach ($this->_rows as $index => $row) {
 
-            // If item id is in exclusion/selection list
-            if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+            // If we deal with an expression
+            if ($expr) {
 
-                // Unset row from current rowset
-                unset($this->_rows[$index]);
+                // Build the expression
+                eval('$match = '. $row->$type . ' ' . $expr . ';');
 
-                // Decrement count of items in current rowset
-                $this->_count --;
+                // If item id is in exclusion/selection list
+                if ($inverse ? !$match : $match) {
+
+                    // Unset row from current rowset
+                    unset($this->_rows[$index]);
+
+                    // Decrement count of items in current rowset
+                    $this->_count --;
+                }
+
+                // Else
+            } else {
+
+                // If item id is in exclusion/selection list
+                if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+
+                    // Unset row from current rowset
+                    unset($this->_rows[$index]);
+
+                    // Decrement count of items in current rowset
+                    $this->_count --;
+                }
             }
         }
 
