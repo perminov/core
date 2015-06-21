@@ -18,7 +18,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, {alias: 'close'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'save'}, {alias: 'autosave'}, '-',
