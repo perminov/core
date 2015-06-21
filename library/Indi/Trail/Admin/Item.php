@@ -362,6 +362,9 @@ class Indi_Trail_Admin_Item {
             // Get control element
             $control = $fieldR->foreign('elementId')->alias;
 
+            // If no defaultValue - try next filter
+            if (!strlen($filter->defaultValue)) continue;
+
             // Get compiled value
             $compiled = $filter->compiled('defaultValue');
 
