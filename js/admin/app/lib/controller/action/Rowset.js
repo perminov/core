@@ -1611,6 +1611,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                     // Load raw data straight into the store
                     me.getStore().loadRawData(me.ti().scope.pageData);
+                    me.getStore().each(function(r, i, l) {
+                        r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
+                    });
                 }
             }
         }, me.rowset);

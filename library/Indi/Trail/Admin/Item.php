@@ -339,6 +339,50 @@ class Indi_Trail_Admin_Item {
     }
 
     /**
+     * Get json-encoded default filter values
+     *
+     * @return string
+     */
+    public function jsonDefaultFilters() {
+
+        // Json
+        $json = array();
+
+        // Array of range-filters
+        $rangeA = ar('number,calendar,datetime');
+
+        // Set up foreign data for `fieldId` prop
+        $this->filters->foreign('fieldId');
+
+        // Foreach filter
+        foreach ($this->filters as $filter) {
+
+            $fieldR = $filter->foreign('fieldId');
+
+            // Get control element
+            $control = $fieldR->foreign('elementId')->alias;
+
+            // Get compiled value
+            $compiled = $filter->compiled('defaultValue');
+
+            // If current filter is a range filter
+            if (in($control, $rangeA)) {
+
+                // Get bounds, and append each bound as a separate item in $json array
+                $boundA = json_decode(str_replace('\'', '"', $compiled));
+                foreach ($boundA as $bound => $value)
+                    if (in($bound, ar('lte,gte')))
+                        $json[] = array($fieldR->alias . '-' . $bound => $value);
+
+            // Append filter's default value as an array, containing single kay and value
+            } else $json[] = array($fieldR->alias => $compiled);
+        }
+
+        // Return json-encoded default filters values
+        return json_encode($json);
+    }
+
+    /**
      * Return the trail item, that is parent for current trail item
      *
      * @param int $step
