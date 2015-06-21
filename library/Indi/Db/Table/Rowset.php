@@ -380,23 +380,50 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function exclude($keys, $type = 'id', $inverse = false){
 
-        // If $ids argument is not an array, we convert it to it by exploding by comma
-        if (!is_array($keys)) $keys = explode(',', $keys);
+        // If $keys argument is a string
+        if (is_string($keys) || is_integer($keys)) {
 
-        // Flip array
-        $keys = array_flip($keys);
+            // Check if it contains a match expression
+            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
+
+            // If $keys argument is not an array, we convert it to it by exploding by comma
+            else if (!is_array($keys)) $keys = explode(',', $keys);
+        }
+
+        // Flip $keys array
+        if (is_array($keys)) $keys = array_flip($keys);
 
         // For each item in $this->_original array
         foreach ($this->_rows as $index => $row) {
 
-            // If item id is in exclusion/selection list
-            if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+            // If we deal with an expression
+            if ($expr) {
 
-                // Unset row from current rowset
-                unset($this->_rows[$index]);
+                // Build the expression
+                eval('$match = '. $row->$type . ' ' . $expr . ';');
 
-                // Decrement count of items in current rowset
-                $this->_count --;
+                // If item id is in exclusion/selection list
+                if ($inverse ? !$match : $match) {
+
+                    // Unset row from current rowset
+                    unset($this->_rows[$index]);
+
+                    // Decrement count of items in current rowset
+                    $this->_count --;
+                }
+
+                // Else
+            } else {
+
+                // If item id is in exclusion/selection list
+                if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+
+                    // Unset row from current rowset
+                    unset($this->_rows[$index]);
+
+                    // Decrement count of items in current rowset
+                    $this->_count --;
+                }
             }
         }
 
@@ -1254,13 +1281,19 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Append row to current rowset, using $original argument as the base data for
      * construction of a row, that will be appended
-     *
+     * 
      * @param array $original
+     * @return Indi_Db_Table_Rowset
      */
     public function append(array $original) {
-        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->model()->table()));
+        
+        // Append
+        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
         $this->_count++;
         $this->_found++;
+        
+        // Return rowset itself
+        return $this;
     }
 
     /**
@@ -1304,5 +1337,24 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function gb($value, $key = 'id') {
         foreach ($this->_rows as $r) if ($r->$key == $value) return $r;
+    }
+
+    /**
+     * Merge current rowset with same-type rowset
+     * 
+     * @param Indi_Db_Table_Rowset $rowset
+     * @return Indi_Db_Table_Rowset
+     */
+    public function merge(Indi_Db_Table_Rowset $rowset) {
+        
+        // Append
+        foreach ($rowset as $row) {
+            $this->_rows[] = $row;
+            $this->_count++;
+            $this->_found++;
+        }
+        
+        // Return rowset itself
+        return $this;
     }
 }

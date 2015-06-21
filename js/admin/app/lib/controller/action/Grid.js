@@ -548,8 +548,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
             eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,
-                fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$form'); if (btn) btn.press();
+                fn:  function(a, b){
+                    if (Ext.getCmp(me.rowset.id).preventEnter) Ext.getCmp(me.rowset.id).preventEnter = false; else {
+                        var btn = Ext.getCmp(me.bid() + '-docked-inner$form'); if (btn) btn.press();
+                    }
                 },
                 scope: me
             },{
