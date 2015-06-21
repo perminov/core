@@ -418,6 +418,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-action-form-topbar-button-save.x-btn-default-toolbar-small .x-btn-inner{
     padding-right: 0px;
 }
+.x-trigger-noedit {
+    cursor: default;
+}
 
 /* Window style adjustments */
 .x-window-default {
@@ -584,4 +587,3 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-windowbar-btn.x-pressed .x-btn-close-btn:hover, .x-windowbar-btn.x-over .x-btn-close-btn:hover {
     background-image: url(/i/admin/wbtn-icon-close-white.png);
 }
-
