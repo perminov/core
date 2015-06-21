@@ -89,7 +89,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (!Indi::uri()->format && !$this->_isRowsetSeparate) {
 
                     // Prepare search data for $this->filtersWHERE()
-                    Indi::get()->search = Indi::trail()->scope->filters;
+                    Indi::get()->search = Indi::trail()->scope->filters == '[]'
+                        ? Indi::trail()->jsonDefaultFilters()
+                        : Indi::trail()->scope->filters;
 
                     // Prepare search data for $this->keywordWHERE()
                     Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
