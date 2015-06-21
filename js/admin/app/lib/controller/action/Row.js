@@ -34,7 +34,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, {alias: 'close'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
@@ -90,15 +90,6 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
-     * Build panel master toolbar items array
-     *
-     * @return {Array}
-     */
-    panelDocked$MasterItemA: function() {
-        return this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
-    },
-
-    /**
      * Master toolbar 'Back' button
      *
      * @return {Object}
@@ -139,7 +130,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         if (!isTab) return null;
 
         // Return 'Close' button config
-        return {
+        return [{
             id: me.panelDockedInnerBid() + 'close',
             text: '',
             iconCls: 'i-btn-icon-close',
@@ -147,7 +138,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             handler: function() {
                 Ext.getCmp(me.panel.id).up('[isSouth]').getActiveTab().close();
             }
-        }
+        }, '-']
     },
 
     /**

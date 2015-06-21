@@ -184,6 +184,17 @@ Ext.define('Indi.lib.controller.action.Action', {
     },
 
     /**
+     * Build and return array of master toolbar items configs
+     *
+     * @return {Array}
+     */
+    panelDocked$MasterItemA: function() {
+        var merged = [], pushed = this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
+        for (var i = 0; i < pushed.length; i++) merged = merged.concat(pushed[i]);
+        return merged;
+    },
+
+    /**
      *
      * @param panel
      * @private

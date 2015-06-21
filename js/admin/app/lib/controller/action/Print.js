@@ -17,7 +17,7 @@ Ext.define('Indi.lib.controller.action.Print', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'print'}, '-',

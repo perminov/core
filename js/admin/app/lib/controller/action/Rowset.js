@@ -884,17 +884,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Build and return array of master toolbar items configs
-     *
-     * @return {Array}
-     */
-    panelDocked$MasterItemA: function() {
-        var merged = [], pushed = this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
-        for (var i = 0; i < pushed.length; i++) merged = merged.concat(pushed[i]);
-        return merged;
-    },
-
-    /**
      * Build and return array of configs of master toolbar items, that represent action-buttons
      *
      * @return {Array}
