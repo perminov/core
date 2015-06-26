@@ -97,7 +97,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Setup initial properties
         $this->_table = $config['table'];
-        $this->_original = $config['original'];
+        $this->_original = $this->fixTypes($config['original']);
         $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
         $this->_system = is_array($config['system']) ? $config['system'] : array();
         $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
@@ -110,6 +110,28 @@ class Indi_Db_Table_Row implements ArrayAccess
                 Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
             }
         }
+    }
+
+    /**
+     * Fix types of data, got from PDO
+     *
+     * @param array $data
+     * @return array
+     */
+    public final function fixTypes(array $data) {
+
+        // Foreach prop check
+        foreach ($data as $k => $v) {
+
+            // If prop's value is a string, containing integer value - force value type to be integer, not string
+            if (preg_match(Indi::rex('int11'), $v)) $data[$k] = (int) $v;
+
+            // Else if prop's value is a string, containing decimal value - force value type to be float, not string
+            else if (preg_match(Indi::rex('decimal112'), $v)) $data[$k] = (float) $v;
+        }
+
+        // Return
+        return $data;
     }
 
     /**
@@ -388,7 +410,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->deleteUsages();
 
         // Standard deletion
-        return $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+        $return = $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+
+        // Unset `id` prop
+        $this->id = null;
+
+        // Return
+        return $return;
     }
 
     /**
@@ -3256,13 +3284,23 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Alias for $this->delta() method
+     *
+     * @param $prop
+     * @return mixed
+     */
+    public function moDelta($prop) {
+        return $this->delta($prop);
+    }
+
+    /**
      * Get the difference between modified and original values for a given property.
      * This method is for use with only properties, that have numeric values
      *
      * @param $prop
      * @return mixed
      */
-    function moDelta($prop) {
+    public function delta($prop) {
         return array_key_exists($prop, $this->_modified) ? $this->_modified[$prop] - $this->_original[$prop] : 0;
     }
 
@@ -3275,7 +3313,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $format
      * @return string
      */
-    function date($prop, $format = 'Y-m-d') {
+    public function date($prop, $format = 'Y-m-d') {
         return date($format, strtotime($this->$prop));
     }
 
@@ -3285,7 +3323,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * FORCED to be passed (in extjs, if you call this.callParent() - no arguments would be passed,
      * unless you use this.callParent(arguments) expression instead)
      */
-    function callParent() {
+    public function callParent() {
 
         // Get call info from backtrace
         $call = array_pop(array_slice(debug_backtrace(), 1, 1));
@@ -3295,12 +3333,14 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
     
     /**
-     * Retrieve width and height from the getimagesize/getflashsize call, for an image or swf file 
+     * Retrieve width and height from the getimagesize/getflashsize call, for an image or swf file
      * linked to a curent row's $alias field, incapsulated within an instance of stdClass object
      *
+     * @param $alias
+     * @param string $copy
      * @return stdClass
      */
-    function dim($alias, $copy = '') {
+    public function dim($alias, $copy = '') {
 
         // If image file exists
         if ($abs = $this->abs($alias, $copy)) {
@@ -3311,5 +3351,55 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Return 
             return (object) array('width' => $dim[0], 'height' => $dim[1]);
         }
+    }
+
+    /**
+     * Reset row props modifications. If row had any foreign data, that data will be re-fetched to ensure it rely
+     * on original values of foreign keys rather than modified values of foreign keys
+     *
+     * @param bool $clone
+     * @return bool|Indi_Db_Table_Row
+     */
+    public function reset($clone = false) {
+
+        // Backup modifications
+        $modified = $this->_modified;
+
+        // Backup foreign data
+        $foreign = $this->_foreign;
+
+        // Get modified foreign key names
+        $mfkeyA = array_intersect(array_keys($modified), array_keys($foreign));
+
+        // Reset modifications
+        $this->_modified = array();
+
+        // Remove foreign data for modified foreign keys
+        foreach ($mfkeyA as $mfkeyI) unset($this->_foreign[$mfkeyI]);
+
+        // If $clone arg is `true`
+        if ($clone) {
+
+            // Create the clone
+            $clone = clone $this;
+
+            // Set up clone's own foreign data, but only for certain foreign keys
+            if ($mfkeyA) $clone->foreign(im($mfkeyA));
+
+            // Get modifications back
+            $this->_modified = $modified;
+
+            // Get foreign data
+            $this->_foreign = $foreign;
+
+        // Else
+        } else {
+
+            // Renew own foreign data, for it to rely on original values rather than modified values
+            if ($mfkeyA) $this->foreign(im($mfkeyA));
+        }
+
+        // Return
+        return $clone ? $clone : $this;
     }
 }
