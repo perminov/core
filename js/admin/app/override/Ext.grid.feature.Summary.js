@@ -1,4 +1,22 @@
+Ext.override(Ext.XTemplate, {
+    recurse : function(values, reference) {
+        this.recursiveCall = true;
+        var returnValue = this.apply(reference ? values[reference] : values);
+        this.recursiveCall = false;
+        return returnValue;
+    }
+});
+
 Ext.override(Ext.grid.feature.Summary, {
+
+    /**
+     * This override is a part of solution, that fixes the bug, related to summary and grouping features together usage
+     *
+     * @return {String}
+     */
+    closeRows: function() {
+        return '</tpl>{[this.recursiveCall ? "" : this.printSummaryRow()]}';
+    },
 
     /**
      * Refresh summary row
