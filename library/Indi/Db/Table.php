@@ -186,6 +186,7 @@ class Indi_Db_Table
      * @return Indi_Db_Table_Rowset object
      */
     public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null, $offsetDetection = false) {
+
         // Get raw tree
         $tree = $this->fetchRawTree($order, $where);
 
@@ -959,6 +960,7 @@ class Indi_Db_Table
      * @throws Exception
      */
     public function delete($where) {
+
         // Basic SQL expression
         $sql = 'DELETE FROM `' . $this->_table . '`';
 
