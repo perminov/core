@@ -413,3 +413,16 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-trigger-noedit {
     cursor: default;
 }
+
+.i-grid-column-multiline .x-column-header-inner .x-column-header-text {
+    white-space: normal;
+}
+.i-grid-column-multiline {
+    height: auto !important;
+}
+.i-grid-column-autoheight {
+    height: auto !important;
+}
+.i-grid-column-multiline .x-column-header-inner {
+    text-align: center;
+}
