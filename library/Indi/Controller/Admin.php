@@ -1774,9 +1774,10 @@ class Indi_Controller_Admin extends Indi_Controller {
     /**
      * Calculate summary data to be included in the json output
      *
+     * @param bool $force
      * @return mixed
      */
-    function rowsetSummary() {
+    function rowsetSummary($force = false) {
 
         // If there is no 'summary' key within $_GET params - return
         if (!$summary = Indi::get('summary')) return;
@@ -1786,7 +1787,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
-        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !Indi::trail()->model->treeColumn())
+        if ((Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !$force) && !Indi::trail()->model->treeColumn())
             if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
 
         // Define an array containing extjs summary types and their sql representatives
