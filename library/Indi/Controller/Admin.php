@@ -1820,11 +1820,24 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Append scope's WHERE clause to the stack
         if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
 
+        // Adjust WHERE clause
+        $where = $this->adjustRowsetSummaryWHERE($where);
+
         // Append WHERE clause to that query
         if ($where) $sql .= ' WHERE ' . im($where, ' AND ');
 
         // Fetch and return calculated summaries
         return Indi::db()->query($sql)->fetchObject();
+    }
+
+    /**
+     * Adjust WHERE clause especially for rowset's summary calculation. This function is empty here, but may be useful in
+     * some situations
+     */
+    function adjustRowsetSummaryWHERE($where) {
+
+        // Return
+        return $where;
     }
 
     /**
