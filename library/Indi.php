@@ -1290,7 +1290,8 @@ class Indi {
 			self::$_blockA = array();
 
 			// Fetch rowset
-            $staticBlockRs = Indi::model('Staticblock')->fetchAll('`toggle` = "y"');
+            $w = Indi::uri()->staticpageAdditionalWHERE; $w[] = '`toggle` = "y"';
+            $staticBlockRs = Indi::model('Staticblock')->fetchAll($w);
 			
 			// Setup values in self::$_blockA array under certain keys
             foreach ($staticBlockRs as $staticBlockR) {
