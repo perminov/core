@@ -421,6 +421,20 @@ class Field_Row extends Indi_Db_Table_Row {
                     $defaultValue = '0.00';
                 }
 
+            // Else if column type is DECIMAL(14,3)
+            } else if ($columnTypeR->type == 'DECIMAL(14,3)') {
+
+                // If $php is true, or default value does not match the column type signature
+                if ($php || !preg_match(Indi::rex('decimal143'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a positive integer - we set field's `defaultValue` as '0.000'
+                    if (!$php) $this->defaultValue = '0.000';
+
+                    // Set $defaultValue as '0.000'
+                    $defaultValue = '0.000';
+                }
+
             // Else if column type is DATE
             } else if ($columnTypeR->type == 'DATE') {
 
@@ -751,8 +765,8 @@ class Field_Row extends Indi_Db_Table_Row {
         // Define array of rex-names, related to their mysql data types
         $rex = array(
             'VARCHAR(255)' => 'varchar255', 'INT(11)' => 'int11', 'DECIMAL(11,2)' => 'decimal112',
-            'DATE' => 'date', 'YEAR' => 'year', 'TIME' => 'time', 'DATETIME' => 'datetime',
-            'ENUM' => 'enum', 'SET' => 'set', 'BOOLEAN' => 'bool', 'VARCHAR(10)' => 'hrgb'
+            'DECIMAL(14,3)' => 'decimal143', 'DATE' => 'date', 'YEAR' => 'year', 'TIME' => 'time',
+            'DATETIME' => 'datetime', 'ENUM' => 'enum', 'SET' => 'set', 'BOOLEAN' => 'bool', 'VARCHAR(10)' => 'hrgb'
         );
 
         // Prepare regular expression for usage in WHERE clause in
@@ -773,7 +787,7 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = $defaultValue;
             } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $defaultValue;
-            } else if (preg_match('/DOUBLE\(7,2\)|YEAR|BOOLEAN/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)|YEAR|BOOLEAN|DECIMAL\(11,2\)|DECIMAL\(14,3\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = false;
             } else if (preg_match('/^DATE|TIME$/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $this->storeRelationAbility == 'none' ? false : $defaultValue;
@@ -789,8 +803,24 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = false;
             } else if (preg_match('/^DATE|TIME|DATETIME$/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '0'; $q = '';
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            }
+        } else if ($newType == 'DECIMAL(14,3)') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/YEAR|BOOLEAN/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
+            } else if (preg_match('/^DATE|TIME|DATETIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0'; $q = '';
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
             }
         } else if ($newType == 'DATE') {
             if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
@@ -818,12 +848,18 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = '0000-00-00'; $w = false;
             } else if (preg_match('/^DATETIME|TIME$/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
-                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`test` AS UNSIGNED)),
-                DATE_FORMAT(CAST(`test` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`' . $col .'` AS UNSIGNED)),
+                DATE_FORMAT(CAST(`' . $col .'` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(14) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00'; $w = false;
             }
         } else if ($newType == 'YEAR') {
@@ -844,9 +880,15 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(4) NOT NULL');
                 $incompatibleValuesReplacement = '0000'; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '0';
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
+                $incompatibleValuesReplacement = '0'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
+                $incompatibleValuesReplacement = '0'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
                 $incompatibleValuesReplacement = '0'; $w = false;
             }
@@ -868,11 +910,17 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
                 $incompatibleValuesReplacement = '00:00:00'; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
                 $incompatibleValuesReplacement = '00:00:00'; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(12) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(15) NOT NULL');
                 $incompatibleValuesReplacement = '00:00:00'; $w = false;
             }
         } else if ($newType == 'DATETIME') {
@@ -892,10 +940,16 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
             }
@@ -916,11 +970,17 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/TIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
                 $incompatibleValuesReplacement = 'IF(`' . $col . '` = "00:00:00", "0", "1")'; $w = false; $q = '';
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '1';
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
                 $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(12) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(15) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.000", "0", "1")'; $w = false; $q = '';
             }
         } else if ($newType == 'ENUM' || $newType == 'SET') {
             if (preg_match('/TEXT/', $curTypeR->type)) {
@@ -946,10 +1006,16 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/TIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(14,3\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             }
@@ -971,11 +1037,17 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/TIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(12) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(15) NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             }
         }

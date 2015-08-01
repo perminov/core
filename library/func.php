@@ -699,10 +699,30 @@ function jconfirm($msg) {
 function price($price, $formatted = false) {
 
     // Get price
-    $float = ((int) round($price * 100))/100;
+    $float = ((int) round($price * 100)) / 100;
 
     // Return that price as float value or as formatted string
     return $formatted ? number_format($float, 2, '.', ' ') : $float;
+}
+
+/**
+ * Normalize the decimal value to the specified precision
+ *
+ * @param float|int $value
+ * @param int $precision
+ * @param bool $formatted
+ * @return float|string
+ */
+function decimal($value, $precision = 2, $formatted = false) {
+
+    // Get the normalizer value
+    $normalizer = pow(10, $precision);
+
+    // Get price
+    $float = ((int) round($value * $normalizer)) / $normalizer;
+
+    // Return that price as float value or as formatted string
+    return $formatted ? number_format($float, $precision, '.', ' ') : $float;
 }
 
 /**

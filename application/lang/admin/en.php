@@ -96,8 +96,9 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE', 'Value "%s", mentioned in fi
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE', 'Date "%s", mentioned in field "%s"  - is not a valid date');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Value "%s", mentioned in field "%s" as a time - should be a time in format HH:MM:SS');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Time "%s", mentioned in field "%s" - is not a valid time');
-define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 5 or less digits in integer part, and 2 or less/none digits in fractional part');
-define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Value "%s" of field "%s" should be a number with 8 or less digits in integer part, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 4 or less digits in integer part, optionally prepended with "-" sign, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Value "%s" of field "%s" should be a number with 8 or less digits in integer part, optionally prepended with "-" sign, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143', 'Value "%s" of field "%s" should be a number with 10 or less digits in integer part, optionally prepended with "-" sign, and 3 or less/none digits in fractional part');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Value "%s" of field "%s" should be a year in format YYYY');
 define('I_ROWSAVE_ERROR_NOTDIRTY_TITLE', 'Nothing to save');
 define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
