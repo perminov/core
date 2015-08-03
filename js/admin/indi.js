@@ -346,6 +346,7 @@ Ext.define('Indi', {
             // Make the request
             Ext.Ajax.request(Ext.merge({
                 url: Indi.pre + uri,
+                timeout: 300000,
                 success: function(response, request){
 
                     // In no 'into' property given within `cfg` object - destroy center panel
