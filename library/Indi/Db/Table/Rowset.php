@@ -381,7 +381,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     public function exclude($keys, $type = 'id', $inverse = false){
 
         // If $keys argument is a string
-        if (is_string($keys) || is_integer($keys)) {
+        if (is_string($keys) || is_integer($keys) || is_null($keys)) {
 
             // Check if it contains a match expression
             if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
