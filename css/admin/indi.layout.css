@@ -542,6 +542,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-windowbar .x-windowbar-btn.i-btn-ellipsis .x-btn-inner{
     text-overflow: ellipsis;
     -o-text-overflow: ellipsis;
+    padding: 0 0 0 3px;
+    position: relative;
+    left: 1px;
 }
 .x-windowbar .x-windowbar-btn em { line-height: 1; display: block; overflow: hidden;}
 .x-windowbar .x-windowbar-btn.x-closable em { padding-right: 10px; }
