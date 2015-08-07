@@ -1039,7 +1039,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
-        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(($wrap ? $wrap/22 : 22) * 15.75);
+        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(($wrap ? $wrap/22 : 1) * 15.75);
         $currentRowIndex++;
 
         // We remember a current row index at this moment, because it is the index which data rows are starting from
