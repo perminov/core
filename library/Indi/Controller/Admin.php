@@ -1037,6 +1037,14 @@ class Indi_Controller_Admin extends Indi_Controller {
                 )
             );
 
+
+            // Ensure header title to be wrapped, if need
+            if ($columnI['height']) {
+                $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getAlignment()->setWrapText(true);
+                $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+                if ($wrap < $columnI['height']) $wrap = $columnI['height'];
+            }
+
             // Apply style for first cell within header row
             if (!$n && Indi::uri()->format == 'pdf') $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)
                 ->applyFromArray(array(
@@ -1063,7 +1071,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
-        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
+        $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(($wrap ? $wrap/22 : 1) * 15.75);
         $currentRowIndex++;
 
         // We remember a current row index at this moment, because it is the index which data rows are starting from
@@ -1800,9 +1808,10 @@ class Indi_Controller_Admin extends Indi_Controller {
     /**
      * Calculate summary data to be included in the json output
      *
+     * @param bool $force
      * @return mixed
      */
-    function rowsetSummary() {
+    function rowsetSummary($force = false) {
 
         // If there is no 'summary' key within $_GET params - return
         if (!$summary = Indi::get('summary')) return;
@@ -1812,7 +1821,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
-        if (Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !Indi::trail()->model->treeColumn())
+        if ((Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !$force) && !Indi::trail()->model->treeColumn())
             if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
 
         // Define an array containing extjs summary types and their sql representatives
@@ -1845,11 +1854,24 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Append scope's WHERE clause to the stack
         if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
 
+        // Adjust WHERE clause
+        $where = $this->adjustRowsetSummaryWHERE($where);
+
         // Append WHERE clause to that query
         if ($where) $sql .= ' WHERE ' . im($where, ' AND ');
 
         // Fetch and return calculated summaries
         return Indi::db()->query($sql)->fetchObject();
+    }
+
+    /**
+     * Adjust WHERE clause especially for rowset's summary calculation. This function is empty here, but may be useful in
+     * some situations
+     */
+    function adjustRowsetSummaryWHERE($where) {
+
+        // Return
+        return $where;
     }
 
     /**

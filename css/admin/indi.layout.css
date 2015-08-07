@@ -529,6 +529,19 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     padding-left: 1px;
 }
 
+.i-grid-column-multiline .x-column-header-inner .x-column-header-text {
+    white-space: normal;
+}
+.i-grid-column-multiline {
+    height: auto !important;
+}
+.i-grid-column-autoheight {
+    height: auto !important;
+}
+.i-grid-column-multiline .x-column-header-inner {
+    text-align: center;
+}
+
 /* Window bar and button */
 .x-windowbar {background: white; border-color: #b5b8c8; margin-top: -4px !important; margin-right: 2px !important; box-shadow: 0 0 5px gray; height: 16px; overflow: hidden;}
 

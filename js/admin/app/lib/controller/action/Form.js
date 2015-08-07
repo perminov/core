@@ -594,6 +594,26 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
+     * Decimal143-fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXDecimal143: function(item) {
+        return {
+            xtype: 'numberfield',
+            cls: 'i-field-number',
+            afterSubTpl: '<span class="i-field-number-after">'+ (item.field.params && item.field.params.measure ? item.field.params.measure : '')+'</span>',
+            maxLength: 15,
+            minValue: 0,
+            maxValue: Math.pow(10, 11) - 0.01,
+            decimalPrecision: 3,
+            precisionPad: true,
+            value: parseFloat(item.value) || item.value
+        };
+    },
+
+    /**
      * Textarea-fields config adjuster
      *
      * @param item
