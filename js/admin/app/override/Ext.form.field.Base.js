@@ -153,6 +153,11 @@ Ext.override(Ext.form.field.Base, {
                     // If s is a string, representing a floating-point number - convert it into float-type and return
                     if (s.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) v = parseFloat(s);
 
+                    // If s is a string, representing a floating-point number, containing
+                    // up to 10 digits in integer part, optionally prepended with an '-' sign,
+                    // and containing up to 3 digits in fractional part - convert it into float-type
+                    if (s.match(/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/)) v = parseFloat(s);
+
                     data[stl.name] = v;
                 }
             });

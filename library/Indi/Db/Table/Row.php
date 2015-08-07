@@ -1739,6 +1739,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     continue;
                 }
 
+            // If element is 'price'
             } else if ($elementR->alias == 'price') {
 
                 // Round the value to 2 digits after floating point
@@ -1749,6 +1750,22 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                     // Push a error to errors stack
                     $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+                // If element is 'decimal143'
+            } else if ($elementR->alias == 'decimal143') {
+
+                // Round the value to 2 digits after floating point
+                if (is_numeric($value)) $value = decimal($value, 3);
+
+                // If $value is not a decimal
+                if (!preg_match(Indi::rex('decimal143'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143, $value, $fieldR->title);
 
                     // Jump to checking the next column's value
                     continue;
@@ -2141,6 +2158,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // Push a error to errors stack
                         $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'DECIMAL(14,3)'
+                } else if ($columnTypeR->type == 'DECIMAL(14,3)') {
+
+                    // If $value is not a decimal, or more than 11-digit decimal
+                    if (!preg_match(Indi::rex('decimal143'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143, $value, $fieldR->title);
 
                         // Jump to checking the next column's value
                         continue;

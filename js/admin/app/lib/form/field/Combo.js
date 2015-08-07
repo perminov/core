@@ -2155,6 +2155,11 @@ Ext.define('Indi.lib.form.field.Combo', {
         //if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
         if (propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
 
+        // If propS is a string, representing a floating-point number, containing
+        // up to 10 digits in integer part, optionally prepended with an '-' sign,
+        // and containing up to 3 digits in fractional part - convert it into float-type and return
+        if (propS.match(/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/)) return parseFloat(propS);
+
         // Retun as is
         return propS;
     },

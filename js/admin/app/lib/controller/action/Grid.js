@@ -115,7 +115,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
-                    [3,5].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
+                    [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
             }(),
             renderer: function (value) {
                 if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
@@ -162,6 +162,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return Ext.merge(this.gridColumnXNumber(column, field), {
             displayZeroes: true,
             decimalPrecision: 2
+        });
+    },
+
+    gridColumnXDecimal143: function(column, field) {
+        return Ext.merge(this.gridColumnXNumber(column, field), {
+            displayZeroes: true,
+            decimalPrecision: 3
         });
     },
 
