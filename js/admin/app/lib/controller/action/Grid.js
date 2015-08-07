@@ -115,7 +115,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
-                    [3,5].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
+                    [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
             }(),
             renderer: function (value) {
                 if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
@@ -162,6 +162,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return Ext.merge(this.gridColumnXNumber(column, field), {
             displayZeroes: true,
             decimalPrecision: 2
+        });
+    },
+
+    gridColumnXDecimal143: function(column, field) {
+        return Ext.merge(this.gridColumnXNumber(column, field), {
+            displayZeroes: true,
+            decimalPrecision: 3
         });
     },
 
@@ -745,6 +752,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
                 };
 
+                if (Ext.isString(gridColumnA[i].cls) && gridColumnA[i].cls.match(/i-grid-column-multiline/))
+                    exportColumnI.height = gridColumnA[i].getHeight();
+
                 // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
                 if (gridColumnA[i].align == 'right')
                     Ext.merge(exportColumnI, {
@@ -777,7 +787,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     rowsetExportQuery: function(format) {
         var me = this, i, request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/'),
-            columns = 'columns=' + encodeURIComponent(JSON.stringify(me['_rowsetExport$' + Indi.ucfirst(format) + 'ColumnA']()));;
+            columns = 'columns=' + encodeURIComponent(JSON.stringify(me['_rowsetExport$' + Indi.ucfirst(format) + 'ColumnA']()));
 
         // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
         // property for each object, that is representing a color-filter in request

@@ -647,8 +647,9 @@ function num2str($num) {
  * @param $success
  * @param mixed $msg1
  * @param mixed $msg2
+ * @param bool $die
  */
-function jflush($success, $msg1 = null, $msg2 = null) {
+function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Start building data for flushing
     $flush = array('success' => $success);
@@ -669,9 +670,14 @@ function jflush($success, $msg1 = null, $msg2 = null) {
     if ($mrg1) $flush = array_merge($flush, $mrg1);
     if ($mrg2) $flush = array_merge($flush, $mrg2);
 
-    // Flush
-    header('Content-Type: application/json');
-    die(json_encode($flush));
+    // If headers were not already sent - flush an error message
+    if (!headers_sent()) header('Content-Type: application/json');
+
+    // Flush contents
+    echo json_encode($flush);
+
+    // Exit if need
+    if ($die) die();
 }
 
 /**
@@ -684,8 +690,11 @@ function jconfirm($msg) {
     // Start building data for flushing
     $flush = array('confirm' => true, 'msg' => $msg);
 
-    // Flush
+    // If headers were not already sent - flush an error message
+    if (!headers_sent()) header('Content-Type: application/json');
     header('Content-Type: application/json');
+
+    // Flush
     die(json_encode($flush));
 }
 
@@ -699,10 +708,30 @@ function jconfirm($msg) {
 function price($price, $formatted = false) {
 
     // Get price
-    $float = ((int) round($price * 100))/100;
+    $float = ((int) round($price * 100)) / 100;
 
     // Return that price as float value or as formatted string
     return $formatted ? number_format($float, 2, '.', ' ') : $float;
+}
+
+/**
+ * Normalize the decimal value to the specified precision
+ *
+ * @param float|int $value
+ * @param int $precision
+ * @param bool $formatted
+ * @return float|string
+ */
+function decimal($value, $precision = 2, $formatted = false) {
+
+    // Get the normalizer value
+    $normalizer = pow(10, $precision);
+
+    // Get price
+    $float = ((int) round($value * $normalizer)) / $normalizer;
+
+    // Return that price as float value or as formatted string
+    return $formatted ? number_format($float, $precision, '.', ' ') : $float;
 }
 
 /**
