@@ -315,7 +315,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
             visible = grid.getWidth() - (grid.getView().hasScrollY() ? 16 : 0), scw = me.rowset.smallColumnWidth,
             fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free, longest, summaryData,
-            summaryFeature = grid.getView().getFeature(0);
+            summaryFeature = grid.getView().getFeature(0), fnhci = -1;
 
         // Get summary data
         if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
@@ -331,7 +331,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
 
             // Reset length
-            longest = '';
+            longest = columnA[i].text;
 
             // Get the longest (within current column) cell contents
             store.each(function(r){
@@ -368,66 +368,79 @@ Ext.define('Indi.lib.controller.action.Grid', {
             total += widthA[i];
 
             // If column is hidden - sum it's width into `hctw` variable
-            if (columnA[i].hidden) hctw += widthA[i];
+            if (columnA[i].hidden) hctw += widthA[i]; else if (fnhci == -1) fnhci = parseInt(i);
         }
 
         // Remember width, best suitable for grid if it was no width limitations
-        grid.widthUsage = parseInt(total);
+        grid.widthUsage = parseInt(total - hctw);
 
-        // Exclude first non-hidden column width from total width
-        total -= widthA[1];
+        // If visible width completely match required width
+        if (visible == grid.widthUsage || grid.fitUsage) {
 
-        // Detect the first column's width, using it's fraction
-        widthA[1] = fcw = Math.ceil(visible * fcwf) || widthA[1];
+            // For each column, set width
+            for (i = 0; i < widthA.length; i++) columnA[i].setWidth(widthA[i]);
 
-        // Include first non-hidden column width (regarding `firstColumnWidthFraction` cfg) to total width
-        total += widthA[1];
+        // Else
+        } else {
 
-        // If total width of all columns is less that available/visible width
-        // - set column widths without any additional calculations
-        if (total - hctw < visible) {
+            if (fnhci != -1) {
 
-            // For each column (except first non-hidden)
-            for (i = 2; i < widthA.length; i++) {
+                // Exclude first non-hidden column width from total width
+                total -= widthA[fnhci];
 
-                // Set width
-                columnA[i].setWidth(widthA[i]);
+                // Detect the first column's width, using it's fraction
+                widthA[fnhci] = fcw = Math.ceil(visible * fcwf) || widthA[fnhci];
 
-                // Sum widths
-                busy += columnA[i].width;
+                // Include first non-hidden column width (regarding `firstColumnWidthFraction` cfg) to total width
+                total += widthA[fnhci];
             }
-        }
 
-        // Else if total width of all columns is greater than available/visible width - calculate
-        // the percent of column widths shrink, and apply it
-        else {
+            // If total width of all columns is less that available/visible width
+            // - set column widths without any additional calculations
+            if (total - hctw < visible) {
 
-            var over = total - hctw - visible, shrinkedWidth;
+                // For each column (except first non-hidden)
+                for (i = 2; i < widthA.length; i++) {
 
-            // Calc the total width for all small columns
-            for (i = 2; i < widthA.length; i++) if (widthA[i] > scw) sctw += widthA[i];
+                    // Set width
+                    columnA[i].setWidth(widthA[i]);
 
-            busy = 0;
-
-            // For each column (except first non-hidden)
-            for (i = 2; i < widthA.length; i++) {
-
-                // If current column's width is greater than `smallColumnWidth` - calc shrinked width,
-                // and apply it if it, hovewer, still not less than `smallColumnWidth`
-                if (widthA[i] > scw) widthA[i] = (shrinkedWidth = widthA[i] - Math.ceil(widthA[i]/sctw * over)) < scw
-                    ? scw
-                    : shrinkedWidth;
-
-                // Set width
-                columnA[i].setWidth(widthA[i]);
-
-                // Sum widths
-                busy += columnA[i].width;
+                    // Sum widths
+                    busy += columnA[i].width;
+                }
             }
-        }
 
-        // Increase first non-hidden column's width, if free space is available
-        columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
+            // Else if total width of all columns is greater than available/visible width - calculate
+            // the percent of column widths shrink, and apply it
+            else {
+
+                var over = total - hctw - visible, shrinkedWidth;
+
+                // Calc the total width for all small columns
+                for (i = 2; i < widthA.length; i++) if (widthA[i] > scw) sctw += widthA[i];
+
+                busy = 0;
+
+                // For each column (except first non-hidden)
+                for (i = 2; i < widthA.length; i++) {
+
+                    // If current column's width is greater than `smallColumnWidth` - calc shrinked width,
+                    // and apply it if it, hovewer, still not less than `smallColumnWidth`
+                    if (widthA[i] > scw) widthA[i] = (shrinkedWidth = widthA[i] - Math.ceil(widthA[i]/sctw * over)) < scw
+                        ? scw
+                        : shrinkedWidth;
+
+                    // Set width
+                    columnA[i].setWidth(widthA[i]);
+
+                    // Sum widths
+                    busy += columnA[i].width;
+                }
+            }
+
+            // Increase first non-hidden column's width, if free space is available
+            columnA[fnhci].setWidth((free = visible - busy) > fcw ? free : fcw);
+        }
 
         // Resume layouts
         Ext.resumeLayouts(true);
