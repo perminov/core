@@ -502,6 +502,35 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // 'Filter' toolbar config
         return {
+            xtype: 'filtertoolbar',
+            ctx: me,
+            hidden: !me.ti().filters.length &&
+                (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
+            id: me.bid() + '-toolbar$filter',
+            items: [{
+                xtype:'fieldset',
+                id: me.bid()+'-toolbar$filter-fieldset',
+                padding: '0 0 1 3',
+                title: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_TITLE,
+                width: '100%',
+                layout: 'column',
+                defaults: {
+                    margin: '0 5 4 2',
+                    labelSeparator: '',
+                    labelPad: 6,
+                    labelStyle: 'padding-left: 0'
+                },
+                items: me.panelDocked$FilterItemA(),
+                listeners: {
+                    afterrender: function(){
+                        me.setFilterValues();
+                    }
+                }
+            }]
+        }
+
+        // 'Filter' toolbar config
+        /*return {
             xtype: 'toolbar',
             dock: 'top',
             hidden: !me.ti().filters.length &&
@@ -529,7 +558,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     }
                 }
             }]
-        }
+        }*/
     },
 
     /**
