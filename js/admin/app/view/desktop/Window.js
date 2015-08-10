@@ -73,7 +73,14 @@ Ext.define('Indi.view.desktop.Window', {
         me.callParent(arguments);
 
         // Update wrapper panel's layout
-        if (wrapper) wrapper.updateLayout();
+        if (wrapper) {
+
+            // Fit south panel for it to be sized as user-friendly as it possible
+            wrapper.fitSouth();
+
+            // Update layout
+            wrapper.updateLayout();
+        }
     },
 
     // @inheritdoc

@@ -1849,4 +1849,46 @@ class Indi {
     public function ckup() {
         return DOC . STD . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
     }
+
+    /**
+     * This function is used to call the url that is located within same host (localhost)
+     * It will return the raw http response, but without headers
+     *
+     * @static
+     * @param $url
+     * @return string
+     */
+    public static function lwget($url) {
+
+        // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
+        $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+
+        // Get request headers, and declare $hrdS variable for collecting stringified headers list
+        $hdrA = apache_request_headers(); $hdrS = '';
+
+        // Unset headers, that may (for some unknown-by-me reasons) cause freeze execution
+        unset($hdrA['Connection'], $hdrA['Content-Length'], $hdrA['Content-length'], $hdrA['Accept-Encoding']);
+
+        // Build headers list
+        foreach ($hdrA as $n => $v) $hdrS .= $n . ': ' . $v . "\r\n";
+
+        // Prepare context options
+        $opt = array('http'=> array('method'=> 'GET', 'header'=> $hdrS));
+
+        // Create context, for passing as a third argument within file_get_contents() call
+        $ctx = stream_context_create($opt);
+
+        // Write session data and suspend session, so session file, containing serialized session data
+        // will be temporarily unlocked, to prevent caused-by-lockness execution freeze
+        session_write_close();
+
+        // Get the response from url call
+        ob_start(); $raw = file_get_contents($url, false, $ctx); $error = ob_get_clean();
+
+        // Resume session
+        session_start();
+
+        // Return $raw response, or error, if it has occured
+        return $error ? $error : $raw;
+    }
 }

@@ -516,7 +516,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var me = this;
 
         // Add keyboard event handelers
-        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id) && Ext.getCmp(me.rowset.id).getEl()) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.F4,
@@ -564,7 +564,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
 
         // Add keyboard event handelers
-        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id) && Ext.getCmp(me.rowset.id).getEl()) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,

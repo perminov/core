@@ -150,5 +150,10 @@ Ext.define('Indi.lib.view.action.Panel', {
                 } else window.center();
             }
         }
-    }
+    },
+
+    /**
+     * Set up a height for south panel, for it to be as user-friendly as it possible
+     */
+    fitSouth: Ext.emptyFn
 });
