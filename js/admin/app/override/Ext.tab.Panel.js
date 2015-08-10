@@ -9,6 +9,6 @@ Ext.override(Ext.tab.Panel, {
         var me = this, activeTab = me.getActiveTab();
 
         // Return
-        return activeTab ? activeTab.getHeightUsage() : 0;
+        return (activeTab ? activeTab.getHeightUsage() : 0) + 1;
     }
 });

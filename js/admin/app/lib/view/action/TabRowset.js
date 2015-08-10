@@ -35,5 +35,15 @@ Ext.define('Indi.lib.view.action.TabRowset', {
 
         // Load store
         me.loadStore();
+    },
+
+    /**
+     * Check if there is no need to do an actual request for loading tab contents,
+     * as tab contents may have been already loaded and should be just picked up
+     *
+     * @param cfg
+     */
+    checkPreloadedResponse: function(cfg) {
+        try { cfg.responseText = this.up('[isWrapper]').$ctx.ti().sections.r(this.name, 'alias').responseText; } catch (e) {}
     }
 });

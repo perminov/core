@@ -345,47 +345,77 @@ Ext.define('Indi', {
             // Get data for remember
             if (centerPnl) Ext.merge(cfg, {params: {forScope: Ext.JSON.encode(centerPnl.forScope())}});
 
-            // Make the request
-            Ext.Ajax.request(Ext.merge({
+            // If `cfg` argument has `responseText` property
+            if (cfg.responseText) {
+
+                // Update title, and destroy target panel, if needed
+                Indi._beforeApplyResponse(cfg);
+
+                // Apply response with no any additional actual ajax-request
+                Indi._applyResponse(cfg.responseText, cfg, uri);
+
+            // Else make the ajax-request
+            } else Ext.Ajax.request(Ext.merge({
                 url: Indi.pre + uri,
                 timeout: 300000,
-                success: function(response, request){
+                success: function(response){
 
-                    // In no 'into' property given within `cfg` object - destroy center panel
-                    if (!cfg.into) void(0); //Indi.clearCenter();
-
-                    // Else if 'insteadOf' property is additionally given within `cfg` object
-                    else if (cfg.insteadOf) {
-
-                        // Set title for a container, that results will be injected in
-                        if (cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
-
-                        // Destroy the component, that will have a one to replace it
-                        Ext.getCmp(cfg.insteadOf).destroy();
-                    }
+                    // Update title, and destroy target panel, if needed
+                    Indi._beforeApplyResponse(cfg);
 
                     // Process response. Here we use Ext.defer to provide a visual
                     // 'white-blink' effect between destroying old and creating new
-                    Ext.defer(function(){
-
-                        // Try to convert responseText to json-object
-                        var json = response.responseText.json();
-
-                        // If responseText converstion to json-object was successful
-                        if (json) {
-
-                            // If `json` has `trail` property, apply/dispatch it
-                            if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
-
-                            // Else if
-                            else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
-
-                        // Run response
-                        } else Ext.get('i-center-center-body').update(response.responseText, true);
-
-                    }, 10);
+                    Ext.defer(function(){ Indi._applyResponse(response.responseText, cfg, uri); }, 10);
                 }
             }, cfg));
+        },
+
+        /**
+         * Update title, and destroy target panel, if needed
+         *
+         * @param cfg
+         * @private
+         */
+        _beforeApplyResponse: function(cfg) {
+
+            // In no 'into' property given within `cfg` object - destroy center panel
+            if (!cfg.into) void(0);
+
+            // Else if 'insteadOf' property is additionally given within `cfg` object
+            else if (cfg.insteadOf) {
+
+                // Set title for a container, that results will be injected in
+                if (cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
+
+                // Destroy the component, that will have a one to replace it
+                Ext.getCmp(cfg.insteadOf).destroy();
+            }
+        },
+
+        /**
+         * Apply response
+         *
+         * @param responseText
+         * @param cfg
+         * @param uri
+         * @private
+         */
+        _applyResponse: function(responseText, cfg, uri) {
+
+            // Try to convert responseText to json-object
+            var json = responseText.json();
+
+            // If responseText conversion to json-object was successful
+            if (json) {
+
+                // If `json` has `trail` property, apply/dispatch it
+                if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+
+                // Else if
+                else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+
+                // Run response
+            } else Ext.get('i-center-center-body').update(responseText, true);
         },
 
         /**

@@ -6,7 +6,19 @@ Ext.override(Ext.panel.Panel, {
      * @return {Number}
      */
     getHeightUsage: function() {
-        return this.getDockedItemsHeightUsage() + this.getInnerItemsHeightUsage();
+        var me = this;
+
+        // Get current panel's docked and inner items height usage
+        me.heightUsage = {
+            docked: me.getDockedItemsHeightUsage(),
+            inner: me.getInnerItemsHeightUsage()
+        }
+
+        // Get total height usage
+        me.heightUsage.total = me.heightUsage.docked + me.heightUsage.inner;
+
+        // Return
+        return me.heightUsage.total;
     },
 
     /**
