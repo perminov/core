@@ -965,18 +965,25 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
                 handler: function(){
+                    var south, already;
 
                     // If Ctrl-key is pressed
-                    if (Ext.EventObject.ctrlKey)
+                    if (Ext.EventObject.ctrlKey) {
 
-                        // Add new tab within south panel
-                        Ext.getCmp(me.panel.id).down('[isSouth]').add(me.southItemIDefault({
+                        // Get south region panel
+                        south = Ext.getCmp(me.panel.id).down('[isSouth]');
+
+                        // If tab, that we want to add - is already exists within south region panel - set it active
+                        if (already = south.down('[isSouthItem][name="0"]')) south.setActiveTab(already);
+
+                        // Else add new tab within south panel
+                        else south.add(me.southItemIDefault({
                             id: 0,
                             title: Indi.lang.I_CREATE
                         }));
 
                     // Else proceed standard behaviour
-                    else Indi.load('/' + section.alias + '/' + this.actionAlias + '/ph/' + section.primaryHash + '/');
+                    } else Indi.load('/' + section.alias + '/' + this.actionAlias + '/ph/' + section.primaryHash + '/');
                 }
             }
         }
@@ -1649,7 +1656,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     southItemIDefault: function(src) {
-        var me = this, section = me.ti().section, scope = me.ti().scope;
+        var me = this, section = me.ti().section, scope = me.ti().scope,
+            id = 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
+            exst = Ext.getCmp(id), exstWin;
+
+        // Close the window, containing existing wrapper having same id
+        if (exst && (exstWin = exst.getWindow())) exstWin.close();
 
         // Config
         return {
@@ -1662,7 +1674,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             layout: 'fit',
             items: [{
                 xtype: 'actiontabrow',
-                id: 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
+                id: id,
                 load: '/' + section.alias + '/form'
                     + (parseInt(src.id) ? '/id/' + src.id : '')
                     + '/ph/' + scope.hash + '/'
@@ -1707,5 +1719,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Return
         return itemA;
-    }
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this, exst = Ext.getCmp(me.panel.id);
+
+        // If such a panel is already exists
+        if (exst && exst.$ctx) exst.destroy();
+
+        // Call parent
+        me.callParent();
+
+        // Attach key map
+        me.keyMap();
+    },
 });
