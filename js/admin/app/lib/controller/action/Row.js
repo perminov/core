@@ -838,7 +838,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this;
+        var me = this, exst = Ext.getCmp(me.panel.id);
 
         // Setup row panel
         me.row = Ext.merge({
@@ -849,6 +849,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Setup main panel items
         me.panel.items = me.panelItemA();
+
+        // If such a panel is already exists within a tab - close it
+        if (exst && exst.xtype == 'actiontabrow') exst.up('[isSouthItem]').close();
 
         // Call parent
         me.callParent();
