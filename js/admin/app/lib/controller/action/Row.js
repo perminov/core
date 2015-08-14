@@ -754,7 +754,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Object}
      */
     southItemIDefault: function(src) {
-        var me = this, scope = me.ti().scope;
+        var me = this, scope = me.ti().scope, id = 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper';
 
         // Config
         return {
@@ -764,10 +764,15 @@ Ext.define('Indi.lib.controller.action.Row', {
             title: src.title,
             name: src.alias,
             border: 0,
+            bodyStyle: {
+                display: 'table-cell',
+                'vertical-align': 'middle',
+                'background-color': 'rgb(220, 220, 220)'
+            },
             layout: 'fit',
             items: [{
                 xtype: 'actiontabrowset',
-                id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+                id: id,
                 load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
                 name: src.alias
             }]
