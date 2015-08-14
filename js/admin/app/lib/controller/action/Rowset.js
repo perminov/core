@@ -1723,15 +1723,41 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this, exst = Ext.getCmp(me.panel.id);
+        var me = this, id = me.panel.id, exst = Ext.getCmp(id), southItem;
 
-        // If such a panel is already exists
-        if (exst && exst.$ctx) exst.destroy();
+        // If such a wrapper-panel is already exists
+        if (exst && exst.$ctx) {
+
+            // Check if it exists within a tab
+            southItem = exst.up('[isSouthItem]');
+
+            // Destroy that existing panel
+            exst.destroy();
+
+            // If destroyed wrapper-panel existed within a tab
+            if (southItem) {
+
+                // Remove garbage
+                if (Ext.get(id)) Ext.get(id).remove();
+
+                // Add wrapper-panel placeholder, so it will appear instead of destroyed wrapper-panel
+                southItem.add({
+                    id: id + '-holder',
+                    cls: 'i-panelholder',
+                    html: 'Содержимое этой панели открыто в отдельном окне' +
+                        '<hr size="1" color="#04408C">' +
+                        '<ul>' +
+                            '<li><a onclick="Indi.app.getWindowByWrapperId(\''+id+'\').toFront();">Перейти</a> к окну</li>' +
+                            '<li><a onclick="Indi.app.putWindowBackToTab(this);">Вернуть</a> содержимое обратно сюда</li>' +
+                        '</ul>'
+                });
+            }
+        }
 
         // Call parent
         me.callParent();
 
         // Attach key map
         me.keyMap();
-    },
+    }
 });

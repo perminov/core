@@ -858,6 +858,46 @@ Ext.define('Indi', {
     },
 
     /**
+     * Get window, containing wrapper-panel having given id, assuming that `wrapperId`
+     * argument - is that wrapper-panel id
+     *
+     * @param wrapperId
+     * @return {*}
+     */
+    getWindowByWrapperId: function(wrapperId) {
+       return Ext.ComponentQuery.query('desktopwindow[wrapperId="' + wrapperId + '"]')[0];
+    },
+
+    /**
+     * This function assumes, that `a` argument is a DOM <a>-element, contained within a certain tab,
+     * that currently contains a placeholder for a wrapper-panel, rather than wrapper-panel itself,
+     * so it determines that exact tab, and the window, where desired wrapper-panel is currently opened.
+     * After that, function closes that window and reload the tab and remove placeholder
+     *
+     * @param a
+     */
+    putWindowBackToTab: function(a) {
+        var aEl = Ext.get(a), holderEl = aEl.up('.x-panel'), wrapperId = holderEl.attr('id').replace('-holder', ''),
+            tabId = holderEl.up('.x-panel-body').up('.x-panel').attr('id'), holder = Ext.getCmp(holderEl.attr('id')),
+            load = Ext.getCmp(wrapperId).$ctx.uri, name = Ext.getCmp(wrapperId).$ctx.ti().section.alias,
+            window = Indi.app.getWindowByWrapperId(wrapperId);
+
+        // Close separate window, containing contents that we want to put back to tab
+        window.close();
+
+        // Re-add tab
+        Ext.getCmp(tabId).add({
+            xtype: 'actiontabrowset',
+            id: wrapperId,
+            load: load,
+            name: name
+        });
+
+        // Destroy placeholder
+        holder.destroy();
+    },
+
+    /**
      * Update bread crumb trail contents to represent current window
      */
     updateTrail: function() {

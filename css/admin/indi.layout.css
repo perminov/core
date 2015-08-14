@@ -603,3 +603,34 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-windowbar-btn.x-pressed .x-btn-close-btn:hover, .x-windowbar-btn.x-over .x-btn-close-btn:hover {
     background-image: url(/i/admin/wbtn-icon-close-white.png);
 }
+
+/* Styles for wrapper-panel placeholders */
+.i-panelholder {
+    height: auto !important;
+    text-align: center;
+}
+.i-panelholder .x-panel-body {
+    width: auto !important;
+    height: auto !important;
+    display: inline-block;
+    background-color: transparent;
+    border: none;
+    color: #04408C;
+    text-shadow: 1px 1px 1px white;
+}
+.i-panelholder .x-panel-body hr {
+    box-shadow: 1px 1px 1px white;
+}
+.i-panelholder .x-panel-body ul {
+    display: block;
+    text-align: left;
+}
+.i-panelholder .x-panel-body ul li {
+    list-style-type: square;
+    list-style-position: inside;
+}
+.i-panelholder .x-panel-body ul li a {
+    cursor: pointer;
+    text-decoration: underline;
+}
+

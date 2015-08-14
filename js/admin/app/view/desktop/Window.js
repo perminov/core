@@ -140,7 +140,7 @@ Ext.define('Indi.view.desktop.Window', {
         me.taskButton.setText(cfg.title);
 
         // Destroy existing wrapper
-        me.getWrapper().destroy();
+        if (me.getWrapper()) me.getWrapper().destroy();
 
         // Set up new wrapperId
         me.wrapperId = cfg.wrapperId;
