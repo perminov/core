@@ -525,6 +525,58 @@ if (!function_exists('http_parse_headers')) {
 }
 
 /**
+ * Provide php's apache_request_headers() function declaration, as it's useful,
+ * but available only in case if PHP is running as an Apache module
+ */
+if (!function_exists('apache_request_headers')) {
+    function apache_request_headers() {
+        
+        $arrCasedHeaders = array(
+            // HTTP
+            'Dasl'             => 'DASL',
+            'Dav'              => 'DAV',
+            'Etag'             => 'ETag',
+            'Mime-Version'     => 'MIME-Version',
+            'Slug'             => 'SLUG',
+            'Te'               => 'TE',
+            'Www-Authenticate' => 'WWW-Authenticate',
+            // MIME
+            'Content-Md5'      => 'Content-MD5',
+            'Content-Id'       => 'Content-ID',
+            'Content-Features' => 'Content-features',
+        );
+        $arrHttpHeaders = array();
+
+        foreach($_SERVER as $strKey => $mixValue) {
+            if('HTTP_' !== substr($strKey, 0, 5)) {
+                continue;
+            }
+
+            $strHeaderKey = strtolower(substr($strKey, 5));
+
+            if(0 < substr_count($strHeaderKey, '_')) {
+                $arrHeaderKey = explode('_', $strHeaderKey);
+                $arrHeaderKey = array_map('ucfirst', $arrHeaderKey);
+                $strHeaderKey = implode('-', $arrHeaderKey);
+            }
+            else {
+                $strHeaderKey = ucfirst($strHeaderKey);
+            }
+
+            if(array_key_exists($strHeaderKey, $arrCasedHeaders)) {
+                $strHeaderKey = $arrCasedHeaders[$strHeaderKey];
+            }
+
+            $arrHttpHeaders[$strHeaderKey] = $mixValue;
+        }
+        
+        // Return
+        return $arrHttpHeaders;
+    }
+}
+
+
+/**
  * Shortcut for in_array() function, but takes $array argument not only as array, but as a string also.
  * In that case $array argument will be converted to array by splitting by comma.
  *
