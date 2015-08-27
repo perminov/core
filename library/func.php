@@ -526,12 +526,15 @@ if (!function_exists('http_parse_headers')) {
 
 /**
  * Provide php's apache_request_headers() function declaration, as it's useful,
- * but available only in case if PHP is running as an Apache module
+ * but available only in case if PHP is running as an Apache module. Function
+ * implementation initially got from stackoverflow.com
  */
 if (!function_exists('apache_request_headers')) {
     function apache_request_headers() {
         
-        $arrCasedHeaders = array(
+        // Cased headers
+        $casedHeaderA = array(
+
             // HTTP
             'Dasl'             => 'DASL',
             'Dav'              => 'DAV',
@@ -540,38 +543,49 @@ if (!function_exists('apache_request_headers')) {
             'Slug'             => 'SLUG',
             'Te'               => 'TE',
             'Www-Authenticate' => 'WWW-Authenticate',
+
             // MIME
             'Content-Md5'      => 'Content-MD5',
             'Content-Id'       => 'Content-ID',
             'Content-Features' => 'Content-features',
         );
-        $arrHttpHeaders = array();
+        
+        // Headers array
+        $httpHeaderA = array();
 
-        foreach($_SERVER as $strKey => $mixValue) {
-            if('HTTP_' !== substr($strKey, 0, 5)) {
-                continue;
-            }
+        // Pick headers info from $_SERVER
+        foreach($_SERVER as $k => $v) {
 
-            $strHeaderKey = strtolower(substr($strKey, 5));
+            // Make sure we $k is header name
+            if('HTTP_' !== substr($k, 0, 5)) continue;
+            
+            // Trim 'HTTP_'
+            $k = strtolower(substr($k, 5));
 
-            if(0 < substr_count($strHeaderKey, '_')) {
-                $arrHeaderKey = explode('_', $strHeaderKey);
-                $arrHeaderKey = array_map('ucfirst', $arrHeaderKey);
-                $strHeaderKey = implode('-', $arrHeaderKey);
-            }
-            else {
-                $strHeaderKey = ucfirst($strHeaderKey);
-            }
+            // If header name contains '_'
+            if (0 < substr_count($k, '_')) {
 
-            if(array_key_exists($strHeaderKey, $arrCasedHeaders)) {
-                $strHeaderKey = $arrCasedHeaders[$strHeaderKey];
-            }
+                // Split by '_'
+                $kA = explode('_', $k);
 
-            $arrHttpHeaders[$strHeaderKey] = $mixValue;
+                // Call 'ucfirst' on each item within $kA
+                $kA = array_map('ucfirst', $kA);
+
+                // Implode by '-'
+                $k = implode('-', $kA);
+
+            // Else call 'ucfirst' on $k
+            } else $k = ucfirst($k);
+
+            // Replace key name if needed
+            if (array_key_exists($k, $casedHeaderA)) $k = $casedHeaderA[$k];
+
+            // Push into $httpHeaderA
+            $httpHeaderA[$k] = $v;
         }
         
         // Return
-        return $arrHttpHeaders;
+        return $httpHeaderA;
     }
 }
 
