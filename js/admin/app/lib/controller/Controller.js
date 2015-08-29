@@ -53,6 +53,20 @@ Ext.define('Indi.lib.controller.Controller', {
         // Build the action component name
         actionCmpName = 'Indi.controller.' + scope.route.last().section.alias + '.action.' + scope.route.last().action.alias;
 
+        /*// Build array of current controller's parents
+        var parentControllerA = [];
+        while ((me = me.superclass) && (me.$className != 'Indi.lib.controller.Controller'))
+            parentControllerA.push(me); parentControllerA.reverse(); me = this;
+
+        // Define parent actions
+        var parentActionName, parentActionCfg = [];
+        for (var i = 0; i < parentControllerA.length; i++) {
+            parentActionName = parentControllerA[i].$className + '.action.' + scope.route.last().action.alias;
+            parentActionCfg[i] = parentControllerA[i].actionsConfig[scope.route.last().action.alias];
+            Ext.define(parentActionName, Ext.merge({extend: actionExtendCmpName}, parentActionCfg[i] || {}));
+            actionExtendCmpName = parentActionName;
+        }*/
+
         // Define the action component
         Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsConfig[action]));
 
