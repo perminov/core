@@ -55,6 +55,20 @@ Ext.define('Indi', {
         },
 
         /**
+         * Check whether `item` argument is exists within `array` argument.
+         * `array` arguments can be given not only as an array, but also as
+         * a string containing comma-separated values
+         *
+         * @param item
+         * @param array
+         * @return {Boolean}
+         */
+        in: function(item, array) {
+            if (typeof array == 'string') array = array.split(',');
+            return array.indexOf(item) != -1;
+        },
+
+        /**
          * Shortcut to trail singleton instance
          *
          * @return {Indi.lib.trail.Trail}
