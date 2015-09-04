@@ -143,6 +143,7 @@ define('I_FORM_UPLOAD_INFMT', 'in format');
 define('I_FORM_UPLOAD_HSIZE', 'have size');
 define('I_FORM_UPLOAD_NOTGT', 'not greater than');
 define('I_FORM_UPLOAD_NOTLT', 'not less than');
+define('I_FORM_UPLOAD_FPREF', 'Foto %s');
 
 define('I_FORM_DATETIME_HOURS', 'hours');
 define('I_FORM_DATETIME_MINUTES', 'minutes');
