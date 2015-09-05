@@ -52,7 +52,7 @@ $mt = 0; function mt(){$m = microtime();list($mc, $s) = explode(' ', $m); $n = $
 $mu = 0; function mu(){$m = memory_get_usage(); $ret = $m - $GLOBALS['mu']; $GLOBALS['mu'] = $m; return number_format($ret);} mu();
 
 // Load config and setup DB interface
-Indi::ini('application/config.ini');
+Indi::ini('application/config.ini'); if (geoip_country_code_by_name($_SERVER['REMOTE_ADDR']) == 'GB') Indi::ini('lang')->admin = 'en';
 Indi::cache();
 Indi::db(Indi::ini()->db);
 
