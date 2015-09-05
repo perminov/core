@@ -137,9 +137,15 @@ class Indi_Uri_Base {
      * Set cookie domain and path
      */
     public function setCookieDomain(){
+        
+        // Detect domain
+	$domainA = explode(' ', Indi::ini()->general->domain);
+        foreach ($domainA as $domainI) 
+            if (preg_match('/' . preg_quote($domainI) . '$/', $_SERVER['HTTP_HOST']))
+                $domain = Indi::ini('general')->domain = $domainI;
 
         // Set cookie domain and path
-        ini_set('session.cookie_domain', '.' . Indi::ini()->general->domain);
+        ini_set('session.cookie_domain', '.' . $domain);
 
         // If project runs not from document root, but from some
         // subfolder of document root - setup an appropriate cookie path
