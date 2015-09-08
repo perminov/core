@@ -1067,7 +1067,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     if ($h = trim(Indi::hexColor($c[1]), '#')) {
 
                         // Create the GD image
-                        $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
+                        $gdImage = @imagecreatetruecolor(14, 11) or iexit('Cannot Initialize new GD image stream');
                         imagefill($gdImage, 0, 0, imagecolorallocate(
                             $gdImage, hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2)))
                         );
@@ -1342,7 +1342,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         echo $raw;
 
         // Exit
-        die();
+        iexit();
     }
 
     /**
@@ -1669,7 +1669,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // Flush the login page
-                die($out);
+                iexit($out);
             }
 
         // Else if user is already signed in, and is trying to perform some action in some section
@@ -1692,8 +1692,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $_SESSION['indi']['throwOutMsg'] = $data;
 
                 // Logout
-                if (Indi::uri()->section == 'index') die(header('Location: ' . PRE . '/logout/'));
-                else if (!Indi::uri()->format) die('<script>top.window.location="' . PRE .'/logout/"</script>');
+                if (Indi::uri()->section == 'index') iexit(header('Location: ' . PRE . '/logout/'));
+                else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else jflush(false, array('trowOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
@@ -1711,7 +1711,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // If current request had a only aim to check access - report that all is ok
-        if (array_key_exists('check', Indi::get())) die('ok');
+        if (array_key_exists('check', Indi::get())) iexit('ok');
     }
 
     /**
@@ -1763,7 +1763,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // Flush json
                 header('Content-Type: application/json');
-                die(json_encode($json));
+                iexit(json_encode($json));
             }
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
@@ -1902,7 +1902,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // If $return argument is true, return builded data, or flush it otherwise
-        if ($return) return $out; else die($out);
+        if ($return) return $out; else iexit($out);
     }
 
     /**
@@ -1933,7 +1933,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Redirect
-        if ($return) return $location; else die('<script>window.parent.Indi.load("' . $location . '");</script>');
+        if ($return) return $location; else iexit('<script>window.parent.Indi.load("' . $location . '");</script>');
     }
 
     /**

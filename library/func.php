@@ -743,7 +743,7 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     echo json_encode($flush);
 
     // Exit if need
-    if ($die) die();
+    if ($die) iexit();
 }
 
 /**
@@ -761,7 +761,7 @@ function jconfirm($msg) {
     header('Content-Type: application/json');
 
     // Flush
-    die(json_encode($flush));
+    iexit(json_encode($flush));
 }
 
 /**
@@ -839,4 +839,16 @@ function alias($title){
 
     // Got as we need
     return $alias;
+}
+
+/**
+ * @param $msg
+ */
+function iexit($msg = null) {
+
+    // Send all DELETE queries to an special email address, for debugging
+    Indi::mailDELETE();
+
+    // Exit
+    exit($msg);
 }

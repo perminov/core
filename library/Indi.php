@@ -1411,7 +1411,14 @@ class Indi {
 
         // Else print backtrace, as the fact that we are here mean that we faced an attempt to call method item()
         // on a non-object, and standard error message is not usefult here, as doesn't give any backtrace
-        else {debug_print_backtrace();die();}
+        else {
+
+            // Print backtrace
+            debug_print_backtrace();
+
+            // Die
+            iexit();
+        }
     }
 
 
@@ -1848,5 +1855,44 @@ class Indi {
      */
     public function ckup() {
         return DOC . STD . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
+    }
+
+    /**
+     * Send all DELETE queries to an email for debugging
+     *
+     * @static
+     * @return mixed
+     */
+    public static function mailDELETE() {
+
+        // If no items in Indi_Db::$DELETEQueryA - return
+        if (!count(Indi_Db::$DELETEQueryA)) return;
+
+        // If DELETE queries logging is notturned On - return
+        if (!Indi::ini('db')->log->DELETE) return;
+
+        // General info
+        $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
+        $msg .= 'URI: ' . URI . '<br>';
+        $msg .= 'Admin: ' . Indi::admin()->title . '<br>';
+        $msg .= 'User: ' . Indi::user()->title . '<br><br>';
+
+        // DELETE queries
+        foreach (Indi_Db::$DELETEQueryA as $i => $DELETEQueryI)
+            $msg .= '#' . ($i + 1)
+                . '-' . ($DELETEQueryI['affected'] === false ? 'false' : $DELETEQueryI['affected'] + '') . ': '
+                . nl2br($DELETEQueryI['sql']) . '<br>';
+
+        // Separator
+        $msg .= '--------------------------------------<br><br>';
+
+        // Empty
+        Indi_Db::$DELETEQueryA = array();
+
+        // Mail
+        @mail('indi.engine@gmail.com', 'DELETE query at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+
+        // If mailing failed - write to special DELETE.log file
+        i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'DELETE.log');
     }
 }
