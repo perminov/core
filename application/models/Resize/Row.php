@@ -38,6 +38,8 @@ class Resize_Row extends Indi_Db_Table_Row {
      */
     public function save() {
 
+        set_time_limit(0); ignore_user_abort(1);
+
         // Get db table name, and field alias
         $table = $this->foreign('fieldId')->foreign('entityId')->table;
         $field = $this->foreign('fieldId')->alias;
