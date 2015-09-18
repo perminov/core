@@ -426,3 +426,6 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-grid-column-multiline .x-column-header-inner {
     text-align: center;
 }
+.i-prompt .x-form-item-label {
+    padding-left: 0;
+}
