@@ -399,8 +399,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // If we deal with an expression
             if ($expr) {
 
-                // Build the expression
-                eval('$match = '. $row->$type . ' ' . $expr . ';');
+                // Temporary value
+                $m_ = $row->$type;
+
+                // Build and execute the comparison expression
+                $match = false; eval('$match = $m_ ' . $expr . ';');
 
                 // If item id is in exclusion/selection list
                 if ($inverse ? !$match : $match) {
