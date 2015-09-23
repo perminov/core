@@ -105,13 +105,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Object}
      */
-    gridColumnDefault: function(field) {
+    gridColumnDefault: function(field, column) {
+        var me = this, tooltip = column.tooltip || (field && field.tooltip);
 
         // Default column config
         return {
-            id: this.bid() + '-rowset-grid-column-' + field.alias,
+            id: me.bid() + '-rowset-grid-column-' + field.alias,
             header: field.title,
             dataIndex: field.alias,
+            tooltip: tooltip,
+            cls: tooltip ? 'i-tooltip' : undefined,
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
@@ -194,9 +197,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // Get current col
             colI = colA[i];
 
+            // Setup a shortcut for a grid field
+            field = me.ti().fields.r(colI.fieldId);
+
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
 
+                // Base cfg
                 columnI = {
                     text: colI.title,
                     columns: me.gridColumnADeep(colI._nested.grid)
@@ -208,11 +215,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // Else
             } else {
 
-                // Setup a shortcut for a grid field
-                field = me.ti().fields.r(colI.fieldId);
-
                 // Get default column config
-                columnI = me.gridColumnDefault(field);
+                columnI = me.gridColumnDefault(field, colI);
 
                 // Apply specific control element config, as columns control elements/xtypes may be different
                 eColumnX = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias);
