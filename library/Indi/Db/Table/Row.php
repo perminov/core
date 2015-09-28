@@ -2,6 +2,13 @@
 class Indi_Db_Table_Row implements ArrayAccess
 {
     /**
+     * Table name of table, that current row is related to
+     *
+     * @var string
+     */
+    protected $_table = '';
+
+    /**
      * Original data
      *
      * @var array
@@ -57,13 +64,6 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @var array
      */
     protected $_files = array();
-
-    /**
-     * Table name of table, that current row is related to
-     *
-     * @var string
-     */
-    protected $_table = '';
 
     /**
      * Store info about errors, fired while a try to save current row
