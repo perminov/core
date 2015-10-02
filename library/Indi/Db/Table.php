@@ -292,7 +292,7 @@ class Indi_Db_Table
             // so we should calculate needed page number, and replace $page argument with calculated value
             // Also, while retrieving upper and lower page (than page with selected vaue) results, we use $selected
             // argument as start point for distance and scope calculations
-            if ($selected && $found > Indi_Db_Table_Row::$comboOptionsVisibleCount){
+            if ($selected && ($found > Indi_Db_Table_Row::$comboOptionsVisibleCount || $offsetDetection)){
 
                 // Get index of selected branch in raw tree
                 $i = 0;
