@@ -773,9 +773,9 @@ Ext.define('Indi', {
          *
          * @return {Number}
          */
-        mt: function(msg) {
+        mt: function() {
             var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
-            Indi._mt = m; if (msg) console.log(msg, d); return d;
+            Indi._mt = m; if (arguments.length) console.log(d, arguments); return d;
         }
     },
 

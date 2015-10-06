@@ -311,15 +311,36 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnAFit: function(grid) {
 
-        // Suspend layouts
-        Ext.suspendLayouts();
-
         // Setup auxiliary variables
-        var me = this, grid = grid || Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
+        var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
             widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
-            visible = grid.getWidth() - (grid.getView().hasScrollY() ? 16 : 0), scw = me.rowset.smallColumnWidth,
-            fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw, hctw = 0, busy = 0, free, longest, summaryData,
-            summaryFeature = grid.getView().getFeature(0);
+            visible, scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw,
+            hctw = 0, busy = 0, free, longest, summaryData, summaryFeature;
+
+        // If view not consists from normalView and lockedView
+        if (view.headerCt) {
+
+            // Suspend layouts
+            Ext.suspendLayouts();
+
+            // Get columns
+            columnA = view.headerCt.getGridColumns();
+
+            // Get visible area
+            visible = grid.getWidth() - (view.hasScrollY() ? 16 : 0);
+
+            // Get sumary feature
+            summaryFeature = view.getFeature(0);
+
+        // Else
+        } else {
+
+            // Pass exection directly to non-locked part of grid
+            me.gridColumnAFit(view.normalGrid);
+
+            // Return
+            return;
+        }
 
         // Get summary data
         if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
@@ -430,8 +451,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Increase first non-hidden column's width, if free space is available
         columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
 
-        // Resume layouts
-        Ext.resumeLayouts(true);
+        // If current grid view is not consists from locked and non-locked parts - resume layouts
+        if (view.headerCt) Ext.resumeLayouts(true);
     },
 
     /**
@@ -448,7 +469,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Set the focus on grid, to automatically provide an ability to use keyboard
         // cursor to navigate through rows, but only if it's not prevented
-        if (me.preventViewFocus) me.preventViewFocus = false; else grid.getView().focus();
+        if (me.preventViewFocus) me.preventViewFocus = false; else {
+            grid.getView().focus ? grid.getView().focus() : grid.getView().normalView.focus();
+        }
 
         // Setup last row autoselection, if need
         if (me.ti().scope.aix) {
@@ -804,11 +827,18 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     // @inheritdoc
-    rowsetSummary: function() {
-        var me = this, grid = Ext.getCmp(me.rowset.id), summary = {};
+    rowsetSummary: function(grid) {
+        var me = this, grid = grid || Ext.getCmp(me.rowset.id), summary = {}, view = grid.getView(), columnA = [];
+
+        if (view.headerCt) {
+            columnA = view.headerCt.getGridColumns();
+        } else {
+            if (view.lockedView) columnA = columnA.concat(view.lockedView.headerCt.getGridColumns());
+            if (view.normalView) columnA = columnA.concat(view.normalView.headerCt.getGridColumns());
+        }
 
         // Pick summary definition from grid columns's summaries types definitions, if used
-        grid.headerCt.getGridColumns().forEach(function(r, i){
+        columnA.forEach(function(r, i){
             if (r.summaryType && !r.summaryText)
                 summary[r.summaryType] = Ext.isArray(summary[r.summaryType])
                     ? summary[r.summaryType].concat([r.dataIndex])
