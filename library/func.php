@@ -275,14 +275,14 @@ function ago($datetime, $postfix = 'назад') {
  * Add the measure version to a given quantity $q
  *
  * @param int $q
- * @param string $versions
+ * @param string $versions012
  * @param bool $showNumber
  * @return string
  */
-function tbq($q = 2, $versions = '', $showNumber = true) {
+function tbq($q = 2, $versions012 = '', $showNumber = true) {
 
     // Distribute quantity measure spell versions
-    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions));
+    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions012));
 
     // Foreach format
     foreach ($formatA as $formatK => $formatV) {
