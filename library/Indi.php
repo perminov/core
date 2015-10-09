@@ -1895,4 +1895,15 @@ class Indi {
         // If mailing failed - write to special DELETE.log file
         i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'DELETE.log');
     }
+
+    /**
+     * Get a value by a given $key from `config` db table
+     *
+     * @static
+     * @param $key
+     * @return mixed
+     */
+    public static function cfg($key) {
+        return Indi::model('Config')->fetchRow('`alias` = "' . $key . '"')->currentValue;
+    }
 }
