@@ -28,11 +28,24 @@ Ext.define('Indi.lib.controller.Controller', {
     actionsConfig: {},
 
     /**
+     * Empty function, for `scope` arg adjustments
+     *
+     * @param scope
+     */
+    preDispatch: function(scope) {
+    },
+
+    /**
      * Action dispatcher function
      *
      * @param {Object} scope Object, containing `route`, `plain`, `uri` and `cfg` properties
      */
     dispatch: function(scope) {
+
+        // Pre-dispatch
+        this.preDispatch(scope);
+
+        // Init aux variables
         var me = this, action = scope.route.last().action.alias, actionExtendCmpName, actionCmpName;
 
         // Setup `actions` property, for being a storage for action classes instances
@@ -74,7 +87,7 @@ Ext.define('Indi.lib.controller.Controller', {
         scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;
         if (scope.route.last().row) {
             scope.id += '-row-' + (scope.route.last().row.id || 0);
-        } else if (scope.route.last(1).row) {
+        } else if (scope.route.last(1) && scope.route.last(1).row) {
             scope.id += '-parentrow-' + scope.route.last(1).row.id;
         }
 

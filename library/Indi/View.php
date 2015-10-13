@@ -506,12 +506,12 @@ class Indi_View {
             switch ($type) {
                 case 'script':
                     // add to the top of the stack.
-                    array_unshift($this->_path[$type], $dir);
+                    array_push($this->_path[$type], $dir);
                     break;
                 case 'helper':
                 default:
                     // add as array with prefix and dir keys
-                    array_unshift($this->_path[$type], array('prefix' => $prefix, 'dir' => $dir));
+                    array_push($this->_path[$type], array('prefix' => $prefix, 'dir' => $dir));
                     break;
             }
         }
@@ -551,8 +551,18 @@ class Indi_View {
      * @param string $type The path type  ('helper', 'filter', 'script')
      * @return array
      */
-    private function _getPaths($type)
-    {
+    public function getPaths($type) {
+        return $this->_path[$type];
+    }
+
+    /**
+     * Remove last path
+     *
+     * @param $type
+     * @return mixed
+     */
+    public function popPaths($type) {
+        array_pop($this->_path[$type]);
         return $this->_path[$type];
     }
 

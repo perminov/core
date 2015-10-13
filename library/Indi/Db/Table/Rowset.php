@@ -513,7 +513,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @param Indi_Trail_Admin_Item $ti
      * @return array
      */
-    public function toGridData(Indi_Trail_Admin_Item $ti) {
+    public function toGridData($ti) {
 
         // If there are no rows in $this argument - return
         if ($this->_count == 0) return array();

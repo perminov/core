@@ -12,29 +12,29 @@ class Indi_Controller {
         // Get the script path
         $spath = Indi::ini('view')->scriptPath;
 
-        // Get the module path
-        $mpath = Indi::uri('module') == 'front' ? '' : '/' . Indi::uri('module');
+        // Do paths setup twice: first for module-specific paths, second for general-paths
+        for ($i = 0; $i < 2; $i++) {
 
-        // Get the module helper path prefix
-        $mhpp = Indi::uri('module') == 'front' ? '' : '/' . ucfirst(Indi::uri('module'));
+            // Get the module paths and prefixes
+            $mpath =  !$i ? '/' . Indi::uri('module') : '';
+            $mhpp =   !$i ? '/' . ucfirst(Indi::uri('module')) : '';
+            $mhcp =   !$i ? ucfirst(Indi::uri('module')) . '_' : '';
 
-        // Get the module helper class prefix
-        $mhcp = Indi::uri('module') == 'front' ? '' : ucfirst(Indi::uri('module')) . '_';
+            // Add script path for certain/current project
+            if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
 
-        // Add script paths for major core part and for front core part
-        $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
-        $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
+            // Add script paths for major core part and for front core part
+            $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
+            $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
 
-        // Add script path for certain/current project
-        if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
+            // Add helper paths for certain/current project
+            if (is_dir(DOC . STD . '/www/library'))
+                $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
 
-        // Add helper paths for major core part and for front core part
-        $view->addHelperPath(DOC . STD . '/core/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
-        $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
-
-        // Add helper paths for certain/current project
-        if (is_dir(DOC . STD . '/www/library'))
-            $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
+            // Add helper paths for major core part and for front core part
+            $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
+            $view->addHelperPath(DOC . STD . '/core/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
+        }
 
         // Put view object into the registry
 		Indi::registry('view', $view);
@@ -590,5 +590,62 @@ class Indi_Controller {
 
         // Make the call
         return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+    }
+
+    /**
+     * Provide default index action
+     */
+    public function indexAction() {
+
+        // If data should be got as json or excel
+        if (Indi::uri('format')) {
+
+            // Adjust rowset, before using it as a basement of grid data
+            $this->adjustGridDataRowset();
+
+            // Build the grid data, based on current rowset
+            $data = $this->rowset->toGridData(Indi::trail());
+
+            // Adjust grid data
+            $this->adjustGridData($data);
+
+            // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
+            if (Indi::uri('format') == 'json') {
+
+                // Get scope
+                $scope = Indi::trail()->scope->toArray();
+
+                // Unset tabs definitions from json-encoded scope data, as we'd already got it previously
+                unset($scope['actionrowset']['south']['tabs']);
+
+                // Setup basic data
+                $json = array(
+                    'totalCount' => $this->rowset->found(),
+                    'blocks' => $data,
+                    'scope' => $scope
+                );
+
+                // Append summary data
+                if ($summary = $this->rowsetSummary()) $json['summary'] = $summary;
+
+                // Provide combo filters consistency
+                foreach (Indi::trail()->filters as $filter)
+                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
+                        $alias = $filter->foreign('fieldId')->alias;
+                        Indi::view()->filterCombo($filter, 'extjs');
+                        $json['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
+                    }
+
+                // Adjust json export
+                $this->adjustJsonExport($json);
+
+                // Flush json
+                header('Content-Type: application/json');
+                iexit(json_encode($json));
+            }
+
+            // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
+            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
+        }
     }
 }
