@@ -39,6 +39,18 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected $_excelA = array();
 
     /**
+     * Constructor
+     */
+    public function __construct() {
+
+        // Call parent constructor
+        parent::__construct();
+
+        // Remove non-module-related script paths
+        for ($i = 0; $i < 3; $i++) Indi::view()->popPaths('script');
+    }
+
+    /**
      * Init all general cms features
      */
     public function preDispatch() {
@@ -1712,63 +1724,6 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If current request had a only aim to check access - report that all is ok
         if (array_key_exists('check', Indi::get())) iexit('ok');
-    }
-
-    /**
-     * Provide default index action
-     */
-    public function indexAction() {
-
-        // If data should be got as json or excel
-        if (Indi::uri('format')) {
-
-            // Adjust rowset, before using it as a basement of grid data
-            $this->adjustGridDataRowset();
-
-            // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData(Indi::trail());
-
-            // Adjust grid data
-            $this->adjustGridData($data);
-
-            // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
-            if (Indi::uri('format') == 'json') {
-
-                // Get scope
-                $scope = Indi::trail()->scope->toArray();
-
-                // Unset tabs definitions from json-encoded scope data, as we'd already got it previously
-                unset($scope['actionrowset']['south']['tabs']);
-
-                // Setup basic data
-                $json = array(
-                    'totalCount' => $this->rowset->found(),
-                    'blocks' => $data,
-                    'scope' => $scope
-                );
-
-                // Append summary data
-                if ($summary = $this->rowsetSummary()) $json['summary'] = $summary;
-
-                // Provide combo filters consistency
-                foreach (Indi::trail()->filters as $filter)
-                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
-                        $alias = $filter->foreign('fieldId')->alias;
-                        Indi::view()->filterCombo($filter, 'extjs');
-                        $json['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
-                    }
-
-                // Adjust json export
-                $this->adjustJsonExport($json);
-
-                // Flush json
-                header('Content-Type: application/json');
-                iexit(json_encode($json));
-            }
-
-            // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
-            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
-        }
     }
 
     /**
