@@ -6,7 +6,7 @@ class Indi_View_Action_Admin_Rowset extends Indi_View_Action_Admin {
         ob_start();
 
         // Setup filters
-        foreach (Indi::trail()->filters as $filter)
+        foreach (Indi::trail()->filters ?: array() as $filter)
             if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12)
                 Indi::view()->filterCombo($filter, 'extjs');
 
