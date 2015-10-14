@@ -648,4 +648,61 @@ class Indi_Controller {
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
         }
     }
+
+    /**
+     * Build and return a final WHERE clause, that will be passed to fetchAll() method, for fetching section's main
+     * rowset. Function use a $primaryWHERE, merge it with $this->filtersWHERE() and append to it $this->keywordWHERE()
+     * if return values of these function are not null
+     *
+     * @param string|array $primaryWHERE
+     * @param string|array $customWHERE
+     * @param bool $merge
+     * @return null|string|array
+     */
+    public function finalWHERE($primaryWHERE, $customWHERE = null, $merge = true) {
+
+        // Empty array yet
+        $finalWHERE = array();
+
+        // If there was a primaryHash passed instead of $primaryWHERE param - then we extract all scope params from
+        if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
+
+            // Prepare $primaryWHERE
+            $primaryWHERE = Indi::trail()->scope->primary;
+
+            // Prepare search data for $this->filtersWHERE()
+            Indi::get()->search = Indi::trail()->scope->filters;
+
+            // Prepare search data for $this->keywordWHERE()
+            Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
+
+            // Prepare sort params for $this->finalORDER()
+            Indi::get()->sort = Indi::trail()->scope->order;
+        }
+
+        // Push primary part
+        if ($primaryWHERE || $primaryWHERE == '0') $finalWHERE['primary'] = $primaryWHERE;
+
+        // Get a WHERE stack of clauses, related to filters search and push it into $finalWHERE under 'filters' key
+        if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE['filters'] = $filtersWHERE;
+
+        // Get a WHERE clause, related to keyword search and push it into $finalWHERE under 'keyword' key
+        if ($keywordWHERE = $this->keywordWHERE()) $finalWHERE['keyword'] = $keywordWHERE;
+
+        // Append custom WHERE
+        if ($customWHERE || $customWHERE == '0') $finalWHERE['custom'] = $customWHERE;
+
+        // If WHERE clause should be a string
+        if ($merge) {
+
+            // Force $finalWHERE to be single-dimension array
+            foreach ($finalWHERE as $part => $where) if (is_array($where)) $finalWHERE[$part] = im($where, ' AND ');
+
+            // Stringify
+            $finalWHERE = implode(' AND ', $finalWHERE);
+        }
+
+        // Return
+        return $finalWHERE;
+    }
 }
