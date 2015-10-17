@@ -92,6 +92,7 @@
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
     <script type="text/javascript" src="/library/Highstock-2.1.9/js/highstock.src.js"></script>
+    <script src="/library/Highstock-2.1.9/current-price-indicator.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
 </head>
 <body id="body">
