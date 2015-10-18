@@ -41,7 +41,6 @@
             defaultOptions = {
                 lineColor: '#0000ff',
                 lineOpacity: 1,
-                lineDashStyle: 'shortdot',
                 lineDashStyle: 'solid',
                 borderColor: '#0000ff',
                 backgroundColor: '#0000ff',
