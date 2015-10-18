@@ -705,4 +705,21 @@ class Indi_Controller {
         // Return
         return $finalWHERE;
     }
+
+    /**
+     * Adjust rowset, before using it as a basement of grid data. This function is empty here, but may be useful in
+     * some situations
+     */
+    function adjustGridDataRowset() {
+
+    }
+
+    /**
+     * Adjust data, that was already prepared for usage in grid. This function is for ability to post-adjustments
+     *
+     * @param array $data This param is passed by reference
+     */
+    function adjustGridData(&$data) {
+
+    }
 }

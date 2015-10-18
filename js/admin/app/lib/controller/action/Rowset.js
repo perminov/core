@@ -536,15 +536,33 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterItemA: function() {
 
         // Declare toolbar filter panel items array, and some additional variables
-        var me = this, itemA = [], itemI, itemICustom, moreItemA = [];
+        var me = this, itemA = [], itemI, item$, itemICustom, moreItemA = [], eItem$;
 
         // Fulfil items array
         for (var i = 0; i < me.ti().filters.length; i++) {
+
+            // Get default filter config
             itemI = me.panelDocked$Filter_Default(me.ti().filters[i]);
-            itemICustom = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
-            if (typeof me[itemICustom] == 'function') itemI = me[itemICustom](itemI);
+
+            // Own element/prop, related to current filter
+            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
+
+            // Apply filter custom config
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // If item is non-empty/null/false/undefined
             if (itemI) {
+
+                // If it has no `name` prop yet - setit up
                 if (!itemI.name) itemI.name = me.ti().filters[i].foreign('fieldId').alias;
+
+                // Refresh label width
+                if (itemI.fieldLabel) itemI.labelWidth = Indi.metrics.getWidth(itemI.fieldLabel);
+
+                // Push into itemA array
                 itemA = itemA.concat(itemI.length ? itemI: [itemI]);
             }
         }

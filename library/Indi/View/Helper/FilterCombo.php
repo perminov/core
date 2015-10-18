@@ -65,8 +65,11 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
             // Get table name
             $tbl = Indi::trail()->model->table();
 
+            // Get primary WHERE
+            $primaryWHERE = $this->primaryWHERE();
+
             // Get finalWHERE as array
-            $sw = $this->getController()->finalWHERE(Indi::trail()->scope->primary, null, false);
+            $sw = $this->getController()->finalWHERE($primaryWHERE, null, false);
 
             // Exclude WHERE clause part, related to current filter
             unset($sw['filters'][$alias]); if (!count($sw['filters'])) unset($sw['filters']);
