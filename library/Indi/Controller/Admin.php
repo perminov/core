@@ -1739,23 +1739,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Adjust rowset, before using it as a basement of grid data. This function is empty here, but may be useful in
-     * some situations
-     */
-    function adjustGridDataRowset() {
-
-    }
-
-    /**
-     * Adjust data, that was already prepared for usage in grid. This function is for ability to post-adjustments
-     *
-     * @param array $data This param is passed by reference
-     */
-    function adjustGridData(&$data) {
-
-    }
-
-    /**
      * Render the output. If $return argument is true, builded output will be returned instead of flushing into the
      * browser
      *
