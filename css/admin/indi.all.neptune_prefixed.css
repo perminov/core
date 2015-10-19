@@ -1,0 +1,9 @@
+.extjs .i-field-dirty-icon {
+    visibility: hidden;
+}
+.extjs .x-form-item{
+    text-shadow: none;
+}
+.extjs .i-tip {
+    padding: 2px 3px 5px 3px;
+}

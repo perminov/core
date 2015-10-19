@@ -1049,7 +1049,7 @@ class Indi {
 
                 // Convert relative paths, mentioned in css files to paths, relative to web root
                 $txt = preg_replace('!url\((\'|)/!', 'url($1' . STD . '/', $txt);
-                $txt = preg_replace('!url\(\'\.\./\.\./resources!', 'url(\'' . STD . '/library/extjs4/resources', $txt);
+                $txt = preg_replace('!url\((\'|"|)\.\./\.\./resources!', 'url($1' . STD . '/library/extjs4/resources', $txt);
 
                 // Remove comments from css
                 $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
@@ -1905,5 +1905,120 @@ class Indi {
      */
     public static function cfg($key) {
         return Indi::model('Config')->fetchRow('`alias` = "' . $key . '"')->currentValue;
+    }
+
+    /**
+     * Toggle on/off implicit flushing
+     *
+     * @static
+     * @param $flag bool
+     */
+    public static function iflush($flag) {
+
+        // Set up no cache
+        if ($flag && !headers_sent()) header('Cache-Control: no-cache');
+
+        // Set up output buffering implicit flush mode
+        ob_implicit_flush($flag);
+
+        // Flush
+        if ($flag) ob_end_flush();
+    }
+
+    /**
+     * Prepend every selector found within css file, located at given $cssFile filepath definition,
+     * with given $wrapWithSelector, for for example if one of css rules is:
+     *
+     *      strong {font-size: 100%;}
+     *
+     * and $wrapWithSelector arg is '.extjs', then the above rule will be changed to
+     *
+     *      .extjs strong {font-size: 100%;}
+     *
+     * Css contents with all selector prefixed will be saved in a separate file, having name as original
+     * but with postfix given by $cssFilenamePostfix arg.
+     *
+     * This function is currently used to prevent ExtJS styles to conflict with any other other 3rd-party styles,
+     * this happens in case when ExtJS app is injected into ordinary website page
+     *
+     * @param $cssFile
+     * @param string $wrapWithSelector
+     * @param string $cssFilenamePostfix
+     */
+    public function wrapCss($cssFile, $wrapWithSelector = '.extjs', $cssFilenamePostfix = '_prefixed') {
+
+        // This may take a time
+        set_time_limit(0);
+
+        // If $cssFile arg does not contain a valid absolute path
+        if ($cssFile != str_replace('\\', '/', realpath($cssFile))) {
+
+            // Find css-file absolute path
+            foreach (ar('www,coref,core') as $rep)
+                if (is_file($abs_ = DOC . '/' . $rep .  $cssFile) && $abs = $abs_)
+                    break;
+
+            // If $abs is still not defined
+            if (!$abs) iexit('Given file ' . $cssFile . ' is not a file');
+
+        // Else we assume that $cssFile arg is an absolute path
+        } else if (!(($abs_ = realpath($cssFile)) && $abs = $abs_)) iexit('Given file ' . $cssFile . ' is not a file');
+
+        // Get css filepath info
+        $info = pathinfo($abs);
+
+        // Check that given file is a css file
+        if ($info['extension'] != 'css') iexit('Given file ' . $cssFile . ' is not a css file');
+
+        // Build absolute filename for file, what will be used for containing prefixed version of original css file contents
+        $abs_prefixed = $info['dirname'] . '/' . $info['filename'] . $cssFilenamePostfix . '.' . $info['extension'];
+
+        // Get raw contents of css-file
+        $raw = file_get_contents($abs);
+
+        // Start implicit flushing
+        Indi::iflush(true);
+
+        // Explode css
+        $rawA = explode('/* i-style-splitter */', $raw); $outA = array();
+
+        // Info message
+        d('Css parts: ' . count($rawA));
+
+        if (count($rawA) < (strlen($raw) / (50 * 1024)))
+            iexit('Css file <span style="font-weight: bold;">' . $abs . '</span> is too large to be processed with '
+                . 'Sabberworm CSS Parser. Please split that css file\'s contents by inserting '
+                . '<span style="font-weight: bold;">/* i-style-splitter * /</span> '
+                . 'after each 1000 (approximately) lines of css-rules code');
+
+        // Foreach part of raw css
+        foreach ($rawA as $i => $raw) {
+
+            // Info message
+            mt(); d('Processing part: ' . ($i + 1) . '...');
+
+            // Strip comments
+            $raw = preg_replace('!/\*.*?\*/!s', '', $raw);
+
+            // Init parser and parse
+            $parserO = new Sabberworm\CSS\Parser($raw); $rawO = $parserO->parse();
+
+            foreach($rawO->getAllDeclarationBlocks() as $blockO)
+                foreach($blockO->getSelectors() as $selectorO)
+                    if (!preg_match('/^\.x-(boundlist|layer|css-shadow)/', $s = ltrim($selectorO->getSelector())))
+                        $selectorO->setSelector($wrapWithSelector . ' '. $selectorO->getSelector());
+
+            // Get raw css contents having every selector prepended with $prepend
+            $outA[] = $raw = $rawO->render();
+
+            // Info message
+            d('Processed part: ' . ($i +1) . ', time taken: ' . mt());
+        }
+
+        // Write safe css into a file
+        file_put_contents($abs_prefixed, im($outA, "\n"));
+
+        // End implicit flushing
+        Indi::iflush(false);
     }
 }
