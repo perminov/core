@@ -995,7 +995,7 @@ input, textarea, select {
   .people:after {
     top: null;
     left: null; }
-
+/* i-style-splitter */
 /* line 914, ../themes/stylesheets/neptune/default/widgets/_button.scss */
 .information {
   -moz-background-clip: text;
@@ -1995,7 +1995,7 @@ input, textarea, select {
   .open:after {
     top: null;
     left: null; }
-
+/* i-style-splitter */
 /* line 914, ../themes/stylesheets/neptune/default/widgets/_button.scss */
 .star {
   -moz-background-clip: text;
@@ -2995,7 +2995,7 @@ input, textarea, select {
   .more:after {
     top: null;
     left: null; }
-
+/* i-style-splitter */
 /* line 914, ../themes/stylesheets/neptune/default/widgets/_button.scss */
 .print {
   -moz-background-clip: text;
@@ -4002,7 +4002,7 @@ input, textarea, select {
   background-image: -o-linear-gradient(top, #2591e8, #1574c0 3%, #115d9b);
   background-image: -ms-linear-gradient(top, #2591e8, #1574c0 3%, #115d9b);
   background-image: linear-gradient(top, #2591e8, #1574c0 3%, #115d9b); }
-
+/* i-style-splitter */
 /* line 102, ../themes/stylesheets/neptune/default/mixins/_frame.scss */
 .x-nlg .x-btn-default-small-mc {
   background-image: url('../../resources/themes/images/neptune/btn/btn-default-small-bg.gif');
@@ -4997,7 +4997,7 @@ input, textarea, select {
   /* line 743, ../themes/stylesheets/neptune/default/widgets/_button.scss */
   .x-btn-default-large-disabled .x-btn-inner {
     color: #f4fafe !important; }
-
+/* i-style-splitter */
 /* line 760, ../themes/stylesheets/neptune/default/widgets/_button.scss */
 .x-ie .x-btn-default-large-disabled .x-btn-inner {
   color: #a3d0f5 !important; }
@@ -5989,7 +5989,7 @@ input, textarea, select {
   left: 0;
   bottom: 0;
   right: 0; }
-
+/* i-style-splitter */
 /* line 539, ../themes/stylesheets/neptune/default/widgets/_button.scss */
 .x-btn-drastic-medium-icon-text-left button {
   height: 24px; }
@@ -6997,7 +6997,7 @@ input, textarea, select {
 /* line 102, ../themes/stylesheets/neptune/default/mixins/_frame.scss */
 .x-nlg .x-btn-default-toolbar-medium-mc {
   background-color: rgba(204, 229, 250, 0); }
-
+/* i-style-splitter */
 /* line 115, ../themes/stylesheets/neptune/default/mixins/_frame.scss */
 .x-nbr .x-btn-default-toolbar-medium {
   padding: 0 !important;
@@ -8000,6 +8000,7 @@ table.x-datepicker-inner {
   height: 18px;
   width: 43px;
   border: 0 none; }
+/* i-style-splitter */
   /* line 310, ../themes/stylesheets/neptune/default/widgets/_datepicker.scss */
   .x-monthpicker-item a {
     display: block;
@@ -8999,7 +9000,7 @@ table.x-datepicker-inner {
   width: 192px;
   height: 1px;
   background-color: #167cce; }
-
+/* i-style-splitter */
 /* line 883, ../themes/stylesheets/neptune/default/widgets/_grid.scss */
 .x-grid-row-editor-buttons-ml,
 .x-grid-row-editor-buttons-mr {
@@ -9999,6 +10000,7 @@ textarea.x-form-invalid-field {
   -ms-border-top-right-radius: 4px;
   -khtml-border-top-right-radius: 4px;
   border-top-right-radius: 4px; }
+/* i-style-splitter */
 /* line 445, ../themes/stylesheets/neptune/default/widgets/_panel.scss */
 .x-panel-collapsed .x-panel-header-default-framed-left {
   -moz-border-radius-topright: 4px;
@@ -10994,7 +10996,7 @@ textarea.x-form-invalid-field {
 .x-tab-bottom-active {
   background-image: none;
   background-color: white; }
-
+/* i-style-splitter */
 /* line 353, ../themes/stylesheets/neptune/default/widgets/_tab.scss */
 .x-tab-disabled button {
   color: rgba(255, 255, 255, 0.5); }
@@ -11995,7 +11997,7 @@ textarea.x-form-invalid-field {
 /* line 68, ../themes/stylesheets/neptune/default/layout/_accordion.scss */
 .x-accordion-body {
   border-width: 0 !important; }
-
+/* i-style-splitter */
 /*    .#{$prefix}accordion-hd-sibling-expanded {
     border-top-color: $accordion-border-color !important;
     @include single-box-shadow($panel-header-inner-border-color, 0, 1px, 0, 0, true);
