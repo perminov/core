@@ -628,7 +628,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             grow: true,
             growMin: 30,
             allowBlank: true,
-            value: item.value + ''
+            value: Ext.isNumber(item.value) ? item.value + '' : (item.value || '')
         }
     },
 

@@ -1945,7 +1945,7 @@ class Indi {
      * @param string $wrapWithSelector
      * @param string $cssFilenamePostfix
      */
-    public function wrapCss($cssFile, $wrapWithSelector = '.extjs', $cssFilenamePostfix = '_prefixed') {
+    public function wrapCss($cssFile, $wrapWithSelector = '[i-load]', $cssFilenamePostfix = '_prefixed') {
 
         // This may take a time
         set_time_limit(0);
