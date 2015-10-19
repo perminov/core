@@ -200,7 +200,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
 
         // Ensure page size to be fully dependent on me.ti().section.rowsOnPage
-        me.getStore().pageSize = me.getStore().lastOptions.limit = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage;
+        me.getStore().pageSize = me.getStore().lastOptions.limit = me.getStore().getProxy().extraParams.limit
+            = me.ti().section.rowsOnPage || me.ti().section.defaultLimit;
 
         // If there is no noReload flag turned on
         if (!cmp.noReload) {
