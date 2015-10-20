@@ -1349,15 +1349,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Empty function. To be redeclared in child classes in case of a need for an json-export adjustments
-     *
-     * @param $json
-     */
-    public function adjustJsonExport(&$json) {
-
-    }
-
-    /**
      * Try to find user data in certain place (database table), identified by $place argument
      *
      * @param $username
