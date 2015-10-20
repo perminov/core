@@ -722,4 +722,13 @@ class Indi_Controller {
     function adjustGridData(&$data) {
 
     }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an json-export adjustments
+     *
+     * @param $json
+     */
+    public function adjustJsonExport(&$json) {
+
+    }
 }
