@@ -359,29 +359,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Builds a SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
-     * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
-     * not contain search clauses for columns, that are involved in building of set of another kind of WHERE clauses -
-     * related to grid filters
-     *
-     * @param $keyword
-     * @return string
-     */
-    public function keywordWHERE($keyword = '') {
-
-        // If $keyword param is not passed we pick Indi::get()->keyword as $keyword
-        if (strlen($keyword) == 0) $keyword = Indi::get()->keyword;
-
-        // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
-        // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
-        // not both at the same time
-        $exclude = array_keys(Indi::obar());
-
-        // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
-        return Indi::trail()->gridFields->keywordWHERE($keyword, $exclude);
-    }
-
-    /**
      * @return null
      */
     public function checkRowIsInScope(){
