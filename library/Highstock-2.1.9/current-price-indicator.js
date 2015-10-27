@@ -27,10 +27,14 @@
         for (var i = 0; i < this.yAxis.length - 1; i++) renderCurrentPriceIndicator(this, i);
     });
 
-    function renderCurrentPriceIndicator(chart, yAxisIndex) {
-
+    function renderCurrentPriceIndicator(chart, yAxisIndex, seriesIndex) {
+        seriesIndex = chart.options.yAxis[yAxisIndex]
+            && chart.options.yAxis[yAxisIndex].currentPriceIndicator
+            && chart.options.yAxis[yAxisIndex].currentPriceIndicator.seriesIndex
+            ? chart.options.yAxis[yAxisIndex].currentPriceIndicator.seriesIndex
+            : yAxisIndex;
         var priceYAxis = chart.yAxis[yAxisIndex],
-            priceSeries = chart.series[yAxisIndex],
+            priceSeries = chart.series[seriesIndex],
             priceData = priceSeries.yData,
             currentPrice,
 

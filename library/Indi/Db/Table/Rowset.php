@@ -441,6 +441,27 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     }
 
     /**
+     * Remove $count items from the beginning of rowset
+     *
+     * @param int $count
+     */
+    public function shift($count = 1) {
+
+        // Remove rows
+        for ($i = 0; $i < $count; $i++) {
+
+            // Remove item from $this->_rows array
+            array_shift($this->_rows);
+
+            // Decrement $this->_count prop
+            $this->_count --;
+
+            // Force $this->_pointer to be not out from the bounds of current rowset
+            if ($this->_pointer > $this->_count) $this->_pointer = $this->_count;
+        }
+    }
+
+    /**
      * Empty rowset
      *
      * @return Indi_Db_Table_Rowset
