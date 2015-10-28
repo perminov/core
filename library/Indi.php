@@ -9,6 +9,25 @@ class Indi {
     protected static $_registry = array();
 
     /**
+     * An internal array, containing info related to what kind of suspicious events should be logged.
+     * Currently is has two types of such events: 'jerror' and 'mflush'. Logging of 'jerror' events
+     * is turned On (e.g is boolean `true`) by default, as if such an event occurs, this mean that
+     * there is something wrong with php-code, logic or smth, and this have to be investigated by developer.
+     * Logging of 'mflush' events is turned Off (e.g is boolean `false`) by default, because in most cases
+     * such events means that user is trying to assign an incorrect values for an some entry's fields,
+     * and he is informed about that by the UI of Indi Engine, so he has the ability to check/fix incorrect
+     * values and try to save the entry again. However, sometimes it is useful to turn it 'On'. Currently
+     * such an approach will be useful if there is some background operations, performed by Cron, etc,
+     * so, in those cases problems happened but nobody see it, and logging for them is the only way to be informed
+     *
+     * @var array
+     */
+    protected static $_logging = array(
+        'jerror' => true,
+        'mflush' => false
+    );
+
+    /**
      * An internal static variable, will be used to store data, got from `staticblock` table 
 	 * as an assotiative array  and that should be accessible anywhere
      *
@@ -1893,7 +1912,7 @@ class Indi {
         @mail('indi.engine@gmail.com', 'DELETE query at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
 
         // If mailing failed - write to special DELETE.log file
-        i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'DELETE.log');
+        i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/DELETE.log');
     }
 
     /**
@@ -2020,5 +2039,58 @@ class Indi {
 
         // End implicit flushing
         Indi::iflush(false);
+    }
+
+    /**
+     * Get current modes of all suspicious events or of a certain event, specified by $type arg,
+     * or set mode of a certain suspicious event
+     *
+     * @static
+     * @param string $type
+     * @param bool $flag
+     * @return array|null|bool
+     */
+    public static function logging($type = null, $flag = null) {
+
+        // If no arguments given - return current state
+        if (func_num_args() == 0) return self::$_logging;
+
+        // If $type arg is not a string - return
+        if (!is_string($type) || !in_array($type, array_keys(self::$_logging))) return null;
+
+        // If only $type arg is given - return whether or not logging of events of such a type is turned On
+        if (func_num_args() == 1) return self::$_logging[$type];
+
+        // If $flag arg is not boolean - return null
+        if (!is_bool($flag)) return null;
+
+        // Assign $flag as a value for item within self::$_log array, under $type key, and return it
+        return self::$_logging[$type] = $flag;
+    }
+
+    /**
+     * @static
+     * @param $type
+     * @param $data
+     * @return mixed
+     */
+    public static function log($type, $data) {
+
+        // General info
+        $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
+        $msg .= 'URI: ' . URI . '<br>';
+
+        // Who?
+        if (Indi::admin()->id) $msg .= 'Admin [id#' . Indi::admin()->id . ']: ' . Indi::admin()->title . '<br>';
+        if (Indi::user()->id) $msg .= 'User [id#' . Indi::user()->id . ']: ' . Indi::user()->title . '<br>';
+
+        // Spacer, data and separator
+        $msg .= '<br>' . print_r($data, true) . '<br>--------------------------------------<br><br>';
+
+        // Mail
+        @mail('indi.engine@gmail.com', $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+
+        // If mailing failed - write to special *.log file
+        i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/' . $type . '.log');
     }
 }
