@@ -9,8 +9,13 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
      */
     public $type = 'filter';
 
+    /**
+     * Detect whether or not filter should have ability to deal with multiple values
+     *
+     * @return bool
+     */
     public function isMultiSelect() {
-        return $this->filter->any;
+        return $this->filter->any();
     }
 
     /**
