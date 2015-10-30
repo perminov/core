@@ -47,6 +47,7 @@
     background-color: #0A54B0; padding: 2px 5px 2px 5px; color: white;
 }
 .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
+    margin-left: 4px;
 }
 .x-panel .i-combo .i-combo-multiple .i-combo-selected-item,
 .i-combo.i-combo-filter .i-combo-multiple .i-combo-selected-item {
