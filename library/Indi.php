@@ -57,9 +57,15 @@ class Indi {
         'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
         'urichunk' => '',
         'varchar255' => '/^[.\s]{0,255}$/',
-        'dir' => ':^([A-Z][\:])?/.*/$:'
+        'dir' => ':^([A-Z][\:])?/.*/$:',
+        'grs' => '/^[a-zA-Z0-9]{15}$/'
     );
 
+    /**
+     * Mime types dictionary
+     *
+     * @var array
+     */
     protected static $_mime = array(
 
         'definitive' => array (
@@ -1375,6 +1381,47 @@ class Indi {
      */
     public static function rex($alias){
         return $alias ? self::$_rex[$alias] : null;
+    }
+
+
+    /**
+     * Call preg_match() using pattern, stored within Indi::$_rex array under $rex key and using given $subject
+     *
+     * @static
+     * @param $rex
+     * @param $subject
+     * @return array|null
+     */
+    public static function rexm($rex, $subject){
+
+        // Check that self::$_rex array has a value under $alias key
+        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+
+        // Match
+        preg_match($rex, $subject, $found);
+
+        // Return
+        return $found;
+    }
+
+    /**
+     * Call preg_match_all() using pattern, stored within Indi::$_rex array under $rex key and using given $subject
+     *
+     * @static
+     * @param $rex
+     * @param $subject
+     * @return array|int
+     */
+    public static function rexma($rex, $subject) {
+
+        // Check that self::$_rex array has a value under $alias key
+        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+
+        // Match
+        $success = preg_match_all($rex, $subject, $found);
+
+        // Return
+        return $success ? $found : $success;
     }
 
     /**
