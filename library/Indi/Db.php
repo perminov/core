@@ -29,7 +29,6 @@ class Indi_Db {
      */
     protected static $_entityA = array();
 
-
     /**
      * Array of table names of existing entities, which have `useCache` flag turned on
      *
@@ -43,6 +42,11 @@ class Indi_Db {
      * @var Indi_Db
      */
     public static $queryCount = 0;
+
+    /**
+     * @var array
+     */
+    public static $DELETEQueryA = array();
 
     /**
      * Flag
@@ -356,6 +360,13 @@ class Indi_Db {
             // Increment queries count
             self::$queryCount++;
 
+            // Collect DELETE queries
+            if (preg_match('/^DELETE/', $sql))
+                self::$DELETEQueryA[] = array(
+                    'sql' => $sql,
+                    'affected' => $affected
+                );
+
             // If no rows were affected and error reporting ($silence argument) is turned on
             // Display error message, backtrace info and make the global stop
             if ($affected === false && $silence == false) $this->jerror($sql);
@@ -411,7 +422,7 @@ class Indi_Db {
         extract(array_pop(array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1, 1)));
 
         // Flush an error
-        die(jerror(0, $errstr, $file, $line));
+        iexit(jerror(0, $errstr, $file, $line));
     }
 
     /**

@@ -11,6 +11,6 @@ class Admin_LogoutController extends Indi_Controller {
         if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
 
         // Redirect
-        die('<script>window.location.replace("' . PRE . '/")</script>');
+        iexit('<script>window.location.replace("' . PRE . '/")</script>');
     }
 }

@@ -132,8 +132,8 @@ class Indi_Db_Table
      */
     public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
 
         // Build LIMIT clause
         if ($count !== null || $page !== null) {
@@ -292,7 +292,7 @@ class Indi_Db_Table
             // so we should calculate needed page number, and replace $page argument with calculated value
             // Also, while retrieving upper and lower page (than page with selected vaue) results, we use $selected
             // argument as start point for distance and scope calculations
-            if ($selected && $found > Indi_Db_Table_Row::$comboOptionsVisibleCount){
+            if ($selected && ($found > Indi_Db_Table_Row::$comboOptionsVisibleCount || $offsetDetection)){
 
                 // Get index of selected branch in raw tree
                 $i = 0;
