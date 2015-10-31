@@ -97,6 +97,9 @@ function jerror($errno, $errstr, $errfile, $errline) {
         'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
     );
 
+    // Log this error if logging of 'jerror's is turned On
+    if (Indi::logging('jerror')) Indi::log('jerror', $error);
+
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
 }
@@ -275,14 +278,14 @@ function ago($datetime, $postfix = 'назад') {
  * Add the measure version to a given quantity $q
  *
  * @param int $q
- * @param string $versions
+ * @param string $versions012
  * @param bool $showNumber
  * @return string
  */
-function tbq($q = 2, $versions = '', $showNumber = true) {
+function tbq($q = 2, $versions012 = '', $showNumber = true) {
 
     // Distribute quantity measure spell versions
-    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions));
+    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions012));
 
     // Foreach format
     foreach ($formatA as $formatK => $formatV) {
@@ -525,6 +528,72 @@ if (!function_exists('http_parse_headers')) {
 }
 
 /**
+ * Provide php's apache_request_headers() function declaration, as it's useful,
+ * but available only in case if PHP is running as an Apache module. Function
+ * implementation initially got from stackoverflow.com
+ */
+if (!function_exists('apache_request_headers')) {
+    function apache_request_headers() {
+        
+        // Cased headers
+        $casedHeaderA = array(
+
+            // HTTP
+            'Dasl'             => 'DASL',
+            'Dav'              => 'DAV',
+            'Etag'             => 'ETag',
+            'Mime-Version'     => 'MIME-Version',
+            'Slug'             => 'SLUG',
+            'Te'               => 'TE',
+            'Www-Authenticate' => 'WWW-Authenticate',
+
+            // MIME
+            'Content-Md5'      => 'Content-MD5',
+            'Content-Id'       => 'Content-ID',
+            'Content-Features' => 'Content-features',
+        );
+        
+        // Headers array
+        $httpHeaderA = array();
+
+        // Pick headers info from $_SERVER
+        foreach($_SERVER as $k => $v) {
+
+            // Make sure we $k is header name
+            if('HTTP_' !== substr($k, 0, 5)) continue;
+            
+            // Trim 'HTTP_'
+            $k = strtolower(substr($k, 5));
+
+            // If header name contains '_'
+            if (0 < substr_count($k, '_')) {
+
+                // Split by '_'
+                $kA = explode('_', $k);
+
+                // Call 'ucfirst' on each item within $kA
+                $kA = array_map('ucfirst', $kA);
+
+                // Implode by '-'
+                $k = implode('-', $kA);
+
+            // Else call 'ucfirst' on $k
+            } else $k = ucfirst($k);
+
+            // Replace key name if needed
+            if (array_key_exists($k, $casedHeaderA)) $k = $casedHeaderA[$k];
+
+            // Push into $httpHeaderA
+            $httpHeaderA[$k] = $v;
+        }
+        
+        // Return
+        return $httpHeaderA;
+    }
+}
+
+
+/**
  * Shortcut for in_array() function, but takes $array argument not only as array, but as a string also.
  * In that case $array argument will be converted to array by splitting by comma.
  *
@@ -677,7 +746,7 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     echo json_encode($flush);
 
     // Exit if need
-    if ($die) die();
+    if ($die) iexit();
 }
 
 /**
@@ -695,7 +764,7 @@ function jconfirm($msg) {
     header('Content-Type: application/json');
 
     // Flush
-    die(json_encode($flush));
+    iexit(json_encode($flush));
 }
 
 /**
@@ -706,12 +775,7 @@ function jconfirm($msg) {
  * @return float|string
  */
 function price($price, $formatted = false) {
-
-    // Get price
-    $float = ((int) round($price * 100)) / 100;
-
-    // Return that price as float value or as formatted string
-    return $formatted ? number_format($float, 2, '.', ' ') : $float;
+    return decimal($price, 2, $formatted);
 }
 
 /**
@@ -728,7 +792,7 @@ function decimal($value, $precision = 2, $formatted = false) {
     $normalizer = pow(10, $precision);
 
     // Get price
-    $float = ((int) round($value * $normalizer)) / $normalizer;
+    $float = round($value * $normalizer) / $normalizer;
 
     // Return that price as float value or as formatted string
     return $formatted ? number_format($float, $precision, '.', ' ') : $float;
@@ -773,4 +837,16 @@ function alias($title){
 
     // Got as we need
     return $alias;
+}
+
+/**
+ * @param $msg
+ */
+function iexit($msg = null) {
+
+    // Send all DELETE queries to an special email address, for debugging
+    Indi::mailDELETE();
+
+    // Exit
+    exit($msg);
 }

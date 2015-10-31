@@ -28,11 +28,24 @@ Ext.define('Indi.lib.controller.Controller', {
     actionsConfig: {},
 
     /**
+     * Empty function, for `scope` arg adjustments
+     *
+     * @param scope
+     */
+    preDispatch: function(scope) {
+    },
+
+    /**
      * Action dispatcher function
      *
      * @param {Object} scope Object, containing `route`, `plain`, `uri` and `cfg` properties
      */
     dispatch: function(scope) {
+
+        // Pre-dispatch
+        this.preDispatch(scope);
+
+        // Init aux variables
         var me = this, action = scope.route.last().action.alias, actionExtendCmpName, actionCmpName;
 
         // Setup `actions` property, for being a storage for action classes instances
@@ -53,6 +66,20 @@ Ext.define('Indi.lib.controller.Controller', {
         // Build the action component name
         actionCmpName = 'Indi.controller.' + scope.route.last().section.alias + '.action.' + scope.route.last().action.alias;
 
+        /*// Build array of current controller's parents
+        var parentControllerA = [];
+        while ((me = me.superclass) && (me.$className != 'Indi.lib.controller.Controller'))
+            parentControllerA.push(me); parentControllerA.reverse(); me = this;
+
+        // Define parent actions
+        var parentActionName, parentActionCfg = [];
+        for (var i = 0; i < parentControllerA.length; i++) {
+            parentActionName = parentControllerA[i].$className + '.action.' + scope.route.last().action.alias;
+            parentActionCfg[i] = parentControllerA[i].actionsConfig[scope.route.last().action.alias];
+            Ext.define(parentActionName, Ext.merge({extend: actionExtendCmpName}, parentActionCfg[i] || {}));
+            actionExtendCmpName = parentActionName;
+        }*/
+
         // Define the action component
         Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsConfig[action]));
 
@@ -60,7 +87,7 @@ Ext.define('Indi.lib.controller.Controller', {
         scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;
         if (scope.route.last().row) {
             scope.id += '-row-' + (scope.route.last().row.id || 0);
-        } else if (scope.route.last(1).row) {
+        } else if (scope.route.last(1) && scope.route.last(1).row) {
             scope.id += '-parentrow-' + scope.route.last(1).row.id;
         }
 

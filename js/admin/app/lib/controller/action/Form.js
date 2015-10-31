@@ -61,7 +61,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     sthItm = wrp.up('[isSouthItem]'), found;
 
                 // If response text is not json-convertable, or does not have `redirect` property - return
-                if (!Ext.isObject(json) || !(uri = json.redirect).length) return;
+                if (!Ext.isObject(json) || !(uri = json.redirect || '').length) return;
 
                 // Parse request url
                 gotoO = Indi.parseUri(uri);
@@ -299,14 +299,20 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemOnlyA: [],
 
     /**
-     * Build and return array of form panel items
+     * Build and return array of form panel items.
+     * If `fieldA` argument is given, function will will use it instead of me.ti().fields for building
+     * array of form fields configuration objects
      *
+     * @param fieldA
      * @return {Array}
      */
-    formItemA: function() {
+    formItemA: function(fieldA) {
 
         // Declare a number of auxiliary variables
         var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, build;
+
+        // If `fieldA` argument was given - use it rather than me.ti().fields
+        fieldA = fieldA || me.ti().fields;
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
@@ -323,22 +329,22 @@ Ext.define('Indi.lib.controller.action.Form', {
         if (Ext.isString(formItemOnlyA) && formItemOnlyA.length) formItemOnlyA = formItemOnlyA.split(',');
 
         // Header form item
-        itemA.push(me.formItemXSpan());
+        if (!arguments.length) itemA.push(me.formItemXSpan());
 
         // Other form items (fields)
-        for (var i = 0; i < me.ti().fields.length; i++) {
+        for (var i = 0; i < fieldA.length; i++) {
 
             // Reset `build` to `false`
             build = false;
 
             // Detect whether or not field should be presented in form
             if (formItemOnlyA.length) {
-                if (formItemOnlyA.indexOf(me.ti().fields[i].id) != -1) {
+                if (formItemOnlyA.indexOf(fieldA[i].id) != -1) {
                     build = true;
-                } else if (formItemOnlyA.indexOf(me.ti().fields[i].alias) != -1) {
+                } else if (formItemOnlyA.indexOf(fieldA[i].alias) != -1) {
                     build = true;
                 }
-            } else if (disabledA.indexOf(me.ti().fields[i].id) == -1) {
+            } else if (disabledA.indexOf(fieldA[i].id) == -1) {
                 build = true;
             }
 
@@ -346,19 +352,19 @@ Ext.define('Indi.lib.controller.action.Form', {
             if (build) {
 
                 // Setup default config
-                itemI = me.formItemDefault(me.ti().fields[i]);
+                itemI = me.formItemDefault(fieldA[i]);
 
                 // Apply specific control element config, as fields control elements/xtypes may be different
-                eItemX = 'formItemX' + Indi.ucfirst(me.ti().fields[i].foreign('elementId').alias);
+                eItemX = 'formItemX' + Indi.ucfirst(fieldA[i].foreign('elementId').alias);
                 if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
                     itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI) : me[eItemX];
                     itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
                 } else Ext.merge(itemI, {
-                    fieldLabel: '!!! ' + me.ti().fields[i].foreign('elementId').alias
+                    fieldLabel: '!!! ' + fieldA[i].foreign('elementId').alias
                 });
 
                 // Apply field custom config
-                eItem$ = 'formItem$' + Indi.ucfirst(me.ti().fields[i].alias);
+                eItem$ = 'formItem$' + Indi.ucfirst(fieldA[i].alias);
                 if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
                     item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
                     itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
@@ -368,7 +374,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (itemI) {
 
                     // Setup `disabled` property as boolean true, if current field is disabled-but-visible
-                    if (visibleA.indexOf(me.ti().fields[i].id) != -1) itemI.disabled = true;
+                    if (visibleA.indexOf(fieldA[i].id) != -1) itemI.disabled = true;
 
                     // Prepend `cls` property with 'i-field' css class name
                     itemI.cls = 'i-field' + (itemI.cls ? ' ' + itemI.cls : '');
@@ -627,7 +633,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             allowBlank: true,
             getInputWidthUsage: function() {
                 return this.getLabelWidthUsage();
-            }
+            },
+            value: Ext.isNumber(item.value) ? item.value + '' : (item.value || '')
         }
     },
 

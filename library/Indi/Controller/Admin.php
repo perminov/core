@@ -2,9 +2,9 @@
 class Indi_Controller_Admin extends Indi_Controller {
 
     /**
-     * Flag for set up whether rowset data should be fetched ONLY 
+     * Flag for set up whether rowset data should be fetched ONLY
      * as a result of a separate http request
-     * 
+     *
      * @var bool
      */
     protected $_isRowsetSeparate = false;
@@ -45,6 +45,18 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @var array
      */
     protected $_excelA = array();
+
+    /**
+     * Constructor
+     */
+    public function __construct() {
+
+        // Call parent constructor
+        parent::__construct();
+
+        // Remove non-module-related script paths
+        for ($i = 0; $i < 3; $i++) Indi::view()->popPaths('script');
+    }
 
     /**
      * Init all general cms features
@@ -376,86 +388,6 @@ class Indi_Controller_Admin extends Indi_Controller {
             return $alternateFieldR->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . Indi::admin()->alternate . 'Id' . '`)'
                 : '`' . Indi::admin()->alternate . 'Id' . '` = "' . Indi::admin()->id . '"';
-    }
-
-    /**
-     * Builds a SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
-     * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
-     * not contain search clauses for columns, that are involved in building of set of another kind of WHERE clauses -
-     * related to grid filters
-     *
-     * @param $keyword
-     * @return string
-     */
-    public function keywordWHERE($keyword = '') {
-
-        // If $keyword param is not passed we pick Indi::get()->keyword as $keyword
-        if (strlen($keyword) == 0) $keyword = Indi::get()->keyword;
-
-        // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
-        // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
-        // not both at the same time
-        $exclude = array_keys(Indi::obar());
-
-        // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
-        return Indi::trail()->gridFields->keywordWHERE($keyword, $exclude);
-    }
-
-    /**
-     * Build and return a final WHERE clause, that will be passed to fetchAll() method, for fetching section's main
-     * rowset. Function use a $primaryWHERE, merge it with $this->filtersWHERE() and append to it $this->keywordWHERE()
-     * if return values of these function are not null
-     *
-     * @param string|array $primaryWHERE
-     * @param string|array $customWHERE
-     * @param bool $merge
-     * @return null|string|array
-     */
-    public function finalWHERE($primaryWHERE, $customWHERE = null, $merge = true) {
-
-        // Empty array yet
-        $finalWHERE = array();
-
-        // If there was a primaryHash passed instead of $primaryWHERE param - then we extract all scope params from
-        if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
-
-            // Prepare $primaryWHERE
-            $primaryWHERE = Indi::trail()->scope->primary;
-
-            // Prepare search data for $this->filtersWHERE()
-            Indi::get()->search = Indi::trail()->scope->filters;
-
-            // Prepare search data for $this->keywordWHERE()
-            Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
-
-            // Prepare sort params for $this->finalORDER()
-            Indi::get()->sort = Indi::trail()->scope->order;
-        }
-
-        // Push primary part
-        if ($primaryWHERE || $primaryWHERE == '0') $finalWHERE['primary'] = $primaryWHERE;
-
-        // Get a WHERE stack of clauses, related to filters search and push it into $finalWHERE under 'filters' key
-        if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE['filters'] = $filtersWHERE;
-
-        // Get a WHERE clause, related to keyword search and push it into $finalWHERE under 'keyword' key
-        if ($keywordWHERE = $this->keywordWHERE()) $finalWHERE['keyword'] = $keywordWHERE;
-
-        // Append custom WHERE
-        if ($customWHERE || $customWHERE == '0') $finalWHERE['custom'] = $customWHERE;
-
-        // If WHERE clause should be a string
-        if ($merge) {
-
-            // Force $finalWHERE to be single-dimension array
-            foreach ($finalWHERE as $part => $where) if (is_array($where)) $finalWHERE[$part] = im($where, ' AND ');
-
-            // Stringify
-            $finalWHERE = implode(' AND ', $finalWHERE);
-        }
-
-        // Return
-        return $finalWHERE;
     }
 
     /**
@@ -1099,7 +1031,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     if ($h = trim(Indi::hexColor($c[1]), '#')) {
 
                         // Create the GD image
-                        $gdImage = @imagecreatetruecolor(14, 11) or die('Cannot Initialize new GD image stream');
+                        $gdImage = @imagecreatetruecolor(14, 11) or iexit('Cannot Initialize new GD image stream');
                         imagefill($gdImage, 0, 0, imagecolorallocate(
                             $gdImage, hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2)))
                         );
@@ -1374,7 +1306,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         echo $raw;
 
         // Exit
-        die();
+        iexit();
     }
 
     /**
@@ -1422,15 +1354,6 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param $objPHPExcel
      */
     public function adjustPdfExport(&$objPHPExcel) {
-
-    }
-
-    /**
-     * Empty function. To be redeclared in child classes in case of a need for an json-export adjustments
-     *
-     * @param $json
-     */
-    public function adjustJsonExport(&$json) {
 
     }
 
@@ -1701,7 +1624,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // Flush the login page
-                die($out);
+                iexit($out);
             }
 
         // Else if user is already signed in, and is trying to perform some action in some section
@@ -1724,8 +1647,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $_SESSION['indi']['throwOutMsg'] = $data;
 
                 // Logout
-                if (Indi::uri()->section == 'index') die(header('Location: ' . PRE . '/logout/'));
-                else if (!Indi::uri()->format) die('<script>top.window.location="' . PRE .'/logout/"</script>');
+                if (Indi::uri()->section == 'index') iexit(header('Location: ' . PRE . '/logout/'));
+                else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else jflush(false, array('trowOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
@@ -1744,65 +1667,6 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If current request had a only aim to check access - report that all is ok
         if (array_key_exists('check', Indi::get())) die('ok');
-    }
-
-    /**
-     * Provide default index action
-     */
-    public function indexAction() {
-
-        // If data should be got as json or excel
-        if (Indi::uri('format') || (!$this->_isRowsetSeparate && Indi::trail(true))) {
-
-            // Adjust rowset, before using it as a basement of grid data
-            $this->adjustGridDataRowset();
-
-            // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData(Indi::trail());
-
-            // Adjust grid data
-            $this->adjustGridData($data);
-
-            // If data is gonna be used in the excel spreadsheet building process, pass it to a special function
-            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
-
-            // Else if data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
-            else {
-
-                // Get scope
-                $scope = Indi::trail()->scope->toArray();
-
-                // Unset tabs definitions from json-encoded scope data, as we'd already got it previously
-                unset($scope['actionrowset']['south']['tabs']);
-
-                // Setup basic data
-                $pageData = array(
-                    'totalCount' => $this->rowset->found(),
-                    'blocks' => $data,
-                    'scope' => $scope
-                );
-
-                // Append summary data
-                if ($summary = $this->rowsetSummary()) $pageData['summary'] = $summary;
-
-                // Provide combo filters consistency
-                foreach (Indi::trail()->filters as $filter)
-                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
-                        $alias = $filter->foreign('fieldId')->alias;
-                        Indi::view()->filterCombo($filter, 'extjs');
-                        $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
-                    }
-
-                // Adjust json export
-                $this->adjustJsonExport($pageData);
-
-                // If uri's 'format' param is specified, and it is 'json' - flush json-encoded $pageData
-                if (Indi::uri('format') == 'json') jflush(true, $pageData); 
-                
-                // Else assign that data into scope's `pageData` prop
-                else Indi::trail()->scope->pageData = $pageData;
-            }
-        }
     }
 
     /**
@@ -1875,23 +1739,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Adjust rowset, before using it as a basement of grid data. This function is empty here, but may be useful in
-     * some situations
-     */
-    function adjustGridDataRowset() {
-
-    }
-
-    /**
-     * Adjust data, that was already prepared for usage in grid. This function is for ability to post-adjustments
-     *
-     * @param array $data This param is passed by reference
-     */
-    function adjustGridData(&$data) {
-
-    }
-
-    /**
      * Render the output. If $return argument is true, builded output will be returned instead of flushing into the
      * browser
      *
@@ -1942,7 +1789,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             if (preg_match('/^[\[{]/', $out)) header('Content-Type: application/json');
 
             // Flush output
-            die($out);
+            iexit($out);
         }
     }
 
@@ -1976,7 +1823,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Redirect
-        if ($return) return $location; else die('<script>window.parent.Indi.load("' . $location . '");</script>');
+        if ($return) return $location; else iexit('<script>window.parent.Indi.load("' . $location . '");</script>');
     }
 
     /**
