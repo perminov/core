@@ -1689,7 +1689,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             name: src.id,
             closable: true,
             border: 0,
-            layout: 'fit',
+            //layout: 'fit',
             items: [{
                 xtype: 'actiontabrow',
                 id: id,

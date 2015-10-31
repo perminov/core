@@ -121,7 +121,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // If 'format' uri's param was specified
-                if (Indi::uri()->format || !$this->_isRowsetSeparate) {
+                if (/* // */Indi::uri()->format || !$this->_isRowsetSeparate) {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
@@ -164,7 +164,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'order' => Indi::get()->sort, 'page' => Indi::get()->page, 'found' => $this->rowset->found(),
                         'WHERE' => $finalWHERE, 'ORDER' => $finalORDER, 'hash' => Indi::trail()->section->primaryHash
                     ));
-                }
+        /* // */}
 
             // Else if where is some another action
             } else {
