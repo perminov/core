@@ -97,6 +97,9 @@ function jerror($errno, $errstr, $errfile, $errline) {
         'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
     );
 
+    // Log this error if logging of 'jerror's is turned On
+    if (Indi::logging('jerror')) Indi::log('jerror', $error);
+
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
 }
