@@ -132,8 +132,8 @@ class Indi_Db_Table
      */
     public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
 
         // Build LIMIT clause
         if ($count !== null || $page !== null) {

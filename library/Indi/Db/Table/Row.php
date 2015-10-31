@@ -203,15 +203,21 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Rollback changes
             Indi::db()->rollback();
 
-            // Flush mismatch
-            jflush(false, array('mismatch' => array(
+            // Build an array, containing mismatches explanations
+            $mismatch = array(
                 'entity' => array(
                     'title' => $this->model()->title(),
                     'entry' => $this->id
                 ),
                 'errors' => $this->_mismatch,
                 'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
-            )));
+            );
+
+            // Log this error if logging of 'jerror's is turned On
+            if (Indi::logging('mflush')) Indi::log('mflush', $mismatch);
+
+            // Flush mismatch
+            jflush(false, array('mismatch' => $mismatch));
         }
     }
 
