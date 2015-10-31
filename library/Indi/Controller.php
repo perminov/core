@@ -384,7 +384,7 @@ class Indi_Controller {
                         $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
 
                         // If filter is multiple (desipite field is singe) set up $mode as `any`
-                        if ($filterR->any) $any = true;
+                        if ($filterR->any()) $any = true;
                     }
 
                     // Set up WHERE clause according to value of $any flag
@@ -417,7 +417,7 @@ class Indi_Controller {
                         $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
 
                         // If filter should search any match rather than all matches
-                        if ($filterR->any) $any = true;
+                        if ($filterR->any()) $any = true;
                     }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array

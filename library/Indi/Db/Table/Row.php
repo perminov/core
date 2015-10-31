@@ -705,7 +705,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         } else {
 
             // If we selected option is set, or if we have keyword that results should match, special logic will run
-            if ($selected && ($fieldR->storeRelationAbility == 'one' || $selectedTypeIsKeyword)) {
+            if ($selected && (($fieldR->storeRelationAbility == 'one' && !$multiSelect) || $selectedTypeIsKeyword)) {
 
                 // We do a backup for WHERE clause, because it's backup version
                 // will be used to calc foundRows property in case if $selectedTypeIsKeyword = false
@@ -903,7 +903,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // and will cause problems in indi.combo.form.js
         $dataRs->enumset = false;
 
-        if ($fieldR->storeRelationAbility == 'many') {
+        if ($fieldR->storeRelationAbility == 'many' || $multiSelect) {
             if ($selected) {
                 // Convert list of selected ids into array
                 $selected = explode(',', $selected);

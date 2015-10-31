@@ -161,7 +161,7 @@ class Indi_View_Helper_Admin_FormCombo {
         // If current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
-        if ($this->field->storeRelationAbility == 'one' && !$this->filter->any) {
+        if ($this->field->storeRelationAbility == 'one' && ($this->filter && !$this->filter->any())) {
 
             // Setup a key
             if (($this->getRow()->id && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
@@ -199,7 +199,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
         // Else if combo is mulptiple
-        } else if ($this->field->storeRelationAbility == 'many' || $this->filter->any) {
+        } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && !$this->filter->any())) {
             // Set value for hidden input
             $selected = array('value' => $selected);
 
@@ -302,7 +302,7 @@ class Indi_View_Helper_Admin_FormCombo {
         );
 
         if ($this->isMultiSelect()) {
-            $view['subTplData']['selected'] = $this->selected;
+            if (!$this->comboDataRs->selected->count()) $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
                 $item = self::detectColor(array('title' => $selectedR->title));
                 $item['id'] = $selectedR->{$this->keyProperty};
@@ -362,7 +362,7 @@ class Indi_View_Helper_Admin_FormCombo {
         // applied at the moment of indi.combo.js maintenance, because indi.combo.js may run earlier than css files
         // loaded and this may cause wrong calculation of widths of selected options in multiple-combos, as by default
         // options's text is in 'Times New Roman' font, which have letter widths, differerent from other fonts
-        $option['font'] = ' font-family: tahoma, arial, verdana, sans-serif;';
+        //$option['font'] = ' font-family: tahoma, arial, verdana, sans-serif;';
 
         // Return
         return $option;

@@ -1156,7 +1156,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return []
      */
     appendNotSameGroupParents: function(items, json) {
-        var me = this, name = me.name;
+        var me = this, name = me.name, i;
 
         // Store info about parents that were aready added, to prevent adding them more that once
         var addedParents = [];
@@ -1165,7 +1165,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var html = '<ul>' + items.join('') + '</ul>';
 
         // Foreach element in 'items' array
-        for (var i = 0; i < items.length; i++) {
+        for (i = 0; i < items.length; i++) {
 
             // If item is a option, not optgroup
             if (Indi.fly(items[i]).attr(name)) {
@@ -1218,7 +1218,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Variable for stepping up once non-disabled option is catched
         var groupIndex = 0, reg, level, previousLevel;
-        for (var i = 0; i < items.length; i++) {
+        for (i = 0; i < items.length; i++) {
 
             // We do this action only if it is a non-disabled option
             if (!Indi.fly(items[i]).hasCls('x-boundlist-item-disabled')) {
@@ -1249,7 +1249,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Get needed items by needed indexes
         var neededItems = [];
-        for (var i = 0; i < items.length; i++) {
+        for (i = 0; i < items.length; i++) {
             if (neededIndexes.indexOf(i) != -1) {
                 neededItems.push(items[i]);
             }
@@ -1303,8 +1303,24 @@ Ext.define('Indi.lib.form.field.Combo', {
                     me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1 + (me.hideTrigger ? 1 : 0));
                 }
             } else {
-                me.tableEl.setWidth(fraction);
-                me.keywordEl.scrollIntoView(me.comboInner, true, true);
+                var usage = 0; me.multipleEl.select('.i-combo-selected-item').each(function(el){
+                    usage += el.getWidth();
+                });
+                if (fraction > me.multipleEl.getWidth(true) - staticDecrease - usage + (usage ? 1 : 0)) {
+                    me.tableEl.up('div[class=""]').css({
+                        position: 'relative',
+                        right: (fraction - (me.multipleEl.getWidth(true) - staticDecrease - usage + (usage ? 1 : 0))) + 'px'
+                    });
+                    me.tableEl.setWidth(fraction);
+                } else {
+                    me.tableEl.up('div[class=""]').css({
+                        position: 'relative',
+                        right: '0px'
+                    });
+                    me.tableEl.setWidth(me.multipleEl.getWidth(true) - staticDecrease - usage + (usage ? 1 : 0));
+                }
+                //me.tableEl.setWidth(fraction);
+                //me.keywordEl.scrollIntoView(me.comboInner, true, true);
             }
         }, 10);
     },

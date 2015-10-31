@@ -40,6 +40,7 @@
 }
 .i-combo .i-combo-multiple .i-combo-selected-item {
     white-space: nowrap; display: inline-block; float: left;
+    margin-left: 1px; margin-top: 1px; font-size: 11px; line-height: 15px;
 }
 
 /* Combo info */
@@ -87,7 +88,8 @@
 }
 .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     background-repeat: no-repeat; background-position: 0 0; width: 8px; height: 8px; display: inline-block;
-    cursor: pointer;
+    cursor: pointer; vertical-align: initial;
+    margin-left: 2px; background-image: url(/i/admin/combo-multiple-selected-item-delete.png);
 }
 
 /* Disabled styling*/
