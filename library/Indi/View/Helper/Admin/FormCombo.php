@@ -158,10 +158,28 @@ class Indi_View_Helper_Admin_FormCombo {
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
 
-        // If current field column type is ENUM or SET, and current row have no selected value, we use first
+        // If combo is boolean
+        if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
+
+            // Setup a key
+            if ($this->getRow()->$name) {
+                $key = $this->getRow()->$name;
+            } else if ($comboDataRs->enumset && $this->type == 'form') {
+                $key = key($options);
+            } else {
+                $key = $this->getDefaultValue();
+            }
+
+            // Setup an info about selected value
+            if ($key) $selected = array(
+                'title' => $options[$key]['title'],
+                'value' => $key
+            );
+
+        // Else if current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
-        if ($this->field->storeRelationAbility == 'one' && ($this->filter && !$this->filter->any())) {
+        } else if ($this->field->storeRelationAbility == 'one' && ($this->filter ? !$this->filter->any() : true)) {
 
             // Setup a key
             if (($this->getRow()->id && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
@@ -200,6 +218,7 @@ class Indi_View_Helper_Admin_FormCombo {
 
         // Else if combo is mulptiple
         } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && !$this->filter->any())) {
+
             // Set value for hidden input
             $selected = array('value' => $selected);
 
@@ -214,24 +233,6 @@ class Indi_View_Helper_Admin_FormCombo {
                 }
             }
             $attrs = ' ' . implode(' ', $attrs);
-
-        // Else if combo is boolean
-        } else if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
-
-            // Setup a key
-            if ($this->getRow()->$name) {
-                $key = $this->getRow()->$name;
-            } else if ($comboDataRs->enumset && $this->type == 'form') {
-                $key = key($options);
-            } else {
-                $key = $this->getDefaultValue();
-            }
-
-            // Setup an info about selected value
-            if ($key) $selected = array(
-                'title' => $options[$key]['title'],
-                'value' => $key
-            );
         }
 
         // Prepare options data
