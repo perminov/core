@@ -29,8 +29,8 @@ Ext.define('Indi.lib.trail.Trail', {
     breadCrumbsRowTitle: function(item){
 
         // At first, we strip newline characters, html '<br>' tags
-        var title = item.row.title ?
-            item.row.title.toString().replace(/[\n\r]/g, '').replace(/<br>/g, ' ') : (item.row._title || 'No title');
+        var title = item.row._system.title ?
+            item.row._system.title.toString().replace(/[\n\r]/g, '').replace(/<br>/g, ' ') : (item.row._title || 'No title');
 
         // Detect color
         var colorDetected = title.match(/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i);
