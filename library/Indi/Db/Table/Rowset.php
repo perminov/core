@@ -566,8 +566,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         foreach ($ti->gridFields as $gridFieldR) {
 
             // Foreign keys (single and multiple)
-            if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = Indi::model($gridFieldR->relation)->titleColumn();
-            else if ($gridFieldR->storeRelationAbility == 'many') $typeA['foreign']['multiple'][$gridFieldR->alias] = Indi::model($gridFieldR->relation)->titleColumn();
+            if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
+            else if ($gridFieldR->storeRelationAbility == 'many') $typeA['foreign']['multiple'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
 
             // Boolean values
             else if ($gridFieldR->foreign('columnTypeId')->type == 'BOOLEAN') $typeA['boolean'][$gridFieldR->alias] = true;
