@@ -189,10 +189,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
+        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
 
         // Other columns
-        for (var i = 0; i < colA.length; i++) {
+        for (i = 0; i < colA.length; i++) {
 
             // Get current col
             colI = colA[i];
@@ -203,11 +203,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
 
-                // Base cfg
+                // Base cfg. Note that here we set up whole column group to be hidden, initialy,
+                // and if at least one of the sub-columns is not hidden - we will set `hidden` prop as `false`
                 columnI = {
                     text: colI.title,
+                    hidden: true,
                     columns: me.gridColumnADeep(colI._nested.grid)
                 }
+
+                // Check if current column group has at least one non-hidden sub-column
+                // and if so, set `hidden` prop of whole group as `false`
+                for (c = 0; c < columnI.columns.length; c++)
+                    if (!columnI.columns[c].hidden)
+                        if (Ext.merge(columnI, {hidden: false}))
+                            break;
 
                 // Add column
                 columnA.push(columnI);
