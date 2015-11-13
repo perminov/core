@@ -850,3 +850,13 @@ function iexit($msg = null) {
     // Exit
     exit($msg);
 }
+
+/**
+ * Get the sign of a number
+ *
+ * @param $n
+ * @return int
+ */
+function sign($n) {
+    return (int) ($n > 0) - (int) ($n < 0);
+}
