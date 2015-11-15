@@ -132,7 +132,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             checked: !(!me.value && !me.allowBlank),
             margin: '0 5 0 0',
             style: me.value ? 'top: 4px !important;' : '',
-            disabled: !me.value && !me.allowBlank,
+            disabled: (!me.value && !me.allowBlank) || me.readOnly,
             boxLabel: me.value ? Indi.lang.I_FORM_UPLOAD_NOCHANGE : Indi.lang.I_FORM_UPLOAD_NOFILE,
             boxLabel: me.value ? '' : Indi.lang.I_FORM_UPLOAD_NOFILE,
             tooltip: me.value ? {html: Indi.lang.I_FORM_UPLOAD_NOCHANGE, anchor: 'bottom'} : null
@@ -157,7 +157,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             boxLabel: Indi.lang.I_FORM_UPLOAD_DELETE,
             style: 'top: 4px !important;',
             boxLabel: '',
-            disabled: !me.allowBlank,
+            disabled: !me.allowBlank || me.readOnly,
             tooltip: {html: Indi.lang.I_FORM_UPLOAD_DELETE, anchor: 'bottom'}
 
         } : null;
@@ -182,6 +182,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             value: !me.value && !me.allowBlank,
             margin: 0,
             tooltip: me.value ? {html: Indi.lang.I_FORM_UPLOAD_REPLACE, anchor: 'bottom'} : null,
+            disabled: me.readOnly,
             listeners: {
                 afterrender: function(rb){
                     rb.el.on('click', function(){
@@ -232,6 +233,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             blankText: me.blankText,
             style: {margin: '-1px 4px 0 0px !important'},
             padding: 0,
+            disabled: me.readOnly,
             getErrors: function() {
                 // Setup auxiliary variables
                 var me = this, errors = [], file = me.fp.getValue(), rex, nativeFile, sizeType,
@@ -372,6 +374,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             margin: '0 8 0 0',
             width: Indi.metrics.getWidth(me.value ? Indi.lang.I_FORM_UPLOAD_REPLACE : Indi.lang.I_FORM_UPLOAD_BROWSE),
             width: Indi.metrics.getWidth(me.value ? '&raquo;' : Indi.lang.I_FORM_UPLOAD_BROWSE) + 1,
+            disabled: me.readOnly,
             buttonConfig: {
                 border: 0,
                 margin: '0 0 0 -1',
@@ -620,6 +623,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             xtype: 'checkbox',
             alias: 'mode',
             style: 'top: 4px !important',
+            disabled: me.readOnly,
             tooltip: {
                 html: Indi.lang.I_FORM_UPLOAD_MODE_TIP,
                 anchor: 'bottom',

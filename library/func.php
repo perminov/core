@@ -97,6 +97,9 @@ function jerror($errno, $errstr, $errfile, $errline) {
         'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 2)
     );
 
+    // Log this error if logging of 'jerror's is turned On
+    if (Indi::logging('jerror')) Indi::log('jerror', $error);
+
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
 }
@@ -275,14 +278,14 @@ function ago($datetime, $postfix = 'назад') {
  * Add the measure version to a given quantity $q
  *
  * @param int $q
- * @param string $versions
+ * @param string $versions012
  * @param bool $showNumber
  * @return string
  */
-function tbq($q = 2, $versions = '', $showNumber = true) {
+function tbq($q = 2, $versions012 = '', $showNumber = true) {
 
     // Distribute quantity measure spell versions
-    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(explode(',', $versions));
+    list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions012));
 
     // Foreach format
     foreach ($formatA as $formatK => $formatV) {
@@ -525,6 +528,72 @@ if (!function_exists('http_parse_headers')) {
 }
 
 /**
+ * Provide php's apache_request_headers() function declaration, as it's useful,
+ * but available only in case if PHP is running as an Apache module. Function
+ * implementation initially got from stackoverflow.com
+ */
+if (!function_exists('apache_request_headers')) {
+    function apache_request_headers() {
+        
+        // Cased headers
+        $casedHeaderA = array(
+
+            // HTTP
+            'Dasl'             => 'DASL',
+            'Dav'              => 'DAV',
+            'Etag'             => 'ETag',
+            'Mime-Version'     => 'MIME-Version',
+            'Slug'             => 'SLUG',
+            'Te'               => 'TE',
+            'Www-Authenticate' => 'WWW-Authenticate',
+
+            // MIME
+            'Content-Md5'      => 'Content-MD5',
+            'Content-Id'       => 'Content-ID',
+            'Content-Features' => 'Content-features',
+        );
+        
+        // Headers array
+        $httpHeaderA = array();
+
+        // Pick headers info from $_SERVER
+        foreach($_SERVER as $k => $v) {
+
+            // Make sure we $k is header name
+            if('HTTP_' !== substr($k, 0, 5)) continue;
+            
+            // Trim 'HTTP_'
+            $k = strtolower(substr($k, 5));
+
+            // If header name contains '_'
+            if (0 < substr_count($k, '_')) {
+
+                // Split by '_'
+                $kA = explode('_', $k);
+
+                // Call 'ucfirst' on each item within $kA
+                $kA = array_map('ucfirst', $kA);
+
+                // Implode by '-'
+                $k = implode('-', $kA);
+
+            // Else call 'ucfirst' on $k
+            } else $k = ucfirst($k);
+
+            // Replace key name if needed
+            if (array_key_exists($k, $casedHeaderA)) $k = $casedHeaderA[$k];
+
+            // Push into $httpHeaderA
+            $httpHeaderA[$k] = $v;
+        }
+        
+        // Return
+        return $httpHeaderA;
+    }
+}
+
+
+/**
  * Shortcut for in_array() function, but takes $array argument not only as array, but as a string also.
  * In that case $array argument will be converted to array by splitting by comma.
  *
@@ -535,6 +604,17 @@ if (!function_exists('http_parse_headers')) {
 function in($item, $array) {
     if (!is_array($array)) $array = explode(',', $array);
     return in_array($item, $array);
+}
+
+/**
+ * Shortcut for implode() function, but with the reversed order of arguments
+ *
+ * @param $array
+ * @param string $separator
+ * @return string
+ */
+function im(array $array, $separator = ',') {
+    return implode($separator, $array);
 }
 
 /**
@@ -636,8 +716,9 @@ function num2str($num) {
  * @param $success
  * @param mixed $msg1
  * @param mixed $msg2
+ * @param bool $die
  */
-function jflush($success, $msg1 = null, $msg2 = null) {
+function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Start building data for flushing
     $flush = array('success' => $success);
@@ -658,6 +739,124 @@ function jflush($success, $msg1 = null, $msg2 = null) {
     if ($mrg1) $flush = array_merge($flush, $mrg1);
     if ($mrg2) $flush = array_merge($flush, $mrg2);
 
+    // If headers were not already sent - flush an error message
+    if (!headers_sent()) header('Content-Type: application/json');
+
+    // Flush contents
+    echo json_encode($flush);
+
+    // Exit if need
+    if ($die) iexit();
+}
+
+/**
+ * Flush the json-encoded message, containing `status` property, and other optional properties, especially for confirm
+ *
+ * @param string $msg
+ */
+function jconfirm($msg) {
+
+    // Start building data for flushing
+    $flush = array('confirm' => true, 'msg' => $msg);
+
+    // If headers were not already sent - flush an error message
+    if (!headers_sent()) header('Content-Type: application/json');
+    header('Content-Type: application/json');
+
     // Flush
-    die(json_encode($flush));
+    iexit(json_encode($flush));
+}
+
+/**
+ * Normalize the price-value
+ *
+ * @param float|int $price
+ * @param bool $formatted
+ * @return float|string
+ */
+function price($price, $formatted = false) {
+    return decimal($price, 2, $formatted);
+}
+
+/**
+ * Normalize the decimal value to the specified precision
+ *
+ * @param float|int $value
+ * @param int $precision
+ * @param bool $formatted
+ * @return float|string
+ */
+function decimal($value, $precision = 2, $formatted = false) {
+
+    // Get the normalizer value
+    $normalizer = pow(10, $precision);
+
+    // Get price
+    $float = round($value * $normalizer) / $normalizer;
+
+    // Return that price as float value or as formatted string
+    return $formatted ? number_format($float, $precision, '.', ' ') : $float;
+}
+
+/**
+ * Converts passed string to it's url equivalent
+ *
+ * @param $title
+ * @return string
+ */
+function alias($title){
+
+    // Symbols
+    $s = array('а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
+        'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+        't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
+        'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&', '/', '_');
+
+    // Replacements
+    $r = array('a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
+        '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+        't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
+        'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-', '_');
+
+    // Declare variable for alias
+    $alias = '';
+
+    // Convert passed title to loweк case and trim whitespaces
+    $title = trim(mb_strtolower($title, 'utf-8'));
+
+    // Find a replacement for each char of title and append it to alias
+    for ($i = 0; $i < mb_strlen($title, 'utf-8'); $i++) {
+        $c = mb_substr($title, $i, 1, 'utf-8');
+        if (($j = array_search($c, $s)) !== false) $alias .= $r[$j];
+    }
+
+    // Strip '-' symbols from alias beginning, ending and replace multiple '-' symbol occurence with single occurence
+    $alias = preg_replace('/^\-+/', '', $alias);
+    $alias = preg_replace('/\-+$/', '', $alias);
+    $alias = preg_replace('/\-{2,}/', '-', $alias);
+
+    // Got as we need
+    return $alias;
+}
+
+/**
+ * @param $msg
+ */
+function iexit($msg = null) {
+
+    // Send all DELETE queries to an special email address, for debugging
+    Indi::mailDELETE();
+
+    // Exit
+    exit($msg);
+}
+
+/**
+ * Get the sign of a number
+ *
+ * @param $n
+ * @return int
+ */
+function sign($n) {
+    return (int) ($n > 0) - (int) ($n < 0);
 }

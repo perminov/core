@@ -53,6 +53,9 @@ $mu = 0; function mu(){$m = memory_get_usage(); $ret = $m - $GLOBALS['mu']; $GLO
 
 // Load config and setup DB interface
 Indi::ini('application/config.ini');
+if (function_exists('geoip_country_code_by_name')
+    && geoip_country_code_by_name($_SERVER['REMOTE_ADDR']) == 'GB')
+        Indi::ini('lang')->admin = 'en';
 Indi::cache();
 Indi::db(Indi::ini()->db);
 

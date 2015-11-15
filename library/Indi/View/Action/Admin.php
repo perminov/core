@@ -37,13 +37,7 @@ class Indi_View_Action_Admin implements Indi_View_Action_Interface {
      */
     public function render() {
 
-        // Start output buffering
-        ob_start();
-
-        // Push <script> tag containing trail-refresh data into the buffer
-        ?><script>Indi.trail(true).apply(<?=json_encode(Indi::trail(true)->toArray())?>);</script><?
-
-        // Get and return buffered contents
-        return ob_get_clean();
+        // Return json-encoded trail data
+        return json_encode(array('route' =>Indi::trail(true)->toArray(), 'plain' => $this->plain));
     }
 }

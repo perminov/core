@@ -10,6 +10,9 @@ Options FollowSymLinks
 <Files config.ini>
   Deny from all 
 </Files>
+<Files .git>
+  Deny from all 
+</Files>
 
 #################
 ## Compression ##

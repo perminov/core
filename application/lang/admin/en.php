@@ -34,6 +34,7 @@ define('I_ACCESS_ERROR_ACTION_IS_NOT_ACCESSIBLE', 'You have no rights on this ac
 define('I_ACCESS_ERROR_ONE_OF_PARENT_SECTIONS_IS_OFF', 'One of parent sections for current section - is switched off');
 define('I_ACCESS_ERROR_ROW_ADDING_DISABLED', 'Row adding is restricted in this section');
 define('I_ACCESS_ERROR_ROW_DOESNT_EXIST', 'Row with such an id does not exist in this section');
+define('I_ACCESS_ERROR_ACTION_IS_OFF_DUETO_CIRCUMSTANCES', 'Action "%s" is accessible, but current circumstances do not suit for it to be performed');
 
 define('I_DOWNLOAD_ERROR_NO_ID', 'Row identifier either is not specified, or is not a number');
 define('I_DOWNLOAD_ERROR_NO_FIELD', 'Field identifier either is not specified, or is not a number');
@@ -63,8 +64,10 @@ define('I_MENU', 'Menu');
 define('I_CREATE', 'Create new item');
 define('I_BACK', 'Back');
 define('I_SAVE', 'Save');
+define('I_CLOSE', 'Close');
 define('I_TOTAL', 'Total');
 define('I_EXPORT_EXCEL', 'Export as an Excel spreadsheet');
+define('I_EXPORT_PDF', 'Export as an PDF document');
 define('I_NAVTO_ROWSET', 'Go back to rowset');
 define('I_NAVTO_ID', 'Goto row by ID');
 define('I_NAVTO_RELOAD', 'Refresh');
@@ -93,12 +96,15 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE', 'Value "%s", mentioned in fi
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE', 'Date "%s", mentioned in field "%s"  - is not a valid date');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Value "%s", mentioned in field "%s" as a time - should be a time in format HH:MM:SS');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Time "%s", mentioned in field "%s" - is not a valid time');
-define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 5 or less digits in integer part, and 2 or less/none digits in fractional part');
-define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Value "%s" of field "%s" should be a number with 8 or less digits in integer part, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 4 or less digits in integer part, optionally prepended with "-" sign, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Value "%s" of field "%s" should be a number with 8 or less digits in integer part, optionally prepended with "-" sign, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143', 'Value "%s" of field "%s" should be a number with 10 or less digits in integer part, optionally prepended with "-" sign, and 3 or less/none digits in fractional part');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Value "%s" of field "%s" should be a year in format YYYY');
 define('I_ROWSAVE_ERROR_NOTDIRTY_TITLE', 'Nothing to save');
 define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
-define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Current row cannot be set as parent for itself in field "%"');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Current row cannot be set as parent for itself in field "%s"');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Row with id "%s", specified in field "%s", - is not exists, so can not be set up as parent row');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Row "%s", specified in field "%s", - is a child/descendant row for a current row "%s", so it can not be set up as parent row');
 define('I_ROWFILE_ERROR_MKDIR', 'Recursive creation of directory "%s" within path "%s" is failed, despite on that path is writable');
 define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Recursive creation of directory "%s" within path "%s" is failed, because that path is not writable');
 define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Target directory "%s" exists, but is not writable');
@@ -137,6 +143,7 @@ define('I_FORM_UPLOAD_INFMT', 'in format');
 define('I_FORM_UPLOAD_HSIZE', 'have size');
 define('I_FORM_UPLOAD_NOTGT', 'not greater than');
 define('I_FORM_UPLOAD_NOTLT', 'not less than');
+define('I_FORM_UPLOAD_FPREF', 'Foto %s');
 
 define('I_FORM_DATETIME_HOURS', 'hours');
 define('I_FORM_DATETIME_MINUTES', 'minutes');
@@ -176,4 +183,4 @@ define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE', 'Nothing to be emptied'
 define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Options are already empty or not used at all');
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Confirm');
-define('I_ACTION_DELETE_CONFIRM_MSG', 'Are you sure?');
+define('I_ACTION_DELETE_CONFIRM_MSG', 'Are you sure you want to delete');

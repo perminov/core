@@ -12,29 +12,29 @@ class Indi_Controller {
         // Get the script path
         $spath = Indi::ini('view')->scriptPath;
 
-        // Get the module path
-        $mpath = Indi::uri('module') == 'front' ? '' : '/' . Indi::uri('module');
+        // Do paths setup twice: first for module-specific paths, second for general-paths
+        for ($i = 0; $i < 2; $i++) {
 
-        // Get the module helper path prefix
-        $mhpp = Indi::uri('module') == 'front' ? '' : '/' . ucfirst(Indi::uri('module'));
+            // Get the module paths and prefixes
+            $mpath =  !$i ? '/' . Indi::uri('module') : '';
+            $mhpp =   !$i ? '/' . ucfirst(Indi::uri('module')) : '';
+            $mhcp =   !$i ? ucfirst(Indi::uri('module')) . '_' : '';
 
-        // Get the module helper class prefix
-        $mhcp = Indi::uri('module') == 'front' ? '' : ucfirst(Indi::uri('module')) . '_';
+            // Add script path for certain/current project
+            if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
 
-        // Add script paths for major core part and for front core part
-        $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
-        $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
+            // Add script paths for major core part and for front core part
+            $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
+            $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
 
-        // Add script path for certain/current project
-        if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
+            // Add helper paths for certain/current project
+            if (is_dir(DOC . STD . '/www/library'))
+                $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
 
-        // Add helper paths for major core part and for front core part
-        $view->addHelperPath(DOC . STD . '/core/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
-        $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
-
-        // Add helper paths for certain/current project
-        if (is_dir(DOC . STD . '/www/library'))
-            $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
+            // Add helper paths for major core part and for front core part
+            $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
+            $view->addHelperPath(DOC . STD . '/core/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
+        }
 
         // Put view object into the registry
 		Indi::registry('view', $view);
@@ -74,11 +74,21 @@ class Indi_Controller {
             jflush(false, 'No odata');
         }
 
+        // If $_GET's 'jump' param is given - skip all below operations
+        if (Indi::get('jump')) return;
+
         // Call the desired action method
-        $this->{Indi::uri()->action . 'Action'}();
+        $this->call(Indi::uri()->action);
 
         // Do the post-dispatch maintenance
         $this->postDispatch();
+    }
+
+    /**
+     * Call the desired action method
+     */
+    public function call($action) {
+        $this->{$action . 'Action'}();
     }
 
     /**
@@ -125,7 +135,6 @@ class Indi_Controller {
         if (preg_match('/^row(set|)$/i', $property)) return isset(Indi::trail()->$property);
     }
 
-
     /**
      * Does nothing. Declared for possibility to adjust primary WHERE clause
      *
@@ -158,12 +167,12 @@ class Indi_Controller {
         // Find a field, that column is linked to
         foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
 
-        // If there is no grid field with such a name, return null
-        if ($fieldR->alias !== $column) return null;
-
         // If no direction - set as ASC by default
         if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
 
+        // If there is no grid field with such a name, return null
+        if ($fieldR->alias !== $column) return $column == 'id' ? '`' . $column . '` ' . $direction : null;
+        
         // Setup a foreign rows for $fieldR's foreign keys
         $fieldR->foreign('columnTypeId');
 
@@ -299,11 +308,11 @@ class Indi_Controller {
                         // else if $hueTo < $hueFrom, use '>=' and '<=' clauses, or else if $hueTo = $hueFrom, use '='
                         // clause
                         if ($hueTo > $hueFrom) {
-                            $where[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) BETWEEN "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" AND "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '"';
+                            $where[$found->alias] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) BETWEEN "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" AND "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '"';
                         } else if ($hueTo < $hueFrom) {
-                            $where[] = '(SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) >= "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" OR SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) <= "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '")';
+                            $where[$found->alias] = '(SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) >= "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '" OR SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) <= "' . str_pad($hueTo, 3, '0', STR_PAD_LEFT) . '")';
                         } else {
-                            $where[] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
+                            $where[$found->alias] = 'SUBSTRING(`' . $filterSearchFieldAlias . '`, 1, 3) = "' . str_pad($hueFrom, 3, '0', STR_PAD_LEFT) . '"';
                         }
 
                         // Pick the current filter value and field type to $excelA
@@ -313,14 +322,14 @@ class Indi_Controller {
 
                         // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
                     } else if ($found->elementId == 9 || $found->elementId == 23) {
-                        $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue ? I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES : I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO;
 
                         // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
                     } else if ($found->elementId == 1) {
-                        $where[] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
+                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
@@ -348,22 +357,39 @@ class Indi_Controller {
                             $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
                         // Use a '>=' or '<=' clause, according to specified range border's type
-                        $where[] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
+                        $where[$found->alias][$matches[2]] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
 
                         // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
 
                         // Use 'MATCH AGAINST' clause
-                        $where[] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
+                        $where[$found->alias] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
                             '*" IN BOOLEAN MODE)';
 
                         // Pick the current filter value and field type to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
                     }
 
-                    // Else if $found field is able to store only one foreign key, use '=' clause
+                // Else if $found field is able to store only one foreign key, use '=' clause
                 } else if ($found->storeRelationAbility == 'one') {
-                    $where[] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+
+                    // Set $any as `false`
+                    $any = false;
+
+                    // Try to find filter
+                    if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
+
+                        // Get filter row
+                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+
+                        // If filter is multiple (desipite field is singe) set up $mode as `any`
+                        if ($filterR->any()) $any = true;
+                    }
+
+                    // Set up WHERE clause according to value of $any flag
+                    $where[$found->alias] = $any
+                        ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, "' . $filterSearchFieldValue . '")'
+                        : '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
@@ -374,11 +400,24 @@ class Indi_Controller {
                         $excelA[$found->alias]['table'] = $found->relation;
                     }
 
-                    // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
+                // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
                 } else if ($found->storeRelationAbility == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();
+
+                    // Set $any as `false`
+                    $any = false;
+
+                    // Try to find filter
+                    if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
+
+                        // Get filter row
+                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+
+                        // If filter should search any match rather than all matches
+                        if ($filterR->any()) $any = true;
+                    }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array
                     if (is_string($filterSearchFieldValue) && strlen($filterSearchFieldValue))
@@ -389,7 +428,7 @@ class Indi_Controller {
                         $fisA[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
 
                     // Implode array of FIND_IN_SET clauses with AND, and enclose by round brackets
-                    $where[] = '(' . implode(' AND ', $fisA) . ')';
+                    $where[$found->alias] = '(' . implode(' ' . ($any ? 'OR' : 'AND') . ' ', $fisA) . ')';
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
@@ -405,7 +444,10 @@ class Indi_Controller {
 
         // If the purpose of current request is to build an excel spreadsheet -
         // setup filters usage information in $this->_excelA property
-        if (Indi::uri()->excel) $this->_excelA = $excelA;
+        if (in(Indi::uri()->format, 'excel,pdf')) $this->_excelA = $excelA;
+
+        // Force $where array to be single-dimension
+        foreach ($where as $filter => $clause) if (is_array($clause)) $where[$filter] = '(' . im($clause, ' AND ') . ')';
 
         // Return WHERE clause
         return $where;
@@ -425,8 +467,29 @@ class Indi_Controller {
         // Get the field
         $field = Indi::trail()->model->fields($for);
 
-        // Find a filter, representing the given field, and get it's WHERE clause
-        $where = ($filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0)) ? $filter->filter : null;
+        // Get filter
+        $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
+
+        // Declare WHERE array
+        $where = array();
+
+        // Append statiс WHERE, defined for filter
+        if (strlen($filter->filter)) $where[] = $filter->filter;
+
+        // Append special part to WHERE clause, responsible for filter combo to do not contain inconsistent options
+        if ($relation = $field->relation) {
+
+            // Get table name
+            $tbl = Indi::trail()->model->table();
+
+            // Setup a shortcut for scope WHERE
+            $sw = Indi::trail()->scope->WHERE;
+
+            // Append part of WHERE clause, that will be involved in the process of fetching filter combo data
+            $where[] = '`id` IN (' . (($in = Indi::db()->query('
+                SELECT DISTINCT `'. $for . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
+            )->fetchAll(PDO::FETCH_COLUMN)) ? implode(',', $in) : 0) . ')';
+        }
 
         // Setup a row
         $this->row = Indi::trail()->filtersSharedRow;
@@ -512,5 +575,183 @@ class Indi_Controller {
 
         // Flush
         jflush(true, $options);
+    }
+
+    /**
+     * Calls the parent class's same function, passing same arguments.
+     * This is similar to ExtJs's callParent() function, except that agruments are
+     * FORCED to be passed (in extjs, if you call this.callParent() - no arguments would be passed,
+     * unless you use this.callParent(arguments) expression instead)
+     */
+    public function callParent() {
+
+        // Get call info from backtrace
+        $call = array_pop(array_slice(debug_backtrace(), 1, 1));
+
+        // Make the call
+        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+    }
+
+    /**
+     * Provide default index action
+     */
+    public function indexAction() {
+
+        // If data should be got as json or excel
+        if (Indi::uri('format')) {
+
+            // Adjust rowset, before using it as a basement of grid data
+            $this->adjustGridDataRowset();
+
+            // Build the grid data, based on current rowset
+            $data = $this->rowset->toGridData(Indi::trail());
+
+            // Adjust grid data
+            $this->adjustGridData($data);
+
+            // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
+            if (Indi::uri('format') == 'json') {
+
+                // Get scope
+                $scope = Indi::trail()->scope->toArray();
+
+                // Unset tabs definitions from json-encoded scope data, as we'd already got it previously
+                unset($scope['actionrowset']['south']['tabs']);
+
+                // Setup basic data
+                $json = array(
+                    'totalCount' => $this->rowset->found(),
+                    'blocks' => $data,
+                    'scope' => $scope
+                );
+
+                // Append summary data
+                if ($summary = $this->rowsetSummary()) $json['summary'] = $summary;
+
+                // Provide combo filters consistency
+                foreach (Indi::trail()->filters as $filter)
+                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
+                        $alias = $filter->foreign('fieldId')->alias;
+                        Indi::view()->filterCombo($filter, 'extjs');
+                        $json['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
+                    }
+
+                // Adjust json export
+                $this->adjustJsonExport($json);
+
+                // Flush json
+                header('Content-Type: application/json');
+                iexit(json_encode($json));
+            }
+
+            // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
+            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
+        }
+    }
+
+    /**
+     * Build and return a final WHERE clause, that will be passed to fetchAll() method, for fetching section's main
+     * rowset. Function use a $primaryWHERE, merge it with $this->filtersWHERE() and append to it $this->keywordWHERE()
+     * if return values of these function are not null
+     *
+     * @param string|array $primaryWHERE
+     * @param string|array $customWHERE
+     * @param bool $merge
+     * @return null|string|array
+     */
+    public function finalWHERE($primaryWHERE, $customWHERE = null, $merge = true) {
+
+        // Empty array yet
+        $finalWHERE = array();
+
+        // If there was a primaryHash passed instead of $primaryWHERE param - then we extract all scope params from
+        if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
+
+            // Prepare $primaryWHERE
+            $primaryWHERE = Indi::trail()->scope->primary;
+
+            // Prepare search data for $this->filtersWHERE()
+            Indi::get()->search = Indi::trail()->scope->filters;
+
+            // Prepare search data for $this->keywordWHERE()
+            Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
+
+            // Prepare sort params for $this->finalORDER()
+            Indi::get()->sort = Indi::trail()->scope->order;
+        }
+
+        // Push primary part
+        if ($primaryWHERE || $primaryWHERE == '0') $finalWHERE['primary'] = $primaryWHERE;
+
+        // Get a WHERE stack of clauses, related to filters search and push it into $finalWHERE under 'filters' key
+        if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE['filters'] = $filtersWHERE;
+
+        // Get a WHERE clause, related to keyword search and push it into $finalWHERE under 'keyword' key
+        if ($keywordWHERE = $this->keywordWHERE()) $finalWHERE['keyword'] = $keywordWHERE;
+
+        // Append custom WHERE
+        if ($customWHERE || $customWHERE == '0') $finalWHERE['custom'] = $customWHERE;
+
+        // If WHERE clause should be a string
+        if ($merge) {
+
+            // Force $finalWHERE to be single-dimension array
+            foreach ($finalWHERE as $part => $where) if (is_array($where)) $finalWHERE[$part] = im($where, ' AND ');
+
+            // Stringify
+            $finalWHERE = implode(' AND ', $finalWHERE);
+        }
+
+        // Return
+        return $finalWHERE;
+    }
+
+    /**
+     * Builds a SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
+     * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
+     * not contain search clauses for columns, that are involved in building of set of another kind of WHERE clauses -
+     * related to grid filters
+     *
+     * @param $keyword
+     * @return string
+     */
+    public function keywordWHERE($keyword = '') {
+
+        // If $keyword param is not passed we pick Indi::get()->keyword as $keyword
+        if (strlen($keyword) == 0) $keyword = Indi::get()->keyword;
+
+        // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
+        // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
+        // not both at the same time
+        $exclude = array_keys(Indi::obar());
+
+        // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
+        return Indi::trail()->gridFields ? Indi::trail()->gridFields->keywordWHERE($keyword, $exclude) : array();
+    }
+
+    /**
+     * Adjust rowset, before using it as a basement of grid data. This function is empty here, but may be useful in
+     * some situations
+     */
+    function adjustGridDataRowset() {
+
+    }
+
+    /**
+     * Adjust data, that was already prepared for usage in grid. This function is for ability to post-adjustments
+     *
+     * @param array $data This param is passed by reference
+     */
+    function adjustGridData(&$data) {
+
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an json-export adjustments
+     *
+     * @param $json
+     */
+    public function adjustJsonExport(&$json) {
+
     }
 }

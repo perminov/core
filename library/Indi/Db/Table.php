@@ -132,8 +132,8 @@ class Indi_Db_Table
      */
     public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
 
         // Build LIMIT clause
         if ($count !== null || $page !== null) {
@@ -186,6 +186,7 @@ class Indi_Db_Table
      * @return Indi_Db_Table_Rowset object
      */
     public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null, $offsetDetection = false) {
+
         // Get raw tree
         $tree = $this->fetchRawTree($order, $where);
 
@@ -211,9 +212,9 @@ class Indi_Db_Table
                 $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
 
             // Else
-            } else $where[] = ($keyword2 = Indi::kl($keyword))
-                ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
-                : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+            } else $where[] = ($keyword2 = str_replace('"', '\"', Indi::kl($keyword)))
+                ? '(`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
+                : '`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%"';
 
             // Fetch rows that match $where clause, ant set foundRows
             $foundRs = $this->fetchAll($where, $order, $count, $page);
@@ -291,7 +292,7 @@ class Indi_Db_Table
             // so we should calculate needed page number, and replace $page argument with calculated value
             // Also, while retrieving upper and lower page (than page with selected vaue) results, we use $selected
             // argument as start point for distance and scope calculations
-            if ($selected && $found > Indi_Db_Table_Row::$comboOptionsVisibleCount){
+            if ($selected && ($found > Indi_Db_Table_Row::$comboOptionsVisibleCount || $offsetDetection)){
 
                 // Get index of selected branch in raw tree
                 $i = 0;
@@ -959,6 +960,7 @@ class Indi_Db_Table
      * @throws Exception
      */
     public function delete($where) {
+
         // Basic SQL expression
         $sql = 'DELETE FROM `' . $this->_table . '`';
 

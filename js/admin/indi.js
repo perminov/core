@@ -29,21 +29,60 @@ Ext.define('Indi', {
     statics: {
 
         /**
-         * Shortcut to trail data
+         * A list of function names, that are declared within Indi object, but should be accessible within global scope
+         * @type {Array}
+         */
+        share: ['alias', 'hide', 'show', 'number', 'mt'],
+
+        /**
+         * Microtime
+         */
+        _mt: 0,
+
+        /**
+         * Global fields storage. Contains all fields that were even initialised
+         */
+        fields: {},
+
+        /**
+         * Get field by id, from fields storage
          *
-         * Indi.trail(true) - return Indi.Trail.instance object
-         * Indi.trail([0-9]*) - return Indi.Trail.instance.item($1) object
-         *
+         * @param id
          * @return {*}
          */
-        trail: function() {
-            if (arguments[0] === true) {
-                return Indi.Trail;
-            } else {
-                return Indi.Trail.item(arguments.length ? parseInt(arguments[0]) : 0);
-            }
+        field: function(id) {
+            return this.fields[id];
         },
 
+        /**
+         * Check whether `item` argument is exists within `array` argument.
+         * `array` arguments can be given not only as an array, but also as
+         * a string containing comma-separated values
+         *
+         * @param item
+         * @param array
+         * @return {Boolean}
+         */
+        in: function(item, array) {
+            if (typeof array == 'string') array = array.split(',');
+            return array.indexOf(item) != -1;
+        },
+
+        /**
+         * Shortcut to trail singleton instance
+         *
+         * @return {Indi.lib.trail.Trail}
+         */
+        trail: function() {
+            return Indi.Trail;
+        },
+
+        /**
+         * Retrieve query string ($_GET) any param, identified by `param` key
+         *
+         * @param param
+         * @return {*}
+         */
         get: function(param) {
 
             // Setup auxilliary variables
@@ -150,32 +189,6 @@ Ext.define('Indi', {
         },
 
         /**
-         * Callbacks store
-         *
-         * @type {Object}
-         */
-        callbacks: {},
-
-        /**
-         * Collect callbacks, for further execution
-         *
-         * @param callback Callback function
-         * @param component Component name, which initialization should fire all stored callbacks
-         */
-        ready: function(callback, component, context) {
-            if (typeof context == 'undefined') context = window;
-            context.Indi.callbacks = Indi.callbacks || {};
-            context.Indi.callbacks[component] = Indi.callbacks[component] || [];
-            context.Indi.callbacks[component].push(callback);
-        },
-
-        /**
-         * A list of function names, that are declared within Indi object, but should be accessible within global scope
-         * @type {Array}
-         */
-        share: ['alias', 'hide', 'show', 'number'],
-
-        /**
          * Converts passed string to it's url equivalent
          *
          * @param title
@@ -187,13 +200,13 @@ Ext.define('Indi', {
             var s = ['а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
                 'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
                 't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
-                'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&'];
+                'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&', '/'];
 
             // Replacements
             var r = ['a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
                 '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
                 't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
-                'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-'];
+                'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-'];
 
             // Declare variable for alias
             var alias = '';
@@ -312,19 +325,11 @@ Ext.define('Indi', {
         },
 
         /**
-         * Returns the Ext center region component
-         *
-         * @return {*}
-         */
-        getCenter: function() {
-            return Ext.getCmp('i-center');
-        },
-
-        /**
          * Destroy the contents of center panel, and all objects related to it
          */
         clearCenter: function() {
-            if (Ext.getCmp('i-center-center-wrapper')) Ext.getCmp('i-center-center-wrapper').destroy();
+            //if (Ext.getCmp(Indi.centerId)) Ext.defer(function(){Ext.getCmp(Indi.centerId).destroy();}, 1);
+            if (Ext.getCmp(Indi.centerId)) Ext.getCmp(Indi.centerId).destroy();
         },
 
         /**
@@ -338,30 +343,101 @@ Ext.define('Indi', {
         },
 
         /**
-         * Uri history
-         */
-        story: [],
-
-        /**
          * Load the contents got from `uri` param
          *
          * @param {String} uri
          * @param {Object} cfg Request config
          */
         load: function(uri, cfg) {
-
-            // Push the given url to a story stack
-            Indi.story.push(uri);
+            var centerPnl = Ext.getCmp(Indi.centerId);
 
             // Normalize `cfg` argument
             cfg = cfg || {};
 
+            // Get data for remember
+            if (centerPnl) Ext.merge(cfg, {params: {forScope: Ext.JSON.encode(centerPnl.forScope())}});
+
             // Make the request
             Ext.Ajax.request(Ext.merge({
-                url: uri,
-                success: function(response){
-                    Indi.clearCenter();
-                    Ext.get('i-center-center-body').update(response.responseText, true);
+                url: Indi.pre + uri,
+                timeout: 300000,
+                success: function(response, request){
+
+                    // In no 'into' property given within `cfg` object - destroy center panel
+                    if (!cfg.into) Indi.clearCenter();
+
+                    // Else if 'insteadOf' property is additionally given within `cfg` object
+                    else if (cfg.insteadOf) {
+
+                        // Set title for a container, that results will be injected in
+                        if (cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
+
+                        // Destroy the component, that will have a one to replace it
+                        Ext.getCmp(cfg.insteadOf).destroy();
+                    }
+
+                    // Process response. Here we use Ext.defer to provide a visual
+                    // 'white-blink' effect between destroying old and creating new
+                    Ext.defer(function(){
+
+                        // Try to convert responseText to json-object
+                        var json = response.responseText.json();
+
+                        // If responseText converstion to json-object was successful
+                        if (json) {
+
+                            // If `json` has `trail` property, apply/dispatch it
+                            if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+
+                            // Else if
+                            else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+
+                        // Run response
+                        } else Ext.get('i-center-center-body').update(response.responseText, true);
+
+                    }, 10);
+                },
+                failure: function(response) {
+                    var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
+
+                    // Parse response text
+                    json = Ext.JSON.decode(response.responseText, true);
+
+                    // The the info about invalid fields from the response, and mark the as invalid
+                    if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
+
+                        // Shortcut to json.mismatch
+                        mismatch = json.mismatch;
+
+                        // Error messages storage
+                        errorByFieldO = mismatch.errors;
+
+                        // Collect all messages for them to be bit later displayed within Ext.MessageBox
+                        Object.keys(errorByFieldO).forEach(function(i){
+                            wholeFormMsg.push(errorByFieldO[i]);
+                        });
+
+                        // If we collected at least one error message, that is related to the whole form rather than
+                        // some certain field - use an Ext.MessageBox to display it
+                        if (wholeFormMsg.length) {
+
+                            msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
+
+                            // Build message
+                            msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                                + mismatch.entity.title + '"'
+                                + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
+                                + ' - выдала следующие ошибки: <br><br>' + msg;
+
+                            // Show message box
+                            Ext.MessageBox.show({
+                                title: Indi.lang.I_ERROR,
+                                msg: msg,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.ERROR
+                            });
+                        }
+                    }
                 }
             }, cfg));
         },
@@ -581,11 +657,43 @@ Ext.define('Indi', {
                             // that have value of 'key' prop in exclusion list
                             for (var i = 0; i < this.length; i++)
                                 if (val.indexOf(this[i][key]+'') != -1)
-                                    this.splice(i, 1);
+                                        this.splice(i--, 1);
                         }
 
                         // Return array itself
                         return this;
+                    }
+                });
+            },
+
+            /**
+             * Get the las item of the array
+             *
+             * @param i {Number}
+             * @return {*}
+             */
+            'Array.prototype.last': function() {
+                Object.defineProperty(Array.prototype, 'last', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function(i) {
+                        return this[this.length - 1 - (isNaN(i) ? 0 : i)];
+                    }
+                });
+            },
+
+            /**
+             * Get the las item of the array
+             *
+             * @param i {Number}
+             * @return {*}
+             */
+            'String.prototype.json': function() {
+                Object.defineProperty(String.prototype, 'json', {
+                    enumerable: false,
+                    configurable: false,
+                    value: function() {
+                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = JSON.parse(this)) ? r : false
                     }
                 });
             }
@@ -618,6 +726,56 @@ Ext.define('Indi', {
 
             // Get the string representation of a filesize
             return Math.floor((size/Math.pow(1024, pow))*100)/100 + postfix[pow];
+        },
+
+        /**
+         * Parse get given uri and convert it into plain object, containing section, action and all othe params
+         *
+         * @param uri
+         * @return {Object}
+         */
+        parseUri: function(uri) {
+            var o = {}, i, uriA = Ext.String.trim(uri).replace(/^\//, '').replace('/\/$/', '').split('/');
+
+            // Setup all params
+            for (i = 0; i < uriA.length; i++)
+
+                // Setup section
+                if (i == 0 && uriA[i]) o.section = uriA[i];
+
+                // Setup action
+                else if (i == 1) o.action = uriA[i];
+
+                // Setup all other params
+                else if (uriA.length > i && uriA[i].length) {
+                    o[uriA[i]] = uriA[i + 1];
+                    i++;
+                }
+
+            // Return object containing section, action and all other params
+            return o;
+        },
+
+        /**
+         *  Equivalent to PHP's microtime(). Got from http://phpjs.org/functions/microtime/
+         *
+         * @param get_as_float
+         * @return {Number}
+         */
+        microtime: function (get_as_float) {
+            var now = new Date().getTime() / 1000, s = parseInt(now, 10);
+            return (get_as_float) ? now : (Math.round((now - s) * 1000) / 1000) + ' ' + s;
+        },
+
+        /**
+         * Measure the count of milliseconds, passed from the last call of this function.
+         * This function is useful for checking how much time any operation takes
+         *
+         * @return {Number}
+         */
+        mt: function() {
+            var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
+            Indi._mt = m; if (arguments.length) console.log(d, arguments); return d;
         }
     },
 

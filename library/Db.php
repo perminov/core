@@ -53,7 +53,8 @@ class Db {
         self::$h = $h; self::$u = $u; self::$p = $p; self::$d = $d;
 
         // Setup the connection
-        self::$c = mysqli_connect(self::$h, self::$u, self::$p);
+        self::$c = @mysqli_connect(self::$h, self::$u, self::$p);
+        if ($e = mysqli_connect_error()) die(iconv('windows-1251', 'utf-8', $e));
 
         // Select the database
         mysqli_select_db(self::$c, self::$d);

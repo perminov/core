@@ -119,7 +119,7 @@ class Indi_Trail_Admin_Item_Scope {
      * @param $alias
      * @return mixed
      */
-    public function filter($alias) {
+    public function filter($alias = null) {
 
         // Try to decode json-string, stored in $this->filters
         $filterA =  json_decode($this->filters);
@@ -127,8 +127,27 @@ class Indi_Trail_Admin_Item_Scope {
         // If decoding was successful, as decode result is an array
         if (is_array($filterA))
 
-            // Try to find an $alias key within each $filterA array, and return it's value if such a key found
-            foreach ($filterA as $filterI) if (key($filterI) == $alias) return current($filterI);
+            // If $alias argument is given
+            if ($alias) {
+
+                // Try to find an $alias key within each $filterA array, and return it's value if such a key found
+                foreach ($filterA as $filterI) if (key($filterI) == $alias) return current($filterI);
+
+            // Else
+            } else {
+
+                // Declare $assoc array
+                $assoc = array();
+
+                // Build simple associative array
+                foreach ($filterA as $filterI) $assoc[key($filterI)] = current($filterI);
+
+                // Return
+                return $assoc;
+            }
+
+        // Return
+        return array();
     }
 
     /**
