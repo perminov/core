@@ -20,4 +20,32 @@ class Field_Base extends Indi_Db_Table {
      * @var array
      */
     protected $_evalFields = array('defaultValue', 'filter');
+
+    /**
+     * Create Indi_Db_Table_Rowset object with some data, if passed
+     *
+     * @param array $input
+     * @return mixed
+     */
+    public function createRowset($input = array()) {
+
+        // Get the type of construction
+        $index = isset($input['rows']) ? 'rows' : 'data';
+
+        // Prepare data for Indi_Db_Table_Rowset object construction
+        $data = array(
+            'table'   => $this->_table,
+            $index     => is_array($input[$index]) ? $input[$index] : array(),
+            'rowClass' => $this->_rowClass,
+            'found'=> isset($input['found'])
+                ? $input['found']
+                : (is_array($input[$index]) ? count($input[$index]) : 0)
+        );
+
+        // Provide special 'aliases' construction property to be set up
+        if ($input['aliases'] && is_array($input['aliases'])) $data['aliases'] = $input['aliases'];
+
+        // Construct and return Indi_Db_Table_Rowset object
+        return new $this->_rowsetClass($data);
+    }
 }

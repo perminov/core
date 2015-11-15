@@ -42,7 +42,7 @@ Ext.override(Ext.form.field.Base, {
     constructor: function() {
         var me = this;
         me.callParent(arguments);
-        me.initZeroValue();
+        me._constructor();
     },
 
     /**
@@ -51,7 +51,7 @@ Ext.override(Ext.form.field.Base, {
     initComponent: function() {
         var me = this;
         me.callParent();
-        me.addEvents('enablebysatellite');
+        me._initComponent();
     },
 
     /**
@@ -103,7 +103,7 @@ Ext.override(Ext.form.field.Base, {
     afterRender: function() {
         var me = this;
         me.callParent();
-        if (!me.disabled && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
+        me._afterRender();
     },
 
     /**
@@ -134,12 +134,32 @@ Ext.override(Ext.form.field.Base, {
      * @return {Object}
      */
     considerOnData: function() {
-        var me = this, data = {};
+        var me = this, data = {}, v, s;
 
         // Collect satellite values
         if (Ext.isArray(me.considerOn)) {
             me.considerOn.forEach(function(stl){
-                if (me.sbl(stl.name)) data[stl.name] = me.sbl(stl.name).getSubmitValue();
+                if (me.sbl(stl.name)) {
+
+                    // Get submit value
+                    v = me.sbl(stl.name).getSubmitValue();
+
+                    // Get it's string version
+                    s = v + '';
+
+                    // If s is a string, representing an integer number - convert it into interger-type and return
+                    if (s.match(/^(-?[1-9][0-9]{0,9}|0)$/)) v = parseInt(s);
+
+                    // If s is a string, representing a floating-point number - convert it into float-type and return
+                    if (s.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) v = parseFloat(s);
+
+                    // If s is a string, representing a floating-point number, containing
+                    // up to 10 digits in integer part, optionally prepended with an '-' sign,
+                    // and containing up to 3 digits in fractional part - convert it into float-type
+                    if (s.match(/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/)) v = parseFloat(s);
+
+                    data[stl.name] = v;
+                }
             });
         }
 
@@ -150,11 +170,14 @@ Ext.override(Ext.form.field.Base, {
     /**
      * Enable current field and fire 'enablebysatellite' event, passing an object containing all satellites values
      */
-    enableBySatellites: function() {
+    enableBySatellites: function(cfg) {
         var me = this;
 
         // Enable field
-        me.enable().clearValue();
+        if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
+
+        // Clear value
+        if (!cfg.hasOwnProperty('clear') || cfg.clear) me.clearValue();
 
         // Fire 'enablebysatellite' event
         me.fireEvent('enablebysatellite', me, me.considerOnData());
@@ -163,21 +186,58 @@ Ext.override(Ext.form.field.Base, {
     /**
      * Check whether or not current field's satellites are in state, that allows to enable/disable current field
      */
-    toggleBySatellites: function() {
-        var me = this; if (!me.disableBySatellites()) me.enableBySatellites();
+    toggleBySatellites: function(cfg) {
+        var me = this; if (!me.disableBySatellites(cfg)) me.enableBySatellites(cfg);
     },
 
     /**
      * Lookup satellites changes
      */
     onChange: function() {
-        var me = this; me.callParent(arguments);
+        var me = this; me.callParent(arguments); me._onChange();
+    },
+
+    /**
+     * Mixin constructor() function, for usage in cases if current class is a mixin for another class
+     *
+     * @private
+     */
+    _constructor: function() {
+        this.initZeroValue();
+    },
+
+    /**
+     * Mixin initComponent() function, for usage in cases if current class is a mixin for another class
+     *
+     * @private
+     */
+    _initComponent: function() {
+        this.addEvents('enablebysatellite');
+    },
+
+    /**
+     * Mixin afterRender() function, for usage in cases if current class is a mixin for another class
+     *
+     * @private
+     */
+    _afterRender: function() {
+        var me = this;
+        if (!me.disabled && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
+    },
+
+    /**
+     * Mixin onChange() function, for usage in cases if current class is a mixin for another class
+     *
+     * @private
+     */
+    _onChange: function() {
+        var me = this;
 
         // Lookup current field's satellites changes, and toggle it, depending on their state
-        me.ownerCt.query('> [satellite]').forEach(function(sbl){
+        if (me.ownerCt) me.ownerCt.query('> [satellite]').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
-                sbl.considerOn.forEach(function(stl){
-                    if (stl.name == me.name) sbl.toggleBySatellites();
+                sbl.considerOn.forEach(function(considerOnStlCfg){
+                    if (considerOnStlCfg.name == me.name) sbl.toggleBySatellites(considerOnStlCfg);
                 });
             }
         });

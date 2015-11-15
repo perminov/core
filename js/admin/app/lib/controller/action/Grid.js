@@ -19,6 +19,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
         firstColumnWidthFraction: 0.4,
         smallColumnWidth: 100,
         border: 0,
+        layout: 'fit',
+
+        /**
+         * Features
+         */
+        features: [{
+            ftype: 'summary',
+            remoteRoot: 'summary'
+        }],
 
         /**
          * Docked items special config
@@ -26,7 +35,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         docked: {
             items: [{alias: 'paging'}],
             inner: {
-                paging: ['-', {alias: 'excel'}]
+                paging: ['-', {alias: 'excel'}, {alias: 'pdf'}]
             }
         },
 
@@ -59,6 +68,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 }
             },
             selectionchange: function (selectionModel, selectedRows) {
+
+                // Refresh summary row
+                if (this.multiSelect && selectionModel.view.getFeature(0).ftype == 'summary')
+                    selectionModel.view.getFeature(0).refresh();
+
                 if (selectedRows.length > 0)
                     Ext.Array.each(selectedRows, function (row) {
                         if (row.raw._system && row.raw._system.disabled)
@@ -66,7 +80,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.handler();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+            },
+
+            itemclick: function() {
+                if (Ext.EventObject.ctrlKey) {
+                    var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+                }
             }
         }
     },
@@ -85,18 +105,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Object}
      */
-    gridColumnDefault: function(field) {
+    gridColumnDefault: function(field, column) {
+        var me = this, tooltip = column.tooltip || (field && field.tooltip);
 
         // Default column config
         return {
-            id: this.bid() + '-rowset-grid-column-' + field.alias,
+            id: me.bid() + '-rowset-grid-column-' + field.alias,
             header: field.title,
             dataIndex: field.alias,
-            cls: 'i-grid-column-filtered',
+            tooltip: tooltip,
+            cls: tooltip ? 'i-tooltip' : undefined,
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
-                    [3,5].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
+                    [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
             }(),
             renderer: function (value) {
                 if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
@@ -125,17 +147,32 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return columnA;
     },
 
-
     gridColumnXNumber: function(column, field) {
         return {
             thousandSeparator: ' ',
-            decimalSeparator: ',',
+            decimalSeparator: '.',
             decimalPrecision: 0,
+            displayZeroes: true,
             renderer: function(v, m, r, i, c, s) {
                 var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
+                if (column.displayZeroes === false && parseFloat(v) == 0) return '';
                 return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
             }
         }
+    },
+
+    gridColumnXPrice: function(column, field) {
+        return Ext.merge(this.gridColumnXNumber(column, field), {
+            displayZeroes: true,
+            decimalPrecision: 2
+        });
+    },
+
+    gridColumnXDecimal143: function(column, field) {
+        return Ext.merge(this.gridColumnXNumber(column, field), {
+            displayZeroes: true,
+            decimalPrecision: 3
+        });
     },
 
     gridColumnXMove: function(column, field) {
@@ -143,7 +180,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
             hidden: true
         }
     },
-
 
     /**
      * Build an array, representing grid columns for the given column level,
@@ -153,21 +189,34 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, colI, field, columnA = [], columnI, columnX, fnColumnX, column$, fnColumn$;
+        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
 
         // Other columns
-        for (var i = 0; i < colA.length; i++) {
+        for (i = 0; i < colA.length; i++) {
 
             // Get current col
             colI = colA[i];
 
+            // Setup a shortcut for a grid field
+            field = me.ti().fields.r(colI.fieldId);
+
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
 
+                // Base cfg. Note that here we set up whole column group to be hidden, initialy,
+                // and if at least one of the sub-columns is not hidden - we will set `hidden` prop as `false`
                 columnI = {
                     text: colI.title,
+                    hidden: true,
                     columns: me.gridColumnADeep(colI._nested.grid)
                 }
+
+                // Check if current column group has at least one non-hidden sub-column
+                // and if so, set `hidden` prop of whole group as `false`
+                for (c = 0; c < columnI.columns.length; c++)
+                    if (!columnI.columns[c].hidden)
+                        if (Ext.merge(columnI, {hidden: false}))
+                            break;
 
                 // Add column
                 columnA.push(columnI);
@@ -175,23 +224,34 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // Else
             } else {
 
-                // Setup a shortcut for a grid field
-                field = me.ti().fields.r(colI.fieldId);
-
                 // Get default column config
-                columnI = me.gridColumnDefault(field);
+                columnI = me.gridColumnDefault(field, colI);
 
                 // Apply specific control element config, as columns control elements/xtypes may be different
-                fnColumnX = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias);
-                if (typeof me[fnColumnX] == 'function') {
-                    columnX = me[fnColumnX](columnI, field);
+                eColumnX = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias);
+                if (Ext.isFunction(me[eColumnX]) || Ext.isObject(me[eColumnX])) {
+                    columnX = Ext.isFunction(me[eColumnX]) ? me[eColumnX](columnI, field) : me[eColumnX];
                     columnI = Ext.isObject(columnX) ? Ext.merge(columnI, columnX) : columnX;
-                }
+                } else if (me[eColumnX] === false) columnI = me[eColumnX];
 
                 // Apply column custom config
-                fnColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
-                if (typeof me[fnColumn$] == 'function') {
-                    column$ = me[fnColumn$](columnI, field);
+                eColumn$ = 'gridColumn$' + Indi.ucfirst(field.alias);
+                if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
+                    column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
+                    columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                } else if (me[eColumn$] === false) columnI = me[eColumn$];
+
+                // Apply string-summary, if column's non-empty `summaryText` property detected
+                if (Ext.isObject(columnI) && columnI.summaryText) {
+                    columnI.summaryRenderer = function(value, summaryData, dataIndex) {
+                        return this.grid.headerCt.getGridColumns().r(dataIndex, 'dataIndex').summaryText;
+                    }
+                }
+
+                // Apply column 'sum' summary renderer config
+                eColumnSummaryX = 'gridColumnSummaryX' + Indi.ucfirst(field.foreign('elementId').alias);
+                if (Ext.isObject(columnI) && columnI.summaryType && typeof me[eColumnSummaryX] == 'function') {
+                    column$ = me[eColumnSummaryX](columnI, field);
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 }
 
@@ -205,36 +265,135 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     * Summary renderer for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnSummaryXNumber: function(column, field) {
+        return {
+            summaryRenderer: function(value, summaryData, dataIndex) {
+                var me = this, grid = me.grid, selectedRows = grid.getSelectionModel().selected,
+                    column = grid.headerCt.getGridColumns().r(dataIndex, 'dataIndex'), columnData = [],
+                    type = column.summaryType, tr, td;
+
+                // If there is currently selected more than 1 row in the grid,
+                // force summary to be calculated for selected rows only
+                if (selectedRows.getCount() > 1 && !column.summaryText) {
+
+                    // Get tr
+                    tr = grid.view.el.down('tr.x-grid-row-summary');
+
+                    // Apply summary cell style
+                    Ext.defer(function(){
+                        td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
+                        td.addCls('x-grid-cell-selected');
+                    }, 1);
+
+                    // Get column data
+                    selectedRows.each(function(r){columnData.push(r.get(dataIndex));});
+
+                    // If summary type is 'sum'
+                    if (['sum', 'min', 'max'].indexOf(type) != -1) value = Ext.Array[type](columnData);
+                }
+
+                // Return
+                return column.renderer(value);
+            }
+        }
+    },
+
+    /**
+     * Summary renderer for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnSummaryXPrice: function(column, field) {
+        return this.gridColumnSummaryXNumber(column, field);
+    },
+
+    /**
      * Adjust grid columns widths, for widths to match column contents
      */
-    gridColumnAFit: function() {
-
-        // Suspend layouts
-        Ext.suspendLayouts();
+    gridColumnAFit: function(grid) {
 
         // Setup auxiliary variables
-        var me = this, grid = Ext.getCmp(me.rowset.id), columnA = grid.getView().headerCt.getGridColumns(),
-            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, cellWidth,
-            visible = grid.getWidth(), scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction,
-            sctw = 0, fcw, hctw = 0, busy = 0, free;
+        var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
+            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
+            visible, scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw,
+            hctw = 0, busy = 0, free, longest, summaryData, summaryFeature;
+
+        // If view not consists from normalView and lockedView
+        if (view.headerCt) {
+
+            // Suspend layouts
+            Ext.suspendLayouts();
+
+            // Get columns
+            columnA = view.headerCt.getGridColumns();
+
+            // Get visible area
+            visible = grid.getWidth() - (view.hasScrollY() ? 16 : 0);
+
+            // Get sumary feature
+            summaryFeature = view.getFeature(0);
+
+        // Else
+        } else {
+
+            // Pass exection directly to non-locked part of grid
+            me.gridColumnAFit(view.normalGrid);
+
+            // Return
+            return;
+        }
+
+        // Get summary data
+        if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
 
             // Get initial column width, based on a column title metrics
-            widthA[i] = Indi.metrics.getWidth(columnA[i].text) + px.ellipsis;
+            widthA[i] = Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
 
             // Increase the width of a column, that store is sorted by, to provide an additional amount
             // of width for sort icon, that is displayed next after column title, within the same column
             if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
 
-            // Increase the width, to fit data, rendered within any cell under current column
+            // Reset length
+            longest = '';
+
+            // Get the longest (within current column) cell contents
             store.each(function(r){
-                cellWidth = Indi.metrics.getWidth(typeof columnA[i].renderer == 'function'
+                cell = typeof columnA[i].renderer == 'function'
                     ? columnA[i].renderer(r.get(columnA[i].dataIndex))
-                    : r.get(columnA[i].dataIndex)) + px.ellipsis;
-                if (cellWidth > widthA[i]) widthA[i] = cellWidth;
+                    : r.get(columnA[i].dataIndex);
+                if (cell && cell.length > longest.length) longest = cell;
             });
+
+            // Don't forgot about summaries
+            if (columnA[i].summaryType && Ext.isObject(summaryData)) {
+                cell = typeof columnA[i].renderer == 'function'
+                    ? columnA[i].renderer(summaryData[columnA[i].id])
+                    : summaryData[columnA[i].id];
+                if (cell.length > longest.length) longest = cell;
+            } else if (columnA[i].summaryText) {
+                cell = columnA[i].summaryText;
+                if (cell.length > longest.length) longest = cell;
+            }
+
+            // Get width of the longest cell
+            longestWidth = Indi.metrics.getWidth(longest);
+
+            // Update widthA[i] if need
+            if (longestWidth > widthA[i]) widthA[i] = longestWidth;
+
+            // Append ellipsis space
+            widthA[i] += px.ellipsis;
 
             // Limit the maximum column width, if such a config was set
             if (columnA[i].maxWidth && widthA[i] > columnA[i].maxWidth) widthA[i] = columnA[i].maxWidth;
@@ -301,8 +460,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Increase first non-hidden column's width, if free space is available
         columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
 
-        // Resume layouts
-        Ext.resumeLayouts(true);
+        // If current grid view is not consists from locked and non-locked parts - resume layouts
+        if (view.headerCt) Ext.resumeLayouts(true);
     },
 
     /**
@@ -319,7 +478,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Set the focus on grid, to automatically provide an ability to use keyboard
         // cursor to navigate through rows, but only if it's not prevented
-        if (me.preventViewFocus) me.preventViewFocus = false; else grid.getView().focus();
+        if (me.preventViewFocus) me.preventViewFocus = false; else {
+            grid.getView().focus ? grid.getView().focus() : grid.getView().normalView.focus();
+        }
 
         // Setup last row autoselection, if need
         if (me.ti().scope.aix) {
@@ -334,6 +495,38 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Adjust grid column widths
         me.gridColumnAFit();
+
+        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'load' attibute
+        me.bindLoads(grid);
+
+        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'jump' attibute
+        me.bindJumps(grid);
+    },
+
+    /**
+     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'load' attibute
+     *
+     * @param root
+     */
+    bindLoads: function(root) {
+        root.getEl().select('[load]').each(function(el){
+            el.on('click', function(e, dom){
+                Indi.load(Ext.get(dom).attr('load'));
+            });
+        });
+    },
+
+    /**
+     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'jump' attibute
+     *
+     * @param root
+     */
+    bindJumps: function(root) {
+        root.getEl().select('[jump]').each(function(el){
+            el.on('click', function(e, dom){
+                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
+            });
+        });
     },
 
     /**
@@ -343,7 +536,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var me = this;
 
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keydown',
             binding: [{
                 key: Ext.EventObject.F4,
@@ -391,12 +584,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
 
         // Add keyboard event handelers
-        Ext.getCmp(me.rowset.id).getEl().addKeyMap({
+        if (Ext.getCmp(me.rowset.id)) Ext.getCmp(me.rowset.id).getEl().addKeyMap({
             eventName: 'keyup',
             binding: [{
                 key: Ext.EventObject.ENTER,
-                fn:  function(){
-                    var btn = Ext.getCmp(me.bid() + '-docked-inner$form'); if (btn) btn.press();
+                fn:  function(a, b){
+                    if (Ext.getCmp(me.rowset.id).preventEnter) Ext.getCmp(me.rowset.id).preventEnter = false; else {
+                        var btn = Ext.getCmp(me.bid() + '-docked-inner$form'); if (btn) btn.press();
+                    }
                 },
                 scope: me
             },{
@@ -445,6 +640,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     rowsetDocked$Paging: function() {
+        var me = this;
+
+        // If scope contains tab info return, as both paging toolbar and tabs toolbar looks bad one under another
+        try {if (me.ti().scope.actionrowset.south.tabs.length) return false;} catch(e) {}
 
         // Paging toolbar cfg
         return {
@@ -465,105 +664,204 @@ Ext.define('Indi.lib.controller.action.Grid', {
     rowsetInner$Excel: function() {
         var me = this;
 
-        // 'Excel' item cfg
+        // 'Excel-export' item cfg
         return {
             id: me.bid() + '-rowset-docked-inner$excel',
             iconCls: 'i-btn-icon-xls',
             tooltip: Indi.lang.I_EXPORT_EXCEL,
             handler: function(){
-
-                // Start preparing request string
-                var request = me.ctx().storeLastRequest().replace('json/1/', 'excel/1/');
-
-                // Get grid component id
-                var gridCmpId = me.ctx().bid() + '-rowset-grid';
-
-                // Get grid columns
-                var gridColumnA = Ext.getCmp(gridCmpId).columns;
-
-                // Define and array for storing column info, required for excel columns building
-                var excelColumnA = [];
-
-                // Setup a multiplier, for proper column width calculation
-                var multiplier = screen.availWidth/Ext.getCmp(gridCmpId).getWidth();
-
-                // Collect needed data about columns
-                for (var i = 0; i < gridColumnA.length; i++) {
-                    if (gridColumnA[i].hidden == false) {
-
-                        // Prepare the data object for excel column
-                        var excelColumnI = {
-                            title: gridColumnA[i].text,
-                            dataIndex: gridColumnA[i].dataIndex,
-                            align: gridColumnA[i].align,
-                            width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
-                        };
-
-                        // If current grid column - is column, currently used for sorting,
-                        // we pick sorting direction, and column title width
-                        if (gridColumnA[i].sortState) {
-                            excelColumnI = $.extend(excelColumnI, {
-                                sortState: gridColumnA[i].sortState.toLowerCase(),
-                                titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
-                            })
-                        }
-
-                        // Push the data object to array
-                        excelColumnA.push(excelColumnI);
-                    }
-                }
-
-                // Set column info as a request variable
-                var columns = 'columns=' + encodeURIComponent(JSON.stringify(excelColumnA));
-
-                // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
-                // property for each object, that is representing a color-filter in request
-                for (var i = 0; i < me.ti().filters.length; i++) {
-                    if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
-                        var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
-                        request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
-                    }
-                }
-
-                // Do request
-                window.location = request + '&' + columns;
+                window.location = me.rowsetExportQuery('excel');
             }
         }
     },
 
     /**
-     * Builds and return an array of panels, that will be used to represent the major UI contents.
-     * Currently is consists only from this.rowset form panel configuration
+     * Rowset panel paging toolbar 'PDF' button-item, for ability to make an advanced PDF-export
+     * within the currently available rows scope
      *
-     * @return {Array}
+     * @return {Object}
      */
-    panelItemA: function() {
+    rowsetInner$Pdf: function() {
+        var me = this;
 
-        // Panels array
-        var itemA = [], rowsetItem = this.rowsetPanel();
+        // 'Pdf-export' item cfg
+        return {
+            id: me.bid() + '-rowset-docked-inner$pdf',
+            iconCls: 'i-btn-icon-pdf',
+            tooltip: Indi.lang.I_EXPORT_PDF,
+            hidden: true,
+            handler: function(){
+                window.location = me.rowsetExportQuery('pdf');
+            }
+        }
+    },
 
-        // Append rowset panel
-        if (rowsetItem) itemA.push(rowsetItem);
+    rowsetExport$PdfColumnA: function() {
+        return this.rowsetExportColumnA();
+    },
 
-        // Return panels array
-        return itemA;
+    rowsetExportColumnA: function() {
+        return Ext.getCmp(this.rowset.id).headerCt.getGridColumns().select(false, 'hidden');
+    },
+
+    rowsetExport$ExcelColumnA: function() {
+        return this.rowsetExportColumnA();
     },
 
     /**
-     * Build an return main panel's rowset panel config object
+     * Build and return array of objects, representing each column that should be presented in the pdf-export
      *
-     * @return {*}
+     * @return {Array}
      */
-    rowsetPanel: function() {
-        return this.rowset;
+    _rowsetExport$PdfColumnA: function() {
+        var me = this, pdfWidth = 720, i, gridColumnA = me.rowsetExport$PdfColumnA(), excelColumnA = [],
+            totalColumnWidthExceptFirstColumn = 0, firstColumnWidth = 0, pdfFirstColumnWidth, width;
+
+        // Collect needed data about columns
+        for (i = 0; i < gridColumnA.length; i++) if (gridColumnA[i].hidden == false) {
+            if (firstColumnWidth == 0) firstColumnWidth = gridColumnA[i].getWidth();
+            else totalColumnWidthExceptFirstColumn += gridColumnA[i].getWidth();
+        }
+
+        // Get width of first pdf's column
+        pdfFirstColumnWidth = pdfWidth - totalColumnWidthExceptFirstColumn;
+
+        // Collect needed data about columns
+        for (i = 0; i < gridColumnA.length; i++) {
+            if (gridColumnA[i].hidden == false) {
+
+                // Width
+                width = excelColumnA.length ? 1 : pdfFirstColumnWidth;
+
+                // Prepare the data object for excel column
+                var exportColumnI = {
+                    title: gridColumnA[i].text,
+                    dataIndex: gridColumnA[i].dataIndex,
+                    align: gridColumnA[i].align,
+                    width: excelColumnA.length ? gridColumnA[i].getWidth() : pdfFirstColumnWidth
+                };
+
+                // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
+                if (gridColumnA[i].align == 'right')
+                    Ext.merge(exportColumnI, {
+                        displayZeroes: gridColumnA[i].displayZeroes
+                    });
+
+                // If current grid column - is column, currently used for sorting,
+                // we pick sorting direction, and column title width
+                if (gridColumnA[i].sortState)
+                    Ext.merge(exportColumnI, {
+                        sortState: gridColumnA[i].sortState.toLowerCase(),
+                        titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
+                    })
+
+                // Push the data object to array
+                excelColumnA.push(exportColumnI);
+            }
+        }
+
+        // Return
+        return excelColumnA;
+    },
+
+    /**
+     * Build and return array of objects, representing each column that should be presented in the excel-export
+     *
+     * @return {Array}
+     */
+    _rowsetExport$ExcelColumnA: function() {
+        var me = this, gridColumnA = me.rowsetExport$ExcelColumnA(), exportColumnA = [],
+            multiplier = screen.availWidth/Ext.getCmp(me.rowset.id).getWidth();
+
+        // Collect needed data about columns
+        for (var i = 0; i < gridColumnA.length; i++) {
+            if (gridColumnA[i].hidden == false) {
+
+                // Prepare the data object for excel column
+                var exportColumnI = {
+                    title: gridColumnA[i].text,
+                    dataIndex: gridColumnA[i].dataIndex,
+                    align: gridColumnA[i].align,
+                    width: Math.ceil(gridColumnA[i].getWidth() * multiplier)
+                };
+
+                if (Ext.isString(gridColumnA[i].cls) && gridColumnA[i].cls.match(/i-grid-column-multiline/))
+                    exportColumnI.height = gridColumnA[i].getHeight();
+
+                // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
+                if (gridColumnA[i].align == 'right')
+                    Ext.merge(exportColumnI, {
+                        displayZeroes: gridColumnA[i].displayZeroes
+                    });
+
+                // If current grid column - is column, currently used for sorting,
+                // we pick sorting direction, and column title width
+                if (gridColumnA[i].sortState)
+                    Ext.merge(exportColumnI, {
+                        sortState: gridColumnA[i].sortState.toLowerCase(),
+                        titleWidth: Indi.metrics.getWidth(gridColumnA[i].text)
+                    });
+
+                // Push the data object to array
+                exportColumnA.push(exportColumnI);
+            }
+        }
+
+        // Return
+        return exportColumnA;
+    },
+
+    /**
+     * Builds full request string (uri + query string) for retrieving current rowset in a format,
+     * identified by `format` argument. Currently 'excel' and 'pdf' values of that argument are supported
+     *
+     * @param format
+     * @return {String}
+     */
+    rowsetExportQuery: function(format) {
+        var me = this, i, request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/'),
+            columns = 'columns=' + encodeURIComponent(JSON.stringify(me['_rowsetExport$' + Indi.ucfirst(format) + 'ColumnA']()));
+
+        // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
+        // property for each object, that is representing a color-filter in request
+        for (i = 0; i < me.ti().filters.length; i++) {
+            if (me.ti().filters[i].foreign('fieldId').foreign('elementId').alias == 'color') {
+                var reg = new RegExp('(%7B%22' + me.ti().filters[i].foreign('fieldId').alias + '%22%3A%5B[0-9]{1,3}%2C[0-9]{1,3}%5D)');
+                request = request.replace(reg, '$1' + encodeURIComponent(',"_xlsLabelWidth":"' + Indi.metrics.getWidth(me.ti().filters[i].foreign('fieldId').title + '&nbsp;-&raquo;&nbsp;') + '"'));
+            }
+        }
+
+        // Return request string
+        return request + '&' + columns;
+    },
+
+    // @inheritdoc
+    rowsetSummary: function(grid) {
+        var me = this, grid = grid || Ext.getCmp(me.rowset.id), summary = {}, view = grid.getView(), columnA = [];
+
+        if (view.headerCt) {
+            columnA = view.headerCt.getGridColumns();
+        } else {
+            if (view.lockedView) columnA = columnA.concat(view.lockedView.headerCt.getGridColumns());
+            if (view.normalView) columnA = columnA.concat(view.normalView.headerCt.getGridColumns());
+        }
+
+        // Pick summary definition from grid columns's summaries types definitions, if used
+        columnA.forEach(function(r, i){
+            if (r.summaryType && !r.summaryText)
+                summary[r.summaryType] = Ext.isArray(summary[r.summaryType])
+                    ? summary[r.summaryType].concat([r.dataIndex])
+                    : [r.dataIndex];
+
+        });
+
+        // Return
+        return summary;
     },
 
     // @inheritdoc
     initComponent: function() {
         var me = this;
-
-        // Setup id
-        me.id = me.bid();
 
         // Setup rowset panel config
         me.rowset = Ext.merge({

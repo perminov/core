@@ -47,7 +47,7 @@ Ext.define('Indi.view.Menu', {
                         iconCls: 'i-menu-leaf-item-icon',
                         leaf: true,
                         cls: 'i-menu-leaf-item',
-                        value: Indi.pre + '/' + data[i+1].alias + '/'
+                        value: '/' + data[i+1].alias + '/'
                     });
                     i++;
                 } while (data[i+1] && parseInt(data[i+1].sectionId));
@@ -79,13 +79,12 @@ Ext.define('Indi.view.Menu', {
 
     // @inheritdoc
     listeners: {
+        afterrender: function(c) {
+            c.expandAll();
+        },
         itemclick: function(view, rec, item, index, eventObj) {
-            if (rec.get('leaf') == false) {
-                if (rec.data.expanded) rec.collapse();
-                else rec.expand();
-            } else {
-                Indi.load(rec.raw.value);
-            }
+            if (rec.get('leaf') == false) rec[rec.data.expanded ? 'collapse' : 'expand']();
+            else Indi.load(rec.raw.value);
         },
         beforecollapse: function(){
             Ext.getCmp('i-logo').hide();

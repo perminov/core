@@ -29,7 +29,6 @@ class Indi_Db {
      */
     protected static $_entityA = array();
 
-
     /**
      * Array of table names of existing entities, which have `useCache` flag turned on
      *
@@ -43,6 +42,18 @@ class Indi_Db {
      * @var Indi_Db
      */
     public static $queryCount = 0;
+
+    /**
+     * @var array
+     */
+    public static $DELETEQueryA = array();
+
+    /**
+     * Flag
+     *
+     * @var bool
+     */
+    protected static $_transactionLevel = 0;
 
     /**
      * Initial database setup, if $config argument is provided, or just return the singleton instance otherwise
@@ -81,6 +92,21 @@ class Indi_Db {
             $entityA = self::$_instance->query(
                 'SELECT * FROM `entity`' . ($entityId ? ' WHERE `id` = "' . $entityId . '"' : '')
             )->fetchAll();
+
+            // Fix tablename case, if need
+            if (!$entityId && !preg_match('/^WIN/i', PHP_OS) && self::$_instance->query('SHOW TABLES LIKE "columntype"')->fetchColumn()) {
+            
+                // Build an sql-query, that will construct sql-queries that will 
+                // fix tablename confusion for each database table affected
+                $needQ = 'SELECT CONCAT("RENAME TABLE `", LOWER(`table`), "` TO `", `table`, "`") '
+                        .'FROM `entity` WHERE LOWER(`table`) COLLATE utf8_bin != `table` COLLATE utf8_bin';
+                
+                // Get RENAME queries
+                $renameQA = self::$_instance->query($needQ)->fetchAll(PDO::FETCH_COLUMN);
+                
+                // Execute RENAME queries
+                foreach ($renameQA as $renameQI) self::$_instance->query($renameQI);
+            }
 
             // Get info about fields, existing within all entities, or one certain entity
             $fieldA = self::$_instance->query(
@@ -334,6 +360,13 @@ class Indi_Db {
             // Increment queries count
             self::$queryCount++;
 
+            // Collect DELETE queries
+            if (preg_match('/^DELETE/', $sql))
+                self::$DELETEQueryA[] = array(
+                    'sql' => $sql,
+                    'affected' => $affected
+                );
+
             // If no rows were affected and error reporting ($silence argument) is turned on
             // Display error message, backtrace info and make the global stop
             if ($affected === false && $silence == false) $this->jerror($sql);
@@ -389,7 +422,7 @@ class Indi_Db {
         extract(array_pop(array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1, 1)));
 
         // Flush an error
-        die(jerror(0, $errstr, $file, $line));
+        iexit(jerror(0, $errstr, $file, $line));
     }
 
     /**
@@ -426,5 +459,44 @@ class Indi_Db {
 
         // Return false
         return false;
+    }
+
+    /**
+     * Begin the transaction, if it not had yet begun
+     */
+    public function begin() {
+
+        // Begin the transaction, if it not had yet begun
+        if (self::$_transactionLevel == 0) self::$_instance->query('START TRANSACTION');
+
+        // Increment the transaction level
+        self::$_transactionLevel ++;
+    }
+
+    /**
+     * Rollback the transaction
+     */
+    public function rollback() {
+
+        // Rollback
+        self::$_instance->query('ROLLBACK');
+
+        // Return `false`. Here we do it because we will be using 'return Indi::db()->rollback()' statements
+        return false;
+    }
+
+    /**
+     * Commit the transaction
+     */
+    public function commit() {
+
+        // Decrease the transaction level
+        self::$_transactionLevel --;
+
+        // if we a at the most top transaction level - commit the transaction,
+        if (self::$_transactionLevel == 0) self::$_instance->query('COMMIT');
+
+        // Return `false`. Here we do it because we will be using 'return Indi::db()->rollback()' statements
+        return true;
     }
 }

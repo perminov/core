@@ -50,7 +50,7 @@ class Section_Row_Base extends Indi_Db_Table_Row {
                         // 13 - html-editor
                         // 14 - file upload
                         // 16 - span (group of fields)
-                        if (in_array($fields[$i]['elementId'], array(6, 13, 14, 16))) {
+                        if (in_array($fields[$i]['elementId'], array(6, 13, 14))) {
                             if ($fields[$i]['elementId'] == 6 && $fields[$i]['alias'] == 'title') {} else {
                                 $exclusions[] = $fields[$i]['alias'];
                             }
@@ -77,15 +77,17 @@ class Section_Row_Base extends Indi_Db_Table_Row {
 
                     // Create grid, stripping exclusions from final grid column list
                     $lastPosition = $gridM->getNextMove();
-                    $j = 0;
+                    $j = 0; $gridId = 0;
                     for ($i = 0; $i < count($fields); $i++) {
                         if (!in_array($fields[$i]['alias'], $exclusions)) {
                             $gridR = $gridM->createRow();
+                            $gridR->gridId = $fields[$i]['elementId'] == 16 ? 0 : $gridId;
                             $gridR->sectionId = $this->id;
                             $gridR->fieldId = $fields[$i]['id'];
                             $gridR->move = $lastPosition + $j - 1;
                             $gridR->save();
                             $j++;
+                            if ($fields[$i]['elementId'] == 16) $gridId = $gridR->id;
                         }
                     }
                 } else return parent::save();

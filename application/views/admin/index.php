@@ -8,7 +8,10 @@
         '/js/jquery-1.9.1.min.js',
         '/library/extjs4/ext-all.js',
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
+        '/library/extjs4/examples/ux/BoxReorderer.js',
+        '/library/extjs4/examples/ux/TabReorderer.js',
 
+        '/js/admin/app/override/Ext.Base.js',
         '/js/admin/app/override/Ext.data.Connection.js',
         '/js/admin/app/override/Ext.dom.Element.js',
         '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
@@ -21,6 +24,10 @@
         '/js/admin/app/override/Ext.form.field.Date.js',
         '/js/admin/app/override/Ext.picker.Date.js',
         '/js/admin/app/override/Ext.form.field.Checkbox.js',
+        '/js/admin/app/override/Ext.grid.feature.Summary.js',
+        '/js/admin/app/override/Ext.grid.View.js',
+        '/js/admin/app/override/Ext.data.Model.js',
+        '/js/admin/app/override/Ext.tab.Bar.js',
 
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
@@ -29,11 +36,25 @@
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
 
+        '/js/admin/app/lib/chart/HighStock.compiled.js',
+        '/js/admin/app/lib/chart/HighStockSerie.js',
+
+        '/js/admin/app/lib/view/action/south/South.js',
+        '/js/admin/app/lib/view/action/south/Row.js',
+        '/js/admin/app/lib/view/action/south/Rowset.js',
+        '/js/admin/app/lib/view/action/Panel.js',
+        '/js/admin/app/lib/view/action/Rowset.js',
+        '/js/admin/app/lib/view/action/Row.js',
+        '/js/admin/app/lib/view/action/Tab.js',
+        '/js/admin/app/lib/view/action/TabRowset.js',
+        '/js/admin/app/lib/view/action/TabRow.js',
+
         '/js/admin/app/lib/trail/Trail.js',
         '/js/admin/app/lib/trail/Item.js',
         '/js/admin/app/lib/dbtable/Row.js',
         '/js/admin/app/lib/view/ShrinkList.js',
         '/js/admin/app/lib/form/field/Combo.js',
+        '/js/admin/app/lib/toolbar/Info.js',
         '/js/admin/app/lib/form/field/SiblingCombo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
@@ -49,6 +70,7 @@
         '/js/admin/app/lib/controller/action/Action.js',
         '/js/admin/app/lib/controller/action/Rowset.js',
         '/js/admin/app/lib/controller/action/Grid.js',
+        '/js/admin/app/lib/controller/action/Chart.js',
         '/js/admin/app/lib/controller/action/ChangeLog.js',
         '/js/admin/app/lib/controller/action/Row.js',
         '/js/admin/app/lib/controller/action/Form.js',
@@ -69,6 +91,8 @@
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
+    <script type="text/javascript" src="/library/Highstock-2.1.9/js/highstock.src.js"></script>
+    <script src="/library/Highstock-2.1.9/current-price-indicator.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
 </head>
 <body id="body">
@@ -87,6 +111,9 @@ Ext.create('Indi', {
     }
 });
 </script>
-<div style="display: none;"><div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div></div>
+<div style="display: none;">
+    <div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div>
+    <div id="i-response-html"></div>
+</div>
 </body>
 </html>

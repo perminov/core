@@ -16,17 +16,16 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Wrapper-panel config
      */
     panel: {
-        id: 'i-center-center-wrapper',
-        renderTo: 'i-center-center-body',
-        border: 0,
+        xtype: 'actionpanel',
         height: '100%',
         closable: true,
-        layout: 'fit',
+        layout: 'border',
         docked: {
             default: {
                 xtype: 'toolbar',
                 style: {paddingRight: '3px'},
-                padding: '0 3 0 2'
+                padding: '0 3 0 2',
+                items: []
             },
             items: [],
             inner: {}
@@ -37,6 +36,9 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Rowset-panel config
      */
     rowset: {
+        region: 'center',
+        layout: 'fit',
+        height: '70%',
         docked: {
             default: {
                 xtype: 'toolbar',
@@ -53,6 +55,9 @@ Ext.define('Indi.lib.controller.action.Action', {
      * Row-panel config
      */
     row: {
+        region: 'center',
+        layout: 'fit',
+        height: '40%',
         docked: {
             default: {
                 xtype: 'toolbar',
@@ -66,42 +71,80 @@ Ext.define('Indi.lib.controller.action.Action', {
     },
 
     /**
+     * South-panel config
+     */
+    south: {
+        xtype: 'actionsouth'
+    },
+
+    /**
      * Get the current trail item, or upper trail item - if `up` argument is given
      *
      * @param up
      * @return {Indi.lib.Trail.Item}
      */
     ti: function(up) {
-        return Indi.trail(this.trailLevel - (Indi.trail(true).store.length - 1) + (up ? up : 0));
+        return this.route.last(up);
     },
 
     /**
      * Get the base id for all components, created while controller's action execution
      * If `up` argument is given, function will return base id of upper-level controller's action
+     * Actually, there is no need to call this method with `up` argument not passed or passed as zero,
+     * because the return value will be exact the same as `id` property, which is available initially.
+     * So this method should be used if upper-level base ids are needed to be got
      *
      * @param up
      * @return {String}
      */
     bid: function(up) {
-        return this.ti(up).bid();
+        var me = this, s = 'i-section-' + me.ti(up).section.alias + '-action-' + me.ti(up).action.alias;
+
+        // Normalize `up` argument
+        up = isNaN(up) ? 0 : up;
+
+        // Build the tail part of base id
+        if (me.ti(up).row) {
+            s += '-row-' + (me.ti(up).row.id || 0);
+        } else if (me.ti(up + 1) && me.ti(up + 1).row) {
+            s += '-parentrow-' + me.ti(up + 1).row.id;
+        }
+
+        // Return
+        return s;
     },
 
     // @inheritdoc
     initComponent: function() {
         var me = this;
 
-        // Append tools and toolbars to the main panel
-        Ext.merge(me.panel, {
-            dockedItems: me.panelDockedA(),
-            tools: me.panelToolA()
-        });
+        // Set up docked items
+        me.panel.dockedItems = me.panelDockedA();
 
-        // Setup main panel title, contents and trailLevel property
-        Ext.create('Ext.Panel', Ext.merge({
-            title: me.ti().section.title,
-            items: me.panel.items,
-            trailLevel: me.trailLevel
-        }, me.panel));
+        // If all contents should be added to existing panel
+        if (me.cfg.into) me.panel.header = false; else {
+
+            // Append tools and toolbars to the main panel
+            Ext.merge(me.panel, {
+                renderTo: 'i-center-center-body',
+                tools: me.panelToolA()
+            });
+
+            // Update id of the main panel (temporary)
+            Indi.centerId = me.panel.id;
+        }
+
+        // Create panel instance
+        var panel = Ext.widget(me.panel);
+
+        // If created instance should be inserted as a tab - do it
+        if (me.cfg.into) Ext.getCmp(me.cfg.into).add(panel);
+
+        // If panel has `onLoad` property, and it's a function - call it
+        if (Ext.isFunction(panel.onLoad)) panel.onLoad(me);
+
+        // If special `onLoad` callback is provided within me.cfg - call it
+        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, me);
 
         // Call parent
         me.callParent();
@@ -140,13 +183,14 @@ Ext.define('Indi.lib.controller.action.Action', {
                 if (typeof me[fnItemI] == 'function') itemI = me[fnItemI]();
 
                 // If config is an object, merge itemI with it
-                if (Ext.isObject(itemCfgA[i])) Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
+                if (Ext.isObject(itemCfgA[i]) && (itemI || typeof me[fnItemI] != 'function'))
+                    Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
 
             // Else use as is
             } else itemI = itemCfgA[i];
 
             // Adjust item
-            if (typeof adjust == 'function') itemI = adjust(itemI);
+            if (itemI && typeof adjust == 'function') itemI = adjust(itemI);
 
             // If itemI become consistent - push it to items array
             if (itemI && ((Ext.isObject(itemI) && JSON.stringify(Object.keys(itemI)) != '["alias"]') || allowNaO))
@@ -403,9 +447,28 @@ Ext.define('Indi.lib.controller.action.Action', {
             });
 
         // Add keyboard event handelers
-        Ext.getCmp(target).getEl().addKeyMap({
+        if (Ext.getCmp(target).rendered) Ext.getCmp(target).getEl().addKeyMap({
             eventName: 'keydown',
             binding: binding
         });
+    },
+
+    /**
+     * Empty function
+     */
+    keyMap: Ext.emptyFn,
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this;
+
+        // Set up an id for wrapper panel
+        me.panel.id = config.id + '-wrapper';
+
+        // Set up and xtype for wrapper panel
+        if (config.cfg.into) me.panel.xtype = 'actiontab' + config.route.last().action.mode.toLowerCase();
+
+        // Call parent
+        me.callParent(arguments);
     }
 });

@@ -22,4 +22,5 @@ scriptPath = application/views
 path = core/data/upload
 
 [ckeditor]
+key = 
 uploadPath = fck

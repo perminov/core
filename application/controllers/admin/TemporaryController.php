@@ -128,4 +128,29 @@ class Admin_TemporaryController extends Indi_Controller {
                 $r->trimSTDfromCKEvalues()->save();
         }
     }
+    
+    public function title2aliasAction() {
+        $materialRs = Indi::model('Material')->fetchAll();
+        foreach ($materialRs as $materialR) {
+            $materialR->alias = alias($materialR->title);
+            $materialR->save();
+            d($materialR->alias);
+        }
+        die('ok');
+    }
+    
+    /*public function accessAction() {
+        Indi::db()->query('
+            UPDATE `section2action`
+            SET `profileIds` = CONCAT(`profileIds`, ",18")
+            WHERE FIND_IN_SET("12", `profileIds`) AND CONCAT(",", `profileIds`, ",") NOT LIKE ",18,"
+        ');
+        die('ok');
+    }*/
+
+    /*public function wrapcssAction() {
+        Indi::wrapCss('/library/extjs4/resources/css/ext-neptune.css');
+        Indi::wrapCss('/css/admin/indi.all.neptune.css');
+        die('ok');
+    }*/
 }

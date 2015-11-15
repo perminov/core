@@ -2,6 +2,13 @@
 class Indi_Db_Table_Row implements ArrayAccess
 {
     /**
+     * Table name of table, that current row is related to
+     *
+     * @var string
+     */
+    protected $_table = '';
+
+    /**
      * Original data
      *
      * @var array
@@ -59,13 +66,6 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_files = array();
 
     /**
-     * Table name of table, that current row is related to
-     *
-     * @var string
-     */
-    protected $_table = '';
-
-    /**
      * Store info about errors, fired while a try to save current row
      *
      * @var array
@@ -77,7 +77,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 20;
+    public static $comboOptionsVisibleCount = 300;
 
     /**
      * Used to store data, required for rendering the UI for current row's properties.
@@ -97,7 +97,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Setup initial properties
         $this->_table = $config['table'];
-        $this->_original = $config['original'];
+        $this->_original = $this->fixTypes($config['original']);
         $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
         $this->_system = is_array($config['system']) ? $config['system'] : array();
         $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
@@ -110,6 +110,28 @@ class Indi_Db_Table_Row implements ArrayAccess
                 Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
             }
         }
+    }
+
+    /**
+     * Fix types of data, got from PDO
+     *
+     * @param array $data
+     * @return array
+     */
+    public final function fixTypes(array $data) {
+
+        // Foreach prop check
+        foreach ($data as $k => $v) {
+
+            // If prop's value is a string, containing integer value - force value type to be integer, not string
+            if (preg_match(Indi::rex('int11'), $v)) $data[$k] = (int) $v;
+
+            // Else if prop's value is a string, containing decimal value - force value type to be float, not string
+            else if (preg_match(Indi::rex('decimal112'), $v)) $data[$k] = (float) $v;
+        }
+
+        // Return
+        return $data;
     }
 
     /**
@@ -168,6 +190,38 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Flush a special-formatted json error message, in case if current row has mismatches
+     *
+     * @param bool $check If this param is omitted or `false` (by default) - function will look at existing mismatches.
+     *                    Otherwise, it will run a distinct mismatch check-up, and then behave on results
+     */
+    public function mflush($check = false) {
+
+        // Check conformance to all requirements / Ensure that there are no mismatches
+        if (count($this->mismatch($check))) {
+
+            // Rollback changes
+            Indi::db()->rollback();
+
+            // Build an array, containing mismatches explanations
+            $mismatch = array(
+                'entity' => array(
+                    'title' => $this->model()->title(),
+                    'entry' => $this->id
+                ),
+                'errors' => $this->_mismatch,
+                'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
+            );
+
+            // Log this error if logging of 'jerror's is turned On
+            if (Indi::logging('mflush')) Indi::log('mflush', $mismatch);
+
+            // Flush mismatch
+            jflush(false, array('mismatch' => $mismatch));
+        }
+    }
+
+    /**
      * Saves row into database table. But.
      * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
      * (but is going to be inserted), and if so - autoset value for `move` column after row save
@@ -176,8 +230,8 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function save() {
 
-        // Check conformance to all requirements
-        if (count($this->mismatch(true))) return false;
+        // If current row has any mismatches - flush that mismatches
+        $this->mflush(true);
 
         // Backup original and modified data
         $original = $this->_original; $modified = $this->_modified;
@@ -362,7 +416,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->deleteUsages();
 
         // Standard deletion
-        return $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+        $return = $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+
+        // Unset `id` prop
+        $this->id = null;
+
+        // Return
+        return $return;
     }
 
     /**
@@ -379,14 +439,14 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param null $order
      * @param string $dir
      * @param null $offset
+     * @param null $consistence
      * @return Indi_Db_Table_Rowset_Combo
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
                                  $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
-                                 $order = null, $dir = 'ASC', $offset = null) {
+                                 $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
 
         // Basic info
-        $entityM = Indi::model('Entity');
         $fieldM = Indi::model('Field');
         $fieldR = $fieldR ? $fieldR : Indi::model($this->_table)->fields($field);
         $fieldColumnTypeR = $fieldR->foreign('columnTypeId');
@@ -403,19 +463,29 @@ class Indi_Db_Table_Row implements ArrayAccess
             Indi::$cmpTpl = $where[$i]; eval(Indi::$cmpRun); $where[$i] = Indi::cmpOut();
         }
 
+        // If $multiSelect argument is not given - detect it automatically
+        if ($multiSelect === null) $multiSelect = $fieldR->storeRelationAbility == 'many';
+
         // If current field column type is ENUM or SET
         if (preg_match('/ENUM|SET/', $fieldColumnTypeR->type)) {
 
             // Use existing enumset data, already nested for current field, instead of additional db fetch
             $dataRs = $fieldR->nested('enumset');
 
+            // If $consistence argument is given, and it's an array, we assume it's an explicit definition of
+            // a number of combo data items, that should ONLY be displayed. ONLY here mean combo items will be
+            // exact as in $consistence array, not less and not greater. This feature is used for rowset filters,
+            // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
+            // for data-options, that will have at least one matching row within rowset, in case of their selection
+            // as a part of a rowset search criteria.
+            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
             $dataRs->enumset = true;
 
             // If current field store relation ability is 'many' - we setup selected as rowset object
-            if ($fieldR->storeRelationAbility == 'many')
-                $dataRs->selected = $dataRs->select($selected, 'alias');
+            if ($multiSelect) $dataRs->selected = $dataRs->select($selected, 'alias');
 
             // Return combo data
             return $dataRs;
@@ -433,9 +503,31 @@ class Indi_Db_Table_Row implements ArrayAccess
                 )
             );
 
+            // If $consistence argument is given, and it's an array, we assume it's an explicit definition of
+            // a number of combo data items, that should ONLY be displayed. ONLY here mean combo items will be
+            // exact as in $consistence array, not less and not greater. This feature is used for rowset filters,
+            // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
+            // for data-options, that will have at least one matching row within rowset, in case of their selection
+            // as a part of a rowset search criteria.
+            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+
+            // Setup `enumset` prop as `true`
             $dataRs->enumset = true;
+
+            // Return
             return $dataRs;
-        }
+
+        // Else if combo data is being prepared for an usual (non-boolean and non-enumset) combo
+        } else
+
+            // If $consistence argument is given, and it's an array, we assume it's an explicit definition of
+            // a number of combo data items, that should ONLY be displayed. ONLY here mean combo items will be
+            // exact as in $consistence array, not less and not greater. This feature is used for rowset filters,
+            // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
+            // for data-options, that will have at least one matching row within rowset, in case of their selection
+            // as a part of a rowset search criteria. The $consistence array is being taken into consideration even
+            // if it constains no elements ( - zero-length array), in this case
+            if (is_string($consistence) && strlen($consistence)) $where[] = $consistence;
 
         // Setup filter by satellite
         if ($fieldR->satellite && $noSatellite != true) {
@@ -549,7 +641,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If $order is not null, but is an empty string, we set is as 'id' for results being fetched in the order of
             // their physical appearance in database table, however, regarding $dir (ASC or DESC) param.
-        } else if (!strlen($order)) {
+        } else if (!is_array($order) && !strlen($order)) {
             $order = 'id';
         }
 
@@ -557,21 +649,23 @@ class Indi_Db_Table_Row implements ArrayAccess
         // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
         // So, if order is empty, the results will be retrieved in the order of their physical placement in
         // their database table
-        if (!preg_match('/\(/', $order)) $order = '`' . $order . '`';
+        if (!is_array($order) && !preg_match('/\(/', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
-            $keyword = str_replace('"','\"', $selected);
+            //$keyword = str_replace('"','\"', $selected);
+            $keyword = $selected;
 
-            // Else if fetch-mode is 'no-keyword'
+        // Else if fetch-mode is 'no-keyword'
         } else {
 
             // Get selected row
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if ($order && !preg_match('/\(/', $order)) {
-                $keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
+            if (!is_array($order) && $order && !preg_match('/\(/', $order)) {
+                //$keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
+                $keyword = $selectedR->{trim($order, '`')};
             }
         }
 
@@ -595,7 +689,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
             } else {
 
-                $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+                if (!is_array($order)) $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                 if (is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
@@ -611,7 +705,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         } else {
 
             // If we selected option is set, or if we have keyword that results should match, special logic will run
-            if ($selected && ($fieldR->storeRelationAbility == 'one' || $selectedTypeIsKeyword)) {
+            if ($selected && (($fieldR->storeRelationAbility == 'one' && !$multiSelect) || $selectedTypeIsKeyword)) {
 
                 // We do a backup for WHERE clause, because it's backup version
                 // will be used to calc foundRows property in case if $selectedTypeIsKeyword = false
@@ -627,9 +721,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                         $where['lookup'] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
 
                     // Else
-                    } else $where['lookup'] = ($keyword2 = Indi::kl($keyword))
-                        ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
-                        : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+                    } else $where['lookup'] = ($keyword2 = str_replace('"', '\"', Indi::kl($keyword)))
+                        ? '(`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "%' . $keyword2 . '%")'
+                        : '`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%"';
 
                 // We should get results started from selected value only if we have no $satellite argument passed
                 } else if (is_null(func_get_arg(4))) {
@@ -637,7 +731,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // If $order is a name of a column, and not an SQL expression, we setup results start point as
                     // current row's column's value
                     if (!preg_match('/\(/', $order)) {
-                        $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . $keyword . '"';
+                        $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . str_replace('"', '\"', $keyword) . '"';
                     }
 
                     // We set this flag to true, because the fact that we are in the body of current 'else if' operator
@@ -809,7 +903,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // and will cause problems in indi.combo.form.js
         $dataRs->enumset = false;
 
-        if ($fieldR->storeRelationAbility == 'many') {
+        if ($fieldR->storeRelationAbility == 'many' || $multiSelect) {
             if ($selected) {
                 // Convert list of selected ids into array
                 $selected = explode(',', $selected);
@@ -1280,7 +1374,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Fetch the rowset, nested to current row, assing that rowset within $this->_nested array under certain key,
      * and return that rowset
      *
-     * @param $table A table, where rowset will be fetched from
+     * @param string $table A table, where rowset will be fetched from
      * @param array $fetch Array of fetch params, that are same as Indi_Db_Table::fetchAll() possible arguments
      * @param null $alias The key, that fetched rowset will be stored in $this->_nested array under
      * @param null $field Connector field, in case if it is different from $this->_table . 'Id'
@@ -1377,6 +1471,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param string $type current|original|modified|temporary
      * @param bool $deep
+     * @param null $purp
      * @return array
      */
     public function toArray($type = 'current', $deep = true, $purp = null) {
@@ -1482,7 +1577,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $tags
      * @return string
      */
-    public static function safeHtml($html, $tags = 'font,span') {
+    public static function safeHtml($html, $tags = 'font,span,br') {
 
         // Strip all tags, except tags, mentioned in $tags argument
         $html = strip_tags($html, '<' . preg_replace('/,/', '><', $tags) . '>');
@@ -1515,8 +1610,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Strip event attributes, using a callback function
         $html = preg_replace_callback('/(<[a-zA-Z0-9]+)((\s+[a-zA-Z0-9]+\s*=\s*("|\')[^\4>]+\4)*)\s*(\/?>)/', 'safeAttrsCallback', $html);
 
-        // Restore double and single quotes that were prepended with a backslash
-        $html = preg_replace('/&quot;/', '\"', $html); $html = preg_replace('/&#039;/', "\'", $html);
+        // Restore double and single quotes
+        $html = preg_replace('/&quot;/', '"', $html); $html = preg_replace('/&#039;/', "'", $html);
 
         // Return result
         return $html;
@@ -1557,6 +1652,18 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Else we assume that $check argument is field name, so the mismatch for especially that field will be returned
         } else return $this->_mismatch[$check];
+
+        // Return array of errors
+        return $this->validate();
+    }
+
+    /**
+     * Validate all modified fields, collect their errors in $this->_mismatch array, with field names as keys
+     * and return it
+     *
+     * @return array
+     */
+    public function validate() {
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
@@ -1621,8 +1728,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                         } else  $value .= self::safeHtml($chunk[$i]);
                     }
 
-                    // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
-                    // and by stripping event attributes from allowed tags
+                // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
+                // and by stripping event attributes from allowed tags
                 } else $value = self::safeHtml($value);
 
             // If element is 'move'
@@ -1638,13 +1745,33 @@ class Indi_Db_Table_Row implements ArrayAccess
                     continue;
                 }
 
+            // If element is 'price'
             } else if ($elementR->alias == 'price') {
+
+                // Round the value to 2 digits after floating point
+                if (is_numeric($value)) $value = price($value);
 
                 // If $value is not a decimal
                 if (!preg_match(Indi::rex('decimal112'), $value)) {
 
                     // Push a error to errors stack
                     $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112, $value, $fieldR->title);
+
+                    // Jump to checking the next column's value
+                    continue;
+                }
+
+                // If element is 'decimal143'
+            } else if ($elementR->alias == 'decimal143') {
+
+                // Round the value to 2 digits after floating point
+                if (is_numeric($value)) $value = decimal($value, 3);
+
+                // If $value is not a decimal
+                if (!preg_match(Indi::rex('decimal143'), $value)) {
+
+                    // Push a error to errors stack
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143, $value, $fieldR->title);
 
                     // Jump to checking the next column's value
                     continue;
@@ -1785,7 +1912,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         // Try to get a unix-timestamp of a date stored in $value variable
                         $utime = strtotime($value);
 
-                        // If date, builded from $utime and formatted according to 'displayFormat' param
+                        // If date, built from $utime and formatted according to 'displayFormat' param
                         // is equal to initial value of $value variable - this will mean that date, stored
                         // in $value is a valid date, so we
                         if (date($fieldR->params['displayFormat'], $utime) == $value) {
@@ -2037,6 +2164,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // Push a error to errors stack
                         $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112, $value, $fieldR->title);
+
+                        // Jump to checking the next column's value
+                        continue;
+                    }
+
+                // If column type is 'DECIMAL(14,3)'
+                } else if ($columnTypeR->type == 'DECIMAL(14,3)') {
+
+                    // If $value is not a decimal, or more than 11-digit decimal
+                    if (!preg_match(Indi::rex('decimal143'), $value)) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143, $value, $fieldR->title);
 
                         // Jump to checking the next column's value
                         continue;
@@ -2326,22 +2466,55 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->$column = $value;
         }
 
-        // If current model has a tree-column, and current row is not an existing new row, and tree column value was
-        // modified, and it is going to be same as current row id
-        if ($this->model()->treeColumn() && $this->id && $this->_modified[$this->model()->treeColumn()] == $this->id) {
+        // Get tree-column name
+        $tc = $this->model()->treeColumn();
 
-            // Define a shortcut for tree column field alias
-            $treeColumn = $this->model()->treeColumn();
+        // If current model has a tree-column, and current row is an existing row and tree column value was modified
+        if ($tc && $this->id && ($parentId_new = $this->_modified[$tc])) {
 
-            // Get the tree column field
-            $fieldR = $this->model()->fields($treeColumn);
+            // Get the tree column field row object
+            $fieldR = $this->model()->fields($tc);
 
-            // Push a error to errors stack
-            $this->_mismatch[$treeColumn] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID, $fieldR->title);
+            // If tree-column's value it is going to be same as current row id
+            if ($parentId_new == $this->id) {
 
+                // Push a error to errors stack
+                $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF, $fieldR->title);
+
+            // Else if there is actually no parent row got by such a parent id
+            } else if (!$parentR = $this->foreign($tc)) {
+
+                // Push a error to errors stack
+                $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404, $parentId_new, $fieldR->title);
+
+            // Else if parent row, got by given parent id, has a non-zero parent row id (mean non-zero grandparent row id for current row)
+            } else if ($parentR->$tc) {
+
+                // Backup $parentR
+                $_parentR = $parentR;
+
+                // Here we ensure that id, that we gonna set up as parent-row id for a current row - is not equal
+                // to current row id, and, even more, ensure that ids of all parent-row's ancestor rows are not
+                // equal to current row id too
+                do {
+
+                    // If ancestor row id is equal to current row id
+                    if ($parentR->$tc == $this->id) {
+
+                        // Push a error to errors stack
+                        $this->_mismatch[$tc] = sprintf(I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD, $_parentR->title(), $fieldR->title, $this->title());
+
+                        // Break the loop
+                        break;
+
+                    // Else get the upper-level ancestor
+                    } else $parentR = $parentR->foreign($tc);
+
+                } while ($parentR->$tc);
+            }
         }
 
-        // Return array of errors
+        // Return found mismatches
         return $this->_mismatch;
     }
 
@@ -2742,13 +2915,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->deleteFiles($field);
 
         // Get the extension of the uploaded file
-        preg_match('/[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+\/[^?#]*\.([a-zA-Z0-9+]+)$/', $url, $m); $ext = $m[1];
+        preg_match('/[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+\/[^?#]*\.([a-zA-Z0-9+]+)$/', $url, $m); $uext = $m[1];
 
         // Try to detect remote file props using cURL request
-        list($size, $mime, $cext) = each(Indi::probe($url));
+        $p = Indi::probe($url); $size = $p['size']; $mime = $p['mime']; $cext = $p['ext'];
 
         // If simple extension detection failed - use one that curl detected
-        if (!$ext) $ext = $cext;
+        $ext = $uext ? $uext : $cext;
 
         // If no size, or zero-size detected
         if (!$size) {
@@ -2760,11 +2933,43 @@ class Indi_Db_Table_Row implements ArrayAccess
             return false;
         }
 
+        // Check is $url's host name is same as $_SERVER['HTTP_HOST']
+        $purl = parse_url($url); $isOwnUrl = $purl['host'] == $_SERVER['HTTP_HOST'] || !$purl['host'];
+
         // If no extension was got from the given url
-        if (!$ext) {
+        if (!$ext || ($isOwnUrl && !$uext)) {
+
+            // If $url's hostname is same as $_SERVER['HTTP_HOST']
+            if ($isOwnUrl) {
+
+                // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
+                if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+
+                // Get request headers, and declare $hrdS variable for collecting strigified headers list
+                $hdrA = apache_request_headers(); $hdrS = '';
+
+                // Unset headers, that may (for some unknown-by-me reasons) cause freeze execution
+                unset($hdrA['Connection'], $hdrA['Content-Length'], $hdrA['Content-length'], $hdrA['Accept-Encoding']);
+
+                // Build headers list
+                foreach ($hdrA as $n => $v) $hdrS .= $n . ': ' . $v . "\r\n";
+
+                // Prepare context options
+                $opt = array('http'=> array('method'=> 'GET', 'header'=> $hdrS));
+
+                // Create context, for passing as a third argument within file_get_contents() call
+                $ctx = stream_context_create($opt);
+
+                // Write session data and suspend session, so session file, containing serialized session data
+                // will be temporarily unlocked, to prevent caused-by-lockness execution freeze
+                session_write_close();
+            }
 
             // Get the contents from url, and if some error occured then
-            ob_start(); $raw = file_get_contents($url); if ($error = ob_get_clean()) {
+            ob_start(); $raw = file_get_contents($url, false, $ctx); if ($error = ob_get_clean()) {
+
+                // Resume session
+                if ($isOwnUrl) session_start();
 
                 // Save that error to $this->_mismatch array, under $field key
                 $this->_mismatch[$field] = $error;
@@ -2773,17 +2978,24 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
             }
 
+            // Resume session
+            if ($isOwnUrl) session_start();
+
             // Create the temporary file, and place the url contents to it
             $tmp = tempnam(sys_get_temp_dir(), "indi-wget");
             $fp = fopen($tmp, 'wb'); fwrite($fp, $raw); fclose($fp);
 
-            // Get the mime type
-            $fi = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($fi, $tmp);
-            finfo_close($fi);
+            // If no extension yet detected
+            if (!$ext) {
 
-            // Get the extension
-            $ext = Indi::ext($mime);
+                // Get the mime type
+                $fi = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($fi, $tmp);
+                finfo_close($fi);
+
+                // Get the extension
+                $ext = Indi::ext($mime);
+            }
         }
 
         // Build the full filename into $dst variable
@@ -3105,5 +3317,178 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return $this;
+    }
+
+    /**
+     * Alias for $this->delta() method
+     *
+     * @param $prop
+     * @return mixed
+     */
+    public function moDelta($prop) {
+        return $this->delta($prop);
+    }
+
+    /**
+     * Get the difference between modified and original values for a given property.
+     * This method is for use with only properties, that have numeric values
+     *
+     * @param $prop
+     * @return mixed
+     */
+    public function delta($prop) {
+        return array_key_exists($prop, $this->_modified) ? $this->_modified[$prop] - $this->_original[$prop] : 0;
+    }
+
+    /**
+     * This function assumes that $prop - is the name of the property, that contains date in a some format,
+     * so function convert it into timestamp and then convert it back to date, but in a custom format, provided
+     * by $format argument. Output format is 'Y-m-d' by default
+     *
+     * @param $prop
+     * @param string $format
+     * @return string
+     */
+    public function date($prop, $format = 'Y-m-d') {
+        return date($format, strtotime($this->$prop));
+    }
+
+    /**
+     * Return number-formatted value of $this->prop
+     *
+     * @param $prop
+     * @param null|int $precision
+     * @param bool $color
+     * @return bool|string
+     */
+    public function number($prop, $precision = null, $color = false) {
+
+        // If $prop arg is an alias of an existing field
+        if ($fieldR = $this->field($prop)) {
+
+            // If $precision arg is not given, or given incorrect
+            if (func_num_args() == 1 || !Indi::rexm('int11', $precision)) {
+
+                // If existing field's column type is DECIMAL(XXX,Y)
+                if (preg_match('/^DECIMAL\([0-9]+,([0-9]+)\)$/', $fieldR->foreign('columnTypeId')->type, $mColumnType)) {
+
+                    // Set $precision as Y
+                    $precision = (int) $mColumnType[1];
+
+                // Else set $precision as 0
+                } else $precision = 0;
+
+            // Else set $precision as 0
+            } else $precision = 0;
+
+        // Else if $prop is a temporary prop
+        } else if (array_key_exists($prop, $this->_temporary)) {
+
+            // If $precision arg is not given, or given incorrect
+            if (func_num_args() == 1 || !Indi::rexm('int11', $precision)) $precision = 0;
+
+        // Else if $prop can't be used as an identifier of any prop
+        } else return false;
+
+        // Return formatted value of $this->$prop
+        $formatted = decimal($this->$prop, $precision, true);
+
+        // If $color flag is `true`
+        if ($color) {
+
+            // Possible colors
+            $colorA = array(-1 => 'red', 0 => 'black', 1 => 'green');
+
+            // Wrap formatted number into a <SPAN> with color definition
+            return '<span style="color: ' . $colorA[sign($this->$prop)] . '">' . $formatted . '</span>';
+
+        // Else just return formatted value
+        } else return $formatted;
+    }
+
+    /**
+     * Calls the parent class's same function, passing same arguments.
+     * This is similar to ExtJs's callParent() function, except that agruments are
+     * FORCED to be passed (in extjs, if you call this.callParent() - no arguments would be passed,
+     * unless you use this.callParent(arguments) expression instead)
+     */
+    public function callParent() {
+
+        // Get call info from backtrace
+        $call = array_pop(array_slice(debug_backtrace(), 1, 1));
+
+        // Make the call
+        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+    }
+    
+    /**
+     * Retrieve width and height from the getimagesize/getflashsize call, for an image or swf file
+     * linked to a curent row's $alias field, incapsulated within an instance of stdClass object
+     *
+     * @param $alias
+     * @param string $copy
+     * @return stdClass
+     */
+    public function dim($alias, $copy = '') {
+
+        // If image file exists
+        if ($abs = $this->abs($alias, $copy)) {
+
+            // Get the native result of getimagesize/getflashsize call
+            $dim = (preg_match('/\.swf$/', $abs) ? getflashsize($abs) : getimagesize($abs));
+            
+            // Return 
+            return (object) array('width' => $dim[0], 'height' => $dim[1]);
+        }
+    }
+
+    /**
+     * Reset row props modifications. If row had any foreign data, that data will be re-fetched to ensure it rely
+     * on original values of foreign keys rather than modified values of foreign keys
+     *
+     * @param bool $clone
+     * @return bool|Indi_Db_Table_Row
+     */
+    public function reset($clone = false) {
+
+        // Backup modifications
+        $modified = $this->_modified;
+
+        // Backup foreign data
+        $foreign = $this->_foreign;
+
+        // Get modified foreign key names
+        $mfkeyA = array_intersect(array_keys($modified), array_keys($foreign));
+
+        // Reset modifications
+        $this->_modified = array();
+
+        // Remove foreign data for modified foreign keys
+        foreach ($mfkeyA as $mfkeyI) unset($this->_foreign[$mfkeyI]);
+
+        // If $clone arg is `true`
+        if ($clone) {
+
+            // Create the clone
+            $clone = clone $this;
+
+            // Set up clone's own foreign data, but only for certain foreign keys
+            if ($mfkeyA) $clone->foreign(im($mfkeyA));
+
+            // Get modifications back
+            $this->_modified = $modified;
+
+            // Get foreign data
+            $this->_foreign = $foreign;
+
+        // Else
+        } else {
+
+            // Renew own foreign data, for it to rely on original values rather than modified values
+            if ($mfkeyA) $this->foreign(im($mfkeyA));
+        }
+
+        // Return
+        return $clone ? $clone : $this;
     }
 }
