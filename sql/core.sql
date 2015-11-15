@@ -72,7 +72,7 @@ CREATE TABLE `columntype` (
 
 /*Data for the table `columntype` */
 
-insert  into `columntype`(`id`,`title`,`type`,`canStoreRelation`,`elementId`) values (1,'Строка','VARCHAR(255)','y','22,23,1,7'),(3,'Число','INT(11)','y','3,21,4,5,23,1,18'),(4,'Текст','TEXT','y','6,7,8,13'),(5,'Цена','DOUBLE(7,2)','n',''),(6,'Дата','DATE','n','12'),(7,'Год','YEAR','n',''),(8,'Время','TIME','n','17'),(9,'Момент','DATETIME','n','19'),(10,'Одно значение из набора','ENUM','n','5,23'),(11,'Набор значений','SET','n','23,1,6,7'),(12,'Правда/Ложь','BOOLEAN','n','9'),(13,'Цвет','VARCHAR(10)','n','11');
+insert  into `columntype`(`id`,`title`,`type`,`canStoreRelation`,`elementId`) values (1,'Строка','VARCHAR(255)','y','22,23,1,7'),(3,'Число','INT(11)','y','3,21,4,5,23,1,18'),(4,'Текст','TEXT','y','6,7,8,13'),(5,'Цена','DECIMAL(11,2)','n','24'),(6,'Дата','DATE','n','12'),(7,'Год','YEAR','n',''),(8,'Время','TIME','n','17'),(9,'Момент','DATETIME','n','19'),(10,'Одно значение из набора','ENUM','n','5,23'),(11,'Набор значений','SET','n','23,1,6,7'),(12,'Правда/Ложь','BOOLEAN','n','9'),(13,'Цвет','VARCHAR(10)','n','11');
 
 /*Table structure for table `disabledfield` */
 
@@ -107,11 +107,11 @@ CREATE TABLE `element` (
   PRIMARY KEY (`id`),
   KEY `storeRelationAbility` (`storeRelationAbility`),
   KEY `storeRelationAbility_2` (`storeRelationAbility`)
-) ENGINE=MyISAM AUTO_INCREMENT=24 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=25 DEFAULT CHARSET=utf8;
 
 /*Data for the table `element` */
 
-insert  into `element`(`id`,`title`,`alias`,`storeRelationAbility`,`hidden`) values (1,'<span class=\"i-color-box\" style=\"background: red;\"></span>Строка','string','none,many',0),(4,'<font color=\"lime\">Приоритет отображения</font>','move','none',1),(5,'Радио-кнопки','radio','one',0),(6,'Текст','textarea','none,many',0),(7,'Чекбоксы','multicheck','many',0),(9,'Чекбокс','check','none',0),(11,'Цвет','color','none',0),(12,'Календарь','calendar','none',0),(13,'HTML-редактор','html','none',0),(14,'Файл','upload','none',0),(16,'Группа полей','span','none',0),(17,'Время','time','none',0),(18,'Число','number','none,one',0),(19,'Момент','datetime','none',0),(22,'Скрытое поле','hidden','none',0),(23,'Список','combo','one,many',0);
+insert  into `element`(`id`,`title`,`alias`,`storeRelationAbility`,`hidden`) values (1,'Строка','string','none,many',0),(4,'Приоритет отображения','move','none',1),(5,'Радио-кнопки','radio','one',0),(6,'Текст','textarea','none,many',0),(7,'Чекбоксы','multicheck','many',0),(9,'Чекбокс','check','none',0),(11,'Цвет','color','none',0),(12,'Календарь','calendar','none',0),(13,'HTML-редактор','html','none',0),(14,'Файл','upload','none',0),(16,'Группа полей','span','none',0),(17,'Время','time','none',0),(18,'Число','number','none,one',0),(19,'Момент','datetime','none',0),(22,'Скрытое поле','hidden','none',0),(23,'Список','combo','one,many',0),(24,'Цена','price','none',0);
 
 /*Table structure for table `entity` */
 
