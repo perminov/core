@@ -137,8 +137,48 @@ function i($value, $type = 'w', $file = 'debug.txt') {
     // Get the absolute path of a file, that will be used for writing data to
     $abs = $doc . $std. '/www/' . $file;
 
-    // Write the data
-    $fp = fopen($abs, $type); ob_start(); print_r($value); echo "\n"; fwrite($fp, ob_get_clean()); fclose($fp);
+    // Renew the $dir, where we assume that output file is/will be located
+    // Here we do not use existing $dir value, because $file arg can be
+    // not only 'someOutputFile.txt', for example, but 'someSubDir/someOutputFile.txt' also
+    // e.g. it can contain additional (deeper) directory specification
+    $dir = Indi::dir(pathinfo($abs, PATHINFO_DIRNAME) . '/');
+
+    // If $dir is not a directory name
+    if (!Indi::rexm('dir', $dir)) {
+
+        // Backup logging mode for 'jerror'
+        $mode = Indi::logging('jerror');
+
+        // Disable logging for 'jerror'
+        Indi::logging('jerror', false);
+
+        // Flush error, containing message describing dir info: whether is ex
+        echo jerror(2, $dir, __FILE__, __LINE__);
+
+        // Revert back logging for 'jerror'
+        Indi::logging('jerror', $mode);
+
+    // Else if $abs file exists but not writable
+    } else if (file_exists($abs) && !is_writable($abs)) {
+
+        // Backup logging mode for 'jerror'
+        $mode = Indi::logging('jerror');
+
+        // Disable logging for 'jerror'
+        Indi::logging('jerror', false);
+
+        // Flush error message, saying that destination file is not writable
+        echo jerror(2, $abs . ' is not writable', __FILE__, __LINE__);
+
+        // Revert back logging for 'jerror'
+        Indi::logging('jerror', $mode);
+
+    // Else
+    } else {
+
+        // Write the data
+        $fp = fopen($abs, $type); fwrite($fp, print_r($value, true) . "\n"); fclose($fp);
+    }
 }
 
 /**
