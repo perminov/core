@@ -2,6 +2,13 @@
 class Indi_Controller {
 
     /**
+     * Encoding of contents, that will be sent to the client browser
+     *
+     * @var string
+     */
+    public $encoding = 'utf-8';
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -46,7 +53,7 @@ class Indi_Controller {
     public function dispatch() {
 
         // Setup the Content-Type header
-        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Type: text/html; charset=' . $this->encoding);
 
         // Do the pre-dispatch maintenance
         $this->preDispatch();
