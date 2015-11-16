@@ -63,6 +63,9 @@ RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/core%{ENV:URI} -f
 RewriteRule .* core%{ENV:URI} [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule \.(jpg|jpeg|gif|css|js|ico)$ core/application/static404.php
+
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/www/index.php -f
 RewriteRule .* www/index.php [L]
 

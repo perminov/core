@@ -2692,7 +2692,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_array($fields) && !count($fields)) return;
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!preg_match(Indi::rex('dir'), $dir = $this->model()->dir())) {
+        if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
 
             // Assume it is a error message, and put it under '#model' key within $this->_mismatch property
             $this->_mismatch['#model'] = $dir;
@@ -2902,7 +2902,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function wget($url, $field) {
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!preg_match(':^([A-Z]\:)?/.*/$:', $dir = $this->model()->dir())) {
+        if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
 
             // Assume it is a error message, and put it under $field key within $this->_mismatch property
             $this->_mismatch[$field] = $dir;
