@@ -1574,13 +1574,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @static
      * @param $html
-     * @param string $tags
+     * @param string $allowedTags
      * @return string
      */
-    public static function safeHtml($html, $tags = 'font,span,br') {
+    public static function safeHtml($html, $allowedTags = '') {
+
+        // Build list of allowed tags, using tags, passed with $allowedTags arg and default tags
+        $allowedS = im(array_unique(array_merge(ar('font,span,br'), ar(strtolower($allowedTags)))));
 
         // Strip all tags, except tags, mentioned in $tags argument
-        $html = strip_tags($html, '<' . preg_replace('/,/', '><', $tags) . '>');
+        $html = strip_tags($html, '<' . preg_replace('/,/', '><', $allowedS) . '>');
 
         // Strip event attributes, and return the result
         return self::safeAttrs($html);
@@ -1725,12 +1728,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                             $i += 2;
 
                         // Else if chunk is not a php expression - make it safe and append to filtered value
-                        } else  $value .= self::safeHtml($chunk[$i]);
+                        } else  $value .= self::safeHtml($chunk[$i], $fieldR->params['allowedTags']);
                     }
 
                 // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
                 // and by stripping event attributes from allowed tags
-                } else $value = self::safeHtml($value);
+                } else $value = self::safeHtml($value, $fieldR->params['allowedTags']);
 
             // If element is 'move'
             } else if ($elementR->alias == 'move') {

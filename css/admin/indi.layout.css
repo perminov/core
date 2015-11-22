@@ -8,7 +8,16 @@
 .x-form-field, .x-form-display-field {font-size: 11px; color: #04408C;}
 .x-form-item-label{padding: 1px 0;}
 .i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px;}
-.i-color-box-wrap .i-color-box {margin: 0;}
+.i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
+.i-color-box-wrap .i-color-box[style*="background: url"],
+.i-bgimg-box-wrap .i-color-box[style*="background: url"] {
+    float: left;
+    height: 16px;
+    width: 16px;
+    margin-top: -3px;
+    position: relative;
+    top: 2px;
+}
 .i-color-box-wrap {text-align: center;}
 .x-btn .x-btn-inner{color: #04408C}
 input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
