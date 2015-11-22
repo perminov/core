@@ -122,7 +122,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
             }(),
             renderer: function (value) {
                 if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
-                if (String(value).match(/ class="i-color-box"/)) return '<div class="i-color-box-wrap">'+value+'</div>';
+                if (String(value).match(/ class="i-color-box"/))
+                    return String(value).match(/ class="i-color-box" style="background:\surl\(/)
+                        ? '<div class="i-bgimg-box-wrap">'+value+'</div>'
+                        : '<div class="i-color-box-wrap">'+value+'</div>';
                 return value;
             }
         }
