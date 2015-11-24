@@ -305,7 +305,7 @@ class Indi_View_Helper_Admin_FormCombo {
         if ($this->isMultiSelect()) {
             $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
-                $item = self::detectColor(array('title' => $selectedR->title));
+                $item = self::detectColor(array('title' => $selectedR->title()));
                 $item['id'] = $selectedR->{$this->keyProperty};
                 $view['subTplData']['selected']['items'][] = $item;
             }
