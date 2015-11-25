@@ -2119,9 +2119,9 @@ class Indi {
      * @static
      * @param $type
      * @param $data
-     * @return mixed
+     * @param string|bool $mail
      */
-    public static function log($type, $data) {
+    public static function log($type, $data, $mail = true) {
 
         // General info
         $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
@@ -2135,7 +2135,14 @@ class Indi {
         $msg .= '<br>' . print_r($data, true) . '<br>--------------------------------------<br><br>';
 
         // Mail
-        @mail('indi.engine@gmail.com', $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+        if ($mail) {
+
+            // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
+            $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';
+
+            // Send mail
+            @mail($mail, $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+        }
 
         // If mailing failed - write to special *.log file
         i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/' . $type . '.log');
