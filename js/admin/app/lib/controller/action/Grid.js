@@ -703,8 +703,21 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return this.rowsetExportColumnA();
     },
 
+    /**
+     * Detect grid's columns that should be exported
+     *
+     * @return {Array}
+     */
     rowsetExportColumnA: function() {
-        return Ext.getCmp(this.rowset.id).headerCt.getGridColumns().select(false, 'hidden');
+        var me = this, grid = Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [];
+
+        // Apply a workaround for cases when grid has locked columns
+        if (view.headerCt) columnA = view.headerCt.getGridColumns(); else {
+            if (view.lockedView) columnA = columnA.concat(view.lockedView.headerCt.getGridColumns());
+            if (view.normalView) columnA = columnA.concat(view.normalView.headerCt.getGridColumns());
+        }
+
+        return columnA.select(false, 'hidden');
     },
 
     rowsetExport$ExcelColumnA: function() {
