@@ -7,6 +7,19 @@ Ext.override(Ext.XTemplate, {
     }
 });
 
+Ext.override(Ext.grid.feature.Grouping, {
+
+    // Create an associated DOM id for the group's header element given the group name
+    getGroupHeaderId: function(groupName) {
+        return this.view.id + '-hd-' + Indi.stripTags(groupName);
+    },
+
+    // Create an associated DOM id for the group's body element given the group name
+    getGroupBodyId: function(groupName) {
+        return this.view.id + '-bd-' + Indi.stripTags(groupName);
+    }
+});
+
 Ext.override(Ext.grid.feature.Summary, {
 
     /**
