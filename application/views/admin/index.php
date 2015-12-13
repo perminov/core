@@ -29,6 +29,8 @@
         '/js/admin/app/override/Ext.data.Model.js',
         '/js/admin/app/override/Ext.tab.Bar.js',
 
+        '/js/admin/app/ux/Ext.ux.form.field.plugin.InputMask.js',
+
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
 
@@ -61,6 +63,7 @@
         '/js/admin/app/lib/form/field/FilePanel.js',
         '/js/admin/app/lib/form/field/Radios.js',
         '/js/admin/app/lib/form/field/MultiCheck.js',
+        '/js/admin/app/lib/form/field/Phone.js',
 
         '/js/admin/app/lib/form/field/Time.js',
         '/js/admin/app/lib/picker/DateTime.js',

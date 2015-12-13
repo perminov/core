@@ -3350,10 +3350,23 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param $prop
      * @param string $format
+     * @param bool $ldate
      * @return string
      */
-    public function date($prop, $format = 'Y-m-d') {
-        return date($format, strtotime($this->$prop));
+    public function date($prop, $format = 'Y-m-d', $ldate = false) {
+        return $ldate ? ldate(Indi::date2strftime($format), $this->$prop) : date($format, strtotime($this->$prop));
+    }
+
+    /**
+     * Format localized date, according to current locale, set by setlocale() call
+     * The key thing is that date()-compatible format can be used, rather than strftime()-compatible format
+     *
+     * @param $prop
+     * @param $format
+     * @return string
+     */
+    public function ldate($prop, $format) {
+        return $this->date($prop, $format, true);
     }
 
     /**
