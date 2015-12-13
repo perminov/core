@@ -10,7 +10,7 @@
 .i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px;}
 .i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
 .i-color-box-wrap .i-color-box[style*="background: url"],
-.i-bgimg-box-wrap .i-color-box[style*="background: url"] {
+.i-bgimg-box-wrap .i-color-box[style*="background: url"], .i-color-box[style*="background: url"] {
     float: left;
     height: 16px;
     width: 16px;
