@@ -2695,15 +2695,15 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_array($fields) && !count($fields)) return;
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
+        if ((is_array($fields) ?: $this->_files) && !Indi::rexm('dir', $dir = $this->model()->dir())) {
 
             // Assume it is a error message, and put it under '#model' key within $this->_mismatch property
             $this->_mismatch['#model'] = $dir;
 
             // Exit
-            return;
+            $this->mflush(false);
         }
-
+        
         // If $fields arguments is a boolean and is true we assume that there is already exists file-fields
         // content modification info, that was set up earlier, so now we should apply file-upload fields contents
         // modifications, according to that info
@@ -2802,6 +2802,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $this->_files[$field] = Indi::post($field);
             }
         }
+        
+        // Flush existing/collected/current mismatches
+        $this->mflush(false);
     }
 
     /**
