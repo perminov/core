@@ -10,6 +10,7 @@
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
         '/library/extjs4/examples/ux/BoxReorderer.js',
         '/library/extjs4/examples/ux/TabReorderer.js',
+        '/library/extjs4/examples/ux/CheckColumn.js',
 
         '/js/admin/app/override/Ext.Base.js',
         '/js/admin/app/override/Ext.data.Connection.js',
@@ -81,6 +82,7 @@
     ));
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',
+        '/library/extjs4/examples/ux/css/CheckHeader.css',
         '/css/admin/indi.all.css',
         '/css/admin/indi.all.default.css',
         '/css/admin/indi.layout.css',
