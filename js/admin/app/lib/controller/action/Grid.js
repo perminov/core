@@ -285,11 +285,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // force summary to be calculated for selected rows only
                 if (selectedRows.getCount() > 1 && !column.summaryText) {
 
-                    // Get tr
-                    tr = grid.view.el.down('tr.x-grid-row-summary');
-
                     // Apply summary cell style
                     Ext.defer(function(){
+                        // Get tr
+                        tr = grid.view.el.down('tr.x-grid-row-summary');
                         td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
                         td.addCls('x-grid-cell-selected');
                     }, 1);
