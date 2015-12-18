@@ -3,7 +3,7 @@
  * creating Ext.tip.ToolTip objects instead of standart Ext.tip.QuickTip objects
  */
 Ext.override(Ext.data.Model, {
-    key: function(key) {
+    key: function(key, val) {
         var me = this;
 
         // If model has no `$keys` property within it's `raw` object, or it's not an object - return
@@ -13,6 +13,6 @@ Ext.override(Ext.data.Model, {
         if (!me.raw.$keys.hasOwnProperty(key)) return null;
 
         // Return original value for a given key name
-        return me.raw.$keys[key];
+        return arguments.length > 1 ? (me.raw.$keys[key] = val) : me.raw.$keys[key];
     }
 });
