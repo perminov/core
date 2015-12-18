@@ -244,6 +244,6 @@ Ext.override(Ext.Msg, {
     side: function(cfg){
         if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
         var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default msg"><p>' + cfg.msg + '</p></div>', true);
-        m.hide().slideIn('b').fadeOut({delay: 3000, remove: true});
+        m.hide().slideIn('b').fadeOut({delay: 5000, remove: true});
     }
 });
