@@ -141,7 +141,7 @@ Ext.override(Ext.data.Connection, {
                 && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object') {
                 if (json.hasOwnProperty('success')) success = json.success;
                 if (json.hasOwnProperty('msg')) {
-                    Ext.Msg.show(json.hasOwnProperty('confirm') ? {
+                    Ext.Msg[Ext.Msg.jflushFn](json.hasOwnProperty('confirm') ? {
                         title: Indi.lang.I_MSG,
                         msg: json.msg,
                         buttons: Ext.Msg.OKCANCEL,
@@ -234,5 +234,16 @@ Ext.override(Ext.data.Connection, {
 
         // Return error strings array
         return errorSA;
+    }
+});
+
+// Small override for Ext.Msg
+Ext.override(Ext.Msg, {
+    jflushFn: 'show',
+    msgCt: null,
+    side: function(cfg){
+        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
+        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default msg"><p>' + cfg.msg + '</p></div>', true);
+        m.hide().slideIn('b').fadeOut({delay: 3000, remove: true});
     }
 });
