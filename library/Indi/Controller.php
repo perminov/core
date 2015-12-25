@@ -2,6 +2,13 @@
 class Indi_Controller {
 
     /**
+     * Encoding of contents, that will be sent to the client browser
+     *
+     * @var string
+     */
+    public $encoding = 'utf-8';
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -46,7 +53,7 @@ class Indi_Controller {
     public function dispatch() {
 
         // Setup the Content-Type header
-        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Type: text/html; charset=' . $this->encoding);
 
         // Do the pre-dispatch maintenance
         $this->preDispatch();
@@ -159,49 +166,66 @@ class Indi_Controller {
         // If no sorting params provided - ORDER clause won't be built
         if (!$json || $json == '[]') return null;
 
-        // Extract column name and direction from json param
-        list($column, $direction) = array_values(current(json_decode($json, 1)));
+        // Array for ORDER clauses
+        $orderA = array();
 
-        // If no sorting is needed - return null
-        if (!$column) return null;
+        // Decode json
+        $jsonA = json_decode($json, 1);
 
-        // Find a field, that column is linked to
-        foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
+        // If json decode failed - return null
+        if (!is_array($jsonA)) return null;
 
-        // If no direction - set as ASC by default
-        if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
+        // Foreach level or sorting, detected within json
+        foreach ($jsonA as $jsonI) {
 
-        // If there is no grid field with such a name, return null
-        if ($fieldR->alias !== $column) return $column == 'id' ? '`' . $column . '` ' . $direction : null;
-        
-        // Setup a foreign rows for $fieldR's foreign keys
-        $fieldR->foreign('columnTypeId');
+            // Extract column name and direction from json param
+            //list($column, $direction) = array_values($jsonI);
+            $column = $jsonI['property']; $direction = $jsonI['direction'];
 
-        // If this is a simple column
-        if ($fieldR->storeRelationAbility == 'none') {
+            // If no sorting is needed - skip current and jump to next order clause candidate
+            if (!$column) continue;
 
-            // If sorting column type is BOOLEAN (use for Checkbox control element only)
-            if ($fieldR->foreign('columnTypeId')->type == 'BOOLEAN') {
+            // Find a field, that column is linked to
+            foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
 
-                // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
-                // values, depending on current language
-                return (Indi::ini('view')->lang == 'en'
-                    ? 'IF(`' . $column . '`, "' . I_YES .'", "' . I_NO . '") '
-                    : 'IF(`' . $column . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
+            // If no direction - set as ASC by default
+            if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
 
-                // Else build the simplest ORDER clause
-            } else {
-                return '`' . $column . '` ' . $direction;
+            // If there is no field with such a name
+            if ($fieldR->alias !== $column) {
+
+                // If column's name is 'id' create new item in $orderA array
+                if ($column == 'id') $orderA[] = '`' . $column . '` ' . $direction;
+                //return $column == 'id' ? '`' . $column . '` ' . $direction : null;
+                continue;
             }
 
-            // Else if column is storing single foreign keys
-        } else if ($fieldR->storeRelationAbility == 'one') {
+            // Setup a foreign rows for $fieldR's foreign keys
+            $fieldR->foreign('columnTypeId');
 
-            // If column is of type ENUM
-            if ($fieldR->foreign('columnTypeId')->type == 'ENUM') {
+            // If this is a simple column
+            if ($fieldR->storeRelationAbility == 'none') {
 
-                // Get a list of comma-imploded aliases, ordered by their titles
-                $set = Indi::db()->query($sql = '
+                // If sorting column type is BOOLEAN (use for Checkbox control element only)
+                if ($fieldR->foreign('columnTypeId')->type == 'BOOLEAN') {
+
+                    // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
+                    // values, depending on current language
+                    $orderA[] = (Indi::ini('view')->lang == 'en'
+                        ? 'IF(`' . $column . '`, "' . I_YES .'", "' . I_NO . '") '
+                        : 'IF(`' . $column . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
+
+                // Else build the simplest ORDER clause
+                } else $orderA[] = '`' . $column . '` ' . $direction;
+
+                // Else if column is storing single foreign keys
+            } else if ($fieldR->storeRelationAbility == 'one') {
+
+                // If column is of type ENUM
+                if ($fieldR->foreign('columnTypeId')->type == 'ENUM') {
+
+                    // Get a list of comma-imploded aliases, ordered by their titles
+                    $set = Indi::db()->query($sql = '
 
                     SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
                     FROM `enumset`
@@ -209,38 +233,38 @@ class Indi_Controller {
 
                 ')->fetchColumn(0);
 
-                // Build the order clause, using FIND_IN_SET function
-                return 'FIND_IN_SET(`' . $column . '`, "' . $set . '") ' . $direction;
+                    // Build the order clause, using FIND_IN_SET function
+                    $orderA[] = 'FIND_IN_SET(`' . $column . '`, "' . $set . '") ' . $direction;
 
                 // If column is of type (BIG|SMALL|MEDIUM|)INT
-            } else if (preg_match('/INT/', $fieldR->foreign('columnTypeId')->type)) {
+                } else if (preg_match('/INT/', $fieldR->foreign('columnTypeId')->type)) {
 
-                // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
-                if (!$fieldR->satellite || $fieldR->dependency != 'e') {
+                    // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
+                    if (!$fieldR->satellite || $fieldR->dependency != 'e') {
 
-                    // Get the possible foreign keys
-                    $setA = Indi::db()->query('
+                        // Get the possible foreign keys
+                        $setA = Indi::db()->query('
                         SELECT DISTINCT `' . $column . '` AS `id`
                         FROM `' . Indi::trail()->model->table() . '`
                         ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
                     ')->fetchAll(PDO::FETCH_COLUMN);
 
-                    // If at least one key was found
-                    if (count($setA)) {
+                        // If at least one key was found
+                        if (count($setA)) {
 
-                        // Setup a proper order of elements in $setA array, depending on their titles
-                        $setA = Indi::order($fieldR->relation, $setA);
+                            // Setup a proper order of elements in $setA array, depending on their titles
+                            $setA = Indi::order($fieldR->relation, $setA);
 
-                        // Build the order clause, using FIND_IN_SET function
-                        return 'FIND_IN_SET(`' . $column . '`, "' . implode(',', $setA) . '") ' . $direction;
-
-                        // Otherwise there will be no ORDER clause
-                    } else {
-                        return null;
+                            // Build the order clause, using FIND_IN_SET function
+                            $orderA[] = 'FIND_IN_SET(`' . $column . '`, "' . implode(',', $setA) . '") ' . $direction;
+                        }
                     }
                 }
             }
         }
+
+        // Return
+        return $orderA;
     }
 
     /**

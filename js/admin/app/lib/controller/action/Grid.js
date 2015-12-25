@@ -122,7 +122,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
             }(),
             renderer: function (value) {
                 if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
-                if (String(value).match(/ class="i-color-box"/)) return '<div class="i-color-box-wrap">'+value+'</div>';
+                if (String(value).match(/ class="i-color-box"/))
+                    return String(value).match(/ class="i-color-box" style="background:\surl\(/)
+                        ? '<div class="i-bgimg-box-wrap">'+value+'</div>'
+                        : '<div class="i-color-box-wrap">'+value+'</div>';
                 return value;
             }
         }
@@ -189,10 +192,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
+        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
 
         // Other columns
-        for (var i = 0; i < colA.length; i++) {
+        for (i = 0; i < colA.length; i++) {
 
             // Get current col
             colI = colA[i];
@@ -203,11 +206,20 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
 
-                // Base cfg
+                // Base cfg. Note that here we set up whole column group to be hidden, initialy,
+                // and if at least one of the sub-columns is not hidden - we will set `hidden` prop as `false`
                 columnI = {
                     text: colI.title,
+                    hidden: true,
                     columns: me.gridColumnADeep(colI._nested.grid)
                 }
+
+                // Check if current column group has at least one non-hidden sub-column
+                // and if so, set `hidden` prop of whole group as `false`
+                for (c = 0; c < columnI.columns.length; c++)
+                    if (!columnI.columns[c].hidden)
+                        if (Ext.merge(columnI, {hidden: false}))
+                            break;
 
                 // Add column
                 columnA.push(columnI);
@@ -273,11 +285,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // force summary to be calculated for selected rows only
                 if (selectedRows.getCount() > 1 && !column.summaryText) {
 
-                    // Get tr
-                    tr = grid.view.el.down('tr.x-grid-row-summary');
-
                     // Apply summary cell style
                     Ext.defer(function(){
+                        // Get tr
+                        tr = grid.view.el.down('tr.x-grid-row-summary');
                         td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
                         td.addCls('x-grid-cell-selected');
                     }, 1);
@@ -709,8 +720,21 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return this.rowsetExportColumnA();
     },
 
+    /**
+     * Detect grid's columns that should be exported
+     *
+     * @return {Array}
+     */
     rowsetExportColumnA: function() {
-        return Ext.getCmp(this.rowset.id).headerCt.getGridColumns().select(false, 'hidden');
+        var me = this, grid = Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [];
+
+        // Apply a workaround for cases when grid has locked columns
+        if (view.headerCt) columnA = view.headerCt.getGridColumns(); else {
+            if (view.lockedView) columnA = columnA.concat(view.lockedView.headerCt.getGridColumns());
+            if (view.normalView) columnA = columnA.concat(view.normalView.headerCt.getGridColumns());
+        }
+
+        return columnA.select(false, 'hidden');
     },
 
     rowsetExport$ExcelColumnA: function() {

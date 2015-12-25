@@ -566,8 +566,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         foreach ($ti->gridFields as $gridFieldR) {
 
             // Foreign keys (single and multiple)
-            if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = true;
-            else if ($gridFieldR->storeRelationAbility == 'many') $typeA['foreign']['multiple'][$gridFieldR->alias] = true;
+            if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
+            else if ($gridFieldR->storeRelationAbility == 'many') $typeA['foreign']['multiple'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
 
             // Boolean values
             else if ($gridFieldR->foreign('columnTypeId')->type == 'BOOLEAN') $typeA['boolean'][$gridFieldR->alias] = true;
@@ -623,13 +623,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     $data[$pointer][$columnI] = $r->$columnI ? I_YES : I_NO;
 
                 // If field column type is a single foreign key, we use title of related foreign row
-                if (isset($typeA['foreign']['single'][$columnI]))
-                    $data[$pointer][$columnI] = $r->foreign($columnI)->title;
+                if (isset($typeA['foreign']['single'][$columnI])) $data[$pointer][$columnI] = $r->foreign($columnI)
+                    ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]) ? $titleColumn : 'title'};
 
                 // If field column type is a multiple foreign key, we use comma-separated titles of related foreign rows
                 if (isset($typeA['foreign']['multiple'][$columnI]))
                     foreach ($r->foreign($columnI) as $m)
-                        $data[$pointer][$columnI] .= $m->title .
+                        $data[$pointer][$columnI] .= $m
+                            ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]) ? $titleColumn : 'title'} .
                             ($r->foreign($columnI)->key() < $r->foreign($columnI)->count() - 1 ? ', ' : '');
 
                 // If field column type is 'date' we adjust it's format if need. If date is '0000-00-00' we set it
@@ -671,7 +672,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>';
                     } else if (preg_match('/box/', $data[$pointer][$columnI]) && $ti->section->alias != 'enumset') {
-                        $data[$pointer][$columnI] = preg_replace('/(<\/span>).*$/', '$1', $data[$pointer][$columnI]);
+                        if (preg_match('/background:\s*url\(/', $data[$pointer][$columnI])) {
+
+                        } else {
+                            $data[$pointer][$columnI] = preg_replace('/(<\/span>).*$/', '$1', $data[$pointer][$columnI]);
+                        }
                     }
                 }
 

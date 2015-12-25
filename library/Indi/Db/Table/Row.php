@@ -1170,14 +1170,17 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // We should check that column - which will be used in WHERE clause for retrieving a dependent rowset -
                 // still exists. We need to perform this check because this column may have already been deleted, if
                 // it was dependent of other column that was deleted.
-                if ($model->fields($field->alias)) {
+                if ($model->fields($field->alias) && $field->columnTypeId && Indi::db()->query(
+                    'SHOW COLUMNS FROM `' . $model->table(). '` LIKE "' . $field->alias . '"'
+                )->fetchColumn()) {
 
                     // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
                     if ($field->storeRelationAbility == 'one') {
+
                         $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
 
-                        // If storeRelationAbility = 'many', we do not delete rows, but we delete
-                        // mentions of $this->id from comma-separated sets of keys
+                    // If storeRelationAbility = 'many', we do not delete rows, but we delete
+                    // mentions of $this->id from comma-separated sets of keys
                     } else if ($field->storeRelationAbility == 'many') {
                         $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
                         foreach ($rs as $r) {
@@ -1374,7 +1377,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Fetch the rowset, nested to current row, assing that rowset within $this->_nested array under certain key,
      * and return that rowset
      *
-     * @param $table A table, where rowset will be fetched from
+     * @param string $table A table, where rowset will be fetched from
      * @param array $fetch Array of fetch params, that are same as Indi_Db_Table::fetchAll() possible arguments
      * @param null $alias The key, that fetched rowset will be stored in $this->_nested array under
      * @param null $field Connector field, in case if it is different from $this->_table . 'Id'
@@ -1574,13 +1577,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @static
      * @param $html
-     * @param string $tags
+     * @param string $allowedTags
      * @return string
      */
-    public static function safeHtml($html, $tags = 'font,span,br') {
+    public static function safeHtml($html, $allowedTags = '') {
+
+        // Build list of allowed tags, using tags, passed with $allowedTags arg and default tags
+        $allowedS = im(array_unique(array_merge(ar('font,span,br'), ar(strtolower($allowedTags)))));
 
         // Strip all tags, except tags, mentioned in $tags argument
-        $html = strip_tags($html, '<' . preg_replace('/,/', '><', $tags) . '>');
+        $html = strip_tags($html, '<' . preg_replace('/,/', '><', $allowedS) . '>');
 
         // Strip event attributes, and return the result
         return self::safeAttrs($html);
@@ -1725,12 +1731,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                             $i += 2;
 
                         // Else if chunk is not a php expression - make it safe and append to filtered value
-                        } else  $value .= self::safeHtml($chunk[$i]);
+                        } else  $value .= self::safeHtml($chunk[$i], $fieldR->params['allowedTags']);
                     }
 
                 // Else field is not in list of eval fields, make it's value safe by stripping restricted html tags,
                 // and by stripping event attributes from allowed tags
-                } else $value = self::safeHtml($value);
+                } else $value = self::safeHtml($value, $fieldR->params['allowedTags']);
 
             // If element is 'move'
             } else if ($elementR->alias == 'move') {
@@ -2692,15 +2698,15 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_array($fields) && !count($fields)) return;
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!preg_match(Indi::rex('dir'), $dir = $this->model()->dir())) {
+        if ((is_array($fields) ?: $this->_files) && !Indi::rexm('dir', $dir = $this->model()->dir())) {
 
             // Assume it is a error message, and put it under '#model' key within $this->_mismatch property
             $this->_mismatch['#model'] = $dir;
 
             // Exit
-            return;
+            $this->mflush(false);
         }
-
+        
         // If $fields arguments is a boolean and is true we assume that there is already exists file-fields
         // content modification info, that was set up earlier, so now we should apply file-upload fields contents
         // modifications, according to that info
@@ -2799,6 +2805,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $this->_files[$field] = Indi::post($field);
             }
         }
+        
+        // Flush existing/collected/current mismatches
+        $this->mflush(false);
     }
 
     /**
@@ -2902,7 +2911,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function wget($url, $field) {
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!preg_match(':^([A-Z]\:)?/.*/$:', $dir = $this->model()->dir())) {
+        if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
 
             // Assume it is a error message, and put it under $field key within $this->_mismatch property
             $this->_mismatch[$field] = $dir;
@@ -3347,10 +3356,76 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param $prop
      * @param string $format
+     * @param bool $ldate
      * @return string
      */
-    public function date($prop, $format = 'Y-m-d') {
-        return date($format, strtotime($this->$prop));
+    public function date($prop, $format = 'Y-m-d', $ldate = false) {
+        return $ldate ? ldate(Indi::date2strftime($format), $this->$prop) : date($format, strtotime($this->$prop));
+    }
+
+    /**
+     * Format localized date, according to current locale, set by setlocale() call
+     * The key thing is that date()-compatible format can be used, rather than strftime()-compatible format
+     *
+     * @param $prop
+     * @param $format
+     * @return string
+     */
+    public function ldate($prop, $format) {
+        return $this->date($prop, $format, true);
+    }
+
+    /**
+     * Return number-formatted value of $this->prop
+     *
+     * @param $prop
+     * @param null|int $precision
+     * @param bool $color
+     * @return bool|string
+     */
+    public function number($prop, $precision = null, $color = false) {
+
+        // If $prop arg is an alias of an existing field
+        if ($fieldR = $this->field($prop)) {
+
+            // If $precision arg is not given, or given incorrect
+            if (func_num_args() == 1 || !Indi::rexm('int11', $precision)) {
+
+                // If existing field's column type is DECIMAL(XXX,Y)
+                if (preg_match('/^DECIMAL\([0-9]+,([0-9]+)\)$/', $fieldR->foreign('columnTypeId')->type, $mColumnType)) {
+
+                    // Set $precision as Y
+                    $precision = (int) $mColumnType[1];
+
+                // Else set $precision as 0
+                } else $precision = 0;
+
+            // Else set $precision as 0
+            } else $precision = 0;
+
+        // Else if $prop is a temporary prop
+        } else if (array_key_exists($prop, $this->_temporary)) {
+
+            // If $precision arg is not given, or given incorrect
+            if (func_num_args() == 1 || !Indi::rexm('int11', $precision)) $precision = 0;
+
+        // Else if $prop can't be used as an identifier of any prop
+        } else return false;
+
+        // Return formatted value of $this->$prop
+        $formatted = decimal($this->$prop, $precision, true);
+
+        // If $color flag is `true`
+        if ($color) {
+
+            // Possible colors
+            $colorA = array(-1 => 'red', 0 => 'black', 1 => 'green');
+
+            // Wrap formatted number into a <SPAN> with color definition
+            return '<span style="color: ' . $colorA[sign($this->$prop)] . '">' . $formatted . '</span>';
+
+        // Else just return formatted value
+        } else return $formatted;
     }
 
     /**
