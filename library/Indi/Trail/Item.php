@@ -99,7 +99,8 @@ class Indi_Trail_Item {
         if ($this->actions) $array['actions'] = $this->actions->toArray();
         if ($this->row) {
             $array['row'] = $this->row->toArray('current', true, $this->action->alias);
-            $array['row']['title'] = $this->row->title();
+            $array['row']['_system']['title'] = $this->row->title();
+            //$array['row']['title'] = $this->row->title();
 
             // Collect aliases of all CKEditor-fields
             $ckeFieldA = array();

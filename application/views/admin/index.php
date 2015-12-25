@@ -10,6 +10,7 @@
         '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
         '/library/extjs4/examples/ux/BoxReorderer.js',
         '/library/extjs4/examples/ux/TabReorderer.js',
+        '/library/extjs4/examples/ux/CheckColumn.js',
 
         '/js/admin/app/override/Ext.Base.js',
         '/js/admin/app/override/Ext.data.Connection.js',
@@ -34,6 +35,8 @@
         '/js/admin/app/override/Ext.grid.header.Container.js',
         '/js/admin/app/override/Ext.grid.Panel.js',
         '/js/admin/app/override/Ext.tab.Panel.js',
+
+        '/js/admin/app/ux/Ext.ux.form.field.plugin.InputMask.js',
 
         '/js/admin/indi.js',
         '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
@@ -74,6 +77,7 @@
         '/js/admin/app/lib/form/field/FilePanel.js',
         '/js/admin/app/lib/form/field/Radios.js',
         '/js/admin/app/lib/form/field/MultiCheck.js',
+        '/js/admin/app/lib/form/field/Phone.js',
 
         '/js/admin/app/lib/form/field/Time.js',
         '/js/admin/app/lib/picker/DateTime.js',
@@ -91,6 +95,7 @@
     ));
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',
+        '/library/extjs4/examples/ux/css/CheckHeader.css',
         '/css/admin/indi.all.css',
         '/css/admin/indi.all.default.css',
         '/css/admin/indi.layout.css',

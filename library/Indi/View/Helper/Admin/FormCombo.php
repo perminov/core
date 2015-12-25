@@ -158,10 +158,28 @@ class Indi_View_Helper_Admin_FormCombo {
         // Get satellite
         if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
 
-        // If current field column type is ENUM or SET, and current row have no selected value, we use first
+        // If combo is boolean
+        if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
+
+            // Setup a key
+            if ($this->getRow()->$name) {
+                $key = $this->getRow()->$name;
+            } else if ($comboDataRs->enumset && $this->type == 'form') {
+                $key = key($options);
+            } else {
+                $key = $this->getDefaultValue();
+            }
+
+            // Setup an info about selected value
+            if ($key) $selected = array(
+                'title' => $options[$key]['title'],
+                'value' => $key
+            );
+
+        // Else if current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
-        if ($this->field->storeRelationAbility == 'one' && ($this->filter && !$this->filter->any())) {
+        } else if ($this->field->storeRelationAbility == 'one' && ($this->filter ? !$this->filter->any() : true)) {
 
             // Setup a key
             if (($this->getRow()->id && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
@@ -200,6 +218,7 @@ class Indi_View_Helper_Admin_FormCombo {
 
         // Else if combo is mulptiple
         } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && !$this->filter->any())) {
+
             // Set value for hidden input
             $selected = array('value' => $selected);
 
@@ -214,24 +233,6 @@ class Indi_View_Helper_Admin_FormCombo {
                 }
             }
             $attrs = ' ' . implode(' ', $attrs);
-
-        // Else if combo is boolean
-        } else if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
-
-            // Setup a key
-            if ($this->getRow()->$name) {
-                $key = $this->getRow()->$name;
-            } else if ($comboDataRs->enumset && $this->type == 'form') {
-                $key = key($options);
-            } else {
-                $key = $this->getDefaultValue();
-            }
-
-            // Setup an info about selected value
-            if ($key) $selected = array(
-                'title' => $options[$key]['title'],
-                'value' => $key
-            );
         }
 
         // Prepare options data
@@ -302,9 +303,9 @@ class Indi_View_Helper_Admin_FormCombo {
         );
 
         if ($this->isMultiSelect()) {
-            if (!$this->comboDataRs->selected->count()) $view['subTplData']['selected'] = $this->selected;
+            $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
-                $item = self::detectColor(array('title' => $selectedR->title));
+                $item = self::detectColor(array('title' => $selectedR->title()));
                 $item['id'] = $selectedR->{$this->keyProperty};
                 $view['subTplData']['selected']['items'][] = $item;
             }
@@ -327,7 +328,8 @@ class Indi_View_Helper_Admin_FormCombo {
         ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', is_string($option['value']) ? $option['value'] : '', $color)) ||
         ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['title'], $color)) ||
         ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $option['title'], $color)) ||
-        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color));
+        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color)) ||
+        ($b = preg_match('/^<span class="i-color-box" style="background: (url\(.*\));[^"]*"[^>]*>/', $option['title'], $color));
 
         // If color was detected somewhere
         if ($v || $t || $s || $b || $option['boxColor']) {

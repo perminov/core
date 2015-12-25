@@ -665,6 +665,51 @@ class Indi {
     );
 
     /**
+     * Matches between recognized characters by date() and strftime() functions
+     *
+     * @var array
+     */
+    public static $date2strftime = array(
+        'd' => '%d',
+        'D' => '%a',
+        'j' => '%e',
+        'l' => '%A',
+        'N' => '%u',
+        'S' => '', // 'S' - is the 'st/nd/rd/th' day-suffix. There is no corresponding strftime-compatible character
+        'w' => '%w',
+        'z' => '%j', // (!) Note: 'z' - is from '0' to '365', in opposite to '%j' - from '001' to '366'
+        'W' => '%W',
+        'F' => '%B',
+        'm' => '%m',
+        'M' => '%b',
+        'n' => '%m', // (!) Note that 'n' - is non-zero-based, in oppisite to '%m' - is zero-based,
+        't' => '', // 't' - is the number of days on the given month. There is no corresponding strftime-compatible character
+        'L' => '', // 'L' - is the leap year indicator. There is no corresponding strftime-compatible character
+        'o' => '%g',
+        'Y' => '%Y',
+        'y' => '%y',
+        'a' => '%p',
+        'A' => '%P',
+        'B' => '', // 'B' - Swatch Internet time. There is no corresponding strftime-compatible character
+        'g' => '%l',
+        'G' => '%k',
+        'h' => '%I',
+        'H' => '%H',
+        'i' => '%M',
+        's' => '%S',
+        'u' => '', // 'u' - Microseconds. There is no corresponding strftime-compatible character
+        'e' => '', // 'e' - Timezone identifier. There is no corresponding strftime-compatible character
+        'I' => '', // 'I' - Daylight saving time flag. There is no corresponding strftime-compatible character
+        'O' => '%z',
+        'P' => '', // 'P' - Difference to Greenwich time (GMT) with colon between hours and minutes. There is no corresponding strftime-compatible character
+        'T' => '%Z',
+        'Z' => '', // 'Z' - Timezone offset in seconds. There is no corresponding strftime-compatible character
+        'c' => '', // 'c' - ISO 8601 date. There is no corresponding strftime-compatible character
+        'r' => '', // 'r' - RFC 2822 formatted date. There is no corresponding strftime-compatible character
+        'U' => ''// 'U' - Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT). There is no corresponding strftime-compatible character
+    );
+
+    /**
      * Compilation function source code, that will be passed to eval() function. Usage:
      * // 1. Setup a template for compiling
      * Indi::$cmpTpl = 'Hello <?=$user->firstName?>';
@@ -2160,9 +2205,9 @@ class Indi {
      * @static
      * @param $type
      * @param $data
-     * @return mixed
+     * @param string|bool $mail
      */
-    public static function log($type, $data) {
+    public static function log($type, $data, $mail = true) {
 
         // General info
         $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
@@ -2176,9 +2221,28 @@ class Indi {
         $msg .= '<br>' . print_r($data, true) . '<br>--------------------------------------<br><br>';
 
         // Mail
-        @mail('indi.engine@gmail.com', $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+        if ($mail) {
+
+            // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
+            $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';
+
+            // Send mail
+            @mail($mail, $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+        }
 
         // If mailing failed - write to special *.log file
         i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/' . $type . '.log');
+    }
+
+    /**
+     * Convert format options, compatible with date() function to options, compatible with strftime() function
+     *
+     * @param $format
+     * @return string
+     */
+    public static function date2strftime($format) {
+        return preg_replace_callback('/(' . implode('|', array_keys(Indi::$date2strftime)) .  ')/', function($m){
+            return Indi::$date2strftime[$m[1]];
+        }, $format);
     }
 }
