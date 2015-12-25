@@ -1170,14 +1170,17 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // We should check that column - which will be used in WHERE clause for retrieving a dependent rowset -
                 // still exists. We need to perform this check because this column may have already been deleted, if
                 // it was dependent of other column that was deleted.
-                if ($model->fields($field->alias)) {
+                if ($model->fields($field->alias) && $field->columnTypeId && Indi::db()->query(
+                    'SHOW COLUMNS FROM `' . $model->table(). '` LIKE "' . $field->alias . '"'
+                )->fetchColumn()) {
 
                     // We delete rows there $this->id in at least one field, which ->storeRelationAbility = 'one'
                     if ($field->storeRelationAbility == 'one') {
+
                         $model->fetchAll('`' . $field->alias . '` = "' . $this->id . '"')->delete();
 
-                        // If storeRelationAbility = 'many', we do not delete rows, but we delete
-                        // mentions of $this->id from comma-separated sets of keys
+                    // If storeRelationAbility = 'many', we do not delete rows, but we delete
+                    // mentions of $this->id from comma-separated sets of keys
                     } else if ($field->storeRelationAbility == 'many') {
                         $rs = $model->fetchAll('FIND_IN_SET(' . $this->id . ', `' . $field->alias . '`)');
                         foreach ($rs as $r) {
