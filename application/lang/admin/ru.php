@@ -77,7 +77,7 @@ define('I_NAVTO_PREV', 'Перейти к предыдущей записи');
 define('I_NAVTO_SIBLING', 'Перейти к любой другой записи');
 define('I_NAVTO_NEXT', 'Перейти к следующей записи');
 define('I_NAVTO_CREATE', 'Перейти к созданию новой записи');
-define('I_NAVTO_NESTED', 'Перейти к списку вложенных записей');
+define('I_NAVTO_NESTED', 'Перейти к списку вложенных записей <i>в отдельном окне системы</i>');
 define('I_NAVTO_ROWINDEX', 'Перейти к записи #');
 
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Значением поля "%s" не может быть объект');

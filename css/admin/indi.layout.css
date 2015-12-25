@@ -455,8 +455,10 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     -ms-border-radius: 0 0;
     -khtml-border-radius: 0 0;
     border-radius: 0 0;
+    box-shadow: 1px 2px 8px #929292;
 }
 .x-window-maximized.x-window-default {
+    box-shadow: none;
     padding: 0;
     background-image: -webkit-gradient(linear,50% 0,50% 100%,color-stop(0%,#dae7f6),color-stop(12px,#cddef3),color-stop(13px,#abc7ec),color-stop(14px,#abc7ec),color-stop(14px,#b8cfee),color-stop(25px,#cbddf3));
     background-image: -webkit-linear-gradient(top,#dae7f6,#cddef3 12px,#abc7ec 13px,#abc7ec 13px,#b8cfee 14px,#cbddf3 25px);
@@ -494,7 +496,18 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     -ms-border-bottom-left-radius: 0;
     -khtml-border-bottom-left-radius: 0;
     border-bottom-left-radius: 0;
-    border-top-width: 0;
+    border-top-width: 1px;
+    border-top-color: #F3F3F3;
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+    -o-box-shadow: none;
+    box-shadow: none;
+}
+.x-window-header-body-horizontal {
+    margin-top: -2px;
+}
+.x-window-maximized .x-window-header-body-horizontal {
+    margin-top: -1px;
 }
 .x-window-maximized .x-window-header-default-top {
     background: transparent;
