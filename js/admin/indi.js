@@ -57,6 +57,20 @@ Ext.define('Indi', {
         },
 
         /**
+         * Check whether `item` argument is exists within `array` argument.
+         * `array` arguments can be given not only as an array, but also as
+         * a string containing comma-separated values
+         *
+         * @param item
+         * @param array
+         * @return {Boolean}
+         */
+        in: function(item, array) {
+            if (typeof array == 'string') array = array.split(',');
+            return array.indexOf(item) != -1;
+        },
+
+        /**
          * Shortcut to trail singleton instance
          *
          * @return {Indi.lib.trail.Trail}
@@ -366,6 +380,48 @@ Ext.define('Indi', {
                     // Process response. Here we use Ext.defer to provide a visual
                     // 'white-blink' effect between destroying old and creating new
                     Ext.defer(function(){ Indi._applyResponse(response.responseText, cfg, uri); }, 10);
+                },
+                failure: function(response) {
+                    var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
+
+                    // Parse response text
+                    json = Ext.JSON.decode(response.responseText, true);
+
+                    // The the info about invalid fields from the response, and mark the as invalid
+                    if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
+
+                        // Shortcut to json.mismatch
+                        mismatch = json.mismatch;
+
+                        // Error messages storage
+                        errorByFieldO = mismatch.errors;
+
+                        // Collect all messages for them to be bit later displayed within Ext.MessageBox
+                        Object.keys(errorByFieldO).forEach(function(i){
+                            wholeFormMsg.push(errorByFieldO[i]);
+                        });
+
+                        // If we collected at least one error message, that is related to the whole form rather than
+                        // some certain field - use an Ext.MessageBox to display it
+                        if (wholeFormMsg.length) {
+
+                            msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
+
+                            // Build message
+                            msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                                + mismatch.entity.title + '"'
+                                + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
+                                + ' - выдала следующие ошибки: <br><br>' + msg;
+
+                            // Show message box
+                            Ext.MessageBox.show({
+                                title: Indi.lang.I_ERROR,
+                                msg: msg,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.ERROR
+                            });
+                        }
+                    }
                 }
             }, cfg));
         },
@@ -749,9 +805,9 @@ Ext.define('Indi', {
          *
          * @return {Number}
          */
-        mt: function(msg) {
+        mt: function() {
             var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
-            Indi._mt = m; if (msg) console.log(msg, d); return d;
+            Indi._mt = m; if (arguments.length) console.log(d, arguments); return d;
         }
     },
 

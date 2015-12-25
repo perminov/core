@@ -143,6 +143,7 @@ define('I_FORM_UPLOAD_INFMT', 'в формате');
 define('I_FORM_UPLOAD_HSIZE', 'иметь размер');
 define('I_FORM_UPLOAD_NOTGT', 'не более');
 define('I_FORM_UPLOAD_NOTLT', 'не менее');
+define('I_FORM_UPLOAD_FPREF', 'Фотография %s');
 
 define('I_FORM_DATETIME_HOURS', 'часов');
 define('I_FORM_DATETIME_MINUTES', 'минут');

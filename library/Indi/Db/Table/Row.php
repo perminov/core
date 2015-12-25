@@ -2,6 +2,13 @@
 class Indi_Db_Table_Row implements ArrayAccess
 {
     /**
+     * Table name of table, that current row is related to
+     *
+     * @var string
+     */
+    protected $_table = '';
+
+    /**
      * Original data
      *
      * @var array
@@ -57,13 +64,6 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @var array
      */
     protected $_files = array();
-
-    /**
-     * Table name of table, that current row is related to
-     *
-     * @var string
-     */
-    protected $_table = '';
 
     /**
      * Store info about errors, fired while a try to save current row
@@ -203,15 +203,21 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Rollback changes
             Indi::db()->rollback();
 
-            // Flush mismatch
-            jflush(false, array('mismatch' => array(
+            // Build an array, containing mismatches explanations
+            $mismatch = array(
                 'entity' => array(
                     'title' => $this->model()->title(),
                     'entry' => $this->id
                 ),
                 'errors' => $this->_mismatch,
                 'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
-            )));
+            );
+
+            // Log this error if logging of 'jerror's is turned On
+            if (Indi::logging('mflush')) Indi::log('mflush', $mismatch);
+
+            // Flush mismatch
+            jflush(false, array('mismatch' => $mismatch));
         }
     }
 
@@ -699,7 +705,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         } else {
 
             // If we selected option is set, or if we have keyword that results should match, special logic will run
-            if ($selected && ($fieldR->storeRelationAbility == 'one' || $selectedTypeIsKeyword)) {
+            if ($selected && (($fieldR->storeRelationAbility == 'one' && !$multiSelect) || $selectedTypeIsKeyword)) {
 
                 // We do a backup for WHERE clause, because it's backup version
                 // will be used to calc foundRows property in case if $selectedTypeIsKeyword = false
@@ -897,7 +903,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // and will cause problems in indi.combo.form.js
         $dataRs->enumset = false;
 
-        if ($fieldR->storeRelationAbility == 'many') {
+        if ($fieldR->storeRelationAbility == 'many' || $multiSelect) {
             if ($selected) {
                 // Convert list of selected ids into array
                 $selected = explode(',', $selected);

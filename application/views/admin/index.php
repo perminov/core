@@ -48,6 +48,9 @@
         '/js/admin/app/view/desktop/WindowBar.js',
         '/js/admin/app/view/desktop/TaskBar.js',
 
+        '/js/admin/app/lib/chart/HighStock.compiled.js',
+        '/js/admin/app/lib/chart/HighStockSerie.js',
+
         '/js/admin/app/lib/view/action/south/South.js',
         '/js/admin/app/lib/view/action/south/Row.js',
         '/js/admin/app/lib/view/action/south/Rowset.js',
@@ -80,6 +83,7 @@
         '/js/admin/app/lib/controller/action/Action.js',
         '/js/admin/app/lib/controller/action/Rowset.js',
         '/js/admin/app/lib/controller/action/Grid.js',
+        '/js/admin/app/lib/controller/action/Chart.js',
         '/js/admin/app/lib/controller/action/ChangeLog.js',
         '/js/admin/app/lib/controller/action/Row.js',
         '/js/admin/app/lib/controller/action/Form.js',
@@ -100,6 +104,8 @@
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
+    <script type="text/javascript" src="/library/Highstock-2.1.9/js/highstock.src.js"></script>
+    <script src="/library/Highstock-2.1.9/current-price-indicator.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
 </head>
 <body id="body">

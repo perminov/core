@@ -200,7 +200,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
 
         // Ensure page size to be fully dependent on me.ti().section.rowsOnPage
-        me.getStore().pageSize = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage;
+        me.getStore().pageSize = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage || me.ti().section.defaultLimit;
         if (me.getStore().lastOptions) me.getStore().lastOptions.limit = me.getStore().pageSize;
 
         // If there is no noReload flag turned on
@@ -569,15 +569,33 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterItemA: function() {
 
         // Declare toolbar filter panel items array, and some additional variables
-        var me = this, itemA = [], itemI, itemICustom, moreItemA = [];
+        var me = this, itemA = [], itemI, item$, itemICustom, moreItemA = [], eItem$;
 
         // Fulfil items array
         for (var i = 0; i < me.ti().filters.length; i++) {
+
+            // Get default filter config
             itemI = me.panelDocked$Filter_Default(me.ti().filters[i]);
-            itemICustom = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
-            if (typeof me[itemICustom] == 'function') itemI = me[itemICustom](itemI);
+
+            // Own element/prop, related to current filter
+            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
+
+            // Apply filter custom config
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // If item is non-empty/null/false/undefined
             if (itemI) {
+
+                // If it has no `name` prop yet - setit up
                 if (!itemI.name) itemI.name = me.ti().filters[i].foreign('fieldId').alias;
+
+                // Refresh label width
+                if (itemI.fieldLabel) itemI.labelWidth = Indi.metrics.getWidth(itemI.fieldLabel);
+
+                // Push into itemA array
                 itemA = itemA.concat(itemI.length ? itemI: [itemI]);
             }
         }
@@ -648,7 +666,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store,
-            multiSelect: parseInt(filter.any) ? true : false
+            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false
         }
     },
 
@@ -1671,7 +1689,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             name: src.id,
             closable: true,
             border: 0,
-            layout: 'fit',
+            //layout: 'fit',
             items: [{
                 xtype: 'actiontabrow',
                 id: id,

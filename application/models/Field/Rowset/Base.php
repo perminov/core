@@ -195,4 +195,22 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // we have only FALSE clauses - return single 'FALSE', otherwise, if we have no clauses at all - return null
         return count($nonFALSE) ? '(' . implode(' OR ', $nonFALSE) . ')' : (count($where) ? 'FALSE' : null);
     }
+
+    /**
+     * Merge with another instance of Field_Rowset_Base
+     *
+     * @param Field_Rowset_Base $rowset
+     * @return Field_Rowset_Base|Indi_Db_Table_Rowset
+     */
+    public function merge(Field_Rowset_Base $rowset) {
+
+        // Call parent
+        $this->callParent();
+
+        // Merge indexes
+        foreach ($rowset->column('alias') as $alias) $this->_indexes[$alias] = count($this->_indexes);
+
+        // Return itself
+        return $this;
+    }
 }

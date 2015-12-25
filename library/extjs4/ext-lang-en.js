@@ -175,7 +175,7 @@
         maxText           : "The date in this field must be before {0}",
         invalidText       : "{0} is not a valid date - it must be in the format {1}",
         format            : "Y-m-d",
-        altFormats        : "Y-m-d|m/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d"
+        altFormats        : "Y-m-d|Y-m-d H:i:s"//"Y-m-d|m/d/Y|m-d-y|m-d-Y|m/d|m-d|md|mdy|mdY|d"
       });
     }
 
