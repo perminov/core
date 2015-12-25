@@ -2,6 +2,13 @@
 class Indi_Controller_Admin_Myprofile extends Indi_Controller_Admin {
 
     /**
+     * Replace view type for 'index' action from 'grid' to 'changeLog'
+     */
+    public function adjustActionCfg() {
+        $this->actionCfg['view']['index'] = 'myProfile';
+    }
+
+    /**
      * Force to perform formAction instead of indexAction
      */
     public function preDispatch() {

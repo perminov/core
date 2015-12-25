@@ -1258,4 +1258,32 @@ class Field_Row extends Indi_Db_Table_Row {
             LIMIT 0 , 1
         ')->fetchColumn();
     }
+
+    /**
+     * Set/Unset param, stored within $this->_temporary['params'] array
+     *
+     * @param $name
+     * @param null $value
+     * @return array
+     */
+    public function param($name = null, $value = null) {
+
+        // If $value arg was explicitly given, and it was given as NULL,
+        // and $name arg exists as a key within $this->_temporary['params'] array
+        if (func_num_args() > 1 && $value === null && array_key_exists($name, $this->_temporary['params']))
+
+            // Unset such a param
+            unset($this->_temporary['params'][$name]);
+
+        // Else set up a new param under given name with given value and return it
+        else if (func_num_args() > 1) return $this->_temporary['params'][$name] = $value;
+
+        // Else if no any args given - return whole $this->_temporary['params'] array
+        // as an instance of sdClass, for all supprops to be easily available using
+        // $fieldR->param()->optionHeight
+        else if (func_num_args() == 0) return (object) $this->_temporary['params'];
+
+        // Else just return it
+        else return $this->_temporary['params'][$name];
+    }
 }

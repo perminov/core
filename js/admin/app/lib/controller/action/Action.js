@@ -106,7 +106,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Build the tail part of base id
         if (me.ti(up).row) {
             s += '-row-' + (me.ti(up).row.id || 0);
-        } else if (me.ti(up + 1).row) {
+        } else if (me.ti(up + 1) && me.ti(up + 1).row) {
             s += '-parentrow-' + me.ti(up + 1).row.id;
         }
 

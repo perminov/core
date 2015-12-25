@@ -12,29 +12,29 @@ class Indi_Controller {
         // Get the script path
         $spath = Indi::ini('view')->scriptPath;
 
-        // Get the module path
-        $mpath = Indi::uri('module') == 'front' ? '' : '/' . Indi::uri('module');
+        // Do paths setup twice: first for module-specific paths, second for general-paths
+        for ($i = 0; $i < 2; $i++) {
 
-        // Get the module helper path prefix
-        $mhpp = Indi::uri('module') == 'front' ? '' : '/' . ucfirst(Indi::uri('module'));
+            // Get the module paths and prefixes
+            $mpath =  !$i ? '/' . Indi::uri('module') : '';
+            $mhpp =   !$i ? '/' . ucfirst(Indi::uri('module')) : '';
+            $mhcp =   !$i ? ucfirst(Indi::uri('module')) . '_' : '';
 
-        // Get the module helper class prefix
-        $mhcp = Indi::uri('module') == 'front' ? '' : ucfirst(Indi::uri('module')) . '_';
+            // Add script path for certain/current project
+            if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
 
-        // Add script paths for major core part and for front core part
-        $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
-        $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
+            // Add script paths for major core part and for front core part
+            $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
+            $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
 
-        // Add script path for certain/current project
-        if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
+            // Add helper paths for certain/current project
+            if (is_dir(DOC . STD . '/www/library'))
+                $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
 
-        // Add helper paths for major core part and for front core part
-        $view->addHelperPath(DOC . STD . '/core/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
-        $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
-
-        // Add helper paths for certain/current project
-        if (is_dir(DOC . STD . '/www/library'))
-            $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
+            // Add helper paths for major core part and for front core part
+            $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
+            $view->addHelperPath(DOC . STD . '/core/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
+        }
 
         // Put view object into the registry
 		Indi::registry('view', $view);
@@ -384,7 +384,7 @@ class Indi_Controller {
                         $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
 
                         // If filter is multiple (desipite field is singe) set up $mode as `any`
-                        if ($filterR->any) $any = true;
+                        if ($filterR->any()) $any = true;
                     }
 
                     // Set up WHERE clause according to value of $any flag
@@ -417,7 +417,7 @@ class Indi_Controller {
                         $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
 
                         // If filter should search any match rather than all matches
-                        if ($filterR->any) $any = true;
+                        if ($filterR->any()) $any = true;
                     }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array
@@ -591,5 +591,170 @@ class Indi_Controller {
 
         // Make the call
         return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+    }
+
+    /**
+     * Provide default index action
+     */
+    public function indexAction() {
+
+        // If data should be got as json or excel
+        if (Indi::uri('format') || (!$this->_isRowsetSeparate && Indi::trail(true))) {
+
+            // Adjust rowset, before using it as a basement of grid data
+            $this->adjustGridDataRowset();
+
+            // Build the grid data, based on current rowset
+            $data = $this->rowset->toGridData(Indi::trail());
+
+            // Adjust grid data
+            $this->adjustGridData($data);
+
+            // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
+            if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
+
+            // If data is needed as json for extjs grid store - we convert $data to json with a proper format and flush it
+            else {
+
+                // Get scope
+                $scope = Indi::trail()->scope->toArray();
+
+                // Unset tabs definitions from json-encoded scope data, as we'd already got it previously
+                unset($scope['actionrowset']['south']['tabs']);
+
+                // Setup basic data
+                $pageData = array(
+                    'totalCount' => $this->rowset->found(),
+                    'blocks' => $data,
+                    'scope' => $scope
+                );
+
+                // Append summary data
+                if ($summary = $this->rowsetSummary()) $pageData['summary'] = $summary;
+
+                // Provide combo filters consistency
+                foreach (Indi::trail()->filters as $filter)
+                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
+                        $alias = $filter->foreign('fieldId')->alias;
+                        Indi::view()->filterCombo($filter, 'extjs');
+                        $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
+                    }
+
+                // Adjust json export
+                $this->adjustJsonExport($pageData);
+
+                // If uri's 'format' param is specified, and it is 'json' - flush json-encoded $pageData
+                if (Indi::uri('format') == 'json') jflush(true, $pageData);
+
+                // Else assign that data into scope's `pageData` prop
+                else Indi::trail()->scope->pageData = $pageData;
+            }
+        }
+    }
+
+    /**
+     * Build and return a final WHERE clause, that will be passed to fetchAll() method, for fetching section's main
+     * rowset. Function use a $primaryWHERE, merge it with $this->filtersWHERE() and append to it $this->keywordWHERE()
+     * if return values of these function are not null
+     *
+     * @param string|array $primaryWHERE
+     * @param string|array $customWHERE
+     * @param bool $merge
+     * @return null|string|array
+     */
+    public function finalWHERE($primaryWHERE, $customWHERE = null, $merge = true) {
+
+        // Empty array yet
+        $finalWHERE = array();
+
+        // If there was a primaryHash passed instead of $primaryWHERE param - then we extract all scope params from
+        if (is_string($primaryWHERE) && preg_match('/^[0-9a-zA-Z]{10}$/', $primaryWHERE)) {
+
+            // Prepare $primaryWHERE
+            $primaryWHERE = Indi::trail()->scope->primary;
+
+            // Prepare search data for $this->filtersWHERE()
+            Indi::get()->search = Indi::trail()->scope->filters;
+
+            // Prepare search data for $this->keywordWHERE()
+            Indi::get()->keyword = urlencode(Indi::trail()->scope->keyword);
+
+            // Prepare sort params for $this->finalORDER()
+            Indi::get()->sort = Indi::trail()->scope->order;
+        }
+
+        // Push primary part
+        if ($primaryWHERE || $primaryWHERE == '0') $finalWHERE['primary'] = $primaryWHERE;
+
+        // Get a WHERE stack of clauses, related to filters search and push it into $finalWHERE under 'filters' key
+        if (count($filtersWHERE = $this->filtersWHERE())) $finalWHERE['filters'] = $filtersWHERE;
+
+        // Get a WHERE clause, related to keyword search and push it into $finalWHERE under 'keyword' key
+        if ($keywordWHERE = $this->keywordWHERE()) $finalWHERE['keyword'] = $keywordWHERE;
+
+        // Append custom WHERE
+        if ($customWHERE || $customWHERE == '0') $finalWHERE['custom'] = $customWHERE;
+
+        // If WHERE clause should be a string
+        if ($merge) {
+
+            // Force $finalWHERE to be single-dimension array
+            foreach ($finalWHERE as $part => $where) if (is_array($where)) $finalWHERE[$part] = im($where, ' AND ');
+
+            // Stringify
+            $finalWHERE = implode(' AND ', $finalWHERE);
+        }
+
+        // Return
+        return $finalWHERE;
+    }
+
+    /**
+     * Builds a SQL string from an array of clauses, imploded with OR. String will be enclosed by round brackets, e.g.
+     * '(`column1` LIKE "%keyword%" OR `column2` LIKE "%keyword%" OR `columnN` LIKE "%keyword%")'. Result string will
+     * not contain search clauses for columns, that are involved in building of set of another kind of WHERE clauses -
+     * related to grid filters
+     *
+     * @param $keyword
+     * @return string
+     */
+    public function keywordWHERE($keyword = '') {
+
+        // If $keyword param is not passed we pick Indi::get()->keyword as $keyword
+        if (strlen($keyword) == 0) $keyword = Indi::get()->keyword;
+
+        // Exclusions array - we will be not trying to find a keyword in columns, that will be involved in search process
+        // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
+        // not both at the same time
+        $exclude = array_keys(Indi::obar());
+
+        // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
+        return Indi::trail()->gridFields ? Indi::trail()->gridFields->keywordWHERE($keyword, $exclude) : array();
+    }
+
+    /**
+     * Adjust rowset, before using it as a basement of grid data. This function is empty here, but may be useful in
+     * some situations
+     */
+    function adjustGridDataRowset() {
+
+    }
+
+    /**
+     * Adjust data, that was already prepared for usage in grid. This function is for ability to post-adjustments
+     *
+     * @param array $data This param is passed by reference
+     */
+    function adjustGridData(&$data) {
+
+    }
+
+    /**
+     * Empty function. To be redeclared in child classes in case of a need for an json-export adjustments
+     *
+     * @param $json
+     */
+    public function adjustJsonExport(&$json) {
+
     }
 }

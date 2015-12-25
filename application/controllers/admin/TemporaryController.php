@@ -147,4 +147,10 @@ class Admin_TemporaryController extends Indi_Controller {
         ');
         die('ok');
     }*/
+
+    /*public function wrapcssAction() {
+        Indi::wrapCss('/library/extjs4/resources/css/ext-neptune.css');
+        Indi::wrapCss('/css/admin/indi.all.neptune.css');
+        die('ok');
+    }*/
 }

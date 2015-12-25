@@ -14,7 +14,11 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public $where = null;
 
-
+    /**
+     * Field_Row instance, that current combo is linked to
+     *
+     * @var
+     */
     public $field;
 
     /**
@@ -98,6 +102,11 @@ class Indi_View_Helper_Admin_FormCombo {
         }
     }
 
+    /**
+     * Get selected value
+     *
+     * @return mixed
+     */
     public function getSelected() {
 
         // If current row does not exist, combo will use field's default value as selected value
@@ -152,7 +161,7 @@ class Indi_View_Helper_Admin_FormCombo {
         // If current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value
         // should have hidden field
-        if ($this->field->storeRelationAbility == 'one' && !$this->filter->any) {
+        if ($this->field->storeRelationAbility == 'one' && ($this->filter && !$this->filter->any())) {
 
             // Setup a key
             if (($this->getRow()->id && !$comboDataRs->enumset) || !is_null($this->getRow()->$name)) {
@@ -190,7 +199,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
         // Else if combo is mulptiple
-        } else if ($this->field->storeRelationAbility == 'many' || $this->filter->any) {
+        } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && !$this->filter->any())) {
             // Set value for hidden input
             $selected = array('value' => $selected);
 
@@ -219,7 +228,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
             // Setup an info about selected value
-            $selected = array(
+            if ($key) $selected = array(
                 'title' => $options[$key]['title'],
                 'value' => $key
             );
@@ -258,28 +267,7 @@ class Indi_View_Helper_Admin_FormCombo {
         foreach ($vars as $var) $this->$var = $$var;
 
         // If combo mode is 'extjs', we prepare a data object containing all involved info
-        if ($mode == 'extjs') $this->extjs($options); /* else {
-
-            // Start output buffering
-            ob_start();
-
-            // Encode that set in json format
-            $options = json_encode($options);
-
-            // Use different templates depend on field type
-            if ($this->field->storeRelationAbility == 'one' ||
-                ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12)) {
-                echo $this->formComboSingle();
-            } else if ($this->field->storeRelationAbility == 'many') {
-                echo $this->formComboMultiple();
-            }
-
-            // Init combo store data
-            ?><script>Indi.ready(function(){<?=$this->context?>.Indi.combo.<?=$this->type?>.store['<?=$this->name?>'] = (<?=$options?>)}, 'combo.<?=$this->type?>', <?=$this->context?>);</script><?
-
-            // Get and return buffered output
-            return ob_get_clean();
-        }*/
+        if ($mode == 'extjs') $this->extjs($options);
     }
 
     /**
@@ -290,10 +278,18 @@ class Indi_View_Helper_Admin_FormCombo {
 
     }
 
+    /**
+     * @return bool
+     */
     public function isMultiSelect() {
         return $this->field->storeRelationAbility == 'many';
     }
 
+    /**
+     * Build a config-array for combo, and assign that array into combo's view prop
+     *
+     * @param $options
+     */
     public function extjs($options) {
 
         $view = array(
@@ -306,7 +302,7 @@ class Indi_View_Helper_Admin_FormCombo {
         );
 
         if ($this->isMultiSelect()) {
-            $view['subTplData']['selected'] = $this->selected;
+            if (!$this->comboDataRs->selected->count()) $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
                 $item = self::detectColor(array('title' => $selectedR->title));
                 $item['id'] = $selectedR->{$this->keyProperty};
@@ -319,83 +315,6 @@ class Indi_View_Helper_Admin_FormCombo {
     }
 
     /**
-     * Template for single-value combo
-     */
-    public function formComboSingle(){
-		ob_start();
-        ?><div id="i-section-<?=Indi::trail()->section->alias?>-action-<?=Indi::trail()->action->alias?>-row-<?=Indi::trail()->row->id?>-field-<?=$this->name?>-combo" class="i-combo i-combo-<?=$this->type?>"><?
-            ?><div class="i-combo-single x-form-text"><?
-                ?><table class="i-combo-table"><tr><?
-                    ?><td class="i-combo-color-box-cell"><?
-                        ?><div class="i-combo-color-box-div"><?
-                        $this->selected = self::detectColor($this->selected); echo $this->selected['box'];
-                        ?></div><?
-                    ?></td><?
-                    ?><td class="i-combo-keyword-cell"><?
-                        ?><div class="i-combo-keyword-div"><?
-                            ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>" placeholder="<?=$this->params['placeholder']?>"/><?
-                            ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-                        ?></div><?
-                    ?></td><?
-                    ?><td class="i-combo-info-cell"><?
-                        ?><div class="i-combo-info-div"><?
-                            ?><table class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><tr><?
-                                ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
-                                ?><td><span class="i-combo-of"><?=I_COMBO_OF?></span></td><?
-                                ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
-                            ?></tr></table><?
-                        ?></div><?
-                    ?></td><?
-                    ?><td class="i-combo-trigger-cell"><?
-                        ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
-                    ?></td><?
-                ?></tr></table><?
-            ?></div><?
-        ?></div><?
-        return ob_get_clean();
-    }
-
-    /**
-     * Template for mutiple-value combo
-     */
-    public function formComboMultiple() {
-        ob_start();
-        ?><div id="i-section-<?=Indi::trail()->section->alias?>-action-<?=Indi::trail()->action->alias?>-row-<?=Indi::trail()->row->id?>-field-<?=$this->name?>-combo" class="i-combo i-combo-<?=$this->type?>"><?
-            ?><div class="i-combo-multiple x-form-text"><?
-            foreach($this->comboDataRs->selected as $selectedR) {
-                $item = self::detectColor(array('title' => $selectedR->title));
-                ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style'] ? $item['style'] : ($item['font'] ? ' style="' . $item['font'] . '"' : '')?>><?
-                    ?><?=$item['box'] . usubstr($item['title'], 50)?><?
-                    ?><span class="i-combo-selected-item-delete"></span><?
-                ?></span><?
-            }
-                ?><div class="i-combo-table-wrapper" id="<?=$this->name?>-table-wrapper"><table class="i-combo-table"><tr><?
-                    ?><td class="i-combo-keyword-cell"><?
-                        ?><div class="i-combo-keyword-div"><?
-                            ?><input class="i-combo-keyword" type="text" id="<?=$this->name?>-keyword" lookup="<?=$this->name?>" value="" no-lookup="<?=$this->params['noLookup']?>"/><?
-                            ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-                        ?></div><?
-                    ?></td><?
-                    ?><td class="i-combo-info-cell"><?
-                        ?><div class="i-combo-info-div"><?
-                            ?><table class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->satellite->alias?>" changed="false"><tr><?
-                                ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
-                                ?><td><span class="i-combo-of"><?=I_COMBO_OF?></span></td><?
-                                ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
-                            ?></tr></table><?
-                        ?></div><?
-                    ?></td><?
-                    ?><td class="i-combo-trigger-cell"><?
-                        ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
-                    ?></td><?
-                ?></tr></table></div><?
-                ?><div class="i-combo-clear" style="clear: both;"></div><?
-            ?></div><?
-        ?></div><?
-        return ob_get_clean();
-    }
-
-    /**
      * Check if option contain a color definition, and if so, extract that color, build color box (in some cases) and
      * prepare some auxiliary data
      *
@@ -405,7 +324,7 @@ class Indi_View_Helper_Admin_FormCombo {
     public static function detectColor($option) {
 
         // Color detection in different places within one certain option
-        ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['value'], $color)) ||
+        ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', is_string($option['value']) ? $option['value'] : '', $color)) ||
         ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['title'], $color)) ||
         ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $option['title'], $color)) ||
         ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color));
@@ -443,8 +362,9 @@ class Indi_View_Helper_Admin_FormCombo {
         // applied at the moment of indi.combo.js maintenance, because indi.combo.js may run earlier than css files
         // loaded and this may cause wrong calculation of widths of selected options in multiple-combos, as by default
         // options's text is in 'Times New Roman' font, which have letter widths, differerent from other fonts
-        $option['font'] = ' font-family: tahoma, arial, verdana, sans-serif;';
+        //$option['font'] = ' font-family: tahoma, arial, verdana, sans-serif;';
 
+        // Return
         return $option;
     }
 }

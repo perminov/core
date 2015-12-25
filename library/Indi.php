@@ -9,6 +9,25 @@ class Indi {
     protected static $_registry = array();
 
     /**
+     * An internal array, containing info related to what kind of suspicious events should be logged.
+     * Currently is has two types of such events: 'jerror' and 'mflush'. Logging of 'jerror' events
+     * is turned On (e.g is boolean `true`) by default, as if such an event occurs, this mean that
+     * there is something wrong with php-code, logic or smth, and this have to be investigated by developer.
+     * Logging of 'mflush' events is turned Off (e.g is boolean `false`) by default, because in most cases
+     * such events means that user is trying to assign an incorrect values for an some entry's fields,
+     * and he is informed about that by the UI of Indi Engine, so he has the ability to check/fix incorrect
+     * values and try to save the entry again. However, sometimes it is useful to turn it 'On'. Currently
+     * such an approach will be useful if there is some background operations, performed by Cron, etc,
+     * so, in those cases problems happened but nobody see it, and logging for them is the only way to be informed
+     *
+     * @var array
+     */
+    protected static $_logging = array(
+        'jerror' => true,
+        'mflush' => false
+    );
+
+    /**
      * An internal static variable, will be used to store data, got from `staticblock` table 
 	 * as an assotiative array  and that should be accessible anywhere
      *
@@ -57,9 +76,15 @@ class Indi {
         'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
         'urichunk' => '',
         'varchar255' => '/^[.\s]{0,255}$/',
-        'dir' => ':^([A-Z][\:])?/.*/$:'
+        'dir' => ':^([A-Z][\:])?/.*/$:',
+        'grs' => '/^[a-zA-Z0-9]{15}$/'
     );
 
+    /**
+     * Mime types dictionary
+     *
+     * @var array
+     */
     protected static $_mime = array(
 
         'definitive' => array (
@@ -1049,7 +1074,7 @@ class Indi {
 
                 // Convert relative paths, mentioned in css files to paths, relative to web root
                 $txt = preg_replace('!url\((\'|)/!', 'url($1' . STD . '/', $txt);
-                $txt = preg_replace('!url\(\'\.\./\.\./resources!', 'url(\'' . STD . '/library/extjs4/resources', $txt);
+                $txt = preg_replace('!url\((\'|"|)\.\./\.\./resources!', 'url($1' . STD . '/library/extjs4/resources', $txt);
 
                 // Remove comments from css
                 $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
@@ -1377,6 +1402,47 @@ class Indi {
         return $alias ? self::$_rex[$alias] : null;
     }
 
+
+    /**
+     * Call preg_match() using pattern, stored within Indi::$_rex array under $rex key and using given $subject
+     *
+     * @static
+     * @param $rex
+     * @param $subject
+     * @return array|null
+     */
+    public static function rexm($rex, $subject){
+
+        // Check that self::$_rex array has a value under $alias key
+        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+
+        // Match
+        preg_match($rex, $subject, $found);
+
+        // Return
+        return $found;
+    }
+
+    /**
+     * Call preg_match_all() using pattern, stored within Indi::$_rex array under $rex key and using given $subject
+     *
+     * @static
+     * @param $rex
+     * @param $subject
+     * @return array|int
+     */
+    public static function rexma($rex, $subject) {
+
+        // Check that self::$_rex array has a value under $alias key
+        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+
+        // Match
+        $success = preg_match_all($rex, $subject, $found);
+
+        // Return
+        return $success ? $found : $success;
+    }
+
     /**
      * Shortcut for Indi_Trail_Admin. Usage:
      *
@@ -1411,9 +1477,15 @@ class Indi {
 
         // Else print backtrace, as the fact that we are here mean that we faced an attempt to call method item()
         // on a non-object, and standard error message is not usefult here, as doesn't give any backtrace
-        else {debug_print_backtrace();die();}
-    }
+        else {
 
+            // Print backtrace
+            debug_print_backtrace();
+
+            // Die
+            iexit();
+        }
+    }
 
     /**
      * Load cache files if need
@@ -1890,5 +1962,223 @@ class Indi {
 
         // Return $raw response, or error, if it has occured
         return $error ? $error : $raw;
+    }
+
+    /**
+     * Send all DELETE queries to an email for debugging
+     *
+     * @static
+     * @return mixed
+     */
+    public static function mailDELETE() {
+
+        // If no items in Indi_Db::$DELETEQueryA - return
+        if (!count(Indi_Db::$DELETEQueryA)) return;
+
+        // If DELETE queries logging is notturned On - return
+        if (!Indi::ini('db')->log->DELETE) return;
+
+        // General info
+        $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
+        $msg .= 'URI: ' . URI . '<br>';
+        $msg .= 'Admin: ' . Indi::admin()->title . '<br>';
+        $msg .= 'User: ' . Indi::user()->title . '<br><br>';
+
+        // DELETE queries
+        foreach (Indi_Db::$DELETEQueryA as $i => $DELETEQueryI)
+            $msg .= '#' . ($i + 1)
+                . '-' . ($DELETEQueryI['affected'] === false ? 'false' : $DELETEQueryI['affected'] + '') . ': '
+                . nl2br($DELETEQueryI['sql']) . '<br>';
+
+        // Separator
+        $msg .= '--------------------------------------<br><br>';
+
+        // Empty
+        Indi_Db::$DELETEQueryA = array();
+
+        // Mail
+        @mail('indi.engine@gmail.com', 'DELETE query at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+
+        // If mailing failed - write to special DELETE.log file
+        i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/DELETE.log');
+    }
+
+    /**
+     * Get a value by a given $key from `config` db table
+     *
+     * @static
+     * @param $key
+     * @return mixed
+     */
+    public static function cfg($key) {
+        return Indi::model('Config')->fetchRow('`alias` = "' . $key . '"')->currentValue;
+    }
+
+    /**
+     * Toggle on/off implicit flushing
+     *
+     * @static
+     * @param $flag bool
+     */
+    public static function iflush($flag) {
+
+        // Set up no cache
+        if ($flag && !headers_sent()) header('Cache-Control: no-cache');
+
+        // Set up output buffering implicit flush mode
+        ob_implicit_flush($flag);
+
+        // Flush
+        if ($flag) ob_end_flush();
+    }
+
+    /**
+     * Prepend every selector found within css file, located at given $cssFile filepath definition,
+     * with given $wrapWithSelector, for for example if one of css rules is:
+     *
+     *      strong {font-size: 100%;}
+     *
+     * and $wrapWithSelector arg is '.extjs', then the above rule will be changed to
+     *
+     *      .extjs strong {font-size: 100%;}
+     *
+     * Css contents with all selector prefixed will be saved in a separate file, having name as original
+     * but with postfix given by $cssFilenamePostfix arg.
+     *
+     * This function is currently used to prevent ExtJS styles to conflict with any other other 3rd-party styles,
+     * this happens in case when ExtJS app is injected into ordinary website page
+     *
+     * @param $cssFile
+     * @param string $wrapWithSelector
+     * @param string $cssFilenamePostfix
+     */
+    public function wrapCss($cssFile, $wrapWithSelector = '[i-load]', $cssFilenamePostfix = '_prefixed') {
+
+        // This may take a time
+        set_time_limit(0);
+
+        // If $cssFile arg does not contain a valid absolute path
+        if ($cssFile != str_replace('\\', '/', realpath($cssFile))) {
+
+            // Find css-file absolute path
+            foreach (ar('www,coref,core') as $rep)
+                if (is_file($abs_ = DOC . '/' . $rep .  $cssFile) && $abs = $abs_)
+                    break;
+
+            // If $abs is still not defined
+            if (!$abs) iexit('Given file ' . $cssFile . ' is not a file');
+
+        // Else we assume that $cssFile arg is an absolute path
+        } else if (!(($abs_ = realpath($cssFile)) && $abs = $abs_)) iexit('Given file ' . $cssFile . ' is not a file');
+
+        // Get css filepath info
+        $info = pathinfo($abs);
+
+        // Check that given file is a css file
+        if ($info['extension'] != 'css') iexit('Given file ' . $cssFile . ' is not a css file');
+
+        // Build absolute filename for file, what will be used for containing prefixed version of original css file contents
+        $abs_prefixed = $info['dirname'] . '/' . $info['filename'] . $cssFilenamePostfix . '.' . $info['extension'];
+
+        // Get raw contents of css-file
+        $raw = file_get_contents($abs);
+
+        // Start implicit flushing
+        Indi::iflush(true);
+
+        // Explode css
+        $rawA = explode('/* i-style-splitter */', $raw); $outA = array();
+
+        // Info message
+        d('Css parts: ' . count($rawA));
+
+        if (count($rawA) < (strlen($raw) / (50 * 1024)))
+            iexit('Css file <span style="font-weight: bold;">' . $abs . '</span> is too large to be processed with '
+                . 'Sabberworm CSS Parser. Please split that css file\'s contents by inserting '
+                . '<span style="font-weight: bold;">/* i-style-splitter * /</span> '
+                . 'after each 1000 (approximately) lines of css-rules code');
+
+        // Foreach part of raw css
+        foreach ($rawA as $i => $raw) {
+
+            // Info message
+            mt(); d('Processing part: ' . ($i + 1) . '...');
+
+            // Strip comments
+            $raw = preg_replace('!/\*.*?\*/!s', '', $raw);
+
+            // Init parser and parse
+            $parserO = new Sabberworm\CSS\Parser($raw); $rawO = $parserO->parse();
+
+            foreach($rawO->getAllDeclarationBlocks() as $blockO)
+                foreach($blockO->getSelectors() as $selectorO)
+                    if (!preg_match('/^\.x-(boundlist|layer|css-shadow)/', $s = ltrim($selectorO->getSelector())))
+                        $selectorO->setSelector($wrapWithSelector . ' '. $selectorO->getSelector());
+
+            // Get raw css contents having every selector prepended with $prepend
+            $outA[] = $raw = $rawO->render();
+
+            // Info message
+            d('Processed part: ' . ($i +1) . ', time taken: ' . mt());
+        }
+
+        // Write safe css into a file
+        file_put_contents($abs_prefixed, im($outA, "\n"));
+
+        // End implicit flushing
+        Indi::iflush(false);
+    }
+
+    /**
+     * Get current modes of all suspicious events or of a certain event, specified by $type arg,
+     * or set mode of a certain suspicious event
+     *
+     * @static
+     * @param string $type
+     * @param bool $flag
+     * @return array|null|bool
+     */
+    public static function logging($type = null, $flag = null) {
+
+        // If no arguments given - return current state
+        if (func_num_args() == 0) return self::$_logging;
+
+        // If $type arg is not a string - return
+        if (!is_string($type) || !in_array($type, array_keys(self::$_logging))) return null;
+
+        // If only $type arg is given - return whether or not logging of events of such a type is turned On
+        if (func_num_args() == 1) return self::$_logging[$type];
+
+        // If $flag arg is not boolean - return null
+        if (!is_bool($flag)) return null;
+
+        // Assign $flag as a value for item within self::$_log array, under $type key, and return it
+        return self::$_logging[$type] = $flag;
+    }
+
+    /**
+     * @static
+     * @param $type
+     * @param $data
+     * @return mixed
+     */
+    public static function log($type, $data) {
+
+        // General info
+        $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
+        $msg .= 'URI: ' . URI . '<br>';
+
+        // Who?
+        if (Indi::admin()->id) $msg .= 'Admin [id#' . Indi::admin()->id . ']: ' . Indi::admin()->title . '<br>';
+        if (Indi::user()->id) $msg .= 'User [id#' . Indi::user()->id . ']: ' . Indi::user()->title . '<br>';
+
+        // Spacer, data and separator
+        $msg .= '<br>' . print_r($data, true) . '<br>--------------------------------------<br><br>';
+
+        // Mail
+        @mail('indi.engine@gmail.com', $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+
+        // If mailing failed - write to special *.log file
+        i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/' . $type . '.log');
     }
 }

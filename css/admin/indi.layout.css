@@ -647,3 +647,16 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     text-decoration: underline;
 }
 
+.x-column-header.i-tooltip .x-column-header-text {
+    border-bottom: 1px dotted gray;
+}
+.i-prompt .x-form-item-label {
+    padding-left: 0;
+}
+
+.i-grid-cell-color-lightgray .x-grid-cell-inner{
+    color: lightgray;
+}
+.i-grid-cell-color-red .x-grid-cell-inner{
+    color: red;
+}
