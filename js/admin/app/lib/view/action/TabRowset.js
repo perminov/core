@@ -28,13 +28,26 @@ Ext.define('Indi.lib.view.action.TabRowset', {
 
     // @inheritdoc
     onLoad: function() {
-        var me = this;
+        var me = this, activeTabName, activeTabHeight;
+
+        // Try detect active tab name
+        try {
+            activeTabName = me.up('[isWrapper]').$ctx.ti().scope.actionrow.south.activeTab;
+            activeTabHeight = me.up('[isWrapper]').$ctx.ti().scope.actionrow.south.height;
+        } catch (e) {}
 
         // Call tab mixin same method
         me.mixins.tab.onLoad.call(me);
 
         // Load store
         me.loadStore();
+
+        // Fit
+        if ((activeTabName && me.$ctx.ti().section.alias != activeTabName) || activeTabHeight == 25) {
+            me.up('[isSouth]').getHeightUsage();
+            me.up('[isWrapper]').fitSouth();
+            me.up('[isSouth]').setHeight();
+        }
     },
 
     /**
