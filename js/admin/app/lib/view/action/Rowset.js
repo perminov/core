@@ -86,7 +86,7 @@ Ext.define('Indi.lib.view.action.Rowset', {
         var me = this, center = me.down('[region="center"]'), south = me.down('[isSouth]');
 
         // If there is no south panel, or it is minimied - return
-        if (!south || !me.heightUsage || south.getHeight() == 25) return;
+        if (!south || !me.heightUsage) return;
 
         // If total usage is less than total height
         if (me.getHeight() >= me.heightUsage.total) {

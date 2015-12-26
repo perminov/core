@@ -460,7 +460,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Set up context to be available as panel's `$ctx` prop
         me.panel.$ctx = me;
 
-        // If all contents should be added to existing panel
+        // If all contents should be added to a window
         if (!me.cfg.into) {
 
             // Append tools and toolbars to the main panel
@@ -468,6 +468,12 @@ Ext.define('Indi.lib.controller.action.Action', {
 
             // Update id of the main panel (temporary)
             Indi.centerId = me.panel.id;
+
+        // Else
+        } else {
+
+            // Remove layout definition
+            delete me.panel.layout;
         }
 
         // Create panel instance

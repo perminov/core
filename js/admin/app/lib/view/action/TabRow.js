@@ -35,6 +35,11 @@ Ext.define('Indi.lib.view.action.TabRow', {
 
         // Update `name` property for the tab, to provide tabs remember at it's most recent state
         me.up('[isSouthItem]').name = parseInt(ctx.ti().row.id) || 0;
+
+        // Fit
+        me.up('[isSouth]').getHeightUsage();
+        me.up('[isWrapper]').fitSouth();
+        me.up('[isSouth]').setHeight();
     },
 
     /**
