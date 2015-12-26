@@ -51,6 +51,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
+                },
+                resize: function(c) {
+                    c.getEl().setStyle('overflow', '');
+                    Ext.defer(function(){
+                        if(c.getEl()) c.getEl().setStyle('overflow', 'auto');
+                    }, 1);
                 }
             }
         },

@@ -18,6 +18,11 @@ Ext.define('Indi.lib.view.action.south.South', {
     // @inheritdoc
     minHeight: 25,
 
+    /**
+     *
+     */
+    collapsedHeight: 25,
+
     // @inheritdoc
     region: 'south',
 
@@ -59,7 +64,18 @@ Ext.define('Indi.lib.view.action.south.South', {
 
         // Bind `tabchange` event listener
         me.on('tabchange', function(){
-            if (me.rendered && (tab = me.getActiveTab().down('[isTab]'))) tab.doLoad();
+            if (me.rendered && (tab = me.getActiveTab().down('[isTab]'))) {
+                if (tab.loaded) {
+                    if (tab.ownerSouth) {
+                        me.height = tab.ownerSouth.height;
+                        me.heightPercent = tab.ownerSouth.heightPercent;
+                        me.resizer.north.setVisible(tab.ownerSouth.resizable);
+                        me.setHeight();
+                    }
+                } else {
+                    tab.doLoad();
+                }
+            }
         });
 
         // Call parent
@@ -91,13 +107,26 @@ Ext.define('Indi.lib.view.action.south.South', {
         if (e.getTarget('.x-tab-close-btn') || e.getTarget('.x-box-scroller')) return;
 
         // If click was made on tab, but south panel is not minimized - return
-        if (h != me.minHeight && e.getTarget('.x-tab')) return;
+        if (h != me.collapsedHeight && e.getTarget('.x-tab')) return;
 
         // If we reach this line, and south panel is not minimized - minimize it, else
-        if (h != me.minHeight) me.setHeight(me.minHeight); else {
+        if (h != me.collapsedHeight) {
+
+            if (me.minHeight != me.collapsedHeight) {
+                me.minHeightBackup = parseInt(me.minHeight);
+                me.minHeight = parseInt(me.collapsedHeight);
+            }
+
+            me.setHeight(me.collapsedHeight);
+        } else {
 
             // Set `height` to be the same as `heightPercent`, so `height` will be in percents rather than in pixels
             me.height = me.heightPercent;
+
+            if (me.minHeightBackup) {
+                me.minHeight = parseInt(me.minHeightBackup);
+                delete me.minHeightBackup;
+            }
 
             // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
             me.setHeight();
@@ -118,8 +147,14 @@ Ext.define('Indi.lib.view.action.south.South', {
 
         // Force `height` property to be expressed in percents rather than in pixels,
         // if new size was applied using Ext.resizer.Resizer
-        if (Ext.EventObject.getTarget() && Ext.EventObject.getTarget('.x-resizable-proxy'))
+        if (Ext.EventObject.getTarget() && Ext.EventObject.getTarget('.x-resizable-proxy')) {
             me.height = me.heightPercent = Math.ceil(arguments[1]/me.up('[isWrapper]').body.getHeight() * 100) + '%';
+            if (me.getActiveTab().down('[isTab]').ownerSouth) {
+                me.getActiveTab().down('[isTab]').ownerSouth.height = me.height;
+                me.getActiveTab().down('[isTab]').ownerSouth.heightPercent = me.heightPercent;
+            }
+        }
+
 
         // Try to load the contents of tab. Try will be successful only in case if
         // a numder of conditions are in place. NOTE: The check if they are in place or not
