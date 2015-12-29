@@ -77,7 +77,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                     foreach ($this->fields as $fieldR) {
                         if ($gridR->fieldId == $fieldR->id) {
                             $gridFieldI = $fieldR;
-                            if ($gridR->alterTitle) $gridFieldI->title = $gridR->alterTitle;
                             $gridFieldA[] = $gridFieldI;
                             $gridFieldAliasA[] = $gridFieldI->alias;
                         }
