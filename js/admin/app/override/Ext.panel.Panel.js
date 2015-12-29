@@ -61,7 +61,9 @@ Ext.override(Ext.panel.Panel, {
      * @return {Number}
      */
     getWidthUsage: function() {
-        return Math.max(this.getDockedItemsWidthUsage(),  this.getInnerItemsWidthUsage());
+        var me = this;
+        me.widthUsage = Math.max(this.getDockedItemsWidthUsage(),  this.getInnerItemsWidthUsage());
+        return me.widthUsage;
     },
 
     /**

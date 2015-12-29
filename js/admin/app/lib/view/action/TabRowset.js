@@ -28,7 +28,7 @@ Ext.define('Indi.lib.view.action.TabRowset', {
 
     // @inheritdoc
     onLoad: function() {
-        var me = this, activeTabName, activeTabHeight;
+        var me = this, activeTabName, activeTabHeight, w = me.up('[isWrapper]').getWindow();
 
         // Try detect active tab name
         try {
@@ -44,10 +44,18 @@ Ext.define('Indi.lib.view.action.TabRowset', {
 
         // Fit
         if ((activeTabName && me.$ctx.ti().section.alias != activeTabName) || activeTabHeight == 25) {
-            me.up('[isSouth]').getHeightUsage();
-            me.up('[isWrapper]').fitSouth();
-            me.up('[isSouth]').setHeight();
+            if (!w.maximized) {
+                me.up('[isWrapper]').fitWindow();
+            } else {
+                me.up('[isSouth]').getHeightUsage();
+                me.up('[isWrapper]').fitSouth();
+                me.up('[isSouth]').setHeight();
+            }
         }
+
+        // Set up `actionrow` obj within scope
+        var s = me.up('[isWrapper]').$ctx.ti().scope;
+        if (!s.actionrow) s.actionrow = {south: {activeTab: me.$ctx.ti().section.alias}}
     },
 
     /**

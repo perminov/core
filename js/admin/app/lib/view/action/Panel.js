@@ -92,7 +92,8 @@ Ext.define('Indi.lib.view.action.Panel', {
      * Set window's height to fit actual content's height
      *
      */
-    fitWindow: function() {
+    fitWindow: function(delta) {
+
         var me = this, window = me.getWindow(), windowFrameHeight, windowFrameWidth, height, width,
             center = Ext.getCmp('i-center-center'), maxWidth = center.getWidth(), maxHeight = center.getHeight();
 
@@ -106,13 +107,13 @@ Ext.define('Indi.lib.view.action.Panel', {
             windowFrameHeight = window.getHeight() - me.getHeight();
 
             // Get real height usage
-            width = me.getWidthUsage() + windowFrameWidth;
+            width = (arguments.length ? me.widthUsage : me.getWidthUsage()) + windowFrameWidth;
 
             // Set window's height to fit actual content's height
             window.setWidth(width);
 
             // Get real height usage
-            height = me.getHeightUsage() + windowFrameHeight + 1;
+            height = (arguments.length ? me.heightUsage.total + delta : me.getHeightUsage()) + windowFrameHeight + 1;
 
             // Decide whether to maximize window or make it fit-sized
             if (height > maxHeight * 0.9) {
