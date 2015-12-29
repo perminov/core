@@ -23,6 +23,11 @@ Ext.define('Indi.lib.view.action.south.South', {
      */
     collapsedHeight: 25,
 
+    /**
+     *
+     */
+    lastHeightUsage: null,
+
     // @inheritdoc
     region: 'south',
 
@@ -60,7 +65,7 @@ Ext.define('Indi.lib.view.action.south.South', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this, tab;
+        var me = this, tab, w;
 
         // Bind `tabchange` event listener
         me.on('tabchange', function(){
@@ -71,6 +76,10 @@ Ext.define('Indi.lib.view.action.south.South', {
                         me.heightPercent = tab.ownerSouth.heightPercent;
                         me.resizer.north.setVisible(tab.ownerSouth.resizable);
                         me.setHeight();
+                        if (!me.up('[isWrapper]').getWindow().maximized) {
+                            me.up('[isWrapper]').fitWindow(me.lastHeightUsage.total - me.heightUsage.total);
+                        }
+
                     }
                 } else {
                     tab.doLoad();
@@ -101,7 +110,7 @@ Ext.define('Indi.lib.view.action.south.South', {
      * @param e Event
      */
     onTabBarClick: function(e) {
-        var me = this, h = me.getHeight();
+        var me = this, h = me.getHeight(), w = me.up('[isWrapper]').getWindow();
 
         // If click was made on tab close icon, or on a scroller - return
         if (e.getTarget('.x-tab-close-btn') || e.getTarget('.x-box-scroller')) return;
@@ -118,6 +127,12 @@ Ext.define('Indi.lib.view.action.south.South', {
             }
 
             me.setHeight(me.collapsedHeight);
+
+            if (!w.maximized) {
+                w.setHeight(w.getHeight() - (h - me.collapsedHeight));
+                w.center();
+            }
+
         } else {
 
             // Set `height` to be the same as `heightPercent`, so `height` will be in percents rather than in pixels
@@ -128,8 +143,25 @@ Ext.define('Indi.lib.view.action.south.South', {
                 delete me.minHeightBackup;
             }
 
-            // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
-            me.setHeight();
+            if (!w.maximized) {
+
+                if (me.getActiveTab().down('[isTab]').loaded) {
+
+                    // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
+                    me.setHeight();
+
+                    w.setHeight(w.getHeight() + (me.getHeight() - me.collapsedHeight));
+                    w.center();
+
+                } else {
+                    me.setHeight();
+                }
+
+            } else {
+
+                // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
+                me.setHeight();
+            }
         }
     },
 
@@ -165,6 +197,17 @@ Ext.define('Indi.lib.view.action.south.South', {
 
         // Return
         return me;
+    },
+
+    // @inheritdoc
+    getHeightUsage: function() {
+        var me = this;
+
+        // Remember last height usage
+        me.lastHeightUsage = Ext.clone(me.heightUsage);
+
+        // Call parent
+        return me.callParent();
     },
 
     /**

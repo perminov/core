@@ -41,7 +41,7 @@ Ext.define('Indi.lib.view.action.Tab', {
         if (me.loaded || me.isLoading) return;
 
         // If south panel is minified - return
-        if (me.up('tabpanel').height == me.up('tabpanel').minHeight) return;
+        if (me.up('tabpanel').height == me.up('tabpanel').collapsedHeight) return;
 
         // Build load config
         cfg = {into: me.up('[isSouthItem]').id, insteadOf: me.insteadOf};
