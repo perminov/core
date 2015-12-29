@@ -104,6 +104,7 @@ Ext.define('Indi.lib.form.field.SiblingCombo', {
         });
 
         // Set width
-        me.setWidth(width);
+        me.setWidth(width); // todo: investigate why setWidth() call does not affect actual width
+        me.minWidth = width;
     }
 });
