@@ -111,7 +111,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Default column config
         return {
             id: me.bid() + '-rowset-grid-column-' + field.alias,
-            header: field.title,
+            header: column.alterTitle || field.title,
             dataIndex: field.alias,
             tooltip: tooltip,
             cls: tooltip ? 'i-tooltip' : undefined,
