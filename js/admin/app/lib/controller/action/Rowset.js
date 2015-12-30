@@ -917,24 +917,36 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDockedInner$Actions: function() {
 
         // Setup auxillirary variables
-        var me = this, actionItemA = [], actionItem, actionItemCustom, actionItemCreate = me.panelDockedInner$Actions$Create();
+        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
 
         // Append 'Create' action button
-        if (actionItemCreate) actionItemA.push(actionItemCreate);
+        if (itemICreate) itemA.push(itemICreate);
 
         // Append other action buttons
         for (var i = 0; i < me.ti().actions.length; i++) {
-            actionItem = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
-            actionItemCustom = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (typeof me[actionItemCustom] == 'function') actionItem = me[actionItemCustom](actionItem);
-            if (actionItem) actionItemA.push(actionItem);
+
+            // Get default column config
+            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
+
+            /*itemICustom = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
+            if (typeof me[itemICustom] == 'function') itemI = me[itemICustom](itemI);*/
+
+            // Apply custom config
+            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
         }
 
         // Push a separator
-        if (actionItemA.length) actionItemA.push('-');
+        if (itemA.length) itemA.push('-');
 
         // Return
-        return actionItemA;
+        return itemA;
     },
 
     /**
