@@ -630,7 +630,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 if (isset($typeA['foreign']['multiple'][$columnI]))
                     foreach ($r->foreign($columnI) as $m)
                         $data[$pointer][$columnI] .= $m
-                            ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]) ? $titleColumn : 'title'} .
+                            ->{is_string($titleColumn = $typeA['foreign']['multiple'][$columnI]) ? $titleColumn : 'title'} .
                             ($r->foreign($columnI)->key() < $r->foreign($columnI)->count() - 1 ? ', ' : '');
 
                 // If field column type is 'date' we adjust it's format if need. If date is '0000-00-00' we set it
