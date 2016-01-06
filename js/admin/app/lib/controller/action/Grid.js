@@ -119,15 +119,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
                     [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
-            }(),
-            renderer: function (value) {
-                if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
-                if (String(value).match(/ class="i-color-box"/))
-                    return String(value).match(/ class="i-color-box" style="background:\surl\(/)
-                        ? '<div class="i-bgimg-box-wrap">'+value+'</div>'
-                        : '<div class="i-color-box-wrap">'+value+'</div>';
-                return value;
-            }
+            }()
         }
     },
 
@@ -150,20 +142,128 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return columnA;
     },
 
+    ////////////////////////////////
+    // Grid column cell renderers //
+    ////////////////////////////////
+
+    /**
+     * Default renderer for text columns
+     *
+     * @param value
+     * @return {*}
+     */
+    gridColumnRenderer_Text: function (value) {
+        if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
+        if (String(value).match(/ class="i-color-box"/))
+            return String(value).match(/ class="i-color-box" style="background:\surl\(/)
+                ? '<div class="i-bgimg-box-wrap">'+value+'</div>'
+                : '<div class="i-color-box-wrap">'+value+'</div>';
+        return value;
+    },
+
+    /**
+     * Default renderer for numeric columns
+     *
+     * @param v
+     * @param m
+     * @param r
+     * @param i
+     * @param c
+     * @param s
+     * @return {*}
+     */
+    gridColumnRenderer_Numeric: function(v, m, r, i, c, s) {
+        var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
+        if (column.displayZeroes === false && parseFloat(v) == 0) return '';
+        return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
+    },
+
+    /**
+     * Renderer fn for string-columns
+     *
+     * @return {*}
+     */
+    gridColumnXString_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for combo-columns
+     *
+     * @return {*}
+     */
+    gridColumnXCombo_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for textarea-columns
+     *
+     * @return {*}
+     */
+    gridColumnXTextarea_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for radio-columns
+     *
+     * @return {*}
+     */
+    gridColumnXRadio_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for number-columns
+     *
+     * @return {*}
+     */
+    gridColumnXNumber_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Numeric.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for price-columns
+     *
+     * @return {*}
+     */
+    gridColumnXPrice_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Numeric.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for decimal143-columns
+     *
+     * @return {*}
+     */
+    gridColumnXDecimal143_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Numeric.apply(this, arguments);
+    },
+
+    /**
+     * Default config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
     gridColumnXNumber: function(column, field) {
         return {
             thousandSeparator: ' ',
             decimalSeparator: '.',
             decimalPrecision: 0,
-            displayZeroes: true,
-            renderer: function(v, m, r, i, c, s) {
-                var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
-                if (column.displayZeroes === false && parseFloat(v) == 0) return '';
-                return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-            }
+            displayZeroes: true
         }
     },
 
+    /**
+     * Default config for price-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
     gridColumnXPrice: function(column, field) {
         return Ext.merge(this.gridColumnXNumber(column, field), {
             displayZeroes: true,
@@ -171,6 +271,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
     },
 
+    /**
+     * Default config for decimal143-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
     gridColumnXDecimal143: function(column, field) {
         return Ext.merge(this.gridColumnXNumber(column, field), {
             displayZeroes: true,
@@ -178,11 +285,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
     },
 
-    gridColumnXMove: function(column, field) {
-        return {
-            hidden: true
-        }
-    },
+    /**
+     * Default config for move-columns
+     */
+    gridColumnXMove: {hidden: true},
 
     /**
      * Build an array, representing grid columns for the given column level,
@@ -192,7 +298,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
+        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
+            eColumnXRenderer;
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -243,6 +350,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 } else if (me[eColumn$] === false) columnI = me[eColumn$];
+
+                // Apply renderer
+                if (Ext.isObject(columnI) && columnI.renderer === undefined) {
+                    eColumnXRenderer = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Renderer';
+                    if (Ext.isFunction(me[eColumnXRenderer])) columnI.renderer = me[eColumnXRenderer];
+                }
 
                 // Apply string-summary, if column's non-empty `summaryText` property detected
                 if (Ext.isObject(columnI) && columnI.summaryText) {
@@ -362,30 +475,40 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // Get initial column width, based on a column title metrics
             widthA[i] = Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
 
-            // Increase the width of a column, that store is sorted by, to provide an additional amount
-            // of width for sort icon, that is displayed next after column title, within the same column
-            if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
-
             // Reset length
             longest = '';
 
-            // Get the longest (within current column) cell contents
-            store.each(function(r){
-                cell = typeof columnA[i].renderer == 'function'
-                    ? columnA[i].renderer(r.get(columnA[i].dataIndex))
-                    : r.get(columnA[i].dataIndex);
-                if (cell && cell.length > longest.length) longest = cell;
-            });
+            // If columns does not have a dataIndex - skip this iteration
+            if (columnA[i].dataIndex) {
 
-            // Don't forgot about summaries
-            if (columnA[i].summaryType && Ext.isObject(summaryData)) {
-                cell = typeof columnA[i].renderer == 'function'
-                    ? columnA[i].renderer(summaryData[columnA[i].id])
-                    : summaryData[columnA[i].id];
-                if (cell.length > longest.length) longest = cell;
-            } else if (columnA[i].summaryText) {
-                cell = columnA[i].summaryText;
-                if (cell.length > longest.length) longest = cell;
+                // Increase the width of a column, that store is sorted by, to provide an additional amount
+                // of width for sort icon, that is displayed next after column title, within the same column
+                if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
+
+                // Get the longest (within current column) cell contents
+                store.each(function(r){
+                    cell = typeof columnA[i].renderer == 'function'
+                        ? columnA[i].renderer(r.get(columnA[i].dataIndex))
+                        : r.get(columnA[i].dataIndex);
+                    if (cell && cell.length > longest.length) longest = cell;
+                });
+
+                // Don't forgot about summaries
+                if (columnA[i].summaryType && Ext.isObject(summaryData)) {
+                    cell = typeof columnA[i].renderer == 'function'
+                        ? columnA[i].renderer(summaryData[columnA[i].id])
+                        : summaryData[columnA[i].id];
+                    if (cell.length > longest.length) longest = cell;
+                } else if (columnA[i].summaryText) {
+                    cell = columnA[i].summaryText;
+                    if (cell.length > longest.length) longest = cell;
+                }
+
+            // Else if column does not have `dataIndex` prop
+            } else {
+
+                // If column's xtype is 'rownumberer'
+                if (columnA[i].xtype == 'rownumberer') longest = store.getTotalCount().toString();
             }
 
             // Get width of the longest cell
