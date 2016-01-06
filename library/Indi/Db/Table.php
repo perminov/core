@@ -863,12 +863,28 @@ class Indi_Db_Table
     }
 
     /**
-     * Create empty row
+     * Create empty row. If non-false $assign argument is given - we assume that $input arg should not be used
+     * be used for construction, but should be used for $this->assign() call. This may me useful
+     * in case when we need to create an instance of a row and assign a values into it - and all
+     * this within a single call. So, without $assign arg usage, the desired effect would require:
+     *
+     *   Indi::model('SomeModel')->createRow()->assign(array('prop1' => 'value1', 'prop2' => 'value2'));
+     *
+     * But not, with $assign arg usage, same effect would require
+     *
+     *   Indi::model('SomeModel')->createRow(array('prop1' => 'value1', 'prop2' => 'value2'));
+     *
+     * So, with $assign arg usage, we can omit the additional 'assign(..)' cal
      *
      * @param array $input
-     * @return Indi_Db_Table_Row object
+     * @param bool $assign
+     * @return mixed
      */
-    public function createRow($input = array()) {
+    public function createRow($input = array(), $assign = false) {
+
+        // If non-false $assign argument is given - we assume that $input arg should not be used
+        // be used for construction, but should be used for $this->assign() call
+        if ($assign) { $assign = $input; $input = array(); }
 
         // Prepare data for construction
         $constructData = array(
@@ -903,6 +919,16 @@ class Indi_Db_Table
         if (!class_exists($rowClass)) {
             require_once 'Indi/Loader.php';
             Indi_Loader::loadClass($rowClass);
+        }
+
+        // If we use $assign arg
+        if (is_array($assign)) {
+
+            // Create an instance of a row
+            $row = new $rowClass($constructData);
+
+            // Assign data and return the row
+            return $row->assign($assign);
         }
 
         // Construct and return Indi_Db_Table_Row object
