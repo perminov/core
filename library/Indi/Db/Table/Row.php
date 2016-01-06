@@ -258,6 +258,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Else current row is a new row
         } else {
 
+            // Set up a $new flag, indicating that this will be a new row
+            $new = true;
+
             // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
             $this->_original['id'] = $this->model()->insert($this->_modified);
 
@@ -310,8 +313,19 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
         $this->files(true);
 
+        // Do some needed operations that are required to be done right after row was inserted into a database table
+        if ($new) $this->onInsert();
+
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
+    }
+
+    /**
+     * This function is called right before 'return ...' statement within Indi_Db_Table_Row::save() body.
+     * It can be useful in cases when we need to do something once where was an entry inserted in database table
+     */
+    public function onInsert() {
+
     }
 
     /**
