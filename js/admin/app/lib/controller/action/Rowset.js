@@ -928,9 +928,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Get default column config
             itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
 
-            /*itemICustom = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (typeof me[itemICustom] == 'function') itemI = me[itemICustom](itemI);*/
-
             // Apply custom config
             eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
             if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
@@ -1268,21 +1265,40 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeFieldA: function (){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, fieldA = [], fieldI$Id = me.storeField$Id(), fieldI, fieldICustom;
+        var me = this, itemA = [], itemI$Id = me.storeField$Id(), itemI, eItemX, itemX, eItem$, item$, fieldR, renderer;
 
         // Push 'id' store field to fields configs array
-        if (fieldI$Id) fieldA.push(fieldI$Id);
+        if (itemI$Id) itemA.push(itemI$Id);
 
         // Other fields
         for (var i = 0; i < me.ti().gridFields.length; i++) {
-            fieldI = me.storeField_Default(me.ti().fields.r(me.ti().gridFields[i].id));
-            fieldICustom = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
-            if (typeof me[fieldICustom] == 'function') fieldI = me[fieldICustom](fieldI);
-            if (fieldI) fieldA.push(fieldI);
+
+            // Get Indi Engine's field
+            fieldR = me.ti().fields.r(me.ti().gridFields[i].id);
+
+            // Get default field config
+            itemI = me.storeField_Default(fieldR);
+
+            // Apply specific control element config, as fields control elements/xtypes may be different
+            eItemX = 'storeFieldX' + Indi.ucfirst(fieldR.foreign('elementId').alias);
+            if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
+                itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI) : me[eItemX];
+                itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
+            } else if (me[eItemX] === false) itemI = me[eItemX];
+
+            // Apply custom config
+            eItem$ = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
         }
 
         // Return array
-        return fieldA;
+        return itemA;
     },
 
     /**
