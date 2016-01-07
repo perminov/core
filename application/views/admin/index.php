@@ -65,6 +65,7 @@
         '/js/admin/app/lib/form/field/Radios.js',
         '/js/admin/app/lib/form/field/MultiCheck.js',
         '/js/admin/app/lib/form/field/Phone.js',
+        '/js/admin/app/lib/form/field/TimeSpan.js',
 
         '/js/admin/app/lib/form/field/Time.js',
         '/js/admin/app/lib/picker/DateTime.js',
