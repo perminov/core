@@ -1035,7 +1035,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             method: 'POST',
             params: params,
             success: function() {
-                r.set('dQty', r.get('dQty') + (checked ? 1 : -1));
+                if (typeof eOpts.checkchangesuccess == 'function')
+                    eOpts.checkchangesuccess(r, checkcolumn, rowIndex, checked, eOpts);
                 r.commit();
             },
             failure: function(response) {
