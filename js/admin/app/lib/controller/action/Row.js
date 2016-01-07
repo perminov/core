@@ -50,7 +50,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     row: {
         border: 0,
-        height: '40%'
+        height: '70%'
     },
 
     south: {

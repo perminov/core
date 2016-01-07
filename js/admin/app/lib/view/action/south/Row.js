@@ -34,7 +34,7 @@ Ext.define('Indi.lib.view.action.south.Row', {
         pixelsPer1Percent = (wPanel.getHeight() - wPanelDockedItemsHeight) / 100;
 
         // Calculate the unused space in percents
-        unusedSpace = parseInt((pixelsPer1Percent * parseInt(cPanel.height) - cUsedHeight) / pixelsPer1Percent);
+        unusedSpace = parseInt((pixelsPer1Percent * parseInt(cPanel.height) - cUsedHeight - 1) / pixelsPer1Percent);
 
         // If unused space detected in center region panel
         if (unusedSpace > 0) {
