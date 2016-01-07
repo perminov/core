@@ -1024,23 +1024,41 @@ Ext.define('Indi.lib.controller.action.Grid', {
         me.keyMap();
     },
 
+    /**
+     * 'checkchange' listener, for use with 'xtype: checkcolumn'
+     *
+     * @param checkcolumn
+     * @param rowIndex
+     * @param checked
+     * @param eOpts
+     */
     gridColumnCheckChange: function(checkcolumn, rowIndex, checked, eOpts) {
         var me = this.ctx(), store = me.getStore(), r = store.getAt(rowIndex),
             id = r.get('id'), aix = store.indexOfTotal(r) + 1, params = {};
 
+        // POST params
         params[checkcolumn.dataIndex] = checked ? 1 : 0;
 
+        // Make Ajax request
         Ext.Ajax.request({
             url: Indi.pre + '/' + me.ti().section.alias + '/save/id/' + id + '/ph/' + me.ti().scope.hash + '/aix/' + aix + '/',
             method: 'POST',
             params: params,
             success: function() {
+
+                // Process user-defined success handler
                 if (typeof eOpts.checkchangesuccess == 'function')
                     eOpts.checkchangesuccess(r, checkcolumn, rowIndex, checked, eOpts);
+
+                // Commit row
                 r.commit();
             },
             failure: function(response) {
+
+                // Handle failure
                 Indi.ajaxFailure(response);
+
+                // Reject row's changes
                 r.reject();
             }
         });
