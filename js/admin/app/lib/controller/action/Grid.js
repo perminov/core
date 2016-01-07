@@ -219,8 +219,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {*}
      */
-    gridColumnXNumber_Renderer: function() {
-        return this.ctx().gridColumnRenderer_Numeric.apply(this, arguments);
+    gridColumnXNumber_Renderer: function(v) {
+        return this.ctx() ? this.ctx().gridColumnRenderer_Numeric.apply(this, arguments) : v;
     },
 
     /**
@@ -228,8 +228,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {*}
      */
-    gridColumnXPrice_Renderer: function() {
-        return this.ctx().gridColumnRenderer_Numeric.apply(this, arguments);
+    gridColumnXPrice_Renderer: function(v) {
+        return this.ctx() ? this.ctx().gridColumnRenderer_Numeric.apply(this, arguments) : v;
     },
 
     /**
@@ -237,8 +237,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {*}
      */
-    gridColumnXDecimal143_Renderer: function() {
-        return this.ctx().gridColumnRenderer_Numeric.apply(this, arguments);
+    gridColumnXDecimal143_Renderer: function(v) {
+        return this.ctx() ? this.ctx().gridColumnRenderer_Numeric.apply(this, arguments) : v;
     },
 
     /**
@@ -1022,5 +1022,26 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Attach key map
         me.keyMap();
+    },
+
+    gridColumnCheckChange: function(checkcolumn, rowIndex, checked, eOpts) {
+        var me = this.ctx(), store = me.getStore(), r = store.getAt(rowIndex),
+            id = r.get('id'), aix = store.indexOfTotal(r) + 1, params = {};
+
+        params[checkcolumn.dataIndex] = checked ? 1 : 0;
+
+        Ext.Ajax.request({
+            url: Indi.pre + '/' + me.ti().section.alias + '/save/id/' + id + '/ph/' + me.ti().scope.hash + '/aix/' + aix + '/',
+            method: 'POST',
+            params: params,
+            success: function() {
+                r.set('dQty', r.get('dQty') + (checked ? 1 : -1));
+                r.commit();
+            },
+            failure: function(response) {
+                Indi.ajaxFailure(response);
+                r.reject();
+            }
+        });
     }
 });

@@ -397,49 +397,56 @@ Ext.define('Indi', {
 
                     }, 10);
                 },
-                failure: function(response) {
-                    var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
-
-                    // Parse response text
-                    json = Ext.JSON.decode(response.responseText, true);
-
-                    // The the info about invalid fields from the response, and mark the as invalid
-                    if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
-
-                        // Shortcut to json.mismatch
-                        mismatch = json.mismatch;
-
-                        // Error messages storage
-                        errorByFieldO = mismatch.errors;
-
-                        // Collect all messages for them to be bit later displayed within Ext.MessageBox
-                        Object.keys(errorByFieldO).forEach(function(i){
-                            wholeFormMsg.push(errorByFieldO[i]);
-                        });
-
-                        // If we collected at least one error message, that is related to the whole form rather than
-                        // some certain field - use an Ext.MessageBox to display it
-                        if (wholeFormMsg.length) {
-
-                            msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
-
-                            // Build message
-                            msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
-                                + mismatch.entity.title + '"'
-                                + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                                + ' - выдала следующие ошибки: <br><br>' + msg;
-
-                            // Show message box
-                            Ext.MessageBox.show({
-                                title: Indi.lang.I_ERROR,
-                                msg: msg,
-                                buttons: Ext.MessageBox.OK,
-                                icon: Ext.MessageBox.ERROR
-                            });
-                        }
-                    }
-                }
+                failure: Indi.ajaxFailure
             }, cfg));
+        },
+
+        /**
+         * Common function for handling 'mismatch' - failures
+         *
+         * @param response
+         */
+        ajaxFailure: function(response) {
+            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
+
+            // Parse response text
+            json = Ext.JSON.decode(response.responseText, true);
+
+            // The the info about invalid fields from the response, and mark the as invalid
+            if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
+
+                // Shortcut to json.mismatch
+                mismatch = json.mismatch;
+
+                // Error messages storage
+                errorByFieldO = mismatch.errors;
+
+                // Collect all messages for them to be bit later displayed within Ext.MessageBox
+                Object.keys(errorByFieldO).forEach(function(i){
+                    wholeFormMsg.push(errorByFieldO[i]);
+                });
+
+                // If we collected at least one error message, that is related to the whole form rather than
+                // some certain field - use an Ext.MessageBox to display it
+                if (wholeFormMsg.length) {
+
+                    msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
+
+                    // Build message
+                    msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                        + mismatch.entity.title + '"'
+                        + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
+                        + ' - выдала следующие ошибки: <br><br>' + msg;
+
+                    // Show message box
+                    Ext.MessageBox.show({
+                        title: Indi.lang.I_ERROR,
+                        msg: msg,
+                        buttons: Ext.MessageBox.OK,
+                        icon: Ext.MessageBox.ERROR
+                    });
+                }
+            }
         },
 
         /**
