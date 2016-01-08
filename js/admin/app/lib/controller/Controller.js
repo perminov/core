@@ -20,12 +20,17 @@ Ext.define('Indi.lib.controller.Controller', {
     /**
      * See docs at same Ext.Component class property
      */
-    mcopwso: ['actionsConfig'],
+    mcopwso: ['actionsConfig', 'actionsSharedConfig'],
 
     /**
      * Actions configuration. This config is for use in subclasses of current class
      */
     actionsConfig: {},
+
+    /**
+     * Actions shared configuration. This config will be applied to any action, rather than to certain action
+     */
+    actionsSharedConfig: {},
 
     /**
      * Empty function, for `scope` arg adjustments
@@ -81,7 +86,7 @@ Ext.define('Indi.lib.controller.Controller', {
         }*/
 
         // Define the action component
-        Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsConfig[action]));
+        Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsSharedConfig, me.actionsConfig[action]));
 
         // Build the id for action object
         scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;
