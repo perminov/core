@@ -261,6 +261,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Set up a $new flag, indicating that this will be a new row
             $new = true;
 
+            // Do some needed operations that are required to be done right before row insertion into a database table
+            $this->onBeforeInsert();
+
             // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
             $this->_original['id'] = $this->model()->insert($this->_modified);
 
@@ -325,6 +328,14 @@ class Indi_Db_Table_Row implements ArrayAccess
      * It can be useful in cases when we need to do something once where was an entry inserted in database table
      */
     public function onInsert() {
+
+    }
+
+    /**
+     * This function is called right before '$this->model()->insert(..)' statement within Indi_Db_Table_Row::save() body.
+     * It can be useful in cases when we need to do something before where will be an entry inserted in database table
+     */
+    public function onBeforeInsert() {
 
     }
 
