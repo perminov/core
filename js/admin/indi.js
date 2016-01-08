@@ -273,7 +273,7 @@ Ext.define('Indi', {
          * @param me
          */
         eval: function(js, me) {
-            if (!Ext.isString(js)) return;
+            if (!Ext.isString(js) || !js.length) return;
             var s = "(hide|show)\\('((tr-[a-zA-Z0-9]+,?)+)'\\);?", ttrMRex = new RegExp(s, 'g'), ttrSRex = new RegExp(s),
                 ttrMMatch, ttrSMatch, ttrSFoundTrA, ttrSReplace, ttrSReplaceTrA = [], trA, replace = [], trueTr;
             if (ttrMMatch = js.match(ttrMRex)) {
