@@ -1732,5 +1732,87 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Return
         return itemA;
+    },
+
+    /**
+     * Save dirty row
+     *
+     * @param record
+     * @param aix
+     */
+    recordRemoteSave: function(record, aix, $ti) {
+        var me = this, ti = $ti || me.ti(), params, bool = [];
+
+        // If no changed was made - return
+        if (!record.dirty) return;
+
+        // Get changes
+        params = Ext.clone(record.getChanges());
+
+        // Convert boolean values to int values
+        Object.keys(params).forEach(function(i){if (Ext.isBoolean(params[i])) params[i] = params[i] ? 1 : 0;});
+
+        // Try to save via Ajax-request
+        Ext.Ajax.request({
+
+            // Params
+            url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/',
+            method: 'POST',
+            params: params,
+
+            // Success handler
+            success: function(response) {
+                var json, value;
+
+                // Parse response text
+                json = Ext.JSON.decode(response.responseText, true);
+
+                // If response contains info about affected fields
+                if (Ext.isObject(json) && Ext.isObject(json.affected)) {
+
+                    // Walk through affected fields
+                    Object.keys(json.affected).forEach(function(i){
+
+                        // If affected field's name starts with '_' - skip
+                        if (i.match(/^_/)) return;
+
+                        // If affected field's name starts with '$'
+                        if (i.match(/^\$/)) {
+
+                            // If affected field's name is '$keys' - update field's key values
+                            if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
+                                record.key(j, json.affected[i][j]);
+                            });
+
+                        // Update field's rendered values
+                        } else {
+
+                            // Shortcut
+                            value = json.affected[i];
+
+                            // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
+                            if (record.fields.get(i).type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
+
+                            // Set field's value
+                            record.set(i, value);
+                        }
+                    });
+                }
+
+                // Commit row
+                record.commit();
+            },
+
+            // Failure handler
+            failure: function(response) {
+
+                // General failure
+                Indi.ajaxFailure(response);
+
+                // Reject changes
+                record.reject();
+            }
+        });
     }
 });

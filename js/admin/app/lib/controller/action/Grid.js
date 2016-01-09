@@ -1038,68 +1038,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         clicksToEdit: 1,
         listeners: {
             edit: function(editor, e) {
-
-                // If no changed was made - return
-                if (!e.record.dirty) return;
-
-                // Aux
-                var params = {}, grid = editor.grid, ctx = grid.ctx(); params[e.field] = e.value;
+                var grid = editor.grid, ctx = grid.ctx();
 
                 // Make sure pressing ENTER will not cause call of it's ordinary handler
                 grid.preventEnter = true;
 
-                // Try to save via Ajax-request
-                Ext.Ajax.request({
-
-                    // Params
-                    url: Indi.pre + '/' + ctx.ti().section.alias + '/save/id/' + e.record.get('id')
-                        + '/ph/' + ctx.ti().scope.hash + '/aix/' + (e.rowIdx + 1) + '/',
-                    method: 'POST',
-                    params: params,
-
-                    // Success handler
-                    success: function(response) {
-                        var json;
-
-                        // Parse response text
-                        json = Ext.JSON.decode(response.responseText, true);
-
-                        // If response contains info about affected fields
-                        if (Ext.isObject(json) && Ext.isObject(json.affected)) {
-
-                            // Walk through affected fields
-                            Object.keys(json.affected).forEach(function(i){
-
-                                // If affected field's name starts with '_' - skip
-                                if (i.match(/^_/)) return;
-
-                                // If affected field's name starts with '$'
-                                if (i.match(/^\$/)) {
-
-                                    // If affected field's name is '$keys' - update field's key values
-                                    if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
-                                        e.record.key(j, json.affected[i][j]);
-                                    });
-
-                                // Update field's rendered values
-                                } else e.record.set(i, json.affected[i]);
-                            });
-                        }
-
-                        // Commit row
-                        e.record.commit();
-                    },
-
-                    // Failure handler
-                    failure: function(response) {
-
-                        // General failure
-                        Indi.ajaxFailure(response);
-
-                        // Reject changes
-                        e.record.reject();
-                    }
-                });
+                // Try to save
+                ctx.recordRemoteSave(e.record, e.rowIdx + 1);
             }
         }
     },
@@ -1113,34 +1058,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param eOpts
      */
     gridColumnCheckChange: function(checkcolumn, rowIndex, checked, eOpts) {
-        var me = this.ctx(), store = me.getStore(), r = store.getAt(rowIndex),
-            id = r.get('id'), aix = store.indexOfTotal(r) + 1, params = {};
+        var me = this.ctx(), s = me.getStore(), r = s.getAt(rowIndex), aix = s.indexOfTotal(r) + 1;
 
-        // POST params
-        params[checkcolumn.dataIndex] = checked ? 1 : 0;
-
-        // Make Ajax request
-        Ext.Ajax.request({
-            url: Indi.pre + '/' + me.ti().section.alias + '/save/id/' + id + '/ph/' + me.ti().scope.hash + '/aix/' + aix + '/',
-            method: 'POST',
-            params: params,
-            success: function() {
-
-                // Process user-defined success handler
-                if (typeof eOpts.checkchangesuccess == 'function')
-                    eOpts.checkchangesuccess(r, checkcolumn, rowIndex, checked, eOpts);
-
-                // Commit row
-                r.commit();
-            },
-            failure: function(response) {
-
-                // Handle failure
-                Indi.ajaxFailure(response);
-
-                // Reject row's changes
-                r.reject();
-            }
-        });
+        // Try to save
+        me.recordRemoteSave(r, aix);
     }
 });
