@@ -262,6 +262,42 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+    gridColumnEditor_Combo: function(c) {
+        var me = this, f = me.ti().fields.r(c.dataIndex, 'alias'), r = me.ti().row;
+        return {
+            xtype: 'combo.form',
+            hideTrigger: true,
+            margin: '0 2 0 3',
+            height: 18,
+            value: '',
+            subTplData: me.ti().row.view(c.dataIndex).subTplData,
+            store: me.ti().row.view(c.dataIndex).store,
+            multiSelect: f.storeRelationAbility == 'many',
+            row: me.ti().row,
+            field: f
+        }
+    },
+
+    /**
+     *
+     * @param c
+     * @param f
+     * @return {Object}
+     */
+    gridColumnXRadio: function(c) {
+        return  {editor: this.gridColumnEditor_Combo(c)}
+    },
+
+    /**
+     *
+     * @param c
+     * @param f
+     * @return {Object}
+     */
+    gridColumnXCombo: function(c) {
+        return  {editor: this.gridColumnEditor_Combo(c)}
+    },
+
     /**
      * Default config for price-columns
      *
