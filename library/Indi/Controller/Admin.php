@@ -1956,6 +1956,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If redirect should be performed, include the location address under 'redirect' key within $response array
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
 
+        // Pick affected prop names
+        $response['affected'] = $this->row->toGridData($this->row->affected());
+
         // Flush response
         jflush(true, $response);
     }
