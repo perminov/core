@@ -643,7 +643,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             && !Ext.get(Ext.EventObject.getTarget()).hasCls('i-combo-selected-item-delete')) {
 
             // Expand/collapse combo options boundlist
-            if (!me.lastCollapsed || (new Date().getTime() - me.lastCollapsed > 250)) {
+            if (!me.lastCollapsed || (new Date().getTime() - me.lastCollapsed > 250) || me.inEditor) {
                 if (me.isExpanded) {
                     me.collapse();
                 } else {
