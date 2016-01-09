@@ -629,7 +629,7 @@ class Indi_Controller {
             $this->adjustGridDataRowset();
 
             // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData(Indi::trail());
+            $data = $this->rowset->toGridData(Indi::trail()->gridFields->column('alias'));
 
             // Adjust grid data
             $this->adjustGridData($data);

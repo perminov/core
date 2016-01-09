@@ -181,7 +181,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Return a model, that current rowset is related to
      *
-     * @return mixed
+     * @return Indi_Db_Table
      */
     public function model() {
         return Indi::model($this->_table);
@@ -531,10 +531,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Converts a rowset to grid data array, using current trail item details, such as columns, filters, etc
      *
-     * @param Indi_Trail_Admin_Item $ti
+     * @param string $fields Comma-separated list of field names
      * @return array
      */
-    public function toGridData($ti) {
+    public function toGridData($fields) {
 
         // If there are no rows in $this argument - return
         if ($this->_count == 0) return array();
@@ -556,14 +556,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'other' => array('id' => true)
         );
 
-        // Setup foreign rows for `columnType` property for each field row within $ti->gridFields rowset
-        $ti->gridFields->foreign('columnTypeId');
+        // Get fields
+        $fieldRs = $this->model()->fields(im(ar($fields)), 'rowset');
 
         // Set up $titleProp variable as an indicator of that titleColumn is within grid fields
-        if (in($titleColumn = $ti->model->titleColumn(), $columnA)) $titleProp = $titleColumn;
+        if (in($titleColumn = $this->model()->titleColumn(), $columnA)) $titleProp = $titleColumn;
 
         // Setup actual info about types of columns, that we will have to deal with
-        foreach ($ti->gridFields as $gridFieldR) {
+        foreach ($fieldRs as $gridFieldR) {
 
             // Foreign keys (single and multiple)
             if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
@@ -671,7 +671,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>';
-                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && $ti->section->alias != 'enumset') {
+                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && $this->table() != 'enumset') {
                         if (preg_match('/background:\s*url\(/', $data[$pointer][$columnI])) {
 
                         } else {

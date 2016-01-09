@@ -1695,5 +1695,42 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Return
         return itemA;
+    },
+
+    /**
+     * Build and return an array, containing plugin definitions for rowset panel
+     *
+     * @return {Array}
+     */
+    rowsetPluginA: function() {
+        var me = this, itemA = [], itemI, eItem$, item$;
+
+        // Walk through desired plugins
+        me.rowset.$plugins.forEach(function(i){
+
+            // If plugin cfg has `alias` prop
+            if (i.alias) {
+
+                // Empty obj for now
+                itemI = i;
+
+                // Get member name, responsible for extended plugin cfg
+                eItem$ = 'rowsetPlugin$' + Indi.ucfirst(i.alias);
+
+                // Deal with extended cfg, whatever it is funcion, object or `false`
+                if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                    item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                    itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+                } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Else if plugin cfg has no 'alias' prop, but has 'ptype' prop - append it as is
+            } else if (i.ptype) itemI = i;
+
+            // Add
+            if (itemI) itemA.push(itemI);
+        });
+
+        // Return
+        return itemA;
     }
 });

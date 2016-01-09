@@ -729,7 +729,7 @@ class Indi_Db_Table
             }
 
         // Else if $name argument is presented, and it contains only one field name
-        } else if (!preg_match('/,/', $names)) {
+        } else if (!preg_match('/,/', $names) && func_num_args() == 1) {
 
             // Return certain field as Indi_Db_Table_Row object, if found
             return $this->_fields->field($names);
@@ -939,7 +939,7 @@ class Indi_Db_Table
      * Create Indi_Db_Table_Rowset object with some data, if passed
      *
      * @param array $input
-     * @return mixed
+     * @return Indi_Db_Table_Rowset
      */
     public function createRowset($input = array()) {
 

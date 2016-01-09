@@ -30,6 +30,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }],
 
         /**
+         * Plugins
+         */
+        $plugins: [{alias: 'cellediting'}],
+
+        /**
          * Docked items special config
          */
         docked: {
@@ -1007,6 +1012,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             columns: me.gridColumnA(),
             store: me.getStore(),
             dockedItems: me.rowsetDockedA(),
+            plugins: me.rowsetPluginA(),
             listeners: {
                 boxready: function() {
                     me.gridColumnAFit();
@@ -1022,6 +1028,80 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Attach key map
         me.keyMap();
+    },
+
+    /**
+     * Config for 'cellediting' grid plugin
+     */
+    rowsetPlugin$Cellediting: {
+        ptype: 'cellediting',
+        clicksToEdit: 1,
+        listeners: {
+            edit: function(editor, e) {
+
+                // If no changed was made - return
+                if (!e.record.dirty) return;
+
+                // Aux
+                var params = {}, grid = editor.grid, ctx = grid.ctx(); params[e.field] = e.value;
+
+                // Make sure pressing ENTER will not cause call of it's ordinary handler
+                grid.preventEnter = true;
+
+                // Try to save via Ajax-request
+                Ext.Ajax.request({
+
+                    // Params
+                    url: Indi.pre + '/' + ctx.ti().section.alias + '/save/id/' + e.record.get('id')
+                        + '/ph/' + ctx.ti().scope.hash + '/aix/' + (e.rowIdx + 1) + '/',
+                    method: 'POST',
+                    params: params,
+
+                    // Success handler
+                    success: function(response) {
+                        var json;
+
+                        // Parse response text
+                        json = Ext.JSON.decode(response.responseText, true);
+
+                        // If response contains info about affected fields
+                        if (Ext.isObject(json) && Ext.isObject(json.affected)) {
+
+                            // Walk through affected fields
+                            Object.keys(json.affected).forEach(function(i){
+
+                                // If affected field's name starts with '_' - skip
+                                if (i.match(/^_/)) return;
+
+                                // If affected field's name starts with '$'
+                                if (i.match(/^\$/)) {
+
+                                    // If affected field's name is '$keys' - update field's key values
+                                    if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
+                                        e.record.key(j, json.affected[i][j]);
+                                    });
+
+                                // Update field's rendered values
+                                } else e.record.set(i, json.affected[i]);
+                            });
+                        }
+
+                        // Commit row
+                        e.record.commit();
+                    },
+
+                    // Failure handler
+                    failure: function(response) {
+
+                        // General failure
+                        Indi.ajaxFailure(response);
+
+                        // Reject changes
+                        e.record.reject();
+                    }
+                });
+            }
+        }
     },
 
     /**

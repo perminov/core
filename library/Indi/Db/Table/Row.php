@@ -23,6 +23,13 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_modified = array();
 
     /**
+     * Array of names of the fields, that were affected by the last ->save() call
+     *
+     * @var array
+     */
+    protected $_affected = array();
+
+    /**
      * System data, used for internal needs
      *
      * @var array
@@ -180,7 +187,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Update title
         if (preg_match('/^one|many$/', $titleFieldR->storeRelationAbility)) {
             $this->model()->update(
-                array('title' => mb_substr($this->title, 0, 255, 'utf-8')),
+                array('title' => ($this->title = mb_substr($this->title, 0, 255, 'utf-8'))),
                 '`id` = "' . $this->id . '"'
             );
         }
@@ -278,7 +285,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Provide a changelog recording, if configured
-        if ($this->model()->changeLog('toggle')) $this->changeLog($original);
+        $this->changeLog($original);
 
         // Auto set `move` if need
         if ($orderAutoSet) {
@@ -3150,19 +3157,22 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $original
      * @return mixed
      */
-    public function changelog($original) {
+    public function changeLog($original) {
 
         // Get changelog config
         $cfg = $this->model()->changeLog();
 
         // Get the state of modified fields, that they were in at the moment before current row was saved
-        $modified = array_diff_assoc($this->_original, $original);
+        $affected = array_diff_assoc($this->_original, $original);
+
+        // Set up `_affected` prop, so it to contain affected field names
+        $this->_affected = array_keys($affected);
 
         // Unset fields, that should not be involved in logging
-        if ($cfg['ignore']) foreach(ar($cfg['ignore']) as $ignore) unset($modified[$ignore]);
+        if ($cfg['ignore']) foreach(ar($cfg['ignore']) as $ignore) unset($affected[$ignore]);
 
         // If no changes logging is not enabled, or current row was a new row, or wasn't, but had no modified properties - return
-        if (!$cfg['toggle'] || !$original['id'] || !count($modified)) return;
+        if (!$cfg['toggle'] || !$original['id'] || !count($affected)) return;
 
         // Get the id of current entity/model
         $entityId = $this->model()->id();
@@ -3171,26 +3181,26 @@ class Indi_Db_Table_Row implements ArrayAccess
         $foreignA = $this->model()->fields()->select('one,many', 'storeRelationAbility')->column('alias');
 
         // Get the list of foreign keys, that had modified values
-        $modifiedForeignA = array_intersect($foreignA, array_keys($modified));
+        $affectedForeignA = array_intersect($foreignA, array_keys($affected));
 
         // Setup $was object as a clone of $this object, but at a state
         // that it had before it was saved, and even before it was modified
         $was = clone $this; $was->original($original);
 
         // Setup foreign data for $was object
-        $was->foreign(implode(',', $modifiedForeignA));
+        $was->foreign(implode(',', $affectedForeignA));
 
         // Setup $now object as a clone of $this object, at it's current state
-        $now = clone $this; $now->foreign(implode(',', $modifiedForeignA));
+        $now = clone $this; $now->foreign(implode(',', $affectedForeignA));
 
         // Get the storage model
         $storageM = Indi::model('ChangeLog');
 
         // Get the rowset of modified fields
-        $modifiedFieldRs = Indi::model($entityId)->fields()->select(array_keys($modified), 'alias');
+        $affectedFieldRs = Indi::model($entityId)->fields()->select(array_keys($affected), 'alias');
 
         // Foreach modified field within the modified fields rowset
-        foreach ($modifiedFieldRs as $modifiedFieldR) {
+        foreach ($affectedFieldRs as $affectedFieldR) {
 
             // Create the changelog entry object
             $storageR = $storageM->createRow();
@@ -3200,29 +3210,29 @@ class Indi_Db_Table_Row implements ArrayAccess
             $storageR->key = $this->id;
 
             // Setup a field, that was modified
-            $storageR->fieldId = $modifiedFieldR->id;
+            $storageR->fieldId = $affectedFieldR->id;
 
             // If modified field is a foreign key
-            if (array_key_exists($modifiedFieldR->alias, $was->foreign())) {
+            if (array_key_exists($affectedFieldR->alias, $was->foreign())) {
 
                 // If modified field's foreign data was a rowset object
-                if ($was->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Rowset) {
+                if ($was->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Rowset) {
 
                     // Declare the array that will contain comma-imploded titles of all rows
                     // within modified field's foreign data rowset
                     $implodedWas = array();
 
                     // Fulfil that array
-                    foreach ($was->foreign($modifiedFieldR->alias) as $r) $implodedWas[] = $r->title();
+                    foreach ($was->foreign($affectedFieldR->alias) as $r) $implodedWas[] = $r->title();
 
                     // Convert that array to comma-separated string
                     $storageR->was = implode(', ', $implodedWas);
 
                 // Else if modified field's foreign data was a row object
-                } else if ($now->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Row) {
+                } else if ($now->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Row) {
 
                     // Get that row's title
-                    $storageR->was = $was->foreign($modifiedFieldR->alias)->title();
+                    $storageR->was = $was->foreign($affectedFieldR->alias)->title();
 
                 }
 
@@ -3230,37 +3240,37 @@ class Indi_Db_Table_Row implements ArrayAccess
             } else {
 
                 // Get it's value as is
-                $storageR->was = $was->{$modifiedFieldR->alias};
+                $storageR->was = $was->{$affectedFieldR->alias};
             }
 
             // If modified field is a foreign key
-            if (array_key_exists($modifiedFieldR->alias, $now->foreign())) {
+            if (array_key_exists($affectedFieldR->alias, $now->foreign())) {
 
                 // If modified field's foreign data was a rowset object
-                if ($now->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Rowset) {
+                if ($now->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Rowset) {
 
                     // Declare the array that will contain comma-imploded titles of all rows
                     // within modified field's foreign data rowset
                     $implodedNow = array();
 
                     // Fulfil that array
-                    foreach ($now->foreign($modifiedFieldR->alias) as $r) $implodedNow[] = $r->title();
+                    foreach ($now->foreign($affectedFieldR->alias) as $r) $implodedNow[] = $r->title();
 
                     // Convert that array to comma-separated string
                     $storageR->now = implode(', ', $implodedNow);
 
                 // Else if modified field's foreign data was a row object
-                } else if ($now->foreign($modifiedFieldR->alias) instanceof Indi_Db_Table_Row) {
+                } else if ($now->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Row) {
 
                     // Get that row's title
-                    $storageR->now = $now->foreign($modifiedFieldR->alias)->title();
+                    $storageR->now = $now->foreign($affectedFieldR->alias)->title();
                 }
 
             // Else if modified field is not a foreign key
             } else {
 
                 // Get it's value as is
-                $storageR->now = $now->{$modifiedFieldR->alias};
+                $storageR->now = $now->{$affectedFieldR->alias};
             }
 
             // Setup other properties
@@ -3537,5 +3547,29 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return $clone ? $clone : $this;
+    }
+
+    /**
+     * Getter function for `_affected` prop
+     *
+     * @return array
+     */
+    public function affected() {
+        return $this->_affected;
+    }
+
+    /**
+     *
+     *
+     * @param $fields
+     * @return mixed
+     */
+    public function toGridData($fields) {
+
+        // Render grid data
+        $data = $this->model()->createRowset(array('rows' => array($this)))->toGridData($fields);
+
+        // Return
+        return array_shift($data);
     }
 }
