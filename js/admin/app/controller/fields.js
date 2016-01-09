@@ -1,4 +1,4 @@
-Ext.define('Indi.controller.entities', {
+Ext.define('Indi.controller.fields', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
@@ -10,21 +10,14 @@ Ext.define('Indi.controller.entities', {
                     height: 18
                 }
             },
-            gridColumn$Table: {
+            gridColumn$Alias: {
                 editor: {
                     xtype: 'textfield',
                     allowBlank: false,
                     margin: '0 2 0 3',
                     height: 18
                 }
-            },
-            panelDockedInner$Actions$Php_InnerHandler: function(action, row, aix, btn) {
-                this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
             }
-        },
-        form: {
-            formItem$Title: {allowBlank: false},
-            formItem$Table: {allowBlank: false}
         }
     }
 });

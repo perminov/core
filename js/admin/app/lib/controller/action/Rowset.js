@@ -1763,7 +1763,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Success handler
             success: function(response) {
-                var json, value;
+                var json, value, field;
 
                 // Parse response text
                 json = Ext.JSON.decode(response.responseText, true);
@@ -1788,11 +1788,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         // Update field's rendered values
                         } else {
 
-                            // Shortcut
-                            value = json.affected[i];
+                            // Shortcuts
+                            value = json.affected[i]; field = record.fields.get(i);
 
                             // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
-                            if (record.fields.get(i).type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
+                            if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
 
                             // Set field's value
                             record.set(i, value);
