@@ -118,7 +118,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             id: me.bid() + '-rowset-grid-column-' + field.alias,
             header: column.alterTitle || field.title,
             dataIndex: field.alias,
-            tooltip: tooltip,
+            tooltip: tooltip ? {html: tooltip, constrainParent: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
             sortable: true,
             align: function(){
