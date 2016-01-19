@@ -244,7 +244,7 @@ Ext.define("Chart.ux.HighStock", {
   },
   // Should be only called when there is data
   draw : function() {
-
+      var me = this;
     if(!this.stores)
       return;
 
@@ -300,8 +300,13 @@ Ext.define("Chart.ux.HighStock", {
 
           var record = items[x];
           var serie = this.series[s], point;
-          point = serie.getData(record);
-          this.chartConfig.series[s].data.push(point);
+            point = serie.getData(record);
+            if (point.isMixedCollection) {
+                point.each(function(item){
+                    me.chartConfig.series[s].data.push(item);
+                });
+            } else this.chartConfig.series[s].data.push(point);
+
         }
       }
     }

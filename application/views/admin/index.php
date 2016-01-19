@@ -39,7 +39,7 @@
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
 
-        '/js/admin/app/lib/chart/HighStock.compiled.js',
+        '/js/admin/app/lib/chart/HighStock.js',
         '/js/admin/app/lib/chart/HighStockSerie.js',
 
         '/js/admin/app/lib/view/action/south/South.js',
