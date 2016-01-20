@@ -1035,7 +1035,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     rowsetPlugin$Cellediting: {
         ptype: 'cellediting',
-        clicksToEdit: 1,
+        triggerEvent: 'cellsecondclick',
         listeners: {
             edit: function(editor, e) {
                 var grid = editor.grid, ctx = grid.ctx();
