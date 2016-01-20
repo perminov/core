@@ -30,6 +30,7 @@
         '/js/admin/app/override/Ext.data.Model.js',
         '/js/admin/app/override/Ext.tab.Bar.js',
         '/js/admin/app/override/Ext.grid.plugin.Editing.js',
+        '/js/admin/app/override/Ext.grid.column.Column.js',
 
         '/js/admin/app/ux/Ext.ux.form.field.plugin.InputMask.js',
 
