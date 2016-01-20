@@ -13,7 +13,6 @@ Ext.override(Ext.grid.plugin.Editing, {
             view.lastClickTime = new Date().getTime();
             return;
         } else if (view.lastClickTime && new Date().getTime() - view.lastClickTime < 506) {
-            console.log(new Date().getTime() - view.lastClickTime);
             view.lastClickTime = new Date().getTime();
             return;
         }
