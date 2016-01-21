@@ -24,6 +24,7 @@ class Indi {
      */
     protected static $_logging = array(
         'jerror' => true,
+        'jflush' => false,
         'mflush' => false
     );
 
