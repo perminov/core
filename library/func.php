@@ -785,6 +785,9 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     // Flush contents
     echo json_encode($flush);
 
+    // Log this error if logging of 'jerror's is turned On
+    if (Indi::logging('jflush')) Indi::log('jflush', $flush);
+
     // Exit if need
     if ($die) iexit();
 }
