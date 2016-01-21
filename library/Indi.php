@@ -2155,7 +2155,7 @@ class Indi {
         if (func_num_args() == 1) return self::$_logging[$type];
 
         // If $flag arg is not boolean - return null
-        if (!is_bool($flag)) return null;
+        //if (!is_bool($flag)) return null;
 
         // Assign $flag as a value for item within self::$_log array, under $type key, and return it
         return self::$_logging[$type] = $flag;
@@ -2185,6 +2185,12 @@ class Indi {
 
             // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
             $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';
+
+            // Check if Indi::logging($type) contains additional email addresses
+            if (is_string(Indi::logging($type)))
+                foreach(ar(Indi::logging($type)) as $ccI)
+                    if (Indi::rexm('email', $ccI))
+                        $mail .= ',' . $ccI;
 
             // Send mail
             @mail($mail, $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
