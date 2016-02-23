@@ -271,9 +271,12 @@ class Indi_Controller {
      * Builds and returns a stack of WHERE clauses, that are representing grid's filters usage
      *
      * @param $FROM string table/model/entity name. Current model will be used by default
+     * @param $search string Special formatted string containing filters values like
+     *                       [{"field1":"val1"}, {"field2":"val2"}] . If not given - Indi::get()->search will be
+     *                       used by default
      * @return array
      */
-    public function filtersWHERE($FROM = '') {
+    public function filtersWHERE($FROM = '', $search = '') {
 
         // Setup model, that should have fields, mentioned as filtering params names
         $model = $FROM ? Indi::model($FROM) : Indi::trail()->model;
@@ -281,14 +284,17 @@ class Indi_Controller {
         // Defined an array for collecting data, that may be used in the process of building an excel spreadsheet
         $excelA = array();
 
+        // Use Indi::get()->search if $search arg is not given
+        $search = $search ?: Indi::get()->search;
+
         // Clauses stack
         $where = array();
 
         // If we have no 'search' param in query string, there is nothing to do here
-        if (Indi::get()->search) {
+        if ($search) {
 
             // Decode 'search' param from json to an associative array
-            $search = json_decode(Indi::get()->search, true);
+            $search = json_decode($search, true);
 
             // Foreach passed filter pair (alias => value)
             foreach ($search as $searchOnField) {
