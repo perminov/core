@@ -2172,6 +2172,7 @@ class Indi {
         // General info
         $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
         $msg .= 'URI: ' . URI . '<br>';
+        $msg .= 'Remote IP: ' . $_SERVER['REMOTE_ADDR'] . '<br>';
 
         // Who?
         if (Indi::admin()->id) $msg .= 'Admin [id#' . Indi::admin()->id . ']: ' . Indi::admin()->title . '<br>';
