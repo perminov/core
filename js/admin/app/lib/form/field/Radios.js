@@ -23,6 +23,11 @@ Ext.define('Indi.lib.form.field.Radios', {
     vertical: true,
 
     /**
+     * Array or comma-separated list of values of `inputValue` prop, that should be disabled
+     */
+    disabledOptions: [],
+
+    /**
      * Append `zeroValue` property initialisation
      */
     constructor: function() {
@@ -35,6 +40,7 @@ Ext.define('Indi.lib.form.field.Radios', {
     initComponent: function() {
         var me = this;
         me.items = me.itemA();
+        if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
         me.callParent();
         me.mixins.fieldBase._initComponent.call(this, arguments);
     },
@@ -62,6 +68,7 @@ Ext.define('Indi.lib.form.field.Radios', {
                 inputValue: inputValue,
                 checked: inputValue == me.row[me.name],
                 enumset: enumset,
+                disabled: me.disabledOptions.indexOf(inputValue) != -1,
                 listeners: {
                     change: function(rb, now) {
                         if (now) {
@@ -99,6 +106,30 @@ Ext.define('Indi.lib.form.field.Radios', {
 
         // Fire `enablebysatellite` event
         me.mixins.fieldBase._afterRender.call(this, arguments);
+    },
+
+    /**
+     * Disable options.
+     *
+     * @param disabledOptions May be passed as comma-separated string, or array
+     * @return {*}
+     */
+    setDisabledOptions: function(disabledOptions) {
+        var me = this;
+
+        // If `disabledOptions` arg is a string - split it by comma
+        if (Ext.isString(disabledOptions)) disabledOptions = disabledOptions.split(',');
+
+        // Toggle options
+        me.items.each(function(item, i, l){
+            item.setDisabled(disabledOptions.indexOf(item.inputValue) != -1);
+        });
+
+        // Update `disabledOptions` prop
+        me.disabledOptions = disabledOptions;
+
+        // Return
+        return me;
     },
 
     /**

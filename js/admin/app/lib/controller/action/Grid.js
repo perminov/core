@@ -118,7 +118,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             id: me.bid() + '-rowset-grid-column-' + field.alias,
             header: column.alterTitle || field.title,
             dataIndex: field.alias,
-            tooltip: tooltip,
+            tooltip: tooltip ? {html: tooltip, constrainParent: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
             sortable: true,
             align: function(){
@@ -247,6 +247,54 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     * Default editor config for string-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXString_Editor: function(column, field) {
+        return {
+            xtype: 'textfield',
+            allowBlank: false,
+            margin: '0 2 0 3',
+            height: 18
+        }
+    },
+
+    /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXNumber_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            height: 18
+        }
+    },
+
+    /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXPrice_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            decimalPrecision: 2,
+            precisionPad: true,
+            height: 18
+        }
+    },
+
+    /**
      * Default config for number-columns
      *
      * @param column
@@ -340,7 +388,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnADeep: function(colA) {
         var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
-            eColumnXRenderer;
+            eColumnXRenderer, eColumnXEditor;
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -410,6 +458,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (Ext.isObject(columnI) && columnI.summaryType && typeof me[eColumnSummaryX] == 'function') {
                     column$ = me[eColumnSummaryX](columnI, field);
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                }
+
+                // Apply editor
+                if (Ext.isObject(columnI) && columnI.editor) {
+                    eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
+                    if (Ext.isFunction(me[eColumnXEditor]) || Ext.isObject(me[eColumnXEditor])) {
+                        columnI.editor = Ext.isFunction(me[eColumnXEditor]) ? me[eColumnXEditor](columnI, field, Ext.isObject(columnI.editor) ? columnI.editor : {}) : me[eColumnXEditor];
+                    } else if (!Ext.isObject(columnI.editor)) {
+                        columnI.editor = false;
+                    }
                 }
 
                 // Add column
@@ -1071,7 +1129,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     rowsetPlugin$Cellediting: {
         ptype: 'cellediting',
-        clicksToEdit: 1,
+        triggerEvent: 'cellsecondclick',
         listeners: {
             edit: function(editor, e) {
                 var grid = editor.grid, ctx = grid.ctx();

@@ -2,22 +2,8 @@ Ext.define('Indi.controller.entities', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
-            gridColumn$Title: {
-                editor: {
-                    xtype: 'textfield',
-                    allowBlank: false,
-                    margin: '0 2 0 3',
-                    height: 18
-                }
-            },
-            gridColumn$Table: {
-                editor: {
-                    xtype: 'textfield',
-                    allowBlank: false,
-                    margin: '0 2 0 3',
-                    height: 18
-                }
-            },
+            gridColumn$Title: {editor: true},
+            gridColumn$Table: {editor: true},
             panelDockedInner$Actions$Php_InnerHandler: function(action, row, aix, btn) {
                 this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
             }

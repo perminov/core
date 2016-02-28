@@ -133,6 +133,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-grid-column-span-right {
     border-right-style: dashed;
 }
+.i-grid-column-editable .x-column-header-text {
+    color: blue;
+}
 .x-grid-group-title {font-weight: normal;}
 .x-grid-row-summary .x-grid-cell {
     color: null;
