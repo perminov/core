@@ -29,6 +29,8 @@
         '/js/admin/app/override/Ext.grid.View.js',
         '/js/admin/app/override/Ext.data.Model.js',
         '/js/admin/app/override/Ext.tab.Bar.js',
+        '/js/admin/app/override/Ext.grid.plugin.Editing.js',
+        '/js/admin/app/override/Ext.grid.column.Column.js',
 
         '/js/admin/app/ux/Ext.ux.form.field.plugin.InputMask.js',
 
@@ -39,7 +41,7 @@
         '/js/admin/app/view/Menu.js',
         '/js/admin/app/view/Viewport.js',
 
-        '/js/admin/app/lib/chart/HighStock.compiled.js',
+        '/js/admin/app/lib/chart/HighStock.js',
         '/js/admin/app/lib/chart/HighStockSerie.js',
 
         '/js/admin/app/lib/view/action/south/South.js',
