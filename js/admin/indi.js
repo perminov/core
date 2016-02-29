@@ -700,7 +700,7 @@ Ext.define('Indi', {
                     enumerable: false,
                     configurable: false,
                     value: function() {
-                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = JSON.parse(this)) ? r : false
+                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = Ext.JSON.decode(this)) ? r : false
                     }
                 });
             }
