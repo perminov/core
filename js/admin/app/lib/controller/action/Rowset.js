@@ -1282,14 +1282,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Apply specific control element config, as fields control elements/xtypes may be different
             eItemX = 'storeFieldX' + Indi.ucfirst(fieldR.foreign('elementId').alias);
             if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
-                itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI) : me[eItemX];
+                itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI, fieldR) : me[eItemX];
                 itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
             } else if (me[eItemX] === false) itemI = me[eItemX];
 
             // Apply custom config
             eItem$ = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
             if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
-                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI, fieldR) : me[eItem$];
                 itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
             } else if (me[eItem$] === false) itemI = me[eItem$];
 
@@ -1321,6 +1321,34 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      */
     storeField$Id: function() {
         return {name: 'id', type: 'int'}
+    },
+
+    /**
+     * Default config for date-fields
+     *
+     * @param field
+     * @param fieldR
+     * @return {Object}
+     */
+    storeFieldXCalendar: function (field, fieldR){
+        return {
+            type: 'date',
+            dateFormat: fieldR.params.displayFormat
+        }
+    },
+
+    /**
+     * Default config for datetime-fields
+     *
+     * @param field
+     * @param fieldR
+     * @return {Object}
+     */
+    storeFieldXDatetime: function (field, fieldR){
+        return {
+            type: 'date',
+            dateFormat: fieldR.params.displayDateFormat + ' ' + fieldR.params.displayTimeFormat
+        }
     },
 
     /**
@@ -1749,8 +1777,21 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Get changes
         params = Ext.clone(record.getChanges());
 
-        // Convert boolean values to int values
-        Object.keys(params).forEach(function(i){if (Ext.isBoolean(params[i])) params[i] = params[i] ? 1 : 0;});
+        // Convert values before submit
+        Object.keys(params).forEach(function(i){
+
+            // Boolean values to int values
+            if (Ext.isBoolean(params[i])) params[i] = params[i] ? 1 : 0;
+
+            // Process date values
+            if (Ext.isDate(params[i])) {
+                if (ti.fields.r(i, 'alias').foreign('elementId').alias == 'datetime') {
+                    params[i] = Ext.Date.format(params[i], 'Y-m-d H:i:s');
+                } else {
+                    params[i] = Ext.Date.format(params[i], 'Y-m-d');
+                }
+            }
+        });
 
         // Try to save via Ajax-request
         Ext.Ajax.request({
