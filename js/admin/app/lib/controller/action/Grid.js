@@ -327,6 +327,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDecimal143_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            decimalPrecision: 3,
+            precisionPad: true,
+            height: 18
+        }
+    },
+
+    /**
      * Default config for number-columns
      *
      * @param column
