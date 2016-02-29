@@ -278,6 +278,38 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     * Default editor config for date-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXCalendar_Editor: function(column, field) {
+        return {
+            xtype: 'datefield',
+            hideTrigger: true,
+            height: 18,
+            format: field.params.displayFormat
+        }
+    },
+
+    /**
+     * Default editor config for datetime-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDatetime_Editor: function(column, field) {
+        return {
+            xtype: 'datetimefield',
+            hideTrigger: true,
+            height: 18,
+            format: field.params.displayDateFormat
+        }
+    },
+
+    /**
      * Default editor config for number-columns
      *
      * @param column
@@ -289,6 +321,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
             xtype: 'numberfield',
             hideTrigger: true,
             decimalPrecision: 2,
+            precisionPad: true,
+            height: 18
+        }
+    },
+
+    /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDecimal143_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            decimalPrecision: 3,
             precisionPad: true,
             height: 18
         }
@@ -378,6 +427,34 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * Default config for move-columns
      */
     gridColumnXMove: {hidden: true},
+
+    /**
+     * Default config for date-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXCalendar: function(column, field) {
+        return {
+            xtype: 'datecolumn',
+            format: field.params.displayFormat
+        }
+    },
+
+    /**
+     * Default config for datetime-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDatetime: function(column, field) {
+        return {
+            xtype: 'datecolumn',
+            format: field.params.displayDateFormat + ' ' + field.params.displayTimeFormat
+        }
+    },
 
     /**
      * Build an array, representing grid columns for the given column level,
