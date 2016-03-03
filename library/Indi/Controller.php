@@ -499,7 +499,7 @@ class Indi_Controller {
         $field = Indi::trail()->model->fields($for);
 
         // Get filter
-        $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
+        if (Indi::trail()->filters) $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
 
         // Declare WHERE array
         $where = array();
@@ -757,7 +757,7 @@ class Indi_Controller {
         $exclude = array_keys(Indi::obar());
 
         // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
-        return Indi::trail()->gridFields ? Indi::trail()->gridFields->keywordWHERE($keyword, $exclude) : array();
+        return Indi::trail()->{Indi::trail()->gridFields ? 'gridFields' : 'fields'}->keywordWHERE($keyword, $exclude);
     }
 
     /**
