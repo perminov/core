@@ -8,7 +8,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
 
     // @inheritdoc
     mixins: {
-        field: 'Ext.form.field.Field'
+        field: 'Ext.form.field.Field',
+        fieldBase: 'Ext.form.field.Base'
     },
 
     // @inheritdoc
@@ -515,6 +516,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         me.preview = me.getPreview();
         me.items = [me.toolbar$Master(), me.previewWrap()];
         me.callParent();
+        me.mixins.fieldBase._initComponent.call(this, arguments);
         me.initField();
     },
 
@@ -564,6 +566,9 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             // Setup positioning
             me.bodyEl.select('[alias="embed"]').first().setStyle({position: 'absolute', top: '50%'});
         }
+
+        // Fire `enablebysatellite` event
+        me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
     /**
@@ -865,5 +870,20 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      */
     clearInvalid: function() {
         this.get('browsed').clearInvalid();
+    },
+
+    /**
+     * Ensure 'fieldBase'-mixin's _onChange method will be called
+     */
+    onChange: function() {
+
+        // Setup auxilliary variables
+        var me = this;
+
+        // Call parent
+        //me.callParent(arguments);
+
+        // Call mixin's _onChange() method
+        me.mixins.fieldBase._onChange.call(this, arguments);
     }
 });
