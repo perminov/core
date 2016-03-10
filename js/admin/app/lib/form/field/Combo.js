@@ -2160,6 +2160,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // If data object, representing current value was not found, return null
         if (!Ext.isObject(r)) return null;
 
+        // If data object, representing current value's 'attrs' prop - was not found, return null
+        if (!Ext.isObject(r.attrs)) return null;
+
         // Setup prop shortcut
         propS = r.attrs[name].toString();
 

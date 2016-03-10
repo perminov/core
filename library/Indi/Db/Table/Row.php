@@ -1249,20 +1249,27 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (($dir = $this->model()->dir('exists')) === false) return;
 
         // If $field argument is not given
-        if (!$field)
+        if (!$field) {
 
             // We assume that all files, uploaded using all (not certain) file upload fields should be deleted,
             // so we get the array of aliases of file upload fields within entity, that current row is related to
-            if ($field = $this->model()->fields()->select('upload', 'alias')->column('alias'))
+            $alias = array();
+            foreach ($this->model()->fields() as $fieldR)
+                if ($fieldR->foreign('elementId')->alias == 'upload')
+                    $alias[] = $fieldR->alias;
 
-                // Use that file upload fields aliases list to build a part of a pattern for use in php glob() function
-                $field = '{' . $field . '}';
+            // If no 'upload' fields found - return
+            if (!$alias) return;
+
+            // Use that file upload fields aliases list to build a part of a pattern for use in php glob() function
+            $field = '{' . im($alias) . '}';
+        }
 
         // If value of $field variable is still empty - return
         if (!$field) return;
 
         // Get all of the possible files, uploaded using that field, and all their versions
-        $fileA = glob($dir . $this->id . '_' . $field . '[.,]*');
+        $fileA = glob($dir . $this->id . '_' . $field . '[.,]*', GLOB_BRACE);
 
         // Delete them
         foreach ($fileA as $fileI) @unlink($fileI);
