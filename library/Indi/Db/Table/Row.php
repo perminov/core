@@ -3402,7 +3402,22 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return string
      */
     public function date($prop, $format = 'Y-m-d', $ldate = false) {
-        return $ldate ? ldate(Indi::date2strftime($format), $this->$prop) : date($format, strtotime($this->$prop));
+
+        // If $ldate arg is given
+        if ($ldate) {
+
+            // Get localized date
+            $date = ldate(Indi::date2strftime($format), $this->$prop);
+
+            // Force Russian-style month name endings
+            foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r)
+                $date = preg_replace('/' . $s . '\b/', $r, $date);
+
+        // Else use ordinary approach
+        } else $date = date($format, strtotime($this->$prop));
+
+        // Return
+        return $date;
     }
 
     /**
