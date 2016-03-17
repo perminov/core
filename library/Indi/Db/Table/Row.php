@@ -436,12 +436,6 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function delete() {
 
-        // Delete all files (images, etc) that have been attached to row
-        $this->deleteFiles();
-
-        // Delete all files/folder uploaded/created while using CKFinder
-        $this->deleteCKFinderFiles();
-
         // Delete other rows of entities, that have fields, related to entity of current row
         // This function also covers other situations, such as if entity of current row has a tree structure,
         // or row has dependent rowsets
@@ -449,6 +443,12 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Standard deletion
         $return = $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+
+        // Delete all files (images, etc) that have been attached to row
+        $this->deleteFiles();
+
+        // Delete all files/folder uploaded/created while using CKFinder
+        $this->deleteCKFinderFiles();
 
         // Unset `id` prop
         $this->id = null;
