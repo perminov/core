@@ -1,18 +1,8 @@
-/**
- * Special version of Indi.form.Combo, created for grid/tile/etc store filtering purposes
- */
 Ext.define('Indi.lib.form.field.Color', {
-
-    // @inheritdoc
-    extend: 'Ext.form.field.Trigger',
-
-    // @inheritdoc
-    alternateClassName: 'Indi.form.Color',
-
-    // @inheritdoc
-    alias: 'widget.colorfield',
-
-    expanded: false,
+	extend: 'Ext.form.field.Picker',
+	alias: 'widget.colorfield',
+	matchFieldWidth: false,
+    pickerOffset: [0, -1],
 
     // @inheritdoc
     afterRender: function() {
@@ -21,18 +11,55 @@ Ext.define('Indi.lib.form.field.Color', {
         // Call parent
         me.callParent(arguments);
 
-        // Bind third-party color picker
-        me.inputEl.attr('onclick', 'colorPicker(event, null, null, null, null, null, null, null, 1, "0")');
+        // Force click made on inputEl to be treated as click made on triggerEl
+        me.inputEl.on('click', me.onTriggerClick, this);
     },
 
-    onTriggerClick: function() {
-        this.inputEl.dom.click();
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Strip hue from value
+        me.value = me.value.replace(/[0-9]{3}#/, '#');
+
+        // Call parent
+        me.callParent(arguments);
     },
 
-    onBlur: function(){
-        if (this.el.select('.cPSkin').first().css('display') == 'block') {
-            this.el.select('.cPSkin').first().css('display', 'none');
-            this.expanded = false;
-        }
-    }
+    // @inheritdoc
+    createPicker: function() {
+		var me = this;
+		return Ext.widget({
+            xtype: 'colorpicker',
+			floating: true,
+			focusOnShow:true,
+			baseCls: Ext.baseCSSPrefix + 'colorpicker',
+			listeners: {
+				scope: me,
+				select: me.onSelect
+			}
+		});
+	},
+
+    // @inheritdoc
+    onSelect: function(picker, value) {
+		var me = this, hex = '#' + value;
+
+        // Set hex value
+		me.setValue(hex);
+
+        // Fire 'select' event
+		me.fireEvent('select', me, hex);
+
+        // Collapse picker
+		me.collapse();
+	},
+
+    // @inheritdoc
+    onExpand: function() {
+		var me = this, value = me.getValue().replace(/[0-9]{3}#/, '#');
+
+        // Set picker's value
+		me.picker.setValue(value);
+	}
 });
