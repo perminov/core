@@ -403,6 +403,19 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
+     * Color-picker fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXColor: function(item) {
+        return {
+            xtype: 'colorfield',
+            allowBlank: true
+        }
+    },
+
+    /**
      * Provide initial/default config for all fields
      *
      * @param field
