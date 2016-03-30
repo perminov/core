@@ -44,3 +44,89 @@ Ext.override(Ext.view.Table, {
         }
     }
 });
+
+/**
+ * Here we override:
+ * 1. onKeyUp() and onKeyDown() methods. The only change is that second argument `true` replaced with `false`
+ *    in me.doDeselect(me.lastFocused, true) calls. We do it to force `selectionchange` event to be fired in case
+ *    of deselection made by keyboard UP and DOWN keys, so this way we use to fix this bug, officially known
+ *    by ExtJS, see https://www.sencha.com/forum/showthread.php?208702-Problem-with-selectionchange-event-of-selection-model
+ *    Despite the mentioned forum thread relates to ExtJS 4.2 (discovered by comparing the code), this bug
+ *    is also actual for ExtJS 4.1.1
+ */
+Ext.override(Ext.selection.RowModel, {
+    onKeyUp: function(e) {
+        var me = this,
+            idx  = me.store.indexOf(me.lastFocused),
+            record;
+
+        if (idx > 0) {
+            // needs to be the filtered count as thats what
+            // will be visible.
+            record = me.store.getAt(idx - 1);
+            if (e.shiftKey && me.lastFocused) {
+                if (me.isSelected(me.lastFocused) && me.isSelected(record)) {
+                    // me.doDeselect(me.lastFocused, true);
+                    me.doDeselect(me.lastFocused, false);
+                    me.setLastFocused(record);
+                } else if (!me.isSelected(me.lastFocused)) {
+                    me.doSelect(me.lastFocused, true);
+                    me.doSelect(record, true);
+                } else {
+                    me.doSelect(record, true);
+                }
+            } else if (e.ctrlKey) {
+                me.setLastFocused(record);
+            } else {
+                me.doSelect(record);
+                //view.focusRow(idx - 1);
+            }
+        }
+        // There was no lastFocused record, and the user has pressed up
+        // Ignore??
+        //else if (this.selected.getCount() == 0) {
+        //
+        //    this.doSelect(record);
+        //    //view.focusRow(idx - 1);
+        //}
+    },
+
+    // Navigate one record down. This could be a selection or
+    // could be simply focusing a record for discontiguous
+    // selection. Provides bounds checking.
+    onKeyDown: function(e) {
+        var me = this,
+            idx  = me.store.indexOf(me.lastFocused),
+            record;
+
+        // needs to be the filtered count as thats what
+        // will be visible.
+        if (idx + 1 < me.store.getCount()) {
+            record = me.store.getAt(idx + 1);
+            if (me.selected.getCount() === 0) {
+                if (!e.ctrlKey) {
+                    me.doSelect(record);
+                } else {
+                    me.setLastFocused(record);
+                }
+                //view.focusRow(idx + 1);
+            } else if (e.shiftKey && me.lastFocused) {
+                if (me.isSelected(me.lastFocused) && me.isSelected(record)) {
+                    //me.doDeselect(me.lastFocused, true);
+                    me.doDeselect(me.lastFocused, false);
+                    me.setLastFocused(record);
+                } else if (!me.isSelected(me.lastFocused)) {
+                    me.doSelect(me.lastFocused, true);
+                    me.doSelect(record, true);
+                } else {
+                    me.doSelect(record, true);
+                }
+            } else if (e.ctrlKey) {
+                me.setLastFocused(record);
+            } else {
+                me.doSelect(record);
+                //view.focusRow(idx + 1);
+            }
+        }
+    }
+});
