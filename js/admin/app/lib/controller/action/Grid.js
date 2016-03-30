@@ -75,8 +75,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
             selectionchange: function (selectionModel, selectedRows) {
 
                 // Refresh summary row
-                if (this.multiSelect && selectionModel.view.getFeature(0).ftype == 'summary')
-                    selectionModel.view.getFeature(0).refresh();
+                if (this.multiSelect && selectionModel.view.getFeature('summary')) {
+                    selectionModel.views.forEach(function(view){
+                        view.getFeature('summary').refresh();
+                    });
+                }
 
                 if (selectedRows.length > 0)
                     Ext.Array.each(selectedRows, function (row) {
@@ -542,7 +545,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     Ext.defer(function(){
                         // Get tr
                         tr = grid.view.el.down('tr.x-grid-row-summary');
-                        td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
+                        td = tr.down('td.x-grid-cell-' + grid.ctx().rowset.id + '-column-' + dataIndex);
                         td.addCls('x-grid-cell-selected');
                     }, 1);
 
