@@ -739,7 +739,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Increase first non-hidden column's width, if free space is available
         if (locked) {
             columnA[0].setWidth(widthA[0]);
-            columnA[1].setWidth(widthA[1]);
+            if (columnA[1]) columnA[1].setWidth(widthA[1]);
         } else {
             columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
         }
