@@ -180,29 +180,44 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Get the scope of rows to move within
         $within = $this->primaryWHERE();
 
-        // If row move was successful
-        if ($this->row->move($direction, $within)) {
+        // Declare array of ids of entries, that should be moved, and push main entry's id as first item
+        $toBeMovedIdA[] = $this->row->id;
 
-            // Get the page of results, that we were at
-            $wasPage = Indi::trail()->scope->page;
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
 
-            // If current model has a tree-column, detect new row index by a special algorithm
-            if (Indi::trail()->model->treeColumn()) Indi::uri()->aix = Indi::trail()->model->detectOffset(
-                Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $this->row->id);
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
 
-            // Else just shift current row index by inc/dec-rementing
-            else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
-
-            // Apply new index
-            $this->setScopeRow();
-
-            // Flush json response, containing new page index, in case if now row
-            // index change is noticeable enough for rowset current page was shifted
-            jflush(true, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
+            // If $otherIdA array is still not empty append it's item into $toBeMovedIdA array
+            if ($otherIdA) $toBeMovedIdA = array_merge($toBeMovedIdA, $otherIdA);
         }
 
-        // Flush json response
-        jflush(false);
+        // Fetch rows that should be moved
+        $toBeMovedRs = Indi::trail()->model->fetchAll(
+            array('`id` IN (' . im($toBeMovedIdA) . ')', Indi::trail()->scope->WHERE),
+            '`move` ' . ($direction == 'up' ? 'ASC' : 'DESC')
+        );
+
+        // For each row
+        foreach ($toBeMovedRs as $toBeMovedR) $toBeMovedR->move($direction, $within);
+
+        // Get the page of results, that we were at
+        $wasPage = Indi::trail()->scope->page;
+
+        // If current model has a tree-column, detect new row index by a special algorithm
+        if (Indi::trail()->model->treeColumn()) Indi::uri()->aix = Indi::trail()->model->detectOffset(
+            Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $this->row->id);
+
+        // Else just shift current row index by inc/dec-rementing
+        else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
+
+        // Apply new index
+        $this->setScopeRow();
+
+        // Flush json response, containing new page index, in case if now row
+        // index change is noticeable enough for rowset current page was shifted
+        jflush(true, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
     }
 
     /**
@@ -1792,6 +1807,23 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Toggle
         Indi::trail()->row->toggle();
+
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
+
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+            // If $otherIdA array is not empty
+            if ($otherIdA) {
+
+                // Fetch rows
+                $otherRs = Indi::trail()->model->fetchAll(array('`id` IN (' . im($otherIdA) . ')', Indi::trail()->scope->WHERE));
+
+                // For each row
+                foreach ($otherRs as $otherR) $otherR->toggle();
+            }
+        }
 
         // Redirect
         $this->redirect();
