@@ -780,7 +780,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Setup last row autoselection, if need
-        if (me.ti().scope.aix) {
+        /*if (me.ti().scope.aix) {
 
             // Calculate row index value, relative to current page
             var index = parseInt(me.ti().scope.aix) - 1 - (parseInt(me.ti().scope.page) - 1) *
@@ -788,6 +788,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
             // If such row (row at that index) exists in grid - selectit
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
+        }*/
+
+        if (Ext.isArray(me.ti().scope.lastIds)) {
+            me.ti().scope.lastIds.forEach(function(id){
+                if (grid.getStore().getById(parseInt(id))) {
+                    grid.selModel.select(grid.getStore().getById(parseInt(id)), true);
+                }
+            });
         }
 
         // Adjust grid column widths

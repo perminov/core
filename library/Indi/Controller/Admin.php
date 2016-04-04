@@ -137,8 +137,16 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Else if where is some another action
             } else {
 
+                // If 'others' param exists in $_POST, and it's not empty
+                // Unset unallowed values
+                if ($otherIdA = ar(Indi::post()->others))
+                    foreach ($otherIdA as $i => $otherIdI)
+                        if (!(int) $otherIdI) unset($otherIdA[$i]);
+                $selectedIdA = $otherIdA ?: array();
+                if ((int) Indi::uri('id')) $selectedIdA[] = (int) Indi::uri('id');
+
                 // Apply some scope params
-                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix);
+                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix, 'lastIds' => $selectedIdA);
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
                 Indi::trail()->scope->apply($applyA);
 
@@ -178,7 +186,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function move($direction) {
 
         // Get the scope of rows to move within
-        $within = $this->primaryWHERE();
+        $within = Indi::trail()->scope->WHERE;
 
         // Declare array of ids of entries, that should be moved, and push main entry's id as first item
         $toBeMovedIdA[] = $this->row->id;
@@ -200,7 +208,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         );
 
         // For each row
-        foreach ($toBeMovedRs as $toBeMovedR) $toBeMovedR->move($direction, $within);
+        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within)) break;
 
         // Get the page of results, that we were at
         $wasPage = Indi::trail()->scope->page;
