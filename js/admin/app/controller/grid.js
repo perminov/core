@@ -12,6 +12,17 @@ Ext.define('Indi.controller.grid', {
                         c.setVisible(!d.fieldId);
                     }
                 }
+            },
+            formItem$ProfileIds: {
+                allowBlank: true,
+                considerOn: [{
+                    name: 'access'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.access != 'all');
+                    }
+                }
             }
         }
     }
