@@ -593,6 +593,12 @@ class Field_Row extends Indi_Db_Table_Row {
         // Run the query
         Indi::db()->query($sql);
 
+        // If we are creating move-column, e.g. this column will be used for ordering rows
+        // Force it's values to be same as values of `id` column, for it to be possible to
+        // move entries up/down once such a column was created
+        if (!$this->id && $columnTypeR->type == 'INT(11)' && $this->foreign('elementId')->alias == 'move')
+            Indi::db()->query('UPDATE `' . $table . '` SET `' . $this->alias . '` = `id`');
+
         // If field column type was ENUM or SET, but now it is not -
         // we should delete rows, related to current field, from `enumset` table
         if (!preg_match('/^ENUM|SET$/', $columnTypeR->type)
