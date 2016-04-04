@@ -396,6 +396,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXMove: {hidden: true},
 
     /**
+     * Default config for move-columns
+     */
+    gridColumn$Toggle: function(){
+        return {
+            cls: 'i-column-header-toggle',
+            header: '&nbsp;&nbsp;&nbsp;',
+            tooltip: arguments[0].tooltip || arguments[0].header,
+            menuDisabled: true,
+            sortable: false
+        }
+    },
+
+    /**
      * Default config for date-columns
      *
      * @param column
