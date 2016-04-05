@@ -451,11 +451,11 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-grid-cell-color-red .x-grid-cell-inner{
     color: red;
 }
-.x-column-header.i-column-header-toggle {
-    background-image: url(/i/admin/btn-icon-toggle.png) !important;
-    background-position: 50% 50%;
-    background-repeat: no-repeat;
+.x-column-header.i-column-header-icon .x-column-header-inner {
+   text-align: center;
 }
-.x-column-header.i-column-header-toggle .x-column-header-inner{
-    background: none;
+.x-column-header.i-column-header-icon .x-column-header-inner .x-column-header-text img {
+    position: relative;
+    margin-bottom: -4px;
+    left: -2px;
 }
