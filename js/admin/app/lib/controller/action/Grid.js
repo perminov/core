@@ -369,6 +369,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             hideTrigger: true,
             margin: '0 2 0 3',
             height: 18,
+            grow: false,
             value: '',
             subTplData: me.ti().row.view(c.dataIndex).subTplData,
             store: me.ti().row.view(c.dataIndex).store,

@@ -1269,6 +1269,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         // results of comboEl.width() call. For some reason, outside the setTimeout body it gives result, that
         // differs from the same one, got inside. I guess it is caused by some browser rendering particularity
         Ext.defer(function(){
+            if (!me.comboEl) return;
             staticDecrease += parseInt(me.comboEl.css('padding-right')) + parseInt(me.comboEl.css('padding-left'));
             staticDecrease += parseInt(me.multipleEl.css('margin-right')) + parseInt(me.multipleEl.css('margin-left'));
             staticDecrease += parseInt(me.multipleEl.css('padding-right')) + parseInt(me.multipleEl.css('padding-left'));
