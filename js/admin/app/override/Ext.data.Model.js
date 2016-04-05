@@ -75,7 +75,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             grid = me.grid,
             activeColumn = me.getActiveColumn(),
             sm = grid.getSelectionModel(),
-            record;
+            record, editorCmp = ed.field, indiField = editorCmp.field;
 
         if (activeColumn) {
             record = me.context.record;
@@ -91,8 +91,20 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             // Only update the record if the new value is different than the
             // startValue. When the view refreshes its el will gain focus
             if (!record.isEqual(value, startValue)) {
-                console.log(record.key(activeColumn.dataIndex));
-                record.set(activeColumn.dataIndex, value);
+                if (indiField) {
+                    if (String(record.key(activeColumn.dataIndex)) != value) {
+                        if (indiField.storeRelationAbility == 'one') {
+                            if (indiField.relation == '6') {
+                                record.set(activeColumn.dataIndex, editorCmp.r(value).title);
+                            } else {
+                                record.set(activeColumn.dataIndex, parseInt(value) ? editorCmp.r(value).title : '');
+                            }
+                            record.key(activeColumn.dataIndex, value);
+                        }
+                    }
+                } else {
+                    record.set(activeColumn.dataIndex, value);
+                }
             }
 
             // Restore focus back to the view's element.

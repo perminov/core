@@ -1806,6 +1806,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     params[i] = Ext.Date.format(params[i], 'Y-m-d');
                 }
             }
+
+            // Process foreign key values
+            if (ti.fields.r(i, 'alias').storeRelationAbility == 'one') {
+                params[i] = record.key(i);
+            }
         });
 
         // Try to save via Ajax-request
