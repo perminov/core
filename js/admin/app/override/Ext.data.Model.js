@@ -98,6 +98,14 @@ Ext.override(Ext.grid.plugin.CellEditing, {
                             cellVal = cellVal.replace(/(class="i-color-box" style="background:\s*[^u][^>]+><\/span>).*$/, '$1');
                             record.set(activeColumn.dataIndex, cellVal);
                             record.key(activeColumn.dataIndex, value);
+                        } else if (indiField.storeRelationAbility == 'many') {
+                            value = value.length ? value.split(',') : [];
+                            var titleA = [], title;
+                            value.forEach(function(item){
+                                titleA.push(editorCmp.r(item).raw);
+                            });
+                            record.set(activeColumn.dataIndex, titleA.join(', '));
+                            record.key(activeColumn.dataIndex, value.join(','));
                         }
                     }
                 } else {
