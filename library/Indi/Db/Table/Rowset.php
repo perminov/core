@@ -1268,6 +1268,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Setup primary option data
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
+            $options[$o->$keyProperty]['raw'] = $o->{$this->titleColumn};
+
             // If color box was detected, and it has box-type, we remember this fact
             if ($info['box']) $hasColorBox = true;
 

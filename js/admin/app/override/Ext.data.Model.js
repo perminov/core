@@ -75,7 +75,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             grid = me.grid,
             activeColumn = me.getActiveColumn(),
             sm = grid.getSelectionModel(),
-            record, editorCmp = ed.field, indiField = editorCmp.field;
+            record, editorCmp = ed.field, indiField = editorCmp.field, cellVal;
 
         if (activeColumn) {
             record = me.context.record;
@@ -94,11 +94,9 @@ Ext.override(Ext.grid.plugin.CellEditing, {
                 if (indiField) {
                     if (String(record.key(activeColumn.dataIndex)) != value) {
                         if (indiField.storeRelationAbility == 'one') {
-                            if (indiField.relation == '6') {
-                                record.set(activeColumn.dataIndex, editorCmp.r(value).title);
-                            } else {
-                                record.set(activeColumn.dataIndex, parseInt(value) ? editorCmp.r(value).title : '');
-                            }
+                            cellVal = parseInt(value) || indiField.relation == '6' ? editorCmp.r(value).raw : '';
+                            cellVal = cellVal.replace(/(class="i-color-box" style="background:\s*[^u][^>]+><\/span>).*$/, '$1');
+                            record.set(activeColumn.dataIndex, cellVal);
                             record.key(activeColumn.dataIndex, value);
                         }
                     }
