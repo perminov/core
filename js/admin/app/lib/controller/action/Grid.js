@@ -436,11 +436,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumn$Toggle: function(){
         return {
-            cls: 'i-column-header-toggle',
-            header: '&nbsp;&nbsp;&nbsp;',
-            tooltip: arguments[0].tooltip || arguments[0].header,
-            menuDisabled: true,
-            sortable: false
+            cls: 'i-column-header-icon',
+            header: '<img src="/i/admin/btn-icon-toggle.png">',
+            tooltip: arguments[0].tooltip || arguments[0].header
         }
     },
 
