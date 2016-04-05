@@ -30,6 +30,13 @@ class Indi_Trail_Admin_Item_Scope {
     public $aix;
 
     /**
+     * Ids of other bulk-accessed rows
+     *
+     * @var
+     */
+    public $lastIds = array();
+
+    /**
      * Json-encoded array of filters, that were used to setup scope bounds
      *
      * @var string

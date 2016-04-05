@@ -100,9 +100,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         foreach ($sectionR->nested('grid') as $gridR) {
             foreach ($this->fields as $fieldR) {
                 if ($gridR->fieldId == $fieldR->id) {
-                    $gridFieldI = $fieldR;
-                    $gridFieldA[] = $gridFieldI;
-                    $gridFieldAliasA[] = $gridFieldI->alias;
+                    if (!$gridR->access || $gridR->access == 'all' || ($gridR->access == 'only' && in(Indi::admin()->profileId, $gridR->profileIds)) || ($gridR->access == 'except' && !in(Indi::admin()->profileId, $gridR->profileIds))) {
+                        $gridFieldI = $fieldR;
+                        $gridFieldA[] = $gridFieldI;
+                        $gridFieldAliasA[] = $gridFieldI->alias;
+                    }
                 }
             }
         }

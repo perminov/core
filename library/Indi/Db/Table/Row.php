@@ -436,12 +436,6 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function delete() {
 
-        // Delete all files (images, etc) that have been attached to row
-        $this->deleteFiles();
-
-        // Delete all files/folder uploaded/created while using CKFinder
-        $this->deleteCKFinderFiles();
-
         // Delete other rows of entities, that have fields, related to entity of current row
         // This function also covers other situations, such as if entity of current row has a tree structure,
         // or row has dependent rowsets
@@ -449,6 +443,12 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Standard deletion
         $return = $this->model()->delete('`id` = "' . $this->_original['id'] . '"');
+
+        // Delete all files (images, etc) that have been attached to row
+        $this->deleteFiles();
+
+        // Delete all files/folder uploaded/created while using CKFinder
+        $this->deleteCKFinderFiles();
 
         // Unset `id` prop
         $this->id = null;
@@ -3402,7 +3402,22 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return string
      */
     public function date($prop, $format = 'Y-m-d', $ldate = false) {
-        return $ldate ? ldate(Indi::date2strftime($format), $this->$prop) : date($format, strtotime($this->$prop));
+
+        // If $ldate arg is given
+        if ($ldate) {
+
+            // Get localized date
+            $date = ldate(Indi::date2strftime($format), $this->$prop);
+
+            // Force Russian-style month name endings
+            foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r)
+                $date = preg_replace('/' . $s . '\b/', $r, $date);
+
+        // Else use ordinary approach
+        } else $date = date($format, strtotime($this->$prop));
+
+        // Return
+        return $date;
     }
 
     /**

@@ -84,9 +84,19 @@ class Indi_Trail_Admin {
             'order' => 'move'
         ));
 
+        // Grid columns WHERE clause
+        $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
+        if (Indi::model('Grid')->fields('access')) {
+            $gridWHERE[] = '(' . im(array(
+                '`access` = "all"',
+                '(`access` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+                '(`access` = "except" AND NOT FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+            ), ' OR ') . ')';
+        }
+
         // Setup grid columns
         $sectionRs->nested('grid', array(
-            'where' => '`sectionId` = "' . $routeA[0] . '" AND `toggle` = "y"',
+            'where' => $gridWHERE,
             'order' => 'move'
         ));
 

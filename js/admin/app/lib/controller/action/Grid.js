@@ -75,8 +75,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
             selectionchange: function (selectionModel, selectedRows) {
 
                 // Refresh summary row
-                if (this.multiSelect && selectionModel.view.getFeature(0).ftype == 'summary')
-                    selectionModel.view.getFeature(0).refresh();
+                if (this.multiSelect && selectionModel.view.getFeature('summary')) {
+                    selectionModel.views.forEach(function(view){
+                        view.getFeature('summary').refresh();
+                    });
+                }
 
                 if (selectedRows.length > 0)
                     Ext.Array.each(selectedRows, function (row) {
@@ -118,7 +121,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             id: me.bid() + '-rowset-grid-column-' + field.alias,
             header: column.alterTitle || field.title,
             dataIndex: field.alias,
-            tooltip: tooltip ? {html: tooltip, constrainParent: false} : '',
+            tooltip: tooltip ? {html: tooltip, constrainParent: false, constrainPosition: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
             sortable: true,
             align: function(){
@@ -142,7 +145,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Recursively build the columns
         columnA = columnA.concat(me.gridColumnADeep(me.ti().grid));
 
-        if (!columnA[1].columns) columnA[1].flex = 1;
+        if (columnA[1] && !columnA[1].columns && !columnA[1].locked) columnA[1].flex = 1;
 
         return columnA;
     },
@@ -429,6 +432,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXMove: {hidden: true},
 
     /**
+     * Default config for move-columns
+     */
+    gridColumn$Toggle: function(){
+        return {
+            cls: 'i-column-header-toggle',
+            header: '&nbsp;&nbsp;&nbsp;',
+            tooltip: arguments[0].tooltip || arguments[0].header,
+            menuDisabled: true,
+            sortable: false
+        }
+    },
+
+    /**
      * Default config for date-columns
      *
      * @param column
@@ -494,8 +510,18 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         if (Ext.merge(columnI, {hidden: false}))
                             break;
 
+                // If `alias` prop of `colI` is not empty - use it to build an explicit id
+                if (colI.alias) columnI.id = me.bid() + '-rowset-grid-column-' + colI.alias;
+
+                // Apply column custom config
+                eColumn$ = 'gridColumn$' + Indi.ucfirst(colI.alias);
+                if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
+                    column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
+                    columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                } else if (me[eColumn$] === false) columnI = me[eColumn$];
+
                 // Add column
-                columnA.push(columnI);
+                if (columnI) columnA.push(columnI);
 
             // Else
             } else {
@@ -578,7 +604,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     Ext.defer(function(){
                         // Get tr
                         tr = grid.view.el.down('tr.x-grid-row-summary');
-                        td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
+                        td = tr.down('td.x-grid-cell-' + grid.ctx().rowset.id + '-column-' + dataIndex);
                         td.addCls('x-grid-cell-selected');
                     }, 1);
 
@@ -609,7 +635,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     /**
      * Adjust grid columns widths, for widths to match column contents
      */
-    gridColumnAFit: function(grid) {
+    gridColumnAFit: function(grid, locked) {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
@@ -630,12 +656,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
             visible = grid.getWidth() - (view.hasScrollY() ? 16 : 0);
 
             // Get sumary feature
-            summaryFeature = view.getFeature(0);
+            summaryFeature = view.getFeature('summary');
 
         // Else
         } else {
 
-            // Pass exection directly to non-locked part of grid
+            // Pass exection directly to locked and non-locked part of grid
+            me.gridColumnAFit(view.lockedGrid, true);
             me.gridColumnAFit(view.normalGrid);
 
             // Return
@@ -643,7 +670,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Get summary data
-        if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
+        if (summaryFeature) summaryData = summaryFeature.generateSummaryData();
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
@@ -759,7 +786,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Increase first non-hidden column's width, if free space is available
-        columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
+        if (locked) {
+            columnA[0].setWidth(widthA[0]);
+            if (columnA[1]) columnA[1].setWidth(widthA[1]);
+        } else {
+            columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
+        }
 
         // If current grid view is not consists from locked and non-locked parts - resume layouts
         if (view.headerCt) Ext.resumeLayouts(true);
@@ -784,7 +816,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Setup last row autoselection, if need
-        if (me.ti().scope.aix) {
+        /*if (me.ti().scope.aix) {
 
             // Calculate row index value, relative to current page
             var index = parseInt(me.ti().scope.aix) - 1 - (parseInt(me.ti().scope.page) - 1) *
@@ -792,6 +824,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
             // If such row (row at that index) exists in grid - selectit
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
+        }*/
+
+        if (Ext.isArray(me.ti().scope.lastIds)) {
+            me.ti().scope.lastIds.forEach(function(id){
+                if (grid.getStore().getById(parseInt(id))) {
+                    grid.selModel.select(grid.getStore().getById(parseInt(id)), true);
+                }
+            });
         }
 
         // Adjust grid column widths

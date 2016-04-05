@@ -68,9 +68,11 @@
         '/js/admin/app/lib/form/field/MultiCheck.js',
         '/js/admin/app/lib/form/field/Phone.js',
         '/js/admin/app/lib/form/field/TimeSpan.js',
+        '/js/admin/app/lib/form/field/Color.js',
 
         '/js/admin/app/lib/form/field/Time.js',
         '/js/admin/app/lib/picker/DateTime.js',
+        '/js/admin/app/lib/picker/Color.js',
         '/js/admin/app/lib/form/field/DateTime.js',
 
         '/js/admin/app/lib/controller/Controller.js',
@@ -86,6 +88,7 @@
     Indi::implode(array(
         '/library/extjs4/resources/css/ext-all.css',
         '/library/extjs4/examples/ux/css/CheckHeader.css',
+        '/library/extjs4/resources/css/colorpicker.css',
         '/css/admin/indi.all.css',
         '/css/admin/indi.all.default.css',
         '/css/admin/indi.layout.css',

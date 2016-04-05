@@ -43,7 +43,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         // current combo is not a boolean combo, and it's hidden value is '0', we set value to
         // empty string, as filter name and value will be sent as one of store fetch params otherwise,
         // so we prevent it
-        if (me.hiddenEl.val() == '0' && me.hiddenEl.attr('boolean') != 'true') me.hiddenEl.val('');
+        if (me.hiddenEl.val() == '0' && me.hiddenEl.attr('boolean') != 'true' && !me.store.enumset) me.hiddenEl.val('');
 
         // Execute javascript code, if it was assigned to selected option. The additional clause for execution
         // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
@@ -138,7 +138,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      * @return {*}
      */
     getValue: function() {
-        return this.boolean || this.multiSelect ? this.value : (this.value + '' == '0' ? '' : this.value || '');
+        return this.boolean || this.multiSelect ? this.value : (this.value + '' == '0' ? (this.store.enumset ? this.value : '') : this.value || '');
     },
 
     /**

@@ -1056,13 +1056,28 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     panelDockedInner$Actions$Toggle_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+        var me = this, grid = Ext.getCmp(me.rowset.id), srs = grid.getSelectionModel().selected.collect('id', 'data');
+        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
+            params: {
+                'others[]': Ext.Array.remove(srs, row.get('id'))
+            }
+        });
     },
     panelDockedInner$Actions$Up_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+        var me = this, grid = Ext.getCmp(me.rowset.id), srs = grid.getSelectionModel().selected.collect('id', 'data');
+        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
+            params: {
+                'others[]': Ext.Array.remove(srs, row.get('id'))
+            }
+        });
     },
     panelDockedInner$Actions$Down_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+        var me = this, grid = Ext.getCmp(me.rowset.id), srs = grid.getSelectionModel().selected.collect('id', 'data');
+        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
+            params: {
+                'others[]': Ext.Array.remove(srs, row.get('id'))
+            }
+        });
     },
 
     /**
