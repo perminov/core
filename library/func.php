@@ -500,13 +500,40 @@ function grs($length = 15, $useSpecialChars = false) {
 /**
  * Build a localized date
  *
- * @param $format
- * @param $date
+ * @param string $format
+ * @param string $date
+ * @param string|array $when
  * @return string
  */
-function ldate($format, $date) {
-    $formatted = strftime($format, strtotime($date));
-    return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
+function ldate($format, $date, $when = '') {
+
+    // If strftime's format syntax is used
+    if (preg_match('/%/', $format)) {
+
+        // Format date
+        $formatted = strftime($format, strtotime($date));
+
+        // Return
+        return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
+
+    // Else
+    } else {
+
+        // Get localized date
+        $date = ldate(Indi::date2strftime($format), $date);
+
+        // Force Russian-style month name endings
+        foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r)
+            $date = preg_replace('/' . $s . '\b/u', $r, $date);
+
+        // Force Russian-style weekday name endings, suitable for version, spelling-compatible for question 'When?'
+        if (in('weekday', ar($when)))
+            foreach (array('а' => 'у') as $s => $r)
+                $date = preg_replace('/' . $s . '\b/u', $r, $date);
+
+        // Return
+        return $date;
+    }
 }
 
 /**
