@@ -1892,6 +1892,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Fire 'change' event
         me.getNative().setValue.call(me, me.hiddenEl.val());
+
+        // Get focus back to keywordEl
+        me.keywordEl.focus();
     },
 
 
