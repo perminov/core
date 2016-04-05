@@ -11,6 +11,9 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
     alternateClassName: 'Indi.form.MultiCheck',
 
     // @inheritdoc
+    mixins: {fieldBase: 'Ext.form.field.Base'},
+
+    // @inheritdoc
     alias: 'widget.multicheck',
 
     /**
@@ -27,6 +30,15 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
     // @inheritdoc
     vertical: true,
 
+    /**
+     * Append `zeroValue` property initialisation
+     */
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+        me.mixins.fieldBase._constructor.call(this, arguments);
+    },
+
     // @inheritdoc
     initComponent: function() {
         var me = this;
@@ -39,6 +51,12 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
         // Call parent
         me.callParent();
+
+        // Reset original value
+        me.resetOriginalValue();
+
+        // Call mixin's '_initComponent' method
+        me.mixins.fieldBase._initComponent.call(this, arguments);
     },
 
     // @inheritdoc
@@ -146,6 +164,9 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
         // Call parent
         me.callParent();
+
+        // Fire `enablebysatellite` event
+        me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
     /**
@@ -261,5 +282,8 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 }
             }
         });
+
+        // Call mixin's _onChange() method
+        me.mixins.fieldBase._onChange.call(this, arguments);
     }
 });

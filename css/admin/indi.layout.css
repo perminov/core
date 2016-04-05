@@ -451,3 +451,11 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-grid-cell-color-red .x-grid-cell-inner{
     color: red;
 }
+.x-column-header.i-column-header-toggle {
+    background-image: url(/i/admin/btn-icon-toggle.png) !important;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+}
+.x-column-header.i-column-header-toggle .x-column-header-inner{
+    background: none;
+}
