@@ -1808,7 +1808,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
 
             // Process foreign key values
-            if (ti.fields.r(i, 'alias').storeRelationAbility == 'one') {
+            if (ti.fields.r(i, 'alias').storeRelationAbility != 'none') {
                 params[i] = record.key(i);
             }
         });
