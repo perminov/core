@@ -3398,10 +3398,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param $prop
      * @param string $format
-     * @param bool $ldate
+     * @param string $ldate
      * @return string
      */
-    public function date($prop, $format = 'Y-m-d', $ldate = false) {
+    public function date($prop, $format = 'Y-m-d', $ldate = '') {
 
         // If $ldate arg is given
         if ($ldate) {
@@ -3410,8 +3410,19 @@ class Indi_Db_Table_Row implements ArrayAccess
             $date = ldate(Indi::date2strftime($format), $this->$prop);
 
             // Force Russian-style month name endings
-            foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r)
-                $date = preg_replace('/' . $s . '\b/', $r, $date);
+            foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
+                $date = preg_replace('/' . $s . '\b/u', $r, $date);
+                $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
+                $date = preg_replace('/' . $s . '$/u', $r, $date);
+            }
+
+            // Force Russian-style weekday name endings, suitable for version, spelling-compatible for question 'When?'
+            if (is_string($ldate) && in('weekday', ar($ldate)))
+                foreach (array('а' => 'у') as $s => $r) {
+                    $date = preg_replace('/' . $s . '\b/u', $r, $date);
+                    $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
+                    $date = preg_replace('/' . $s . '$/u', $r, $date);
+                }
 
         // Else use ordinary approach
         } else $date = date($format, strtotime($this->$prop));
