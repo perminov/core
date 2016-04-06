@@ -1150,6 +1150,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && in_array($foreignR->$col, $set))
                             $rows[] = $foreignR;
 
+                    // Ensure foreign rows will appear in the same order as their keys within $r->$key
+                    $rows_ = array(); foreach ($rows as $row) $rows_[$row->$col] = $row;
+                    $rows  = array(); foreach (ar($r->$key) as $j) $rows[] = $rows_[$j]; unset($rows_);
+
                     // Create a rowset object, with usage of data, collected in $rows array, and assing that rowset
                     // as a value within $this->_foreign property under current foreign key field name and current row
                     $r->foreign($key, Indi::model($foreignKeyEntityId)->createRowset(array('rows' => $rows)));
