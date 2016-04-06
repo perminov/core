@@ -2448,12 +2448,18 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param data
      */
     remoteFetch: function(data) {
-        var me = this, url = me.ctx().uri.split('?')[0];
+        var me = this, url;
 
-        // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
-        // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
-        // name rather than as a separate param name within the axaj request url
-        if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        if (me.fetchUrl) url = me.fetchUrl; else {
+
+            // Base url
+            url = me.ctx().uri.split('?')[0];
+
+            // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
+            // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
+            // name rather than as a separate param name within the axaj request url
+            if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        }
 
         // Append odata specification
         url += 'odata/' + me.name + '/';
@@ -2775,6 +2781,22 @@ Ext.define('Indi.lib.form.field.Combo', {
 
             // Adjust width of .i-combo-table element for it to fit all available space
             me.comboTableFit();
+        }
+    },
+
+    resetInfo: function(value) {
+        var me = this;
+        if (me.infoEl) {
+            me.infoEl.attr('page-top', 0);
+            me.infoEl.attr('page-btm', 0);
+            me.infoEl.attr('page-top-reached', value ? 'false' : 'true');
+            me.infoEl.attr('page-btm-reached', 'false');
+            me.fetchedByPageUps = 0;
+        }
+        me.subTplData.pageUpDisabled = value ? 'false' : 'true';
+        if (me.picker) {
+            me.picker.destroy();
+            delete me.picker;
         }
     }
 });
