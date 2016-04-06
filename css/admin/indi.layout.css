@@ -7,7 +7,7 @@
 .x-border-box .x-form-trigger,.x-border-box .x-form-text{height: 19px; line-height: 13px;}
 .x-form-field, .x-form-display-field {font-size: 11px; color: #04408C;}
 .x-form-item-label{padding: 1px 0;}
-.i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px;}
+.i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px; cursor: pointer;}
 .i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
 .i-color-box-wrap .i-color-box[style*="background: url"],
 .i-bgimg-box-wrap .i-color-box[style*="background: url"], .i-color-box[style*="background: url"] {

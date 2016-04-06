@@ -509,15 +509,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         if (Ext.merge(columnI, {hidden: false}))
                             break;
 
-                // If `alias` prop of `colI` is not empty - use it to build an explicit id
-                if (colI.alias) columnI.id = me.bid() + '-rowset-grid-column-' + colI.alias;
+                // If `alias` prop of `colI` is not empty
+                if (colI.alias) {
 
-                // Apply column custom config
-                eColumn$ = 'gridColumn$' + Indi.ucfirst(colI.alias);
-                if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
-                    column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
-                    columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
-                } else if (me[eColumn$] === false) columnI = me[eColumn$];
+                    // Use it to build an explicit id
+                    columnI.id = me.bid() + '-rowset-grid-column-' + colI.alias;
+
+                    // Apply column custom config
+                    eColumn$ = 'gridColumn$' + Indi.ucfirst(colI.alias);
+                    if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
+                        column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
+                        columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                    } else if (me[eColumn$] === false) columnI = me[eColumn$];
+                }
 
                 // Add column
                 if (columnI) columnA.push(columnI);
