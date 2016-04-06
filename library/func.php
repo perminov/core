@@ -523,13 +523,19 @@ function ldate($format, $date, $when = '') {
         $date = ldate(Indi::date2strftime($format), $date);
 
         // Force Russian-style month name endings
-        foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r)
+        foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
             $date = preg_replace('/' . $s . '\b/u', $r, $date);
+            $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
+            $date = preg_replace('/' . $s . '$/u', $r, $date);
+        }
 
         // Force Russian-style weekday name endings, suitable for version, spelling-compatible for question 'When?'
         if (in('weekday', ar($when)))
-            foreach (array('а' => 'у') as $s => $r)
+            foreach (array('а' => 'у') as $s => $r) {
                 $date = preg_replace('/' . $s . '\b/u', $r, $date);
+                $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
+                $date = preg_replace('/' . $s . '$/u', $r, $date);
+            }
 
         // Return
         return $date;
