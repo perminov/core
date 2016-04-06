@@ -553,10 +553,18 @@ class Indi_Controller {
             if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
             // Else if options data is for combo, associated with a existing form field
-        } else $field = Indi::trail()->model->fields($for);
+        } else {
+
+            $field = Indi::trail()->model->fields($for);
+            Indi::view()->formCombo($for, null, 'extjs', 'subTplData');
+            if (Indi::uri('subTplData')) {
+                $subTplData = $this->row->view($for);
+                $subTplData = $subTplData['subTplData'];
+            }
+        }
 
         // Prepare and flush json-encoded combo options data
-        $this->_odata($for, $post, $field, null, $order, $dir, $offset);
+        $this->_odata($for, $post, $field, null, $order, $dir, $offset, $subTplData);
     }
 
     /**
@@ -572,7 +580,7 @@ class Indi_Controller {
      * @param string $dir
      * @param string $offset
      */
-    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
+    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null, $subTplData = null) {
 
         // Get combo data rowset
         $comboDataRs = $post->keyword
@@ -605,7 +613,7 @@ class Indi_Controller {
         $options['titleMaxLength'] = $titleMaxLength;
 
         // Flush
-        jflush(true, $options);
+        jflush(true, $subTplData ? array('store' => $options, 'subTplData' => $subTplData) : $options);
     }
 
     /**
