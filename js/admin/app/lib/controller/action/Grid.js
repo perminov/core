@@ -393,8 +393,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one') return null;
         return {
             xtype: 'combo.cell',
-            subTplData: me.ti().row.view(c.dataIndex).subTplData,
-            store: me.ti().row.view(c.dataIndex).store,
+            store: {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, js: '', optionHeight: "14", page: 1},
             field: f
         }
     },

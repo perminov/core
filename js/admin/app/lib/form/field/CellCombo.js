@@ -30,6 +30,11 @@ Ext.define('Indi.lib.form.field.CellCombo', {
     // @inheritdoc
     value: '',
 
+    /**
+     * Empty prop
+     */
+    subTplData: {satellite: null, attrs: null, pageUpDisabled: "true", selected: {title: null, value: 0}},
+
     // @inheritdoc
     fitWidth: function() {
         var me = this;
