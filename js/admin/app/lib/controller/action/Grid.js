@@ -95,6 +95,32 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (Ext.EventObject.ctrlKey) {
                     var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
                 }
+            },
+
+            cellclick: function(gridview, tdDom, cellIndex, record, trDom, rowIndex, e) {
+                var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
+                    dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
+                    enumset = field.nested('enumset'), value, valueItem, valueItemIndex, oldValue, s,
+                    canSave = me.ti().actions.r('save', 'alias');
+
+                // If 'Save' action is accessible, and column is linked to 'enumset' field
+                // and that field is not in the list of disabled fields - provide some kind
+                // of cell-editor functionality, so enumset values can be switched from one to another
+                if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')) {
+                    s = me.getStore();
+                    value = record.key(dataIndex);
+                    valueItem = enumset.r(value, 'alias');
+                    enumset.forEach(function(item, i){
+                        if (item.alias == value) valueItemIndex = i;
+                    });
+                    valueItemIndex ++;
+                    valueItemIndex = valueItemIndex > enumset.length - 1 ? 0 : valueItemIndex;
+                    valueItem = enumset[valueItemIndex];
+                    value = valueItem.alias;
+                    record.key(dataIndex, value);
+                    record.set(dataIndex, valueItem.title.replace(/(<\/span>).*$/, '\1'));
+                    me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti());
+                }
             }
         }
     },
