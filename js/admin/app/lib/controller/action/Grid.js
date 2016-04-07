@@ -100,7 +100,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cellclick: function(gridview, tdDom, cellIndex, record, trDom, rowIndex, e) {
                 var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
                     dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
-                    enumset = field.nested('enumset'), value, valueItem, valueItemIndex, oldValue, s,
+                    enumset = field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
                     canSave = me.ti().actions.r('save', 'alias');
 
                 // If 'Save' action is accessible, and column is linked to 'enumset' field
