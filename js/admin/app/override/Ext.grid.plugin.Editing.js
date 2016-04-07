@@ -240,7 +240,10 @@ Ext.override(Ext.grid.plugin.CellEditing, {
 
         ed.startEdit(me.getCell(record, columnHeader), value);
 
-        if (typeof ed.field.onTriggerClick == 'function') ed.field.onTriggerClick(); //+
+        if (typeof ed.field.onTriggerClick == 'function') {
+            ed.field.expand();
+            ed.field.focus(false, true);
+        } //+
 
         me.editing = true;
         me.scroll = me.view.el.getScroll();
