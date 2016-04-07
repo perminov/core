@@ -2764,6 +2764,10 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Get the index of selected option id in me.store.ids
                 index = me.store.ids.indexOf(me.store.enumset ? id : parseInt(id));
 
+                // If index of values was not found, but combo is enumset,
+                // try find the index guessing that but enumset key may be numeric
+                if (index == -1 && me.store.enumset) index = me.store.ids.indexOf(parseInt(id));
+
                 // Setup color box if needed
                 color = me.color(me.store.data[index], me.store.ids[index]);
 
