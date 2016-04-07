@@ -145,8 +145,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
                         var json = JSON.parse(response.responseText);
 
                         // Refresh store
-                        ed.field.resetInfo(value);
-                        ed.field.store = json;
+                        ed.field.resetInfo(value, json);
                         ed.field[ed.field.store.ids.length ? 'enable' : 'disable']();
                         ed.field.fetchUrl = url;
 

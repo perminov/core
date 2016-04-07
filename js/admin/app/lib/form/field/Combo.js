@@ -2786,22 +2786,5 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Adjust width of .i-combo-table element for it to fit all available space
             me.comboTableFit();
         }
-    },
-
-    resetInfo: function(value) {
-        var me = this;
-        if (me.infoEl) {
-            me.infoEl.attr('page-top', 0);
-            me.infoEl.attr('page-btm', 0);
-            me.infoEl.attr('page-top-reached', value ? 'false' : 'true');
-            me.infoEl.attr('page-btm-reached', 'false');
-            me.keywordEl.attr('selectedIndex', 1);
-            me.fetchedByPageUps = 0;
-        }
-        me.subTplData.pageUpDisabled = value ? 'false' : 'true';
-        if (me.picker) {
-            me.picker.destroy();
-            delete me.picker;
-        }
     }
 });

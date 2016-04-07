@@ -50,13 +50,16 @@ Ext.define('Indi.lib.form.field.SiblingCombo', {
     },
 
     /**
-     * Adjust combo width, so all involved things are taken into consideration while calculating least combo width
+     * Calculate width, required by combo
+     *
+     * @return {Number}
      */
-    fitWidth: function() {
+    getFitWidth: function() {
+
         var me = this, width = 0, maxPseudoTitle = '', pseudoTitle = '', color, optionContentsMaxWidth;
 
         // Append labelWidth
-        width += me.labelCell.getWidth();
+        if (me.labelCell) width += me.labelCell.getWidth();
 
         // Append borders (left and right) widths
         width += parseInt(me.comboInner.css('border-left-width')) + parseInt(me.comboInner.css('border-right-width'));
@@ -102,6 +105,16 @@ Ext.define('Indi.lib.form.field.SiblingCombo', {
         me.triggerEl.each(function(el){
             width += el.getWidth();
         });
+
+        // Return required width
+        return width;
+    },
+
+    /**
+     * Adjust combo width, so all involved things are taken into consideration while calculating least combo width
+     */
+    fitWidth: function() {
+        var me = this, width = me.getFitWidth();
 
         // Set width
         me.setWidth(width);
