@@ -390,6 +390,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
     gridColumnEditor_Combo: function(c) {
         var me = this, f = me.ti().fields.r(c.dataIndex, 'alias'), r = me.ti().row;
+        if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one') return null;
         return {
             xtype: 'combo.cell',
             subTplData: me.ti().row.view(c.dataIndex).subTplData,
