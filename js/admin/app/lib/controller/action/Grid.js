@@ -106,7 +106,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // If 'Save' action is accessible, and column is linked to 'enumset' field
                 // and that field is not in the list of disabled fields - provide some kind
                 // of cell-editor functionality, so enumset values can be switched from one to another
-                if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')) {
+                if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId') && field.storeRelationAbility == 'one') {
                     s = me.getStore();
                     value = record.key(dataIndex);
                     valueItem = enumset.r(value, 'alias');
