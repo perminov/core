@@ -28,7 +28,7 @@ Ext.define('Indi.lib.form.field.CellCombo', {
     height: 18,
 
     // @inheritdoc
-    //value: '',
+    value: '',
 
     // @inheritdoc
     fitWidth: function() {
@@ -38,10 +38,7 @@ Ext.define('Indi.lib.form.field.CellCombo', {
         me.minWidth = me.getFitWidth();
 
         // If current width is less than min width - increase
-        if (me.minWidth > me.width) {
-            console.log('me.minWidth > me.width', me.minWidth, me.width);
-            me.setWidth(me.minWidth);
-        }
+        if (me.minWidth > me.width) me.setWidth(me.minWidth);
     },
 
     resetInfo: function(value, store) {
@@ -51,6 +48,7 @@ Ext.define('Indi.lib.form.field.CellCombo', {
             me.infoEl.attr('page-btm', 0);
             me.infoEl.attr('page-top-reached', value ? 'false' : 'true');
             me.infoEl.attr('page-btm-reached', 'false');
+            me.keywordEl.attr('selectedIndex', 1);
             me.fetchedByPageUps = 0;
         }
         me.subTplData.pageUpDisabled = value ? 'false' : 'true';

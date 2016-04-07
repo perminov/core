@@ -556,15 +556,10 @@ class Indi_Controller {
         } else {
 
             $field = Indi::trail()->model->fields($for);
-            Indi::view()->formCombo($for, null, 'extjs', 'subTplData');
-            if (Indi::uri('subTplData')) {
-                $subTplData = $this->row->view($for);
-                $subTplData = $subTplData['subTplData'];
-            }
         }
 
         // Prepare and flush json-encoded combo options data
-        $this->_odata($for, $post, $field, null, $order, $dir, $offset, $subTplData);
+        $this->_odata($for, $post, $field, null, $order, $dir, $offset);
     }
 
     /**
@@ -613,7 +608,7 @@ class Indi_Controller {
         $options['titleMaxLength'] = $titleMaxLength;
 
         // Flush
-        jflush(true, $subTplData ? array('store' => $options, 'subTplData' => $subTplData) : $options);
+        jflush(true, $options);
     }
 
     /**
