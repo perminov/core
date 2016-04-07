@@ -2795,6 +2795,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             me.infoEl.attr('page-btm', 0);
             me.infoEl.attr('page-top-reached', value ? 'false' : 'true');
             me.infoEl.attr('page-btm-reached', 'false');
+            me.keywordEl.attr('selectedIndex', 1);
             me.fetchedByPageUps = 0;
         }
         me.subTplData.pageUpDisabled = value ? 'false' : 'true';
