@@ -31,6 +31,12 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
     vertical: true,
 
     /**
+     * Temporary config, for switching enumset options javascript execution on/off
+     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
+     */
+    nojs: false,
+
+    /**
      * Append `zeroValue` property initialisation
      */
     constructor: function() {
@@ -120,7 +126,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 enumset: enumset,
                 listeners: {
                     change: function(rb, now) {
-                        if (now) {
+                        if (now && !me.nojs) {
                             try {
                                 Indi.eval(rb.enumset.system.js, rb.ownerCt);
                             } catch (e) {
@@ -160,7 +166,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
             checked[i].fireEvent('change', checked[i], true);
 
         // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent();
@@ -255,7 +261,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
         var me = this;
 
         // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent(arguments);

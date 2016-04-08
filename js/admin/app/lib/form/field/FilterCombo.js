@@ -53,13 +53,13 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
         if (me.store.enumset && !me.multiSelect) {
             var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && me.store['data'][index].system.js) {
+            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
                 Indi.eval(me.store['data'][index].system.js, me);
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) Indi.eval(me.store.js, me);
+        if (me.store.js && !me.nojs) Indi.eval(me.store.js, me);
 
         // Call superclass setValue method to provide 'change' event firing
         me.getNative().setValue.call(me, me.hiddenEl.val());
