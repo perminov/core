@@ -14,6 +14,10 @@ Ext.define('Indi.controller.staticblocks', {
                 var me = this;
 
                 return {
+                    considerOn: [{
+                        name: 'type',
+                        clear: false
+                    }],
                     editorCfg: {
                         resize_dir: 'both',
                         on: {
@@ -23,24 +27,16 @@ Ext.define('Indi.controller.staticblocks', {
                                 Ext.getCmp(me.row.id).query('[name="detailsHtmlHeight"]')[0].setValue(size.height);
                             }
                         }
+                    },
+                    listeners: {
+                        enablebysatellite: function(c, d) {
+                            c.setVisible(d.type == 'html');
+                        }
                     }
                 }
             },
 
-            /**
-             * Remove mention of ',tr-detailsHtmlWidth,tr-detailsHtmlHeight' from radios handler javascript.
-             * This it temporary solution.
-             *
-             * @param item
-             * @return {*}
-             */
-            formItem$Type: function(item) {
-                for (var i = 0; i < item.field.nested('enumset').length; i++) {
-                    item.field.nested('enumset')[i].javascript =
-                        item.field.nested('enumset')[i].javascript.replace(',tr-detailsHtmlWidth,tr-detailsHtmlHeight', '');
-                }
-                return item;
-            },
+            formItem$Type: {nojs: true},
 
             /**
              * Here we setup visibility and actual value
@@ -51,22 +47,12 @@ Ext.define('Indi.controller.staticblocks', {
             formItem$DetailsHtmlWidth: function(item) {
                 var me = this;
 
-                // Setup actual value and visibility
-                item.hidden = 'true';
-                item.value = me.ti().row.id && Ext.isNumeric(item.value)
-                    ? (item.value < 100 ? 100 : item.value)
-                    : Indi.form.CkEditor.prototype.editorCfg.defaultWidth;
-
                 // Return
                 return {
-                    listeners: {
-                        afterrender: function(cmp){
-                            cmp.hide();
-                        },
-                        beforeshow: function() {
-                            return false;
-                        }
-                    }
+                    hidden: true,
+                    value: me.ti().row.id && Ext.isNumeric(item.value)
+                        ? (item.value < 100 ? 100 : item.value)
+                        : Indi.form.CkEditor.prototype.editorCfg.defaultWidth
                 }
             },
 
@@ -79,21 +65,55 @@ Ext.define('Indi.controller.staticblocks', {
             formItem$DetailsHtmlHeight: function(item) {
                 var me = this;
 
-                // Setup actual value and visibility
-                item.hidden = 'true';
-                item.value = me.ti().row.id && Ext.isNumeric(item.value)
-                    ? (item.value < 50 ? 50 : item.value)
-                    : Indi.form.CkEditor.prototype.editorCfg.defaultHeight;
-
                 // Return
                 return {
-                    listeners: {
-                        afterrender: function(cmp){
-                            cmp.hide();
-                        },
-                        beforeshow: function() {
-                            return false;
-                        }
+                    hidden: true,
+                    value: me.ti().row.id && Ext.isNumeric(item.value)
+                        ? (item.value < 50 ? 50 : item.value)
+                        : Indi.form.CkEditor.prototype.editorCfg.defaultHeight
+                }
+            },
+            formItem$DetailsHtmlBodyClass: {
+                considerOn: [{
+                    name: 'type',
+                    clear: false
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.type == 'html');
+                    }
+                }
+            },
+            formItem$DetailsHtmlStyle: {
+                considerOn: [{
+                    name: 'type',
+                    clear: false
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.type == 'html');
+                    }
+                }
+            },
+            formItem$DetailsString: {
+                considerOn: [{
+                    name: 'type',
+                    clear: false
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.type == 'string');
+                    }
+                }
+            },
+            formItem$DetailsTextarea: {
+                considerOn: [{
+                    name: 'type',
+                    clear: false
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.type == 'textarea');
                     }
                 }
             }

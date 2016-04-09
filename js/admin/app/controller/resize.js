@@ -16,11 +16,14 @@ Ext.define('Indi.controller.resize', {
             },
             formItem$MasterDimensionValue: {
                 considerOn: [{
-                    name: 'proportions'
+                    name: 'proportions',
+                    clear: false
                 }, {
-                    name: 'masterDimensionAlias'
+                    name: 'masterDimensionAlias',
+                    clear: false
                 }, {
-                    name: 'slaveDimensionLimitation'
+                    name: 'slaveDimensionLimitation',
+                    clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d){
@@ -30,11 +33,14 @@ Ext.define('Indi.controller.resize', {
             },
             formItem$SlaveDimensionValue: {
                 considerOn: [{
-                    name: 'proportions'
+                    name: 'proportions',
+                    clear: false
                 }, {
-                    name: 'masterDimensionAlias'
+                    name: 'masterDimensionAlias',
+                    clear: false
                 }, {
-                    name: 'slaveDimensionLimitation'
+                    name: 'slaveDimensionLimitation',
+                    clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d){
