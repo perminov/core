@@ -10,7 +10,18 @@ Ext.define('Indi.controller.entities', {
         },
         form: {
             formItem$Title: {allowBlank: false},
-            formItem$Table: {allowBlank: false}
+            formItem$Table: {allowBlank: false},
+            formItem$System: {nojs: true},
+            formItem$UseCache: {
+                considerOn: [{
+                    name: 'system'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.system == 'y');
+                    }
+                }
+            }
         }
     }
 });

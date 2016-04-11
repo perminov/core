@@ -5,6 +5,18 @@ Ext.define('Indi.lib.form.field.Color', {
     pickerOffset: [0, -1],
 
     // @inheritdoc
+    mixins: {fieldBase: 'Ext.form.field.Base'},
+
+    /**
+     * Append `zeroValue` property initialisation
+     */
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+        me.mixins.fieldBase._constructor.call(this, arguments);
+    },
+
+    // @inheritdoc
     afterRender: function() {
         var me = this;
 
@@ -13,6 +25,9 @@ Ext.define('Indi.lib.form.field.Color', {
 
         // Force click made on inputEl to be treated as click made on triggerEl
         me.inputEl.on('click', me.onTriggerClick, this);
+
+        // Fire `enablebysatellite` event
+        me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
     // @inheritdoc
@@ -24,6 +39,9 @@ Ext.define('Indi.lib.form.field.Color', {
 
         // Call parent
         me.callParent(arguments);
+
+        // Call mixin's initComponent method
+        me.mixins.fieldBase._initComponent.call(this, arguments);
     },
 
     // @inheritdoc
@@ -61,5 +79,19 @@ Ext.define('Indi.lib.form.field.Color', {
 
         // Set picker's value
 		me.picker.setValue(value);
-	}
+	},
+
+    /**
+     * Function that will be called after combo value change. Provide dependent-combos reloading in case
+     * if current field is a satellite for one or more combos, that are siblings to current field
+     */
+    onChange: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Call mixin's _onChange() method
+        me.mixins.fieldBase._onChange.call(this, arguments);
+    }
 });
