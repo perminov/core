@@ -23,6 +23,12 @@ Ext.define('Indi.lib.form.field.Radios', {
     vertical: true,
 
     /**
+     * Temporary config, for switching enumset options javascript execution on/off
+     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
+     */
+    nojs: false,
+
+    /**
      * Array or comma-separated list of values of `inputValue` prop, that should be disabled
      */
     disabledOptions: [],
@@ -39,9 +45,17 @@ Ext.define('Indi.lib.form.field.Radios', {
     // @inheritdoc
     initComponent: function() {
         var me = this;
+
+        // Build items
         me.items = me.itemA();
+
+        // Setup disabled options
         if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
+
+        // Call parent
         me.callParent();
+
+        // Call mixin's initComponent method
         me.mixins.fieldBase._initComponent.call(this, arguments);
     },
 
@@ -71,7 +85,7 @@ Ext.define('Indi.lib.form.field.Radios', {
                 disabled: me.disabledOptions.indexOf(inputValue) != -1,
                 listeners: {
                     change: function(rb, now) {
-                        if (now) {
+                        if (now && !me.nojs) {
                             try {
                                 Indi.eval(rb.enumset.system.js, rb.ownerCt);
                             } catch (e) {
@@ -99,7 +113,7 @@ Ext.define('Indi.lib.form.field.Radios', {
         if (checked) checked.fireEvent('change', checked, true);
 
         // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent();
@@ -142,7 +156,7 @@ Ext.define('Indi.lib.form.field.Radios', {
         var me = this, name = me.name, dComboName, dCombo;
 
         // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent(arguments);

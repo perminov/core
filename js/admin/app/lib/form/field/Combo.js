@@ -32,6 +32,12 @@ Ext.define('Indi.lib.form.field.Combo', {
     maxSelected: 0,
 
     /**
+     * Temporary config, for switching enumset options javascript execution on/off
+     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
+     */
+    nojs: false,
+
+    /**
      * The text that will be displayed if the number of currently selected options is already reached the maximum
      * allowed count. This config takes effect only if `multiSelect` is `true`
      */
@@ -402,7 +408,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Execute javascript-code, assigned to appended item
         if (me.store.enumset) {
             var index = me.store['ids'].indexOf(key);
-            if (index != -1 && me.store['data'][index].system.js) {
+            if (index != -1 && !me.nojs && me.store['data'][index].system.js) {
                 Indi.eval(me.store['data'][index].system.js, me);
             }
         }
@@ -593,20 +599,20 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (me.multiSelect) {
                 me.el.select('.i-combo-selected-item').each(function(el){
                     var index = me.store['ids'].indexOf(el.attr('selected-id'));
-                    if (index != -1 && me.store['data'][index].system.js) {
+                    if (index != -1 && !me.nojs && me.store['data'][index].system.js) {
                         Indi.eval(me.store['data'][index].system.js, me);
                     }
                 });
             } else {
                 var index = me.store['ids'].indexOf(me.hiddenEl.val());
-                if (index != -1 && this.store['data'][index].system.js) {
+                if (index != -1 && !me.nojs  && this.store['data'][index].system.js) {
                     Indi.eval(this.store['data'][index].system.js, me);
                 }
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) {
+        if (me.store.js && !me.nojs) {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
         }
     },
@@ -2004,7 +2010,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Execute javascript-code, assigned to selected item
                 if (me.store.enumset) {
                     var index = me.store['ids'].indexOf(li.attr(name));
-                    if (index != -1 && me.store['data'][index].system.js) {
+                    if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
                         Indi.eval(me.store['data'][index].system.js, me);
                     }
                 }
@@ -2089,13 +2095,13 @@ Ext.define('Indi.lib.form.field.Combo', {
         // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
         if (me.store.enumset && !me.multiSelect) {
             var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && me.store['data'][index].system.js) {
+            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
                 Indi.eval(me.store['data'][index].system.js, me);
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) {
+        if (me.store.js && !me.nojs) {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
         }
 

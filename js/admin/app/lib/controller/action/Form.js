@@ -454,6 +454,16 @@ Ext.define('Indi.lib.controller.action.Form', {
                 },
                 resize: function(cmp) {
                     if (cmp.dirtyIcon) cmp.dirtyIcon.alignTo(cmp.el, 'tl', [0, 1]);
+                },
+                show: function(cmp) {
+                    cmp.ownerCt.query('> *').forEach(function(sbl){
+                        if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
+                    })
+                },
+                hide: function(cmp) {
+                    cmp.ownerCt.query('> *').forEach(function(sbl){
+                        if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
+                    })
                 }
             },
             getDirtyIcon: function() {

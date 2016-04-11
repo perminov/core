@@ -2,22 +2,76 @@ Ext.define('Indi.controller.resize', {
     extend: 'Indi.Controller',
     actionsConfig: {
         form: {
-            formItem$Proportions: function(item) {
-                var data = item.row.view(item.name).store.data;
-                data[0].system.js = "show('tr-masterDimensionAlias,tr-masterDimensionValue,tr-slaveDimensionLimitation,tr-slaveDimensionValue');";
-                data[1].system.js = "show('tr-masterDimensionValue,tr-slaveDimensionValue'); hide('tr-masterDimensionAlias,tr-slaveDimensionLimitation');";
-                data[2].system.js = "hide('tr-masterDimensionAlias,tr-masterDimensionValue,tr-slaveDimensionLimitation,tr-slaveDimensionValue');";
-                return item;
+            formItem$Proportions: {nojs: true},
+            formItem$MasterDimensionAlias: {
+                nojs: true,
+                considerOn: [{
+                    name: 'proportions'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d){
+                        c.setVisible(d.proportions == 'p');
+                    }
+                }
             },
-            formItem$MasterDimensionAlias: function(item) {
-                var data = item.row.view(item.name).store.data;
-                data[0].system.js = "if (me.sbl('slaveDimensionLimitation').labelEl) me.sbl('slaveDimensionLimitation').labelEl.update('Ограничить пропорциональную высоту');";
-                data[1].system.js = "if (me.sbl('slaveDimensionLimitation').labelEl) me.sbl('slaveDimensionLimitation').labelEl.update('Ограничить пропорциональную ширину');";
-                return item;
+            formItem$MasterDimensionValue: {
+                considerOn: [{
+                    name: 'proportions',
+                    clear: false
+                }, {
+                    name: 'masterDimensionAlias',
+                    clear: false
+                }, {
+                    name: 'slaveDimensionLimitation',
+                    clear: false
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d){
+                        c.setVisible(d.proportions == 'c' || (d.proportions == 'p' && (d.masterDimensionAlias == 'width' || d.slaveDimensionLimitation)));
+                    }
+                }
             },
-            formItem$SlaveDimensionLimitation: function(item) {
+            formItem$SlaveDimensionValue: {
+                considerOn: [{
+                    name: 'proportions',
+                    clear: false
+                }, {
+                    name: 'masterDimensionAlias',
+                    clear: false
+                }, {
+                    name: 'slaveDimensionLimitation',
+                    clear: false
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d){
+                        c.setVisible(d.proportions == 'c' || (d.proportions == 'p' && (d.masterDimensionAlias == 'height' || d.slaveDimensionLimitation)));
+                    }
+                }
+            },
+            formItem$SlaveDimensionLimitation: {
+                considerOn: [{
+                    name: 'masterDimensionAlias'
+                }, {
+                    name: 'proportions'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.labelEl.update('Ограничить пропорциональную ' + (d.masterDimensionAlias == 'width' ? 'высоту' : 'ширину'));
+                        c.setVisible(d.proportions == 'p');
+                    }
+                }
+            },
+            formItem$ChangeColor: {nojs: true},
+            formItem$Color: function() {
                 return {
-                    fieldLabel: 'Ограничить пропорциональную ' + (this.row.masterDimensionAlias == 'width' ? 'высоту' : 'ширину')
+                    considerOn: [{
+                        name: 'changeColor'
+                    }],
+                    listeners: {
+                        enablebysatellite: function(c, d) {
+                            c.setVisible(d.changeColor == 'y');
+                        }
+                    }
                 }
             }
         }

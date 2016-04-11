@@ -2917,15 +2917,21 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Else create a non-cropped thumbnail
             } else {
 
-                // If slave dimension should not be limited
-                if (!$resizeR->slaveDimensionLimitation) {
+                // If slave dimension should be limited
+                if ($resizeR->slaveDimensionLimitation) {
+
+                    // Create a thumbnail
+                    $imagick->thumbnailImage($width, $height, true);
+
+                // Else if slave dimension should not be limited
+                } else {
 
                     // Set it as 0
                     if ($resizeR->masterDimensionAlias == 'width') $height = 0; else $width = 0;
-                }
 
-                // Create a thumbnail
-                $imagick->thumbnailImage($width, $height, $resizeR->slaveDimensionLimitation);
+                    // Create a thumbnail
+                    $imagick->thumbnailImage($width, $height, false);
+                }
             }
 
             // Remove the canvas
