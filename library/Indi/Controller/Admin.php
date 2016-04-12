@@ -1121,7 +1121,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                 );
 
                 // Get the control element
-                $el = Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
+                $el = $columnI['dataIndex'] == 'id'
+                    ? 'number'
+                    : Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
 
                 // If control element is 'price' or 'number'
                 if (in($el, 'price,number')) {
@@ -1198,7 +1200,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $value = $summary->{$columnI['dataIndex']};
 
                 // Get the control element
-                $el = Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
+                $el = $columnI['dataIndex'] == 'id'
+                    ? 'number'
+                    : Indi::trail()->model->fields($columnI['dataIndex'])->foreign('elementId')->alias;
 
                 // If control element is 'price' or 'number'
                 if (in($el, 'price,number')) {
