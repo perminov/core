@@ -1054,11 +1054,11 @@ class Indi_Db_Table
                 if (array_key_exists($fieldR->alias, $data)) {
 
                     // We append value with related field alias to $set array
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', stripslashes($data[$fieldR->alias])) .'"';
 
                 // Else if column type is TEXT, we use field's default value as value for insertion
                 } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $fieldR->compiled('defaultValue')) .'"';
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', stripcslashes($fieldR->compiled('defaultValue'))) .'"';
 
             }
         }
@@ -1105,7 +1105,7 @@ class Indi_Db_Table
                     if (array_key_exists($fieldR->alias, $data))
 
                         // We append value with related field alias to $set array
-                        $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                        $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', stripslashes($data[$fieldR->alias])) .'"';
                 }
             }
 
