@@ -2112,7 +2112,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
         if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
-            if (d.xtype == 'combo.form') {
+            if (d.xtype.match(/^combo\.(form|auto)$/)) {
                 d.setDisabled(false, true);
                 if (!d.disabled) {
                     d.remoteFetch({
@@ -2453,12 +2453,19 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param data
      */
     remoteFetch: function(data) {
-        var me = this, url = me.ctx().uri.split('?')[0];
+        var me = this, url;
 
-        // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
-        // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
-        // name rather than as a separate param name within the axaj request url
-        if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        // If `fetchUrl` prop was set - use it, or build own othwerwise
+        if (me.fetchUrl) url = me.fetchUrl; else {
+
+            // Base url
+            url = me.ctx().uri.split('?')[0];
+
+            // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
+            // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
+            // name rather than as a separate param name within the axaj request url
+            if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        }
 
         // Append odata specification
         url += 'odata/' + me.name + '/';
