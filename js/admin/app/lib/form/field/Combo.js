@@ -181,6 +181,17 @@ Ext.define('Indi.lib.form.field.Combo', {
         '</div>'
     ],
 
+    // @inheritdocs
+    initComponent: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Add 'remotefetch' event
+        me.addEvents('refreshchildren');
+    },
+
     /**
      * Init disabled options
      */
@@ -2279,10 +2290,15 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Update page-top|page-btm value
                 me.infoEl.attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
+
+            } else if (requestData.mode == 'refresh-children'){
+
+                // Fire 'refreshchildren' event
+                me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
             }
 
-            // Else if results set is empty (no non-disabled options), we hide options, and set red
-            // color for keyword, as there was no related results found
+        // Else if results set is empty (no non-disabled options), we hide options, and set red
+        // color for keyword, as there was no related results found
         } else {
 
             // Hide options list div
@@ -2291,7 +2307,12 @@ Ext.define('Indi.lib.form.field.Combo', {
             // If just got resuts are result for satellited combo, autofetched after satellite value was changed
             // and we have no results related to current satellite value, we disable satellited combo
             if (requestData.mode == 'refresh-children') {
+
+                // Disable
                 me.setDisabled(true);
+
+                // Fire 'refreshchildren' event
+                me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
 
             // Else if reason of no results was not in satellite, we add special css class for that case
             } else {
@@ -2530,7 +2551,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     // Merge optgroup info
                     if (me.store.optgroup) me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                    // Otherwise we just replace current options with fetched options
+                // Otherwise we just replace current options with fetched options
                 } else {
                     var jsBackup = me.store.js;
                     var optionHeightBackup = me.store.optionHeight;

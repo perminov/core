@@ -61,10 +61,15 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
                 // Convert response.responseText to JSON object
                 var json = JSON.parse(response.responseText);
 
-                // Refresh store
-                me.resetInfo(me.value, json);
-                me[me.store.ids.length ? 'enable' : 'disable']();
-                me.fetchUrl = url;
+                if (!me.isDestroyed) {
+                    // Refresh store
+                    me.resetInfo(me.value, json);
+                    me[me.store.ids.length ? 'enable' : 'disable']();
+                    me.fetchUrl = url;
+
+                    if (params.satellite && params.satellite.length && params.satellite != '0')
+                        me.fireEvent('refreshchildren', me, parseInt(json.found));
+                }
             },
             failure: Indi.ajaxFailure
         });
