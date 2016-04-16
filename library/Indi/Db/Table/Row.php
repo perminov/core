@@ -665,7 +665,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Set ORDER clause for combo data
         if (is_null($order)) {
-            if ($relatedM->fields('move')) {
+            if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
             } else {
                 $order = $titleColumn;
