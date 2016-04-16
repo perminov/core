@@ -225,7 +225,7 @@ Ext.override(Ext.data.Connection, {
     errorExplorer: function(errorOA, asStringsArray) {
 
         // Define auxilliary variables
-        var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query'}, type;
+        var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query', 3: 'MYSQL PDO'}, type;
 
         // Convert each error message object to a string
         for (var i = 0; i < errorOA.length; i++)
