@@ -303,7 +303,7 @@ class Indi_View_Helper_Admin_FormCombo {
         );
 
         if ($this->isMultiSelect()) {
-            $view['subTplData']['selected'] = $this->selected;
+            $view['subTplData']['selected'] = $this->comboDataRs->selected->count() ? array() : $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
                 $item = self::detectColor(array('title' => $selectedR->title()));
                 $item['id'] = $selectedR->{$this->keyProperty};
