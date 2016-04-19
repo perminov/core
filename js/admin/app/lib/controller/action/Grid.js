@@ -431,7 +431,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumn$Toggle: function(){
         return {
             cls: 'i-column-header-icon',
-            header: '<img src="/i/admin/btn-icon-toggle.png">',
+            header: '<img src="' + Indi.std + '/i/admin/btn-icon-toggle.png">',
             tooltip: arguments[0].tooltip || arguments[0].header
         }
     },
