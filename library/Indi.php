@@ -2223,6 +2223,8 @@ class Indi {
         $mail = new PHPMailer();
         $mail->isHTML(true);
         $mail->CharSet = 'UTF-8';
+        if ($fe = Indi::ini('mail')->default->from->email) $mail->From = $fe;
+        if ($fn = Indi::ini('mail')->default->from->name)  $mail->FromName = $fn;
         return $mail;
     }
 }
