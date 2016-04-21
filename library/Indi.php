@@ -2212,4 +2212,17 @@ class Indi {
             return Indi::$date2strftime[$m[1]];
         }, $format);
     }
+
+    /**
+     * Create and return a new instance of PHPMailer class,
+     * pre-configured with ->isHTML(true) and ->CharSet = 'UTF-8'
+     *
+     * @return PHPMailer
+     */
+    public static function mailer() {
+        $mail = new PHPMailer();
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+        return $mail;
+    }
 }
