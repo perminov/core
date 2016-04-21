@@ -1068,8 +1068,20 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If $key argument contains more than one key name - we setup rows for all keys
         if (preg_match('/,/',$key)) {
+
+            // Explode keys by comma
             $keyA = explode(',', $key);
-            foreach ($keyA as $keyI) $this->foreign(trim($keyI));
+
+            // Fetch foreign data for each key separately
+            foreach ($keyA as $keyI) {
+
+                // If $refresh arg is boolean true, or if value, stored under $keyI was modified
+                // set up $refresh_ flag as boolean true
+                $refresh_ = $refresh ?: array_key_exists(trim($keyI), $this->_modified);
+
+                // Fetch foreign data
+                $this->foreign(trim($keyI), $refresh_);
+            }
 
             // Return current row
             return $this;
@@ -1081,8 +1093,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If $refresh argument is an object, we interpret it as a foreign row, and assign it directly
         if (is_string($key) && is_object($refresh)) return $this->_foreign[$key] = $refresh;
 
+        // If $refresh arg is boolean true, or if value, stored under $key was modified
+        // set up $refresh_ flag as boolean true
+        $refresh_ = $refresh ?: array_key_exists(trim($key), $this->_modified);
+
         // If foreign row, got by foreign key, was got already got earlier, and no refresh should be done - return it
-        if (array_key_exists($key, $this->_foreign) && !$refresh) {
+        if (array_key_exists($key, $this->_foreign) && !$refresh_) {
             return $this->_foreign[$key];
 
         // Else
