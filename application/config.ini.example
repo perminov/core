@@ -16,7 +16,7 @@ front = ru
 admin = ru
 
 [mail]
-default.from.name = EMPTY
+default.from.name = empty.local
 default.from.email = info@empty.local
 
 [view]
