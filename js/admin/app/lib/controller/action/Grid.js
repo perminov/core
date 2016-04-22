@@ -289,7 +289,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXString_Editor: function(column, field) {
         return {
             xtype: 'textfield',
-            allowBlank: false,
+            allowBlank: true,
             margin: '0 2 0 3',
             height: 18
         }
