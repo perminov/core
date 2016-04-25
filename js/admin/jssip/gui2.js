@@ -40,8 +40,8 @@ window.GUI = {
    */
   new_session : function(e) {
 	var display_name, status,
-        request = e.data.request,
-        call = e.data.session,
+        request = e.request,
+        call = e.session,
         uri = call.remote_identity.uri.toString(),
         session = GUI.getSession(uri);
 
@@ -74,13 +74,13 @@ window.GUI = {
 
     // Progress
     call.on('progress',function(e){
-      if (e.data.originator === 'remote') {
+      if (e.originator === 'remote') {
         GUI.setCallSessionStatus(session, 'in-progress');
       }
     });
 
     // Started
-    call.on('started',function(e){
+    call.on('accepted',function(e){
       //Attach the streams to the views if it exists.
      // if ( call.getLocalStreams().length > 0) {
         // selfView.src = window.URL.createObjattachMediaStreamectURL(call.getLocalStreams()[0]);
@@ -90,10 +90,10 @@ window.GUI = {
      // }
 
 	var remoteView = document.getElementById('remoteAudio');
-      if ( call.getRemoteStreams().length > 0) {
+      if ( call.connection.getRemoteStreams().length > 0) {
         //remoteView.src = window.URL.createObjectURL(call.getRemoteStreams()[0]);
         // Use the helper form plugin-adapter.js:
-		remoteView = attachMediaStream(remoteView, call.getRemoteStreams()[0]);
+		remoteView = attachMediaStream(remoteView, call.connection.getRemoteStreams()[0]);
       }
 
       GUI.setCallSessionStatus(session, 'answered');
@@ -102,10 +102,10 @@ window.GUI = {
     // Failed
     call.on('failed',function(e) {
       var
-        cause = e.data.cause,
-        response = e.data.response;
+        cause = e.cause,
+        response = e.response;
 
-      if (e.data.originator === 'remote' && cause.match("SIP;cause=200", "i")) {
+      if (e.originator === 'remote' && cause.match("SIP;cause=200", "i")) {
         cause = 'answered_elsewhere';
       }
 
@@ -117,8 +117,9 @@ window.GUI = {
 
     // NewDTMF
    call.on('newDTMF',function(e) {
-     if (e.data.originator === 'remote') {
-       sound_file = e.data.dtmf.tone;
+   console.log('newDTMF');
+     if (e.originator === 'remote') {
+       sound_file = e.dtmf.tone;
        soundPlayer.setAttribute("src", "sounds/dialpad/" + sound_file + ".ogg");
        soundPlayer.play();
      }
@@ -131,7 +132,7 @@ window.GUI = {
 					$('.web-phone').removeClass('web-phone-inprogress');
 				}
 	  log("Вызов завершен");
-      var cause = e.data.cause;
+      var cause = e.cause;
 
       GUI.setCallSessionStatus(session, "terminated", cause);
       GUI.removeSession(session, 1500);
@@ -144,8 +145,8 @@ window.GUI = {
    */
   new_message : function(e) {
     var display_name, text,
-      request = e.data.request,
-      message = e.data.message,
+      request = e.request,
+      message = e.message,
       uri = message.remote_identity.uri.toString(),
       session = GUI.getSession(uri);
 
@@ -164,11 +165,11 @@ window.GUI = {
       $(session).find(".chat input").focus();
     } else {
       message.on('failed', function(e){
-        var response = e.data.response;
+        var response = e.response;
         if (response)
           GUI.addChatMessage(session, "error", response.status_code.toString() + " " + response.reason_phrase);
         else
-          GUI.addChatMessage(session, "error", e.data.cause.toString());
+          GUI.addChatMessage(session, "error", e.cause.toString());
       });
     }
   },
