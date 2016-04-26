@@ -1375,6 +1375,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     OR `a`.`password` = OLD_PASSWORD("' . $password . '")
                         AS `passwordOk`,
                 '. $adminToggle . ' AS `adminToggle`,
+                IF(`p`.`entityId`, `p`.`entityId`, 11) as `mid`,
                 `p`.`toggle` = "y" AS `profileToggle`,
                 `p`.`title` AS `profileTitle`,
                 COUNT(`sa`.`sectionId`) > 0 AS `atLeastOneSectionAccessible`
@@ -1596,7 +1597,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     if (!is_array($data)) jflush(false, $data);
 
                     // Else start a session for user and report that sing-in was ok
-                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
+                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate', 'mid');
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
                     jflush(true, array('ok' => '1'));
                 }

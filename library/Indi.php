@@ -2227,4 +2227,30 @@ class Indi {
         if ($fn = Indi::ini('mail')->default->from->name)  $mail->FromName = $fn;
         return $mail;
     }
+
+    /**
+     * Get session data, related to current user
+     *
+     * @static
+     * @param string $prop
+     * @return array|PHPSTORM_HELPERS\object
+     */
+    public static function me($prop = null) {
+
+        // If session was not yet started
+        if (!session_id()) {
+
+            // Set cookie domain
+            Indi::uri()->setCookieDomain();
+
+            // Start session
+            session_start();
+        }
+
+        // Get session data, containing info about current logged-in admin
+        $me = (object) $_SESSION['admin'];
+
+        // If $mode args is explicitly given return session data, stored under $mode key within $_SESSION
+        return is_string($prop) ? $me->$prop : $me;
+    }
 }
