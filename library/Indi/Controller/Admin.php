@@ -1375,6 +1375,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     OR `a`.`password` = OLD_PASSWORD("' . $password . '")
                         AS `passwordOk`,
                 '. $adminToggle . ' AS `adminToggle`,
+                IF(`p`.`entityId`, `p`.`entityId`, 11) as `mid`,
                 `p`.`toggle` = "y" AS `profileToggle`,
                 `p`.`title` AS `profileTitle`,
                 COUNT(`sa`.`sectionId`) > 0 AS `atLeastOneSectionAccessible`
@@ -1596,7 +1597,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     if (!is_array($data)) jflush(false, $data);
 
                     // Else start a session for user and report that sing-in was ok
-                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
+                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate', 'mid');
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
                     jflush(true, array('ok' => '1'));
                 }
@@ -2281,5 +2282,35 @@ class Indi_Controller_Admin extends Indi_Controller {
             $_SESSION['indi']['admin'][$apply['section']][$apply['hash']],
             $merge
         );
+    }
+
+    /**
+     * This methos sets up a special read/write access mode,
+     * so that only new entries creation is allowed, but modification of existing entries
+     * is restricted. If $ownerCheck arg is given as non-false then this method will perform and additional
+     * owner-check, so this will prevent existing entries
+     * from being modified by users who are not their creators
+     *
+     * @param bool $ownerCheck
+     * @return mixed
+     */
+    public function createOnly($ownerCheck = false) {
+
+        // If entries creation is disabled - do nothing
+        if (Indi::trail()->section->disableAdd) return;
+
+        // If we do not deal with an existing row - do nothing
+        if (!Indi::trail()->row->id) return;
+
+        // If current user created current entry - do nothing
+        if ($ownerCheck)
+            if (Indi::trail()->row->authorId == Indi::me('id') && Indi::trail()->row->authorType == Indi::me('mid'))
+                return;
+
+        // Deny 'save' and 'delete' actions
+        $this->deny('save');
+
+        // Setup special value for section's `disableAdd` prop, indicating that creation is still possible
+        Indi::trail()->section->disableAdd = 2;
     }
 }

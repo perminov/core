@@ -187,10 +187,10 @@ function ensureMediaPlaying (mediaElement) {
 																  try {
                                                                     
 																	MyPhone.on('newRTCSession', function(e) {
-																		  GUI.new_session(e)
+																		GUI.new_session(e)
 																	});
 																	log("Звоним на " + target); 
-                                                                    console.log(MyPhone);
+
 																	MyPhone.call(target, {
 																	  mediaConstraints: { audio: true, video:false },
 																	  RTCOfferConstraints: { mandatory: { OfferToReceiveAudio: false } }
@@ -225,7 +225,7 @@ function ensureMediaPlaying (mediaElement) {
 			coolPhone.start();
 			coolPhone.on('newRTCSession', function(e) {
 				  //alert('newRTCSession');
-				  GUI.new_session(e)
+				  GUI.new_session(e);
 				  /*var text = ' is calling you. Accept?';
 				  var accept = confirm(text);
 				  log("Входящий вызов...");
