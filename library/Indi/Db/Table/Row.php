@@ -573,7 +573,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if (strlen($this->{$satelliteR->alias})) {
                     $satellite = $this->{$satelliteR->alias};
                 } else {
-                    $satellite = $satelliteR->defaultValue;
+                    $satellite = $satelliteR->compiled('defaultValue');
                 }
             }
 
@@ -3628,5 +3628,21 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return array_shift($data);
+    }
+
+    /**
+     * Assing values for props, responsible for storing info about
+     * the user who initially created current entry
+     *
+     * @param string $prefix
+     */
+    public function author($prefix = 'author') {
+        if (Indi::admin()) {
+            $this->{$prefix . 'Type'} = Indi::admin()->model()->id();
+            $this->{$prefix . 'Id'} = Indi::admin()->id;
+        } else {
+            $this->{$prefix . 'Type'} = Indi::me('aid');
+            $this->{$prefix . 'Id'} = Indi::me('id');
+        }
     }
 }
