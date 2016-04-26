@@ -79,14 +79,24 @@ class Indi_Trail_Admin {
         ));
 
         // Get filters
+        $searchWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
+        if (Indi::model('Search')->fields('access') && Indi::model('Search')->fields('profileIds')) {
+            $searchWHERE[] = '(' . im(array(
+                '`access` = "all"',
+                '(`access` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+                '(`access` = "except" AND NOT FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+            ), ' OR ') . ')';
+        }
+
+        // Setup filters
         $sectionRs->nested('search', array(
-            'where' => '`sectionId` = "' . $routeA[0] . '" AND `toggle` = "y"',
+            'where' => $searchWHERE,
             'order' => 'move'
         ));
 
         // Grid columns WHERE clause
         $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
-        if (Indi::model('Grid')->fields('access')) {
+        if (Indi::model('Grid')->fields('access') && Indi::model('Grid')->fields('profileIds')) {
             $gridWHERE[] = '(' . im(array(
                 '`access` = "all"',
                 '(`access` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
