@@ -3607,12 +3607,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Getter function for `_affected` prop
+     * Getter function for `_affected` prop. If $prop arg is given, then function
+     * will indicate whether or not prop having $prop as it alias is in the list
+     * of affected props
      *
-     * @return array
+     * @param null|string $prop
+     * @return array|bool
      */
-    public function affected() {
-        return $this->_affected;
+    public function affected($prop = null) {
+        return func_num_args() ? in($prop, $this->_affected) : $this->_affected;
     }
 
     /**
