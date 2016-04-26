@@ -62,6 +62,7 @@
         '/js/admin/app/lib/toolbar/Info.js',
         '/js/admin/app/lib/form/field/SiblingCombo.js',
         '/js/admin/app/lib/form/field/CellCombo.js',
+        '/js/admin/app/lib/form/field/AutoCombo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
         '/js/admin/app/lib/form/field/FilePanel.js',

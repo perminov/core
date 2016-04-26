@@ -289,7 +289,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXString_Editor: function(column, field) {
         return {
             xtype: 'textfield',
-            allowBlank: false,
+            allowBlank: true,
             margin: '0 2 0 3',
             height: 18
         }
@@ -461,7 +461,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumn$Toggle: function(){
         return {
             cls: 'i-column-header-icon',
-            header: '<img src="/i/admin/btn-icon-toggle.png">',
+            header: '<img src="' + Indi.std + '/i/admin/btn-icon-toggle.png">',
             tooltip: arguments[0].tooltip || arguments[0].header
         }
     },

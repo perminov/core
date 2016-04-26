@@ -2212,4 +2212,45 @@ class Indi {
             return Indi::$date2strftime[$m[1]];
         }, $format);
     }
+
+    /**
+     * Create and return a new instance of PHPMailer class,
+     * pre-configured with ->isHTML(true) and ->CharSet = 'UTF-8'
+     *
+     * @return PHPMailer
+     */
+    public static function mailer() {
+        $mail = new PHPMailer();
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+        if ($fe = Indi::ini('mail')->default->from->email) $mail->From = $fe;
+        if ($fn = Indi::ini('mail')->default->from->name)  $mail->FromName = $fn;
+        return $mail;
+    }
+
+    /**
+     * Get session data, related to current user
+     *
+     * @static
+     * @param string $prop
+     * @return array|PHPSTORM_HELPERS\object
+     */
+    public static function me($prop = null) {
+
+        // If session was not yet started
+        if (!session_id()) {
+
+            // Set cookie domain
+            Indi::uri()->setCookieDomain();
+
+            // Start session
+            session_start();
+        }
+
+        // Get session data, containing info about current logged-in admin
+        $me = (object) $_SESSION['admin'];
+
+        // If $mode args is explicitly given return session data, stored under $mode key within $_SESSION
+        return is_string($prop) ? $me->$prop : $me;
+    }
 }
