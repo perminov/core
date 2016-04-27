@@ -6,9 +6,10 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
 
         $order = Indi::trail()->scope->ORDER;
 
-        if (is_array($order)) {
+        if (is_array($order) && count($order) > 1) {
             //$this->comboDataOrderColumn = $order;
         } else {
+            if (is_array($order)) $order = array_pop($order);
             $order = array_shift(explode(', `', $order));
             $this->comboDataOrderDirection = array_pop(explode(' ', $order));
             $this->comboDataOrderColumn = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
