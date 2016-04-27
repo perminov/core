@@ -781,8 +781,13 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
 
                 // Get foundRows WHERE clause
-                $foundRowsWhere = $selectedTypeIsKeyword ? $where : $whereBackup;
-                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . implode(' AND ', $foundRowsWhere) : '';
+                $foundRowsWhere = im($selectedTypeIsKeyword ? $where : $whereBackup, ' AND ');
+
+                // Adjust WHERE clause so it surely match existing value
+                $this->comboDataExistingValueWHERE($foundRowsWhere, $fieldR);
+
+                //
+                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . $foundRowsWhere : '';
 
                 // Get number of total found rows
                 $found = Indi::db()->query(
@@ -823,11 +828,17 @@ class Indi_Db_Table_Row implements ArrayAccess
                         $upper = true;
                     }
 
+                // Else
                 } else {
 
+                    // Append order direction
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                    // Adjust WHERE clause so it surely match existing value
+                    if (!$selectedTypeIsKeyword) $this->comboDataExistingValueWHERE($where, $fieldR);
                 }
 
+                // Fetch raw combo data
                 $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page, $offset);
 
                 // We set number of total found rows only if passed page number is null, so that means that
@@ -3647,5 +3658,40 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->{$prefix . 'Type'} = Indi::me('aid');
             $this->{$prefix . 'Id'} = Indi::me('id');
         }
+    }
+
+    /**
+     * Adjust given $where arg so it surely match existing value
+     *
+     * @param $where
+     * @param $fieldR
+     * @return mixed
+     */
+    protected function comboDataExistingValueWHERE(&$where, $fieldR) {
+
+        // If current entry is not yet exist - return
+        if (!$this->id) return;
+
+        // If $where arg is an empty array - return
+        if (is_array($where) && !count($where)) return;
+
+        // If $where arg is an empty string - return
+        if (is_string($where) && !strlen($where)) return;
+
+        // Build alternative WHERE clauses,
+        // that will surely provide current value presence within fetched combo data
+        $or = array(
+            'one' => '`id` = "' . $this->{$fieldR->alias} . '"',
+            'many' => '`id` IN (' . $this->{$fieldR->alias} . ')'
+        );
+
+        // If $fieldR's `storeRelationAbility` prop's value is not one oth the keys within $or array - return
+        if (!$or[$fieldR->storeRelationAbility]) return;
+
+        // Implode $where
+        if (is_array($where)) $where = im($where, ' AND ');
+
+        // Append alternative
+        $where = im(array('(' . $where . ')', $or[$fieldR->storeRelationAbility]), ' OR ');
     }
 }
