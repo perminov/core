@@ -650,7 +650,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // If current combo is a filter-combo, and ctrl key is pressed - clear combo
-        if (arguments.length && !me.readOnly && arguments[0].ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
+        if (arguments.length && !me.readOnly && arguments[0].ctrlKey && !me.disabled && (!me.store.enumset || me.xtype == 'combo.filter')) {
             me.clearCombo();
             return;
         }
