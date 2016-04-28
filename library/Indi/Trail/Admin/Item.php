@@ -226,7 +226,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             // Get the id
             $id = Indi::uri('action') == 'index' && $index == 1
                 ? Indi::uri('id')
-                : Indi::trail($index-1)->row->$connector;
+                : (preg_match('/,/', Indi::trail($index-1)->row->$connector) // ambiguous check
+                    ? $_SESSION['indi']['admin']['trail']['parentId'][$this->section->id]
+                    : Indi::trail($index-1)->row->$connector);
 
             // Add main item to WHERE clause stack
             $where[] = '`id` = "' . $id . '"';
