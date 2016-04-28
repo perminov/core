@@ -703,6 +703,12 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
+        // Alternate WHERE
+        if (Indi::admin()->alternate && $alternateField = $relatedM->fields(Indi::admin()->alternate . 'Id'))
+            $where[] = $alternateField->storeRelationAbility == 'many'
+                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
+                : '`' . $alternateField->alias . '` = "' . Indi::admin()->id .'"';
+        
         // If related entity has tree-structure
         if ($relatedM->treeColumn()) {
 
@@ -3691,7 +3697,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         );
 
         // If $fieldR's `storeRelationAbility` prop's value is not one oth the keys within $or array - return
-        if (!$or[$fieldR->storeRelationAbility] && !$consistence) return;
+        if ((!$this->{$fieldR->alias} || !$or[$fieldR->storeRelationAbility]) && !$consistence) return;
 
         // Implode $where
         if (is_array($where)) $where = im($where, ' AND ');
