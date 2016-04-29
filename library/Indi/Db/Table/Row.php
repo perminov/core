@@ -3707,4 +3707,65 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Append alternative
         $where = im(array('(' . $where . ')', $consistence ? '(' . $consistence . ')' : $or[$fieldR->storeRelationAbility]), ' OR ');
     }
+
+    /**
+     * Append $value to the list of comma-separated values, stored as a string value in $this->$prop
+     *
+     * @param $prop
+     * @param $value
+     * @param bool $unique
+     * @return mixed
+     */
+    public function push($prop, $value, $unique = true) {
+
+        // Convert $value to string
+        $value .= '';
+
+        // Convert $this->$prop to string
+        $this->$prop .= '';
+
+        // If $value is not an empty string
+        if (strlen($value)) {
+
+            // If $this->$prop is currently not an empty string, append $value followed by comma
+            if (strlen($this->$prop)) {
+
+                // If $unique is `true`, make sure $this->$prop will contain only distinct values
+                if (!$unique || !in($value, $this->$prop)) $this->$prop .= ',' . $value;
+            }
+
+            // Else setup $this->$prop with $value
+            else $this->$prop = $value;
+        }
+
+        // Return
+        return $this->$prop;
+    }
+
+    /**
+     * Drop $value from the comma-separated list, stored in $this->$prop
+     * NOTE: $value can also be comma-separated list too
+     *
+     * @param $prop
+     * @param $value
+     * @return mixed
+     */
+    public function drop($prop, $value) {
+
+        // Convert $value to string
+        $value .= '';
+
+        // Convert $this->$prop to string
+        $this->$prop .= '';
+
+        // If $value and $this->$prop are not empty strings
+        if (strlen($value) && strlen($this->$prop)) {
+
+            // If $unique is `true`, make sure $this->$prop will contain only distinct values
+            $this->$prop = im(un($this->$prop, $value));
+        }
+
+        // Return
+        return $this->$prop;
+    }
 }
