@@ -42,6 +42,51 @@ Ext.override(Ext.view.Table, {
             me.featuresMC.add(feature.ftype, feature);
             feature.init();
         }
+    },
+
+    processItemEvent: function(record, row, rowIndex, e) {
+        var me = this,
+            cell = e.getTarget(me.cellSelector, row),
+            cellIndex = cell ? cell.cellIndex : -1,
+            map = me.statics().EventMap,
+            selModel = me.getSelectionModel(),
+            type = e.type,
+            result;
+
+        if (type == 'keydown' && !cell && selModel.getCurrentPosition) {
+            // CellModel, otherwise we can't tell which cell to invoke
+            cell = me.getCellByPosition(selModel.getCurrentPosition());
+            if (cell) {
+                cell = cell.dom;
+                cellIndex = cell.cellIndex;
+            }
+        }
+
+        result = me.fireEvent('uievent', type, me, cell, rowIndex, cellIndex, e, record, row);
+
+        if (result === false || me.callParent(arguments) === false) {
+            return false;
+        }
+
+        // Don't handle cellmouseenter and cellmouseleave events for now
+        if (type == 'mouseover' || type == 'mouseout') {
+            return !((me.fireEvent('cell' + type, me, cell, cellIndex, record, row, rowIndex, e) === false)); // ++
+            //return true; // --
+        }
+
+        if(!cell) {
+            // if the element whose event is being processed is not an actual cell (for example if using a rowbody
+            // feature and the rowbody element's event is being processed) then do not fire any "cell" events
+            return true;
+        }
+
+        return !(
+            // We are adding cell and feature events
+            (me['onBeforeCell' + map[type]](cell, cellIndex, record, row, rowIndex, e) === false) ||
+                (me.fireEvent('beforecell' + type, me, cell, cellIndex, record, row, rowIndex, e) === false) ||
+                (me['onCell' + map[type]](cell, cellIndex, record, row, rowIndex, e) === false) ||
+                (me.fireEvent('cell' + type, me, cell, cellIndex, record, row, rowIndex, e) === false)
+            );
     }
 });
 
