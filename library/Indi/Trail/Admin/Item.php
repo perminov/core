@@ -19,6 +19,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
      */
     public function __construct($sectionR, $level) {
 
+        // Call parent
+        parent::__construct();
+
         // Setup $this->section
         $config = array();
         $dataTypeA = array('original', 'temporary', 'compiled', 'foreign');
