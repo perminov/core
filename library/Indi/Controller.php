@@ -552,8 +552,11 @@ class Indi_Controller {
             $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
             if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
-            // Else if options data is for combo, associated with a existing form field
+        // Else if options data is for combo, associated with a existing form field - pick that field
         } else $field = Indi::trail()->model->fields($for);
+
+        // If field having $for as it's `alias` was not found in existing fields, try to finв it within pseudo fields
+        if (!$field) $field = Indi::trail()->pseudoFields->field($for);
 
         // Prepare and flush json-encoded combo options data
         $this->_odata($for, $post, $field, null, $order, $dir, $offset);
@@ -573,6 +576,9 @@ class Indi_Controller {
      * @param string $offset
      */
     protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
+
+        // If field was not found neither within existing field, nor within pseudo fields
+        if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
         // Get combo data rowset
         $comboDataRs = $post->keyword

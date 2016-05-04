@@ -74,6 +74,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
         if (Indi::trail(true) && Indi::trail()->model) {
 
+            // Adjust trail
+            $this->adjustTrail();
+
             // If action is 'index'
             if (Indi::uri('action') == 'index') {
 
@@ -2044,8 +2047,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
         // Return clause
-        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+        /*return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
             ? 'FIND_IN_SET("' . $connectorValue . '", `' . $connectorAlias . '`)'
+            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';*/
+        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+            ? 'CONCAT(",", `' . $connectorAlias . '`, ",") REGEXP ",(' . im(ar($connectorValue), '|') . '),"'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
 
@@ -2063,6 +2069,14 @@ class Indi_Controller_Admin extends Indi_Controller {
      * be done within this function's body, using appendDisabledField() and excludeDisabledFields() methods
      */
     public function adjustDisabledFields() {
+
+    }
+
+
+    /**
+     * This function is an injection that allows to adjust any trail items before their involvement
+     */
+    public function adjustTrail() {
 
     }
 

@@ -2,6 +2,13 @@
 class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
     /**
+     * Table name of table, that current rowset is related to
+     *
+     * @var string
+     */
+    protected $_table = 'field';
+
+    /**
      * Contains an array with fields aliases as keys, and their indexes within $this->_rows array as values.
      * Is need for ability to direct fetch a needed row from rowset, by it's alias.
      *
@@ -211,6 +218,25 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         foreach ($rowset->column('alias') as $alias) $this->_indexes[$alias] = count($this->_indexes);
 
         // Return itself
+        return $this;
+    }
+
+    /**
+     * Append row to current rowset, using $original argument as the base data for
+     * construction of a row, that will be appended
+     *
+     * @param array $original
+     * @return Field_Rowset_Base|Indi_Db_Table_Rowset|Field_Rowset
+     */
+    public function append(array $original) {
+
+        // Push alias into indexes
+        $this->_indexes[$original['alias']] = $this->_count;
+
+        // Call parent
+        $this->callParent();
+
+        // Return
         return $this;
     }
 }

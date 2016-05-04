@@ -20,7 +20,7 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
         var me = this;
 
         // Pick field from context
-        config.field = config.$ctx.ti().fields.r(config.name, 'alias');
+        config.field = config.$ctx.ti().fields.r(config.name, 'alias') || config.$ctx.ti().pseudoFields.r(config.name, 'alias');
 
         // Setup satellite
         config.satellite = config.field.satellite;
