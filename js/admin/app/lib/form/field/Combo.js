@@ -38,6 +38,17 @@ Ext.define('Indi.lib.form.field.Combo', {
     nojs: false,
 
     /**
+     * Flag indicating whether or not zero-results of keyword-search
+     * will be interpreted as a reason for validation failure
+     */
+    allowKeywordNoResults: false,
+
+    /**
+     * The text that will be displayed if nothing found using keyword-lookup
+     */
+    keywordNoResultsText: Indi.lang.I_COMBO_KEYWORD_NO_RESULTS,
+
+    /**
      * The text that will be displayed if the number of currently selected options is already reached the maximum
      * allowed count. This config takes effect only if `multiSelect` is `true`
      */
@@ -189,7 +200,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.callParent(arguments);
 
         // Add 'remotefetch' event
-        me.addEvents('refreshchildren');
+        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect');
     },
 
     /**
@@ -1430,6 +1441,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         } else if (mode == 'selected-but-found-with-lookup'){
             me.rebuildComboData();
         }
+
+        // Fire 'keyworderased' event
+        me.fireEvent('keyworderased', me);
     },
 
     /**
@@ -1909,6 +1923,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Fire 'change' event
         me.getNative().setValue.call(me, me.hiddenEl.val());
 
+        // Fire 'itemselect' event
+        me.fireEvent('itemselect', me);
+
         // Get focus back to keywordEl
         me.keywordEl.focus();
     },
@@ -2295,6 +2312,11 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Fire 'refreshchildren' event
                 me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
+
+            } else {
+
+                // Fire 'keywordfound' event
+                me.fireEvent('keywordfound', me, parseInt(responseData['found']));
             }
 
         // Else if results set is empty (no non-disabled options), we hide options, and set red
@@ -2314,17 +2336,58 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Fire 'refreshchildren' event
                 me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
 
-            // Else if reason of no results was not in satellite, we add special css class for that case
+            // Else if reason of no results was not in satellite but in keyword
             } else {
-                me.keywordEl.addCls('i-combo-keyword-no-results');
-                me.markInvalid('Ничего не найдено');
+
+                // Call special handler fn
+                me.onKeywordNothingFound();
             }
         }
     },
 
-    /*
-     * Bind 'hover' and 'click' event handlers for boundlist items
+    /**
+     * Handler for cases, when keyword-lookup was used, but nothing found
      */
+    onKeywordNothingFound: function() {
+        var me = this, keyword = me.keywordEl.val();
+
+        // Add special css class for
+        me.keywordEl.addCls('i-combo-keyword-no-results');
+
+        // If `multiSelect` prop is not `true`
+        if (!me.multiSelect) {
+
+            // Clear combo, but ensure keyword itself won't be cleared, as here we want validation to be run,
+            // so this will indicate that combo is invalid as there was nothing found using given keyword
+            me.clearCombo(); me.keywordEl.val(keyword); me.validate();
+
+        // Else just validate
+        } else me.validate();
+
+        // Fire 'keywordnothingfound' event
+        me.fireEvent('keywordnothingfound', me);
+    },
+
+    /**
+     * Do additional check for some results to be found using given keyword
+     *
+     * @param value
+     * @return {*}
+     */
+    validator: function(value) {
+        var me = this;
+
+        // Do check for non-emptyness of keyword-search results, if need
+        if (me.infoEl.attr('fetch-mode') == 'keyword' && me.allowKeywordNoResults == false
+            && me.keywordEl.hasCls('i-combo-keyword-no-results')) return me.keywordNoResultsText;
+
+        // Return
+        return true;
+    },
+
+    /*
+    * Bind 'hover' and 'click' event handlers for boundlist items
+    */
     bindItemHoverClick: function() {
         var me = this, query = '.x-boundlist-item:not(.x-boundlist-item-disabled)';
 
