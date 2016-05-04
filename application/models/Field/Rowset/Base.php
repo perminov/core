@@ -239,4 +239,30 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // Return
         return $this;
     }
+
+    /**
+     * Create pseudo-field
+     *
+     * @param $name
+     * @param $table
+     * @param bool $multiple
+     * @return mixed
+     */
+    public function combo($name, $table, $multiple = false) {
+
+        // Append
+        $this->append(array(
+            'alias' => 'contactId',
+            'columnTypeId' => $multiple ? 1 : 3,
+            'storeRelationAbility' => $multiple ? 'many' : 'one',
+            'elementId' => 23,
+            'defaultValue' => $multiple ? '' : 0,
+            'relation' => Indi::model($table)->id(),
+            'dependency' => 'u',
+            'satellite' => 0
+        ));
+
+        // Return field itself
+        return $this->field($name);
+    }
 }
