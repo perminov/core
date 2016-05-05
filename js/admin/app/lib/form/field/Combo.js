@@ -2221,6 +2221,28 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Get title of foreign entry, fethed for `name` key
+     *
+     * @param name
+     * @return {*}
+     */
+    fgn: function(name) {
+        var me = this, r = me.r(me.val()), propS;
+
+        // If data object, representing current value was not found, return null
+        if (!Ext.isObject(r)) return null;
+
+        // If data object, representing current value's '_foreign' prop - was not found, return null
+        if (!Ext.isObject(r._foreign)) return null;
+
+        // If data object, representing foreign data, fethed for `name` key - was not found, return null
+        if (!r._foreign.hasOwnProperty(name)) return null;
+
+        // Return
+        return r._foreign[name];
+    },
+
+    /**
      * Builds html for new options list, bind events and do some more things
      *
      * @param requestData

@@ -1015,6 +1015,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup combo data rowset title column
         $dataRs->titleColumn = $titleColumn;
 
+        // If foreign data should be fetched
+        if ($fieldR->params['foreign']) $dataRs->foreign($fieldR->params['foreign']);
+
         // Return combo data rowset
         return $dataRs;
     }
