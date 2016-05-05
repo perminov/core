@@ -2164,7 +2164,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Check for `maxSelected` conformance
         if (me.multiSelect && v && me.maxSelected && me.maxSelected < v.split(',').length)
-            errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected);
+            errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' ' + me.maxSelected);
 
         // Check for value should not be/contain disabled value
         if (me.disabledOptions)
