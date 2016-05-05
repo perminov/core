@@ -281,7 +281,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param bool $upper
      * @return null
      */
-    public function setScopeRow($upper = false) {
+    public function setScopeRow($upper = false, Indi_Db_Table_Row $r = null) {
 
         // If no primary hash param passed within the uri - return
         if (!Indi::uri()->ph) return;
@@ -292,15 +292,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If there is no current state yet - return
         if (!is_array($original)) return;
 
+        // If $r argis not given, use $this->row
+        $r = $r ?: $this->row;
+
         // If current action deals with row, that is not yet exists in database - return
-        if (!$this->row->id) return;
+        if (!$r->id) return;
 
         // Setup $modified array with 'aix' param as first item in. This array may be additionally fulfilled with
         // 'page' param, if passed 'aix' value is too large or too small to match initial results page number (this
         // mean that page number should be recalculated, so 'page' param will store recalculated page number). After
         // all necessary operations will be done - valued from this ($modified) array will replace existing values
         // in scope
-        $modified = array('aix' => Indi::uri()->aix);
+        $modified = array('aix' => Indi::uri()->aix, 'lastIds' => array($r->id));
 
         // Start and end indexes. We calculate them, because we should know, whether page number should be changed or no
         $start = ($original['page'] - 1) * Indi::trail((int) $upper)->section->rowsOnPage + 1;
@@ -1941,28 +1944,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Save the row
         $this->row->save();
 
-        // If current row has been just successfully created
-        if ($updateAix && $this->row->id) {
-
-            // If $scope's WHERE clause is not empty
-            if (Indi::trail()->scope->WHERE) {
-
-                // Prepare WHERE clause to ensure that newly created row does match all the requirements, that are
-                // used for fetching rows that are suitable for displaying in rowset (grid, calendar, etc) panel
-                $where = '`id` = "' . $this->row->id . '" AND ' . Indi::trail()->scope->WHERE;
-
-                // Do the check
-                $R = Indi::trail()->model->fetchRow($where);
-
-            // Else we assume that there are no requirements for current row to be displayed in rowset panel
-            } else $R = $this->row;
-
-            // Here we should do check for row existence, because there can be situation when we have just created
-            // a row, but values of some of it's properties do not match the requirements of current scope, and in that
-            // case current scope 'aix' and/or 'page' params should not be adjusted
-            if ($R) Indi::uri()->aix = Indi::trail()->model
-                ->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
-        }
+        // If current row has been just successfully created - update Indi::uri('aix')
+        if ($updateAix && $this->row->id) $this->updateAix($this->row);
 
         // Setup row index
         $this->setScopeRow();
@@ -2014,6 +1997,33 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Flush response
         jflush(true, $response);
+    }
+
+    /**
+     * Assign Indi::uri()->aix according to given $r instance
+     *
+     * @param Indi_Db_Table_Row $r
+     */
+    public function updateAix(Indi_Db_Table_Row $r) {
+
+        // If $scope's WHERE clause is not empty
+        if (Indi::trail()->scope->WHERE) {
+
+            // Prepare WHERE clause to ensure that newly created row does match all the requirements, that are
+            // used for fetching rows that are suitable for displaying in rowset (grid, calendar, etc) panel
+            $where = '`id` = "' . $r->id . '" AND ' . Indi::trail()->scope->WHERE;
+
+            // Do the check
+            $R = Indi::trail()->model->fetchRow($where);
+
+            // Else we assume that there are no requirements for current row to be displayed in rowset panel
+        } else $R = $r;
+
+        // Here we should do check for row existence, because there can be situation when we have just created
+        // a row, but values of some of it's properties do not match the requirements of current scope, and in that
+        // case current scope 'aix' and/or 'page' params should not be adjusted
+        if ($R) Indi::uri()->aix = Indi::trail()->model
+            ->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
     }
 
     /**
