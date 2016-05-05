@@ -64,7 +64,7 @@ Ext.override(Ext.view.Table, {
 
         result = me.fireEvent('uievent', type, me, cell, rowIndex, cellIndex, e, record, row);
 
-        if (result === false || me.callParent(arguments) === false) {
+        if (result === false /*|| me.callParent(arguments) === false*/) {
             return false;
         }
 
