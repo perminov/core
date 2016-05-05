@@ -123,17 +123,15 @@ class Indi_View_Helper_Admin_FormCombo {
      * Builds the combo
      *
      * @param $name
-     * @param null $tableName
-     * @param string $mode
      * @return string
      */
-    public function formCombo($name, $tableName = null, $mode = 'default') {
+    public function formCombo($name) {
 
         // Set name
         $this->name = $name;
 
         // Get field
-        $this->field = $this->getField($name, $tableName);
+        $this->field = $this->getField($name);
 
         // Get params
         $params = $this->field->params;
@@ -268,7 +266,7 @@ class Indi_View_Helper_Admin_FormCombo {
         foreach ($vars as $var) $this->$var = $$var;
 
         // If combo mode is 'extjs', we prepare a data object containing all involved info
-        if ($mode == 'extjs') $this->extjs($options);
+        $this->extjs($options);
     }
 
     /**
@@ -293,6 +291,7 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public function extjs($options) {
 
+        // Prepare view params
         $view = array(
             'subTplData' => array(
                 'satellite' => $this->satellite->alias,
@@ -302,6 +301,7 @@ class Indi_View_Helper_Admin_FormCombo {
             'store' => $options
         );
 
+        // Setup view data,related to currenty selected value(s)
         if ($this->isMultiSelect()) {
             $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
@@ -312,6 +312,8 @@ class Indi_View_Helper_Admin_FormCombo {
         } else {
             $view['subTplData']['selected'] = self::detectColor($this->selected);
         }
+
+        // Assign view params
         $this->getRow()->view($this->field->alias, $view);
     }
 
