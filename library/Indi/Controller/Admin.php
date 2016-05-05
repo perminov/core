@@ -2331,12 +2331,14 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (Indi::trail()->row->authorId == Indi::me('id') && Indi::trail()->row->authorType == Indi::me('mid'))
                     return;
 
-            // Elseif belonging mode is represented by 'alternate' concept, and current system user is an alternate
+            // Else if belonging mode is represented by 'alternate' concept, and current system user is an alternate
             } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate . 'Id')) {
 
                 // If current entry does not belongto current system user - return
                 if (Indi::admin()->id == $this->row->$af) return;
-            }
+            
+            // Else if there is no any kind of belonging
+            } else return;
 
         // Deny 'save' and 'delete' actions
         $this->deny('save');
