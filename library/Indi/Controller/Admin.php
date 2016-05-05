@@ -2321,10 +2321,22 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we do not deal with an existing row - do nothing
         if (!Indi::trail()->row->id) return;
 
-        // If current user created current entry - do nothing
+        // If current entry belongs to current system user- do nothing
         if ($ownerCheck)
-            if (Indi::trail()->row->authorId == Indi::me('id') && Indi::trail()->row->authorType == Indi::me('mid'))
-                return;
+
+            // If belonging mode is represented with a pairof special 'authorType' and 'authorId' fields
+            if (Indi::trail()->model->fields('authorId') && Indi::trail()->model->fields('authorType')) {
+
+                // If current entry does not belongto current system user - return
+                if (Indi::trail()->row->authorId == Indi::me('id') && Indi::trail()->row->authorType == Indi::me('mid'))
+                    return;
+
+            // Elseif belonging mode is represented by 'alternate' concept, and current system user is an alternate
+            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate . 'Id')) {
+
+                // If current entry does not belongto current system user - return
+                if (Indi::admin()->id == $this->row->$af) return;
+            }
 
         // Deny 'save' and 'delete' actions
         $this->deny('save');
