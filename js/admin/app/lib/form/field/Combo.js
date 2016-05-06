@@ -2400,7 +2400,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this;
 
         // Do check for non-emptyness of keyword-search results, if need
-        if (me.infoEl.attr('fetch-mode') == 'keyword' && me.allowKeywordNoResults == false
+        if (me.rendered && me.infoEl.attr('fetch-mode') == 'keyword' && me.allowKeywordNoResults == false
             && me.keywordEl.hasCls('i-combo-keyword-no-results')) return me.keywordNoResultsText;
 
         // Return
