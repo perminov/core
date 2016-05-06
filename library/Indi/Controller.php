@@ -547,7 +547,7 @@ class Indi_Controller {
             $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                 $for, Indi::trail()->section->entityId, Indi::trail()->scope->WHERE);
             $this->row->$for = Indi::uri()->id;
-            $order = Indi::trail()->scope->ORDER;
+            $order = is_array(Indi::trail()->scope->ORDER) ? end(Indi::trail()->scope->ORDER) : Indi::trail()->scope->ORDER;
             $dir = array_pop(explode(' ', $order));
             $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
             if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
