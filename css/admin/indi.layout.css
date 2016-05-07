@@ -11,14 +11,13 @@
 .i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
 .i-color-box-wrap .i-color-box[style*="background: url"],
 .i-bgimg-box-wrap .i-color-box[style*="background: url"], .i-color-box[style*="background: url"] {
-    float: left;
     height: 16px;
     width: 16px;
-    margin-top: -3px;
+    margin: -3px 0 0 0;
     position: relative;
     top: 2px;
 }
-.i-color-box-wrap {text-align: center;}
+.i-bgimg-box-wrap, .i-color-box-wrap {text-align: center;}
 .x-btn .x-btn-inner{color: #04408C}
 input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-inline-block{display: inline-block;}
