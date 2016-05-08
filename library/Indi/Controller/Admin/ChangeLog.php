@@ -32,4 +32,16 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
         // Return clause
         return '`entityId` = "' . Indi::trail(1)->section->entityId . '" AND `' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
+
+    /**
+     * Adjust values, for 'changerId' and 'key' props
+     *
+     * @param array $data
+     */
+    public function adjustGridData(&$data) {
+        for ($i = 0; $i < count($data); $i++) {
+            $data[$i]['changerId'] = $data[$i]['datetime'] . ' - ' . $data[$i]['changerId'];
+            $data[$i]['key'] = $data[$i]['entityId'] . ' » ' . $data[$i]['key'];
+        }
+    }
 }
