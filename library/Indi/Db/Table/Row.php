@@ -450,11 +450,32 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Delete all files/folder uploaded/created while using CKFinder
         $this->deleteCKFinderFiles();
 
+        // Delete all `changeLog` entries, related to current entry
+        $this->deleteChangeLog();
+
         // Unset `id` prop
         $this->id = null;
 
         // Return
         return $return;
+    }
+
+    /**
+     * Delete all `changeLog` entries, related to current entry
+     */
+    public function deleteChangeLog() {
+
+        // If `id` prop is null/zero/false/empty - return
+        if (!$this->id) return;
+
+        // If `ChangeLog` model does not exist - return
+        if (!$changeLogM = Indi::model('ChangeLog', true)) return;
+
+        // Find and delete related `changeLog` entries
+        $changeLogM->fetchAll(array(
+            '`entityId` = "' . $this->model()->id() . '"',
+            '`key` = "' . $this->id . '"'
+        ))->delete();
     }
 
     /**
@@ -3288,7 +3309,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $storageR->was = implode(', ', $implodedWas);
 
                 // Else if modified field's foreign data was a row object
-                } else if ($now->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Row) {
+                } else if ($was->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Row) {
 
                     // Get that row's title
                     $storageR->was = $was->foreign($affectedFieldR->alias)->title();
