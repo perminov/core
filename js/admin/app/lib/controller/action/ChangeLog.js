@@ -49,13 +49,11 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     },
 
     /**
-     * Adjust all rows `datetime` properties, for them to contain `author` property contents additionally
+     * Turn Off `entityId` grid column
      *
-     * @param r {Ext.data.Model}
+     * @param column
      */
-    storeLoadCallbackDataRowAdjust: function(r) {
-        r.set('changerId',Ext.Date.format(r.get('datetime'), 'Y-m-d H:i:s') + ' - ' + r.get('changerId'));
-    },
+    gridColumn$EntityId: false,
 
     /**
      * Turn Off Author grid column, as author titles are involved within grouper contents
