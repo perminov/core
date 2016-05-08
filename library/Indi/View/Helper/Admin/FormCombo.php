@@ -245,7 +245,7 @@ class Indi_View_Helper_Admin_FormCombo {
         );
 
         // Setup tree flag in entity has a tree structure
-        if ($comboDataRs->model()->treeColumn()) $options['tree'] = true;
+        if ($comboDataRs->table() && $comboDataRs->model()->treeColumn()) $options['tree'] = true;
 
         // Setup groups for options
         if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
