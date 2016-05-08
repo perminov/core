@@ -679,7 +679,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If we have no related model - this happen if we have 'varibale entity' satellite dependency type
         // and current satellite value is not defined - we return empty rowset
-        if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title'));
+        if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title', 'rowClass' => __CLASS__));
 
         // Get title column
         $titleColumn = $fieldR->params['titleColumn'] ? $fieldR->params['titleColumn'] : $relatedM->titleColumn();
