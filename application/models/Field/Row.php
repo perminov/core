@@ -67,14 +67,31 @@ class Field_Row extends Indi_Db_Table_Row {
             $this->foreign('entityId')->save();
         }
 
+        // Prevent deletion of `section` entries, having current `field` entry as `defaultSortField`
+        if ($sectionRs = Indi::model('Section')->fetchAll('`defaultSortField` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->defaultSortField = 0;
+                $sectionR->save();
+            }
+
+        // Prevent deletion of `section` entries, having current `field` entry as `parentSectionConnector`
+        if ($sectionRs = Indi::model('Section')->fetchAll('`parentSectionConnector` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->parentSectionConnector = 0;
+                $sectionR->save();
+            }
+
         // Standard deletion
-        parent::delete();
+        $return = parent::delete();
 
         // Delete db table associated column
         $this->deleteColumn();
 
         // Delete current field from model's fields
         Indi::model($this->entityId)->fields()->exclude($this->id);
+
+        // Return
+        return $return;
     }
 
     /**
