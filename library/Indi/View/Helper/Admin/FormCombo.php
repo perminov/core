@@ -215,7 +215,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
         // Else if combo is mulptiple
-        } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && !$this->filter->any())) {
+        } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && $this->filter->any())) {
 
             // Set value for hidden input
             $selected = array('value' => $selected);
