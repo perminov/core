@@ -2253,4 +2253,18 @@ class Indi {
         // If $mode args is explicitly given return session data, stored under $mode key within $_SESSION
         return is_string($prop) ? $me->$prop : $me;
     }
+
+    /**
+     * Detect absolute filepath for a relative one, checking
+     * 'www', 'coref' and 'core' folders as places of possible location
+     *
+     * @static
+     * @param $src
+     * @return string
+     */
+    public static function abs($src) {
+        foreach (ar('www,coref,core') as $rep)
+            if (file_exists($abs = DOC . STD . '/' . $rep . $src))
+                return $abs;
+    }
 }
