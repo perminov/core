@@ -1273,9 +1273,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
             // Setup foreign entries titles
-            foreach (ar($params['foreign']) as $fk)
-                if ($fr = $o->foreign($fk))
-                    $options[$o->$keyProperty]['_foreign'][$fk] =  $fr->title();
+            if ($params['foreign'])
+                foreach (ar($params['foreign']) as $fk)
+                    if ($fr = $o->foreign($fk))
+                        $options[$o->$keyProperty]['_foreign'][$fk] =  $fr->title();
 
             // If color box was detected, and it has box-type, we remember this fact
             if ($info['box']) $hasColorBox = true;
