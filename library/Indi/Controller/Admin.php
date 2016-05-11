@@ -906,6 +906,28 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Replace &nbsp;
             $columnI['title'] = str_replace('&nbsp;', ' ', $columnI['title']);
 
+            // Try detect an image
+            if (preg_match('/<img src="([^"]+)"/', $columnI['title'], $src)) {
+
+                // If detected image exists
+                if ($abs = Indi::abs($src[1])) {
+
+                    // Setup additional x-offset for color-box, for it to be centered within the cell
+                    $additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+
+                    //  Add the image to a worksheet
+                    $objDrawing = new PHPExcel_Worksheet_Drawing();
+                    $objDrawing->setPath($abs);
+                    $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                    $objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+                }
+
+                // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                // because gd image will override cell value otherwise
+                $columnI['title'] = str_pad('', 6, ' ');
+            }
+
             // Write header title of a certain column to a header cell
             $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $columnI['title']);
 
@@ -1021,8 +1043,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Get the value
                 $value = $data[$i][$columnI['dataIndex']];
 
-                // If cell value contain a .i-color-box item, we replaced it with same-looking GD image box
-                if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);">/', $value, $c)) {
+                // If cell value contains a .i-color-box item, we replaced it with same-looking GD image box
+                if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);" title="[^"]+">/', $value, $c)) {
 
                     // If color was detected
                     if ($h = trim(Indi::hexColor($c[1]), '#')) {
@@ -1047,10 +1069,28 @@ class Indi_Controller_Admin extends Indi_Controller {
                         $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
                         $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
-                        // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
-                        // because gd image will override cell value otherwise
-                        $value = str_pad('', 6, ' ') . strip_tags($value);
+
+                    // Else if cell value contains a .i-color-box item, that uses an image by background:url(...)
+                    } else if (preg_match('/^ ?url\(([^)]+)\)/', $c[1], $src)) {
+
+                        // If detected image exists
+                        if ($abs = Indi::abs(trim($src[1], '.'))) {
+
+                            // Setup additional x-offset for color-box, for it to be centered within the cell
+                            $additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+
+                            //  Add the image to a worksheet
+                            $objDrawing = new PHPExcel_Worksheet_Drawing();
+                            $objDrawing->setPath($abs);
+                            $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                            $objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                            $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+                        }
                     }
+
+                    // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                    // because gd image will override cell value otherwise
+                    $value = str_pad('', 6, ' ') . strip_tags($value);
 
                 // Else if cell value contain a color definition within 'color' attribute,
                 // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
