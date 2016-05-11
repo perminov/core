@@ -15,7 +15,7 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
             default: {minHeight: 27},
             items: [{alias: 'filter'}],
             inner: {
-                filter: [{alias: 'keyword'}]
+                filter: [{alias: 'keyword', margin: '0 5 4 2'}]
             }
         }
     },
