@@ -671,7 +671,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>';
-                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && $this->table() != 'enumset') {
+                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && !in($this->table(), 'enumset,changeLog')) {
                         if (preg_match('/background:\s*url\(/', $data[$pointer][$columnI])) {
                             $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
                         } else {
@@ -1273,9 +1273,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
             // Setup foreign entries titles
-            foreach (ar($params['foreign']) as $fk)
-                if ($fr = $o->foreign($fk))
-                    $options[$o->$keyProperty]['_foreign'][$fk] =  $fr->title();
+            if ($params['foreign'])
+                foreach (ar($params['foreign']) as $fk)
+                    if ($fr = $o->foreign($fk))
+                        $options[$o->$keyProperty]['_foreign'][$fk] =  $fr->title();
 
             // If color box was detected, and it has box-type, we remember this fact
             if ($info['box']) $hasColorBox = true;
