@@ -7,7 +7,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     alternateClassName: 'Indi.Controller.Action.Rowset',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action',
+    extend: 'Indi.lib.controller.action.Action',
 
     // @inheritdoc
     mcopwso: ['store', 'rowset', 'south', 'panel'],
@@ -87,7 +87,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.onFilterChange(cmp);
 
         // Declare and fulfil an array with properties, available for each row in the rowset
-        var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
+        var columnA = []; if (me.ti().gridFields) for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
 
         // Declare an array for params, which will be fulfiled with filters's values
         var paramA = [];
@@ -183,15 +183,22 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Append `keyword` property to the request extra params
         if (keyword) extraParams.keyword = keyword;
 
-        // Append summary definition
-        var summary = me.rowsetSummary(); if (Ext.isObject(summary) && Ext.Object.getSize(summary))
-            extraParams.summary = JSON.stringify(summary);
+        // If me.rowsetSummary is a function
+        if (Ext.isFunction(me.rowsetSummary)) {
+
+            // Get summary definitions
+            var summary = me.rowsetSummary();
+
+            // Append them to extraParams
+            if (Ext.isObject(summary) && Ext.Object.getSize(summary))
+                extraParams.summary = JSON.stringify(summary);
+        }
 
         // Set extra params for store's proxy
         me.getStore().getProxy().extraParams = extraParams;
 
         // Adjust an 'url' property of  this.getStore().proxy object, to apply keyword search usage
-        me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/index/' +
+        me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/' +
             (me.ti(1).row ? 'id/' + me.ti(1).row.id + '/' : '') + 'format/json/';
 
         // Disable keyword component, if all available properties are already involved in search by

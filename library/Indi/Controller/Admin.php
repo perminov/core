@@ -1801,6 +1801,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Render the layout
             $out = Indi::view()->render('index.php');
 
+
         // Else, if we are doing something in a certain section
         } else {
 
@@ -1813,7 +1814,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Strip '/admin' from $out, if cms-only mode is enabled
-        if (COM) $out = preg_replace('/("|\')\/admin/', '$1', $out);
+        if (COM) $out = preg_replace('/(action|src|href)=("|\')\/admin/', '$1=$1', $out);
 
         // Make a src|href replacements, if project is running in a subfolder of document root
         if (STD) {

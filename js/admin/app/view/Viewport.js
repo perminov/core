@@ -77,7 +77,7 @@ Ext.define('Indi.view.Viewport', {
                 setInterval(Indi.view.Viewport.dateUpdater, 1000);
                 this.tpl.overwrite(this.el, {
                     date: Ext.Date.format(new Date(Indi.time * 1000), Indi.view.Viewport.dateUpdaterFormat),
-                    admin: Indi.user,
+                    admin: Indi.user.title,
                     pre: Indi.pre,
                     logout: Indi.lang.I_LOGOUT
                 });
