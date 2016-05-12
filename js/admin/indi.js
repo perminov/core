@@ -66,7 +66,38 @@ Ext.define('Indi', {
          * @return {Boolean}
          */
         in: function(item, array) {
-            if (typeof array == 'string') array = array.split(',');
+            var a, i;
+
+            // If `array` arg is null/undefined return false
+            if (array === null || array == undefined || typeof array == 'function') return false;
+
+            // If `array` arg is a string/number
+            if (typeof array == 'string' || typeof array == 'number') {
+
+                // Cast `array` arg as string
+                a = array + '';
+
+                // If `array` arg is an empty string return false
+                if (!a.length) return false;
+
+                // If `array` arg is null/undefined return false
+                if (item === null || item == undefined || typeof item == 'function' || typeof item == 'object') return false;
+
+                // Split `array` arg by comma
+                a = a.split(',');
+
+                // Cast `item` as string
+                if (typeof item == 'boolean') {
+                    i = (item ? 1 : 0) + '';
+                } else if (typeof item == 'number' || typeof item == 'string') {
+                    i = item + '';
+                }
+
+                // Return
+                return a.indexOf(i) != -1;
+            }
+
+            // Return
             return array.indexOf(item) != -1;
         },
 
@@ -275,7 +306,7 @@ Ext.define('Indi', {
          * @param me
          */
         eval: function(js, me) {
-            if (!Ext.isString(js)) return;
+            if (!Ext.isString(js) || !js.length) return;
             var s = "(hide|show)\\('((tr-[a-zA-Z0-9]+,?)+)'\\);?", ttrMRex = new RegExp(s, 'g'), ttrSRex = new RegExp(s),
                 ttrMMatch, ttrSMatch, ttrSFoundTrA, ttrSReplace, ttrSReplaceTrA = [], trA, replace = [], trueTr;
             if (ttrMMatch = js.match(ttrMRex)) {
@@ -381,49 +412,56 @@ Ext.define('Indi', {
                     // 'white-blink' effect between destroying old and creating new
                     Ext.defer(function(){ Indi._applyResponse(response.responseText, cfg, uri); }, 10);
                 },
-                failure: function(response) {
-                    var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
-
-                    // Parse response text
-                    json = Ext.JSON.decode(response.responseText, true);
-
-                    // The the info about invalid fields from the response, and mark the as invalid
-                    if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
-
-                        // Shortcut to json.mismatch
-                        mismatch = json.mismatch;
-
-                        // Error messages storage
-                        errorByFieldO = mismatch.errors;
-
-                        // Collect all messages for them to be bit later displayed within Ext.MessageBox
-                        Object.keys(errorByFieldO).forEach(function(i){
-                            wholeFormMsg.push(errorByFieldO[i]);
-                        });
-
-                        // If we collected at least one error message, that is related to the whole form rather than
-                        // some certain field - use an Ext.MessageBox to display it
-                        if (wholeFormMsg.length) {
-
-                            msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
-
-                            // Build message
-                            msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
-                                + mismatch.entity.title + '"'
-                                + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                                + ' - выдала следующие ошибки: <br><br>' + msg;
-
-                            // Show message box
-                            Ext.MessageBox.show({
-                                title: Indi.lang.I_ERROR,
-                                msg: msg,
-                                buttons: Ext.MessageBox.OK,
-                                icon: Ext.MessageBox.ERROR
-                            });
-                        }
-                    }
-                }
+                failure: Indi.ajaxFailure
             }, cfg));
+        },
+
+        /**
+         * Common function for handling 'mismatch' - failures
+         *
+         * @param response
+         */
+        ajaxFailure: function(response) {
+            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
+
+            // Parse response text
+            json = Ext.JSON.decode(response.responseText, true);
+
+            // The the info about invalid fields from the response, and mark the as invalid
+            if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
+
+                // Shortcut to json.mismatch
+                mismatch = json.mismatch;
+
+                // Error messages storage
+                errorByFieldO = mismatch.errors;
+
+                // Collect all messages for them to be bit later displayed within Ext.MessageBox
+                Object.keys(errorByFieldO).forEach(function(i){
+                    wholeFormMsg.push(errorByFieldO[i]);
+                });
+
+                // If we collected at least one error message, that is related to the whole form rather than
+                // some certain field - use an Ext.MessageBox to display it
+                if (wholeFormMsg.length) {
+
+                    msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
+
+                    // Build message
+                    msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                        + mismatch.entity.title + '"'
+                        + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
+                        + ' - выдала следующие ошибки: <br><br>' + msg;
+
+                    // Show message box
+                    Ext.MessageBox.show({
+                        title: Indi.lang.I_ERROR,
+                        msg: msg,
+                        buttons: Ext.MessageBox.OK,
+                        icon: Ext.MessageBox.ERROR
+                    });
+                }
+            }
         },
 
         /**
@@ -725,7 +763,7 @@ Ext.define('Indi', {
                     enumerable: false,
                     configurable: false,
                     value: function() {
-                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = JSON.parse(this)) ? r : false
+                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = Ext.JSON.decode(this)) ? r : false
                     }
                 });
             }
@@ -808,6 +846,73 @@ Ext.define('Indi', {
         mt: function() {
             var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
             Indi._mt = m; if (arguments.length) console.log(d, arguments); return d;
+        },
+
+        /**
+         * Add the measure version to a given quantity
+         *
+         * @param q
+         * @param versions012
+         * @param showNumber
+         * @return {String}
+         */
+        tbq: function(q, versions012, showNumber) {
+            var versions210, formatKA = ['2-4', '1', '0,11-19,5-9'], formatA = {}, formatK, formatV, spanA, k, interval, m;
+
+            // Set up default values for arguments
+            if (arguments.length < 1) q = 2;
+            if (arguments.length < 2) versions012 = '';
+            if (arguments.length < 3) showNumber = true;
+
+            // Force q arg to be string
+            q += '';
+
+            // Get versions reversed array
+            versions210 = versions012.split(',').reverse();
+
+            // Distribute quantity measure spell versions
+            formatA['2-4'] = versions210[0]; formatA['1'] = versions210[1]; formatA['0,11-19,5-9'] = versions210[2];
+
+            // Foreach format
+            for (var i in formatKA) {
+
+                formatK = formatKA[i];
+                formatV = formatA[formatK];
+
+                // Extract the intervals from format key
+                spanA = formatK.split(',');
+
+                // Foreach interval
+                for (k = 0; k < spanA.length; k++) {
+
+                    // If current interval is actually not interval, e.g it constits from only one digit
+                    if (spanA[k].indexOf('-') == -1) {
+
+                        // If quantity count ends with that digit
+                        if (q.match(new RegExp(spanA[k] + '$')))
+
+                            // Return the quantity (if showNumber argument is true), with appended spell version
+                            return (showNumber ? q + ' ' : '') + formatV;
+
+                    // Else current interval really is an interval
+                    } else {
+
+                        // Get the start and end digits of that interval
+                        interval = spanA[k].split('-');
+
+                        // Foreach digit within start and end interval digits
+                        for (m = parseInt(interval[0]); m <= parseInt(interval[1]); m ++) {
+
+                            // If quantity count ends with that digit
+                            if (q.match(new RegExp(m + '$')))
+
+                                // Return the quantity (if showNumber argument is true), with appended spell version
+                                return (showNumber ? q + ' ' : '') + formatV;
+                        }
+                    }
+                }
+            }
+            return q;
         }
     },
 

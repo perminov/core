@@ -50,7 +50,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     row: {
         border: 0,
-        height: '40%'
+        height: '70%'
     },
 
     south: {
@@ -252,7 +252,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
 
         // Append 'ph' and 'aix' params
-        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
+        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix || autosave ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
         // Return
         return uri;

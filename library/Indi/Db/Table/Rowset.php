@@ -181,7 +181,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Return a model, that current rowset is related to
      *
-     * @return mixed
+     * @return Indi_Db_Table
      */
     public function model() {
         return Indi::model($this->_table);
@@ -531,10 +531,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     /**
      * Converts a rowset to grid data array, using current trail item details, such as columns, filters, etc
      *
-     * @param Indi_Trail_Admin_Item $ti
+     * @param string $fields Comma-separated list of field names
      * @return array
      */
-    public function toGridData($ti) {
+    public function toGridData($fields) {
 
         // If there are no rows in $this argument - return
         if ($this->_count == 0) return array();
@@ -556,14 +556,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'other' => array('id' => true)
         );
 
-        // Setup foreign rows for `columnType` property for each field row within $ti->gridFields rowset
-        $ti->gridFields->foreign('columnTypeId');
+        // Get fields
+        $fieldRs = $this->model()->fields(im(ar($fields)), 'rowset');
 
         // Set up $titleProp variable as an indicator of that titleColumn is within grid fields
-        if (in($titleColumn = $ti->model->titleColumn(), $columnA)) $titleProp = $titleColumn;
+        if (in($titleColumn = $this->model()->titleColumn(), $columnA)) $titleProp = $titleColumn;
 
         // Setup actual info about types of columns, that we will have to deal with
-        foreach ($ti->gridFields as $gridFieldR) {
+        foreach ($fieldRs as $gridFieldR) {
 
             // Foreign keys (single and multiple)
             if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
@@ -630,7 +630,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 if (isset($typeA['foreign']['multiple'][$columnI]))
                     foreach ($r->foreign($columnI) as $m)
                         $data[$pointer][$columnI] .= $m
-                            ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]) ? $titleColumn : 'title'} .
+                            ->{is_string($titleColumn = $typeA['foreign']['multiple'][$columnI]) ? $titleColumn : 'title'} .
                             ($r->foreign($columnI)->key() < $r->foreign($columnI)->count() - 1 ? ', ' : '');
 
                 // If field column type is 'date' we adjust it's format if need. If date is '0000-00-00' we set it
@@ -671,11 +671,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>';
-                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && $ti->section->alias != 'enumset') {
+                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && !in($this->table(), 'enumset,changeLog')) {
                         if (preg_match('/background:\s*url\(/', $data[$pointer][$columnI])) {
-
+                            $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
                         } else {
-                            $data[$pointer][$columnI] = preg_replace('/(<\/span>).*$/', '$1', $data[$pointer][$columnI]);
+                            $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
                         }
                     }
                 }
@@ -1150,6 +1150,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && in_array($foreignR->$col, $set))
                             $rows[] = $foreignR;
 
+                    // Ensure foreign rows will appear in the same order as their keys within $r->$key
+                    $rows_ = array(); foreach ($rows as $row) $rows_[$row->$col] = $row;
+                    $rows  = array(); foreach (ar($r->$key) as $j) $rows[] = $rows_[$j]; unset($rows_);
+
                     // Create a rowset object, with usage of data, collected in $rows array, and assing that rowset
                     // as a value within $this->_foreign property under current foreign key field name and current row
                     $r->foreign($key, Indi::model($foreignKeyEntityId)->createRowset(array('rows' => $rows)));
@@ -1267,6 +1271,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Setup primary option data
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+
+            // Setup foreign entries titles
+            if ($params['foreign'])
+                foreach (ar($params['foreign']) as $fk)
+                    if ($fr = $o->foreign($fk))
+                        $options[$o->$keyProperty]['_foreign'][$fk] =  $fr->title();
 
             // If color box was detected, and it has box-type, we remember this fact
             if ($info['box']) $hasColorBox = true;

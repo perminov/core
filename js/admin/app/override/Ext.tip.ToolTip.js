@@ -56,15 +56,19 @@ Ext.override(Ext.tip.ToolTip, {
                             this.anchorOffset = -20;
                             this.anchorOffset += this.getWidth()/2;
 
-                            if (this.constrainParent && this.target.lastBox && this.target.lastBox.x < offsetX) {
+                            var rightOverlap = this.target.getXY()[0] + this.target.getWidth()/2 + this.getWidth()/2 - Ext.getBody().getWidth();
+                            var leftOverlap = this.target.getXY()[0] + this.target.getWidth()/2 - this.getWidth()/2;
+                            if (rightOverlap > -5) {
+                                this.anchorOffset += rightOverlap + 5;
+                                this.mouseOffset[0] -= rightOverlap + 5;
+                            } else if (leftOverlap < 5) {
+                                this.anchorOffset += leftOverlap - 5;
+                                this.mouseOffset[0] -= leftOverlap - 5;
+                            } else if (this.constrainParent && this.target.lastBox && this.target.lastBox.x < offsetX) {
                                 this.mouseOffset = [-this.target.lastBox.x + this.staticOffset[0], this.staticOffset[1]];
                                 this.anchorOffset -= offsetX - this.target.lastBox.x;
                             }
 
-                            /*if (true) {
-                                this.mouseOffset[0] = 0;
-                                this.anchorOffset = -7;
-                            }*/
                         } else {
                             this.mouseOffset = [this.staticOffset[0], this.staticOffset[1]];
                         }

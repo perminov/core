@@ -10,7 +10,7 @@ Ext.define('Indi.lib.form.field.Phone', {
     alternateClassName: 'Indi.form.Phone',
 
     // @inheritdoc
-    alias: 'widget.phonefield',
+    alias: ['widget.phonefield', 'widget.phone'],
 
     // @inheritdoc
     constructor: function(config) {

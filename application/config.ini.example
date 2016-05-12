@@ -1,5 +1,5 @@
 [general]
-domain = empty
+domain = empty.local
 seoUri = false
 title = false
 
@@ -14,6 +14,10 @@ dbname   = empty
 [lang]
 front = ru
 admin = ru
+
+[mail]
+default.from.name = empty.local
+default.from.email = info@empty.local
 
 [view]
 scriptPath = application/views

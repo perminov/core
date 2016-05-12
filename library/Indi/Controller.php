@@ -271,9 +271,12 @@ class Indi_Controller {
      * Builds and returns a stack of WHERE clauses, that are representing grid's filters usage
      *
      * @param $FROM string table/model/entity name. Current model will be used by default
+     * @param $search string Special formatted string containing filters values like
+     *                       [{"field1":"val1"}, {"field2":"val2"}] . If not given - Indi::get()->search will be
+     *                       used by default
      * @return array
      */
-    public function filtersWHERE($FROM = '') {
+    public function filtersWHERE($FROM = '', $search = '') {
 
         // Setup model, that should have fields, mentioned as filtering params names
         $model = $FROM ? Indi::model($FROM) : Indi::trail()->model;
@@ -281,14 +284,17 @@ class Indi_Controller {
         // Defined an array for collecting data, that may be used in the process of building an excel spreadsheet
         $excelA = array();
 
+        // Use Indi::get()->search if $search arg is not given
+        $search = $search ?: Indi::get()->search;
+
         // Clauses stack
         $where = array();
 
         // If we have no 'search' param in query string, there is nothing to do here
-        if (Indi::get()->search) {
+        if ($search) {
 
             // Decode 'search' param from json to an associative array
-            $search = json_decode(Indi::get()->search, true);
+            $search = json_decode($search, true);
 
             // Foreach passed filter pair (alias => value)
             foreach ($search as $searchOnField) {
@@ -493,7 +499,7 @@ class Indi_Controller {
         $field = Indi::trail()->model->fields($for);
 
         // Get filter
-        $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
+        if (Indi::trail()->filters) $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
 
         // Declare WHERE array
         $where = array();
@@ -541,13 +547,16 @@ class Indi_Controller {
             $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                 $for, Indi::trail()->section->entityId, Indi::trail()->scope->WHERE);
             $this->row->$for = Indi::uri()->id;
-            $order = Indi::trail()->scope->ORDER;
+            $order = is_array(Indi::trail()->scope->ORDER) ? end(Indi::trail()->scope->ORDER) : Indi::trail()->scope->ORDER;
             $dir = array_pop(explode(' ', $order));
             $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
             if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
-            // Else if options data is for combo, associated with a existing form field
+        // Else if options data is for combo, associated with a existing form field - pick that field
         } else $field = Indi::trail()->model->fields($for);
+
+        // If field having $for as it's `alias` was not found in existing fields, try to finв it within pseudo fields
+        if (!$field) $field = Indi::trail()->pseudoFields->field($for);
 
         // Prepare and flush json-encoded combo options data
         $this->_odata($for, $post, $field, null, $order, $dir, $offset);
@@ -567,6 +576,9 @@ class Indi_Controller {
      * @param string $offset
      */
     protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
+
+        // If field was not found neither within existing field, nor within pseudo fields
+        if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
         // Get combo data rowset
         $comboDataRs = $post->keyword
@@ -629,7 +641,7 @@ class Indi_Controller {
             $this->adjustGridDataRowset();
 
             // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData(Indi::trail());
+            $data = $this->rowset->toGridData(Indi::trail()->gridFields->column('alias'));
 
             // Adjust grid data
             $this->adjustGridData($data);
@@ -753,7 +765,7 @@ class Indi_Controller {
         $exclude = array_keys(Indi::obar());
 
         // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
-        return Indi::trail()->gridFields ? Indi::trail()->gridFields->keywordWHERE($keyword, $exclude) : array();
+        return Indi::trail()->{Indi::trail()->gridFields ? 'gridFields' : 'fields'}->keywordWHERE($keyword, $exclude);
     }
 
     /**
