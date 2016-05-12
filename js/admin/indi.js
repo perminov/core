@@ -895,7 +895,12 @@ Ext.define('Indi', {
         if (Ext.get('i-login-box')) {
             Ext.create('Indi.view.LoginBox', {title: Indi.title});
         } else {
+
+            // Create viewport
             Indi.viewport = Ext.create('Indi.view.Viewport');
+
+            // Load dashboard
+            if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
         }
 
         Indi.app = this;
