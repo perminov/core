@@ -24,6 +24,7 @@ class Indi {
      */
     protected static $_logging = array(
         'jerror' => true,
+        'jflush' => false,
         'mflush' => false
     );
 
@@ -69,9 +70,9 @@ class Indi {
         'int11list' => '/^[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*$/',
         'bool' => '/^(0|1)$/',
         'time' => '/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/',
-        'double72' => '/^([1-9][0-9]{0,6}|0)(\.[0-9]{1,2})?$/',
-        'decimal112' => '/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/',
-        'decimal143' => '/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/',
+        'double72' => '/^([1-9][0-9]{0,6}|[0-9])(\.[0-9]{1,2})?$/',
+        'decimal112' => '/^(-?([1-9][0-9]{1,7}|[0-9]))(\.[0-9]{1,2})?$/',
+        'decimal143' => '/^(-?([1-9][0-9]{1,9}|[0-9]))(\.[0-9]{1,3})?$/',
         'datetime' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
         'urichunk' => '',
@@ -2195,7 +2196,7 @@ class Indi {
         if (func_num_args() == 1) return self::$_logging[$type];
 
         // If $flag arg is not boolean - return null
-        if (!is_bool($flag)) return null;
+        //if (!is_bool($flag)) return null;
 
         // Assign $flag as a value for item within self::$_log array, under $type key, and return it
         return self::$_logging[$type] = $flag;
@@ -2212,6 +2213,7 @@ class Indi {
         // General info
         $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
         $msg .= 'URI: ' . URI . '<br>';
+        $msg .= 'Remote IP: ' . $_SERVER['REMOTE_ADDR'] . '<br>';
 
         // Who?
         if (Indi::admin()->id) $msg .= 'Admin [id#' . Indi::admin()->id . ']: ' . Indi::admin()->title . '<br>';
@@ -2225,6 +2227,12 @@ class Indi {
 
             // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
             $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';
+
+            // Check if Indi::logging($type) contains additional email addresses
+            if (is_string(Indi::logging($type)))
+                foreach(ar(Indi::logging($type)) as $ccI)
+                    if (Indi::rexm('email', $ccI))
+                        $mail .= ',' . $ccI;
 
             // Send mail
             @mail($mail, $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
@@ -2244,5 +2252,60 @@ class Indi {
         return preg_replace_callback('/(' . implode('|', array_keys(Indi::$date2strftime)) .  ')/', function($m){
             return Indi::$date2strftime[$m[1]];
         }, $format);
+    }
+
+    /**
+     * Create and return a new instance of PHPMailer class,
+     * pre-configured with ->isHTML(true) and ->CharSet = 'UTF-8'
+     *
+     * @return PHPMailer
+     */
+    public static function mailer() {
+        $mail = new PHPMailer();
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+        if ($fe = Indi::ini('mail')->default->from->email) $mail->From = $fe;
+        if ($fn = Indi::ini('mail')->default->from->name)  $mail->FromName = $fn;
+        return $mail;
+    }
+
+    /**
+     * Get session data, related to current user
+     *
+     * @static
+     * @param string $prop
+     * @return array|PHPSTORM_HELPERS\object
+     */
+    public static function me($prop = null) {
+
+        // If session was not yet started
+        if (!session_id()) {
+
+            // Set cookie domain
+            Indi::uri()->setCookieDomain();
+
+            // Start session
+            session_start();
+        }
+
+        // Get session data, containing info about current logged-in admin
+        $me = (object) $_SESSION['admin'];
+
+        // If $mode args is explicitly given return session data, stored under $mode key within $_SESSION
+        return is_string($prop) ? $me->$prop : $me;
+    }
+
+    /**
+     * Detect absolute filepath for a relative one, checking
+     * 'www', 'coref' and 'core' folders as places of possible location
+     *
+     * @static
+     * @param $src
+     * @return string
+     */
+    public static function abs($src) {
+        foreach (ar('www,coref,core') as $rep)
+            if (file_exists($abs = DOC . STD . '/' . $rep . $src))
+                return $abs;
     }
 }

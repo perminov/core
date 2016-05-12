@@ -24,7 +24,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
      * @param Search_Row $filter
      * @return string
      */
-    public function filterCombo($filter, $mode = 'default') {
+    public function filterCombo($filter) {
         // Here we create a shared *_Row object, that will be used by all filters, that are presented in current grid.
         // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
         // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
@@ -47,7 +47,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
 
         // Do stuff
-        ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias, null, $mode); return ob_get_clean();
+        ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias); return ob_get_clean();
     }
 
     /**
@@ -60,6 +60,9 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
      * no options, and therefore will be disabled
      */
     public function getConsistence() {
+
+        // Check if consistency is not toggled Off for current filter
+        if ($this->filter->model()->fields('consistensy') && !$this->filter->consistensy) return;
 
         // If filter is non-boolean
         if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && Indi::uri('format')) {
@@ -170,112 +173,5 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         } else {
             return '';
         }
-    }
-
-    /**
-     * Calculates width for combo. Takes in attention:
-     * 1. Indents (if combo is dealing with tree of options)
-     * 2. Color-boxes
-     * 3. Titles width
-     * 4. .i-combo-info visual availability. If can be visible - additional space will be reserved.
-     *
-     * @return int
-     */
-    public function getWidth() {
-        if (!$this->titleMaxLength) $this->titleMaxLength = 20;
-        return ($this->titleMaxIndent ? $this->titleMaxIndent * 3 : 0) +
-            ($this->comboDataRs->optgroup ? 15 : 0) +
-            ($this->hasColorBox ? 15 : 0) +
-            ceil($this->titleMaxLength * 6.5) +
-            ($this->params['noLookup'] == 'true' || $this->comboDataRs->enumset ? 10 : 30) +
-            20;
-    }
-
-
-    /**
-     * Calculates width for keyword input field.
-     *
-     * @return int
-     */
-    public function getKeywordFieldWidth() {
-        return $this->getWidth() - ($this->params['noLookup'] == 'true' || $this->comboDataRs->enumset ? 0 : 30);
-
-    }
-
-    /**
-     * Template for single-value combo
-     */
-    public function formComboSingle(){
-        ob_start();
-        ?><div id="i-section-<?=Indi::trail()->section->alias?>-action-index-filter-<?=$this->name?>-combo" class="i-combo i-combo-<?=$this->type?> i-combo-<?=$this->type?>-single" style="width: <?=$this->getWidth()?>px;" max="<?=$this->titleMaxLength?>"><?
-        ?><div class="i-combo-single x-form-text"><?
-            ?><table class="i-combo-table"><tr><?
-                ?><td class="i-combo-color-box-cell"><?
-                    ?><div class="i-combo-color-box-div"><?
-                        $this->selected = Indi_View_Helper_Admin_FormCombo::detectColor($this->selected); echo $this->selected['box'];
-                        ?></div><?
-                    ?></td><?
-                ?><td class="i-combo-keyword-cell"><?
-                    ?><div class="i-combo-keyword-div"><?
-                        ?><input class="i-combo-keyword" id="<?=$this->name?>-keyword"<?=$this->selected['style']?> type="text" lookup="<?=$this->name?>" value="<?=str_replace('"', '&quot;', $this->selected['input'] ? $this->selected['input'] : $this->selected['title']);?>" no-lookup="<?=$this->params['noLookup']?>"/><?
-                        ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?> boolean="<?=$this->field->columnTypeId==12 ? 'true' : 'false'?>"/><?
-                        ?></div><?
-                    ?></td><?
-                ?><td class="i-combo-info-cell"><?
-                    ?><div class="i-combo-info-div"><?
-                        ?><table class="i-combo-info" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><tr><?
-                            ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
-                            ?><td><span class="i-combo-of"><?=I_COMBO_OF?></span></td><?
-                            ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
-                            ?></tr></table><?
-                        ?></div><?
-                    ?></td><?
-                ?><td class="i-combo-trigger-cell"><?
-                    ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
-                    ?></td><?
-                ?></tr></table><?
-            ?></div><?
-        ?></div><?
-        return ob_get_clean();
-    }
-
-    /**
-     * Template for mutiple-value combo
-     */
-    public function formComboMultiple() {
-        ob_start();
-        ?><div class="i-combo i-combo-<?=$this->type?>" id="i-section-<?=Indi::trail()->section->alias?>-action-index-filter-<?=$this->name?>-combo" style="width: <?=ceil(($this->getWidth()-20)*1.5)?>px;"><?
-        ?><div class="i-combo-multiple x-form-text"><?
-            foreach($this->comboDataRs->selected as $selectedR) {
-                $item = Indi_View_Helper_Admin_FormCombo::detectColor(array('title' => $selectedR->title));
-                ?><span class="i-combo-selected-item" selected-id="<?=$selectedR->{$this->keyProperty}?>"<?=$item['style'] ? $item['style'] : ($item['font'] ? ' style="' . $item['font'] . '"' : '')?>><?
-                    ?><?=$item['box'] . usubstr($item['title'], 50)?><?
-                    ?><span class="i-combo-selected-item-delete"></span><?
-                    ?></span><?
-            }
-            ?><span class="i-combo-table-wrapper" id="<?=$this->name?>-table-wrapper"><table class="i-combo-table"><tr><?
-                ?><td class="i-combo-keyword-cell"><?
-                    ?><div class="i-combo-keyword-div"><?
-                        ?><input class="i-combo-keyword" type="text" id="<?=$this->name?>-keyword" lookup="<?=$this->name?>" value="" no-lookup="<?=$this->params['noLookup']?>"/><?
-                        ?><input type="hidden" id="<?=$this->name?>" value="<?=$this->selected['value']?>" name="<?=$this->name?>"<?=$this->attrs?>/><?
-                        ?></div><?
-                    ?></td><?
-                ?><td class="i-combo-info-cell"><?
-                    ?><div class="i-combo-info-div"><?
-                        ?><table class="i-combo-info i-combo-info-multiple" id="<?=$this->name?>-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="<?=$this->pageUpDisabled?>" page-btm-reached="false" satellite="<?=$this->noSatellite() ? '' : $this->satellite->alias?>" changed="false"><tr><?
-                            ?><td><span class="i-combo-count" id="<?=$this->name?>-count"></span></td><?
-                            ?><td><span class="i-combo-of"><?=I_COMBO_OF?></span></td><?
-                            ?><td><span class="i-combo-found" id="<?=$this->name?>-found"></span></td><?
-                            ?></tr></table><?
-                        ?></div><?
-                    ?></td><?
-                ?><td class="i-combo-trigger-cell"><?
-                    ?><div class="i-combo-trigger x-form-trigger" id="<?=$this->name?>-trigger"></div><?
-                    ?></td><?
-                ?></tr></table></span><?
-            ?><div style="clear: both;"></div><?
-            ?></div><?
-        ?></div><?
-        return ob_get_clean();
     }
 }

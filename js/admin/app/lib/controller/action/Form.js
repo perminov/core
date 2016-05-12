@@ -403,6 +403,19 @@ Ext.define('Indi.lib.controller.action.Form', {
     },
 
     /**
+     * Color-picker fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXColor: function(item) {
+        return {
+            xtype: 'colorfield',
+            allowBlank: true
+        }
+    },
+
+    /**
      * Provide initial/default config for all fields
      *
      * @param field
@@ -441,6 +454,16 @@ Ext.define('Indi.lib.controller.action.Form', {
                 },
                 resize: function(cmp) {
                     if (cmp.dirtyIcon) cmp.dirtyIcon.alignTo(cmp.el, 'tl', [0, 1]);
+                },
+                show: function(cmp) {
+                    cmp.ownerCt.query('> *').forEach(function(sbl){
+                        if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
+                    })
+                },
+                hide: function(cmp) {
+                    cmp.ownerCt.query('> *').forEach(function(sbl){
+                        if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
+                    })
                 }
             },
             getDirtyIcon: function() {
@@ -630,6 +653,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             xtype: 'textarea',
             grow: true,
             growMin: 30,
+            rows: 2,
             allowBlank: true,
             getInputWidthUsage: function() {
                 return this.getLabelWidthUsage();
