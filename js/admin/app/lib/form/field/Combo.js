@@ -91,6 +91,13 @@ Ext.define('Indi.lib.form.field.Combo', {
     nbspPx: 4,
 
     /**
+     * Only for multiSelect: true
+     * This prop is for ability to set up an url, that will be involved in Indi.load(..) call
+     * one of the selected items was clicked
+     */
+    jump: false,
+
+    /**
      * Regular expression for color detecting
      *
      * @type {RegExp}
@@ -200,7 +207,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.callParent(arguments);
 
         // Add 'remotefetch' event
-        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect');
+        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect', 'selecteditemclick');
     },
 
     /**
@@ -610,6 +617,16 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.comboEl.on('click', me.onKeywordClick, me);
         me.comboEl.on('click', me.onTriggerClick, me);
 
+        // If combo is multiSelect: true
+        if (me.multiSelect) {
+
+            // Bind a handler for 'click' event for .i-combo-selected-item elements
+            me.el.select('.i-combo-selected-item').on('click', me.onSelectedItemClick, me);
+
+            // Add i-combo-jump css class
+            if (me.jump && Ext.isString(me.jump)) me.comboEl.addCls('i-combo-jump');
+        }
+
         // Adjust width of .i-combo-table element for it to fit all available space
         me.comboTableFit();
 
@@ -640,6 +657,23 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Handler for 'click' events on .i-combo-selected-item elements
+     *
+     * @param e
+     * @param dom
+     */
+    onSelectedItemClick: function(e, dom) {
+        var me = this, id = Ext.get(dom).attr('selected-id');
+
+        // Fire 'selecteditemclick' event
+        if (me.fireEvent('selecteditemclick', me, id, me.r(id)) !== false) {
+
+            // Do jump
+            if (me.jump && Ext.isString(me.jump)) Indi.load(me.jump.replace('{id}', id) + 'jump/1/');
+        }
+    },
+
+    /**
      * Keyword element click handler
      *
      * @param e
@@ -659,6 +693,9 @@ Ext.define('Indi.lib.form.field.Combo', {
      */
     onTriggerClick: function() {
         var me = this;
+
+        // If click was on .i-combo-selected-item element - do nothing
+        if (Ext.EventObject.getTarget('.i-combo-selected-item')) return;
 
         // If current combo is a filter-combo, and ctrl key is pressed - clear combo
         if (arguments.length && !me.readOnly && arguments[0].ctrlKey && !me.disabled && (!me.store.enumset || me.xtype == 'combo.filter')) {
@@ -2013,6 +2050,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Apply color
                 a.css(css);
+
+                // Bind a handler for 'click' event
+                if (me.multiSelect) a.on('click', me.onSelectedItemClick, me);
 
                 // Bind a click event handler for a .i-combo-selected-item-delete
                 // child node within newly appended item

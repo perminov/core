@@ -91,6 +91,9 @@
     cursor: pointer; vertical-align: initial;
     margin-left: 2px; background-image: url(/i/admin/combo-multiple-selected-item-delete.png);
 }
+.i-combo.i-combo-jump .i-combo-multiple .i-combo-selected-item {
+    cursor: pointer;
+}
 
 /* Disabled styling*/
 .i-combo .i-combo-keyword[disabled] {background: inherit;}
