@@ -120,7 +120,7 @@ Ext.create('Indi', {
         menu: <?=json_encode($this->menu)?>,
         user: {
             title: '<?=$this->admin?>',
-            dashboard: '<?=($d=Indi::admin()->foreign('profileId')->dashboard) ? $d : 'false'?>'
+            dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
         }
     }
 });
