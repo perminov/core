@@ -1,7 +1,8 @@
-/**
- * Provide programmatical click ability, keeping css 'clicked-style' in force
- */
 Ext.override(Ext.button.Button, {
+
+    /**
+     * Provide programmatical click ability, keeping css 'clicked-style' in force
+     */
     press: function() {
         var me = this;
         if (!me.disabled) {
@@ -9,6 +10,42 @@ Ext.override(Ext.button.Button, {
             Ext.defer(function(){try{me.onMouseUp({button: 0});} catch(e){}}, 300);
             me.handler();
         }
+    },
+
+    /**
+     * Here we disable function body, as we have own way to create tooltips
+     *
+     * @param tooltip
+     * @param initial
+     * @return {*}
+     */
+    setTooltip: function(tooltip, initial) {
+        var me = this;
+        /*if (me.rendered) {
+            if (!initial) {
+                me.clearTip();
+            }
+            if (Ext.isObject(tooltip) && tooltip.id) {
+                Ext.tip.QuickTipManager.register(Ext.apply({
+                    target: me.btnEl.id
+                }, tooltip));
+                me.tooltip = tooltip;
+            } else {
+                //me.btnEl.dom.setAttribute(me.getTipAttr(), tooltip);
+            }
+        } else {
+            me.tooltip = tooltip;
+        }*/
+        return me;
+    },
+
+    /**
+     * Here we disable function body, as we have own wayto destroy tooltips
+     */
+    clearTip: function() {
+        /*if (Ext.isObject(this.tooltip) && this.tooltip.id) {
+            Ext.tip.QuickTipManager.unregister(this.btnEl);
+        }*/
     }
 });
 
