@@ -1062,25 +1062,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
     },
 
-    panelDockedInner$Actions$Toggle_InnerHandler: function(action, row, aix, btn) {
-        var me = this, grid = Ext.getCmp(me.rowset.id), srs = grid.getSelectionModel().selected.collect('id', 'data');
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
-            params: {
-                'others[]': Ext.Array.remove(srs, row.get('id'))
-            }
-        });
-    },
-    panelDockedInner$Actions$Up_InnerHandler: function(action, row, aix, btn) {
-        var me = this, grid = Ext.getCmp(me.rowset.id), srs = grid.getSelectionModel().selected.collect('id', 'data');
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
-            params: {
-                'others[]': Ext.Array.remove(srs, row.get('id'))
-            }
-        });
-    },
-    panelDockedInner$Actions$Down_InnerHandler: function(action, row, aix, btn) {
-        var me = this, grid = Ext.getCmp(me.rowset.id), srs = grid.getSelectionModel().selected.collect('id', 'data');
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
+    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn) {
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
+        me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
             params: {
                 'others[]': Ext.Array.remove(srs, row.get('id'))
             }
@@ -1088,7 +1072,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandler,
+     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandlerLoad,
      * but it does not reload the whole panel - it just reload store only instead
      *
      * @param action
@@ -1097,7 +1081,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param btn
      */
     panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn, ajaxCfg) {
-        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn, Ext.merge({
+        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn, Ext.merge({
             success: function(response) {
                 var json = Ext.JSON.decode(response.responseText, true), page;
                 if (Ext.isObject(json) && (page = json.page)) me.getStore().loadPage(page);
@@ -1173,7 +1157,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }));
 
         // Else proceed standard behaviour
-        } else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
+        } else me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn);
     },
 
     /**
@@ -1183,7 +1167,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param row
      * @param aix
      */
-    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
+    panelDockedInner$Actions_DefaultInnerHandlerLoad: function(action, row, aix, btn, ajaxCfg) {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
