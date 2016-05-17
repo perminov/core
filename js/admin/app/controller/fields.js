@@ -17,6 +17,13 @@ Ext.define('Indi.controller.fields', {
                     margin: '0 2 0 3',
                     height: 18
                 }
+            },
+            gridColumn$Required: function() {
+                return {
+                    cls: 'i-column-header-icon',
+                    header: '<img src="' + Indi.std + '/i/admin/btn-icon-required.png">',
+                    tooltip: arguments[0].tooltip || arguments[0].header
+                }
             }
         },
         form: {
