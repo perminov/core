@@ -11,4 +11,13 @@ class Indi_Db_Table_Row_Noeval extends Indi_Db_Table_Row {
         // Setup initial properties
         $this->_init($config);
     }
+
+    /**
+     * Here we override this method withan empty body, to prevent compiling of default values
+     *
+     * @param $prop
+     */
+    public function compileDefaultValue($prop) {
+
+    }
 }

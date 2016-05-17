@@ -3802,4 +3802,15 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return
         return $this->$prop;
     }
+
+    /**
+     * This function is for compiling prop default values within *_Row instance context
+     *
+     * @param $prop
+     */
+    public function compileDefaultValue($prop) {
+        if (strlen($this->_original[$prop])) {
+            Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
+        }
+    }
 }

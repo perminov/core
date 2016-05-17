@@ -900,16 +900,9 @@ class Indi_Db_Table
         // If $constructData['original'] is an empty array, we setup it according to model structure
         if (count($constructData['original']) == 0) {
             $constructData['original']['id'] = null;
-            foreach ($this->fields() as $fieldR) {
-                if ($fieldR->columnTypeId) {
+            foreach ($this->fields() as $fieldR)
+                if ($fieldR->columnTypeId)
                     $constructData['original'][$fieldR->alias] = $fieldR->defaultValue;
-                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
-                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
-                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
-                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
-                    }
-                }
-            }
         }
 
         // Get row class name
@@ -921,18 +914,25 @@ class Indi_Db_Table
             Indi_Loader::loadClass($rowClass);
         }
 
-        // If we use $assign arg
-        if (is_array($assign)) {
+        // Create an instance of a row
+        $row = new $rowClass($constructData);
 
-            // Create an instance of a row
-            $row = new $rowClass($constructData);
-
-            // Assign data and return the row
-            return $row->assign($assign);
+        // If $constructData['original'] is an empty array, we setup it according to model structure
+        if (!$row->id) {
+            foreach ($this->fields() as $fieldR) {
+                if ($fieldR->columnTypeId) {
+                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
+                        $row->compileDefaultValue($fieldR->alias);
+                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
+                        $row->compileDefaultValue($fieldR->alias);
+                    }
+                }
+            }
         }
 
-        // Construct and return Indi_Db_Table_Row object
-        return new $rowClass($constructData);
+        // Construct and return Indi_Db_Table_Row object,
+        // but, if $assign arg is given - preliminary assign data
+        return is_array($assign) ? $row->assign($assign) : $row;
     }
 
     /**
