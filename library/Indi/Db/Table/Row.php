@@ -1775,16 +1775,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         } else return $this->_mismatch[$check];
 
         // Return array of errors
-        return $this->validate();
+        return $this->scratchy() ?: $this->validate();
     }
 
     /**
-     * Validate all modified fields, collect their errors in $this->_mismatch array, with field names as keys
-     * and return it
+     * Custom validation function, to be overridden in child classes if need
      *
      * @return array
      */
     public function validate() {
+        return $this->_mismatch;
+    }
+
+    /**
+     * Validate all modified fields to ensure all of them have values, convenient with their datatypes,
+     * collect their errors in $this->_mismatch array, with field names as keys and return it
+     *
+     * @return array
+     */
+    public function scratchy() {
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
