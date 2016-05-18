@@ -1414,4 +1414,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Make the call
         return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
     }
+
+    /**
+     * Get sum of values, stored in all rows under $prop prop
+     *
+     * @param $prop
+     * @return number
+     */
+    public function sum($prop) {
+        return array_sum($this->column($prop));
+    }
 }
