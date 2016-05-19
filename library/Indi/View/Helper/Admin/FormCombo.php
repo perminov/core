@@ -74,7 +74,7 @@ class Indi_View_Helper_Admin_FormCombo {
      * @return mixed
      */
     public function getDefaultValue() {
-        return $this->field->compiled('defaultValue');
+        return $this->getRow()->compileDefaultValue($this->name);
     }
 
     /**

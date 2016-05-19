@@ -235,7 +235,7 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
 
         // Lookup current field's satellites changes, and toggle it, depending on their state
-        if (me.ownerCt) me.ownerCt.query('> [satellite]').forEach(function(sbl){
+        if (me.ownerCt) me.ownerCt.query('> *').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
                 sbl.considerOn.forEach(function(considerOnStlCfg){
                     if (considerOnStlCfg.name == me.name) sbl.toggleBySatellites(considerOnStlCfg);

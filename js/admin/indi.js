@@ -1081,11 +1081,16 @@ Ext.define('Indi', {
         // Merge static properties, passed within construction, with prototype's static properties
         me.self = Ext.merge(me.self, me.statics);
 
-        // If we are welcomed by a log-in panel - set up it's title
-        if (Ext.get('i-login-box')) Ext.create('Indi.view.LoginBox', {title: Indi.title});
+        if (Ext.get('i-login-box')) {
+            Ext.create('Indi.view.LoginBox', {title: Indi.title});
+        } else {
 
-        // Else create a viewport instance
-        else Indi.viewport = Ext.create('Indi.view.Viewport');
+            // Create viewport
+            Indi.viewport = Ext.create('Indi.view.Viewport');
+
+            // Load dashboard
+            if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
+        }
 
         // Static shortcut to this app
         Indi.app = this;
