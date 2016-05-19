@@ -160,6 +160,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             dataIndex: field.alias,
             tooltip: tooltip ? {html: tooltip, constrainParent: false, constrainPosition: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
+            tdCls: parseInt(field.relation) == 6 ? 'i-grid-column-enumset' : '',
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
