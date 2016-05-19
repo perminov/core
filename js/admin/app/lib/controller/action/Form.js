@@ -433,7 +433,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
-            allowBlank: me.ti().section.type != 'p',
+            allowBlank: field.required ? field.required == 'n' : me.ti().section.type != 'p',
             field: field,
             row: this.ti().row,
             listeners: {

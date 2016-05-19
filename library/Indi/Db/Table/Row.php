@@ -103,13 +103,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function __construct(array $config = array()) {
 
         // Setup initial properties
-        $this->_table = $config['table'];
-        $this->_original = $this->fixTypes($config['original']);
-        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
-        $this->_system = is_array($config['system']) ? $config['system'] : array();
-        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
-        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
-        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
+        $this->_init($config);
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
@@ -117,6 +111,21 @@ class Indi_Db_Table_Row implements ArrayAccess
                 Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
             }
         }
+    }
+
+    /**
+     * Setup initial properties
+     *
+     * @param array $config
+     */
+    protected function _init(array $config = array()) {
+        $this->_table = $config['table'];
+        $this->_original = $this->fixTypes($config['original']);
+        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+        $this->_system = is_array($config['system']) ? $config['system'] : array();
+        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
+        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
+        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
     }
 
     /**
@@ -1766,16 +1775,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         } else return $this->_mismatch[$check];
 
         // Return array of errors
-        return $this->validate();
+        return $this->scratchy() ?: $this->validate();
     }
 
     /**
-     * Validate all modified fields, collect their errors in $this->_mismatch array, with field names as keys
-     * and return it
+     * Custom validation function, to be overridden in child classes if need
      *
      * @return array
      */
     public function validate() {
+        return $this->_mismatch;
+    }
+
+    /**
+     * Validate all modified fields to ensure all of them have values, convenient with their datatypes,
+     * collect their errors in $this->_mismatch array, with field names as keys and return it
+     *
+     * @return array
+     */
+    public function scratchy() {
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
@@ -3792,5 +3810,16 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return $this->$prop;
+    }
+
+    /**
+     * This function is for compiling prop default values within *_Row instance context
+     *
+     * @param $prop
+     */
+    public function compileDefaultValue($prop) {
+        if (strlen($this->_original[$prop])) {
+            Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
+        }
     }
 }

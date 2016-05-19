@@ -131,8 +131,10 @@ Ext.create('Indi', {
         uri: <?=json_encode(Indi::uri()->toArray())?>,
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,
-        user: '<?=$this->admin?>',
-        home: <?=Indi::admin()->foreign('profileId')->home ? 'true' : 'false'?>
+        user: {
+            title: '<?=$this->admin?>',
+            dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
+        }
     }
 });
 </script>

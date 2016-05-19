@@ -227,6 +227,12 @@ Ext.define('Indi.lib.trail.Trail', {
                     // created, hovewer, got from localization object, instead of actual action title
                     crumbA.push('<span>' + Indi.lang.I_CREATE + '</span>');
                 }
+
+            // Else if action is not 'index'
+            } else if (item.action.alias != 'index') {
+
+                // Push action title into crumbs
+                crumbA.push('<span>' + item.action.title + '</span>');
             }
         }
 

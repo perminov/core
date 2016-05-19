@@ -105,7 +105,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             },
 
             itemclick: function() {
-                if (Ext.EventObject.ctrlKey) {
+                if (Ext.EventObject.ctrlKey && !this.multiSelect) {
                     var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
                 }
             },
