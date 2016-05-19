@@ -2141,10 +2141,10 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
         // Append
-        Indi::trail()->disabledFields->append(array(
+        foreach(ar($alias) as $a) Indi::trail()->disabledFields->append(array(
             'id' => 0,
             'sectionId' => Indi::trail()->section->id,
-            'fieldId' => Indi::trail()->model->fields($alias)->id,
+            'fieldId' => Indi::trail()->model->fields($a)->id,
             'defaultValue' => $defaultValue,
             'displayInForm' => $displayInForm ? 1 : 0,
         ));
