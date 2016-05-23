@@ -119,7 +119,7 @@ Ext.override(Ext.tip.ToolTip, {
             else tooltipCfg.html = me.tooltip;
 
             // Create tooltip
-            new Ext.tip.ToolTip(tooltipCfg);
+            if (tooltipCfg.html) new Ext.tip.ToolTip(tooltipCfg);
         }
     }
 });
