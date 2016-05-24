@@ -462,6 +462,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     margin-bottom: -4px;
     left: -2px;
 }
+.x-column-header.i-column-header-icon-center .x-column-header-inner .x-column-header-text {
+    margin-right: 0;
+}
 .x-grid-with-row-lines .x-grid-row-over td.x-grid-cell.i-overflow:hover {
     padding: 2px 2px;
     color: white;
