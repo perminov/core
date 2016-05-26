@@ -485,3 +485,6 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
     -webkit-user-select: text;
     cursor: text;
 }
+.i-link {
+    cursor: pointer; border-bottom: 1px dotted; text-decoration: none; display: inline-block;
+}
