@@ -519,7 +519,7 @@ class Indi_Controller {
             // Append part of WHERE clause, that will be involved in the process of fetching filter combo data
             $where[] = '`id` IN (' . (($in = Indi::db()->query('
                 SELECT DISTINCT `'. $for . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
-            )->fetchAll(PDO::FETCH_COLUMN)) ? implode(',', $in) : 0) . ')';
+            )->fetchAll(PDO::FETCH_COLUMN)) ? trim(implode(',', $in), ',') : 0) . ')';
         }
 
         // Setup a row
