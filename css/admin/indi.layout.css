@@ -11,14 +11,16 @@
 .i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
 .i-color-box-wrap .i-color-box[style*="background: url"],
 .i-bgimg-box-wrap .i-color-box[style*="background: url"], .i-color-box[style*="background: url"] {
-    float: left;
     height: 16px;
     width: 16px;
-    margin-top: -3px;
+    margin: -3px 0 0 0;
     position: relative;
     top: 2px;
 }
-.i-color-box-wrap {text-align: center;}
+.i-bgimg-box-wrap .i-color-box[style*="background: url"]{
+    vertical-align: text-bottom;
+}
+.i-grid-column-enumset .i-bgimg-box-wrap, .i-color-box-wrap {text-align: center;}
 .x-btn .x-btn-inner{color: #04408C}
 input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-inline-block{display: inline-block;}
@@ -294,6 +296,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-reload{background-image: url('/i/admin/btn-icon-reload.png');}
 .i-btn-icon-close{background-image: url('/i/admin/btn-icon-close.png');}
 .i-btn-icon-loading{background-image: url('/i/admin/btn-icon-loading.gif'); background-position: inherit;}
+.i-btn-icon-form-goto{background-image: url('/i/admin/btn-icon-form-goto.png');}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
@@ -458,4 +461,27 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     position: relative;
     margin-bottom: -4px;
     left: -2px;
+}
+.x-column-header.i-column-header-icon-center .x-column-header-inner .x-column-header-text {
+    margin-right: 0;
+}
+.x-grid-with-row-lines .x-grid-row-over td.x-grid-cell.i-overflow:hover {
+    padding: 2px 2px;
+    color: white;
+    position: absolute;
+    background: blue !important;
+    z-index: 1;
+    white-space: normal;
+    border: none;
+}
+td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner * {
+    color: white;
+    z-index: 1;
+    white-space: normal;
+    user-select: text;
+    -o-user-select: text;
+    -ms-user-select: text;
+    -moz-user-select: -moz-text;
+    -webkit-user-select: text;
+    cursor: text;
 }

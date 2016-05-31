@@ -221,97 +221,54 @@ function usubstr($string, $length, $dots = true) {
 }
 
 /**
- * Get the string representation of the period, started at a moment, given by $datetime argument and current moment
+ * Get the string representation of the period, between dates
  *
- * @param $datetime
- * @param string $postfix
+ * @param string|int $date1 Can be formatted date or unix-timestamp
+ * @param string|int|null $date2 Can be formatted date or unix-timestamp. If not given, time() will be used instead
+ * @param string $mode Can be 'ago' or 'left'
  * @return string
  */
-function ago($datetime, $postfix = 'назад') {
+function ago($date1, $date2 = null, $mode = 'ago') {
 
-    // Get the current moment as timestamp
-    $curr = time();
+    // Convert $date1 and $date2 dates to unix-timestamps
+    $date1 = is_numeric($date1) ? $date1 : strtotime($date1);
+    $date2 = $date2 ? (is_numeric($date2) ? $date2 : strtotime($date2)) : time();
 
-    // Get the moment in the past as timestamp
-    $past = strtotime($datetime);
+    // If $curr date and $past
+    if ($date1 == $date2) return '';
+
+    // Setup $sign depend on whether $date2 is greater than $date1 and $mode is 'left' or 'ago'
+    if ($mode == 'left') {
+        $sign = $date2 < $date1 ? '' : '-';
+    } else if (!$mode || $mode == 'ago') {
+        $sign = $date2 > $date1 ? '' : '-';
+    }
 
     // Get the difference between them in seconds
-    $duration = $curr - $past;
+    $duration = max($date1, $date2) - min($date1, $date2);
 
     // Build an array of difference levels and their values
     $levelA = array(
         'Y' => date('Y', $duration) - 1970,
         'n' => date('n', $duration) - 1,
         'j' => date('j', $duration) - 1,
-        'G' => date('G', $duration) - 4,
+        'G' => date('G', $duration) - 3,
         'i' => trim(date('i', $duration), '0'),
         's' => trim(date('s', $duration), '0')
     );
 
     // Build an array of difference levels quantity spelling, depends on their values
-    $spellA = array(
-        'Y' => array('0,5-9,11-19' => 'лет', '1' => 'год', '2-4' => 'года'),
-        'n' => array('0,5-9,11-19' => 'месяцев', '1' => 'месяц', '2-4'     => 'месяца'),
-        'j' => array('0,5-9,11-19' => 'дней', '1' => 'день', '2-4' => 'дня'),
-        'G' => array('0,5-9,11-19' => 'часов', '1' => 'час', '2-4' => 'часа'),
-        'i' => array('0,5-9,11-19' => 'минут', '1' => 'минута', '2-4' => 'минуты'),
-        's' => array('0,5-9,11-19' => 'секунд','1' => 'секунда', '2-4' => 'секунды')
+    $tbqA = array(
+        'Y' => 'лет,год,года',
+        'n' => 'месяцев,месяц,месяца',
+        'j' => 'дней,день,дня',
+        'G' => 'часов,час,часа',
+        'i' => 'минут,минута,минуты',
+        's' => 'секунд,секунда,секунды'
     );
 
-    // Foreach difference level
-    foreach ($levelA as $levelK => $levelV) {
-
-        // If level value is non-zero
-        if ($levelV) {
-
-            // Set $part variable as level value
-            $part = $levelV;
-
-            // Get the array of spell rules for current level key
-            $format = $spellA[$levelK];
-
-            // Foreach spell rule
-            foreach ($format as $digits => $lang) {
-
-                // Get the spans array for the current spell rule
-                $spanA = explode(',', $digits);
-
-                // Foreach span
-                for ($k = 0; $k < count($spanA); $k ++)
-
-                    // If current span is not a true span, e.g is a single digit
-                    if (strpos($spanA[$k], '-') === false) {
-
-                        // If difference value ends with a digit, that is the same as current span
-                        if (preg_match('/' . $spanA[$k] . '$/', $part))
-
-                            // Return difference value, with appended spell format and postfix
-                            return $part . ' ' . $format[$digits] . ' ' . $postfix;
-
-                    // Else if current span isa true span, e.g is not a single digit
-                    } else {
-
-                        // Get the span start and end digits, e.g interval
-                        $interval = explode('-', $spanA[$k]);
-
-                        // Foreach digit within that interval
-                        for ($m = $interval[0]; $m <= $interval[1]; $m++)
-
-                            // If difference level value ends with current digit within current interval
-                            if (preg_match('/' . $m . '$/', $part))
-
-                                // Return difference value, with appended spell format and postfix
-                                return $part . ' ' . $format[$digits] . ' ' . $postfix;
-                    }
-            }
-
-            // Break
-            break;
-        }
-    }
-
-    // Return
-    return 'только что';
+    // Foreach difference level, check if it is has non-zero value and return correct spelling
+    foreach ($levelA as $levelK => $levelV) if ($levelV) return $sign . tbq($levelV, $tbqA[$levelK]);
 }
 
 /**

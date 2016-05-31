@@ -56,6 +56,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
+                },
+                cellmouseover: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
+                    if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
+                        Ext.get(td).addCls('i-overflow').selectable();
+                },
+                cellmouseout: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
+                    Ext.get(td).removeCls('i-overflow');
                 }
             }
         },
@@ -92,7 +99,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             },
 
             itemclick: function() {
-                if (Ext.EventObject.ctrlKey) {
+                if (Ext.EventObject.ctrlKey && !this.multiSelect) {
                     var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
                 }
             },
@@ -153,6 +160,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             dataIndex: field.alias,
             tooltip: tooltip ? {html: tooltip, constrainParent: false, constrainPosition: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
+            tdCls: parseInt(field.relation) == 6 ? 'i-grid-column-enumset' : '',
             sortable: true,
             align: function(){
                 return (field.storeRelationAbility == 'none' &&
@@ -289,7 +297,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXString_Editor: function(column, field) {
         return {
             xtype: 'textfield',
-            allowBlank: false,
+            allowBlank: true,
             margin: '0 2 0 3',
             height: 18
         }
@@ -461,7 +469,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumn$Toggle: function(){
         return {
             cls: 'i-column-header-icon',
-            header: '<img src="/i/admin/btn-icon-toggle.png">',
+            header: '<img src="' + Indi.std + '/i/admin/btn-icon-toggle.png">',
             tooltip: arguments[0].tooltip || arguments[0].header
         }
     },
@@ -719,7 +727,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     cell = typeof columnA[i].renderer == 'function'
                         ? columnA[i].renderer(r.get(columnA[i].dataIndex))
                         : r.get(columnA[i].dataIndex);
-                    if (cell && cell.length > longest.length) longest = cell;
+                    if (cell && cell.length > longest.length &&
+                        (!cell.match(/class="i-color-box"/) || (cell = Indi.stripTags(cell)).length > longest.length))
+                        longest = cell;
                 });
 
                 // Don't forgot about summaries

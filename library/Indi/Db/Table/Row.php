@@ -103,13 +103,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function __construct(array $config = array()) {
 
         // Setup initial properties
-        $this->_table = $config['table'];
-        $this->_original = $this->fixTypes($config['original']);
-        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
-        $this->_system = is_array($config['system']) ? $config['system'] : array();
-        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
-        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
-        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
+        $this->_init($config);
 
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
@@ -117,6 +111,21 @@ class Indi_Db_Table_Row implements ArrayAccess
                 Indi::$cmpTpl = $this->_original[$evalField]; eval(Indi::$cmpRun); $this->_compiled[$evalField] = Indi::cmpOut();
             }
         }
+    }
+
+    /**
+     * Setup initial properties
+     *
+     * @param array $config
+     */
+    protected function _init(array $config = array()) {
+        $this->_table = $config['table'];
+        $this->_original = $this->fixTypes($config['original']);
+        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+        $this->_system = is_array($config['system']) ? $config['system'] : array();
+        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
+        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
+        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
     }
 
     /**
@@ -450,11 +459,32 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Delete all files/folder uploaded/created while using CKFinder
         $this->deleteCKFinderFiles();
 
+        // Delete all `changeLog` entries, related to current entry
+        $this->deleteChangeLog();
+
         // Unset `id` prop
         $this->id = null;
 
         // Return
         return $return;
+    }
+
+    /**
+     * Delete all `changeLog` entries, related to current entry
+     */
+    public function deleteChangeLog() {
+
+        // If `id` prop is null/zero/false/empty - return
+        if (!$this->id) return;
+
+        // If `ChangeLog` model does not exist - return
+        if (!$changeLogM = Indi::model('ChangeLog', true)) return;
+
+        // Find and delete related `changeLog` entries
+        $changeLogM->fetchAll(array(
+            '`entityId` = "' . $this->model()->id() . '"',
+            '`key` = "' . $this->id . '"'
+        ))->delete();
     }
 
     /**
@@ -573,7 +603,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if (strlen($this->{$satelliteR->alias})) {
                     $satellite = $this->{$satelliteR->alias};
                 } else {
-                    $satellite = $satelliteR->defaultValue;
+                    $satellite = $satelliteR->compiled('defaultValue');
                 }
             }
 
@@ -658,14 +688,18 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If we have no related model - this happen if we have 'varibale entity' satellite dependency type
         // and current satellite value is not defined - we return empty rowset
-        if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title'));
+        if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title', 'rowClass' => __CLASS__));
 
         // Get title column
         $titleColumn = $fieldR->params['titleColumn'] ? $fieldR->params['titleColumn'] : $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
         if (is_null($order)) {
-            if ($relatedM->fields('move')) {
+            if ($relatedM->comboDataOrder) {
+                $order = $relatedM->comboDataOrder;
+                if (!func_get_arg(9) && $relatedM->comboDataOrderDirection)
+                    $dir = $relatedM->comboDataOrderDirection;
+            } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
             } else {
                 $order = $titleColumn;
@@ -701,6 +735,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
+        // Alternate WHERE
+        if (Indi::admin()->alternate && !$fieldR->ignoreAlternate
+            && $alternateField = $relatedM->fields(Indi::admin()->alternate . 'Id'))
+            $where[] = $alternateField->storeRelationAbility == 'many'
+                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
+                : '`' . $alternateField->alias . '` = "' . Indi::admin()->id .'"';
+        
         // If related entity has tree-structure
         if ($relatedM->treeColumn()) {
 
@@ -779,8 +820,13 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
 
                 // Get foundRows WHERE clause
-                $foundRowsWhere = $selectedTypeIsKeyword ? $where : $whereBackup;
-                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . implode(' AND ', $foundRowsWhere) : '';
+                $foundRowsWhere = im($selectedTypeIsKeyword ? $where : $whereBackup, ' AND ');
+
+                // Adjust WHERE clause so it surely match existing value
+                if (is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($foundRowsWhere, $fieldR, $consistence);
+
+                //
+                $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . $foundRowsWhere : '';
 
                 // Get number of total found rows
                 $found = Indi::db()->query(
@@ -821,11 +867,17 @@ class Indi_Db_Table_Row implements ArrayAccess
                         $upper = true;
                     }
 
+                // Else
                 } else {
 
+                    // Append order direction
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                    // Adjust WHERE clause so it surely match existing value
+                    if (!$selectedTypeIsKeyword && is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
                 }
 
+                // Fetch raw combo data
                 $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page, $offset);
 
                 // We set number of total found rows only if passed page number is null, so that means that
@@ -856,6 +908,11 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
+                    // Adjust WHERE clause so it surely match consistence values
+                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_get_arg(4))) 
+                        $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
+
+                    // Fetch raw combo data
                     $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page + 1);
                 }
             }
@@ -988,6 +1045,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup combo data rowset title column
         $dataRs->titleColumn = $titleColumn;
 
+        // If foreign data should be fetched
+        if ($fieldR->params['foreign']) $dataRs->foreign($fieldR->params['foreign']);
+
         // Return combo data rowset
         return $dataRs;
     }
@@ -1066,8 +1126,20 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If $key argument contains more than one key name - we setup rows for all keys
         if (preg_match('/,/',$key)) {
+
+            // Explode keys by comma
             $keyA = explode(',', $key);
-            foreach ($keyA as $keyI) $this->foreign(trim($keyI));
+
+            // Fetch foreign data for each key separately
+            foreach ($keyA as $keyI) {
+
+                // If $refresh arg is boolean true, or if value, stored under $keyI was modified
+                // set up $refresh_ flag as boolean true
+                $refresh_ = $refresh ?: array_key_exists(trim($keyI), $this->_modified);
+
+                // Fetch foreign data
+                $this->foreign(trim($keyI), $refresh_);
+            }
 
             // Return current row
             return $this;
@@ -1079,8 +1151,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If $refresh argument is an object, we interpret it as a foreign row, and assign it directly
         if (is_string($key) && is_object($refresh)) return $this->_foreign[$key] = $refresh;
 
+        // If $refresh arg is boolean true, or if value, stored under $key was modified
+        // set up $refresh_ flag as boolean true
+        $refresh_ = $refresh ?: array_key_exists(trim($key), $this->_modified);
+
         // If foreign row, got by foreign key, was got already got earlier, and no refresh should be done - return it
-        if (array_key_exists($key, $this->_foreign) && !$refresh) {
+        if (array_key_exists($key, $this->_foreign) && !$refresh_) {
             return $this->_foreign[$key];
 
         // Else
@@ -1699,16 +1775,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         } else return $this->_mismatch[$check];
 
         // Return array of errors
-        return $this->validate();
+        return $this->scratchy() ?: $this->validate();
     }
 
     /**
-     * Validate all modified fields, collect their errors in $this->_mismatch array, with field names as keys
-     * and return it
+     * Custom validation function, to be overridden in child classes if need
      *
      * @return array
      */
     public function validate() {
+        return $this->_mismatch;
+    }
+
+    /**
+     * Validate all modified fields to ensure all of them have values, convenient with their datatypes,
+     * collect their errors in $this->_mismatch array, with field names as keys and return it
+     *
+     * @return array
+     */
+    public function scratchy() {
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
@@ -3242,7 +3327,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $storageR->was = implode(', ', $implodedWas);
 
                 // Else if modified field's foreign data was a row object
-                } else if ($now->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Row) {
+                } else if ($was->foreign($affectedFieldR->alias) instanceof Indi_Db_Table_Row) {
 
                     // Get that row's title
                     $storageR->was = $was->foreign($affectedFieldR->alias)->title();
@@ -3589,12 +3674,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Getter function for `_affected` prop
+     * Getter function for `_affected` prop. If $prop arg is given, then function
+     * will indicate whether or not prop having $prop as it alias is in the list
+     * of affected props
      *
-     * @return array
+     * @param null|string $prop
+     * @return array|bool
      */
-    public function affected() {
-        return $this->_affected;
+    public function affected($prop = null) {
+        return func_num_args() ? in($prop, $this->_affected) : $this->_affected;
     }
 
     /**
@@ -3610,5 +3698,128 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return array_shift($data);
+    }
+
+    /**
+     * Assing values for props, responsible for storing info about
+     * the user who initially created current entry
+     *
+     * @param string $prefix
+     */
+    public function author($prefix = 'author') {
+        if (Indi::admin()) {
+            $this->{$prefix . 'Type'} = Indi::admin()->model()->id();
+            $this->{$prefix . 'Id'} = Indi::admin()->id;
+        } else {
+            $this->{$prefix . 'Type'} = Indi::me('aid');
+            $this->{$prefix . 'Id'} = Indi::me('id');
+        }
+    }
+
+    /**
+     * Adjust given $where arg so it surely match existing value
+     *
+     * @param $where
+     * @param $fieldR
+     * @return mixed
+     */
+    protected function comboDataExistingValueWHERE(&$where, $fieldR, $consistence = null) {
+
+        // If current entry is not yet exist - return
+        if (!$this->id && !$consistence) return;
+
+        // If $where arg is an empty array - return
+        if (is_array($where) && !count($where)) return;
+
+        // If $where arg is an empty string - return
+        if (is_string($where) && !strlen($where)) return;
+
+        // Build alternative WHERE clauses,
+        // that will surely provide current value presence within fetched combo data
+        $or = array(
+            'one' => '`id` = "' . $this->{$fieldR->alias} . '"',
+            'many' => '`id` IN (' . $this->{$fieldR->alias} . ')'
+        );
+
+        // If $fieldR's `storeRelationAbility` prop's value is not one oth the keys within $or array - return
+        if ((!$this->{$fieldR->alias} || !$or[$fieldR->storeRelationAbility]) && !$consistence) return;
+
+        // Implode $where
+        if (is_array($where)) $where = im($where, ' AND ');
+
+        // Append alternative
+        $where = im(array('(' . $where . ')', $consistence ? '(' . $consistence . ')' : $or[$fieldR->storeRelationAbility]), ' OR ');
+    }
+
+    /**
+     * Append $value to the list of comma-separated values, stored as a string value in $this->$prop
+     *
+     * @param $prop
+     * @param $value
+     * @param bool $unique
+     * @return mixed
+     */
+    public function push($prop, $value, $unique = true) {
+
+        // Convert $value to string
+        $value .= '';
+
+        // Convert $this->$prop to string
+        $this->$prop .= '';
+
+        // If $value is not an empty string
+        if (strlen($value)) {
+
+            // If $this->$prop is currently not an empty string, append $value followed by comma
+            if (strlen($this->$prop)) {
+
+                // If $unique is `true`, make sure $this->$prop will contain only distinct values
+                if (!$unique || !in($value, $this->$prop)) $this->$prop .= ',' . $value;
+            }
+
+            // Else setup $this->$prop with $value
+            else $this->$prop = $value;
+        }
+
+        // Return
+        return $this->$prop;
+    }
+
+    /**
+     * Drop $value from the comma-separated list, stored in $this->$prop
+     * NOTE: $value can also be comma-separated list too
+     *
+     * @param $prop
+     * @param $value
+     * @return mixed
+     */
+    public function drop($prop, $value) {
+
+        // Convert $value to string
+        $value .= '';
+
+        // Convert $this->$prop to string
+        $this->$prop .= '';
+
+        // If $value and $this->$prop are not empty strings
+        if (strlen($value) && strlen($this->$prop)) {
+
+            // If $unique is `true`, make sure $this->$prop will contain only distinct values
+            $this->$prop = im(un($this->$prop, $value));
+        }
+
+        // Return
+        return $this->$prop;
+    }
+
+    /**
+     * This function is for compiling prop default values within *_Row instance context
+     *
+     * @param $prop
+     */
+    public function compileDefaultValue($prop) {
+        if (strlen($this->_original[$prop])) {
+            Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
+        }
     }
 }

@@ -74,6 +74,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we are in some section, mean not in just '/admin/', but at least in '/admin/somesection/'
         if (Indi::trail(true) && Indi::trail()->model) {
 
+            // Adjust trail
+            $this->adjustTrail();
+
             // If action is 'index'
             if (Indi::uri('action') == 'index') {
 
@@ -278,7 +281,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param bool $upper
      * @return null
      */
-    public function setScopeRow($upper = false) {
+    public function setScopeRow($upper = false, Indi_Db_Table_Row $r = null) {
 
         // If no primary hash param passed within the uri - return
         if (!Indi::uri()->ph) return;
@@ -289,15 +292,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If there is no current state yet - return
         if (!is_array($original)) return;
 
+        // If $r argis not given, use $this->row
+        $r = $r ?: $this->row;
+
         // If current action deals with row, that is not yet exists in database - return
-        if (!$this->row->id) return;
+        if (!$r->id) return;
 
         // Setup $modified array with 'aix' param as first item in. This array may be additionally fulfilled with
         // 'page' param, if passed 'aix' value is too large or too small to match initial results page number (this
         // mean that page number should be recalculated, so 'page' param will store recalculated page number). After
         // all necessary operations will be done - valued from this ($modified) array will replace existing values
         // in scope
-        $modified = array('aix' => Indi::uri()->aix);
+        $modified = array('aix' => Indi::uri()->aix, 'lastIds' => array($r->id));
 
         // Start and end indexes. We calculate them, because we should know, whether page number should be changed or no
         $start = ($original['page'] - 1) * Indi::trail((int) $upper)->section->rowsOnPage + 1;
@@ -900,6 +906,28 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Replace &nbsp;
             $columnI['title'] = str_replace('&nbsp;', ' ', $columnI['title']);
 
+            // Try detect an image
+            if (preg_match('/<img src="([^"]+)"/', $columnI['title'], $src)) {
+
+                // If detected image exists
+                if ($abs = Indi::abs($src[1])) {
+
+                    // Setup additional x-offset for color-box, for it to be centered within the cell
+                    $additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+
+                    //  Add the image to a worksheet
+                    $objDrawing = new PHPExcel_Worksheet_Drawing();
+                    $objDrawing->setPath($abs);
+                    $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                    $objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+                }
+
+                // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                // because gd image will override cell value otherwise
+                $columnI['title'] = str_pad('', 6, ' ');
+            }
+
             // Write header title of a certain column to a header cell
             $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $columnI['title']);
 
@@ -1015,8 +1043,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Get the value
                 $value = $data[$i][$columnI['dataIndex']];
 
-                // If cell value contain a .i-color-box item, we replaced it with same-looking GD image box
-                if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);">/', $value, $c)) {
+                // If cell value contains a .i-color-box item, we replaced it with same-looking GD image box
+                if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);" title="[^"]+">/', $value, $c)) {
 
                     // If color was detected
                     if ($h = trim(Indi::hexColor($c[1]), '#')) {
@@ -1041,10 +1069,28 @@ class Indi_Controller_Admin extends Indi_Controller {
                         $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
                         $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
-                        // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
-                        // because gd image will override cell value otherwise
-                        $value = str_pad('', 6, ' ') . strip_tags($value);
+
+                    // Else if cell value contains a .i-color-box item, that uses an image by background:url(...)
+                    } else if (preg_match('/^ ?url\(([^)]+)\)/', $c[1], $src)) {
+
+                        // If detected image exists
+                        if ($abs = Indi::abs(trim($src[1], '.'))) {
+
+                            // Setup additional x-offset for color-box, for it to be centered within the cell
+                            $additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+
+                            //  Add the image to a worksheet
+                            $objDrawing = new PHPExcel_Worksheet_Drawing();
+                            $objDrawing->setPath($abs);
+                            $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                            $objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                            $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+                        }
                     }
+
+                    // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                    // because gd image will override cell value otherwise
+                    $value = str_pad('', 6, ' ') . strip_tags($value);
 
                 // Else if cell value contain a color definition within 'color' attribute,
                 // or as a 'color: xxxxxxxx' expression within 'style' attribute, we extract that color definition
@@ -1375,6 +1421,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     OR `a`.`password` = OLD_PASSWORD("' . $password . '")
                         AS `passwordOk`,
                 '. $adminToggle . ' AS `adminToggle`,
+                IF(`p`.`entityId`, `p`.`entityId`, 11) as `mid`,
                 `p`.`toggle` = "y" AS `profileToggle`,
                 `p`.`title` AS `profileTitle`,
                 COUNT(`sa`.`sectionId`) > 0 AS `atLeastOneSectionAccessible`
@@ -1596,7 +1643,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     if (!is_array($data)) jflush(false, $data);
 
                     // Else start a session for user and report that sing-in was ok
-                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate');
+                    $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate', 'mid');
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
                     jflush(true, array('ok' => '1'));
                 }
@@ -1754,6 +1801,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Render the layout
             $out = Indi::view()->render('index.php');
 
+
         // Else, if we are doing something in a certain section
         } else {
 
@@ -1766,7 +1814,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Strip '/admin' from $out, if cms-only mode is enabled
-        if (COM) $out = preg_replace('/("|\')\/admin/', '$1', $out);
+        if (COM) $out = preg_replace('/(action|src|href)=("|\')\/admin/', '$1=$1', $out);
 
         // Make a src|href replacements, if project is running in a subfolder of document root
         if (STD) {
@@ -1937,28 +1985,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Save the row
         $this->row->save();
 
-        // If current row has been just successfully created
-        if ($updateAix && $this->row->id) {
-
-            // If $scope's WHERE clause is not empty
-            if (Indi::trail()->scope->WHERE) {
-
-                // Prepare WHERE clause to ensure that newly created row does match all the requirements, that are
-                // used for fetching rows that are suitable for displaying in rowset (grid, calendar, etc) panel
-                $where = '`id` = "' . $this->row->id . '" AND ' . Indi::trail()->scope->WHERE;
-
-                // Do the check
-                $R = Indi::trail()->model->fetchRow($where);
-
-            // Else we assume that there are no requirements for current row to be displayed in rowset panel
-            } else $R = $this->row;
-
-            // Here we should do check for row existence, because there can be situation when we have just created
-            // a row, but values of some of it's properties do not match the requirements of current scope, and in that
-            // case current scope 'aix' and/or 'page' params should not be adjusted
-            if ($R) Indi::uri()->aix = Indi::trail()->model
-                ->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
-        }
+        // If current row has been just successfully created - update Indi::uri('aix')
+        if ($updateAix && $this->row->id) $this->updateAix($this->row);
 
         // Setup row index
         $this->setScopeRow();
@@ -1987,11 +2015,16 @@ class Indi_Controller_Admin extends Indi_Controller {
                     $_SESSION['indi']['admin'][Indi::uri()->section][$hash]['found']++;
 
                     // Replace the null id with id of newly created row
-                    $location = str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
+                    $location = str_replace(array('/id/null/', '/id//'), '/id/' . Indi::trail()->row->id . '/', $location);
+                    $location = str_replace(array('/aix/null/', '/aix//'), '/aix/' . Indi::uri()->aix . '/', $location);
                 }
 
             // Replace the null id with id of newly created row
-            } else if (!Indi::uri()->id) str_replace(array('/null/', '//'), '/' . Indi::trail()->row->id . '/', $location);
+            } else if (!Indi::uri()->id) {
+
+                $location = str_replace(array('/id/null/', '/id//'), '/id/' . Indi::trail()->row->id . '/', $location);
+                $location = str_replace(array('/aix/null/', '/aix//'), '/aix/' . Indi::uri()->aix . '/', $location);
+            }
         }
 
         // Prepare response. Here we mention a number of properties, related to saved row, as a proof that row saved ok
@@ -2005,6 +2038,33 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Flush response
         jflush(true, $response);
+    }
+
+    /**
+     * Assign Indi::uri()->aix according to given $r instance
+     *
+     * @param Indi_Db_Table_Row $r
+     */
+    public function updateAix(Indi_Db_Table_Row $r) {
+
+        // If $scope's WHERE clause is not empty
+        if (Indi::trail()->scope->WHERE) {
+
+            // Prepare WHERE clause to ensure that newly created row does match all the requirements, that are
+            // used for fetching rows that are suitable for displaying in rowset (grid, calendar, etc) panel
+            $where = '`id` = "' . $r->id . '" AND ' . Indi::trail()->scope->WHERE;
+
+            // Do the check
+            $R = Indi::trail()->model->fetchRow($where);
+
+            // Else we assume that there are no requirements for current row to be displayed in rowset panel
+        } else $R = $r;
+
+        // Here we should do check for row existence, because there can be situation when we have just created
+        // a row, but values of some of it's properties do not match the requirements of current scope, and in that
+        // case current scope 'aix' and/or 'page' params should not be adjusted
+        if ($R) Indi::uri()->aix = Indi::trail()->model
+            ->detectOffset(Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $R->id);
     }
 
     /**
@@ -2038,8 +2098,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
         // Return clause
-        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+        /*return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
             ? 'FIND_IN_SET("' . $connectorValue . '", `' . $connectorAlias . '`)'
+            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';*/
+        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+            ? 'CONCAT(",", `' . $connectorAlias . '`, ",") REGEXP ",(' . im(ar($connectorValue), '|') . '),"'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
     }
 
@@ -2060,6 +2123,14 @@ class Indi_Controller_Admin extends Indi_Controller {
 
     }
 
+
+    /**
+     * This function is an injection that allows to adjust any trail items before their involvement
+     */
+    public function adjustTrail() {
+
+    }
+
     /**
      * Append the field, identified by $alias, to the list of disabled fields
      *
@@ -2070,10 +2141,10 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
         // Append
-        Indi::trail()->disabledFields->append(array(
+        foreach(ar($alias) as $a) Indi::trail()->disabledFields->append(array(
             'id' => 0,
             'sectionId' => Indi::trail()->section->id,
-            'fieldId' => Indi::trail()->model->fields($alias)->id,
+            'fieldId' => Indi::trail()->model->fields($a)->id,
             'defaultValue' => $defaultValue,
             'displayInForm' => $displayInForm ? 1 : 0,
         ));
@@ -2281,5 +2352,49 @@ class Indi_Controller_Admin extends Indi_Controller {
             $_SESSION['indi']['admin'][$apply['section']][$apply['hash']],
             $merge
         );
+    }
+
+    /**
+     * This methos sets up a special read/write access mode,
+     * so that only new entries creation is allowed, but modification of existing entries
+     * is restricted. If $ownerCheck arg is given as non-false then this method will perform and additional
+     * owner-check, so this will prevent existing entries
+     * from being modified by users who are not their creators
+     *
+     * @param bool $ownerCheck
+     * @return mixed
+     */
+    public function createOnly($ownerCheck = false) {
+
+        // If entries creation is disabled - do nothing
+        if (Indi::trail()->section->disableAdd) return;
+
+        // If we do not deal with an existing row - do nothing
+        if (!Indi::trail()->row->id) return;
+
+        // If current entry belongs to current system user- do nothing
+        if ($ownerCheck)
+
+            // If belonging mode is represented with a pairof special 'authorType' and 'authorId' fields
+            if (Indi::trail()->model->fields('authorId') && Indi::trail()->model->fields('authorType')) {
+
+                // If current entry does not belongto current system user - return
+                if (Indi::trail()->row->authorId == Indi::me('id') && Indi::trail()->row->authorType == Indi::me('mid'))
+                    return;
+
+            // Else if belonging mode is represented by 'alternate' concept, and current system user is an alternate
+            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate . 'Id')) {
+
+                // If current entry does not belongto current system user - return
+                if (Indi::admin()->id == $this->row->$af) return;
+            
+            // Else if there is no any kind of belonging
+            } else return;
+
+        // Deny 'save' and 'delete' actions
+        $this->deny('save');
+
+        // Setup special value for section's `disableAdd` prop, indicating that creation is still possible
+        Indi::trail()->section->disableAdd = 2;
     }
 }

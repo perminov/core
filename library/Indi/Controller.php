@@ -519,7 +519,7 @@ class Indi_Controller {
             // Append part of WHERE clause, that will be involved in the process of fetching filter combo data
             $where[] = '`id` IN (' . (($in = Indi::db()->query('
                 SELECT DISTINCT `'. $for . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
-            )->fetchAll(PDO::FETCH_COLUMN)) ? implode(',', $in) : 0) . ')';
+            )->fetchAll(PDO::FETCH_COLUMN)) ? trim(implode(',', $in), ',') : 0) . ')';
         }
 
         // Setup a row
@@ -547,16 +547,16 @@ class Indi_Controller {
             $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                 $for, Indi::trail()->section->entityId, Indi::trail()->scope->WHERE);
             $this->row->$for = Indi::uri()->id;
-            $order = Indi::trail()->scope->ORDER;
+            $order = is_array(Indi::trail()->scope->ORDER) ? end(Indi::trail()->scope->ORDER) : Indi::trail()->scope->ORDER;
             $dir = array_pop(explode(' ', $order));
             $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
             if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
-            // Else if options data is for combo, associated with a existing form field
-        } else {
+        // Else if options data is for combo, associated with a existing form field - pick that field
+        } else $field = Indi::trail()->model->fields($for);
 
-            $field = Indi::trail()->model->fields($for);
-        }
+        // If field having $for as it's `alias` was not found in existing fields, try to finв it within pseudo fields
+        if (!$field) $field = Indi::trail()->pseudoFields->field($for);
 
         // Prepare and flush json-encoded combo options data
         $this->_odata($for, $post, $field, null, $order, $dir, $offset);
@@ -576,6 +576,9 @@ class Indi_Controller {
      * @param string $offset
      */
     protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null, $subTplData = null) {
+
+        // If field was not found neither within existing field, nor within pseudo fields
+        if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
         // Get combo data rowset
         $comboDataRs = $post->keyword
