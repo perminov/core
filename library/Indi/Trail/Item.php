@@ -31,6 +31,28 @@ class Indi_Trail_Item {
     public $row;
 
     /**
+     * Non-really existing fields, that, however, may be required for usage in prompts, etc
+     *
+     * @var array
+     */
+    public $pseudoFields = null;
+
+    /**
+     * Abstract data, for being passed to js
+     *
+     * @var array
+     */
+    public $data = array();
+
+    /**
+     * Constructor
+     */
+    public function __construct() {
+
+        // Setup `pseudoFields` prop as an empty instance of Field_Rowset class
+        $this->pseudoFields = new Field_Rowset(array('table' => 'field'));
+    }
+    /**
      * Getter. Currently declared only for getting 'model' and 'fields' property
      *
      * @param $property
@@ -123,7 +145,9 @@ class Indi_Trail_Item {
         if ($this->disabledFields) $array['disabledFields'] = $this->disabledFields->toArray();
         if ($this->filters) $array['filters'] = $this->filters->toArray();
         if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
+        if ($this->pseudoFields) $array['pseudoFields'] = $this->pseudoFields->toArray();
         if ($this->scope) $array['scope'] = $this->scope->toArray();
+        $array['data'] = $this->data;
         $array['level'] = $this->level;
         return $array;
     }

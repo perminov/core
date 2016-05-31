@@ -64,7 +64,38 @@ Ext.define('Indi', {
          * @return {Boolean}
          */
         in: function(item, array) {
-            if (typeof array == 'string') array = array.split(',');
+            var a, i;
+
+            // If `array` arg is null/undefined return false
+            if (array === null || array == undefined || typeof array == 'function') return false;
+
+            // If `array` arg is a string/number
+            if (typeof array == 'string' || typeof array == 'number') {
+
+                // Cast `array` arg as string
+                a = array + '';
+
+                // If `array` arg is an empty string return false
+                if (!a.length) return false;
+
+                // If `array` arg is null/undefined return false
+                if (item === null || item == undefined || typeof item == 'function' || typeof item == 'object') return false;
+
+                // Split `array` arg by comma
+                a = a.split(',');
+
+                // Cast `item` as string
+                if (typeof item == 'boolean') {
+                    i = (item ? 1 : 0) + '';
+                } else if (typeof item == 'number' || typeof item == 'string') {
+                    i = item + '';
+                }
+
+                // Return
+                return a.indexOf(i) != -1;
+            }
+
+            // Return
             return array.indexOf(item) != -1;
         },
 
@@ -783,6 +814,73 @@ Ext.define('Indi', {
         mt: function() {
             var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
             Indi._mt = m; if (arguments.length) console.log(d, arguments); return d;
+        },
+
+        /**
+         * Add the measure version to a given quantity
+         *
+         * @param q
+         * @param versions012
+         * @param showNumber
+         * @return {String}
+         */
+        tbq: function(q, versions012, showNumber) {
+            var versions210, formatKA = ['2-4', '1', '0,11-19,5-9'], formatA = {}, formatK, formatV, spanA, k, interval, m;
+
+            // Set up default values for arguments
+            if (arguments.length < 1) q = 2;
+            if (arguments.length < 2) versions012 = '';
+            if (arguments.length < 3) showNumber = true;
+
+            // Force q arg to be string
+            q += '';
+
+            // Get versions reversed array
+            versions210 = versions012.split(',').reverse();
+
+            // Distribute quantity measure spell versions
+            formatA['2-4'] = versions210[0]; formatA['1'] = versions210[1]; formatA['0,11-19,5-9'] = versions210[2];
+
+            // Foreach format
+            for (var i in formatKA) {
+
+                formatK = formatKA[i];
+                formatV = formatA[formatK];
+
+                // Extract the intervals from format key
+                spanA = formatK.split(',');
+
+                // Foreach interval
+                for (k = 0; k < spanA.length; k++) {
+
+                    // If current interval is actually not interval, e.g it constits from only one digit
+                    if (spanA[k].indexOf('-') == -1) {
+
+                        // If quantity count ends with that digit
+                        if (q.match(new RegExp(spanA[k] + '$')))
+
+                            // Return the quantity (if showNumber argument is true), with appended spell version
+                            return (showNumber ? q + ' ' : '') + formatV;
+
+                    // Else current interval really is an interval
+                    } else {
+
+                        // Get the start and end digits of that interval
+                        interval = spanA[k].split('-');
+
+                        // Foreach digit within start and end interval digits
+                        for (m = parseInt(interval[0]); m <= parseInt(interval[1]); m ++) {
+
+                            // If quantity count ends with that digit
+                            if (q.match(new RegExp(m + '$')))
+
+                                // Return the quantity (if showNumber argument is true), with appended spell version
+                                return (showNumber ? q + ' ' : '') + formatV;
+                        }
+                    }
+                }
+            }
+            return q;
         }
     },
 
@@ -797,7 +895,12 @@ Ext.define('Indi', {
         if (Ext.get('i-login-box')) {
             Ext.create('Indi.view.LoginBox', {title: Indi.title});
         } else {
+
+            // Create viewport
             Indi.viewport = Ext.create('Indi.view.Viewport');
+
+            // Load dashboard
+            if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
         }
 
         Indi.app = this;

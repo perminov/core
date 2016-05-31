@@ -62,6 +62,7 @@
         '/js/admin/app/lib/toolbar/Info.js',
         '/js/admin/app/lib/form/field/SiblingCombo.js',
         '/js/admin/app/lib/form/field/CellCombo.js',
+        '/js/admin/app/lib/form/field/AutoCombo.js',
         '/js/admin/app/lib/form/field/FilterCombo.js',
         '/js/admin/app/lib/form/field/CkEditor.js',
         '/js/admin/app/lib/form/field/FilePanel.js',
@@ -118,8 +119,10 @@ Ext.create('Indi', {
         uri: <?=json_encode(Indi::uri()->toArray())?>,
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,
-        user: '<?=$this->admin?>',
-        home: <?=Indi::admin()->foreign('profileId')->home ? 'true' : 'false'?>
+        user: {
+            title: '<?=$this->admin?>',
+            dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
+        }
     }
 });
 </script>

@@ -235,12 +235,26 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
 
         // Lookup current field's satellites changes, and toggle it, depending on their state
-        if (me.ownerCt) me.ownerCt.query('> [satellite]').forEach(function(sbl){
+        if (me.ownerCt) me.ownerCt.query('> *').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
                 sbl.considerOn.forEach(function(considerOnStlCfg){
                     if (considerOnStlCfg.name == me.name) sbl.toggleBySatellites(considerOnStlCfg);
                 });
             }
         });
+    }
+});
+Ext.override(Ext.form.field.Text, {
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this; config.plugins = config.plugins || [];
+
+        // Add InputMask plugin
+        if (config.inputMask)
+            config.plugins.push(new Ext.ux.form.field.plugin.InputMask(config.inputMask, { placeholder: '*' }));
+
+        // Call parent
+        me.callParent(arguments);
     }
 });

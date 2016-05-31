@@ -1,5 +1,5 @@
 <?php
-class Field_Row extends Indi_Db_Table_Row {
+class Field_Row extends Indi_Db_Table_Row_Noeval {
 
     /**
      * Constructor
@@ -8,23 +8,11 @@ class Field_Row extends Indi_Db_Table_Row {
      */
     public function __construct(array $config = array()) {
 
-        // Setup initial properties
-        $this->_table = 'field';
-        $this->_original = $config['original'];
-        $this->_system = is_array($config['system']) ? $config['system'] : array();
-        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
-        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
-        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
-        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+        // Explicitly set table name
+        $config['table'] = 'field';
 
-        // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
-        if (strlen($this->_original['defaultValue'])) {
-            if (preg_match(Indi::rex('php'), $this->_original['defaultValue'])) {
-                Indi::$cmpTpl = $this->_original['defaultValue']; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::cmpOut();
-            } else {
-                $this->_compiled['defaultValue'] = $this->_original['defaultValue'];
-            }
-        }
+        // Call parent
+        parent::__construct($config);
     }
 
     /**
@@ -67,14 +55,31 @@ class Field_Row extends Indi_Db_Table_Row {
             $this->foreign('entityId')->save();
         }
 
+        // Prevent deletion of `section` entries, having current `field` entry as `defaultSortField`
+        if ($sectionRs = Indi::model('Section')->fetchAll('`defaultSortField` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->defaultSortField = 0;
+                $sectionR->save();
+            }
+
+        // Prevent deletion of `section` entries, having current `field` entry as `parentSectionConnector`
+        if ($sectionRs = Indi::model('Section')->fetchAll('`parentSectionConnector` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->parentSectionConnector = 0;
+                $sectionR->save();
+            }
+
         // Standard deletion
-        parent::delete();
+        $return = parent::delete();
 
         // Delete db table associated column
         $this->deleteColumn();
 
         // Delete current field from model's fields
         Indi::model($this->entityId)->fields()->exclude($this->id);
+
+        // Return
+        return $return;
     }
 
     /**

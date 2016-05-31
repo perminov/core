@@ -671,9 +671,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>';
-                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && $this->table() != 'enumset') {
+                    } else if (preg_match('/box/', $data[$pointer][$columnI]) && !in($this->table(), 'enumset,changeLog')) {
                         if (preg_match('/background:\s*url\(/', $data[$pointer][$columnI])) {
-
+                            if ($this->model()->fields($columnI)->relation == 6) {
+                                $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
+                            }
                         } else {
                             $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
                         }
@@ -1274,6 +1276,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             $options[$o->$keyProperty]['raw'] = $o->{$this->titleColumn};
 
+            // Setup foreign entries titles
+            if ($params['foreign'])
+                foreach (ar($params['foreign']) as $fk)
+                    if ($fr = $o->foreign($fk))
+                        $options[$o->$keyProperty]['_foreign'][$fk] =  $fr->title();
+
             // If color box was detected, and it has box-type, we remember this fact
             if ($info['box']) $hasColorBox = true;
 
@@ -1409,5 +1417,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
         // Make the call
         return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+    }
+
+    /**
+     * Get sum of values, stored in all rows under $prop prop
+     *
+     * @param $prop
+     * @return number
+     */
+    public function sum($prop) {
+        return array_sum($this->column($prop));
     }
 }

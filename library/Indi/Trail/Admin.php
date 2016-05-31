@@ -79,14 +79,24 @@ class Indi_Trail_Admin {
         ));
 
         // Get filters
+        $searchWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
+        if (Indi::model('Search')->fields('access') && Indi::model('Search')->fields('profileIds')) {
+            $searchWHERE[] = '(' . im(array(
+                '`access` = "all"',
+                '(`access` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+                '(`access` = "except" AND NOT FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+            ), ' OR ') . ')';
+        }
+
+        // Setup filters
         $sectionRs->nested('search', array(
-            'where' => '`sectionId` = "' . $routeA[0] . '" AND `toggle` = "y"',
+            'where' => $searchWHERE,
             'order' => 'move'
         ));
 
         // Grid columns WHERE clause
         $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
-        if (Indi::model('Grid')->fields('access')) {
+        if (Indi::model('Grid')->fields('access') && Indi::model('Grid')->fields('profileIds')) {
             $gridWHERE[] = '(' . im(array(
                 '`access` = "all"',
                 '(`access` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
@@ -100,9 +110,19 @@ class Indi_Trail_Admin {
             'order' => 'move'
         ));
 
+        // Disabled field WHERE clause
+        $disabledFieldsWHERE = array('`sectionId` = "' . $routeA[0] . '"');
+        if (Indi::model('DisabledField')->fields('impact') && Indi::model('DisabledField')->fields('profileIds')) {
+            $disabledFieldsWHERE[] = '(' . im(array(
+                '`impact` = "all"',
+                '(`impact` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+                '(`impact` = "except" AND NOT FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+            ), ' OR ') . ')';
+        }
+
         // Setup disabled fields
         $sectionRs->nested('disabledField', array(
-            'where' => '`sectionId` = "' . $routeA[0] . '"'
+            'where' => $disabledFieldsWHERE
         ));
 
         // Setup initial set of properties

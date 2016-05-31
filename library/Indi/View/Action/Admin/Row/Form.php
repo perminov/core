@@ -19,7 +19,7 @@ class Indi_View_Action_Admin_Row_Form extends Indi_View_Action_Admin_Row {
                 if ($fieldR->foreign('elementId')->alias == 'upload') {
                     echo Indi::view()->formUpload($fieldR->alias, null, 'extjs');
                 } else if (preg_match('/combo|radio|multicheck/', $fieldR->foreign('elementId')->alias))
-                    echo Indi::view()->formCombo($fieldR->alias, null, 'extjs');
+                    echo Indi::view()->formCombo($fieldR->alias);
             }
 
         // Return buffered output with parent's return-value
