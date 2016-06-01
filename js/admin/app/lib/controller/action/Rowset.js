@@ -1774,7 +1774,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param record
      * @param aix
      */
-    recordRemoteSave: function(record, aix, $ti) {
+    recordRemoteSave: function(record, aix, $ti, callback) {
         var me = this, ti = $ti || me.ti(), params, bool = [];
 
         // If no changed was made - return
@@ -1854,6 +1854,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                 // Commit row
                 record.commit();
+
+                // Call callback
+                callback();
             },
 
             // Failure handler
