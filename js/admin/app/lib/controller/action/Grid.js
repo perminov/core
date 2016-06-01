@@ -95,7 +95,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) {
+                    this.view.dblclick = true;
+                    btn.press();
+                }
             },
 
             itemclick: function() {
