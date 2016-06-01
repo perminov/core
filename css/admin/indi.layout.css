@@ -196,6 +196,21 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-grid-dirty-cell {
     background-image: url('/i/admin/dirty-orange.gif');
 }
+.i-grid-cell-editor-focus {
+    border: 1px dotted blue !important;
+}
+
+.i-grid-cell-editor-focus.i-grid-column-align-left .x-grid-cell-inner {
+    right: 1px;
+    position: relative;
+}
+.i-grid-cell-editor-focus.i-grid-column-align-right .x-grid-cell-inner {
+    right: -1px;
+    position: relative;
+}
+.i-grid-column-align-right .x-grid-cell-inner {
+    text-align: right !important;
+}
 
 /* Indi combos default style adjustments - for cases, when indi combos are used as an ext components*/
 .i-filter-combo .x-panel-body-default{
@@ -484,4 +499,7 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
     -moz-user-select: -moz-text;
     -webkit-user-select: text;
     cursor: text;
+}
+.i-link {
+    cursor: pointer; border-bottom: 1px dotted; text-decoration: none; display: inline-block;
 }
