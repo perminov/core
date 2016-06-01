@@ -6,7 +6,7 @@ Ext.override(Ext.grid.plugin.Editing, {
 
     // private. Used if we are triggered by a cellclick event
     onCellSecondClick: function(view, cell, colIdx, record, row, rowIdx, e) {
-        var thisClick = colIdx + ':' + rowIdx, lastCell;
+        var thisClick = colIdx + ':' + rowIdx, lastCell, me = this;
         if (view.lastClickCell) {
             lastCell = view.getCellByPosition({
                 column: parseInt(view.lastClickCell.split(':')[0]),
@@ -27,8 +27,12 @@ Ext.override(Ext.grid.plugin.Editing, {
 
         // cancel editing if the element that was clicked was a tree expander
         if(!view.expanderSelector || !e.getTarget(view.expanderSelector)) {
-            Ext.fly(cell).removeCls('i-grid-cell-editor-focus');
-            this.startEdit(record, view.getHeaderAtIndex(colIdx));
+            Ext.defer(function(){
+                if (!view.dblclick) {
+                    Ext.fly(cell).removeCls('i-grid-cell-editor-focus');
+                    me.startEdit(record, view.getHeaderAtIndex(colIdx));
+                }
+            }, 506);
         }
     },
 
