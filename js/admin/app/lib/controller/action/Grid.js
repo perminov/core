@@ -95,7 +95,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) {
+                    this.view.dblclick = true;
+                    btn.press();
+                }
             },
 
             itemclick: function() {
@@ -151,7 +154,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     gridColumnDefault: function(field, column) {
-        var me = this, tooltip = column.tooltip || (field && field.tooltip);
+        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [];
+
+        // Setup align
+        tdClsA.push('i-grid-column-align-' + ((field.storeRelationAbility == 'none' &&
+            [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left'));
+
+        // Setup presence of .i-grid-column-enumset
+        if (parseInt(field.relation) == 6) tdClsA.push('i-grid-column-enumset');
 
         // Default column config
         return {
@@ -160,12 +170,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             dataIndex: field.alias,
             tooltip: tooltip ? {html: tooltip, constrainParent: false, constrainPosition: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
-            tdCls: parseInt(field.relation) == 6 ? 'i-grid-column-enumset' : '',
-            sortable: true,
-            align: function(){
-                return (field.storeRelationAbility == 'none' &&
-                    [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
-            }()
+            tdCls: tdClsA.join(' '),
+            sortable: true
         }
     },
 
@@ -1291,7 +1297,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 grid.preventEnter = true;
 
                 // Try to save
-                ctx.recordRemoteSave(e.record, e.rowIdx + 1);
+                ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(){
+                    var cell = editor.view.getCellByPosition({
+                        column: e.colIdx,
+                        row: e.rowIdx
+                    });
+                    Ext.fly(cell).addCls('i-grid-cell-editor-focus');
+                });
             }
         }
     },
