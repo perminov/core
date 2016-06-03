@@ -80,6 +80,7 @@ define('I_NAVTO_CREATE', 'Goto new row creation');
 define('I_NAVTO_NESTED', 'Goto nested objects');
 define('I_NAVTO_ROWINDEX', 'Goto row by #');
 
+define('I_ROWSAVE_ERROR_VALUE_REQUIRED', 'Field "%s" is required');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Value "%s" of field "%s" should not be greater than a 11-digit decimal');
