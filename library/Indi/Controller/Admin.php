@@ -1983,12 +1983,12 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->preSave();
 
         // Setup 'zeroValue'-mismatches
-        foreach (Indi::trail()->fields as $fieldR)
+        /*foreach (Indi::trail()->fields as $fieldR)
             if ($fieldR->mode == 'required' && $this->row->fieldIsZero($fieldR->alias))
                 $this->row->mismatch($fieldR->alias, sprintf(I_ROWSAVE_ERROR_VALUE_REQUIRED, $fieldR->title));
 
         // Flush 'zeroValue'-mismatches
-        $this->row->mflush();
+        $this->row->mflush();*/
 
         // Save the row
         $this->row->save();
