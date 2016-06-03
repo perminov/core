@@ -80,6 +80,7 @@ define('I_NAVTO_CREATE', 'Перейти к созданию новой запи
 define('I_NAVTO_NESTED', 'Перейти к списку вложенных записей');
 define('I_NAVTO_ROWINDEX', 'Перейти к записи #');
 
+define('I_ROWSAVE_ERROR_VALUE_REQUIRED', 'Поле "%s" обязательно для заполнения');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Значением поля "%s" не может быть объект');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Значением поля "%s" не может быть массив');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Значение "%s" поля "%s" должно быть целым числом, имеющим не более 11 разрядов');
