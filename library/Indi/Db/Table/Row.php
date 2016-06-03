@@ -741,7 +741,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $where[] = $alternateField->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
                 : '`' . $alternateField->alias . '` = "' . Indi::admin()->id .'"';
-        
+
         // If related entity has tree-structure
         if ($relatedM->treeColumn()) {
 

@@ -2,27 +2,14 @@ Ext.define('Indi.controller.fields', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
-            gridColumn$Title: {
-                editor: {
-                    xtype: 'textfield',
-                    allowBlank: false,
-                    margin: '0 2 0 3',
-                    height: 18
-                }
-            },
-            gridColumn$Alias: {
-                editor: {
-                    xtype: 'textfield',
-                    allowBlank: false,
-                    margin: '0 2 0 3',
-                    height: 18
-                }
-            },
-            gridColumn$Required: function() {
+            gridColumn$Title: {editor: true},
+            gridColumn$Alias: {editor: true},
+            gridColumn$Mode: function() {
                 return {
                     cls: 'i-column-header-icon',
-                    header: '<img src="' + Indi.std + '/i/admin/btn-icon-required.png">',
-                    tooltip: arguments[0].tooltip || arguments[0].header
+                    header: '<img src="' + Indi.std + '/i/admin/field/readonly.png" style="left: -1px;">',
+                    tooltip: arguments[0].tooltip || arguments[0].header,
+                    allowCycle: true
                 }
             }
         },

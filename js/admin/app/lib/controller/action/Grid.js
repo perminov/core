@@ -117,7 +117,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // and that field is not in the list of disabled fields - provide some kind
                 // of cell-editor functionality, so enumset values can be switched from one to another
                 if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
-                    && field.storeRelationAbility == 'one' && enumset.length == 2) {
+                    && field.storeRelationAbility == 'one'
+                    && (col.allowCycle !== false || enumset.length <= 2)) {
 
                     s = me.getStore();
                     value = record.key(dataIndex);

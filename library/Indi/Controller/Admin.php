@@ -1982,6 +1982,14 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Do pre-save operations
         $this->preSave();
 
+        // Setup 'zeroValue'-mismatches
+        /*foreach (Indi::trail()->fields as $fieldR)
+            if ($fieldR->mode == 'required' && $this->row->fieldIsZero($fieldR->alias))
+                $this->row->mismatch($fieldR->alias, sprintf(I_ROWSAVE_ERROR_VALUE_REQUIRED, $fieldR->title));
+
+        // Flush 'zeroValue'-mismatches
+        $this->row->mflush();*/
+
         // Save the row
         $this->row->save();
 
@@ -2194,8 +2202,11 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If no trail - call action and return
         if (!Indi::trail(true)) return $this->{$action . 'Action'}();
 
-        // Adjust access rights ()
+        // Adjust access rights
         $this->adjustAccess();
+
+        // Adjust existing row access rights
+        if (Indi::trail()->row->id) $this->adjustExistingRowAccess(Indi::trail()->row);
 
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
@@ -2396,5 +2407,14 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup special value for section's `disableAdd` prop, indicating that creation is still possible
         Indi::trail()->section->disableAdd = 2;
+    }
+
+    /**
+     * Empty function. To be overridden in child classes
+     *
+     * @param Indi_Db_Table_Row $row
+     */
+    public function adjustExistingRowAccess(Indi_Db_Table_Row $row) {
+        
     }
 }
