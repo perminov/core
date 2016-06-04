@@ -729,7 +729,7 @@ class Indi_Db_Table
             }
 
         // Else if $name argument is presented, and it contains only one field name
-        } else if (!preg_match('/,/', $names)) {
+        } else if (!preg_match('/,/', $names) && func_num_args() == 1) {
 
             // Return certain field as Indi_Db_Table_Row object, if found
             return $this->_fields->field($names);
@@ -863,12 +863,28 @@ class Indi_Db_Table
     }
 
     /**
-     * Create empty row
+     * Create empty row. If non-false $assign argument is given - we assume that $input arg should not be used
+     * be used for construction, but should be used for $this->assign() call. This may me useful
+     * in case when we need to create an instance of a row and assign a values into it - and all
+     * this within a single call. So, without $assign arg usage, the desired effect would require:
+     *
+     *   Indi::model('SomeModel')->createRow()->assign(array('prop1' => 'value1', 'prop2' => 'value2'));
+     *
+     * But not, with $assign arg usage, same effect would require
+     *
+     *   Indi::model('SomeModel')->createRow(array('prop1' => 'value1', 'prop2' => 'value2'));
+     *
+     * So, with $assign arg usage, we can omit the additional 'assign(..)' cal
      *
      * @param array $input
-     * @return Indi_Db_Table_Row object
+     * @param bool $assign
+     * @return mixed
      */
-    public function createRow($input = array()) {
+    public function createRow($input = array(), $assign = false) {
+
+        // If non-false $assign argument is given - we assume that $input arg should not be used
+        // be used for construction, but should be used for $this->assign() call
+        if ($assign) { $assign = $input; $input = array(); }
 
         // Prepare data for construction
         $constructData = array(
@@ -884,16 +900,9 @@ class Indi_Db_Table
         // If $constructData['original'] is an empty array, we setup it according to model structure
         if (count($constructData['original']) == 0) {
             $constructData['original']['id'] = null;
-            foreach ($this->fields() as $fieldR) {
-                if ($fieldR->columnTypeId) {
+            foreach ($this->fields() as $fieldR)
+                if ($fieldR->columnTypeId)
                     $constructData['original'][$fieldR->alias] = $fieldR->defaultValue;
-                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
-                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
-                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
-                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
-                    }
-                }
-            }
         }
 
         // Get row class name
@@ -905,15 +914,32 @@ class Indi_Db_Table
             Indi_Loader::loadClass($rowClass);
         }
 
-        // Construct and return Indi_Db_Table_Row object
-        return new $rowClass($constructData);
+        // Create an instance of a row
+        $row = new $rowClass($constructData);
+
+        // If $constructData['original'] is an empty array, we setup it according to model structure
+        if (!$row->id) {
+            foreach ($this->fields() as $fieldR) {
+                if ($fieldR->columnTypeId) {
+                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
+                        $row->compileDefaultValue($fieldR->alias);
+                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
+                        $row->compileDefaultValue($fieldR->alias);
+                    }
+                }
+            }
+        }
+
+        // Construct and return Indi_Db_Table_Row object,
+        // but, if $assign arg is given - preliminary assign data
+        return is_array($assign) ? $row->assign($assign) : $row;
     }
 
     /**
      * Create Indi_Db_Table_Rowset object with some data, if passed
      *
      * @param array $input
-     * @return mixed
+     * @return Indi_Db_Table_Rowset
      */
     public function createRowset($input = array()) {
 
@@ -1028,11 +1054,11 @@ class Indi_Db_Table
                 if (array_key_exists($fieldR->alias, $data)) {
 
                     // We append value with related field alias to $set array
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', stripslashes($data[$fieldR->alias])) .'"';
 
                 // Else if column type is TEXT, we use field's default value as value for insertion
                 } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $fieldR->compiled('defaultValue')) .'"';
+                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', stripcslashes($fieldR->compiled('defaultValue'))) .'"';
 
             }
         }
@@ -1079,7 +1105,7 @@ class Indi_Db_Table
                     if (array_key_exists($fieldR->alias, $data))
 
                         // We append value with related field alias to $set array
-                        $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                        $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', stripslashes($data[$fieldR->alias])) .'"';
                 }
             }
 

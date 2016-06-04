@@ -24,6 +24,8 @@
     background-color: #ecffeb;
 }
 .x-boundlist-item .i-combo-color-box {width: 14px; height: 9px;}
+.x-boundlist-item .i-combo-color-box[style*="background: url"] {width: 16px; height: 16px;}
+
 .x-boundlist-item-group, .x-boundlist-item-group.x-boundlist-item-disabled {
     background-color: #dfe8f6;
     color: #0554c1;
@@ -47,6 +49,7 @@
 
 /* Combo color box */
 .i-combo .i-combo-color-box {width: 14px; height: 9px;}
+.i-combo .i-combo-color-box[style*="background: url"] {width: 16px; height: 15px;}
 
 /* Combo multiple selected items*/
 .i-combo .i-combo-multiple .i-combo-selected-item {

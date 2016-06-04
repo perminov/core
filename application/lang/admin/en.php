@@ -80,6 +80,7 @@ define('I_NAVTO_CREATE', 'Goto new row creation');
 define('I_NAVTO_NESTED', 'Goto nested objects');
 define('I_NAVTO_ROWINDEX', 'Goto row by #');
 
+define('I_ROWSAVE_ERROR_VALUE_REQUIRED', 'Field "%s" is required');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Value "%s" of field "%s" should not be greater than a 11-digit decimal');
@@ -151,6 +152,8 @@ define('I_FORM_DATETIME_SECONDS', 'seconds');
 define('I_COMBO_OF', 'of');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected options is');
 define('I_COMBO_MISMATCH_DISABLED_VALUE', 'The chosen option is not allowed as it is disabled');
+define('I_COMBO_KEYWORD_NO_RESULTS', 'Nothing found using this keyword');
+define('I_COMBO_ODATA_FIELD404', 'Field "%s" is neither real field nor pseudo field');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'The current section\'s scope of available rows');

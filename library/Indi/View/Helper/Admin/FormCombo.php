@@ -74,7 +74,7 @@ class Indi_View_Helper_Admin_FormCombo {
      * @return mixed
      */
     public function getDefaultValue() {
-        return $this->field->compiled('defaultValue');
+        return $this->getRow()->compileDefaultValue($this->name);
     }
 
     /**
@@ -123,17 +123,15 @@ class Indi_View_Helper_Admin_FormCombo {
      * Builds the combo
      *
      * @param $name
-     * @param null $tableName
-     * @param string $mode
      * @return string
      */
-    public function formCombo($name, $tableName = null, $mode = 'default') {
+    public function formCombo($name) {
 
         // Set name
         $this->name = $name;
 
         // Get field
-        $this->field = $this->getField($name, $tableName);
+        $this->field = $this->getField($name);
 
         // Get params
         $params = $this->field->params;
@@ -217,7 +215,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
         // Else if combo is mulptiple
-        } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && !$this->filter->any())) {
+        } else if ($this->field->storeRelationAbility == 'many' || ($this->filter && $this->filter->any())) {
 
             // Set value for hidden input
             $selected = array('value' => $selected);
@@ -247,7 +245,7 @@ class Indi_View_Helper_Admin_FormCombo {
         );
 
         // Setup tree flag in entity has a tree structure
-        if ($comboDataRs->model()->treeColumn()) $options['tree'] = true;
+        if ($comboDataRs->table() && $comboDataRs->model()->treeColumn()) $options['tree'] = true;
 
         // Setup groups for options
         if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
@@ -268,7 +266,7 @@ class Indi_View_Helper_Admin_FormCombo {
         foreach ($vars as $var) $this->$var = $$var;
 
         // If combo mode is 'extjs', we prepare a data object containing all involved info
-        if ($mode == 'extjs') $this->extjs($options);
+        $this->extjs($options);
     }
 
     /**
@@ -293,6 +291,7 @@ class Indi_View_Helper_Admin_FormCombo {
      */
     public function extjs($options) {
 
+        // Prepare view params
         $view = array(
             'subTplData' => array(
                 'satellite' => $this->satellite->alias,
@@ -302,16 +301,19 @@ class Indi_View_Helper_Admin_FormCombo {
             'store' => $options
         );
 
+        // Setup view data,related to currenty selected value(s)
         if ($this->isMultiSelect()) {
             $view['subTplData']['selected'] = $this->selected;
             foreach($this->comboDataRs->selected as $selectedR) {
-                $item = self::detectColor(array('title' => $selectedR->title));
+                $item = self::detectColor(array('title' => $selectedR->title()));
                 $item['id'] = $selectedR->{$this->keyProperty};
                 $view['subTplData']['selected']['items'][] = $item;
             }
         } else {
             $view['subTplData']['selected'] = self::detectColor($this->selected);
         }
+
+        // Assign view params
         $this->getRow()->view($this->field->alias, $view);
     }
 
@@ -328,7 +330,8 @@ class Indi_View_Helper_Admin_FormCombo {
         ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', is_string($option['value']) ? $option['value'] : '', $color)) ||
         ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['title'], $color)) ||
         ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $option['title'], $color)) ||
-        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color));
+        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color)) ||
+        ($b = preg_match('/^<span class="i-color-box" style="background: (url\(.*\));[^"]*"[^>]*>/', $option['title'], $color));
 
         // If color was detected somewhere
         if ($v || $t || $s || $b || $option['boxColor']) {

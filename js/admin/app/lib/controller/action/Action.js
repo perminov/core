@@ -162,7 +162,7 @@ Ext.define('Indi.lib.controller.action.Action', {
     push: function(itemCfgA, fnItemPrefix, allowNaO, adjust) {
 
         // Setup auxilliary variables
-        var me = this, itemA = [], itemI, fnItemI;
+        var me = this, itemA = [], itemI, $ItemI;
 
         // Build itemA array
         for (var i = 0; i < itemCfgA.length; i++) {
@@ -177,13 +177,14 @@ Ext.define('Indi.lib.controller.action.Action', {
             if (itemCfgA[i].hasOwnProperty('alias')) {
 
                 // Get the item's creator function name
-                fnItemI = fnItemPrefix + '$' + Indi.ucfirst(itemCfgA[i].alias);
+                $ItemI = fnItemPrefix + '$' + Indi.ucfirst(itemCfgA[i].alias);
 
                 // If such function exists and return value of that function call
-                if (typeof me[fnItemI] == 'function') itemI = me[fnItemI]();
+                if (typeof me[$ItemI] == 'function') itemI = me[$ItemI]();
+                else if (Ext.isObject(me[$ItemI])) itemI = me[$ItemI];
 
                 // If config is an object, merge itemI with it
-                if (Ext.isObject(itemCfgA[i]) && (itemI || typeof me[fnItemI] != 'function'))
+                if (Ext.isObject(itemCfgA[i]) && (itemI || typeof me[$ItemI] != 'function'))
                     Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
 
             // Else use as is

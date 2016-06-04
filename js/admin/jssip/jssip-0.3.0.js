@@ -3395,7 +3395,7 @@ RTCMediaHandler.prototype = {
       this.peerConnection.close();
 
       if(this.localMedia) {
-        this.localMedia.stop();
+        if (typeof this.localMedia.stop == 'function') this.localMedia.stop();
       }
     }
   },

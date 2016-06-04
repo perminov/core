@@ -73,9 +73,19 @@ class Indi_Db {
                 // Create it
                 self::$_instance = new self();
 
-                // Setup a PDO object
-                self::$_pdo = new PDO($arg->adapter . ':dbname=' . $arg->dbname . ';host=' . $arg->host,
-                    $arg->username, $arg->password);
+                // Try to create PDO instance
+                try {
+
+                    // Setup a PDO object
+                    @self::$_pdo = new PDO($arg->adapter . ':dbname=' . $arg->dbname . ';host=' . $arg->host,
+                        $arg->username, $arg->password);
+
+                // If something goes wrong
+                } catch (PDOException $e) {
+
+                    // Pass caught exception to the own handler
+                    self::$_instance->jerror($e);
+                }
 
                 // Setup encoding
                 self::$_instance->query('SET NAMES utf8');
@@ -408,21 +418,42 @@ class Indi_Db {
      */
     public function jerror($sql) {
 
-        // Get the native mysql error message
-        $errstr = array_pop(self::$_pdo->errorInfo());
+        // If $sql arg is an instance of PDOException class
+        if ($sql instanceof PDOException) {
 
-        // Prepend the sql query
-        $errstr = $sql . ' - ' . $errstr;
+            // Get error message
+            $errstr = preg_match('/WIN/', PHP_OS)
+                ? iconv('windows-1251', 'utf-8', $sql->getMessage())
+                : $sql->getMessage();
 
-        // Remove the useless shit
-        $errstr = str_replace('; check the manual that corresponds to your MySQL server version for the right syntax to use', '', $errstr);
-        $errstr = preg_replace('/at line [0-9]+/', '', $errstr);
+            $file = $sql->getFile();
+            $line = $sql->getLine();
 
-        // Get line and file
-        extract(array_pop(array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1, 1)));
+            // Set error code
+            $errcode = 3;
+
+        // Else
+        } else {
+
+            // Get the native mysql error message
+            $errstr = array_pop(self::$_pdo->errorInfo());
+
+            // Prepend the sql query
+            $errstr = $sql . ' - ' . $errstr;
+
+            // Remove the useless shit
+            $errstr = str_replace('; check the manual that corresponds to your MySQL server version for the right syntax to use', '', $errstr);
+            $errstr = preg_replace('/at line [0-9]+/', '', $errstr);
+
+            // Set error code
+            $errcode = 0;
+
+            // Get line and file
+            extract(array_pop(array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1, 1)));
+        }
 
         // Flush an error
-        iexit(jerror(0, $errstr, $file, $line));
+        iexit(jerror($errcode, $errstr, $file, $line));
     }
 
     /**

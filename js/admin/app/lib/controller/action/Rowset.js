@@ -7,7 +7,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     alternateClassName: 'Indi.Controller.Action.Rowset',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action',
+    extend: 'Indi.lib.controller.action.Action',
 
     // @inheritdoc
     mcopwso: ['store', 'rowset', 'south', 'panel'],
@@ -87,7 +87,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.onFilterChange(cmp);
 
         // Declare and fulfil an array with properties, available for each row in the rowset
-        var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
+        var columnA = []; if (me.ti().gridFields) for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
 
         // Declare an array for params, which will be fulfiled with filters's values
         var paramA = [];
@@ -183,15 +183,22 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Append `keyword` property to the request extra params
         if (keyword) extraParams.keyword = keyword;
 
-        // Append summary definition
-        var summary = me.rowsetSummary(); if (Ext.isObject(summary) && Ext.Object.getSize(summary))
-            extraParams.summary = JSON.stringify(summary);
+        // If me.rowsetSummary is a function
+        if (Ext.isFunction(me.rowsetSummary)) {
+
+            // Get summary definitions
+            var summary = me.rowsetSummary();
+
+            // Append them to extraParams
+            if (Ext.isObject(summary) && Ext.Object.getSize(summary))
+                extraParams.summary = JSON.stringify(summary);
+        }
 
         // Set extra params for store's proxy
         me.getStore().getProxy().extraParams = extraParams;
 
         // Adjust an 'url' property of  this.getStore().proxy object, to apply keyword search usage
-        me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/index/' +
+        me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/' +
             (me.ti(1).row ? 'id/' + me.ti(1).row.id + '/' : '') + 'format/json/';
 
         // Disable keyword component, if all available properties are already involved in search by
@@ -917,24 +924,33 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDockedInner$Actions: function() {
 
         // Setup auxillirary variables
-        var me = this, actionItemA = [], actionItem, actionItemCustom, actionItemCreate = me.panelDockedInner$Actions$Create();
+        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
 
         // Append 'Create' action button
-        if (actionItemCreate) actionItemA.push(actionItemCreate);
+        if (itemICreate) itemA.push(itemICreate);
 
         // Append other action buttons
         for (var i = 0; i < me.ti().actions.length; i++) {
-            actionItem = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
-            actionItemCustom = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (typeof me[actionItemCustom] == 'function') actionItem = me[actionItemCustom](actionItem);
-            if (actionItem) actionItemA.push(actionItem);
+
+            // Get default column config
+            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
+
+            // Apply custom config
+            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
         }
 
         // Push a separator
-        if (actionItemA.length) actionItemA.push('-');
+        if (itemA.length) itemA.push('-');
 
         // Return
-        return actionItemA;
+        return itemA;
     },
 
     /**
@@ -1046,18 +1062,17 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
     },
 
-    panelDockedInner$Actions$Toggle_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
-    },
-    panelDockedInner$Actions$Up_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
-    },
-    panelDockedInner$Actions$Down_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn) {
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
+        me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
+            params: {
+                'others[]': Ext.Array.remove(srs, row.get('id'))
+            }
+        });
     },
 
     /**
-     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandler,
+     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandlerLoad,
      * but it does not reload the whole panel - it just reload store only instead
      *
      * @param action
@@ -1066,7 +1081,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param btn
      */
     panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn, ajaxCfg) {
-        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn, Ext.merge({
+        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn, Ext.merge({
             success: function(response) {
                 var json = Ext.JSON.decode(response.responseText, true), page;
                 if (Ext.isObject(json) && (page = json.page)) me.getStore().loadPage(page);
@@ -1142,7 +1157,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }));
 
         // Else proceed standard behaviour
-        } else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
+        } else me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn);
     },
 
     /**
@@ -1152,7 +1167,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param row
      * @param aix
      */
-    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
+    panelDockedInner$Actions_DefaultInnerHandlerLoad: function(action, row, aix, btn, ajaxCfg) {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
@@ -1256,21 +1271,40 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeFieldA: function (){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, fieldA = [], fieldI$Id = me.storeField$Id(), fieldI, fieldICustom;
+        var me = this, itemA = [], itemI$Id = me.storeField$Id(), itemI, eItemX, itemX, eItem$, item$, fieldR, renderer;
 
         // Push 'id' store field to fields configs array
-        if (fieldI$Id) fieldA.push(fieldI$Id);
+        if (itemI$Id) itemA.push(itemI$Id);
 
         // Other fields
         for (var i = 0; i < me.ti().gridFields.length; i++) {
-            fieldI = me.storeField_Default(me.ti().fields.r(me.ti().gridFields[i].id));
-            fieldICustom = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
-            if (typeof me[fieldICustom] == 'function') fieldI = me[fieldICustom](fieldI);
-            if (fieldI) fieldA.push(fieldI);
+
+            // Get Indi Engine's field
+            fieldR = me.ti().fields.r(me.ti().gridFields[i].id);
+
+            // Get default field config
+            itemI = me.storeField_Default(fieldR);
+
+            // Apply specific control element config, as fields control elements/xtypes may be different
+            eItemX = 'storeFieldX' + Indi.ucfirst(fieldR.foreign('elementId').alias);
+            if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
+                itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI, fieldR) : me[eItemX];
+                itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
+            } else if (me[eItemX] === false) itemI = me[eItemX];
+
+            // Apply custom config
+            eItem$ = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI, fieldR) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
         }
 
         // Return array
-        return fieldA;
+        return itemA;
     },
 
     /**
@@ -1293,6 +1327,34 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      */
     storeField$Id: function() {
         return {name: 'id', type: 'int'}
+    },
+
+    /**
+     * Default config for date-fields
+     *
+     * @param field
+     * @param fieldR
+     * @return {Object}
+     */
+    storeFieldXCalendar: function (field, fieldR){
+        return {
+            type: 'date',
+            dateFormat: fieldR.params.displayFormat
+        }
+    },
+
+    /**
+     * Default config for datetime-fields
+     *
+     * @param field
+     * @param fieldR
+     * @return {Object}
+     */
+    storeFieldXDatetime: function (field, fieldR){
+        return {
+            type: 'date',
+            dateFormat: fieldR.params.displayDateFormat + ' ' + fieldR.params.displayTimeFormat
+        }
     },
 
     /**
@@ -1667,5 +1729,145 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Return
         return itemA;
+    },
+
+    /**
+     * Build and return an array, containing plugin definitions for rowset panel
+     *
+     * @return {Array}
+     */
+    rowsetPluginA: function() {
+        var me = this, itemA = [], itemI, eItem$, item$;
+
+        // Walk through desired plugins
+        me.rowset.$plugins.forEach(function(i){
+
+            // If plugin cfg has `alias` prop
+            if (i.alias) {
+
+                // Empty obj for now
+                itemI = i;
+
+                // Get member name, responsible for extended plugin cfg
+                eItem$ = 'rowsetPlugin$' + Indi.ucfirst(i.alias);
+
+                // Deal with extended cfg, whatever it is funcion, object or `false`
+                if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                    item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                    itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+                } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Else if plugin cfg has no 'alias' prop, but has 'ptype' prop - append it as is
+            } else if (i.ptype) itemI = i;
+
+            // Add
+            if (itemI) itemA.push(itemI);
+        });
+
+        // Return
+        return itemA;
+    },
+
+    /**
+     * Save dirty row
+     *
+     * @param record
+     * @param aix
+     */
+    recordRemoteSave: function(record, aix, $ti, callback) {
+        var me = this, ti = $ti || me.ti(), params, bool = [];
+
+        // If no changed was made - return
+        if (!record.dirty) return;
+
+        // Get changes
+        params = Ext.clone(record.getChanges());
+
+        // Convert values before submit
+        Object.keys(params).forEach(function(i){
+
+            // Boolean values to int values
+            if (Ext.isBoolean(params[i])) params[i] = params[i] ? 1 : 0;
+
+            // Process date values
+            if (Ext.isDate(params[i])) {
+                if (ti.fields.r(i, 'alias').foreign('elementId').alias == 'datetime') {
+                    params[i] = Ext.Date.format(params[i], 'Y-m-d H:i:s');
+                } else {
+                    params[i] = Ext.Date.format(params[i], 'Y-m-d');
+                }
+            }
+
+            // Process foreign key values
+            if (ti.fields.r(i, 'alias').storeRelationAbility != 'none') {
+                params[i] = record.key(i);
+            }
+        });
+
+        // Try to save via Ajax-request
+        Ext.Ajax.request({
+
+            // Params
+            url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/',
+            method: 'POST',
+            params: params,
+
+            // Success handler
+            success: function(response) {
+                var json, value, field;
+
+                // Parse response text
+                json = Ext.JSON.decode(response.responseText, true);
+
+                // If response contains info about affected fields
+                if (Ext.isObject(json) && Ext.isObject(json.affected)) {
+
+                    // Walk through affected fields
+                    Object.keys(json.affected).forEach(function(i){
+
+                        // If affected field's name starts with '_' - skip
+                        if (i.match(/^_/)) return;
+
+                        // If affected field's name starts with '$'
+                        if (i.match(/^\$/)) {
+
+                            // If affected field's name is '$keys' - update field's key values
+                            if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
+                                record.key(j, json.affected[i][j]);
+                            });
+
+                        // Update field's rendered values
+                        } else {
+
+                            // Shortcuts
+                            value = json.affected[i]; field = record.fields.get(i);
+
+                            // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
+                            if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
+
+                            // Set field's value
+                            record.set(i, value);
+                        }
+                    });
+                }
+
+                // Commit row
+                record.commit();
+
+                // Call callback
+                callback();
+            },
+
+            // Failure handler
+            failure: function(response) {
+
+                // General failure
+                Indi.ajaxFailure(response);
+
+                // Reject changes
+                record.reject();
+            }
+        });
     }
 });

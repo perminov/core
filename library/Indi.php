@@ -24,6 +24,7 @@ class Indi {
      */
     protected static $_logging = array(
         'jerror' => true,
+        'jflush' => false,
         'mflush' => false
     );
 
@@ -69,9 +70,9 @@ class Indi {
         'int11list' => '/^[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*$/',
         'bool' => '/^(0|1)$/',
         'time' => '/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/',
-        'double72' => '/^([1-9][0-9]{0,6}|0)(\.[0-9]{1,2})?$/',
-        'decimal112' => '/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/',
-        'decimal143' => '/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/',
+        'double72' => '/^([1-9][0-9]{0,6}|[0-9])(\.[0-9]{1,2})?$/',
+        'decimal112' => '/^(-?([1-9][0-9]{1,7}|[0-9]))(\.[0-9]{1,2})?$/',
+        'decimal143' => '/^(-?([1-9][0-9]{1,9}|[0-9]))(\.[0-9]{1,3})?$/',
         'datetime' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
         'urichunk' => '',
@@ -662,6 +663,51 @@ class Indi {
         'whitesmoke'=>'F5F5F5',
         'yellow'=>'FFFF00',
         'yellowgreen'=>'9ACD32'
+    );
+
+    /**
+     * Matches between recognized characters by date() and strftime() functions
+     *
+     * @var array
+     */
+    public static $date2strftime = array(
+        'd' => '%d',
+        'D' => '%a',
+        'j' => '%e',
+        'l' => '%A',
+        'N' => '%u',
+        'S' => '', // 'S' - is the 'st/nd/rd/th' day-suffix. There is no corresponding strftime-compatible character
+        'w' => '%w',
+        'z' => '%j', // (!) Note: 'z' - is from '0' to '365', in opposite to '%j' - from '001' to '366'
+        'W' => '%W',
+        'F' => '%B',
+        'm' => '%m',
+        'M' => '%b',
+        'n' => '%m', // (!) Note that 'n' - is non-zero-based, in oppisite to '%m' - is zero-based,
+        't' => '', // 't' - is the number of days on the given month. There is no corresponding strftime-compatible character
+        'L' => '', // 'L' - is the leap year indicator. There is no corresponding strftime-compatible character
+        'o' => '%g',
+        'Y' => '%Y',
+        'y' => '%y',
+        'a' => '%p',
+        'A' => '%P',
+        'B' => '', // 'B' - Swatch Internet time. There is no corresponding strftime-compatible character
+        'g' => '%l',
+        'G' => '%k',
+        'h' => '%I',
+        'H' => '%H',
+        'i' => '%M',
+        's' => '%S',
+        'u' => '', // 'u' - Microseconds. There is no corresponding strftime-compatible character
+        'e' => '', // 'e' - Timezone identifier. There is no corresponding strftime-compatible character
+        'I' => '', // 'I' - Daylight saving time flag. There is no corresponding strftime-compatible character
+        'O' => '%z',
+        'P' => '', // 'P' - Difference to Greenwich time (GMT) with colon between hours and minutes. There is no corresponding strftime-compatible character
+        'T' => '%Z',
+        'Z' => '', // 'Z' - Timezone offset in seconds. There is no corresponding strftime-compatible character
+        'c' => '', // 'c' - ISO 8601 date. There is no corresponding strftime-compatible character
+        'r' => '', // 'r' - RFC 2822 formatted date. There is no corresponding strftime-compatible character
+        'U' => ''// 'U' - Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT). There is no corresponding strftime-compatible character
     );
 
     /**
@@ -2109,7 +2155,7 @@ class Indi {
         if (func_num_args() == 1) return self::$_logging[$type];
 
         // If $flag arg is not boolean - return null
-        if (!is_bool($flag)) return null;
+        //if (!is_bool($flag)) return null;
 
         // Assign $flag as a value for item within self::$_log array, under $type key, and return it
         return self::$_logging[$type] = $flag;
@@ -2119,13 +2165,14 @@ class Indi {
      * @static
      * @param $type
      * @param $data
-     * @return mixed
+     * @param string|bool $mail
      */
-    public static function log($type, $data) {
+    public static function log($type, $data, $mail = true) {
 
         // General info
         $msg = 'Datetime: ' . date('Y-m-d H:i:s') . '<br>';
         $msg .= 'URI: ' . URI . '<br>';
+        $msg .= 'Remote IP: ' . $_SERVER['REMOTE_ADDR'] . '<br>';
 
         // Who?
         if (Indi::admin()->id) $msg .= 'Admin [id#' . Indi::admin()->id . ']: ' . Indi::admin()->title . '<br>';
@@ -2135,9 +2182,89 @@ class Indi {
         $msg .= '<br>' . print_r($data, true) . '<br>--------------------------------------<br><br>';
 
         // Mail
-        @mail('indi.engine@gmail.com', $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+        if ($mail) {
+
+            // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
+            $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';
+
+            // Check if Indi::logging($type) contains additional email addresses
+            if (is_string(Indi::logging($type)))
+                foreach(ar(Indi::logging($type)) as $ccI)
+                    if (Indi::rexm('email', $ccI))
+                        $mail .= ',' . $ccI;
+
+            // Send mail
+            @mail($mail, $type . ' happened at ' . $_SERVER['HTTP_HOST'], $msg, 'Content-Type: text/html; charset=utf-8');
+        }
 
         // If mailing failed - write to special *.log file
         i(str_replace(ar('<br>,<br/>,<br />'), "\n", $msg), 'a', 'log/' . $type . '.log');
+    }
+
+    /**
+     * Convert format options, compatible with date() function to options, compatible with strftime() function
+     *
+     * @param $format
+     * @return string
+     */
+    public static function date2strftime($format) {
+        return preg_replace_callback('/(' . implode('|', array_keys(Indi::$date2strftime)) .  ')/', function($m){
+            return Indi::$date2strftime[$m[1]];
+        }, $format);
+    }
+
+    /**
+     * Create and return a new instance of PHPMailer class,
+     * pre-configured with ->isHTML(true) and ->CharSet = 'UTF-8'
+     *
+     * @return PHPMailer
+     */
+    public static function mailer() {
+        $mail = new PHPMailer();
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+        if ($fe = Indi::ini('mail')->default->from->email) $mail->From = $fe;
+        if ($fn = Indi::ini('mail')->default->from->name)  $mail->FromName = $fn;
+        return $mail;
+    }
+
+    /**
+     * Get session data, related to current user
+     *
+     * @static
+     * @param string $prop
+     * @return array|PHPSTORM_HELPERS\object
+     */
+    public static function me($prop = null) {
+
+        // If session was not yet started
+        if (!session_id()) {
+
+            // Set cookie domain
+            Indi::uri()->setCookieDomain();
+
+            // Start session
+            session_start();
+        }
+
+        // Get session data, containing info about current logged-in admin
+        $me = (object) $_SESSION['admin'];
+
+        // If $mode args is explicitly given return session data, stored under $mode key within $_SESSION
+        return is_string($prop) ? $me->$prop : $me;
+    }
+
+    /**
+     * Detect absolute filepath for a relative one, checking
+     * 'www', 'coref' and 'core' folders as places of possible location
+     *
+     * @static
+     * @param $src
+     * @return string
+     */
+    public static function abs($src) {
+        foreach (ar('www,coref,core') as $rep)
+            if (file_exists($abs = DOC . STD . '/' . $rep . $src))
+                return $abs;
     }
 }

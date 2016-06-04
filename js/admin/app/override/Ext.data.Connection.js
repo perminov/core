@@ -16,16 +16,20 @@ Ext.override(Ext.data.Connection, {
                 responseText: '',
                 responseXML: null
             }, doc, contentNode,
-            phpErrors, json;
+            phpErrors, json, success = true;
 
         try {
             doc = frame.contentWindow.document || frame.contentDocument || window.frames[frame.id].document;
+            
             if (doc) {
+            
                 if (doc.body) {
 
-                    phpErrors = me.phpErrors(doc.body.innerHTML);
+                    phpErrors = me.phpErrors(doc.body.innerHTML, true);
+
                     if (phpErrors.length) {
                         var err = me.errorExplorer(phpErrors);
+                        success = false;
 
                         // Write php-errors to the console, additionally
                         if (console && (console.log || console.error))
@@ -39,6 +43,7 @@ Ext.override(Ext.data.Connection, {
                         });
                     } else if (doc.body.innerHTML.substr(0, 1).match(/[{\[]/)
                         && typeof (json = Ext.JSON.decode(doc.body.innerHTML, true)) == 'object') {
+                        if (json.hasOwnProperty('success')) success = json.success;
                         if (json.hasOwnProperty('msg')) {
                             Ext.Msg.show({
                                 title: Indi.lang[json.hasOwnProperty('success') && json.success ? 'I_MSG' : 'I_ERROR'],
@@ -72,9 +77,14 @@ Ext.override(Ext.data.Connection, {
         } catch (e) {
         }
 
-        me.fireEvent('requestcomplete', me, response, options);
+        if (success) {
+            me.fireEvent('requestcomplete', me, response, options);
+            Ext.callback(options.success, options.scope, [response, options]);
+        } else {
+            me.fireEvent('requestexception', me, response, options);
+            Ext.callback(options.failure, options.scope, [response, options]);
+        }
 
-        Ext.callback(options.success, options.scope, [response, options]);
         Ext.callback(options.callback, options.scope, [options, true, response]);
 
         setTimeout(function() {
@@ -131,7 +141,7 @@ Ext.override(Ext.data.Connection, {
                 && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object') {
                 if (json.hasOwnProperty('success')) success = json.success;
                 if (json.hasOwnProperty('msg')) {
-                    Ext.Msg.show(json.hasOwnProperty('confirm') ? {
+                    Ext.Msg[Ext.Msg.jflushFn](json.hasOwnProperty('confirm') ? {
                         title: Indi.lang.I_MSG,
                         msg: json.msg,
                         buttons: Ext.Msg.OKCANCEL,
@@ -185,10 +195,13 @@ Ext.override(Ext.data.Connection, {
      * @param rt Response text, for trying to find errors in
      * @return {Array} Found errors
      */
-    phpErrors: function(rt){
+    phpErrors: function(rt, entitiesEncoded){
 
         // If response text is empty - return false
         if (!rt.length) return ['Empty response'];
+        
+        // If `entitiesEncoded` arg is `true`, we decode back htmlentities
+        if (entitiesEncoded) rt = rt.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
         // Define variables
         var errorA = [], errorI;
@@ -212,14 +225,25 @@ Ext.override(Ext.data.Connection, {
     errorExplorer: function(errorOA, asStringsArray) {
 
         // Define auxilliary variables
-        var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query'}, type;
+        var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query', 3: 'MYSQL PDO'}, type;
 
         // Convert each error message object to a string
         for (var i = 0; i < errorOA.length; i++)
-            errorSA.push((type = typeO[errorOA[i].code] ? type + ': ' : '') + errorOA[i].text + ' at ' +
+            errorSA.push(((type = typeO[errorOA[i].code]) ? type + ': ' : '') + errorOA[i].text + ' at ' +
                 errorOA[i].file + ' on line ' + errorOA[i].line);
 
         // Return error strings array
         return errorSA;
+    }
+});
+
+// Small override for Ext.Msg
+Ext.override(Ext.Msg, {
+    jflushFn: 'show',
+    msgCt: null,
+    side: function(cfg){
+        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
+        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default msg"><p>' + cfg.msg + '</p></div>', true);
+        m.hide().slideIn('b').fadeOut({delay: 5000, remove: true});
     }
 });

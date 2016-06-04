@@ -30,7 +30,7 @@ Ext.define('Indi.lib.trail.Trail', {
 
         // At first, we strip newline characters, html '<br>' tags
         var title = item.row._system.title ?
-            item.row._system.title.toString().replace(/[\n\r]/g, '').replace(/<br>/g, ' ') : (item.row._title || 'No title');
+            item.row._system.title.toString().replace(/[\n\r]/g, '').replace(/<br>/g, ' ') : (item.row._title || 'id#' + item.row.id);
 
         // Detect color
         var colorDetected = title.match(/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i);
@@ -227,6 +227,12 @@ Ext.define('Indi.lib.trail.Trail', {
                     // created, hovewer, got from localization object, instead of actual action title
                     crumbA.push('<span>' + Indi.lang.I_CREATE + '</span>');
                 }
+
+            // Else if action is not 'index'
+            } else if (item.action.alias != 'index') {
+
+                // Push action title into crumbs
+                crumbA.push('<span>' + item.action.title + '</span>');
             }
         }
 
