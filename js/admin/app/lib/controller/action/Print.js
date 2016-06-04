@@ -32,6 +32,11 @@ Ext.define('Indi.lib.controller.action.Print', {
     },
 
     /**
+     * Omit south panel
+     */
+    south: false,
+
+    /**
      * Master toolbar 'Print' item, for ability to print the built document
      *
      * @return {Object}
