@@ -2,6 +2,13 @@
 class Indi_Controller {
 
     /**
+     * Encoding of contents, that will be sent to the client browser
+     *
+     * @var string
+     */
+    public $encoding = 'utf-8';
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -46,7 +53,7 @@ class Indi_Controller {
     public function dispatch() {
 
         // Setup the Content-Type header
-        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Type: text/html; charset=' . $this->encoding);
 
         // Do the pre-dispatch maintenance
         $this->preDispatch();
@@ -155,52 +162,70 @@ class Indi_Controller {
      * @return null|string
      */
     public function finalORDER($finalWHERE, $json = '') {
+
         // If no sorting params provided - ORDER clause won't be built
         if (!$json) return null;
 
-        // Extract column name and direction from json param
-        list($column, $direction) = array_values(current(json_decode($json, 1)));
+        // Array for ORDER clauses
+        $orderA = array();
 
-        // If no sorting is needed - return null
-        if (!$column) return null;
+        // Decode json
+        $jsonA = json_decode($json, 1);
 
-        // Find a field, that column is linked to
-        foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
+        // If json decode failed - return null
+        if (!is_array($jsonA)) return null;
 
-        // If no direction - set as ASC by default
-        if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
+        // Foreach level or sorting, detected within json
+        foreach ($jsonA as $jsonI) {
 
-        // If there is no grid field with such a name, return null
-        if ($fieldR->alias !== $column) return $column == 'id' ? '`' . $column . '` ' . $direction : null;
-        
-        // Setup a foreign rows for $fieldR's foreign keys
-        $fieldR->foreign('columnTypeId');
+            // Extract column name and direction from json param
+            //list($column, $direction) = array_values($jsonI);
+            $column = $jsonI['property']; $direction = $jsonI['direction'];
 
-        // If this is a simple column
-        if ($fieldR->storeRelationAbility == 'none') {
+            // If no sorting is needed - skip current and jump to next order clause candidate
+            if (!$column) continue;
 
-            // If sorting column type is BOOLEAN (use for Checkbox control element only)
-            if ($fieldR->foreign('columnTypeId')->type == 'BOOLEAN') {
+            // Find a field, that column is linked to
+            foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
 
-                // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
-                // values, depending on current language
-                return (Indi::ini('view')->lang == 'en'
-                    ? 'IF(`' . $column . '`, "' . I_YES .'", "' . I_NO . '") '
-                    : 'IF(`' . $column . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
+            // If no direction - set as ASC by default
+            if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
 
-                // Else build the simplest ORDER clause
-            } else {
-                return '`' . $column . '` ' . $direction;
+            // If there is no field with such a name
+            if ($fieldR->alias !== $column) {
+
+                // If column's name is 'id' create new item in $orderA array
+                if ($column == 'id') $orderA[] = '`' . $column . '` ' . $direction;
+                //return $column == 'id' ? '`' . $column . '` ' . $direction : null;
+                continue;
             }
 
-            // Else if column is storing single foreign keys
-        } else if ($fieldR->storeRelationAbility == 'one') {
+            // Setup a foreign rows for $fieldR's foreign keys
+            $fieldR->foreign('columnTypeId');
 
-            // If column is of type ENUM
-            if ($fieldR->foreign('columnTypeId')->type == 'ENUM') {
+            // If this is a simple column
+            if ($fieldR->storeRelationAbility == 'none') {
 
-                // Get a list of comma-imploded aliases, ordered by their titles
-                $set = Indi::db()->query($sql = '
+                // If sorting column type is BOOLEAN (use for Checkbox control element only)
+                if ($fieldR->foreign('columnTypeId')->type == 'BOOLEAN') {
+
+                    // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
+                    // values, depending on current language
+                    $orderA[] = (Indi::ini('view')->lang == 'en'
+                        ? 'IF(`' . $column . '`, "' . I_YES .'", "' . I_NO . '") '
+                        : 'IF(`' . $column . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
+
+                // Else build the simplest ORDER clause
+                } else $orderA[] = '`' . $column . '` ' . $direction;
+
+                // Else if column is storing single foreign keys
+            } else if ($fieldR->storeRelationAbility == 'one') {
+
+                // If column is of type ENUM
+                if ($fieldR->foreign('columnTypeId')->type == 'ENUM') {
+
+                    // Get a list of comma-imploded aliases, ordered by their titles
+                    $set = Indi::db()->query($sql = '
 
                     SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
                     FROM `enumset`
@@ -208,47 +233,50 @@ class Indi_Controller {
 
                 ')->fetchColumn(0);
 
-                // Build the order clause, using FIND_IN_SET function
-                return 'FIND_IN_SET(`' . $column . '`, "' . $set . '") ' . $direction;
+                    // Build the order clause, using FIND_IN_SET function
+                    $orderA[] = 'FIND_IN_SET(`' . $column . '`, "' . $set . '") ' . $direction;
 
                 // If column is of type (BIG|SMALL|MEDIUM|)INT
-            } else if (preg_match('/INT/', $fieldR->foreign('columnTypeId')->type)) {
+                } else if (preg_match('/INT/', $fieldR->foreign('columnTypeId')->type)) {
 
-                // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
-                if (!$fieldR->satellite || $fieldR->dependency != 'e') {
+                    // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
+                    if (!$fieldR->satellite || $fieldR->dependency != 'e') {
 
-                    // Get the possible foreign keys
-                    $setA = Indi::db()->query('
+                        // Get the possible foreign keys
+                        $setA = Indi::db()->query('
                         SELECT DISTINCT `' . $column . '` AS `id`
                         FROM `' . Indi::trail()->model->table() . '`
                         ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
                     ')->fetchAll(PDO::FETCH_COLUMN);
 
-                    // If at least one key was found
-                    if (count($setA)) {
+                        // If at least one key was found
+                        if (count($setA)) {
 
-                        // Setup a proper order of elements in $setA array, depending on their titles
-                        $setA = Indi::order($fieldR->relation, $setA);
+                            // Setup a proper order of elements in $setA array, depending on their titles
+                            $setA = Indi::order($fieldR->relation, $setA);
 
-                        // Build the order clause, using FIND_IN_SET function
-                        return 'FIND_IN_SET(`' . $column . '`, "' . implode(',', $setA) . '") ' . $direction;
-
-                        // Otherwise there will be no ORDER clause
-                    } else {
-                        return null;
+                            // Build the order clause, using FIND_IN_SET function
+                            $orderA[] = 'FIND_IN_SET(`' . $column . '`, "' . implode(',', $setA) . '") ' . $direction;
+                        }
                     }
                 }
             }
         }
+
+        // Return
+        return $orderA;
     }
 
     /**
      * Builds and returns a stack of WHERE clauses, that are representing grid's filters usage
      *
      * @param $FROM string table/model/entity name. Current model will be used by default
+     * @param $search string Special formatted string containing filters values like
+     *                       [{"field1":"val1"}, {"field2":"val2"}] . If not given - Indi::get()->search will be
+     *                       used by default
      * @return array
      */
-    public function filtersWHERE($FROM = '') {
+    public function filtersWHERE($FROM = '', $search = '') {
 
         // Setup model, that should have fields, mentioned as filtering params names
         $model = $FROM ? Indi::model($FROM) : Indi::trail()->model;
@@ -256,14 +284,17 @@ class Indi_Controller {
         // Defined an array for collecting data, that may be used in the process of building an excel spreadsheet
         $excelA = array();
 
+        // Use Indi::get()->search if $search arg is not given
+        $search = $search ?: Indi::get()->search;
+
         // Clauses stack
         $where = array();
 
         // If we have no 'search' param in query string, there is nothing to do here
-        if (Indi::get()->search) {
+        if ($search) {
 
             // Decode 'search' param from json to an associative array
-            $search = json_decode(Indi::get()->search, true);
+            $search = json_decode($search, true);
 
             // Foreach passed filter pair (alias => value)
             foreach ($search as $searchOnField) {
@@ -468,7 +499,7 @@ class Indi_Controller {
         $field = Indi::trail()->model->fields($for);
 
         // Get filter
-        $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
+        if (Indi::trail()->filters) $filter = Indi::trail()->filters->select($field->id, 'fieldId')->at(0);
 
         // Declare WHERE array
         $where = array();
@@ -488,7 +519,7 @@ class Indi_Controller {
             // Append part of WHERE clause, that will be involved in the process of fetching filter combo data
             $where[] = '`id` IN (' . (($in = Indi::db()->query('
                 SELECT DISTINCT `'. $for . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
-            )->fetchAll(PDO::FETCH_COLUMN)) ? implode(',', $in) : 0) . ')';
+            )->fetchAll(PDO::FETCH_COLUMN)) ? trim(implode(',', $in), ',') : 0) . ')';
         }
 
         // Setup a row
@@ -516,13 +547,16 @@ class Indi_Controller {
             $field = Indi_View_Helper_Admin_SiblingCombo::createPseudoFieldR(
                 $for, Indi::trail()->section->entityId, Indi::trail()->scope->WHERE);
             $this->row->$for = Indi::uri()->id;
-            $order = Indi::trail()->scope->ORDER;
+            $order = is_array(Indi::trail()->scope->ORDER) ? end(Indi::trail()->scope->ORDER) : Indi::trail()->scope->ORDER;
             $dir = array_pop(explode(' ', $order));
             $order = trim(preg_replace('/ASC|DESC/', '', $order), ' `');
             if (preg_match('/\(/', $order)) $offset = Indi::uri()->aix - 1;
 
-            // Else if options data is for combo, associated with a existing form field
+        // Else if options data is for combo, associated with a existing form field - pick that field
         } else $field = Indi::trail()->model->fields($for);
+
+        // If field having $for as it's `alias` was not found in existing fields, try to finв it within pseudo fields
+        if (!$field) $field = Indi::trail()->pseudoFields->field($for);
 
         // Prepare and flush json-encoded combo options data
         $this->_odata($for, $post, $field, null, $order, $dir, $offset);
@@ -542,6 +576,9 @@ class Indi_Controller {
      * @param string $offset
      */
     protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
+
+        // If field was not found neither within existing field, nor within pseudo fields
+        if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
         // Get combo data rowset
         $comboDataRs = $post->keyword
@@ -604,7 +641,7 @@ class Indi_Controller {
             $this->adjustGridDataRowset();
 
             // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData(Indi::trail());
+            $data = $this->rowset->toGridData(Indi::trail()->gridFields->column('alias'));
 
             // Adjust grid data
             $this->adjustGridData($data);
@@ -726,7 +763,7 @@ class Indi_Controller {
         $exclude = array_keys(Indi::obar());
 
         // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
-        return Indi::trail()->gridFields ? Indi::trail()->gridFields->keywordWHERE($keyword, $exclude) : array();
+        return Indi::trail()->{Indi::trail()->gridFields ? 'gridFields' : 'fields'}->keywordWHERE($keyword, $exclude);
     }
 
     /**

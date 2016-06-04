@@ -19,6 +19,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
      */
     public function __construct($sectionR, $level) {
 
+        // Call parent
+        parent::__construct();
+
         // Setup $this->section
         $config = array();
         $dataTypeA = array('original', 'temporary', 'compiled', 'foreign');
@@ -71,32 +74,64 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             $this->view();
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
-            if (Indi::uri('action') == 'index') {
-                $gridFieldA = array();
-                foreach ($sectionR->nested('grid') as $gridR) {
-                    foreach ($this->fields as $fieldR) {
-                        if ($gridR->fieldId == $fieldR->id) {
-                            $gridFieldI = $fieldR;
-                            if ($gridR->alterTitle) $gridFieldI->title = $gridR->alterTitle;
-                            $gridFieldA[] = $gridFieldI;
-                            $gridFieldAliasA[] = $gridFieldI->alias;
-                        }
-                    }
-                }
-                $this->gridFields = Indi::model('Field')->createRowset(array(
-                    'rows' => $gridFieldA,
-                    'aliases' => $gridFieldAliasA
-                ));
-                $this->grid = $sectionR->nested('grid');
-            }
+            if (Indi::uri('action') == 'index') $this->gridFields($sectionR);
 
+            // Setup disabled fields
             $this->disabledFields = $sectionR->nested('disabledField');
+
+            // Setup additional disabled fields, depend on the value of `mode` prop of entity's fields
+            foreach ($this->fields as $fieldR)
+                if (in($fieldR->mode, 'readonly,hidden'))
+                    $this->disabledFields->append(array(
+                        'fieldId' => $fieldR->id,
+                        'displayInForm' => (int) ($fieldR->mode == 'readonly')
+                    ));
 
         } else {
 
             // Setup action as 'index'
             foreach ($this->actions as $actionR) if ($actionR->alias == 'index') $this->action = $actionR;
         }
+    }
+
+    /**
+     * This function is responsible for preparing data related to grid columns/fields
+     *
+     * @param null $sectionR
+     * @return Indi_Db_Table_Rowset|null
+     */
+    public function gridFields($sectionR = null) {
+
+        // If $sectionR arg is not given / null / false / zero - use $this->section instead
+        if (!$sectionR) $sectionR = $this->section;
+
+        // Declare array for grid fields
+        $gridFieldA = array();
+
+        // Foreach nested `grid`  entry
+        foreach ($sectionR->nested('grid') as $gridR) {
+            foreach ($this->fields as $fieldR) {
+                if ($gridR->fieldId == $fieldR->id) {
+                    if (!$gridR->access || $gridR->access == 'all' || ($gridR->access == 'only' && in(Indi::admin()->profileId, $gridR->profileIds)) || ($gridR->access == 'except' && !in(Indi::admin()->profileId, $gridR->profileIds))) {
+                        $gridFieldI = $fieldR;
+                        $gridFieldA[] = $gridFieldI;
+                        $gridFieldAliasA[] = $gridFieldI->alias;
+                    }
+                }
+            }
+        }
+
+        // Build and assign `gridFields` prop
+        $this->gridFields = Indi::model('Field')->createRowset(array(
+            'rows' => $gridFieldA,
+            'aliases' => $gridFieldAliasA
+        ));
+
+        // todo: check do we need this line
+        $this->grid = $sectionR->nested('grid');
+
+        // Return
+        return $this->gridFields;
     }
 
     /**
@@ -203,7 +238,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             // Get the id
             $id = Indi::uri('action') == 'index' && $index == 1
                 ? Indi::uri('id')
-                : Indi::trail($index-1)->row->$connector;
+                : (preg_match('/,/', Indi::trail($index-1)->row->$connector) // ambiguous check
+                    ? $_SESSION['indi']['admin']['trail']['parentId'][$this->section->id]
+                    : Indi::trail($index-1)->row->$connector);
 
             // Add main item to WHERE clause stack
             $where[] = '`id` = "' . $id . '"';

@@ -137,8 +137,48 @@ function i($value, $type = 'w', $file = 'debug.txt') {
     // Get the absolute path of a file, that will be used for writing data to
     $abs = $doc . $std. '/www/' . $file;
 
-    // Write the data
-    $fp = fopen($abs, $type); ob_start(); print_r($value); echo "\n"; fwrite($fp, ob_get_clean()); fclose($fp);
+    // Renew the $dir, where we assume that output file is/will be located
+    // Here we do not use existing $dir value, because $file arg can be
+    // not only 'someOutputFile.txt', for example, but 'someSubDir/someOutputFile.txt' also
+    // e.g. it can contain additional (deeper) directory specification
+    $dir = Indi::dir(pathinfo($abs, PATHINFO_DIRNAME) . '/');
+
+    // If $dir is not a directory name
+    if (!Indi::rexm('dir', $dir)) {
+
+        // Backup logging mode for 'jerror'
+        $mode = Indi::logging('jerror');
+
+        // Disable logging for 'jerror'
+        Indi::logging('jerror', false);
+
+        // Flush error, containing message describing dir info: whether is ex
+        echo jerror(2, $dir, __FILE__, __LINE__);
+
+        // Revert back logging for 'jerror'
+        Indi::logging('jerror', $mode);
+
+    // Else if $abs file exists but not writable
+    } else if (file_exists($abs) && !is_writable($abs)) {
+
+        // Backup logging mode for 'jerror'
+        $mode = Indi::logging('jerror');
+
+        // Disable logging for 'jerror'
+        Indi::logging('jerror', false);
+
+        // Flush error message, saying that destination file is not writable
+        echo jerror(2, $abs . ' is not writable', __FILE__, __LINE__);
+
+        // Revert back logging for 'jerror'
+        Indi::logging('jerror', $mode);
+
+    // Else
+    } else {
+
+        // Write the data
+        $fp = fopen($abs, $type); fwrite($fp, print_r($value, true) . "\n"); fclose($fp);
+    }
 }
 
 /**
@@ -181,97 +221,54 @@ function usubstr($string, $length, $dots = true) {
 }
 
 /**
- * Get the string representation of the period, started at a moment, given by $datetime argument and current moment
+ * Get the string representation of the period, between dates
  *
- * @param $datetime
- * @param string $postfix
+ * @param string|int $date1 Can be formatted date or unix-timestamp
+ * @param string|int|null $date2 Can be formatted date or unix-timestamp. If not given, time() will be used instead
+ * @param string $mode Can be 'ago' or 'left'
  * @return string
  */
-function ago($datetime, $postfix = 'назад') {
+function ago($date1, $date2 = null, $mode = 'ago') {
 
-    // Get the current moment as timestamp
-    $curr = time();
+    // Convert $date1 and $date2 dates to unix-timestamps
+    $date1 = is_numeric($date1) ? $date1 : strtotime($date1);
+    $date2 = $date2 ? (is_numeric($date2) ? $date2 : strtotime($date2)) : time();
 
-    // Get the moment in the past as timestamp
-    $past = strtotime($datetime);
+    // If $curr date and $past
+    if ($date1 == $date2) return '';
+
+    // Setup $sign depend on whether $date2 is greater than $date1 and $mode is 'left' or 'ago'
+    if ($mode == 'left') {
+        $sign = $date2 < $date1 ? '' : '-';
+    } else if (!$mode || $mode == 'ago') {
+        $sign = $date2 > $date1 ? '' : '-';
+    }
 
     // Get the difference between them in seconds
-    $duration = $curr - $past;
+    $duration = max($date1, $date2) - min($date1, $date2);
 
     // Build an array of difference levels and their values
     $levelA = array(
         'Y' => date('Y', $duration) - 1970,
         'n' => date('n', $duration) - 1,
         'j' => date('j', $duration) - 1,
-        'G' => date('G', $duration) - 4,
+        'G' => date('G', $duration) - 3,
         'i' => trim(date('i', $duration), '0'),
         's' => trim(date('s', $duration), '0')
     );
 
     // Build an array of difference levels quantity spelling, depends on their values
-    $spellA = array(
-        'Y' => array('0,5-9,11-19' => 'лет', '1' => 'год', '2-4' => 'года'),
-        'n' => array('0,5-9,11-19' => 'месяцев', '1' => 'месяц', '2-4'     => 'месяца'),
-        'j' => array('0,5-9,11-19' => 'дней', '1' => 'день', '2-4' => 'дня'),
-        'G' => array('0,5-9,11-19' => 'часов', '1' => 'час', '2-4' => 'часа'),
-        'i' => array('0,5-9,11-19' => 'минут', '1' => 'минута', '2-4' => 'минуты'),
-        's' => array('0,5-9,11-19' => 'секунд','1' => 'секунда', '2-4' => 'секунды')
+    $tbqA = array(
+        'Y' => 'лет,год,года',
+        'n' => 'месяцев,месяц,месяца',
+        'j' => 'дней,день,дня',
+        'G' => 'часов,час,часа',
+        'i' => 'минут,минута,минуты',
+        's' => 'секунд,секунда,секунды'
     );
 
-    // Foreach difference level
-    foreach ($levelA as $levelK => $levelV) {
-
-        // If level value is non-zero
-        if ($levelV) {
-
-            // Set $part variable as level value
-            $part = $levelV;
-
-            // Get the array of spell rules for current level key
-            $format = $spellA[$levelK];
-
-            // Foreach spell rule
-            foreach ($format as $digits => $lang) {
-
-                // Get the spans array for the current spell rule
-                $spanA = explode(',', $digits);
-
-                // Foreach span
-                for ($k = 0; $k < count($spanA); $k ++)
-
-                    // If current span is not a true span, e.g is a single digit
-                    if (strpos($spanA[$k], '-') === false) {
-
-                        // If difference value ends with a digit, that is the same as current span
-                        if (preg_match('/' . $spanA[$k] . '$/', $part))
-
-                            // Return difference value, with appended spell format and postfix
-                            return $part . ' ' . $format[$digits] . ' ' . $postfix;
-
-                    // Else if current span isa true span, e.g is not a single digit
-                    } else {
-
-                        // Get the span start and end digits, e.g interval
-                        $interval = explode('-', $spanA[$k]);
-
-                        // Foreach digit within that interval
-                        for ($m = $interval[0]; $m <= $interval[1]; $m++)
-
-                            // If difference level value ends with current digit within current interval
-                            if (preg_match('/' . $m . '$/', $part))
-
-                                // Return difference value, with appended spell format and postfix
-                                return $part . ' ' . $format[$digits] . ' ' . $postfix;
-                    }
-            }
-
-            // Break
-            break;
-        }
-    }
-
-    // Return
-    return 'только что';
+    // Foreach difference level, check if it is has non-zero value and return correct spelling
+    foreach ($levelA as $levelK => $levelV) if ($levelV) return $sign . tbq($levelV, $tbqA[$levelK]);
 }
 
 /**
@@ -460,13 +457,46 @@ function grs($length = 15, $useSpecialChars = false) {
 /**
  * Build a localized date
  *
- * @param $format
- * @param $date
+ * @param string $format
+ * @param string $date
+ * @param string|array $when
  * @return string
  */
-function ldate($format, $date) {
-    $formatted = strftime($format, strtotime($date));
-    return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
+function ldate($format, $date, $when = '') {
+
+    // If strftime's format syntax is used
+    if (preg_match('/%/', $format)) {
+
+        // Format date
+        $formatted = strftime($format, strtotime($date));
+
+        // Return
+        return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
+
+    // Else
+    } else {
+
+        // Get localized date
+        $date = ldate(Indi::date2strftime($format), $date);
+
+        // Force Russian-style month name endings
+        foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
+            $date = preg_replace('/' . $s . '\b/u', $r, $date);
+            $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
+            $date = preg_replace('/' . $s . '$/u', $r, $date);
+        }
+
+        // Force Russian-style weekday name endings, suitable for version, spelling-compatible for question 'When?'
+        if (in('weekday', ar($when)))
+            foreach (array('а' => 'у') as $s => $r) {
+                $date = preg_replace('/' . $s . '\b/u', $r, $date);
+                $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
+                $date = preg_replace('/' . $s . '$/u', $r, $date);
+            }
+
+        // Return
+        return $date;
+    }
 }
 
 /**
@@ -693,7 +723,7 @@ function un($array, $unset, $strict = true, $preserveKeys = false) {
 /**
  * Convert number to string representation
  */
-function num2str($num) {
+function num2str($num, $iunit = true, $dunit = true) {
     if(!function_exists('num2str_')){function num2str_($n,$f1,$f2,$f5){$n=abs(intval($n))%100;if($n>10&&$n<20)return$f5;
     $n=$n%10;if($n>1&&$n<5)return$f2;if($n==1)return $f1;return $f5;}}
     $nul='ноль';$ten=array(array('','один','два','три','четыре','пять','шесть','семь','восемь','девять'),array('','одна',
@@ -706,8 +736,8 @@ function num2str($num) {
     if(intval($rub)>0){foreach(str_split($rub,3)as$uk=>$v){if(!intval($v))continue;$uk=sizeof($unit)-$uk-1;$gender=$unit
     [$uk][3];list($i1,$i2,$i3)=array_map('intval',str_split($v,1));$out[]=$hundred[$i1];if($i2>1)$out[]=$tens[$i2].' '.
     $ten[$gender][$i3];else$out[]=$i2>0?$a20[$i3]:$ten[$gender][$i3];if($uk>1)$out[]=num2str_($v,$unit[$uk][0],$unit[$uk][1],
-    $unit[$uk][2]);}}else$out[]=$nul;$out[]=num2str_(intval($rub), $unit[1][0],$unit[1][1],$unit[1][2]);$out[]=$kop.' '.
-    num2str_($kop,$unit[0][0],$unit[0][1],$unit[0][2]);return trim(preg_replace('/ {2,}/',' ',join(' ',$out)));
+    $unit[$uk][2]);}}else$out[]=$nul;if($iunit)$out[]=num2str_(intval($rub), $unit[1][0],$unit[1][1],$unit[1][2]);if($dunit)
+    $out[]=$kop.' '.num2str_($kop,$unit[0][0],$unit[0][1],$unit[0][2]);return trim(preg_replace('/ {2,}/',' ',join(' ',$out)));
 }
 
 /**
@@ -744,6 +774,9 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Flush contents
     echo json_encode($flush);
+
+    // Log this error if logging of 'jerror's is turned On
+    if (Indi::logging('jflush')) Indi::log('jflush', $flush);
 
     // Exit if need
     if ($die) iexit();

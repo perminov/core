@@ -30,6 +30,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }],
 
         /**
+         * Plugins
+         */
+        $plugins: [{alias: 'cellediting'}],
+
+        /**
          * Docked items special config
          */
         docked: {
@@ -51,6 +56,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
+                },
+                cellmouseover: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
+                    if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
+                        Ext.get(td).addCls('i-overflow').selectable();
+                },
+                cellmouseout: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
+                    Ext.get(td).removeCls('i-overflow');
                 }
             }
         },
@@ -70,8 +82,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
             selectionchange: function (selectionModel, selectedRows) {
 
                 // Refresh summary row
-                if (this.multiSelect && selectionModel.view.getFeature(0).ftype == 'summary')
-                    selectionModel.view.getFeature(0).refresh();
+                if (this.multiSelect && selectionModel.view.getFeature('summary')) {
+                    selectionModel.views.forEach(function(view){
+                        view.getFeature('summary').refresh();
+                    });
+                }
 
                 if (selectedRows.length > 0)
                     Ext.Array.each(selectedRows, function (row) {
@@ -80,12 +95,46 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     });
             },
             itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) {
+                    this.view.dblclick = true;
+                    btn.press();
+                }
             },
 
             itemclick: function() {
-                if (Ext.EventObject.ctrlKey) {
+                if (Ext.EventObject.ctrlKey && !this.multiSelect) {
                     var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
+                }
+            },
+
+            cellclick: function(gridview, tdDom, cellIndex, record, trDom, rowIndex, e) {
+                var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
+                    dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
+                    enumset = field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
+                    canSave = me.ti().actions.r('save', 'alias'), cb;
+
+                // If 'Save' action is accessible, and column is linked to 'enumset' field
+                // and that field is not in the list of disabled fields - provide some kind
+                // of cell-editor functionality, so enumset values can be switched from one to another
+                if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
+                    && field.storeRelationAbility == 'one'
+                    && (col.allowCycle !== false || enumset.length <= 2)) {
+
+                    s = me.getStore();
+                    value = record.key(dataIndex);
+                    valueItem = enumset.r(value, 'alias');
+                    enumset.forEach(function(item, i){
+                        if (item.alias == value) valueItemIndex = i;
+                        if (item.title.match(/i-color-box/)) cb = true;
+                    });
+                    if (!cb) return;
+                    valueItemIndex ++;
+                    valueItemIndex = valueItemIndex > enumset.length - 1 ? 0 : valueItemIndex;
+                    valueItem = enumset[valueItemIndex];
+                    value = valueItem.alias;
+                    record.key(dataIndex, value);
+                    record.set(dataIndex, valueItem.title.replace(/(<\/span>).*$/, '\1'));
+                    me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti());
                 }
             }
         }
@@ -106,25 +155,24 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     gridColumnDefault: function(field, column) {
-        var me = this, tooltip = column.tooltip || (field && field.tooltip);
+        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [];
+
+        // Setup align
+        tdClsA.push('i-grid-column-align-' + ((field.storeRelationAbility == 'none' &&
+            [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left'));
+
+        // Setup presence of .i-grid-column-enumset
+        if (parseInt(field.relation) == 6) tdClsA.push('i-grid-column-enumset');
 
         // Default column config
         return {
             id: me.bid() + '-rowset-grid-column-' + field.alias,
-            header: field.title,
+            header: column.alterTitle || field.title,
             dataIndex: field.alias,
-            tooltip: tooltip,
+            tooltip: tooltip ? {html: tooltip, constrainParent: false, constrainPosition: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
-            sortable: true,
-            align: function(){
-                return (field.storeRelationAbility == 'none' &&
-                    [3,5,14].indexOf(parseInt(field.columnTypeId)) != -1) ? 'right' : 'left';
-            }(),
-            renderer: function (value) {
-                if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
-                if (String(value).match(/ class="i-color-box"/)) return '<div class="i-color-box-wrap">'+value+'</div>';
-                return value;
-            }
+            tdCls: tdClsA.join(' '),
+            sortable: true
         }
     },
 
@@ -142,25 +190,230 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Recursively build the columns
         columnA = columnA.concat(me.gridColumnADeep(me.ti().grid));
 
-        if (!columnA[1].columns) columnA[1].flex = 1;
+        if (columnA[1] && !columnA[1].columns && !columnA[1].locked) columnA[1].flex = 1;
 
         return columnA;
     },
 
+    ////////////////////////////////
+    // Grid column cell renderers //
+    ////////////////////////////////
+
+    /**
+     * Default renderer for text columns
+     *
+     * @param value
+     * @return {*}
+     */
+    gridColumnRenderer_Text: function (value) {
+        if (String(value).match(/<\?/)) return Ext.util.Format.htmlEncode(value);
+        if (String(value).match(/ class="i-color-box"/))
+            return String(value).match(/ class="i-color-box" style="background:\surl\(/)
+                ? '<div class="i-bgimg-box-wrap">'+value+'</div>'
+                : '<div class="i-color-box-wrap">'+value+'</div>';
+        return value;
+    },
+
+    /**
+     * Default renderer for numeric columns
+     *
+     * @param v
+     * @param m
+     * @param r
+     * @param i
+     * @param c
+     * @param s
+     * @return {*}
+     */
+    gridColumnRenderer_Numeric: function(v, m, r, i, c, s) {
+        var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
+        if (column.displayZeroes === false && parseFloat(v) == 0) return '';
+        return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
+    },
+
+    /**
+     * Renderer fn for string-columns
+     *
+     * @return {*}
+     */
+    gridColumnXString_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for combo-columns
+     *
+     * @return {*}
+     */
+    gridColumnXCombo_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for textarea-columns
+     *
+     * @return {*}
+     */
+    gridColumnXTextarea_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for radio-columns
+     *
+     * @return {*}
+     */
+    gridColumnXRadio_Renderer: function() {
+        return this.ctx().gridColumnRenderer_Text.apply(this, arguments);
+    },
+
+    /**
+     * Renderer fn for number-columns
+     *
+     * @return {*}
+     */
+    gridColumnXNumber_Renderer: function(v) {
+        return this.ctx() ? this.ctx().gridColumnRenderer_Numeric.apply(this, arguments) : v;
+    },
+
+    /**
+     * Renderer fn for price-columns
+     *
+     * @return {*}
+     */
+    gridColumnXPrice_Renderer: function(v) {
+        return this.ctx() ? this.ctx().gridColumnRenderer_Numeric.apply(this, arguments) : v;
+    },
+
+    /**
+     * Renderer fn for decimal143-columns
+     *
+     * @return {*}
+     */
+    gridColumnXDecimal143_Renderer: function(v) {
+        return this.ctx() ? this.ctx().gridColumnRenderer_Numeric.apply(this, arguments) : v;
+    },
+
+    /**
+     * Default editor config for string-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXString_Editor: function(column, field) {
+        return {
+            xtype: 'textfield',
+            allowBlank: true,
+            margin: '0 2 0 3',
+            height: 18
+        }
+    },
+
+    /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXNumber_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            height: 18
+        }
+    },
+
+    /**
+     * Default editor config for date-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXCalendar_Editor: function(column, field) {
+        return {
+            xtype: 'datefield',
+            hideTrigger: true,
+            height: 18,
+            format: field.params.displayFormat
+        }
+    },
+
+    /**
+     * Default editor config for datetime-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDatetime_Editor: function(column, field) {
+        return {
+            xtype: 'datetimefield',
+            hideTrigger: true,
+            height: 18,
+            format: field.params.displayDateFormat
+        }
+    },
+
+    /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXPrice_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            decimalPrecision: 2,
+            precisionPad: true,
+            height: 18
+        }
+    },
+
+    /**
+     * Default editor config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDecimal143_Editor: function(column, field) {
+        return {
+            xtype: 'numberfield',
+            hideTrigger: true,
+            decimalPrecision: 3,
+            precisionPad: true,
+            height: 18
+        }
+    },
+
+    /**
+     * Default config for number-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
     gridColumnXNumber: function(column, field) {
         return {
             thousandSeparator: ' ',
             decimalSeparator: '.',
             decimalPrecision: 0,
-            displayZeroes: true,
-            renderer: function(v, m, r, i, c, s) {
-                var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
-                if (column.displayZeroes === false && parseFloat(v) == 0) return '';
-                return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-            }
+            displayZeroes: true
         }
     },
 
+    /**
+     * Default config for price-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
     gridColumnXPrice: function(column, field) {
         return Ext.merge(this.gridColumnXNumber(column, field), {
             displayZeroes: true,
@@ -168,6 +421,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
     },
 
+    /**
+     * Default config for decimal143-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
     gridColumnXDecimal143: function(column, field) {
         return Ext.merge(this.gridColumnXNumber(column, field), {
             displayZeroes: true,
@@ -175,9 +435,47 @@ Ext.define('Indi.lib.controller.action.Grid', {
         });
     },
 
-    gridColumnXMove: function(column, field) {
+    /**
+     * Default config for move-columns
+     */
+    gridColumnXMove: {hidden: true},
+
+    /**
+     * Default config for move-columns
+     */
+    gridColumn$Toggle: function(){
         return {
-            hidden: true
+            cls: 'i-column-header-icon',
+            header: '<img src="' + Indi.std + '/i/admin/btn-icon-toggle.png">',
+            tooltip: arguments[0].tooltip || arguments[0].header
+        }
+    },
+
+    /**
+     * Default config for date-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXCalendar: function(column, field) {
+        return {
+            xtype: 'datecolumn',
+            format: field.params.displayFormat
+        }
+    },
+
+    /**
+     * Default config for datetime-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXDatetime: function(column, field) {
+        return {
+            xtype: 'datecolumn',
+            format: field.params.displayDateFormat + ' ' + field.params.displayTimeFormat
         }
     },
 
@@ -189,7 +487,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnADeep: function(colA) {
-        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX;
+        var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
+            eColumnXRenderer, eColumnXEditor;
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -218,8 +517,22 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         if (Ext.merge(columnI, {hidden: false}))
                             break;
 
+                // If `alias` prop of `colI` is not empty
+                if (colI.alias) {
+
+                    // Use it to build an explicit id
+                    columnI.id = me.bid() + '-rowset-grid-column-' + colI.alias;
+
+                    // Apply column custom config
+                    eColumn$ = 'gridColumn$' + Indi.ucfirst(colI.alias);
+                    if (Ext.isFunction(me[eColumn$]) || Ext.isObject(me[eColumn$])) {
+                        column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
+                        columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                    } else if (me[eColumn$] === false) columnI = me[eColumn$];
+                }
+
                 // Add column
-                columnA.push(columnI);
+                if (columnI) columnA.push(columnI);
 
             // Else
             } else {
@@ -241,6 +554,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 } else if (me[eColumn$] === false) columnI = me[eColumn$];
 
+                // Apply renderer
+                if (Ext.isObject(columnI) && columnI.renderer === undefined) {
+                    eColumnXRenderer = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Renderer';
+                    if (Ext.isFunction(me[eColumnXRenderer])) columnI.renderer = me[eColumnXRenderer];
+                }
+
                 // Apply string-summary, if column's non-empty `summaryText` property detected
                 if (Ext.isObject(columnI) && columnI.summaryText) {
                     columnI.summaryRenderer = function(value, summaryData, dataIndex) {
@@ -253,6 +572,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (Ext.isObject(columnI) && columnI.summaryType && typeof me[eColumnSummaryX] == 'function') {
                     column$ = me[eColumnSummaryX](columnI, field);
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
+                }
+
+                // Apply editor
+                if (Ext.isObject(columnI) && columnI.editor) {
+                    eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
+                    if (Ext.isFunction(me[eColumnXEditor]) || Ext.isObject(me[eColumnXEditor])) {
+                        columnI.editor = Ext.isFunction(me[eColumnXEditor]) ? me[eColumnXEditor](columnI, field, Ext.isObject(columnI.editor) ? columnI.editor : {}) : me[eColumnXEditor];
+                    } else if (!Ext.isObject(columnI.editor)) {
+                        columnI.editor = false;
+                    }
                 }
 
                 // Add column
@@ -282,12 +611,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // force summary to be calculated for selected rows only
                 if (selectedRows.getCount() > 1 && !column.summaryText) {
 
-                    // Get tr
-                    tr = grid.view.el.down('tr.x-grid-row-summary');
-
                     // Apply summary cell style
                     Ext.defer(function(){
-                        td = tr.down('td.x-grid-cell-' + grid.id + '-column-' + dataIndex);
+                        // Get tr
+                        tr = grid.view.el.down('tr.x-grid-row-summary');
+                        td = tr.down('td.x-grid-cell-' + grid.ctx().rowset.id + '-column-' + dataIndex);
                         td.addCls('x-grid-cell-selected');
                     }, 1);
 
@@ -318,7 +646,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     /**
      * Adjust grid columns widths, for widths to match column contents
      */
-    gridColumnAFit: function(grid) {
+    gridColumnAFit: function(grid, locked) {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
@@ -339,12 +667,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
             visible = grid.getWidth() - (view.hasScrollY() ? 16 : 0);
 
             // Get sumary feature
-            summaryFeature = view.getFeature(0);
+            summaryFeature = view.getFeature('summary');
 
         // Else
         } else {
 
-            // Pass exection directly to non-locked part of grid
+            // Pass exection directly to locked and non-locked part of grid
+            me.gridColumnAFit(view.lockedGrid, true);
             me.gridColumnAFit(view.normalGrid);
 
             // Return
@@ -352,7 +681,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Get summary data
-        if (summaryFeature && summaryFeature.ftype == 'summary') summaryData = summaryFeature.generateSummaryData();
+        if (summaryFeature) summaryData = summaryFeature.generateSummaryData();
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
@@ -360,30 +689,42 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // Get initial column width, based on a column title metrics
             widthA[i] = Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
 
-            // Increase the width of a column, that store is sorted by, to provide an additional amount
-            // of width for sort icon, that is displayed next after column title, within the same column
-            if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
-
             // Reset length
             longest = '';
 
-            // Get the longest (within current column) cell contents
-            store.each(function(r){
-                cell = typeof columnA[i].renderer == 'function'
-                    ? columnA[i].renderer(r.get(columnA[i].dataIndex))
-                    : r.get(columnA[i].dataIndex);
-                if (cell && cell.length > longest.length) longest = cell;
-            });
+            // If columns does not have a dataIndex - skip this iteration
+            if (columnA[i].dataIndex) {
 
-            // Don't forgot about summaries
-            if (columnA[i].summaryType && Ext.isObject(summaryData)) {
-                cell = typeof columnA[i].renderer == 'function'
-                    ? columnA[i].renderer(summaryData[columnA[i].id])
-                    : summaryData[columnA[i].id];
-                if (cell.length > longest.length) longest = cell;
-            } else if (columnA[i].summaryText) {
-                cell = columnA[i].summaryText;
-                if (cell.length > longest.length) longest = cell;
+                // Increase the width of a column, that store is sorted by, to provide an additional amount
+                // of width for sort icon, that is displayed next after column title, within the same column
+                if (columnA[i].dataIndex == me.ti().section.defaultSortFieldAlias) widthA[i] += px.sort;
+
+                // Get the longest (within current column) cell contents
+                store.each(function(r){
+                    cell = typeof columnA[i].renderer == 'function'
+                        ? columnA[i].renderer(r.get(columnA[i].dataIndex))
+                        : r.get(columnA[i].dataIndex);
+                    if (cell && cell.length > longest.length &&
+                        (!cell.match(/class="i-color-box"/) || (cell = Indi.stripTags(cell)).length > longest.length))
+                        longest = cell;
+                });
+
+                // Don't forgot about summaries
+                if (columnA[i].summaryType && Ext.isObject(summaryData)) {
+                    cell = typeof columnA[i].renderer == 'function'
+                        ? columnA[i].renderer(summaryData[columnA[i].id])
+                        : summaryData[columnA[i].id];
+                    if (cell.length > longest.length) longest = cell;
+                } else if (columnA[i].summaryText) {
+                    cell = columnA[i].summaryText;
+                    if (cell.length > longest.length) longest = cell;
+                }
+
+            // Else if column does not have `dataIndex` prop
+            } else {
+
+                // If column's xtype is 'rownumberer'
+                if (columnA[i].xtype == 'rownumberer') longest = store.getTotalCount().toString();
             }
 
             // Get width of the longest cell
@@ -458,7 +799,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Increase first non-hidden column's width, if free space is available
-        columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
+        if (locked) {
+            columnA[0].setWidth(widthA[0]);
+            if (columnA[1]) columnA[1].setWidth(widthA[1]);
+        } else {
+            columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
+        }
 
         // If current grid view is not consists from locked and non-locked parts - resume layouts
         if (view.headerCt) Ext.resumeLayouts(true);
@@ -483,7 +829,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Setup last row autoselection, if need
-        if (me.ti().scope.aix) {
+        /*if (me.ti().scope.aix) {
 
             // Calculate row index value, relative to current page
             var index = parseInt(me.ti().scope.aix) - 1 - (parseInt(me.ti().scope.page) - 1) *
@@ -491,6 +837,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
             // If such row (row at that index) exists in grid - selectit
             if (grid.getStore().getAt(index)) grid.selModel.select(index, true);
+        }*/
+
+        if (Ext.isArray(me.ti().scope.lastIds)) {
+            me.ti().scope.lastIds.forEach(function(id){
+                if (grid.getStore().getById(parseInt(id))) {
+                    grid.selModel.select(grid.getStore().getById(parseInt(id)), true);
+                }
+            });
         }
 
         // Adjust grid column widths
@@ -700,8 +1054,21 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return this.rowsetExportColumnA();
     },
 
+    /**
+     * Detect grid's columns that should be exported
+     *
+     * @return {Array}
+     */
     rowsetExportColumnA: function() {
-        return Ext.getCmp(this.rowset.id).headerCt.getGridColumns().select(false, 'hidden');
+        var me = this, grid = Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [];
+
+        // Apply a workaround for cases when grid has locked columns
+        if (view.headerCt) columnA = view.headerCt.getGridColumns(); else {
+            if (view.lockedView) columnA = columnA.concat(view.lockedView.headerCt.getGridColumns());
+            if (view.normalView) columnA = columnA.concat(view.normalView.headerCt.getGridColumns());
+        }
+
+        return columnA.select(false, 'hidden');
     },
 
     rowsetExport$ExcelColumnA: function() {
@@ -869,6 +1236,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             columns: me.gridColumnA(),
             store: me.getStore(),
             dockedItems: me.rowsetDockedA(),
+            plugins: me.rowsetPluginA(),
             listeners: {
                 boxready: function() {
                     me.gridColumnAFit();
@@ -884,5 +1252,45 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Attach key map
         me.keyMap();
+    },
+
+    /**
+     * Config for 'cellediting' grid plugin
+     */
+    rowsetPlugin$Cellediting: {
+        ptype: 'cellediting',
+        triggerEvent: 'cellsecondclick',
+        listeners: {
+            edit: function(editor, e) {
+                var grid = editor.grid, ctx = grid.ctx();
+
+                // Make sure pressing ENTER will not cause call of it's ordinary handler
+                grid.preventEnter = true;
+
+                // Try to save
+                ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(){
+                    var cell = editor.view.getCellByPosition({
+                        column: e.colIdx,
+                        row: e.rowIdx
+                    });
+                    Ext.fly(cell).addCls('i-grid-cell-editor-focus');
+                });
+            }
+        }
+    },
+
+    /**
+     * 'checkchange' listener, for use with 'xtype: checkcolumn'
+     *
+     * @param checkcolumn
+     * @param rowIndex
+     * @param checked
+     * @param eOpts
+     */
+    gridColumnCheckChange: function(checkcolumn, rowIndex, checked, eOpts) {
+        var me = this.ctx(), s = me.getStore(), r = s.getAt(rowIndex), aix = s.indexOfTotal(r) + 1;
+
+        // Try to save
+        me.recordRemoteSave(r, aix);
     }
 });

@@ -80,6 +80,7 @@ define('I_NAVTO_CREATE', 'Перейти к созданию новой запи
 define('I_NAVTO_NESTED', 'Перейти к списку вложенных записей');
 define('I_NAVTO_ROWINDEX', 'Перейти к записи #');
 
+define('I_ROWSAVE_ERROR_VALUE_REQUIRED', 'Поле "%s" обязательно для заполнения');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Значением поля "%s" не может быть объект');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Значением поля "%s" не может быть массив');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Значение "%s" поля "%s" должно быть целым числом, имеющим не более 11 разрядов');
@@ -151,6 +152,8 @@ define('I_FORM_DATETIME_SECONDS', 'секунд');
 define('I_COMBO_OF', 'из');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количество выбранных опций -');
 define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Выбранное значение отключено и поэтому недоступно для выбора');
+define('I_COMBO_KEYWORD_NO_RESULTS', 'Ничего не найдено');
+define('I_COMBO_ODATA_FIELD404', 'Поле "%s" не является ни реальным полем, ни псевдо-полем');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');

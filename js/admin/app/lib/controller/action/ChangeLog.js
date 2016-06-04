@@ -15,7 +15,7 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
             default: {minHeight: 27},
             items: [{alias: 'filter'}],
             inner: {
-                filter: [{alias: 'keyword'}]
+                filter: [{alias: 'keyword', margin: '0 5 4 2'}]
             }
         }
     },
@@ -45,35 +45,29 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
      * Grouper field
      */
     store: {
-        groupField: 'datetime'
+        groupField: 'changerId'
     },
 
     /**
-     * Adjust all rows `datetime` properties, for them to contain `author` property contents additionally
+     * Turn Off `entityId` grid column
      *
-     * @param r {Ext.data.Model}
+     * @param column
      */
-    storeLoadCallbackDataRowAdjust: function(r) {
-        r.set('datetime', r.get('datetime') + ' - ' + r.get('changerId'));
-    },
+    gridColumn$EntityId: false,
 
     /**
      * Turn Off Author grid column, as author titles are involved within grouper contents
      *
      * @param column
      */
-    gridColumn$ChangerId: function(column) {
-        column = null;
-    },
+    gridColumn$ChangerId: false,
 
     /**
      * Turn Off Datetime grid column, as datetimes are involved within grouper contents
      *
      * @param column
      */
-    gridColumn$Datetime: function(column) {
-        column = null;
-    },
+    gridColumn$Datetime: false,
 
     /**
      * Restrict most of column abilities for 'Field' column
@@ -81,13 +75,11 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
      * @param column
      * @return {*}
      */
-    gridColumn$FieldId: function(column) {
-        return Ext.merge(column, {
-            groupable: false,
-            sortable: false,
-            menuDisabled: true,
-            header: 'Что'
-        });
+    gridColumn$FieldId: {
+        groupable: false,
+        sortable: false,
+        menuDisabled: true,
+        header: 'Что'
     },
 
     /**
@@ -96,15 +88,13 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
      * @param column
      * @return {*}
      */
-    gridColumn$Was: function(column) {
-        return Ext.merge(column, {
-            groupable: false,
-            sortable: false,
-            menuDisabled: true,
-            renderer: function(value) {
-                return value;
-            }
-        })
+    gridColumn$Was: {
+        groupable: false,
+        sortable: false,
+        menuDisabled: true,
+        renderer: function(value) {
+            return value;
+        }
     },
 
     /**
@@ -113,14 +103,12 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
      * @param column
      * @return {*}
      */
-    gridColumn$Now: function(column) {
-        return Ext.merge(column, {
-            groupable: false,
-            sortable: false,
-            menuDisabled: true,
-            renderer: function(value) {
-                return value;
-            }
-        })
+    gridColumn$Now: {
+        groupable: false,
+        sortable: false,
+        menuDisabled: true,
+        renderer: function(value) {
+            return value;
+        }
     }
 });

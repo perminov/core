@@ -88,7 +88,7 @@ window.GUI = {
      //   selfView = attachMediaStream(selfView, call.getLocalStreams()[0]);
      //   selfView.volume = 0;
      // }
-	  
+
 	var remoteView = document.getElementById('remoteAudio');
       if ( call.getRemoteStreams().length > 0) {
         //remoteView.src = window.URL.createObjectURL(call.getRemoteStreams()[0]);
