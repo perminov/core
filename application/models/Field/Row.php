@@ -671,7 +671,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                     `fieldId` = "' . $this->id . '",
                     `title` = "' . sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI) . '",
                     `alias` = "' . $enumsetAppendI. '",
-                    `javascript` = "",
+                    ' . (Indi::model('Enumset')->fields('javascript') ? '`javascript` = "",' : '') . '
                     `move` = "' . Indi::db()->query('SHOW TABLE STATUS LIKE "enumset"')->fetch(PDO::FETCH_OBJ)->Auto_increment . '"
                 ');
 
