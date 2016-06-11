@@ -28,7 +28,7 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         if ($this->id) {
 
             // If modified version of value is already exists within list of possible value - throw an error message
-            if (in_array($this->alias, $enumsetA)) iexit(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
+            if (in_array($this->alias, ar(im($enumsetA)))) iexit(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
 
             // Convert $defaultValue to an array, for handling case if column type is SET
             $defaultValue = explode(',', $defaultValue);
@@ -54,7 +54,7 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         } else {
 
             // If value that is going to be appended - is already exists within list of possible value - throw an error message
-            if (in_array($this->alias, $enumsetA)) iexit(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
+            if (in_array($this->alias, ar(im($enumsetA)))) iexit(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
 
             // Append a new value to the list of allowed values
             $enumsetA[] = $this->alias;
