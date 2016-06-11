@@ -460,9 +460,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Else set by original way
             } else {
-                Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                resetFn(Ext.getCmp(filterCmpIdPrefix + alias));
-                Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                if (Ext.getCmp(filterCmpIdPrefix + alias).allowClear !== false) {
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias));
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                }
             }
         }
 

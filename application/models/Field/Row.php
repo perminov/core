@@ -328,6 +328,9 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // If column type is SET or ENUM - add the secondary type definition
         if (preg_match('/^ENUM|SET$/', $columnTypeR->type)) {
 
+            // Get the column type row, representing field's column before type change (original column)
+            $curTypeR = Indi::model('ColumnType')->fetchRow('`id` = "' . $this->_original['columnTypeId'] . '"');
+
             // Get the existing enumset values
             $enumsetA = $this->id ? $this->nested('enumset')->column('alias'): array();
 
@@ -338,6 +341,11 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
             // Get the values, that should be added to the list of possible values
             $enumsetAppendA = array_diff($defaultValueA, $enumsetA);
+
+            // If we are converting BOOLEAN to ENUM|SET, ensure both 0 and 1 will be
+            // 1. mentioned in ALTER TABLE query
+            // 2. insterted into `enumset` table
+            if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
 
             // Get the final list of possible values
             $enumsetA = array_merge($enumsetA, $enumsetAppendA);
@@ -665,11 +673,13 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // If earlier we detected some values, that should be inserted to `enumset` table - insert them
         if ($enumsetAppendA)
-            foreach ($enumsetAppendA as $enumsetAppendI)
+            foreach ($enumsetAppendA as $title => $enumsetAppendI)
                 Indi::db()->query('
                     INSERT INTO `enumset` SET
                     `fieldId` = "' . $this->id . '",
-                    `title` = "' . sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI) . '",
+                    `title` = "' . (Indi::rexm('int11', $title)
+                        ? sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI)
+                        : $title) . '",
                     `alias` = "' . $enumsetAppendI. '",
                     ' . (Indi::model('Enumset')->fields('javascript') ? '`javascript` = "",' : '') . '
                     `move` = "' . Indi::db()->query('SHOW TABLE STATUS LIKE "enumset"')->fetch(PDO::FETCH_OBJ)->Auto_increment . '"
@@ -1001,10 +1011,10 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             } else if (preg_match('/SET/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
-                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . implode('|', $enumsetA) . '$';
+                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . im($enumsetA, '|') . '$';
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
-                $incompatibleValuesReplacement = $defaultValue; $w = false;
+                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . im($enumsetA, '|') . '$';
             } else if (preg_match('/DATETIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;

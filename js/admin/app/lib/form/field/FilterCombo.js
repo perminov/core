@@ -105,7 +105,10 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      */
     setReadonlyIfNeeded: function() {
         var me = this;
-        if (me.store.enumset) me.keywordEl.attr('no-lookup', 'true');
+        if (me.store.enumset || me.allowClear === false) {
+            me.keywordEl.attr('no-lookup', 'true');
+            me.keywordEl.attr('readonly', 'readonly');
+        }
     },
 
     // @inheritdoc
@@ -147,7 +150,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      * @return {Boolean}
      */
     isClearable: function() {
-        return true;
+        return this.allowClear !== false;
     },
 
     // @inheritdoc
