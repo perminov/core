@@ -462,7 +462,10 @@ function grs($length = 15, $useSpecialChars = false) {
  * @param string|array $when
  * @return string
  */
-function ldate($format, $date, $when = '') {
+function ldate($format, $date = '', $when = '') {
+
+    // If $date arg not given - assume it is a current datetime
+    if (!$date) $date = date('Y-m-d H:i:s');
 
     // If strftime's format syntax is used
     if (preg_match('/%/', $format)) {
@@ -480,7 +483,7 @@ function ldate($format, $date, $when = '') {
         $date = ldate(Indi::date2strftime($format), $date);
 
         // Force Russian-style month name endings
-        foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
+        if (in('month', ar($when))) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
             $date = preg_replace('/' . $s . '\b/u', $r, $date);
             $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
             $date = preg_replace('/' . $s . '$/u', $r, $date);
