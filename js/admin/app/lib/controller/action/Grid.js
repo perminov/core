@@ -650,7 +650,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
-            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
+            widthA = [], px = {ellipsis: {usual: 18, rownumberer: 12}, sort: 18},
+            store = grid.getStore(), total = 0, i, j, longestWidth, cell,
             visible, scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw,
             hctw = 0, busy = 0, free, longest, summaryData, summaryFeature;
 
@@ -724,7 +725,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             } else {
 
                 // If column's xtype is 'rownumberer'
-                if (columnA[i].xtype == 'rownumberer') longest = store.getTotalCount().toString();
+                if (columnA[i].xtype == 'rownumberer') longest = (store.last() ? store.indexOfTotal(store.last()) + 1 : 1) + '';
             }
 
             // Get width of the longest cell
@@ -734,7 +735,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (longestWidth > widthA[i]) widthA[i] = longestWidth;
 
             // Append ellipsis space
-            widthA[i] += px.ellipsis;
+            if (columnA[i].xtype == 'rownumberer') widthA[i] += px.ellipsis.rownumberer;
+            else widthA[i] += px.ellipsis.usual;
 
             // Limit the maximum column width, if such a config was set
             if (columnA[i].maxWidth && widthA[i] > columnA[i].maxWidth) widthA[i] = columnA[i].maxWidth;
