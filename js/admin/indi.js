@@ -112,12 +112,17 @@ Ext.define('Indi', {
          * Retrieve query string ($_GET) any param, identified by `param` key
          *
          * @param param
+         * @param url User-defined url for picking GET param from, instead of document.locaton.toString()
          * @return {*}
          */
-        get: function(param) {
+        get: function(param, url) {
+            var qs = (url || document.location.toString()).split('?')[1];
+
+            // If no GET params - return
+            if (!qs) return;
 
             // Setup auxilliary variables
-            var pairA = document.location.search.substr(1).split('&'), pairI, getO = {};
+            var pairA = qs.split('&'), pairI, getO = {};
 
             // Build getO object
             for (var i = 0; i < pairA.length; i++) {
@@ -898,6 +903,9 @@ Ext.define('Indi', {
 
             // Create viewport
             Indi.viewport = Ext.create('Indi.view.Viewport');
+
+            // Create loadmask
+            Indi.loadmask = new Ext.LoadMask(Indi.viewport);
 
             // Load dashboard
             if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
