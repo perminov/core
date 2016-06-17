@@ -934,6 +934,9 @@ class Indi {
                 ? Indi::model($table)->fetchRow('`id` = "' . (int) $_SESSION['admin']['id'] . '"')
                 : false;
 
+            // If current visitor is not a cms/admin user - return
+            if (!$adminR) return null;    
+            
             // Setup 'alternate' property
             $adminR->alternate = $_SESSION['admin']['alternate'];
 
