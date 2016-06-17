@@ -433,7 +433,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
-            allowBlank: field.mode != 'required',
+            allowBlank: field.mode != 'required' && parseInt(field.relation) != 6,
             disabled: field.mode == 'readonly',
             field: field,
             row: this.ti().row,
