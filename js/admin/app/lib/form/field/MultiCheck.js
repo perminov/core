@@ -123,6 +123,11 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 id: me.id + '$' + inputValue,
                 inputValue: inputValue,
                 checked: me.row[me.name].length && me.row[me.name].split(',').indexOf(inputValue) != -1,
+                tooltip: enumset.system.tooltip ? {
+                    html: enumset.system.tooltip,
+                    anchor: 'left',
+                    staticOffset: [-2, -5]
+                } : false,
                 enumset: enumset,
                 listeners: {
                     change: function(rb, now) {

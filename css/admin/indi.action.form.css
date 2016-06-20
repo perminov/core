@@ -88,7 +88,7 @@
 }
 .i-field .x-form-check-group .x-checkboxgroup-form-item {
     margin-bottom: 1px;
-    width: 100%;
+    /*width: 100%;*/
 }
 .i-field.i-field-multicheck .x-form-checkboxgroup-body {
     padding: 2px 0 0 0;
