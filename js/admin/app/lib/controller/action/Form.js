@@ -435,6 +435,8 @@ Ext.define('Indi.lib.controller.action.Form', {
             value: this.ti().row[field.alias],
             allowBlank: field.mode != 'required' && parseInt(field.relation) != 6,
             disabled: field.mode == 'readonly',
+            labelAlign: field.params && field.params.wide == 'true' ? 'top' : 'left',
+            cls: field.params && field.params.wide == 'true' ? 'i-field-wide' : '',
             field: field,
             row: this.ti().row,
             listeners: {
