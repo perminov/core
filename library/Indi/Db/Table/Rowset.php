@@ -1274,6 +1274,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Setup primary option data
             $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
 
+            // Put trimmed part of option title into tooltip
+            if (preg_match('/\.\.$/', $options[$o->$keyProperty]['title']))
+                $options[$o->$keyProperty]['system']['tooltip'] = mb_substr($info['title'], 50, 255, 'utf-8');
+
             // Setup foreign entries titles
             if ($params['foreign'])
                 foreach (ar($params['foreign']) as $fk)
