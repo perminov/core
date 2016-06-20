@@ -2232,6 +2232,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                         mode: 'refresh-children'
                     });
                 }
+            } else if (d.xtype == 'multicheck') {
+                d.remoteFetch({
+                    satellite: me.hiddenEl.val(),
+                    mode: 'refresh-children'
+                });
             }
         });
     },
