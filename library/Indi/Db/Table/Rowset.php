@@ -1271,12 +1271,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // If color was detected as a box, append $system['boxColor'] property
             if ($info['box']) $system['boxColor'] = $info['color'];
 
+            // Get max length
+            $substr = $params['substr'] ?: 50;
+
             // Setup primary option data
-            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], $substr), 'system' => $system);
 
             // Put trimmed part of option title into tooltip
             if (preg_match('/\.\.$/', $options[$o->$keyProperty]['title']))
-                $options[$o->$keyProperty]['system']['tooltip'] = '..' . mb_substr($info['title'], 50, 255, 'utf-8');
+                $options[$o->$keyProperty]['system']['tooltip'] = '..' . mb_substr($info['title'], $substr, 1024, 'utf-8');
 
             // Setup foreign entries titles
             if ($params['foreign'])
