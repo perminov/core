@@ -332,8 +332,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
         $this->files(true);
 
-        // Do some needed operations that are required to be done right after row was inserted into a database table
-        if ($new) $this->onInsert();
+        // Do some needed operations that are required to be done right after row was inserted/updated
+        if ($new) $this->onInsert(); else $this->onUpdate();
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
@@ -352,6 +352,14 @@ class Indi_Db_Table_Row implements ArrayAccess
      * It can be useful in cases when we need to do something before where will be an entry inserted in database table
      */
     public function onBeforeInsert() {
+
+    }
+
+    /**
+     * This function is called right before 'return ...' statement within Indi_Db_Table_Row::save() body.
+     * It can be useful in cases when we need to do something once where was an entry updated in database table
+     */
+    public function onUpdate() {
 
     }
 
@@ -3682,7 +3690,25 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return array|bool
      */
     public function affected($prop = null) {
-        return func_num_args() ? in($prop, $this->_affected) : $this->_affected;
+
+        // If $prop arg is given
+        if (func_num_args()) {
+
+            // If $prop arg is an array, or contains comma, we assume that $prop arg is a list of prop names
+            if (is_array($prop) || preg_match('/,/', $prop)) {
+
+                // So we try to detect if any of props within that list was affected
+                foreach (ar($prop) as $propI) if (in($propI, $this->_affected)) return true;
+
+                // If detection failed - return false
+                return false;
+
+            // Else if single prop name is given as $prop arg - detect whether or not it is in the list of affected props
+            } else return in($prop, $this->_affected);
+        }
+
+        // Return array of affected props
+        return $this->_affected;
     }
 
     /**
