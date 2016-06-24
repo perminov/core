@@ -512,9 +512,6 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemXString: function(item) {
 
-        // If this is an auto-created field - return
-        if (item.fieldLabel == 'Auto title') return null;
-
         // Cfg object
         var cfgO = {
             maxLength: 255
