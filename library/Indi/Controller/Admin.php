@@ -1890,6 +1890,35 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     * Mark-for-delete current row, and redirect back
+     */
+    public function m4dAction() {
+
+        // Toggle
+        Indi::trail()->row->m4d();
+
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
+
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+            // If $otherIdA array is not empty
+            if ($otherIdA) {
+
+                // Fetch rows
+                $otherRs = Indi::trail()->model->fetchAll(array('`id` IN (' . im($otherIdA) . ')', Indi::trail()->scope->WHERE));
+
+                // For each row
+                foreach ($otherRs as $otherR) $otherR->m4d();
+            }
+        }
+
+        // Redirect
+        $this->redirect();
+    }
+
+    /**
      * Do custom things before saveAction() call
      */
     public function postSave() {

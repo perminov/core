@@ -1264,6 +1264,21 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Mark for deletion
+     */
+    public function m4d() {
+
+        // If `m4d` field does not exist - flush an error message
+        if (!$this->model()->fields('m4d')) jflush(false, sprintf(I_ROWM4D_NO_SUCH_FIELD, $this->model()->title()));
+
+        // Do mark
+        $this->m4d = 1;
+
+        // Save
+        $this->save();
+    }
+
+    /**
      * Delete all usages of current row
      */
     public function deleteUsages() {
