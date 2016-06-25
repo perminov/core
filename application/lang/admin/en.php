@@ -111,6 +111,8 @@ define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Recursive creation of director
 define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Target directory "%s" exists, but is not writable');
 define('I_ROWFILE_ERROR_NONEXISTENT_ROW', 'There is no possibility to deal with files of nonexistent row');
 
+define('I_ROWM4D_NO_SUCH_FIELD', 'Field `m4d` does not exist within "%s" entity');
+
 define('I_UPLOAD_ERR_INI_SIZE', 'The uploaded file in field "%s" exceeds the upload_max_filesize directive in php.ini');
 define('I_UPLOAD_ERR_FORM_SIZE', 'The uploaded file in field "%s" exceeds the MAX_FILE_SIZE directive that was specified ');
 define('I_UPLOAD_ERR_PARTIAL', 'The uploaded file in field "%s" was only partially uploaded');
