@@ -1119,7 +1119,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     foreach ($foreignRs[$foreignKeyEntityId] as $foreignR) {
 
                         // If foreign key value of current row is equal to foreign row id
-                        if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && $r->$key == $foreignR->$col) {
+                        if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && '' . $r->$key == '' . $foreignR->$col) {
 
                             // Assign foreign row directly
                             $r->foreign($key, $foreignR);
