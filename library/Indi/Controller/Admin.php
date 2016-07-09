@@ -2316,6 +2316,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Walk through hierarchy, setup scopes for each step as if user would manually navigate to each uri subsequently
         for ($i = 0; $i < count($nav); $i++) {
 
+            // If $_GLOBALS['cmsOnlyMode'] is not `true` - prepend $nav[$i] with '/admin'
+            if (!COM) $nav[$i] = '/admin' . $nav[$i];
+
             // Append primary hash and row index (none of them will be appended at first-iteration)
             $nav[$i] .=  $ph . $aix;
 
