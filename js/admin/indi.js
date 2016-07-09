@@ -395,7 +395,7 @@ Ext.define('Indi', {
 
             // Make the request
             Ext.Ajax.request(Ext.merge({
-                url: Indi.pre + uri,
+                url: Indi.pre + (uri = uri.replace(/^\/admin/, '')),
                 timeout: 300000,
                 success: function(response, request){
 
