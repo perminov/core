@@ -299,6 +299,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-form{background-image: url('/i/admin/btn-icon-form.png');}
 .i-btn-icon-delete{background-image: url('/i/admin/btn-icon-delete.png');}
 .i-btn-icon-m4d{background-image: url('/i/admin/btn-icon-m4d.png');}
+.i-btn-icon-cancel{background-image: url('/i/admin/btn-icon-cancel.png');}
 .i-btn-icon-back{background-image: url('/i/admin/btn-icon-back.png');}
 .i-btn-icon-save{background-image: url('/i/admin/btn-icon-save.png');}
 .i-btn-icon-toggle{background-image: url('/i/admin/btn-icon-toggle.png');}
