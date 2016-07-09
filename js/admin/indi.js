@@ -886,6 +886,33 @@ Ext.define('Indi', {
                 }
             }
             return q;
+        },
+
+        /**
+         * Calculate the time, left until certain datetime
+         *
+         * @param to
+         * @return {Object}
+         */
+        timeleft: function(to){
+            var interval = Date.parse(to) - new Date - 1000 * 60 * 0, r = {
+                days: Math.floor(interval/(60*60*1000*24)*1),
+                hours: Math.floor((interval%(60*60*1000*24))/(60*60*1000)*1),
+                minutes: Math.floor(((interval%(60*60*1000*24))%(60*60*1000))/(60*1000)*1),
+                seconds: Math.floor((((interval%(60*60*1000*24))%(60*60*1000))%(60*1000))/1000*1)
+            };
+
+            // Get total time
+            r.none = r.days + r.hours + r.minutes + r.seconds ? false : true;
+
+            // Get string representation
+            r.str = (r.days ? r.days + 'д ' : '')
+                + (r.hours ? ((r.hours + '').length == 1 ? '0' : '') + r.hours + ':' : '')
+                + ((r.minutes + '').length == 1 ? '0' : '') + r.minutes + ':'
+                + ((r.seconds + '').length == 1 ? '0' : '') + r.seconds;
+
+            // Return
+            return r;
         }
     },
 
