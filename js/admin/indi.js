@@ -894,8 +894,8 @@ Ext.define('Indi', {
          * @param to
          * @return {Object}
          */
-        timeleft: function(to){
-            var interval = Date.parse(to) - new Date - 1000 * 60 * 0, r = {
+        timeleft: function(to, ago, append){
+            var interval = ago ? (new Date - Date.parse(to)) : (Date.parse(to) - new Date + (append || 0) * 60 * 1000), r = {
                 days: Math.floor(interval/(60*60*1000*24)*1),
                 hours: Math.floor((interval%(60*60*1000*24))/(60*60*1000)*1),
                 minutes: Math.floor(((interval%(60*60*1000*24))%(60*60*1000))/(60*1000)*1),
