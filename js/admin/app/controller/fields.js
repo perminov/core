@@ -11,7 +11,8 @@ Ext.define('Indi.controller.fields', {
                     tooltip: arguments[0].tooltip || arguments[0].header,
                     allowCycle: true
                 }
-            }
+            },
+            rowset: {multiSelect: true}
         },
         form: {
             formItem$StoreRelationAbility: {nojs: true},

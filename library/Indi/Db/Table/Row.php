@@ -3863,4 +3863,24 @@ class Indi_Db_Table_Row implements ArrayAccess
             Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
         }
     }
+
+    /**
+     * Detect whether or not
+     * 1. Entry has at least one modified prop ($prop arg is not given)
+     * 2. ANY of entry's props, mentioned in given $prop arg (the comma-separated list) was modified
+     *
+     * @param $propS
+     * @return bool|int
+     */
+    public function isModified($propS = null) {
+
+        // If $propS arg is notgiven/null/zero/false/empty - return count of modified props
+        if (func_num_args() == 0 || !$propS) return count($this->_modified);
+
+        // Detect if at least one prop in the $propS list is modified
+        foreach (ar($propS) as $propI) if (array_key_exists($propI, $this->_modified)) return true;
+
+        // Return false
+        return false;
+    }
 }
