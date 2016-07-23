@@ -224,7 +224,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
 
         // Apply new index
-        $this->setScopeRow();
+        $this->setScopeRow(false, null, $toBeMovedRs->column('id'));
 
         // Flush json response, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
@@ -281,7 +281,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param bool $upper
      * @return null
      */
-    public function setScopeRow($upper = false, Indi_Db_Table_Row $r = null) {
+    public function setScopeRow($upper = false, Indi_Db_Table_Row $r = null, $lastIds = null) {
 
         // If no primary hash param passed within the uri - return
         if (!Indi::uri()->ph) return;
@@ -303,7 +303,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // mean that page number should be recalculated, so 'page' param will store recalculated page number). After
         // all necessary operations will be done - valued from this ($modified) array will replace existing values
         // in scope
-        $modified = array('aix' => Indi::uri()->aix, 'lastIds' => array($r->id));
+        $modified = array('aix' => Indi::uri()->aix, 'lastIds' => ar($lastIds ?: $r->id));
 
         // Start and end indexes. We calculate them, because we should know, whether page number should be changed or no
         $start = ($original['page'] - 1) * Indi::trail((int) $upper)->section->rowsOnPage + 1;
