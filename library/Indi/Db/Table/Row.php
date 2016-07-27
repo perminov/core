@@ -364,6 +364,14 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * This function is called right before 'return ...' statement within Indi_Db_Table_Row::delete() body.
+     * It can be useful in cases when we need to do something once where was an entry deleted from database table
+     */
+    public function onDelete() {
+
+    }
+
+    /**
      * Update titles of all rows, that use current row for building title
      */
     public function titleUsagesUpdate() {
@@ -469,6 +477,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Delete all `changeLog` entries, related to current entry
         $this->deleteChangeLog();
+
+        // Do some custom things
+        $this->onDelete();
 
         // Unset `id` prop
         $this->id = null;
