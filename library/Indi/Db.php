@@ -37,6 +37,13 @@ class Indi_Db {
     protected static $_cacheA = array();
 
     /**
+     * Array of table names of existing entities, which have `alternate` flag turned on
+     *
+     * @var array
+     */
+    protected static $_roleA = array();
+
+    /**
      * Store queries count
      *
      * @var Indi_Db
@@ -102,6 +109,11 @@ class Indi_Db {
             $entityA = self::$_instance->query(
                 'SELECT * FROM `entity`' . ($entityId ? ' WHERE `id` = "' . $entityId . '"' : '')
             )->fetchAll();
+
+            // Get ids of entities, linked to access roles
+            self::$_roleA = self::$_instance->query('
+                SELECT `entityId` FROM `profile` WHERE `entityId` != "0"
+            ')->fetchAll(PDO::FETCH_COLUMN);
 
             // Fix tablename case, if need
             if (!$entityId && !preg_match('/^WIN/i', PHP_OS) && self::$_instance->query('SHOW TABLES LIKE "columntype"')->fetchColumn()) {
@@ -258,6 +270,9 @@ class Indi_Db {
             // Foreach existing entity
             foreach ($entityA as $entityI) {
 
+                // Append 'admin'-entity's id to self::$_roleA array
+                if ($entityI['table'] == 'admin') self::$_roleA[] = $entityI['id'];
+
                 // Create an item within self::$_entityA array, containing some basic info
                 self::$_entityA[ucfirst($entityI['table'])] = array(
                     'id' => $entityI['id'],
@@ -265,6 +280,7 @@ class Indi_Db {
                     'extends' => $entityI['extends'],
                     'useCache' => $entityI['useCache'],
                     'titleFieldId' => $entityI['titleFieldId'],
+                    'hasRole' => in_array($entityI['id'], self::$_roleA),
                     'fields' => new Field_Rowset_Base(array(
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],
@@ -283,6 +299,15 @@ class Indi_Db {
 
         // Return instance
         return self::$_instance;
+    }
+
+    /**
+     * Getter for self::$_roleA
+     *
+     * @return array
+     */
+    public static function role() {
+        return self::$_roleA;
     }
 
     /**

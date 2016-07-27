@@ -520,6 +520,9 @@ Ext.define('Indi.lib.controller.action.Form', {
         // If field's name is 'alias' - setup `allowBlank` property as `false`
         if (item.name == 'alias') cfgO.allowBlank = false;
 
+        // Apply input mask
+        if (item.field.params.inputMask) cfgO.inputMask = item.field.params.inputMask;
+
         // Return config
         return cfgO
     },
