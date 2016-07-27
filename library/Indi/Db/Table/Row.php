@@ -2667,8 +2667,59 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
+        // If current row relates to an account-model - do additional validation
+        $this->_ifRole();
+
         // Return found mismatches
         return $this->_mismatch;
+    }
+
+    /**
+     * Check if current entry's model is attached to a role, and if so - check that username (`email` prop) is unique
+     *
+     * @return mixed
+     */
+    protected function _ifRole() {
+
+        // If current model is not used within any access role - return
+        if (!$this->model()->hasRole()) return;
+
+        // If current entry already has a mismatch-message for 'email' field - return
+        if ($this->_mismatch['email']) return;
+
+        // Strip unsafe characters
+        $this->email = preg_replace('/[^0-9a-zA-Z\.-_@]/', '', $this->email);
+
+        // If `email` prop became empty
+        if (!$this->email) {
+
+            // Setup mismatch message
+            $this->_mismatch['email'] = sprintf(I_ADMIN_ROWSAVE_LOGIN_REQUIRED, $this->field('email')->title);
+
+            // Return
+            return;
+        }
+
+        // For each account model
+        foreach (Indi_Db::role() as $entityId) {
+
+            // Model shortcut
+            $m = Indi::model($entityId);
+
+            // Try to find an account with such a username, and if found
+            if ($m->fetchRow(array(
+                '`email` = "' . $this->email . '"',
+                $m->id() == $this->model()->id() ? '`id` != "' . $this->id . '"' : 'TRUE'
+            ))) {
+
+                // Setup a mismatch message
+                $this->_mismatch['email'] = sprintf(
+                    I_ADMIN_ROWSAVE_LOGIN_OCCUPIED, $this->email, $this->field('email')->title);
+
+                // Stop searching
+                break;
+            }
+        }
     }
 
     /**
