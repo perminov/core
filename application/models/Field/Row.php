@@ -673,7 +673,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // If earlier we detected some values, that should be inserted to `enumset` table - insert them
         if ($enumsetAppendA)
-            foreach ($enumsetAppendA as $title => $enumsetAppendI)
+            foreach ($enumsetAppendA as $title => $enumsetAppendI) if (strlen($enumsetAppendI)  )
                 Indi::db()->query('
                     INSERT INTO `enumset` SET
                     `fieldId` = "' . $this->id . '",

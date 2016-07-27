@@ -433,7 +433,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
-            allowBlank: field.mode != 'required' && parseInt(field.relation) != 6,
+            allowBlank: field.mode != 'required' && (parseInt(field.relation) != 6 || field.storeRelationAbility == 'many'),
             disabled: field.mode == 'readonly',
             labelAlign: field.params && field.params.wide == 'true' ? 'top' : 'left',
             cls: field.params && field.params.wide == 'true' ? 'i-field-wide' : '',
@@ -522,6 +522,9 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Apply input mask
         if (item.field.params.inputMask) cfgO.inputMask = item.field.params.inputMask;
+
+        // Apply vtype
+        if (item.field.params.vtype) cfgO.vtype = item.field.params.vtype;
 
         // Return config
         return cfgO
