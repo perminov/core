@@ -521,10 +521,10 @@ Ext.define('Indi.lib.controller.action.Form', {
         if (item.name == 'alias') cfgO.allowBlank = false;
 
         // Apply input mask
-        if (item.field.params.inputMask) cfgO.inputMask = item.field.params.inputMask;
+        if (item.field.params && item.field.params.inputMask) cfgO.inputMask = item.field.params.inputMask;
 
         // Apply vtype
-        if (item.field.params.vtype) cfgO.vtype = item.field.params.vtype;
+        if (item.field.params && item.field.params.vtype) cfgO.vtype = item.field.params.vtype;
 
         // Return config
         return cfgO
