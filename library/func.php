@@ -896,3 +896,21 @@ function iexit($msg = null) {
 function sign($n) {
     return (int) ($n > 0) - (int) ($n < 0);
 }
+
+/**
+ * Convert size in bytes to string representation
+ *
+ * @param $size
+ * @return string
+ */
+function size2str($size) {
+
+    // Postixes
+    $postfix = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
+
+    // Pow
+    $pow = (int) floor(strlen($size)/3);
+
+    // Return
+    return (floor(($size/pow(1024, $pow))*100)/100) . $postfix[$pow];
+}
