@@ -3283,10 +3283,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup basic file info
         $file = array(
             'mtime' => filemtime($abs),
-            'size' => filesize($abs),
+            'size' => $size = filesize($abs),
             'src' => $this->src($abs),
             'ext' => $ext,
-            'mime' => Indi::mime($abs)
+            'mime' => Indi::mime($abs),
+            'text' => $text = strtoupper($ext) . ' » ' . size2str($size),
+            'href' => $href = PRE . '/auxiliary/download/id/' . $this->id . '/field/' . $this->model()->fields($field)->id . '/',
+            'link' => '<a href="' . $href . '">' . $text . '</a>'
         );
 
         // Get more info, using getimagesize/getflashsize functions
@@ -3300,7 +3303,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Return
-        return $file;
+        return (object) $file;
     }
 
     /**
