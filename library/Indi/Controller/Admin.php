@@ -2070,8 +2070,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If redirect should be performed, include the location address under 'redirect' key within $response array
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
 
-        // Pick affected prop names
-        $response['affected'] = $this->row->toGridData($this->row->affected());
+        // Wrap row in a rowset, process it by $this->adjustGridDataRowset(), and unwrap back
+        $this->rowset = Indi::trail()->model->createRowset(array('rows' => array($this->row)));
+        $this->adjustGridDataRowset();
+        $this->row = $this->rowset->current();
+
+        // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
+        $data = array($this->row->toGridData($this->row->affected()));
+        $this->adjustGridData($data);
+        $data = array_shift($data);
+
+        // Assign row's grid data into 'affected' key within $response
+        $response['affected'] = $data;
 
         // Flush response
         jflush(true, $response);

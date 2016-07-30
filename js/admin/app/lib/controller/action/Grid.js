@@ -53,16 +53,21 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     return 'i-grid-row-disabled';
             },
             loadingText: Ext.LoadMask.prototype.msg,
+            cellOverflow: true,
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
                 },
                 cellmouseover: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
-                    if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
-                        Ext.get(td).addCls('i-overflow').selectable();
+                    if (view.cellOverflow) {
+                        if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
+                            Ext.get(td).addCls('i-overflow').selectable();
+                    }
                 },
                 cellmouseout: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
-                    Ext.get(td).removeCls('i-overflow');
+                    if (view.cellOverflow) {
+                        Ext.get(td).removeCls('i-overflow');
+                    }
                 }
             }
         },
