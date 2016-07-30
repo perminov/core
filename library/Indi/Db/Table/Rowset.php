@@ -553,6 +553,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'price' => array(),
             'date' => array(),
             'datetime' => array(),
+            'upload' => array(),
             'other' => array('id' => true)
         );
 
@@ -581,6 +582,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 $typeA['date'][$gridFieldR->alias] = $gridFieldR->params;
             else if ($gridFieldR->foreign('columnTypeId')->type == 'DATETIME')
                 $typeA['datetime'][$gridFieldR->alias] = $gridFieldR->params;
+
+            // File-uploads
+            else if ($gridFieldR->foreign('elementId')->alias == 'upload')
+                $typeA['upload'][$gridFieldR->alias] = true;
 
             // All other types
             else $typeA['other'][$gridFieldR->alias] = true;
@@ -657,6 +662,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         ? '' : date( $typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
                             $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI));
                 }
+
+                // If field type is fileupload, we build something like
+                // '<a href="/url/for/file/download/">DOCX » 1.25mb</a>'
+                if (isset($typeA['upload'][$columnI])) $data[$pointer][$columnI] = $r->file($columnI)->link;
 
                 // If there the color-value in format 'hue#rrgbb' can probably be found in field value
                 // we do a try, and if found - inject a '.i-color-box' element

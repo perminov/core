@@ -1679,7 +1679,7 @@ class Indi {
      * @param $ext
      * @return string
      */
-    public function mime($ext) {
+    public static function mime($ext) {
 
         // If $ext argument seems to be a file name
         if (preg_match('/\./', $ext)) {
