@@ -659,8 +659,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         $typeA['datetime'][$columnI]['displayTimeFormat'] = 'H:i:s';
 
                     $data[$pointer][$columnI] = $r->$columnI == '0000-00-00 00:00:00'
-                        ? '' : date( $typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
-                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI));
+                        ? '' : ldate($typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
+                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI),
+                            $typeA['datetime'][$columnI]['when']);
                 }
 
                 // If field type is fileupload, we build something like
