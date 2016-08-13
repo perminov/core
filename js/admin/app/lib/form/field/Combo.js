@@ -2233,6 +2233,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                         mode: 'refresh-children'
                     });
                 }
+            } else if (d.xtype == 'multicheck') {
+                d.remoteFetch({
+                    satellite: me.hiddenEl.val(),
+                    mode: 'refresh-children'
+                });
             }
         });
     },
@@ -2276,8 +2281,11 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param name
      */
-    prop: function(name) {
+    prop: function(name, parse) {
         var me = this, r = me.r(me.val()), propS;
+
+        // If `parse` arg is not given, set up it as `true`, by default
+        if (arguments.length < 2) parse = true;
 
         // If data object, representing current value was not found, return null
         if (!Ext.isObject(r)) return null;
@@ -2290,16 +2298,16 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // If propS is a string, representing an integer number - convert it into interger-type and return
         //if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
-        if (propS.match(/^(-?[1-9][0-9]{0,9}|0)$/)) return parseInt(propS);
+        if (parse && propS.match(/^(-?[1-9][0-9]{0,9}|0)$/)) return parseInt(propS);
 
         // If propS is a string, representing a floating-point number - convert it into float-type and return
         //if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
-        if (propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
+        if (parse && propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
 
         // If propS is a string, representing a floating-point number, containing
         // up to 10 digits in integer part, optionally prepended with an '-' sign,
         // and containing up to 3 digits in fractional part - convert it into float-type and return
-        if (propS.match(/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/)) return parseFloat(propS);
+        if (parse && propS.match(/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/)) return parseFloat(propS);
 
         // Retun as is
         return propS;

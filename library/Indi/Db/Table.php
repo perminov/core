@@ -30,6 +30,13 @@ class Indi_Db_Table
     protected $_useCache = false;
 
     /**
+     * Flag, indicating that this model instances may be used as an access accounts
+     *
+     * @var boolean
+     */
+    protected $_hasRole = false;
+
+    /**
      * Id of field, that is used as title-field
      *
      * @var boolean
@@ -118,6 +125,9 @@ class Indi_Db_Table
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
+
+        // Setup 'hasRole' flag
+        $this->_hasRole = $config['hasRole'];
     }
 
     /**
@@ -1132,6 +1142,15 @@ class Indi_Db_Table
      */
     public function useCache() {
         return $this->_useCache;
+    }
+
+    /**
+     * Return the 'hasRole' flag value
+     *
+     * @return bool
+     */
+    public function hasRole() {
+        return $this->_hasRole;
     }
 
     /**

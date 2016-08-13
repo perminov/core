@@ -53,16 +53,21 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     return 'i-grid-row-disabled';
             },
             loadingText: Ext.LoadMask.prototype.msg,
+            cellOverflow: true,
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
                 },
                 cellmouseover: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
-                    if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
-                        Ext.get(td).addCls('i-overflow').selectable();
+                    if (view.cellOverflow) {
+                        if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
+                            Ext.get(td).addCls('i-overflow').selectable();
+                    }
                 },
                 cellmouseout: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
-                    Ext.get(td).removeCls('i-overflow');
+                    if (view.cellOverflow) {
+                        Ext.get(td).removeCls('i-overflow');
+                    }
                 }
             }
         },
@@ -117,7 +122,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // and that field is not in the list of disabled fields - provide some kind
                 // of cell-editor functionality, so enumset values can be switched from one to another
                 if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
-                    && field.storeRelationAbility == 'one' && enumset.length == 2) {
+                    && field.storeRelationAbility == 'one'
+                    && (col.allowCycle !== false || enumset.length <= 2)) {
 
                     s = me.getStore();
                     value = record.key(dataIndex);
@@ -679,7 +685,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
-            widthA = [], px = {ellipsis: 18, sort: 18}, store = grid.getStore(), total = 0, i, j, longestWidth, cell,
+            widthA = [], px = {ellipsis: {usual: 18, rownumberer: 12}, sort: 18},
+            store = grid.getStore(), total = 0, i, j, longestWidth, cell,
             visible, scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw,
             hctw = 0, busy = 0, free, longest, summaryData, summaryFeature;
 
@@ -753,7 +760,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             } else {
 
                 // If column's xtype is 'rownumberer'
-                if (columnA[i].xtype == 'rownumberer') longest = store.getTotalCount().toString();
+                if (columnA[i].xtype == 'rownumberer') longest = (store.last() ? store.indexOfTotal(store.last()) + 1 : 1) + '';
             }
 
             // Get width of the longest cell
@@ -763,7 +770,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (longestWidth > widthA[i]) widthA[i] = longestWidth;
 
             // Append ellipsis space
-            widthA[i] += px.ellipsis;
+            if (columnA[i].xtype == 'rownumberer') widthA[i] += px.ellipsis.rownumberer;
+            else widthA[i] += px.ellipsis.usual;
 
             // Limit the maximum column width, if such a config was set
             if (columnA[i].maxWidth && widthA[i] > columnA[i].maxWidth) widthA[i] = columnA[i].maxWidth;

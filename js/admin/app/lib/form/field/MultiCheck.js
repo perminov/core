@@ -106,16 +106,16 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
      *
      * @return {Array}
      */
-    itemA: function() {
+    itemA: function(store) {
 
         // Setup auxiliary variables
         var me = this, itemI, itemA = [], inputValue;
 
         // For each store data item
-        me.row.view(me.name).store.data.forEach(function(enumset, index){
+        (store || me.row.view(me.name).store).data.forEach(function(enumset, index){
 
             // Get radio input value
-            inputValue = me.row.view(me.name).store.ids[index] + '';
+            inputValue = (store || me.row.view(me.name).store).ids[index] + '';
 
             // Prepare initial radio item cfg
             itemI = {
@@ -123,6 +123,11 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 id: me.id + '$' + inputValue,
                 inputValue: inputValue,
                 checked: me.row[me.name].length && me.row[me.name].split(',').indexOf(inputValue) != -1,
+                tooltip: enumset.system.tooltip ? {
+                    html: enumset.system.tooltip,
+                    anchor: 'left',
+                    staticOffset: [-2, -5]
+                } : false,
                 enumset: enumset,
                 listeners: {
                     change: function(rb, now) {
@@ -291,5 +296,92 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
         // Call mixin's _onChange() method
         me.mixins.fieldBase._onChange.call(this, arguments);
+    },
+
+    /**
+     * Prepare request parameters, do request, fetch data and rebuild combo
+     *
+     * @param data
+     */
+    remoteFetch: function(data) {
+        var me = this, url;
+
+        // If `fetchUrl` prop was set - use it, or build own othwerwise
+        if (me.fetchUrl) url = me.fetchUrl; else {
+
+            // Base url
+            url = me.ctx().uri.split('?')[0];
+
+            // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
+            // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
+            // name rather than as a separate param name within the axaj request url
+            if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        }
+
+        // Append odata specification
+        url += 'odata/' + me.name + '/';
+
+        // Fetch request
+        Ext.Ajax.request({
+            url: Indi.pre.replace(/\/$/, '') + url,
+            params: Ext.merge(data, {consider: Ext.JSON.encode(me.considerOnData())}),
+            success: function(response) {
+
+                // Convert response.responseText to JSON object
+                var json = JSON.parse(response.responseText);
+
+                // Build html for options, and do all other things
+                me.afterFetchAdjustments(data, json);
+            }
+        })
+    },
+
+    /**
+     * Rebuild options list
+     *
+     * @param requestData
+     * @param responseData
+     */
+    afterFetchAdjustments: function(requestData, responseData) {
+        var me = this, itemA;
+
+        // Clear value
+        me.setValue();
+
+        // Remove all
+        me.removeAll();
+
+        // If results set is not empty
+        if (parseInt(responseData.found)) {
+
+            // Enable combo if children were found
+            me.setDisabled();
+
+            // Append children
+            me.itemA(responseData).forEach(function(itemI){
+                me.add(itemI);
+            });
+
+        // If just got results are result for satellited combo, autofetched after satellite value was changed
+        // and we have no results related to current satellite value, we disable satellited combo
+        } else me.setDisabled(true);
+
+        // Fire 'refreshchildren' event
+        me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
+    },
+
+    /**
+     * Here we override native method, for handling situations when boxes list changed
+     *
+     * @return {Boolean}
+     */
+    isDirty: function(){
+        var c = this.getBoxes(), a, d = c.length, me = this;
+
+        // If any of boxes are dirty - return true
+        for (a = 0; a < d; a++) if (c[a].isDirty()) return true;
+
+        // Return
+        return !me.isEqual(me.getValue(), me.originalValue) && (!me.disabled || !d);
     }
 });

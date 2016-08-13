@@ -9,6 +9,90 @@ Ext.override(Ext.grid.View, {
 });
 
 /**
+ * Grid panel adjustments
+ */
+Ext.override(Ext.grid.Panel, {
+
+    /**
+     * This function's code is picked from Ext.grid.PagingScroller
+     */
+    getFirstVisibleRowIndex: function(returnRecord) {
+        var me = this,
+            view = me.view,
+            scrollTop = view.el.dom.scrollTop,
+            rows,
+            count,
+            i,
+            rowBottom;
+
+        if (me.variableRowHeight) {
+            rows = view.getNodes();
+            count = rows.length;
+            if (!count) {
+                return;
+            }
+            rowBottom = Ext.fly(rows[0]).getOffsetsTo(view.el)[1];
+            for (i = 0; i < count; i++) {
+                rowBottom += rows[i].offsetHeight;
+
+                // Searching for the first visible row, and off the bottom of the clientArea, then there's no visible first row!
+                if (rowBottom > view.el.dom.clientHeight) {
+                    return;
+                }
+
+                // Return the index *within the total dataset* of the first visible row
+                // We cannot use the loop index to offset from the table's start index because of possible intervening group headers.
+                if (rowBottom > 0) {
+                    console.log(view.getRecord(rows[i]));
+                    return view.getRecord(rows[i]).index;
+                }
+            }
+        } else {
+            return Math.floor(scrollTop / me.rowHeight);
+        }
+    },
+
+    /**
+     * This function's code is picked from Ext.grid.PagingScroller
+     */
+    getLastVisibleRowIndex: function() {
+        var me = this,
+            store = me.store,
+            view = me.view,
+            clientHeight = view.el.dom.clientHeight,
+            rows,
+            count,
+            i,
+            rowTop;
+
+        if (me.variableRowHeight) {
+            rows = view.getNodes();
+            if (!rows.length) {
+                return;
+            }
+            count = store.getCount() - 1;
+            rowTop = Ext.fly(rows[count]).getOffsetsTo(view.el)[1] + rows[count].offsetHeight;
+            for (i = count; i >= 0; i--) {
+                rowTop -= rows[i].offsetHeight;
+
+                // Searching for the last visible row, and off the top of the clientArea, then there's no visible last row!
+                if (rowTop < 0) {
+                    return;
+                }
+
+                // Return the index *within the total dataset* of the last visible row.
+                // We cannot use the loop index to offset from the table's start index because of possible intervening group headers.
+                if (rowTop < clientHeight) {
+                    return view.getRecord(rows[i]).index;
+                }
+            }
+        } else {
+            return me.getFirstVisibleRowIndex() + Math.ceil(clientHeight / me.rowHeight) + 1;
+        }
+    }
+});
+
+/**
  * Here we override:
  * 1. Ext.view.Table.initFeatures() method, for it to create ftype-named keys (rather than undefined-keys)
  *    for items within featuresMC MixedCollection, for the possibility to get the features using the

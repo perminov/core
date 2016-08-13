@@ -934,6 +934,9 @@ class Indi {
                 ? Indi::model($table)->fetchRow('`id` = "' . (int) $_SESSION['admin']['id'] . '"')
                 : false;
 
+            // If current visitor is not a cms/admin user - return
+            if (!$adminR) return null;    
+            
             // Setup 'alternate' property
             $adminR->alternate = $_SESSION['admin']['alternate'];
 
@@ -1676,7 +1679,7 @@ class Indi {
      * @param $ext
      * @return string
      */
-    public function mime($ext) {
+    public static function mime($ext) {
 
         // If $ext argument seems to be a file name
         if (preg_match('/\./', $ext)) {

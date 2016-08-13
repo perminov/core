@@ -112,12 +112,17 @@ Ext.define('Indi', {
          * Retrieve query string ($_GET) any param, identified by `param` key
          *
          * @param param
+         * @param url User-defined url for picking GET param from, instead of document.locaton.toString()
          * @return {*}
          */
-        get: function(param) {
+        get: function(param, url) {
+            var qs = (url || document.location.toString()).split('?')[1];
+
+            // If no GET params - return
+            if (!qs) return;
 
             // Setup auxilliary variables
-            var pairA = document.location.search.substr(1).split('&'), pairI, getO = {};
+            var pairA = qs.split('&'), pairI, getO = {};
 
             // Build getO object
             for (var i = 0; i < pairA.length; i++) {
@@ -390,7 +395,7 @@ Ext.define('Indi', {
 
             // Make the request
             Ext.Ajax.request(Ext.merge({
-                url: Indi.pre + uri,
+                url: Indi.pre + (uri = uri.replace(/^\/admin\//, '\/')),
                 timeout: 300000,
                 success: function(response, request){
 
@@ -881,6 +886,33 @@ Ext.define('Indi', {
                 }
             }
             return q;
+        },
+
+        /**
+         * Calculate the time, left until certain datetime
+         *
+         * @param to
+         * @return {Object}
+         */
+        timeleft: function(to, ago, append){
+            var interval = ago ? (new Date - Date.parse(to)) : (Date.parse(to) - new Date + (append || 0) * 60 * 1000), r = {
+                days: Math.floor(interval/(60*60*1000*24)*1),
+                hours: Math.floor((interval%(60*60*1000*24))/(60*60*1000)*1),
+                minutes: Math.floor(((interval%(60*60*1000*24))%(60*60*1000))/(60*1000)*1),
+                seconds: Math.floor((((interval%(60*60*1000*24))%(60*60*1000))%(60*1000))/1000*1)
+            };
+
+            // Get total time
+            r.none = r.days + r.hours + r.minutes + r.seconds ? false : true;
+
+            // Get string representation
+            r.str = (r.days ? r.days + 'д ' : '')
+                + (r.hours ? ((r.hours + '').length == 1 ? '0' : '') + r.hours + ':' : '')
+                + ((r.minutes + '').length == 1 ? '0' : '') + r.minutes + ':'
+                + ((r.seconds + '').length == 1 ? '0' : '') + r.seconds;
+
+            // Return
+            return r;
         }
     },
 
@@ -898,6 +930,9 @@ Ext.define('Indi', {
 
             // Create viewport
             Indi.viewport = Ext.create('Indi.view.Viewport');
+
+            // Create loadmask
+            Indi.loadmask = new Ext.LoadMask(Indi.viewport);
 
             // Load dashboard
             if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
