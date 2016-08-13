@@ -2,8 +2,9 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title><?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?></title>
+    <title><?=Indi::ini('general')->title ?: 'Indi Engine'?></title>
     <!-- Imploded and gzipped scripts and styles -->
+    <?$this->other('gz')?>
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
     <script>

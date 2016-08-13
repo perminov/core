@@ -168,6 +168,7 @@ class Entity_Row extends Indi_Db_Table_Row {
                         $fieldR->storeRelationAbility = 'none';
                         $fieldR->columnTypeId = 1;
                         $fieldR->elementId = 1;
+                        $fieldR->mode = 'hidden';
                         $fieldR->save();
                     }
 

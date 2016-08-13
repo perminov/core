@@ -558,6 +558,10 @@ class Indi_Controller {
         // If field having $for as it's `alias` was not found in existing fields, try to finв it within pseudo fields
         if (!$field) $field = Indi::trail()->pseudoFields->field($for);
 
+        // Do some things, custom for certain field, before odata fetch
+        if (($method = 'formActionOdata' . ucfirst(Indi::uri()->odata)) && method_exists($this, $method))
+            $this->$method(json_decode(Indi::post('consider'), true));
+
         // Prepare and flush json-encoded combo options data
         $this->_odata($for, $post, $field, null, $order, $dir, $offset);
     }

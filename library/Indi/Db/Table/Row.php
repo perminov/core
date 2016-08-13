@@ -332,8 +332,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
         $this->files(true);
 
-        // Do some needed operations that are required to be done right after row was inserted into a database table
-        if ($new) $this->onInsert();
+        // Do some needed operations that are required to be done right after row was inserted/updated
+        if ($new) $this->onInsert(); else $this->onUpdate();
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
@@ -352,6 +352,22 @@ class Indi_Db_Table_Row implements ArrayAccess
      * It can be useful in cases when we need to do something before where will be an entry inserted in database table
      */
     public function onBeforeInsert() {
+
+    }
+
+    /**
+     * This function is called right before 'return ...' statement within Indi_Db_Table_Row::save() body.
+     * It can be useful in cases when we need to do something once where was an entry updated in database table
+     */
+    public function onUpdate() {
+
+    }
+
+    /**
+     * This function is called right before 'return ...' statement within Indi_Db_Table_Row::delete() body.
+     * It can be useful in cases when we need to do something once where was an entry deleted from database table
+     */
+    public function onDelete() {
 
     }
 
@@ -461,6 +477,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Delete all `changeLog` entries, related to current entry
         $this->deleteChangeLog();
+
+        // Do some custom things
+        $this->onDelete();
 
         // Unset `id` prop
         $this->id = null;
@@ -741,7 +760,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $where[] = $alternateField->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
                 : '`' . $alternateField->alias . '` = "' . Indi::admin()->id .'"';
-        
+
         // If related entity has tree-structure
         if ($relatedM->treeColumn()) {
 
@@ -1253,6 +1272,21 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Else throw exception
         } else throw new Exception('Column `toggle` does not exist');
+    }
+
+    /**
+     * Mark for deletion
+     */
+    public function m4d() {
+
+        // If `m4d` field does not exist - flush an error message
+        if (!$this->model()->fields('m4d')) jflush(false, sprintf(I_ROWM4D_NO_SUCH_FIELD, $this->model()->title()));
+
+        // Do mark
+        $this->m4d = 1;
+
+        // Save
+        $this->save();
     }
 
     /**
@@ -2644,8 +2678,59 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
+        // If current row relates to an account-model - do additional validation
+        $this->_ifRole();
+
         // Return found mismatches
         return $this->_mismatch;
+    }
+
+    /**
+     * Check if current entry's model is attached to a role, and if so - check that username (`email` prop) is unique
+     *
+     * @return mixed
+     */
+    protected function _ifRole() {
+
+        // If current model is not used within any access role - return
+        if (!$this->model()->hasRole()) return;
+
+        // If current entry already has a mismatch-message for 'email' field - return
+        if ($this->_mismatch['email']) return;
+
+        // Strip unsafe characters
+        $this->email = preg_replace('/[^0-9a-zA-Z\.-_@]/', '', $this->email);
+
+        // If `email` prop became empty
+        if (!$this->email) {
+
+            // Setup mismatch message
+            $this->_mismatch['email'] = sprintf(I_ADMIN_ROWSAVE_LOGIN_REQUIRED, $this->field('email')->title);
+
+            // Return
+            return;
+        }
+
+        // For each account model
+        foreach (Indi_Db::role() as $entityId) {
+
+            // Model shortcut
+            $m = Indi::model($entityId);
+
+            // Try to find an account with such a username, and if found
+            if ($m->fetchRow(array(
+                '`email` = "' . $this->email . '"',
+                $m->id() == $this->model()->id() ? '`id` != "' . $this->id . '"' : 'TRUE'
+            ))) {
+
+                // Setup a mismatch message
+                $this->_mismatch['email'] = sprintf(
+                    I_ADMIN_ROWSAVE_LOGIN_OCCUPIED, $this->email, $this->field('email')->title);
+
+                // Stop searching
+                break;
+            }
+        }
     }
 
     /**
@@ -3198,10 +3283,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup basic file info
         $file = array(
             'mtime' => filemtime($abs),
-            'size' => filesize($abs),
+            'size' => $size = filesize($abs),
             'src' => $this->src($abs),
             'ext' => $ext,
-            'mime' => Indi::mime($abs)
+            'mime' => Indi::mime($abs),
+            'text' => $text = strtoupper($ext) . ' » ' . size2str($size),
+            'href' => $href = PRE . '/auxiliary/download/id/' . $this->id . '/field/' . $this->model()->fields($field)->id . '/',
+            'link' => '<a href="' . $href . '">' . $text . '</a>'
         );
 
         // Get more info, using getimagesize/getflashsize functions
@@ -3215,7 +3303,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Return
-        return $file;
+        return (object) $file;
     }
 
     /**
@@ -3682,7 +3770,25 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return array|bool
      */
     public function affected($prop = null) {
-        return func_num_args() ? in($prop, $this->_affected) : $this->_affected;
+
+        // If $prop arg is given
+        if (func_num_args()) {
+
+            // If $prop arg is an array, or contains comma, we assume that $prop arg is a list of prop names
+            if (is_array($prop) || preg_match('/,/', $prop)) {
+
+                // So we try to detect if any of props within that list was affected
+                foreach (ar($prop) as $propI) if (in($propI, $this->_affected)) return true;
+
+                // If detection failed - return false
+                return false;
+
+            // Else if single prop name is given as $prop arg - detect whether or not it is in the list of affected props
+            } else return in($prop, $this->_affected);
+        }
+
+        // Return array of affected props
+        return $this->_affected;
     }
 
     /**
@@ -3821,5 +3927,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (strlen($this->_original[$prop])) {
             Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
         }
+    }
+
+    /**
+     * Detect whether or not
+     * 1. Entry has at least one modified prop ($prop arg is not given)
+     * 2. ANY of entry's props, mentioned in given $prop arg (the comma-separated list) was modified
+     *
+     * @param $propS
+     * @return bool|int
+     */
+    public function isModified($propS = null) {
+
+        // If $propS arg is notgiven/null/zero/false/empty - return count of modified props
+        if (func_num_args() == 0 || !$propS) return count($this->_modified);
+
+        // Detect if at least one prop in the $propS list is modified
+        foreach (ar($propS) as $propI) if (array_key_exists($propI, $this->_modified)) return true;
+
+        // Return false
+        return false;
     }
 }

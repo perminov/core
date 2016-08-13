@@ -9,11 +9,16 @@ Ext.define('Indi.lib.toolbar.Info', {
     infoTextColor: 'blue',
 
     // @inheritdoc
+    renderSelectors: {
+        innerEl: '.i-infotb-inner'
+    },
+
+    // @inheritdoc
     initComponent: function() {
         var me = this;
 
         // Single item
-        me.items = '<span style="color: ' + me.infoTextColor + ';">' + me.infoText + '</span>';
+        me.items = '<span style="color: ' + me.infoTextColor + ';" class="i-infotb-inner">' + me.infoText + '</span>';
 
         // Styles
         me.minHeight = 15;

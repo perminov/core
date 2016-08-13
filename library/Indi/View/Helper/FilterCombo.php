@@ -62,7 +62,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
     public function getConsistence() {
 
         // Check if consistency is not toggled Off for current filter
-        if ($this->filter->model()->fields('consistensy') && !$this->filter->consistensy) return;
+        if ($this->filter->model()->fields('consistence') && !$this->filter->consistence) return;
 
         // If filter is non-boolean
         if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && Indi::uri('format')) {

@@ -215,7 +215,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         $this->callParent();
 
         // Merge indexes
-        foreach ($rowset->column('alias') as $alias) $this->_indexes[$alias] = count($this->_indexes);
+        foreach ($rowset as $r) $this->_indexes[$r->alias] = count($this->_indexes);
 
         // Return itself
         return $this;

@@ -433,7 +433,10 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
-            allowBlank: field.required ? field.required == 'n' : me.ti().section.type != 'p',
+            allowBlank: field.mode != 'required' && (parseInt(field.relation) != 6 || field.storeRelationAbility == 'many'),
+            disabled: field.mode == 'readonly',
+            labelAlign: field.params && field.params.wide == 'true' ? 'top' : 'left',
+            cls: field.params && field.params.wide == 'true' ? 'i-field-wide' : '',
             field: field,
             row: this.ti().row,
             listeners: {
@@ -509,9 +512,6 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemXString: function(item) {
 
-        // If this is an auto-created field - return
-        if (item.fieldLabel == 'Auto title') return null;
-
         // Cfg object
         var cfgO = {
             maxLength: 255
@@ -519,6 +519,12 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // If field's name is 'alias' - setup `allowBlank` property as `false`
         if (item.name == 'alias') cfgO.allowBlank = false;
+
+        // Apply input mask
+        if (item.field.params && item.field.params.inputMask) cfgO.inputMask = item.field.params.inputMask;
+
+        // Apply vtype
+        if (item.field.params && item.field.params.vtype) cfgO.vtype = item.field.params.vtype;
 
         // Return config
         return cfgO
