@@ -21,7 +21,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'mark4delete'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'm4d', 'cancel'],
 
         /**
          * Tools special config
@@ -66,6 +66,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * This function provide batch-adjustment ability for each row within the store
      */
     storeLoadCallbackDataRowAdjust: Ext.emptyFn,
+
+    /**
+     * Force 'Mark for deletion' filter to be not clearable
+     */
+    panelDocked$Filter$M4d: {allowClear: false},
 
     /**
      * Get store, that current action is dealing with
@@ -463,9 +468,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Else set by original way
             } else {
-                Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                resetFn(Ext.getCmp(filterCmpIdPrefix + alias));
-                Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                if (Ext.getCmp(filterCmpIdPrefix + alias).allowClear !== false) {
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias));
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                }
             }
         }
 
@@ -1550,7 +1557,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
 
             // Finally, if filter has a non-null default value
-            if (me.ti().filters[i].defaultValue) {
+            if (me.ti().filters[i].defaultValue || (control == 'check' && me.ti().filters[i].defaultValue === 0)) {
 
                 // Setup a shortcut for filter's default value
                 d = me.ti().filters[i].defaultValue;
@@ -1884,7 +1891,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param record
      * @param aix
      */
-    recordRemoteSave: function(record, aix, $ti) {
+    recordRemoteSave: function(record, aix, $ti, callback) {
         var me = this, ti = $ti || me.ti(), params, bool = [];
 
         // If no changed was made - return
@@ -1964,6 +1971,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                 // Commit row
                 record.commit();
+
+                // Call callback
+                if (Ext.isFunction(callback)) callback();
             },
 
             // Failure handler

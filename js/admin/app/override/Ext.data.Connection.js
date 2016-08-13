@@ -156,6 +156,18 @@ Ext.override(Ext.data.Connection, {
                             request.options.url = request.options.url.split('?')[0] + '?answer=' + answer
                                 + (request.options.url.split('?')[1] ? '&' + request.options.url.split('?')[1] : '');
 
+                            // If answer is 'ok'
+                            if (answer == 'ok') {
+
+                                // Show load mask
+                                Indi.loadmask.show();
+
+                                // Setup callback for mask to hide
+                                request.options.callback = function(){
+                                    Indi.loadmask.hide();
+                                };
+                            }
+
                             // Make new request
                             me.request(request.options);
                         }

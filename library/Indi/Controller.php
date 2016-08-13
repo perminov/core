@@ -519,7 +519,7 @@ class Indi_Controller {
             // Append part of WHERE clause, that will be involved in the process of fetching filter combo data
             $where[] = '`id` IN (' . (($in = Indi::db()->query('
                 SELECT DISTINCT `'. $for . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
-            )->fetchAll(PDO::FETCH_COLUMN)) ? implode(',', $in) : 0) . ')';
+            )->fetchAll(PDO::FETCH_COLUMN)) ? trim(implode(',', $in), ',') : 0) . ')';
         }
 
         // Setup a row
@@ -557,6 +557,10 @@ class Indi_Controller {
 
         // If field having $for as it's `alias` was not found in existing fields, try to finв it within pseudo fields
         if (!$field) $field = Indi::trail()->pseudoFields->field($for);
+
+        // Do some things, custom for certain field, before odata fetch
+        if (($method = 'formActionOdata' . ucfirst(Indi::uri()->odata)) && method_exists($this, $method))
+            $this->$method(json_decode(Indi::post('consider'), true));
 
         // Prepare and flush json-encoded combo options data
         $this->_odata($for, $post, $field, null, $order, $dir, $offset);

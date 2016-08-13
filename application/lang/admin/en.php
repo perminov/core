@@ -80,6 +80,7 @@ define('I_NAVTO_CREATE', 'Goto new row creation');
 define('I_NAVTO_NESTED', 'Goto nested objects');
 define('I_NAVTO_ROWINDEX', 'Goto row by #');
 
+define('I_ROWSAVE_ERROR_VALUE_REQUIRED', 'Field "%s" is required');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Value "%s" of field "%s" should not be greater than a 11-digit decimal');
@@ -105,10 +106,16 @@ define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Current row cannot be set as parent for itself in field "%s"');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Row with id "%s", specified in field "%s", - is not exists, so can not be set up as parent row');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Row "%s", specified in field "%s", - is a child/descendant row for a current row "%s", so it can not be set up as parent row');
+
+define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Field "%s" is required');
+define('I_ADMIN_ROWSAVE_LOGIN_OCCUPIED', 'Value "%s" of field "%s" is already used as an username for another account');
+
 define('I_ROWFILE_ERROR_MKDIR', 'Recursive creation of directory "%s" within path "%s" is failed, despite on that path is writable');
 define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Recursive creation of directory "%s" within path "%s" is failed, because that path is not writable');
 define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Target directory "%s" exists, but is not writable');
 define('I_ROWFILE_ERROR_NONEXISTENT_ROW', 'There is no possibility to deal with files of nonexistent row');
+
+define('I_ROWM4D_NO_SUCH_FIELD', 'Field `m4d` does not exist within "%s" entity');
 
 define('I_UPLOAD_ERR_INI_SIZE', 'The uploaded file in field "%s" exceeds the upload_max_filesize directive in php.ini');
 define('I_UPLOAD_ERR_FORM_SIZE', 'The uploaded file in field "%s" exceeds the MAX_FILE_SIZE directive that was specified ');

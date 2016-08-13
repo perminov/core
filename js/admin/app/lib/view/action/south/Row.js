@@ -51,5 +51,8 @@ Ext.define('Indi.lib.view.action.south.Row', {
 
         // Else set `heightPercent` to default south panel height
         else me.heightPercent = me.self.prototype.height;
+
+        // If we decided to hide center panel, set south panel's height as '100%'
+        if (cPanel.hidden) me.height = me.heightPercent = '100%';
     }
 });

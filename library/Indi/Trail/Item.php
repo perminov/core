@@ -38,6 +38,13 @@ class Indi_Trail_Item {
     public $pseudoFields = null;
 
     /**
+     * Abstract data, for being passed to js
+     *
+     * @var array
+     */
+    public $data = array();
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -140,6 +147,7 @@ class Indi_Trail_Item {
         if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
         if ($this->pseudoFields) $array['pseudoFields'] = $this->pseudoFields->toArray();
         if ($this->scope) $array['scope'] = $this->scope->toArray();
+        $array['data'] = $this->data;
         $array['level'] = $this->level;
         return $array;
     }
