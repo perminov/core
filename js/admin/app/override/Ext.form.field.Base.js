@@ -286,3 +286,17 @@ Ext.override(Ext.form.field.Base, {
         return inputValueWidth + input.getPadding('lr') + input.getMargin('lr') + input.getBorderWidth('lr');
     }
 });
+Ext.override(Ext.form.field.Text, {
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this; config.plugins = config.plugins || [];
+
+        // Add InputMask plugin
+        if (config.inputMask)
+            config.plugins.push(new Ext.ux.form.field.plugin.InputMask(config.inputMask, { placeholder: '*' }));
+
+        // Call parent
+        me.callParent(arguments);
+    }
+});

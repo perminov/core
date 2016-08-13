@@ -256,7 +256,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
 
         // Apply new index
-        $this->setScopeRow();
+        $this->setScopeRow(false, null, $toBeMovedRs->column('id'));
 
         // Flush json response, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
@@ -313,7 +313,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param bool $upper
      * @return null
      */
-    public function setScopeRow($upper = false, Indi_Db_Table_Row $r = null) {
+    public function setScopeRow($upper = false, Indi_Db_Table_Row $r = null, $lastIds = null) {
 
         // If no primary hash param passed within the uri - return
         if (!Indi::uri()->ph) return;
@@ -335,7 +335,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // mean that page number should be recalculated, so 'page' param will store recalculated page number). After
         // all necessary operations will be done - valued from this ($modified) array will replace existing values
         // in scope
-        $modified = array('aix' => Indi::uri()->aix, 'lastIds' => array($r->id));
+        $modified = array('aix' => Indi::uri()->aix, 'lastIds' => ar($lastIds ?: $r->id));
 
         // Start and end indexes. We calculate them, because we should know, whether page number should be changed or no
         $start = ($original['page'] - 1) * Indi::trail((int) $upper)->section->rowsOnPage + 1;
@@ -1825,7 +1825,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
 
             // Setup the left menu
-            Indi::view()->menu = Section::menu();
+            $menu = Section::menu(); $this->adjustMenu($menu); Indi::view()->menu = $menu;
 
             // Setup info about current logged in cms user
             Indi::view()->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
@@ -1931,6 +1931,35 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     * Mark-for-delete current row, and redirect back
+     */
+    public function m4dAction() {
+
+        // Toggle
+        Indi::trail()->row->m4d();
+
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
+
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+            // If $otherIdA array is not empty
+            if ($otherIdA) {
+
+                // Fetch rows
+                $otherRs = Indi::trail()->model->fetchAll(array('`id` IN (' . im($otherIdA) . ')', Indi::trail()->scope->WHERE));
+
+                // For each row
+                foreach ($otherRs as $otherR) $otherR->m4d();
+            }
+        }
+
+        // Redirect
+        $this->redirect();
+    }
+
+    /**
      * Do custom things before saveAction() call
      */
     public function postSave() {
@@ -2023,6 +2052,14 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Do pre-save operations
         $this->preSave();
 
+        // Setup 'zeroValue'-mismatches
+        /*foreach (Indi::trail()->fields as $fieldR)
+            if ($fieldR->mode == 'required' && $this->row->fieldIsZero($fieldR->alias))
+                $this->row->mismatch($fieldR->alias, sprintf(I_ROWSAVE_ERROR_VALUE_REQUIRED, $fieldR->title));
+
+        // Flush 'zeroValue'-mismatches
+        $this->row->mflush();*/
+
         // Save the row
         $this->row->save();
 
@@ -2074,8 +2111,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If redirect should be performed, include the location address under 'redirect' key within $response array
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
 
-        // Pick affected prop names
-        $response['affected'] = $this->row->toGridData($this->row->affected());
+        // Wrap row in a rowset, process it by $this->adjustGridDataRowset(), and unwrap back
+        $this->rowset = Indi::trail()->model->createRowset(array('rows' => array($this->row)));
+        $this->adjustGridDataRowset();
+        $this->row = $this->rowset->at(0);
+
+        // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
+        $data = array($this->row->toGridData($this->row->affected()));
+        $this->adjustGridData($data);
+        $data = array_shift($data);
+
+        // Assign row's grid data into 'affected' key within $response
+        $response['affected'] = $data;
 
         // Flush response
         jflush(true, $response);
@@ -2235,8 +2282,11 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If no trail - call action and return
         if (!Indi::trail(true)) return $this->{$action . 'Action'}();
 
-        // Adjust access rights ()
+        // Adjust access rights
         $this->adjustAccess();
+
+        // Adjust existing row access rights
+        if (Indi::trail()->row->id) $this->adjustExistingRowAccess(Indi::trail()->row);
 
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
@@ -2317,6 +2367,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Walk through hierarchy, setup scopes for each step as if user would manually navigate to each uri subsequently
         for ($i = 0; $i < count($nav); $i++) {
 
+            // If $_GLOBALS['cmsOnlyMode'] is not `true` - prepend $nav[$i] with '/admin'
+            if (!COM) $nav[$i] = '/admin' . $nav[$i];
+
             // Append primary hash and row index (none of them will be appended at first-iteration)
             $nav[$i] .=  $ph . $aix;
 
@@ -2326,8 +2379,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Remove 'jump' param from $_GET
                 Indi::get('jump', null);
 
+                // Replace '/id//' and '/aix//' width '/'
+                $to = preg_replace(':/(id|aix)//:', '/', array_pop($nav));
+
                 // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
-                $this->redirect(array_pop($nav));
+                $this->redirect($to);
 
             // Simulate as if rowset panel was loaded
             } else Indi::uri()->dispatch($nav[$i]);
@@ -2437,5 +2493,24 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup special value for section's `disableAdd` prop, indicating that creation is still possible
         Indi::trail()->section->disableAdd = 2;
+    }
+
+    /**
+     * Empty function. To be overridden in child classes
+     *
+     * @param Indi_Db_Table_Row $row
+     */
+    public function adjustExistingRowAccess(Indi_Db_Table_Row $row) {
+        
+    }
+
+    /**
+     * Empty function. To be overridden on child classes
+     *
+     * @param $menu
+     * @return mixed
+     */
+    public function adjustMenu(&$menu) {
+
     }
 }

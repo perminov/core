@@ -553,6 +553,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'price' => array(),
             'date' => array(),
             'datetime' => array(),
+            'upload' => array(),
             'other' => array('id' => true)
         );
 
@@ -581,6 +582,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 $typeA['date'][$gridFieldR->alias] = $gridFieldR->params;
             else if ($gridFieldR->foreign('columnTypeId')->type == 'DATETIME')
                 $typeA['datetime'][$gridFieldR->alias] = $gridFieldR->params;
+
+            // File-uploads
+            else if ($gridFieldR->foreign('elementId')->alias == 'upload')
+                $typeA['upload'][$gridFieldR->alias] = true;
 
             // All other types
             else $typeA['other'][$gridFieldR->alias] = true;
@@ -654,9 +659,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         $typeA['datetime'][$columnI]['displayTimeFormat'] = 'H:i:s';
 
                     $data[$pointer][$columnI] = $r->$columnI == '0000-00-00 00:00:00'
-                        ? '' : date( $typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
-                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI));
+                        ? '' : ldate($typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
+                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI),
+                            $typeA['datetime'][$columnI]['when']);
                 }
+
+                // If field type is fileupload, we build something like
+                // '<a href="/url/for/file/download/">DOCX » 1.25mb</a>'
+                if (isset($typeA['upload'][$columnI])) $data[$pointer][$columnI] = $r->file($columnI)->link;
 
                 // If there the color-value in format 'hue#rrgbb' can probably be found in field value
                 // we do a try, and if found - inject a '.i-color-box' element
@@ -673,7 +683,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                             . $color[1] . ';"></span>';
                     } else if (preg_match('/box/', $data[$pointer][$columnI]) && !in($this->table(), 'enumset,changeLog')) {
                         if (preg_match('/background:\s*url\(/', $data[$pointer][$columnI])) {
-                            $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
+                            if ($this->model()->fields($columnI)->relation == 6) {
+                                $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
+                            }
                         } else {
                             $data[$pointer][$columnI] = preg_replace('/(><\/span>)(.*)$/', ' title="$2"$1', $data[$pointer][$columnI]);
                         }
@@ -1117,7 +1129,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     foreach ($foreignRs[$foreignKeyEntityId] as $foreignR) {
 
                         // If foreign key value of current row is equal to foreign row id
-                        if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && $r->$key == $foreignR->$col) {
+                        if (($col == 'alias' ? $foreignR->fieldId == $fieldR->id : true) && '' . $r->$key == '' . $foreignR->$col) {
 
                             // Assign foreign row directly
                             $r->foreign($key, $foreignR);
@@ -1269,8 +1281,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // If color was detected as a box, append $system['boxColor'] property
             if ($info['box']) $system['boxColor'] = $info['color'];
 
+            // Get max length
+            $substr = $params['substr'] ?: 50;
+
             // Setup primary option data
-            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+            $options[$o->$keyProperty] = array('title' => usubstr($info['title'], $substr), 'system' => $system);
+
+            // Put trimmed part of option title into tooltip
+            if (preg_match('/\.\.$/', $options[$o->$keyProperty]['title']))
+                $options[$o->$keyProperty]['system']['tooltip'] = '..' . mb_substr($info['title'], $substr, 1024, 'utf-8');
 
             // Setup foreign entries titles
             if ($params['foreign'])

@@ -49,7 +49,7 @@
 .i-field.i-field-number.x-form-readonly .x-form-trigger-wrap{
     width: 84px !important;
 }
-.i-field.i-field-number .i-field-number-after {
+.i-field .i-field-number-after {
     position: absolute; margin-top: -17px; margin-left: 104px; font-size: 11px;
 }
 .i-field.i-field-number.x-form-readonly .i-field-number-after {
@@ -88,7 +88,7 @@
 }
 .i-field .x-form-check-group .x-checkboxgroup-form-item {
     margin-bottom: 1px;
-    width: 100%;
+    /*width: 100%;*/
 }
 .i-field.i-field-multicheck .x-form-checkboxgroup-body {
     padding: 2px 0 0 0;
@@ -114,6 +114,8 @@
 }
 
 .i-radio-color-box {width: 14px; height: 10px; display: inline-block; position: relative; top: 1px; margin-right: 4px;}
+
+.i-field.i-field-wide + .i-field {border-top-width: 0 !important;}
 
 /* Browser fixes */
 .x-safari .x-form-cb-label.x-form-cb-label-after{
