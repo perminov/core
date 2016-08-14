@@ -1793,7 +1793,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
 
             // Setup the left menu
-            Indi::view()->menu = Section::menu();
+            $menu = Section::menu(); $this->adjustMenu($menu); Indi::view()->menu = $menu;
 
             // Setup info about current logged in cms user
             Indi::view()->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
@@ -2070,8 +2070,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If redirect should be performed, include the location address under 'redirect' key within $response array
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
 
-        // Pick affected prop names
-        $response['affected'] = $this->row->toGridData($this->row->affected());
+        // Wrap row in a rowset, process it by $this->adjustGridDataRowset(), and unwrap back
+        $this->rowset = Indi::trail()->model->createRowset(array('rows' => array($this->row)));
+        $this->adjustGridDataRowset();
+        $this->row = $this->rowset->at(0);
+
+        // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
+        $data = array($this->row->toGridData($this->row->affected()));
+        $this->adjustGridData($data);
+        $data = array_shift($data);
+
+        // Assign row's grid data into 'affected' key within $response
+        $response['affected'] = $data;
 
         // Flush response
         jflush(true, $response);
@@ -2451,5 +2461,15 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function adjustExistingRowAccess(Indi_Db_Table_Row $row) {
         
+    }
+
+    /**
+     * Empty function. To be overridden on child classes
+     *
+     * @param $menu
+     * @return mixed
+     */
+    public function adjustMenu(&$menu) {
+
     }
 }

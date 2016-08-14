@@ -8,7 +8,7 @@ Ext.override(Ext.button.Button, {
         if (!me.disabled) {
             me.onMouseDown({button: 0});
             Ext.defer(function(){try{me.onMouseUp({button: 0});} catch(e){}}, 300);
-            me.handler();
+            me.handler(me);
         }
     },
 

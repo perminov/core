@@ -50,7 +50,7 @@
     width: 84px !important;
 }
 .i-field .i-field-number-after {
-    position: absolute; margin-top: -17px; margin-left: 105%; font-size: 11px;
+    position: absolute; margin-top: -17px; margin-left: 104px; font-size: 11px;
 }
 .i-field.i-field-number.x-form-readonly .i-field-number-after {
     margin-left: 87px;
