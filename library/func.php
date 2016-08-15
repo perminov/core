@@ -485,7 +485,7 @@ function ldate($format, $date = '', $when = '') {
 
         // Force Russian-style month name endings
         if (in('month', ar($when))) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
-            $date = preg_replace('/' . $s . '\b/u', $r, $date);
+            $date = preg_replace('/([а-яА-Я]{2,})' . $s . '\b/u', '$1' . $r, $date);
             $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
             $date = preg_replace('/' . $s . '$/u', $r, $date);
         }
