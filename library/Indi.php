@@ -2187,6 +2187,14 @@ class Indi {
         // Mail
         if ($mail) {
 
+            // If where was some input
+            if ($input = file_get_contents('php://input')) {
+
+                // Append it to $msg
+                $msg .= 'Input data:' . '<br>';
+                $msg .= '<br>' . print_r($input, true) . '<br>--------------------------------------<br><br>';
+            }
+
             // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
             $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';
 
