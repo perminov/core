@@ -134,8 +134,8 @@ class Indi_Trail_Item {
             $ckeDataA = array_intersect(array_keys($array['row']), $ckeFieldA);
 
             // Left-trim the {STD . '/www'} from the values of 'href' and 'src' attributes
-            foreach ($ckeDataA as $ckeDataI) $array['row'][$ckeDataI]
-                = preg_replace(':(\s*(src|href)\s*=\s*[\'"])(/[^/]):', '$1' . STD . '$3', $array['row'][$ckeDataI]);
+            //foreach ($ckeDataA as $ckeDataI) $array['row'][$ckeDataI]
+                //= preg_replace(':(\s*(src|href)\s*=\s*[\'"])(/[^/]):', '$1' . STD . '$3', $array['row'][$ckeDataI]);
 
         }
         if ($this->model) $array['model'] = $this->model->toArray();
