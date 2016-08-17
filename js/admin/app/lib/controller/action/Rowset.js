@@ -53,8 +53,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 this.ctx().filterChange({noReload: true});
             },
             load: function(){
-                this.ctx().storeLoadCallbackDefault();
-                this.ctx().storeLoadCallback();
+                this.ctx().storeLoadCallbackDefault.apply(this.ctx(), arguments);
+                this.ctx().storeLoadCallback.apply(this.ctx(), arguments);
             }
         },
         ctx: function() {
