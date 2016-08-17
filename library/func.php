@@ -544,21 +544,29 @@ if (!function_exists('array_column')) {
  */
 if (!function_exists('http_parse_headers')) {
     function http_parse_headers($raw){
-        $headers = array(); $key = '';
-        foreach(explode("\n", $raw) as $h) {
-            $h = explode(':', $h, 2);
-            if (isset($h[1])){
-                if (!isset($headers[$h[0]])) $headers[$h[0]] = trim($h[1]);
-                else if (is_array($headers[$h[0]])) $headers[$h[0]] = array_merge($headers[$h[0]], array(trim($h[1])));
-                else $headers[$h[0]] = array_merge(array($headers[$h[0]]), array(trim($h[1])));
-                $key = $h[0];
-            } else {
-                if (substr($h[0], 0, 1) == "\t") $headers[$key] .= "\r\n\t".trim($h[0]);
-                else if (!$key) $headers[0] = trim($h[0]);trim($h[0]);
-            }
-        }
-        return $headers;
+        return parsepairs($raw, ':');
     }
+}
+
+/**
+ * 
+ *
+ */
+function parsepairs($raw, $delimiter = ':'){
+    $headers = array(); $key = '';
+    foreach(explode("\n", $raw) as $h) {
+        $h = explode($delimiter, $h, 2);
+        if (isset($h[1])){
+            if (!isset($headers[$h[0]])) $headers[$h[0]] = trim($h[1]);
+            else if (is_array($headers[$h[0]])) $headers[$h[0]] = array_merge($headers[$h[0]], array(trim($h[1])));
+            else $headers[$h[0]] = array_merge(array($headers[$h[0]]), array(trim($h[1])));
+            $key = $h[0];
+        } else {
+            if (substr($h[0], 0, 1) == "\t") $headers[$key] .= "\r\n\t".trim($h[0]);
+            else if (!$key) $headers[0] = trim($h[0]);trim($h[0]);
+        }
+    }
+    return $headers;
 }
 
 /**
