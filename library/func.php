@@ -763,7 +763,7 @@ function num2str($num, $iunit = true, $dunit = true) {
 function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Start building data for flushing
-    $flush = array('success' => $success);
+    $flush = is_array($success) && array_key_exists('success', $success) ? $success : array('success' => $success);
 
     // Deal with first data-argument
     if (func_num_args() > 1 && func_get_arg(1) != null)
