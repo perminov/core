@@ -1024,6 +1024,34 @@ class Indi_Controller_Admin extends Indi_Controller {
                     )
                 )
             );
+
+            // Apply background color for all cells within current column, in caseif current column is
+            // a rownumberer-column
+            if ($columnA[$n]['type'] == 'rownumberer') $objPHPExcel->getActiveSheet()
+                ->getStyle($columnL . ($currentRowIndex + 1) . ':' . $columnL . $lastRowIndex)
+                ->applyFromArray(
+                array(
+                    'borders' => array(
+                        'right' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'BDD5F1':'d5d5d5')
+                            )
+                        ),
+                    ),
+                    'fill' => array(
+                        'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
+                        'rotation' => 0,
+                        'startcolor' => array(
+                            'rgb' => 'F9F9F9',
+                        ),
+                        'endcolor' => array(
+                            'rgb' => 'E3E4E6',
+                        ),
+                    )
+                )
+            );
+
         }
 
         // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
@@ -1196,7 +1224,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
 
                 // Set odd-even rows background difference
-                if ($i%2) {
+                if ($i%2 && $columnA[$n]['type'] != 'rownumberer') {
                     $objPHPExcel->getActiveSheet()
                         ->getStyle($columnL . $currentRowIndex)
                         ->getFill()
