@@ -926,6 +926,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
                 // because gd image will override cell value otherwise
                 $columnI['title'] = str_pad('', 6, ' ');
+
+            // Else if current column is a row-numberer column
+            } else if (preg_match('/^&#160;?$/', $columnI['title'])) {
+                $columnI['title'] = ' ';
+                $columnA[$n]['type'] = 'rownumberer';
             }
 
             // Write header title of a certain column to a header cell
@@ -1040,8 +1045,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Convert the column index to excel column letter
                 $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
-                // Get the value
-                $value = $data[$i][$columnI['dataIndex']];
+                // Get the index/value
+                if ($columnI['dataIndex']) $value = $data[$i][$columnI['dataIndex']];
+                else if ($columnI['type'] == 'rownumberer') $value = $i + 1;
+                else $value = '';
 
                 // If cell value contains a .i-color-box item, we replaced it with same-looking GD image box
                 if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);" title="[^"]+">/', $value, $c)) {
