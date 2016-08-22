@@ -305,6 +305,13 @@ Ext.override(Ext.form.field.Base, {
      */
     addBtn: function(cfg) {
         this.getLbar().add(cfg);
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+        if (me.lbar) me.lbar.destroy();
+        me.callParent(arguments);
     }
 });
 Ext.override(Ext.form.field.Text, {
