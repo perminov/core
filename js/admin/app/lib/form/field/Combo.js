@@ -586,6 +586,19 @@ Ext.define('Indi.lib.form.field.Combo', {
     afterRender: function() {
         var me = this;
 
+        // Else if combo is multiSelect: false, but `jump` prop is not an empty string
+        if (!me.multiSelect && me.jump && Ext.isString(me.jump)) {
+
+            // Add button to leftbar
+            me.lbarItems.push({
+                iconCls: 'i-btn-icon-form-goto',
+                name: 'jump',
+                handler: function() {
+                    Indi.load(me.jump.replace('{id}', me.val()) + 'jump/1/');
+                }
+            });
+        }
+
         // Call parent
         me.callParent(arguments);
 
@@ -625,26 +638,6 @@ Ext.define('Indi.lib.form.field.Combo', {
 
             // Add i-combo-jump css class
             if (me.jump && Ext.isString(me.jump)) me.comboEl.addCls('i-combo-jump');
-
-        // Else if combo is multiSelect: false, but `jump` prop is not an empty string
-        } else if (me.jump && Ext.isString(me.jump)) {
-
-            // Add button to leftbar
-            me.getLbar().add({
-                xtype: 'button',
-                iconCls: 'i-btn-icon-form-goto',
-                name: 'jump',
-                padding: 0,
-                disabled: !parseInt(me.val()),
-                handler: function() {
-                    Indi.load(me.jump.replace('{id}', me.val()) + 'jump/1/');
-                }
-            });
-
-            // Ensure jump btn will be disabled if combo-value changes to zero-value
-            me.on('change', function(c, newValue){
-                me.getLbar().down('[name="jump"]').setDisabled(!parseInt(newValue));
-            }, me);
         }
 
         // Adjust width of .i-combo-table element for it to fit all available space
@@ -674,30 +667,6 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.store.js && !me.nojs) {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
         }
-    },
-
-    /**
-     * Get left-side bar, and preliminary create it, if it does not exists
-     *
-     * @return {*}
-     */
-    getLbar: function() {
-        var me = this;
-        if (!me.lbar) {
-            me.lbar = Ext.create('Ext.toolbar.Toolbar', {
-                autoRender: true,
-                autoShow: true,
-                margin: 0,
-                padding: 0,
-                height: me.triggerWrap.getHeight(),
-                style: {
-                    background: 'none'
-                },
-                border: 0,
-                floating: true
-            });
-        }
-        return me.lbar;
     },
 
     /**

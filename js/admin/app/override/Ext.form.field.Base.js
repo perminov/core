@@ -53,6 +53,7 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
         me.callParent();
         me._initComponent();
+        me.lbarItems = me.lbarItems || [];
     },
 
     /**
@@ -105,6 +106,7 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
         me.callParent();
         me._afterRender();
+        me.initLbar();
     },
 
     /**
@@ -242,6 +244,67 @@ Ext.override(Ext.form.field.Base, {
                 });
             }
         });
+    },
+
+    /**
+     * Init left-bar. Left-bar will be created only if me.lbarItems is not an empty array
+     */
+    initLbar: function() {
+        var me = this;
+
+        // Build lbarItems
+        me.lbarItems.forEach(function(item){
+            me.addBtn(item);
+        });
+    },
+
+    /**
+     * Get left-side bar, and preliminary create it, if it does not exists
+     *
+     * @return {*}
+     */
+    getLbar: function() {
+        var me = this;
+
+        // If left bar not yet exists - create it
+        if (!me.lbar) me.lbar = Ext.create('Ext.toolbar.Toolbar', {
+            autoShow: true,
+            margin: '1 1 0 0',
+            padding: 0,
+            height: (me.triggerWrap || me.inputEl).getHeight() - 1,
+            style: {
+                background: 'none',
+                float: 'right'
+            },
+            defaults: {
+                xtype: 'button',
+                padding: 0,
+                target: me,
+                listeners: {
+                    boxready: function(c) {
+                        c.setDisabled(c.target.hasZeroValue());
+                        c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                        c.target.on('change', function(target, newValue){
+                            c.setDisabled(target.hasZeroValue());
+                        }, me);
+                    }
+                }
+            },
+            renderTo: me.labelCell,
+            border: 0
+        });
+
+        // Return left-bar
+        return me.lbar;
+    },
+
+    /**
+     * Add component into left-bar
+     *
+     * @param cfg
+     */
+    addBtn: function(cfg) {
+        this.getLbar().add(cfg);
     }
 });
 Ext.override(Ext.form.field.Text, {

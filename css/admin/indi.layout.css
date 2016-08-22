@@ -313,6 +313,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-close{background-image: url('/i/admin/btn-icon-close.png');}
 .i-btn-icon-loading{background-image: url('/i/admin/btn-icon-loading.gif'); background-position: inherit;}
 .i-btn-icon-form-goto{background-image: url('/i/admin/btn-icon-form-goto.png');}
+.i-btn-icon-video{background-image: url('/i/admin/btn-icon-video.png');}
+.i-btn-icon-goto{background-image: url('/i/admin/btn-icon-goto.png');}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
@@ -503,4 +505,8 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 }
 .i-link {
     cursor: pointer; border-bottom: 1px dotted; text-decoration: none; display: inline-block;
+}
+.i-field .x-form-item-label {
+    display: inline-block;
+    line-height: 19px;
 }
