@@ -251,6 +251,8 @@ Ext.override(Ext.form.field.Base, {
      */
     initLbar: function() {
         var me = this;
+        
+        me.lbarItems = me.lbarItems || [];
 
         // Build lbarItems
         me.lbarItems.forEach(function(item){
