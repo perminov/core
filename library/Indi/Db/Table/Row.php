@@ -1419,9 +1419,19 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return bool|string
      */
     public function abs($alias, $copy = '') {
+
+        // Here were omit STD's one or more dir levels at the ending, in case if
+        // Indi::ini('upload')->path is having one or more '../' at the beginning
+        $std = STD; $uph = Indi::ini('upload')->path;
+        if (preg_match(':^(\.\./)+:', $uph, $m)) {
+            $uph = preg_replace(':^(\.\./)+:', '', $uph);
+            $lup = count(explode('/', rtrim($m[0], '/')));
+            for ($i = 0; $i < $lup; $i++) $std = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std);
+        }
+
         // Get the name of the directory, relative to document root,
         // and where all files related model of current row are located
-        $src =  STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+        $src =  $std . '/' . $uph . '/' . $this->_table . '/';
 
         // Build the filename pattern for using in glob() php function
         $pat = DOC . $src . $this->id . ($alias ? '_' . $alias : '') . ($copy ? ',' . $copy : '') . '.' ;
@@ -1450,10 +1460,19 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function src($alias, $copy = '', $dc = false, $std = false) {
 
         // Get the filename with absolute path
-        if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy))
+        if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy)) {
+
+            // Here were omit STD's one or more dir levels at the ending, in case if
+            // Indi::ini('upload')->path is having one or more '../' at the beginning
+            $std_ = STD;
+            if (preg_match(':^(\.\./)+:', Indi::ini('upload')->path, $m)) {
+                $lup = count(explode('/', rtrim($m[0], '/')));
+                for ($i = 0; $i < $lup; $i++) $std_ = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std_);
+            }
 
             // Return path, relative to document root
-            return str_replace(DOC . ($std ? '' : STD), '', $abs) . ($dc ? '?' . filemtime($abs) : '');
+            return str_replace(DOC . ($std ? '' : $std_), '', $abs) . ($dc ? '?' . filemtime($abs) : '');
+        }
     }
 
     /**
@@ -3300,6 +3319,15 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($more) {
             $file['width'] = $more[0];
             $file['height'] = $more[1];
+        }
+
+        // Here were omit STD's one or more dir levels at the ending, in case if
+        // Indi::ini('upload')->path is having one or more '../' at the beginning
+        $std_ = STD;
+        if (preg_match(':^(\.\./)+:', Indi::ini('upload')->path, $m)) {
+            $lup = count(explode('/', rtrim($m[0], '/')));
+            for ($i = 0; $i < $lup; $i++) $std_ = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std_);
+            $file['std'] = $std_;
         }
 
         // Return
