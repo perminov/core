@@ -784,14 +784,17 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     // If headers were not already sent - flush an error message
     if (!headers_sent()) header('Content-Type: application/json');
 
-    // Flush contents
-    echo json_encode($flush);
+    // Check if redirect should be performed
+    $redir = func_num_args() == 4 ? is_string($die) && Indi::rex('url', $die) : ($_ = Indi::$jfr) && $die = $_;
 
     // Log this error if logging of 'jerror's is turned On
-    if (Indi::logging('jflush')) Indi::log('jflush', $flush);
+    if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
+
+    // If $die arg is an url - do not flush data
+    if (!$redir) echo json_encode($flush);
 
     // Exit if need
-    if ($die) iexit();
+    if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
 }
 
 /**

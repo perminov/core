@@ -29,6 +29,16 @@ class Indi {
     );
 
     /**
+     * jflush-redirect. If not empty, all jflush() calls will be logged despite Indi::logging('flush') may be `false`,
+     * and additionally there would be a redirect to url, specified by Indi::$jfr
+     *
+     * NOTE: *_Row->mflush() calls also involve jflush() call
+     *
+     * @var string
+     */
+    public static $jfr = '';
+
+    /**
      * An internal static variable, will be used to store data, got from `staticblock` table 
 	 * as an assotiative array  and that should be accessible anywhere
      *
