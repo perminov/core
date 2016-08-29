@@ -457,6 +457,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     * Default config for fileupload-columns
+     */
+    gridColumnXUpload: {sortable: false},
+
+    /**
      * Default config for date-columns
      *
      * @param column
