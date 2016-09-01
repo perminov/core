@@ -510,3 +510,6 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
     display: inline-block;
     line-height: 19px;
 }
+.i-field.i-print-iframe {
+    border-top-width: 0 !important;
+}
