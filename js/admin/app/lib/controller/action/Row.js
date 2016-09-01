@@ -254,8 +254,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @param autosave {Boolean}
      * @return {String}
      */
-    panelDockedInner$Reload_uri: function (autosave) {
-        var me = this, uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
+    panelDockedInner$Reload_uri: function (autosave, action) {
+        var me = this, uri = '/' + me.ti().section.alias + '/' + (action || me.ti().action.alias);
 
         // Append 'id' param to the uri
         uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
