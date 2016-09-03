@@ -129,4 +129,46 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
         // Flush success
         jflush(true, 'Группа полей "Создание" была добавлена в структуру сущности "' . $this->row->title . '"');
     }
+
+    /**
+     * Create a `toggle` field within given entity
+     */
+    public function toggleAction() {
+
+        // Get model
+        $model = Indi::model($this->row->id);
+
+        // If `author` field exists - flush error
+        if ($model->fields('toggle'))
+            jflush(false, 'Группа полей "Статус" уже существует в структуре сущности "' . $this->row->title . '"');
+
+        // Create field
+        $fieldR = Indi::model('Field')->createRow(array(
+            'entityId' => $this->row->id,
+            'title' => 'Статус',
+            'alias' => 'toggle',
+            'storeRelationAbility' => 'one',
+            'elementId' => Indi::model('Element')->fetchRow('`alias` = "combo"')->id,
+            'columnTypeId' => Indi::model('ColumnType')->fetchRow('`type` = "ENUM"')->id,
+            'defaultValue' => 'y'
+        ), true);
+
+        // Save field
+        $fieldR->save();
+
+        // Get first enumset option (that was created automatically)
+        $y = $fieldR->nested('enumset')->at(0);
+        $y->title = '<span class="i-color-box" style="background: lime;"></span>Включен';
+        $y->save();
+
+        // Create one more enumset option within this field
+        Indi::model('Enumset')->createRow(array(
+            'fieldId' => $y->fieldId,
+            'title' => '<span class="i-color-box" style="background: red;"></span>Выключен',
+            'alias' => 'n'
+        ), true)->save();
+
+        // Flush success
+        jflush(true, 'Поле "Статус" было добавлено в структуру сущности "' . $this->row->title . '"');
+    }
 }
