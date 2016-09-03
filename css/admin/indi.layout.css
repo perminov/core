@@ -315,6 +315,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-form-goto{background-image: url('/i/admin/btn-icon-form-goto.png');}
 .i-btn-icon-video{background-image: url('/i/admin/btn-icon-video.png');}
 .i-btn-icon-goto{background-image: url('/i/admin/btn-icon-goto.png');}
+.i-btn-icon-php{background-image: url('/i/admin/btn-icon-php.png');}
+.i-btn-icon-author{background-image: url('/i/admin/btn-icon-author.png');}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
