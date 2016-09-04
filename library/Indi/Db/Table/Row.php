@@ -710,7 +710,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title', 'rowClass' => __CLASS__));
 
         // Get title column
-        $titleColumn = $fieldR->params['titleColumn'] ? $fieldR->params['titleColumn'] : $relatedM->titleColumn();
+        $titleColumn = $fieldR->params['titleColumn'] ?: $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
         if (is_null($order)) {
