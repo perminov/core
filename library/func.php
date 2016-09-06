@@ -1020,3 +1020,51 @@ function url2a($text) {
     // Return
     return ob_get_clean();
 }
+
+/**
+ * Try to detect phone number within the given string
+ * and if detected, return it in +7 (123) 456-78-90 format
+ *
+ * If nothing detected - return empty string
+ * If multiple phone numbers detected - return first one
+ *
+ * @param $str
+ * @return mixed|string
+ */
+function phone($str) {
+    $parts = preg_split('/[,;\/б]/', $str);
+    $phone = array_shift($parts);
+    $phone = preg_replace('/^[^0-9+()]+/', '', $phone);
+    $phone = array_shift(explode(' +7', $phone));
+    $phone = preg_replace('/([0-9])[ -]([0-9])/', '$1$2', $phone);
+    $phone = array_shift(explode('. ', $phone));
+    $phone = array_shift(preg_split('/ [а-яА-Я]/', $phone));
+    $phone = array_shift(explode('||', $phone));
+    $phone = preg_replace('/\) 8/', ')8', $phone);
+    $phone = array_shift(explode(' 8', $phone));
+    $phone = preg_replace('/\) ([0-9])/', ')$1', $phone);
+    $phone = array_shift(preg_split('/ \([а-яА-Я]/', $phone));
+    $phone = preg_replace('/- /', '-', $phone);
+    $phone = preg_replace('/([0-9])-([0-9])/', '$1$2', $phone);
+    $phone = preg_replace('/\)-/', ')', $phone);
+    $phone = array_shift(preg_split('/\.[а-яА-Я]/', $phone));
+    $phone = preg_replace('/-[а-яА-Я]+$/', '', $phone);
+    $phone = rtrim($phone, ' -(');
+    $phone = preg_replace('/[ ()-]/', '', $phone);
+    $phone = preg_replace('/831831/', '831', $phone);
+    if (strlen($phone) == 7) $phone = '+7831' . $phone;
+    else if (strlen($phone) == 11 && preg_match('/^8/', $phone)) $phone = preg_replace('/^8/', '+7', $phone);
+    else if (strlen($phone) == 10 && preg_match('/^83/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 11 && preg_match('/^7/', $phone)) $phone = '+' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^9/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^495/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 8 && preg_match('/^257/', $phone)) $phone = '+78' . $phone;
+    else if (strlen($phone) == 8 && preg_match('/^23/', $phone)) $phone = '+783' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^383/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^093/', $phone)) $phone = '+7493' . preg_replace('/^093/', '', $phone);
+    else if (strlen($phone) == 10 && preg_match('/^343/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 12 && preg_match('/^\+7/', $phone)) $phone = $phone;
+    else $phone = '';
+    if ($phone) $phone = preg_replace('/(\+7)([0-9]{3})([0-9]{3})([0-9]{2})([0-9]{2})/', '$1 ($2) $3-$4-$5', $phone);
+    return $phone;
+}
