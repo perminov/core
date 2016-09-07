@@ -207,7 +207,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.callParent(arguments);
 
         // Add 'remotefetch' event
-        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect', 'selecteditemclick');
+        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect', 'selecteditemclick', 'keywordfound');
     },
 
     /**
@@ -229,7 +229,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     getSubmitValue: function() {
-        return this.getValue();
+        return this.submitMode == 'keyword' ? this.keywordEl.val() : this.getValue();
     },
 
     /**
@@ -2462,7 +2462,8 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Do check for non-emptyness of keyword-search results, if need
         if (me.rendered && me.infoEl.attr('fetch-mode') == 'keyword' && me.allowKeywordNoResults == false
-            && me.keywordEl.hasCls('i-combo-keyword-no-results')) return me.keywordNoResultsText;
+            && me.keywordEl.hasCls('i-combo-keyword-no-results') && me.submitMode != 'keyword')
+            return me.keywordNoResultsText;
 
         // Return
         return true;
@@ -2974,5 +2975,16 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Call parent
         me.callParent();
+    },
+
+    /**
+     * If `mode` arg is 'keyword' - me.keywordEl.val() will be submitted instead of me.val()
+     *
+     * @param mode
+     */
+    setSubmitMode: function(mode) {
+        var me = this;
+        me.submitMode = mode == 'keyword' ? mode : 'hidden';
+        me.validate();
     }
 });
