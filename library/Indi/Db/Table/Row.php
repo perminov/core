@@ -755,7 +755,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Alternate WHERE
-        if (Indi::admin()->alternate && !$fieldR->ignoreAlternate
+        if (Indi::admin()->alternate && !$fieldR->ignoreAlternate && !$fieldR->params['ignoreAlternate']
             && $alternateField = $relatedM->fields(Indi::admin()->alternate . 'Id'))
             $where[] = $alternateField->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
