@@ -282,13 +282,19 @@ Ext.override(Ext.form.field.Base, {
                 xtype: 'button',
                 padding: 0,
                 target: me,
+                enablerEvents: 'change',
+                enabler: function(c, eventName, args) {
+                    return !c.target.hasZeroValue();
+                },
                 listeners: {
                     boxready: function(c) {
-                        c.setDisabled(c.target.hasZeroValue());
+                        c.setDisabled(c.enabler(c, 'boxready', arguments) ? false : true);
                         c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
-                        c.target.on('change', function(target, newValue){
-                            c.setDisabled(target.hasZeroValue());
-                        }, me);
+                        c.enablerEvents.split(',').forEach(function(eventName){
+                            c.target.on(eventName, function(newValue){
+                                c.setDisabled(c.enabler(c, eventName, arguments) ? false : true);
+                            }, me);
+                        })
                     }
                 }
             },
