@@ -160,6 +160,7 @@ define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количес�
 define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Выбранное значение отключено и поэтому недоступно для выбора');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Ничего не найдено');
 define('I_COMBO_ODATA_FIELD404', 'Поле "%s" не является ни реальным полем, ни псевдо-полем');
+define('I_COMBO_GROUPBY_NOGROUP', 'Принадлежность не указана');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
