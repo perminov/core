@@ -350,6 +350,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Get the whole option data object by option value
                 data = me.valueToRaw(value, true);
 
+                //
+                if (me.submitMode == 'keyword') data.title = me.keywordEl.val();
+
                 // Detect option color (style or box) and apply it
                 me.color(data, value).apply();
 
@@ -2978,13 +2981,23 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     *
+     * @param v
+     */
+    setRawValue: function(v) {
+        var me = this; if (me.submitMode != 'keyword') me.getNative().setRawValue.call(me, v);
+    },
+
+    /**
      * If `mode` arg is 'keyword' - me.keywordEl.val() will be submitted instead of me.val()
      *
      * @param mode
      */
     setSubmitMode: function(mode) {
-        var me = this;
+        var me = this, k = me.keywordEl.val();
         me.submitMode = mode == 'keyword' ? mode : 'hidden';
+        me.val(mode == 'keyword' ? k : me.zeroValue);
+        if (mode != 'keyword') me.setRawValue(k);
         me.validate();
     }
 });
