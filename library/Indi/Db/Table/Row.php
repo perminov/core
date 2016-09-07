@@ -957,31 +957,47 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Get titles for optgroups
             $groupByOptions = array();
+
+            // If groupBy-field is an enumset-field
             if ($groupByFieldEntityM->table() == 'enumset') {
 
+                // Get groups by aliases
                 $groupByRs = $groupByFieldEntityM->fetchAll(array(
                     '`fieldId` = "' . $groupByFieldR->id . '"',
                     'FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 ));
 
+                // Set key prop
                 $keyProperty = 'alias';
+
+            // Else
             } else {
 
+                // Get groups by ids
                 $groupByRs = $groupByFieldEntityM->fetchAll(
                     'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 );
+
+                // Set key prop
                 $keyProperty = 'id';
             }
 
-            $titleColumn = $groupByFieldEntityM->titleColumn();
+            // Get groupBy title-column
+            $groupBy_titleColumn = $groupByFieldEntityM->titleColumn();
 
+            // If some of combo data entries are not within any group
+            if ($groupByRs->count() < count($distinctGroupByFieldValues) && array_key_exists('0', $distinctGroupByFieldValues)) {
+                $groupByOptions['0'] = array('title' => I_COMBO_GROUPBY_NOGROUP, 'system' => array());
+            }
+
+            // Foreach group
             foreach ($groupByRs as $groupByR) {
 
                 // Here we are trying to detect, does $o->title have tag with color definition, for example
                 // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
                 // We should do that because such tags existance may cause a dom errors while performing usubstr()
                 $info = Indi_View_Helper_Admin_FormCombo::detectColor(array(
-                    'title' => $groupByR->$titleColumn,
+                    'title' => $groupByR->$groupBy_titleColumn,
                     'value' => $groupByR->$keyProperty
                 ));
 

@@ -160,6 +160,7 @@ define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected o
 define('I_COMBO_MISMATCH_DISABLED_VALUE', 'The chosen option is not allowed as it is disabled');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Nothing found using this keyword');
 define('I_COMBO_ODATA_FIELD404', 'Field "%s" is neither real field nor pseudo field');
+define('I_COMBO_GROUPBY_NOGROUP', 'Grouping not set');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'The current section\'s scope of available rows');
