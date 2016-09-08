@@ -96,6 +96,17 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_view = array();
 
     /**
+     * Flag, indicating whether or not onUpdate() should be called within save() call
+     * This can be useful when onUpdate() definition contains own save() call, so
+     * setting $this->_onUpdate = false; before own save() call will prevent infinite call recursion
+     *
+     * Note: after save() call $this->_onUpdate will be reverted back to `true` automatically
+     *
+     * @var bool
+     */
+    protected $_onUpdate = true;
+
+    /**
      * Constructor
      *
      * @param array $config
@@ -333,7 +344,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->files(true);
 
         // Do some needed operations that are required to be done right after row was inserted/updated
-        if ($new) $this->onInsert(); else $this->onUpdate();
+        if ($new) $this->onInsert(); else if ($this->_onUpdate) $this->onUpdate($original); else $this->_onUpdate = true;
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
