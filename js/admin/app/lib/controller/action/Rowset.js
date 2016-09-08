@@ -69,11 +69,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeLoadCallbackDataRowAdjust: Ext.emptyFn,
 
     /**
-     * Force 'Mark for deletion' filter to be not clearable
-     */
-    panelDocked$Filter$M4d: {allowClear: false},
-
-    /**
      * Get store, that current action is dealing with
      *
      * @return {*}

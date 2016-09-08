@@ -49,8 +49,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
          */
         viewConfig: {
             getRowClass: function (row) {
-                if (row.raw._system && row.raw._system.disabled)
-                    return 'i-grid-row-disabled';
+                var cls = [];
+
+                // Append 'i-grid-row-disabled' css class if need
+                if (row.raw._system && row.raw._system.disabled) cls.push('i-grid-row-disabled');
+
+                // Append 'i-grid-row-m4d-(1|2)' css class if need
+                cls.push('i-grid-row-m4d-' + row.raw.$keys.m4d);
+
+                // Return whitespace-separated list of css clases
+                return cls.join(' ');
             },
             loadingText: Ext.LoadMask.prototype.msg,
             cellOverflow: true,
@@ -455,6 +463,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
             tooltip: arguments[0].tooltip || arguments[0].header
         }
     },
+
+    /**
+     * Hide m4d-columns, as 'i-grid-row-m4d-1' css-class added within getRowClass() fn,
+     * for each row having '1' as value of `m4d` prop. That provide visual distinction
+     * between regular rows and rows, marked for deletion, and this way is more user-friendly
+     * than keeping visibility for cell-values who just saying 'Yes' or 'No' within that column
+     */
+    gridColumn$M4d: {hidden: true},
 
     /**
      * Default config for fileupload-columns
