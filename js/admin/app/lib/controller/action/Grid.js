@@ -55,7 +55,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (row.raw._system && row.raw._system.disabled) cls.push('i-grid-row-disabled');
 
                 // Append 'i-grid-row-m4d-(1|2)' css class if need
-                cls.push('i-grid-row-m4d-' + row.raw.$keys.m4d);
+                if (row.raw.$keys && row.raw.$keys.hasOwnProperty('m4d')) cls.push('i-grid-row-m4d-' + row.raw.$keys.m4d);
 
                 // Return whitespace-separated list of css clases
                 return cls.join(' ');
