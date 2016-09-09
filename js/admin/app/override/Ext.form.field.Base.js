@@ -289,7 +289,14 @@ Ext.override(Ext.form.field.Base, {
                 listeners: {
                     boxready: function(c) {
                         c.setDisabled(c.enabler(c, 'boxready', arguments) ? false : true);
-                        c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                        if (c.target.hidden) {
+                            c.target.on('boxready', function(){
+                                c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                                c.ownerCt.setHeight((me.triggerWrap || me.inputEl).getHeight() - 1);
+                            });
+                        } else {
+                            c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                        }
                         c.enablerEvents.split(',').forEach(function(eventName){
                             c.target.on(eventName, function(newValue){
                                 c.setDisabled(c.enabler(c, eventName, arguments) ? false : true);
