@@ -381,8 +381,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
-        if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        }
 
         // Return
         return atLeastOneFilterIsUsed;
@@ -471,8 +473,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
-        if (keywordC && keywordC.getValue()) keywordC.setValue('');
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) keywordC.setValue('');
+        }
 
         // Reload store for empty filter values to be picked up.
         if (!noReload) me.filterChange({});
