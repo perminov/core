@@ -808,6 +808,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Price-filters configurator function
+     *
+     * @param filter
+     * @return {Object}
+     */
+    panelDocked$FilterXPrice: function(filter) {
+        return this.panelDocked$FilterXNumber(filter);
+    },
+
+    /**
      * Number-filters configurator function
      *
      * @param filter
@@ -828,6 +838,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-gte',
             name: alias + '-gte',
+            isFilter: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 50 + Indi.metrics.getWidth(fieldLabel),
@@ -845,6 +856,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-lte',
             name: alias + '-lte',
+            isFilter: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
             width: 50 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
