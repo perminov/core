@@ -217,7 +217,8 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this, i;
 
         // If `disabledOptions` prop is not an array - setup it as empty array
-        if (!Ext.isArray(me.disabledOptions)) me.disabledOptions = [];
+        if (!Ext.isArray(me.disabledOptions))
+            me.disabledOptions = Ext.isString(me.disabledOptions) ? me.disabledOptions.split(',') : [];
 
         // Else convert each value within `disabledOptions` array to a string, for a better compatibility
         else for (i = 0; i < me.disabledOptions.length; i++) me.disabledOptions[i] = String(me.disabledOptions[i]);
