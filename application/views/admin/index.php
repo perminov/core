@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title><?=Indi::ini('general')->title ?: 'Indi Engine'?></title>
     <?$this->other('gz')?>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
@@ -24,7 +25,8 @@ Ext.create('Indi', {
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,
         user: {
-            title: '<?=$this->admin?>',
+            title: '<?=Indi::admin()->title()?>',
+            role: '<?=Indi::admin()->foreign('profileId')->title?>',
             dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
         }
     }

@@ -365,8 +365,8 @@ class Indi_Controller {
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
 
-                        // Else if $found field's control element are 'Number', 'Date' or  'Datetime'
-                    } else if (preg_match('/^18|12|19$/', $found->elementId)) {
+                    // Else if $found field's control element are 'Number', 'Date', 'Datetime', 'Price' or 'Decimal143'
+                    } else if (preg_match('/^18|12|19|24|25$/', $found->elementId)) {
 
                         // Detect the type of filter value - bottom or top, in 'range' terms mean
                         // greater-or-equal or less-or-equal
@@ -380,7 +380,7 @@ class Indi_Controller {
                             $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
 
                         // Pick the current filter value and field type to $excelA
-                        $excelA[$found->alias]['type'] = $found->elementId == 18 ? 'number' : 'date';
+                        $excelA[$found->alias]['type'] = in($found->elementId, '18,24,25') ? 'number' : 'date';
                         $excelA[$found->alias]['value'][$matches[2]] = $filterSearchFieldValue;
 
                         // If we deal with DATETIME column, append a time postfix for a proper comparison

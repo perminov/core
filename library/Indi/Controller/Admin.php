@@ -926,6 +926,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
                 // because gd image will override cell value otherwise
                 $columnI['title'] = str_pad('', 6, ' ');
+
+            // Else if current column is a row-numberer column
+            } else if (preg_match('/^&#160;?$/', $columnI['title'])) {
+                $columnI['title'] = ' ';
+                $columnA[$n]['type'] = 'rownumberer';
             }
 
             // Write header title of a certain column to a header cell
@@ -1019,6 +1024,34 @@ class Indi_Controller_Admin extends Indi_Controller {
                     )
                 )
             );
+
+            // Apply background color for all cells within current column, in caseif current column is
+            // a rownumberer-column
+            if ($columnA[$n]['type'] == 'rownumberer') $objPHPExcel->getActiveSheet()
+                ->getStyle($columnL . ($currentRowIndex + 1) . ':' . $columnL . $lastRowIndex)
+                ->applyFromArray(
+                array(
+                    'borders' => array(
+                        'right' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'BDD5F1':'d5d5d5')
+                            )
+                        ),
+                    ),
+                    'fill' => array(
+                        'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
+                        'rotation' => 0,
+                        'startcolor' => array(
+                            'rgb' => 'F9F9F9',
+                        ),
+                        'endcolor' => array(
+                            'rgb' => 'E3E4E6',
+                        ),
+                    )
+                )
+            );
+
         }
 
         // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
@@ -1040,8 +1073,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Convert the column index to excel column letter
                 $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
-                // Get the value
-                $value = $data[$i][$columnI['dataIndex']];
+                // Get the index/value
+                if ($columnI['dataIndex']) $value = $data[$i][$columnI['dataIndex']];
+                else if ($columnI['type'] == 'rownumberer') $value = $i + 1;
+                else $value = '';
 
                 // If cell value contains a .i-color-box item, we replaced it with same-looking GD image box
                 if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);" title="[^"]+">/', $value, $c)) {
@@ -1189,7 +1224,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
 
                 // Set odd-even rows background difference
-                if ($i%2) {
+                if ($i%2 && $columnA[$n]['type'] != 'rownumberer') {
                     $objPHPExcel->getActiveSheet()
                         ->getStyle($columnL . $currentRowIndex)
                         ->getFill()

@@ -400,10 +400,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             if ($expr) {
 
                 // Temporary value
-                $m_ = $row->$type;
+                $m_ = $row->$type; $match = false;
 
-                // Build and execute the comparison expression
-                $match = false; eval('$match = $m_ ' . $expr . ';');
+                // Detect match
+                if (preg_match('/^(\/|#|\+|%)[^\1]*\1[imsxeu]*$/', $expr))
+                    eval('$match = preg_match($expr, $m_);'); else eval('$match = $m_ ' . $expr . ';');
 
                 // If item id is in exclusion/selection list
                 if ($inverse ? !$match : $match) {
@@ -567,8 +568,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         foreach ($fieldRs as $gridFieldR) {
 
             // Foreign keys (single and multiple)
-            if ($gridFieldR->storeRelationAbility == 'one') $typeA['foreign']['single'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
-            else if ($gridFieldR->storeRelationAbility == 'many') $typeA['foreign']['multiple'][$gridFieldR->alias] = $gridFieldR->relation ? Indi::model($gridFieldR->relation)->titleColumn() : true;
+            if ($gridFieldR->storeRelationAbility == 'one')
+                $typeA['foreign']['single'][$gridFieldR->alias] = $gridFieldR->relation
+                    ? ($gridFieldR->params['titleColumn'] ?: Indi::model($gridFieldR->relation)->titleColumn())
+                    : true;
+
+            else if ($gridFieldR->storeRelationAbility == 'many')
+                $typeA['foreign']['multiple'][$gridFieldR->alias] = $gridFieldR->relation
+                    ? ($gridFieldR->params['titleColumn'] ?: Indi::model($gridFieldR->relation)->titleColumn())
+                    : true;
 
             // Boolean values
             else if ($gridFieldR->foreign('columnTypeId')->type == 'BOOLEAN') $typeA['boolean'][$gridFieldR->alias] = true;

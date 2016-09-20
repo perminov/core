@@ -63,7 +63,16 @@ foreach (array('www', 'core') as $p) {
         break;
     }
 }
-$baseUrl =  $_SERVER['REDIRECT_STD'] . '/' . Indi::ini('upload')->path . '/' . Indi::ini('ckeditor')->uploadPath .'/';
+
+$std = $_SERVER['REDIRECT_STD'];
+$uph = Indi::ini('upload')->path;
+if (preg_match(':^(\.\./)+:', $uph, $m)) {
+    $uph = preg_replace(':^(\.\./)+:', '', $uph);
+    $lup = count(explode('/', rtrim($m[0], '/')));
+    for ($i = 0; $i < $lup; $i++) $std = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std);
+}
+
+$baseUrl =  $std . '/' . $uph . '/' . Indi::ini('ckeditor')->uploadPath .'/';
 
 if ($_SESSION['admin']['alternate']) $baseUrl .= $_SESSION['admin']['alternate'] . '/' . $_SESSION['admin']['id'] . '/';
 

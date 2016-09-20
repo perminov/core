@@ -21,7 +21,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'm4d', 'cancel'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
+            'print', 'm4d', 'cancel', 'php', 'author', 'login'],
 
         /**
          * Tools special config
@@ -53,8 +54,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 this.ctx().filterChange({noReload: true});
             },
             load: function(){
-                this.ctx().storeLoadCallbackDefault();
-                this.ctx().storeLoadCallback();
+                this.ctx().storeLoadCallbackDefault.apply(this.ctx(), arguments);
+                this.ctx().storeLoadCallback.apply(this.ctx(), arguments);
             }
         },
         ctx: function() {
@@ -66,11 +67,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * This function provide batch-adjustment ability for each row within the store
      */
     storeLoadCallbackDataRowAdjust: Ext.emptyFn,
-
-    /**
-     * Force 'Mark for deletion' filter to be not clearable
-     */
-    panelDocked$Filter$M4d: {allowClear: false},
 
     /**
      * Get store, that current action is dealing with
@@ -385,8 +381,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
-        if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        }
 
         // Return
         return atLeastOneFilterIsUsed;
@@ -475,8 +473,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
-        if (keywordC && keywordC.getValue()) keywordC.setValue('');
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) keywordC.setValue('');
+        }
 
         // Reload store for empty filter values to be picked up.
         if (!noReload) me.filterChange({});
@@ -808,6 +808,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Price-filters configurator function
+     *
+     * @param filter
+     * @return {Object}
+     */
+    panelDocked$FilterXPrice: function(filter) {
+        return this.panelDocked$FilterXNumber(filter);
+    },
+
+    /**
      * Number-filters configurator function
      *
      * @param filter
@@ -828,6 +838,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-gte',
             name: alias + '-gte',
+            isFilter: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 50 + Indi.metrics.getWidth(fieldLabel),
@@ -845,6 +856,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-lte',
             name: alias + '-lte',
+            isFilter: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
             width: 50 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),

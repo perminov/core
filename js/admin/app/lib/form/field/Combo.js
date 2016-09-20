@@ -207,7 +207,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.callParent(arguments);
 
         // Add 'remotefetch' event
-        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect', 'selecteditemclick');
+        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect', 'selecteditemclick', 'keywordfound');
     },
 
     /**
@@ -217,7 +217,8 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this, i;
 
         // If `disabledOptions` prop is not an array - setup it as empty array
-        if (!Ext.isArray(me.disabledOptions)) me.disabledOptions = [];
+        if (!Ext.isArray(me.disabledOptions))
+            me.disabledOptions = Ext.isString(me.disabledOptions) ? me.disabledOptions.split(',') : [];
 
         // Else convert each value within `disabledOptions` array to a string, for a better compatibility
         else for (i = 0; i < me.disabledOptions.length; i++) me.disabledOptions[i] = String(me.disabledOptions[i]);
@@ -229,7 +230,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     getSubmitValue: function() {
-        return this.getValue();
+        return this.submitMode == 'keyword' ? this.keywordEl.val() : this.getValue();
     },
 
     /**
@@ -349,6 +350,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Get the whole option data object by option value
                 data = me.valueToRaw(value, true);
+
+                //
+                if (me.submitMode == 'keyword') data.title = me.keywordEl.val();
 
                 // Detect option color (style or box) and apply it
                 me.color(data, value).apply();
@@ -586,6 +590,19 @@ Ext.define('Indi.lib.form.field.Combo', {
     afterRender: function() {
         var me = this;
 
+        // Else if combo is multiSelect: false, but `jump` prop is not an empty string
+        if (!me.multiSelect && me.jump && Ext.isString(me.jump)) {
+
+            // Add button to leftbar
+            me.lbarItems.push({
+                iconCls: 'i-btn-icon-form-goto',
+                name: 'jump',
+                handler: function() {
+                    Indi.load(me.jump.replace('{id}', me.val()) + 'jump/1/');
+                }
+            });
+        }
+
         // Call parent
         me.callParent(arguments);
 
@@ -625,26 +642,6 @@ Ext.define('Indi.lib.form.field.Combo', {
 
             // Add i-combo-jump css class
             if (me.jump && Ext.isString(me.jump)) me.comboEl.addCls('i-combo-jump');
-
-        // Else if combo is multiSelect: false, but `jump` prop is not an empty string
-        } else if (me.jump && Ext.isString(me.jump)) {
-
-            // Add button to leftbar
-            me.getLbar().add({
-                xtype: 'button',
-                iconCls: 'i-btn-icon-form-goto',
-                name: 'jump',
-                padding: 0,
-                disabled: !parseInt(me.val()),
-                handler: function() {
-                    Indi.load(me.jump.replace('{id}', me.val()) + 'jump/1/');
-                }
-            });
-
-            // Ensure jump btn will be disabled if combo-value changes to zero-value
-            me.on('change', function(c, newValue){
-                me.getLbar().down('[name="jump"]').setDisabled(!parseInt(newValue));
-            }, me);
         }
 
         // Adjust width of .i-combo-table element for it to fit all available space
@@ -674,30 +671,6 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.store.js && !me.nojs) {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
         }
-    },
-
-    /**
-     * Get left-side bar, and preliminary create it, if it does not exists
-     *
-     * @return {*}
-     */
-    getLbar: function() {
-        var me = this;
-        if (!me.lbar) {
-            me.lbar = Ext.create('Ext.toolbar.Toolbar', {
-                autoRender: true,
-                autoShow: true,
-                margin: 0,
-                padding: 0,
-                height: me.triggerWrap.getHeight(),
-                style: {
-                    background: 'none'
-                },
-                border: 0,
-                floating: true
-            });
-        }
-        return me.lbar;
     },
 
     /**
@@ -2494,7 +2467,8 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Do check for non-emptyness of keyword-search results, if need
         if (me.rendered && me.infoEl.attr('fetch-mode') == 'keyword' && me.allowKeywordNoResults == false
-            && me.keywordEl.hasCls('i-combo-keyword-no-results')) return me.keywordNoResultsText;
+            && me.keywordEl.hasCls('i-combo-keyword-no-results') && me.submitMode != 'keyword')
+            return me.keywordNoResultsText;
 
         // Return
         return true;
@@ -3006,5 +2980,26 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Call parent
         me.callParent();
+    },
+
+    /**
+     *
+     * @param v
+     */
+    setRawValue: function(v) {
+        var me = this; if (me.submitMode != 'keyword') me.getNative().setRawValue.call(me, v);
+    },
+
+    /**
+     * If `mode` arg is 'keyword' - me.keywordEl.val() will be submitted instead of me.val()
+     *
+     * @param mode
+     */
+    setSubmitMode: function(mode) {
+        var me = this, k = me.keywordEl.val();
+        me.submitMode = mode == 'keyword' ? mode : 'hidden';
+        me.val(mode == 'keyword' ? k : me.zeroValue);
+        if (mode != 'keyword') me.setRawValue(k);
+        me.validate();
     }
 });

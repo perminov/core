@@ -465,7 +465,9 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         // 'Dims' item config
         return {
             xtype: 'displayfield',
-            value: '<a style="text-decoration: none;" href="' + Indi.std + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
+            value: '<a style="text-decoration: none;" href="'
+                + (me.data.hasOwnProperty('std') ? me.data.std : Indi.std)
+                + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
             width: Indi.metrics.getWidth(me.data.width + 'x' + me.data.height),
             tooltip: {
                 html: Indi.lang.I_FORM_UPLOAD_ORIGINAL,
@@ -712,7 +714,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         var me = this, embedSpec = {
             tag: 'embed',
             alias: 'embed',
-            src: Indi.std + me.data.src + '?' + me.data.mtime,
+            src: (me.data.hasOwnProperty('std') ? me.data.std : Indi.std) + me.data.src + '?' + me.data.mtime,
             type: 'application/x-shockwave-flash',
             pluginspace: 'http://www.macromedia.com/go/getflashplayer',
             play: 'true',
@@ -731,7 +733,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         var me = this, imgSpec = {
             tag: 'img',
             alias: 'embed',
-            src: Indi.std + me.data.src + '?' + me.data.mtime
+            src: (me.data.hasOwnProperty('std') ? me.data.std : Indi.std) + me.data.src + '?' + me.data.mtime
         };
         return Ext.DomHelper.markup(imgSpec);
     },

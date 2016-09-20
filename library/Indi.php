@@ -29,6 +29,16 @@ class Indi {
     );
 
     /**
+     * jflush-redirect. If not empty, all jflush() calls will be logged despite Indi::logging('flush') may be `false`,
+     * and additionally there would be a redirect to url, specified by Indi::$jfr
+     *
+     * NOTE: *_Row->mflush() calls also involve jflush() call
+     *
+     * @var string
+     */
+    public static $jfr = '';
+
+    /**
      * An internal static variable, will be used to store data, got from `staticblock` table 
 	 * as an assotiative array  and that should be accessible anywhere
      *
@@ -2186,6 +2196,14 @@ class Indi {
 
         // Mail
         if ($mail) {
+
+            // If where was some input
+            if ($input = file_get_contents('php://input')) {
+
+                // Append it to $msg
+                $msg .= 'Input data:' . '<br>';
+                $msg .= '<br>' . print_r($input, true) . '<br>--------------------------------------<br><br>';
+            }
 
             // If $mail arg is not a valid email address, use 'indi.engine@gmail.com'
             $mail = Indi::rexm('email', $mail) ? $mail : 'indi.engine@gmail.com';

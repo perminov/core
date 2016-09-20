@@ -23,7 +23,9 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_modified = array();
 
     /**
-     * Array of names of the fields, that were affected by the last ->save() call
+     * Associative array of names of the fields (as keys),
+     * that were affected by the last ->save() call,
+     * and their previous values (as values)
      *
      * @var array
      */
@@ -94,6 +96,17 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @var array
      */
     protected $_view = array();
+
+    /**
+     * Flag, indicating whether or not onUpdate() should be called within save() call
+     * This can be useful when onUpdate() definition contains own save() call, so
+     * setting $this->_onUpdate = false; before own save() call will prevent infinite call recursion
+     *
+     * Note: after save() call $this->_onUpdate will be reverted back to `true` automatically
+     *
+     * @var bool
+     */
+    protected $_onUpdate = true;
 
     /**
      * Constructor
@@ -333,7 +346,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->files(true);
 
         // Do some needed operations that are required to be done right after row was inserted/updated
-        if ($new) $this->onInsert(); else $this->onUpdate();
+        if ($new) $this->onInsert(); else if ($this->_onUpdate) $this->onUpdate($original); else $this->_onUpdate = true;
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
@@ -710,7 +723,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title', 'rowClass' => __CLASS__));
 
         // Get title column
-        $titleColumn = $fieldR->params['titleColumn'] ? $fieldR->params['titleColumn'] : $relatedM->titleColumn();
+        $titleColumn = $fieldR->params['titleColumn'] ?: $relatedM->titleColumn();
 
         // Set ORDER clause for combo data
         if (is_null($order)) {
@@ -755,7 +768,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Alternate WHERE
-        if (Indi::admin()->alternate && !$fieldR->ignoreAlternate
+        if (Indi::admin()->alternate && !$fieldR->ignoreAlternate && !$fieldR->params['ignoreAlternate']
             && $alternateField = $relatedM->fields(Indi::admin()->alternate . 'Id'))
             $where[] = $alternateField->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
@@ -957,31 +970,47 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Get titles for optgroups
             $groupByOptions = array();
+
+            // If groupBy-field is an enumset-field
             if ($groupByFieldEntityM->table() == 'enumset') {
 
+                // Get groups by aliases
                 $groupByRs = $groupByFieldEntityM->fetchAll(array(
                     '`fieldId` = "' . $groupByFieldR->id . '"',
                     'FIND_IN_SET(`alias`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 ));
 
+                // Set key prop
                 $keyProperty = 'alias';
+
+            // Else
             } else {
 
+                // Get groups by ids
                 $groupByRs = $groupByFieldEntityM->fetchAll(
                     'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
                 );
+
+                // Set key prop
                 $keyProperty = 'id';
             }
 
-            $titleColumn = $groupByFieldEntityM->titleColumn();
+            // Get groupBy title-column
+            $groupBy_titleColumn = $groupByFieldEntityM->titleColumn();
 
+            // If some of combo data entries are not within any group
+            if ($groupByRs->count() < count($distinctGroupByFieldValues) && array_key_exists('0', $distinctGroupByFieldValues)) {
+                $groupByOptions['0'] = array('title' => I_COMBO_GROUPBY_NOGROUP, 'system' => array());
+            }
+
+            // Foreach group
             foreach ($groupByRs as $groupByR) {
 
                 // Here we are trying to detect, does $o->title have tag with color definition, for example
                 // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
                 // We should do that because such tags existance may cause a dom errors while performing usubstr()
                 $info = Indi_View_Helper_Admin_FormCombo::detectColor(array(
-                    'title' => $groupByR->$titleColumn,
+                    'title' => $groupByR->$groupBy_titleColumn,
                     'value' => $groupByR->$keyProperty
                 ));
 
@@ -1419,9 +1448,19 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return bool|string
      */
     public function abs($alias, $copy = '') {
+
+        // Here were omit STD's one or more dir levels at the ending, in case if
+        // Indi::ini('upload')->path is having one or more '../' at the beginning
+        $std = STD; $uph = Indi::ini('upload')->path;
+        if (preg_match(':^(\.\./)+:', $uph, $m)) {
+            $uph = preg_replace(':^(\.\./)+:', '', $uph);
+            $lup = count(explode('/', rtrim($m[0], '/')));
+            for ($i = 0; $i < $lup; $i++) $std = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std);
+        }
+
         // Get the name of the directory, relative to document root,
         // and where all files related model of current row are located
-        $src =  STD . '/' . Indi::ini()->upload->path . '/' . $this->_table . '/';
+        $src =  $std . '/' . $uph . '/' . $this->_table . '/';
 
         // Build the filename pattern for using in glob() php function
         $pat = DOC . $src . $this->id . ($alias ? '_' . $alias : '') . ($copy ? ',' . $copy : '') . '.' ;
@@ -1450,10 +1489,19 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function src($alias, $copy = '', $dc = false, $std = false) {
 
         // Get the filename with absolute path
-        if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy))
+        if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy)) {
+
+            // Here were omit STD's one or more dir levels at the ending, in case if
+            // Indi::ini('upload')->path is having one or more '../' at the beginning
+            $std_ = STD;
+            if (preg_match(':^(\.\./)+:', Indi::ini('upload')->path, $m)) {
+                $lup = count(explode('/', rtrim($m[0], '/')));
+                for ($i = 0; $i < $lup; $i++) $std_ = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std_);
+            }
 
             // Return path, relative to document root
-            return str_replace(DOC . ($std ? '' : STD), '', $abs) . ($dc ? '?' . filemtime($abs) : '');
+            return str_replace(DOC . ($std ? '' : $std_), '', $abs) . ($dc ? '?' . filemtime($abs) : '');
+        }
     }
 
     /**
@@ -3302,6 +3350,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             $file['height'] = $more[1];
         }
 
+        // Here were omit STD's one or more dir levels at the ending, in case if
+        // Indi::ini('upload')->path is having one or more '../' at the beginning
+        $std_ = STD;
+        if (preg_match(':^(\.\./)+:', Indi::ini('upload')->path, $m)) {
+            $lup = count(explode('/', rtrim($m[0], '/')));
+            for ($i = 0; $i < $lup; $i++) $std_ = preg_replace(':/[a-zA-Z0-9_\-]+$:', '', $std_);
+            $file['std'] = $std_;
+        }
+
         // Return
         return (object) $file;
     }
@@ -3349,10 +3406,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         $cfg = $this->model()->changeLog();
 
         // Get the state of modified fields, that they were in at the moment before current row was saved
-        $affected = array_diff_assoc($this->_original, $original);
+        $affected = array_diff_assoc($original, $this->_original);
 
-        // Set up `_affected` prop, so it to contain affected field names
-        $this->_affected = array_keys($affected);
+        // Set up `_affected` prop, so it to contain affected field names as keys, and their previous values
+        $this->_affected = $affected;
 
         // Unset fields, that should not be involved in logging
         if ($cfg['ignore']) foreach(ar($cfg['ignore']) as $ignore) unset($affected[$ignore]);
@@ -3461,6 +3518,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Setup other properties
             $storageR->datetime = date('Y-m-d H:i:s');
+            if ($storageM->fields('monthId')) $storageR->monthId = Month::o()->id;
             $storageR->changerType = Indi::model(Indi::admin()->alternate ? Indi::admin()->alternate : 'Admin')->id();
             $storageR->profileId = Indi::admin()->profileId;
             $storageR->changerId = Indi::admin()->id;
@@ -3767,9 +3825,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * of affected props
      *
      * @param null|string $prop
+     * @param null|bool $prev
      * @return array|bool
      */
-    public function affected($prop = null) {
+    public function affected($prop = null, $prev = false) {
 
         // If $prop arg is given
         if (func_num_args()) {
@@ -3778,17 +3837,19 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (is_array($prop) || preg_match('/,/', $prop)) {
 
                 // So we try to detect if any of props within that list was affected
-                foreach (ar($prop) as $propI) if (in($propI, $this->_affected)) return true;
+                foreach (ar($prop) as $propI)
+                    if (array_key_exists($propI, $this->_affected))
+                        return $prev ? $this->_affected[$propI] : true;
 
                 // If detection failed - return false
                 return false;
 
             // Else if single prop name is given as $prop arg - detect whether or not it is in the list of affected props
-            } else return in($prop, $this->_affected);
+            } else return $prev ? $this->_affected[$prop] : array_key_exists($prop, $this->_affected);
         }
 
         // Return array of affected props
-        return $this->_affected;
+        return $prev ? $this->_affected : array_keys($this->_affected);
     }
 
     /**
@@ -3947,5 +4008,35 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return false
         return false;
+    }
+
+    /**
+     * @param $field
+     * @param $nested
+     */
+    public function keys2nested($field, $nested) {
+
+        // If $field field's value was not modified
+        if (!$this->affected($field)) return;
+
+        // Get previous and current values of $field prop
+        $was = strlen($was = $this->affected($field, true)) ? ar($was) : array();
+        $now = strlen($now = $this->$field) ? ar($now) : array();
+
+        // Compare previous and current values and get arrays of deleted and inserted keys
+        $del = array_diff($was, $now);
+        $new = array_diff($now, $was);
+
+        // Get field name within nested model, responsible for logical connection between
+        $connector = Indi::model($this->field($field)->relation)->table() . 'Id';
+
+        // Remove nested rows, having keys that were removed from comma-separated list within $field-prop value
+        if ($del) $this->nested($nested)->select($del, $connector)->delete();
+
+        // Create and append nested rows, having keys
+        foreach ($new as $id) Indi::model($nested)->createRow(array(
+            $this->table() . 'Id' => $this->id,
+            $connector => $id
+        ), true)->save();
     }
 }
