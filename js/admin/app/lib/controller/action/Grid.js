@@ -436,8 +436,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXRadio: function(c) {
-        return  {editor: this.gridColumnEditor_Combo(c)}
+    gridColumnXRadio_Editor: function(c) {
+        return this.gridColumnEditor_Combo(c);
     },
 
     /**
@@ -446,8 +446,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXCombo: function(c) {
-        return  {editor: this.gridColumnEditor_Combo(c)}
+    gridColumnXCombo_Editor: function(c) {
+        return this.gridColumnEditor_Combo(c);
     },
 
     /**
