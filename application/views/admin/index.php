@@ -25,7 +25,8 @@ Ext.create('Indi', {
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,
         user: {
-            title: '<?=$this->admin?>',
+            title: '<?=Indi::admin()->title()?>',
+            role: '<?=Indi::admin()->foreign('profileId')->title?>',
             dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
         }
     }

@@ -59,10 +59,12 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background-image: none !important;
     width: 0;
 }
-#i-menu .x-grid-row-over.x-grid-tree-node-leaf td div{
+#i-menu .x-grid-row-over.x-grid-tree-node-leaf td div,
+#i-mobile-menu .x-grid-row-over.x-grid-tree-node-leaf td div{
     background-color: #ecffeb !important;
 }
-#i-menu .x-grid-row-selected.x-grid-tree-node-leaf td div{
+#i-menu .x-grid-row-selected.x-grid-tree-node-leaf td div,
+#i-mobile-menu .x-grid-row-selected.x-grid-tree-node-leaf td div{
     background-color: #dfffdf !important;
 }
 
@@ -87,10 +89,6 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 #i-center-north-date {
     float: right;
-}
-#i-center-north-admin {
-    text-align: left;
-    margin-bottom: 5px;
 }
 
 #i-center-north-trail {
@@ -335,17 +333,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-gecko #i-menu .i-menu-leaf-item .x-grid-cell-inner{
     padding-left: 3px;
 }
-.x-gecko #i-center-north-admin {
-    margin-bottom: 3px;
-}
-
-.x-ie9 #i-center-north-admin,
-.x-ie8 #i-center-north-admin ,
-.x-safari #i-center-north-admin{
-    min-height: 16px;
-    margin-top: 1px;
-}
-.x-ie9 #i-center-north-trail, 
+.x-ie9 #i-center-north-trail,
 .x-ie8 #i-center-north-trail,
 .x-safari #i-center-north-trail {
     padding-top: 1px;
