@@ -46,11 +46,8 @@ class Section_Row_Base extends Indi_Db_Table_Row {
 
                     // Exclude columns that have controls of several types, listed below
                     for ($i = 0; $i < count($fields); $i++) {
-                        // 6 - text
                         // 13 - html-editor
-                        // 14 - file upload
-                        // 16 - span (group of fields)
-                        if (in_array($fields[$i]['elementId'], array(6, 13, 14))) {
+                        if (in_array($fields[$i]['elementId'], array(13))) {
                             if ($fields[$i]['elementId'] == 6 && $fields[$i]['alias'] == 'title') {} else {
                                 $exclusions[] = $fields[$i]['alias'];
                             }

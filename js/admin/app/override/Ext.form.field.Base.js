@@ -53,6 +53,7 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
         me.callParent();
         me._initComponent();
+        me.lbarItems = me.lbarItems || [];
     },
 
     /**
@@ -105,6 +106,7 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
         me.callParent();
         me._afterRender();
+        me.initLbar();
     },
 
     /**
@@ -242,6 +244,89 @@ Ext.override(Ext.form.field.Base, {
                 });
             }
         });
+    },
+
+    /**
+     * Init left-bar. Left-bar will be created only if me.lbarItems is not an empty array
+     */
+    initLbar: function() {
+        var me = this;
+
+        me.lbarItems = me.lbarItems || [];
+
+        // Build lbarItems
+        me.lbarItems.forEach(function(item){
+            me.addBtn(item);
+        });
+    },
+
+    /**
+     * Get left-side bar, and preliminary create it, if it does not exists
+     *
+     * @return {*}
+     */
+    getLbar: function() {
+        var me = this;
+
+        // If left bar not yet exists - create it
+        if (!me.lbar) me.lbar = Ext.create('Ext.toolbar.Toolbar', {
+            autoShow: true,
+            margin: '1 1 0 0',
+            padding: 0,
+            height: (me.triggerWrap || me.inputEl).getHeight() - 1,
+            style: {
+                background: 'none',
+                float: 'right'
+            },
+            defaults: {
+                xtype: 'button',
+                padding: 0,
+                target: me,
+                enablerEvents: 'change',
+                enabler: function(c, eventName, args) {
+                    return !c.target.hasZeroValue();
+                },
+                listeners: {
+                    boxready: function(c) {
+                        c.setDisabled(c.enabler(c, 'boxready', arguments) ? false : true);
+                        if (c.target.hidden) {
+                            c.target.on('boxready', function(){
+                                c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                                c.ownerCt.setHeight((me.triggerWrap || me.inputEl).getHeight() - 1);
+                            });
+                        } else {
+                            c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                        }
+                        c.enablerEvents.split(',').forEach(function(eventName){
+                            c.target.on(eventName, function(newValue){
+                                c.setDisabled(c.enabler(c, eventName, arguments) ? false : true);
+                            }, me);
+                        })
+                    }
+                }
+            },
+            renderTo: me.labelCell,
+            border: 0
+        });
+
+        // Return left-bar
+        return me.lbar;
+    },
+
+    /**
+     * Add component into left-bar
+     *
+     * @param cfg
+     */
+    addBtn: function(cfg) {
+        this.getLbar().add(cfg);
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+        if (me.lbar) me.lbar.destroy();
+        me.callParent(arguments);
     }
 });
 Ext.override(Ext.form.field.Text, {

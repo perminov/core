@@ -4,15 +4,12 @@
 Ext.define('Indi.view.Menu', {
     extend: 'Ext.tree.Panel',
     alternateClassName: 'Indi.Menu',
-    id: 'i-menu',
     rootVisible: false,
-    title: Indi.lang.I_MENU,
+    alias: 'widget.mainmenu',
     useArrows: true,
     border: 1,
     region: 'west',
     width: 200,
-    collapsible: true,
-    padding: '50 0 0 0',
     weight: 300,
 
     /**
@@ -66,7 +63,8 @@ Ext.define('Indi.view.Menu', {
         var me = this;
 
         // Setup store
-        me.store = Ext.create('Ext.data.TreeStore', {
+        me.store = Ext.getStore('mainmenu-store') || Ext.create('Ext.data.TreeStore', {
+            id: 'mainmenu-store',
             root: {
                 expanded: true,
                 children: me.data2items(Indi.menu)
@@ -84,7 +82,10 @@ Ext.define('Indi.view.Menu', {
         },
         itemclick: function(view, rec, item, index, eventObj) {
             if (rec.get('leaf') == false) rec[rec.data.expanded ? 'collapse' : 'expand']();
-            else Indi.load(rec.raw.value);
+            else {
+                if (view.up('#i-mobile-menu')) view.up('menu').hide();
+                Indi.load(rec.raw.value);
+            }
         },
         beforecollapse: function(){
             Ext.getCmp('i-logo').hide();
@@ -95,6 +96,11 @@ Ext.define('Indi.view.Menu', {
         expand: function(){
             Ext.getCmp('i-logo').show();
             Indi.viewport.doComponentLayout();
+        },
+        selectionchange: function(sm, sr) {
+            ['i-menu', 'i-mobile-menu'].forEach(function(id){
+                if (id != sm.view.ownerCt.id) Ext.getCmp(id).getSelectionModel().select(sr);
+            })
         }
     }
 });

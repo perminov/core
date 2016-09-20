@@ -485,7 +485,7 @@ function ldate($format, $date = '', $when = '') {
 
         // Force Russian-style month name endings
         if (in('month', ar($when))) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
-            $date = preg_replace('/' . $s . '\b/u', $r, $date);
+            $date = preg_replace('/([а-яА-Я]{2,})' . $s . '\b/u', '$1' . $r, $date);
             $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
             $date = preg_replace('/' . $s . '$/u', $r, $date);
         }
@@ -544,21 +544,29 @@ if (!function_exists('array_column')) {
  */
 if (!function_exists('http_parse_headers')) {
     function http_parse_headers($raw){
-        $headers = array(); $key = '';
-        foreach(explode("\n", $raw) as $h) {
-            $h = explode(':', $h, 2);
-            if (isset($h[1])){
-                if (!isset($headers[$h[0]])) $headers[$h[0]] = trim($h[1]);
-                else if (is_array($headers[$h[0]])) $headers[$h[0]] = array_merge($headers[$h[0]], array(trim($h[1])));
-                else $headers[$h[0]] = array_merge(array($headers[$h[0]]), array(trim($h[1])));
-                $key = $h[0];
-            } else {
-                if (substr($h[0], 0, 1) == "\t") $headers[$key] .= "\r\n\t".trim($h[0]);
-                else if (!$key) $headers[0] = trim($h[0]);trim($h[0]);
-            }
-        }
-        return $headers;
+        return parsepairs($raw, ':');
     }
+}
+
+/**
+ * 
+ *
+ */
+function parsepairs($raw, $delimiter = ':'){
+    $headers = array(); $key = '';
+    foreach(explode("\n", $raw) as $h) {
+        $h = explode($delimiter, $h, 2);
+        if (isset($h[1])){
+            if (!isset($headers[$h[0]])) $headers[$h[0]] = trim($h[1]);
+            else if (is_array($headers[$h[0]])) $headers[$h[0]] = array_merge($headers[$h[0]], array(trim($h[1])));
+            else $headers[$h[0]] = array_merge(array($headers[$h[0]]), array(trim($h[1])));
+            $key = $h[0];
+        } else {
+            if (substr($h[0], 0, 1) == "\t") $headers[$key] .= "\r\n\t".trim($h[0]);
+            else if (!$key) $headers[0] = trim($h[0]);trim($h[0]);
+        }
+    }
+    return $headers;
 }
 
 /**
@@ -755,7 +763,7 @@ function num2str($num, $iunit = true, $dunit = true) {
 function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Start building data for flushing
-    $flush = array('success' => $success);
+    $flush = is_array($success) && array_key_exists('success', $success) ? $success : array('success' => $success);
 
     // Deal with first data-argument
     if (func_num_args() > 1 && func_get_arg(1) != null)
@@ -776,14 +784,17 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     // If headers were not already sent - flush an error message
     if (!headers_sent()) header('Content-Type: application/json');
 
-    // Flush contents
-    echo json_encode($flush);
+    // Check if redirect should be performed
+    $redir = func_num_args() == 4 ? is_string($die) && Indi::rex('url', $die) : ($_ = Indi::$jfr) && $die = $_;
 
     // Log this error if logging of 'jerror's is turned On
-    if (Indi::logging('jflush')) Indi::log('jflush', $flush);
+    if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
+
+    // If $die arg is an url - do not flush data
+    if (!$redir) echo json_encode($flush);
 
     // Exit if need
-    if ($die) iexit();
+    if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
 }
 
 /**
@@ -1008,4 +1019,52 @@ function url2a($text) {
 
     // Return
     return ob_get_clean();
+}
+
+/**
+ * Try to detect phone number within the given string
+ * and if detected, return it in +7 (123) 456-78-90 format
+ *
+ * If nothing detected - return empty string
+ * If multiple phone numbers detected - return first one
+ *
+ * @param $str
+ * @return mixed|string
+ */
+function phone($str) {
+    $parts = preg_split('/[,;\/б]/', $str);
+    $phone = array_shift($parts);
+    $phone = preg_replace('/^[^0-9+()]+/', '', $phone);
+    $phone = array_shift(explode(' +7', $phone));
+    $phone = preg_replace('/([0-9])[ -]([0-9])/', '$1$2', $phone);
+    $phone = array_shift(explode('. ', $phone));
+    $phone = array_shift(preg_split('/ [а-яА-Я]/', $phone));
+    $phone = array_shift(explode('||', $phone));
+    $phone = preg_replace('/\) 8/', ')8', $phone);
+    $phone = array_shift(explode(' 8', $phone));
+    $phone = preg_replace('/\) ([0-9])/', ')$1', $phone);
+    $phone = array_shift(preg_split('/ \([а-яА-Я]/', $phone));
+    $phone = preg_replace('/- /', '-', $phone);
+    $phone = preg_replace('/([0-9])-([0-9])/', '$1$2', $phone);
+    $phone = preg_replace('/\)-/', ')', $phone);
+    $phone = array_shift(preg_split('/\.[а-яА-Я]/', $phone));
+    $phone = preg_replace('/-[а-яА-Я]+$/', '', $phone);
+    $phone = rtrim($phone, ' -(');
+    $phone = preg_replace('/[ ()-]/', '', $phone);
+    $phone = preg_replace('/831831/', '831', $phone);
+    if (strlen($phone) == 7) $phone = '+7831' . $phone;
+    else if (strlen($phone) == 11 && preg_match('/^8/', $phone)) $phone = preg_replace('/^8/', '+7', $phone);
+    else if (strlen($phone) == 10 && preg_match('/^83/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 11 && preg_match('/^7/', $phone)) $phone = '+' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^9/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^495/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 8 && preg_match('/^257/', $phone)) $phone = '+78' . $phone;
+    else if (strlen($phone) == 8 && preg_match('/^23/', $phone)) $phone = '+783' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^383/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^093/', $phone)) $phone = '+7493' . preg_replace('/^093/', '', $phone);
+    else if (strlen($phone) == 10 && preg_match('/^343/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 12 && preg_match('/^\+7/', $phone)) $phone = $phone;
+    else $phone = '';
+    if ($phone) $phone = preg_replace('/(\+7)([0-9]{3})([0-9]{3})([0-9]{2})([0-9]{2})/', '$1 ($2) $3-$4-$5', $phone);
+    return $phone;
 }

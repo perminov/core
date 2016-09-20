@@ -1195,7 +1195,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
             // If column does not have a satellite (dependency='u'), or have but dependency type is set to 'c'
             // (- mean childs-by-parent logic)
-            if (preg_match('/c|u/', $this->dependency)) {
+            if (preg_match('/с|c|u/', $this->dependency)) {
 
                 // Get the related model
                 $relatedM = Indi::model($this->relation);
