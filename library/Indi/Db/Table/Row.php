@@ -23,7 +23,9 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_modified = array();
 
     /**
-     * Array of names of the fields, that were affected by the last ->save() call
+     * Associative array of names of the fields (as keys),
+     * that were affected by the last ->save() call,
+     * and their previous values (as values)
      *
      * @var array
      */
@@ -3404,10 +3406,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         $cfg = $this->model()->changeLog();
 
         // Get the state of modified fields, that they were in at the moment before current row was saved
-        $affected = array_diff_assoc($this->_original, $original);
+        $affected = array_diff_assoc($original, $this->_original);
 
-        // Set up `_affected` prop, so it to contain affected field names
-        $this->_affected = array_keys($affected);
+        // Set up `_affected` prop, so it to contain affected field names as keys, and their previous values
+        $this->_affected = $affected;
 
         // Unset fields, that should not be involved in logging
         if ($cfg['ignore']) foreach(ar($cfg['ignore']) as $ignore) unset($affected[$ignore]);
@@ -3823,9 +3825,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * of affected props
      *
      * @param null|string $prop
+     * @param null|bool $prev
      * @return array|bool
      */
-    public function affected($prop = null) {
+    public function affected($prop = null, $prev = false) {
 
         // If $prop arg is given
         if (func_num_args()) {
@@ -3834,17 +3837,19 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (is_array($prop) || preg_match('/,/', $prop)) {
 
                 // So we try to detect if any of props within that list was affected
-                foreach (ar($prop) as $propI) if (in($propI, $this->_affected)) return true;
+                foreach (ar($prop) as $propI)
+                    if (array_key_exists($propI, $this->_affected))
+                        return $prev ? $this->_affected[$propI] : true;
 
                 // If detection failed - return false
                 return false;
 
             // Else if single prop name is given as $prop arg - detect whether or not it is in the list of affected props
-            } else return in($prop, $this->_affected);
+            } else return $prev ? $this->_affected[$prop] : array_key_exists($prop, $this->_affected);
         }
 
         // Return array of affected props
-        return $this->_affected;
+        return $prev ? $this->_affected : array_keys($this->_affected);
     }
 
     /**
@@ -4003,5 +4008,35 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return false
         return false;
+    }
+
+    /**
+     * @param $field
+     * @param $nested
+     */
+    public function keys2nested($field, $nested) {
+
+        // If $field field's value was not modified
+        if (!$this->affected($field)) return;
+
+        // Get previous and current values of $field prop
+        $was = strlen($was = $this->affected($field, true)) ? ar($was) : array();
+        $now = strlen($now = $this->$field) ? ar($now) : array();
+
+        // Compare previous and current values and get arrays of deleted and inserted keys
+        $del = array_diff($was, $now);
+        $new = array_diff($now, $was);
+
+        // Get field name within nested model, responsible for logical connection between
+        $connector = Indi::model($this->field($field)->relation)->table() . 'Id';
+
+        // Remove nested rows, having keys that were removed from comma-separated list within $field-prop value
+        if ($del) $this->nested($nested)->select($del, $connector)->delete();
+
+        // Create and append nested rows, having keys
+        foreach ($new as $id) Indi::model($nested)->createRow(array(
+            $this->table() . 'Id' => $this->id,
+            $connector => $id
+        ), true)->save();
     }
 }
