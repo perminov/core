@@ -239,8 +239,27 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Do pre delete maintenance
         $this->preDelete();
 
-        // Delete row
-        if ($deleted = (int) $this->row->delete()) {
+        // Declare array of ids of entries, that should be deleted, and push main entry's id as first item
+        $toBeDeletedIdA[] = $this->row->id;
+
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
+
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+            // If $otherIdA array is still not empty append it's item into $toBeMovedIdA array
+            if ($otherIdA) $toBeDeletedIdA = array_merge($toBeDeletedIdA, $otherIdA);
+        }
+
+        // Fetch rows that should be moved
+        $toBeDeletedRs = Indi::trail()->model->fetchAll(
+            array('`id` IN (' . im($toBeDeletedIdA) . ')', Indi::trail()->scope->WHERE),
+            Indi::trail()->scope->ORDER
+        );
+
+        // For each row
+        foreach ($toBeDeletedRs as $toBeDeletedR) if ($deleted = (int) $toBeDeletedR->delete()) {
 
             // Get the page of results, that we were at
             $wasPage = Indi::trail()->scope->page;
