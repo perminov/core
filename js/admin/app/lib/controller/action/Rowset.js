@@ -27,7 +27,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Tools special config
          */
-        tools: [{alias: 'reset'}],
+        tools: [{alias: 'fundock'}, {alias: 'reset'}],
 
         /**
          * Docked items special config
@@ -37,6 +37,41 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
                 master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
+            }
+        },
+
+        /**
+         * Instance of {xtype: window}, created for filters toolbar to be injected in
+         */
+        filterWin: null,
+
+        // @inheritdoc
+        listeners: {
+            resize: function(c, w, h, ow, oh) {
+                var me = Ext.getCmp(c.id.replace('-wrapper', '')),
+                    f = Ext.getCmp(c.id.replace('-wrapper', '-toolbar$filter'));
+
+                // If filters toolbar has no items (e.g. there is no filters) - return
+                if (f.empty) return;
+
+                // If filters toolbar's height wastes more than 20% of total height, available for wrapper-panel
+                if (f.lastBox.height / c.getHeight() > 0.2) {
+                    if (f.up('[isWrapper]')) f.hide(); else if (!me.panel.filterWin.hidden) {
+                        if (me.panel.filterWin) me.panel.filterWin.maxWidth = c.getWidth() - 30;
+                        me.panel.filterWin.setWidth(Indi.viewport.getWidth() - 30);
+                        me.panel.filterWin.setHeight(f.getHeight() + 1);
+                        me.panel.filterWin.center();
+                    }
+                    c.down('tool[alias="fundock"]').show();
+                } else {
+                    c.down('tool[alias="fundock"]').hide();
+                    if (f.up('[hasCtx]')) {
+                        c.insertDocked(0, f);
+                        if (me.panel.filterWin) me.panel.filterWin.close();
+                    } else if (f.hidden) {
+                        f.show();
+                    }
+                }
             }
         }
     },
@@ -106,6 +141,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Get all filter components
         var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
+
+        // If filters toolbar was undocked from main panel into a window - try search within that window
+        if (!filterCmpA.length && me.panel.filterWin) filterCmpA = me.panel.filterWin.query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
@@ -504,22 +542,95 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Get filter window. If if not yet exists - preliminary create it
+     *
+     * @return {*}
+     */
+    getFilterWindow: function() {
+        var me = this;
+
+        // If filter window was not yet created - create it
+        if (!me.panel.filterWin) me.panel.filterWin = Ext.widget({
+            xtype: 'window',
+            frame: false,
+            $ctx: me,
+            hasCtx: true,
+            frameHeader: false,
+            layout: 'fit',
+            style: 'background: transparent; border: 0;',
+            bodyStyle: 'background: transparent; border-bottom-width: 0;',
+            modal: true,
+            width: Ext.getCmp(me.panel.id).getWidth() - 30,
+            border: '1 1 2 1',
+            padding: 0,
+            closable: false,
+            closeAction: 'hide',
+            resizable: {
+                handles: 'e w'
+            },
+            header: false,
+            listeners: {
+                afterrender: function(с) {
+                    с.mon(Ext.getBody(), 'click', function(el, e){
+                        с.close(с.closeAction);
+                    }, с, {delegate: '.x-mask'});
+                },
+                resize: function(c, w, h, ow, oh) {
+                    if (Ext.EventObject.getTarget() && Ext.EventObject.getTarget('.x-resizable-proxy')) {
+                        if (w != ow) c.setHeight(c.down('[name="toolbar$filter"]').getHeight() + 1);
+                    }
+                }
+            }
+        });
+
+        // Return
+        return me.panel.filterWin;
+    },
+
+    /**
+     * Filters reset tool config builder
+     *
+     * @return {Object}
+     */
+    panelTool$Fundock: function() {
+        var me = this;
+
+        // We add the filter-reset tool only if there is at least one filter defined for current section
+        if (!me.ti().filters.length) return null;
+
+        // Append tool data object to the 'tools' array
+        return {
+            type: 'search',
+            hidden: true,
+            tooltip: 'Показать фильтры',
+            handler: function() {
+                var f = Ext.getCmp(me.bid() + '-toolbar$filter');
+                Ext.getCmp(me.panel.id).removeDocked(f, false);
+                me.getFilterWindow().show().center().addDocked(f.show(), 'top');
+                me.getFilterWindow().center();
+            }
+        }
+    },
+
+    /**
      * Panel filter toolbar builder
      *
      * @return {Object}
      */
     panelDocked$Filter: function() {
-        var me = this;
+        var me = this, hidden = !me.ti().filters.length &&
+            (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length);
 
         // 'Filter' toolbar config
         return {
             xtype: 'toolbar',
             dock: 'top',
-            hidden: !me.ti().filters.length &&
-                (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
             padding: '1 5 5 5',
             id: me.bid() + '-toolbar$filter',
             layout: 'auto',
+            hidden: hidden,
+            empty: hidden,
+            name: 'toolbar$filter',
             items: [{
                 xtype:'fieldset',
                 id: me.bid()+'-toolbar$filter-fieldset',
@@ -1888,5 +1999,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 record.reject();
             }
         });
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+
+        // Destroy filters window, if it was created
+        if (me.panel.filterWin) me.panel.filterWin.destroy();
+
+        // Call parent
+        me.callParent();
     }
 });
