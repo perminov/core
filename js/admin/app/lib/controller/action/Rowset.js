@@ -1228,7 +1228,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix, btn) {
-        var me = this;
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
 
         // Show the deletion confirmation message box
         Ext.MessageBox.show({
@@ -1237,7 +1237,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             buttons: Ext.MessageBox.YESNO,
             icon: Ext.MessageBox.QUESTION,
             fn: function(answer) {
-                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn)
+                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn, {
+                    params: {
+                        'others[]': Ext.Array.remove(srs, row.get('id'))
+                    }
+                })
                 else Ext.getCmp(me.rowset.id).getView().focus();
             }
         });
