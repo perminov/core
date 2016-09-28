@@ -833,10 +833,14 @@ Ext.define('Indi.lib.controller.action.Row', {
         // Append tab (south region) panel only if it's consistent
         if (me.panel.xtype != 'actiontabrow' && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
             if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
-                southItem.height = me.ti().scope.actionrow.south.height;
+                if (!Ext.isFunction(me.south.height)) southItem.height = me.ti().scope.actionrow.south.height;
                 southItem.activeTab = me.ti().sections.column('alias').indexOf(me.ti().scope.actionrow.south.activeTab);
             }
 
+            // If south panel's  height should be calculated on-the-fly - do it
+            if (Ext.isFunction(me.south.height)) southItem.height = me.south.height(me);
+
+            // Push south panel into items array
             itemA.push(southItem);
         }
 

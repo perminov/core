@@ -107,8 +107,34 @@ Ext.define('Indi.lib.controller.action.Grid', {
                             selectionModel.deselect(row, true);
                     });
             },
-            itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) {
+            itemdblclick: function(gridview) {
+                var btn, press = true, cls, dataIndex, col, me = gridview.ctx(), bid = me.bid(), field, canSave;
+
+                // Prevent collisions in cases when item was clicked in cell, having inline-editor,
+                // that have 'celldblclick' it's trigger event
+                if (me.ti().actions.r('save', 'alias') && me.rowsetPlugin$Cellediting.triggerEvent == 'celldblclick') {
+
+                    // Get td's css classes list
+                    cls = Ext.EventObject.getTarget('.x-grid-cell', 10, true).attr('class');
+
+                    // Find a css class, containing bid, and pick column's dataIndex from it
+                    Ext.String.trim(cls).split(' ').forEach(function(i){
+                        if (i.match(new RegExp(bid))) dataIndex = i.split('-').pop();
+                    });
+
+                    // Get column by it's dataIndex
+                    if (col = gridview.headerCt.down('[dataIndex="' + dataIndex + '"]')) {
+
+                        // Get field by alias
+                        field = me.ti().fields.r(dataIndex, 'alias');
+
+                        // If field is not in the list of disabled fields
+                        if (!me.ti().disabledFields.r(field.id, 'fieldId') && col.initialConfig.editor) press = false;
+                    }
+                }
+
+                // Press 'Details' btn if ok
+                btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn && press) {
                     this.view.dblclick = true;
                     btn.press();
                 }
@@ -129,7 +155,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // If 'Save' action is accessible, and column is linked to 'enumset' field
                 // and that field is not in the list of disabled fields - provide some kind
                 // of cell-editor functionality, so enumset values can be switched from one to another
-                if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
+                if (!col.initialConfig.editor && canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
                     && field.storeRelationAbility == 'one'
                     && (col.allowCycle !== false || enumset.length <= 2)) {
 
@@ -422,7 +448,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
     gridColumnEditor_Combo: function(c) {
         var me = this, f = me.ti().fields.r(c.dataIndex, 'alias'), r = me.ti().row;
-        if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one') return null;
+        if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one' && !c.editor) return null;
         return {
             xtype: 'combo.cell',
             store: {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, js: '', optionHeight: "14", page: 1},
