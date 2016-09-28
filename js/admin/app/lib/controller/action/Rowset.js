@@ -10,7 +10,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     extend: 'Indi.lib.controller.action.Action',
 
     // @inheritdoc
-    mcopwso: ['store', 'rowset', 'south', 'panel'],
+    mcopwso: ['store', 'rowset', 'south', 'panel', 'rowsetPlugin$Cellediting'],
 
     // @inheritdoc
     panel: {
@@ -1377,12 +1377,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.bid() + '-toolbar-master-keyword',
             xtype: 'textfield',
             isKeyword: true,
-            fieldLabel: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
-            labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
             labelSeparator: '',
+            tooltip: Indi.lang.I_ACTION_INDEX_KEYWORD_TOOLTIP,
+            emptyText: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
             value: me.ti().scope.keyword ? Indi.urldecode(me.ti().scope.keyword) : '',
-            width: 100 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+            width: 100,
             height: 19,
             cls: 'i-form-text',
             margin: '0 0 0 5',

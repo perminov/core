@@ -950,8 +950,15 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 });
 
-            // Else hide mask
-            } else me.getMask().hide();
+            // Else
+            } else {
+
+                // Scroll to the first invalid field
+                formCmp.down('[activeError]').el.scrollIntoView(formCmp.body, false, true);
+
+                // Hide mask
+                me.getMask().hide();
+            }
 
         // Else
         } else {
