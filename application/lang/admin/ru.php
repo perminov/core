@@ -176,7 +176,8 @@ define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_MSG_END', ' - не�
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'Отсутствуют');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Выберите--');
 
-define('I_ACTION_INDEX_KEYWORD_LABEL', 'Искать');
+define('I_ACTION_INDEX_KEYWORD_LABEL', 'Искать…');
+define('I_ACTION_INDEX_KEYWORD_TOOLTIP', 'Искать по всем столбцам');
 define('I_ACTION_INDEX_SUBSECTIONS_LABEL', 'Подразделы');
 define('I_ACTION_INDEX_SUBSECTIONS_VALUE', '--Выберите--');
 define('I_ACTION_INDEX_SUBSECTIONS_NO', 'Отсутствуют');

@@ -146,7 +146,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             column: context.colIdx
         });
         if (ed) {
-            if (ed.field.field && !ed.field.store.enumset) {
+            if (ed.field.field && (!ed.field.store.enumset || columnHeader.initialConfig.editor)) {
                 var ctx = me.view.ctx(), ti = ctx.ti(), section = ti.section, scope = ti.scope,
                     url = '/' + section.alias + '/form/id/' + record.get('id') + '/ph/' + scope.hash
                         + '/aix/' + context.rowIdx + '/';

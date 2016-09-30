@@ -9,6 +9,10 @@
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
+    <?if (Indi::ini('ws')->enabled){?>
+    <script type="text/javascript" src="/js/admin/sockjs-0.3.js"></script>
+    <script type="text/javascript" src="/js/admin/ws.js"></script>
+    <?}?>
     <script type="text/javascript" src="/library/Highstock-2.1.9/js/highstock.src.js"></script>
     <script src="/library/Highstock-2.1.9/current-price-indicator.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
@@ -26,6 +30,7 @@ Ext.create('Indi', {
         menu: <?=json_encode($this->menu)?>,
         user: {
             title: '<?=Indi::admin()->title()?>',
+            uid: '<?=Indi::admin()->id . '-' . Indi::admin()->profileId?>',
             role: '<?=Indi::admin()->foreign('profileId')->title?>',
             dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
         }
