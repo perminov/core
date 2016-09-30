@@ -614,6 +614,9 @@ class Indi_Controller {
         // Setup `titleMaxLength` property
         $options['titleMaxLength'] = $titleMaxLength;
 
+        // Setup `enumset` property
+        $options['enumset'] = $field->relation == 6;
+
         // Flush
         jflush(true, $options);
     }
