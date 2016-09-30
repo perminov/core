@@ -1990,7 +1990,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 record.commit();
 
                 // Call callback
-                if (Ext.isFunction(callback)) callback();
+                if (Ext.isFunction(callback)) callback(json);
             },
 
             // Failure handler

@@ -838,7 +838,10 @@ Ext.define('Indi.lib.controller.action.Row', {
             }
 
             // If south panel's  height should be calculated on-the-fly - do it
-            if (Ext.isFunction(me.south.height)) southItem.height = me.south.height(me);
+            if (Ext.isFunction(me.south.height)) {
+                southItem.heightFn = me.south.height;
+                southItem.height = me.south.height(me);
+            }
 
             // Push south panel into items array
             itemA.push(southItem);

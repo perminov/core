@@ -1345,19 +1345,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
         ptype: 'cellediting',
         triggerEvent: 'cellsecondclick',
         listeners: {
-            edit: function(editor, e) {
+            edit: function(editor, e, eOpts) {
                 var grid = editor.grid, ctx = grid.ctx();
 
                 // Make sure pressing ENTER will not cause call of it's ordinary handler
                 grid.preventEnter = true;
 
                 // Try to save
-                ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(){
+                ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(json){
                     var cell = editor.view.getCellByPosition({
                         column: e.colIdx,
                         row: e.rowIdx
                     });
                     Ext.fly(cell).addCls('i-grid-cell-editor-focus');
+
+                    // Call additional callback, defined as one of listeners, and pass json-decoded response
+                    if (Ext.isFunction(eOpts.remotesave))
+                        eOpts.remotesave.call(editor, e, json);
                 });
             }
         }

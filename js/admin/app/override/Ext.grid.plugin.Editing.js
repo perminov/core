@@ -253,7 +253,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
         ed.startEdit(me.getCell(record, columnHeader), value);
 
         if (typeof ed.field.onTriggerClick == 'function') {
-            ed.field.expand();
+            if (Ext.isFunction(ed.field.expand)) ed.field.expand();
             ed.field.focus(false, true);
         } //+
 
