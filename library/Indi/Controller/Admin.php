@@ -2006,8 +2006,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Save form data
      *
      * @param bool $redirect
+     * @param bool $return
      */
-    public function saveAction($redirect = true) {
+    public function saveAction($redirect = true, $return = false) {
 
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
@@ -2136,9 +2137,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Assign row's grid data into 'affected' key within $response
         $response['affected'] = $data;
+        $response['success'] = true;
 
         // Flush response
-        jflush(true, $response);
+        if ($return) return $response; else jflush($response);
     }
 
     /**
