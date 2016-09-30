@@ -673,7 +673,7 @@ function ar($items, $allowEmpty = false) {
     if (is_array($items)) return $items;
 
     // Else if $items arg is strict null - return array containing that null as a first item
-    if ($items === null) return array(null);
+    if ($items === null) return $allowEmpty ? array(null) : array();
 
     // Else if $items arg is a boolean value - return array containing that boolean value as a first item
     if (is_bool($items)) return array($items);

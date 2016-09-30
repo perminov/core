@@ -272,14 +272,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($this->_original['id']) {
 
             // Update it
-            if ($affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"')) {
-
-                // Merge $this->_original and $this->_modified arrays into $this->_original array
-                $this->_original = (array) array_merge($this->_original, $this->_modified);
-
-                // Empty $this->_modified and $this->_mismatch arrays
-                $this->_modified = $this->_mismatch = array();
-            }
+            $affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"');
 
             // Setup $return variable as a number of affected rows, e.g 1 or 0
             $return = $affected;
@@ -296,15 +289,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
             $this->_original['id'] = $this->model()->insert($this->_modified);
 
-            // Merge $this->_original and $this->_modified arrays into $this->_original array
-            $this->_original = (array) array_merge($this->_original, $this->_modified);
-
-            // Empty $this->_modified and $this->_mismatch arrays
-            $this->_modified = $this->_mismatch = array();
-
             // Setup $return variable as id of current (a moment ago inserted) row
             $return = $this->_original['id'];
         }
+
+        // Merge $this->_original and $this->_modified arrays into $this->_original array
+        $this->_original = (array) array_merge($this->_original, $this->_modified);
+
+        // Empty $this->_modified, $this->_mismatch and $this->_affected arrays
+        $this->_modified = $this->_mismatch = $this->_affected = array();
 
         // Provide a changelog recording, if configured
         $this->changeLog($original);
@@ -3618,14 +3611,63 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Get the difference between modified and original values for a given property.
-     * This method is for use with only properties, that have numeric values
+     * Get the difference between modified (but not yet saved) value and original value for a given property.
+     * This method is for use with only properties, that have numeric values or
+     * properties, containing comma-separated list of foreign keys
      *
-     * @param $prop
+     * @param $prop string
+     * @param $diff null|string If given, valid values are 'ins' or 'del' (mean 'inserted keys' or 'deleted keys')
      * @return mixed
      */
-    public function delta($prop) {
-        return array_key_exists($prop, $this->_modified) ? $this->_modified[$prop] - $this->_original[$prop] : 0;
+    public function delta($prop, $diff = null) {
+
+        // Shortcut to if clause, detecting whether we should operate on keys rather than on number-values
+        $csl = $diff && $this->field($prop)->storeRelationAbility == 'many' && in($diff, 'ins,del');
+
+        // If at the time of this call, call of parent::save() was not yet made (e.g. $this->_modified is not yet emptied)
+        if (array_key_exists($prop, $this->_modified)) {
+
+            // If field definition assumes containing comma-separated list of keys
+            if ($csl) return array_diff(
+                ar($this->{$diff == 'ins' ? '_modified' : '_original'}[$prop]),
+                ar($this->{$diff == 'del' ? '_modified' : '_original'}[$prop]));
+
+            // Else return result of deduction of previous value from modified value
+            else return $this->_modified[$prop] - $this->_original[$prop];
+
+        // Return empty array or 0, depend on whether field definition
+        // assumes containing comma-separated list of keys
+        } else return $csl ? array() : 0;
+    }
+
+    /**
+     * Get the difference between modified (and already saved) value and original value for a given property
+     * This method is for use with only properties, that have numeric values or
+     * properties, containing comma-separated list of foreign keys
+     *
+     * @param $prop
+     * @param $diff null|string If given, valid values are 'ins' or 'del' (mean 'inserted keys' or 'deleted keys')
+     * @return mixed
+     */
+    public function adelta($prop, $diff = null) {
+
+        // Shortcut to if clause, detecting whether we should operate on keys rather than on number-values
+        $csl = $diff && $this->field($prop)->storeRelationAbility == 'many' && in($diff, 'ins,del');
+
+        // Else if this call is made after parent::save(), and $prop is in the list of affected props
+        if ($this->affected($prop)) {
+
+            // If field definition assumes containing comma-separated list of keys
+            if ($csl) return array_diff(
+                ar($diff == 'ins' ? $this->_original[$prop] : $this->_affected[$prop]),
+                ar($diff == 'del' ? $this->_original[$prop] : $this->_affected[$prop]));
+
+            // Else return result of deduction of previous value from current value
+            else return $this->_original[$prop] - $this->affected($prop, true);
+
+        // Return empty array or 0, depend on whether field definition
+        // assumes containing comma-separated list of keys
+        } else return $csl ? array() : 0;
     }
 
     /**
