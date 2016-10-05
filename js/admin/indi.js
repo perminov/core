@@ -936,7 +936,7 @@ Ext.define('Indi', {
 
             // If websockets enabled
             if (Indi.ini.ws && parseInt(Indi.ini.ws.enabled))
-                Ext.Loader.loadScriptFile('/js/admin/ws.js', Ext.emptyFn, Ext.emptyFn, this, false);
+                Ext.Loader.loadScriptFile(Indi.std + '/js/admin/ws.js', Ext.emptyFn, Ext.emptyFn, this, false);
 
             // Load dashboard
             if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
