@@ -25,7 +25,7 @@ define('DOC', rtrim($_SERVER['DOCUMENT_ROOT'], '/'));
 define('URI', rtrim($_SERVER['REQUEST_URI'], '/'));
 
 // Set up error reporting
-error_reporting(E_ALL ^ E_NOTICE ^ E_STRICT);
+error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^ E_STRICT : E_ALL ^ E_NOTICE);
 ini_set('display_errors', 'On');
 
 // Set include path. Here we add more include paths, in case if some stuff is related to front module only,
