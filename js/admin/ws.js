@@ -1,4 +1,4 @@
-var connection = new SockJS('http://karusel3.local:8888');
+var connection = new SockJS('http://prazdnik.life:8888');
 connection.onopen = function () {
     connection.send(JSON.stringify({type: 'open', uid: Indi.user.uid}));
 }
@@ -8,9 +8,9 @@ connection.onerror = function(event) {
 }
 
 connection.onmessage = function(message) {
-    var data = JSON.parse(message.data);
+    var data = JSON.parse(message.data), store;
     if (data.type == 'reload') {
-        Ext.getStore('i-section-list-action-index-store').reload();
+        if (store = Ext.getStore('i-section-list-action-index-store')) store.reload();
     }
 }
 
