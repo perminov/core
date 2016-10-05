@@ -570,7 +570,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnADeep: function(colA) {
         var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
-            eColumnXRenderer, eColumnXEditor;
+            eColumnXRenderer, eColumnXEditor, canSave = me.ti().actions.r('save', 'alias');
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -658,11 +658,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Apply editor
                 if (Ext.isObject(columnI) && columnI.editor) {
-                    eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
-                    if (Ext.isFunction(me[eColumnXEditor]) || Ext.isObject(me[eColumnXEditor])) {
-                        columnI.editor = Ext.isFunction(me[eColumnXEditor]) ? me[eColumnXEditor](columnI, field, Ext.isObject(columnI.editor) ? columnI.editor : {}) : me[eColumnXEditor];
-                    } else if (!Ext.isObject(columnI.editor)) {
+                    if (!canSave || me.ti().disabledFields.r(field.id, 'fieldId')) {
                         columnI.editor = false;
+                    } else {
+                        eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
+                        if (Ext.isFunction(me[eColumnXEditor]) || Ext.isObject(me[eColumnXEditor])) {
+                            columnI.editor = Ext.isFunction(me[eColumnXEditor]) ? me[eColumnXEditor](columnI, field, Ext.isObject(columnI.editor) ? columnI.editor : {}) : me[eColumnXEditor];
+                        } else if (!Ext.isObject(columnI.editor)) {
+                            columnI.editor = false;
+                        }
                     }
                 }
 
