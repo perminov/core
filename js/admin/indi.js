@@ -934,6 +934,10 @@ Ext.define('Indi', {
             // Create loadmask
             Indi.loadmask = new Ext.LoadMask(Indi.viewport);
 
+            // If websockets enabled
+            if (Indi.ini.ws && parseInt(Indi.ini.ws.enabled))
+                Ext.Loader.loadScriptFile('/js/admin/ws.js', Ext.emptyFn, Ext.emptyFn, this, false);
+
             // Load dashboard
             if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
         }
