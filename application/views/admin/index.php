@@ -11,7 +11,6 @@
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
     <?if (Indi::ini('ws')->enabled){?>
     <script type="text/javascript" src="/js/admin/sockjs-0.3.js"></script>
-    <script type="text/javascript" src="/js/admin/ws.js"></script>
     <?}?>
     <script type="text/javascript" src="/library/Highstock-2.1.9/js/highstock.src.js"></script>
     <script src="/library/Highstock-2.1.9/current-price-indicator.js"></script>
@@ -28,6 +27,9 @@ Ext.create('Indi', {
         uri: <?=json_encode(Indi::uri()->toArray())?>,
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,
+        ini: {
+            ws: <?=json_encode(Indi::ini('ws'))?>
+        },
         user: {
             title: '<?=Indi::admin()->title()?>',
             uid: '<?=Indi::admin()->id . '-' . Indi::admin()->profileId?>',
