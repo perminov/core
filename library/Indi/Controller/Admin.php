@@ -78,7 +78,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $this->adjustTrail();
 
             // If action is 'index'
-            if (Indi::uri('action') == 'index') {
+            if (Indi::trail()->action->rowRequired == 'n') {
 
                 // Get the primary WHERE clause
                 $primaryWHERE = $this->primaryWHERE();
@@ -92,7 +92,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 Indi::trail()->scope->apply($applyA);
 
                 // If a rowset should be fetched
-                if (Indi::uri()->format) {
+                if (Indi::uri()->format || Indi::uri('action') != 'index') {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);

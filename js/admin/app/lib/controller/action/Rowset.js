@@ -1196,7 +1196,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
         me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
             params: {
-                'others[]': Ext.Array.remove(srs, row.get('id'))
+                'others[]': srs.length ? Ext.Array.remove(srs, row.get('id')) : []
             }
         });
     },
@@ -1305,7 +1305,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
-        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+        uri = '/' + section.alias + '/' + action.alias
+            + '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
+            + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
+            + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix) + '/';
 
         // Load it
         Indi.load(uri, ajaxCfg);

@@ -3208,7 +3208,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($isOwnUrl) {
 
                 // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
-                if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+                if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . STD . $url;
 
                 // Get request headers, and declare $hrdS variable for collecting strigified headers list
                 $hdrA = apache_request_headers(); $hdrS = '';
@@ -3220,7 +3220,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 foreach ($hdrA as $n => $v) $hdrS .= $n . ': ' . $v . "\r\n";
 
                 // Prepare context options
-                $opt = array('http'=> array('method'=> 'GET', 'header'=> $hdrS));
+                $opt = array('http' => array('method'=> 'GET', 'header' => $hdrS));
 
                 // Create context, for passing as a third argument within file_get_contents() call
                 $ctx = stream_context_create($opt);
@@ -3267,7 +3267,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         $dst = $dir . $this->id . '_' . $field . '.' . $ext;
 
         // Copy the remote file
-        copy($tmp ? $tmp : $url, $dst);
+        $return = copy($tmp ? $tmp : $url, $dst);
+
+        // Change access rights
+        chmod($dst, 0666);
 
         // Delete the temporary file
         if ($tmp) @unlink($tmp);
@@ -3282,8 +3285,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             foreach ($resizeRs as $resizeR) $this->resize($field, $resizeR, $dst);
         }
 
-        // Return boolean true
-        return true;
+        // Return boolean value
+        return $return;
     }
 
     /**
