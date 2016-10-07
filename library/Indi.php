@@ -1739,7 +1739,7 @@ class Indi {
         $purl = parse_url($url); $isOwnUrl = $purl['host'] == $_SERVER['HTTP_HOST'] || !$purl['host'];
 
         // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
-        if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+        if (!$purl['host']) $url = 'http://' . $_SERVER['HTTP_HOST'] . STD . $url;
 
         // Create curl resource
         $ch = curl_init($url);
