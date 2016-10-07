@@ -236,7 +236,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 : Indi::trail($index)->model->table() . 'Id';
 
             // Get the id
-            $id = $this->action->rowRequired == 'n' && $index == 1
+            $id = Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1
                 ? Indi::uri('id')
                 : (preg_match('/,/', Indi::trail($index-1)->row->$connector) // ambiguous check
                     ? $_SESSION['indi']['admin']['trail']['parentId'][$this->section->id]
