@@ -39,6 +39,9 @@ class Admin_SectionsController extends Indi_Controller_Admin {
 
             // Put the contents to a model file
             file_put_contents($ctrlAbs, $ctrlRaw);
+
+            // Chmod
+            chmod($ctrlAbs, 0765);
         }
 
         // Flush success
@@ -87,6 +90,9 @@ class Admin_SectionsController extends Indi_Controller_Admin {
 
         // Put the contents to a model file
         file_put_contents($ctrlAbs, $ctrlRaw);
+
+        // Chmod
+        chmod($ctrlAbs, 0765);
 
         // Flush success
         jflush(true);
