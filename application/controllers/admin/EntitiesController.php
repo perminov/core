@@ -38,7 +38,10 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
             $modelSc = preg_replace(':\{Model\}:', $model, $emptyModelSc);
 
             // Put the contents to a model file
-            file_put_contents($modelFn, $modelSc);
+            file_put_contents($modelFn, $modelSc);            
+
+            // Chmod
+            chmod($modelFn, 0765);
         }
 
         // Build the model's own dir name, and try to create it, if it not yet exist
@@ -64,6 +67,9 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
 
             // Put the contents to a model's rowClass file
             file_put_contents($modelRowFn, $modelRowSc);
+
+            // Chmod
+            chmod($modelRowFn, 0765);
         }
 
         // Flush success
