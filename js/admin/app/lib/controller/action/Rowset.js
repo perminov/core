@@ -322,6 +322,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.store = Ext.merge({
             id: me.bid() + '-store',
             fields: me.storeFieldA(),
+            table: me.ti().model.tableName,
             sorters: me.storeSorters(),
             pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
@@ -2014,6 +2015,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Destroy filters window, if it was created
         if (me.panel.filterWin) me.panel.filterWin.destroy();
+
+        // Destroy store
+        if (me.getStore()) me.getStore().destroyStore();
 
         // Call parent
         me.callParent();
