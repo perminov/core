@@ -449,7 +449,7 @@ Ext.define('Indi', {
             json = Ext.JSON.decode(response.responseText, true);
 
             // The the info about invalid fields from the response, and mark the as invalid
-            if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
+            if (Ext.isObject(json.mismatch)) {
 
                 // Shortcut to json.mismatch
                 mismatch = json.mismatch;
@@ -482,6 +482,8 @@ Ext.define('Indi', {
                         icon: Ext.MessageBox.ERROR
                     });
                 }
+            } else if (json.throwOutMsg) {
+                top.window.location.reload();
             }
         },
 
