@@ -1745,7 +1745,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Logout
                 if (Indi::uri()->section == 'index') iexit(header('Location: ' . PRE . '/logout/'));
                 else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
-                else jflush(false, array('trowOutMsg' => $data));
+                else jflush(false, array('throwOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
             } else if (Indi::uri()->section != 'index') {
