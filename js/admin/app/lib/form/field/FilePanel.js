@@ -327,9 +327,10 @@ Ext.define('Indi.lib.form.field.FilePanel', {
                     if (d = parseFloat(me.minSize)) {
                         sizeType = (me.minSize + '').replace(d.toString(), '').toUpperCase();
                         if (minSize = d * Math.pow(1024, sizeTypeO.hasOwnProperty(sizeType) ? sizeTypeO[sizeType] : 0)) {
-                            if (nativeFile.size > minSize) {
-                                errors.push(Indi.lang.I_FORM_UPLOAD_HSIZE + ' ' + Indi.lang.I_FORM_UPLOAD_NOTGT + ' '
-                                    + Indi.size2str(minSize).toUpperCase());
+                            if (nativeFile.size < minSize) {
+                                errors.push(
+                                    Indi.lang.I_FORM_UPLOAD_HSIZE + ' ' + Indi.lang.I_FORM_UPLOAD_NOTLT + ' '
+                                        + Indi.size2str(minSize).toUpperCase());
                             }
                         }
                     }
