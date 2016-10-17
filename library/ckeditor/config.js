@@ -11,5 +11,5 @@ CKEDITOR.editorConfig = function( config ) {
 	config.allowedContent = true;
 	config.oembed_maxWidth = '560';
 	config.oembed_maxHeight = '315';
-
 };
+CKEDITOR.dtd.$removeEmpty['i'] = false;
