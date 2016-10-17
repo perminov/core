@@ -2722,8 +2722,145 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If current row relates to an account-model - do additional validation
         $this->_ifRole();
 
+        // Check each file's type and size
+        foreach ($this->_files as $field => $meta) {
+            $errorA = array();
+
+            // Check type
+            if ($allowTypes = $this->field($field)->param('allowTypes'))
+                if ($type = $this->_fileShouldBeOfType($meta['name'], $allowTypes)) $errorA[] = $type;
+
+            // Check max size
+            if ($maxSize = $this->field($field)->param('maxSize'))
+                if ($maxSize = $this->_fileShouldBeOfMaxSize($meta['size'], $maxSize)) $errorA[] = $maxSize;
+
+            // Check min size
+            if ($minSize = $this->field($field)->param('minSize'))
+                if ($minSize = $this->_fileShouldBeOfMinSize($meta['size'], $minSize)) $errorA[] = $minSize;
+
+            // Build error message
+            if ($errorA) $this->_mismatch[$field] = I_FILE . ' ' . I_SHOULD . ' ' . im($errorA, ', ' . I_AND . ' ');
+        }
+
         // Return found mismatches
         return $this->_mismatch;
+    }
+
+    /**
+     * Check if given $size is greater than $maxSize, and if so - builds an error message
+     *
+     * @param $size
+     * @param $maxSize
+     * @return string
+     */
+    protected function _fileShouldBeOfMaxSize($size, $maxSize) {
+
+        // Size types
+        $sizeTypeO = array('K' => 1, 'M' => 2, 'G' =>  3);
+
+        // If no $maxSize given - return
+        if (!$d = floatval($maxSize)) return;
+
+        // Get max size type
+        $sizeType = strtoupper(preg_replace('/[^KMG]/i', '', $maxSize));
+
+        // Check size
+        if ($maxSize = $d * pow(1024, $sizeTypeO[$sizeType] ?: 0)) if ($size > $maxSize)
+            return I_FORM_UPLOAD_HSIZE . ' ' . I_FORM_UPLOAD_NOTGT . ' ' . strtoupper(func_get_arg(1));
+    }
+
+    /**
+     * Check if given $size is less than $minSize, and if so - builds an error message
+     *
+     * @param $size
+     * @param $minSize
+     * @return string
+     */
+    protected function _fileShouldBeOfMinSize($size, $minSize) {
+
+        // Size types
+        $sizeTypeO = array('K' => 1, 'M' => 2, 'G' =>  3);
+
+        // If no $minSize given - return
+        if (!$d = floatval($minSize)) return;
+
+        // Get min size type
+        $sizeType = strtoupper(preg_replace('/[^KMG]/i', '', $minSize));
+
+        // Check size
+        if ($minSize = $d * pow(1024, $sizeTypeO[$sizeType] ?: 0)) if ($size < $minSize)
+            return I_FORM_UPLOAD_HSIZE . ' ' . I_FORM_UPLOAD_NOTLT . ' ' . strtoupper(func_get_arg(1));
+    }
+
+    /**
+     * Check if given $file is of type, or has extension within $allowTypes, and if no
+     * - builds an error message
+     *
+     * @param $file
+     * @param $allowTypes
+     * @return string
+     */
+    protected function _fileShouldBeOfType($file, $allowTypes) {
+
+        // Declare aux variables
+        $aTypeAExt = $customExtA = $msgTypeA = array(); $msg = '';
+
+        // Predefined filetype-groups
+        $typeA = array(
+            'image'     => array('txt' => I_FORM_UPLOAD_ASIMG, 'ext' => 'gif,png,jpeg,jpg'),
+            'office'    => array('txt' => I_FORM_UPLOAD_ASOFF, 'ext' => 'doc,pdf,docx,xls,xlsx,txt,odt,ppt,pptx'),
+            'draw'      => array('txt' => I_FORM_UPLOAD_ASDRW, 'ext' => 'psd,ai,cdr'),
+            'archive'   => array('txt' => I_FORM_UPLOAD_ASARC, 'ext' => 'zip,rar,7z,gz,tar'),
+        );
+
+        // Get the array of type-groups
+        $aTypeA = ar($allowTypes);
+
+        // Get the whole list of allowed extensions
+        for ($i = 0; $i < count($aTypeA); $i++)
+            if (!is_array($aTypeI = $typeA[$aTypeA[$i]])) $customExtA[] = $aTypeA[$i];
+            else if (is_string($aTypeIExt = $aTypeI['ext'])) $aTypeAExt = array_merge($aTypeAExt, ar($aTypeIExt));
+
+        // Setup regular expression for file extension check
+        $rex = '/\.(' . im(explode(';', preg_quote(im(array_merge($aTypeAExt, $customExtA), ';'), '/')), '|') . ')$/i';
+
+        // Check the file extension
+        if (!preg_match($rex, $file)) {
+
+            // Build array, containing parts of error message, each mentioning a certain allowed type group
+            for ($i = 0; $i < count($aTypeA); $i++)
+                if (is_array($dTypeI = $typeA[$aTypeA[$i]]))
+                    $msgTypeA[] = $dTypeI['txt'];
+
+            // Prepare the part of the error message, containing abstract list of allowed extenstions
+            if (count($customExtA)) {
+                $msg .= I_FORM_UPLOAD_OFEXT . ' ';
+                if ($msgTypeA) $msg .= strtoupper(im($customExtA, ', ')) . ' ' . I_OR . ' '; else {
+                    $customExtILast = array_pop($customExtA);
+                    $msg .= $customExtA ? strtoupper(im($customExtA, ', ')) . ' ' . I_OR . ' ' : '';
+                    $msg .= strtoupper($customExtILast);
+                }
+            }
+
+            // Prepare the part of the error message, containing human-friendly file-type groups mentions
+            if ($msgTypeA) {
+                $msg .= I_BE . ' ';
+                $msgTypeILast = array_pop($msgTypeA);
+                $msg .= $msgTypeA ? im($msgTypeA, ', ') . ' ' . I_OR . ' ' : '';
+                $msg .= $msgTypeILast;
+
+                $msg .= ' ' . I_FORM_UPLOAD_INFMT . ' ';
+
+                // Prepare the part of the error message, containing merged extension list for
+                // all human-friendly file-type groups mentions
+                $aTypeAExtLast = array_pop($aTypeAExt);
+                $msg .= $aTypeAExt ? strtoupper(im($aTypeAExt, ', ')) . ' ' . I_OR . ' ' : '';
+                $msg .= strtoupper($aTypeAExtLast);
+            }
+
+            // Return
+            return $msg;
+        }
     }
 
     /**
@@ -3559,9 +3696,29 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return bool
      */
     public function fieldIsZero($field, $version = null) {
-        if ($version == 'original') return $this->_original[$field] == $this->field($field)->zeroValue();
-        else if ($version == 'modified') return $this->_modified[$field] == $this->field($field)->zeroValue();
-        else return $this->$field == $this->field($field)->zeroValue();
+
+        // If field is a file-upload field, we implement special logic of zeroValue detection
+        if ($this->field($field)->foreign('elementId')->alias == 'upload') {
+
+            // If file was uploaded, but it is a temporary - return false
+            if (is_array($this->_files[$field])) return false;
+
+            // Else if file is going to be retrieved by an url - return false
+            if (Indi::rexm('url', $this->_files[$field])) return false;
+
+            // Else if file was uploaded/retrieved earlier (existing file), and it's not going to be deleted - return false
+            if ($this->abs($field) && $this->_files[$field] != 'd') return false;
+
+            // Return true, as there is no existing file, and it's not going to be uploaded/retrieved
+            // Or there is an already existing file, but it's going to be deleted
+            return true;
+
+        // Else use simple logic
+        } else {
+            if ($version == 'original') return $this->_original[$field] == $this->field($field)->zeroValue();
+            else if ($version == 'modified') return $this->_modified[$field] == $this->field($field)->zeroValue();
+            else return $this->$field == $this->field($field)->zeroValue();
+        }
     }
 
     /**
