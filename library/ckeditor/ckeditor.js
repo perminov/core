@@ -6,7 +6,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
     if (window.CKEDITOR && window.CKEDITOR.dom) return;
     window.CKEDITOR || (window.CKEDITOR = function () {
         var b = {
-            timestamp: "D2LL",
+            timestamp: "D2LL1",
             version: "4.1",
             revision: "80c139aa",
             rnd: Math.floor(900 * Math.random()) + 100,
