@@ -73,6 +73,9 @@ class Indi_Trail_Item {
      */
     public function filtersSharedRow($start) {
 
+        // If no model/entity is linked - return
+        if (!$this->model) return;
+
         // Setup filters shared row
         $this->filtersSharedRow = $this->model->createRow();
 
