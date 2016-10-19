@@ -2726,6 +2726,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         foreach ($this->_files as $field => $meta) {
             $errorA = array();
 
+            // Here we assume that $meta is an array
+            if (!is_array($meta)) continue;
+
             // Check type
             if ($allowTypes = $this->field($field)->param('allowTypes'))
                 if ($type = $this->_fileShouldBeOfType($meta['name'], $allowTypes)) $errorA[] = $type;
@@ -3454,12 +3457,59 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Get some basic info about uploaded file
      *
      * @param $field
+     * @param $src
      * @return array
      */
-    public function file($field) {
+    public function file($field, $src = false) {
 
         // If given field alias - is not an alias of one of filefields - return
         if (!$this->model()->getFileFields($field)) return;
+
+        // If $src arg is given
+        if ($src) {
+
+            // If value, got by $this->model()->dir() call, is not a directory name
+            if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
+
+                // Assume it is a error message, and put it under $field key within $this->_mismatch property
+                $this->_mismatch[$field] = $dir;
+
+                // Exit
+                return false;
+            }
+
+            // Get absolute pathto file
+            $abs = DOC . STD . $src;
+
+            // If $src is not an existing file
+            if (!is_file($abs)) {
+
+                // Assign an error message
+                $this->_mismatch[$field] = 'Filename "' . $src . '" is not a file';
+            }
+
+            // Get extension
+            $ext = pathinfo($src, PATHINFO_EXTENSION);
+
+            // Build the full filename into $dst variable
+            $dst = $dir . $this->id . '_' . $field . '.' . $ext;
+
+            // Copy the remote file
+            copy($abs, $dst);
+
+            // Change access rights
+            chmod($dst, 0666);
+
+            // If uploaded file is an image in formats gif, jpg or png
+            if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
+
+                // Check if there should be copies created for that image
+                $resizeRs = Indi::model('Resize')->fetchAll('`fieldId` = "' . $this->model()->fields($field)->id . '"');
+
+                // If should - create thmem
+                foreach ($resizeRs as $resizeR) $this->resize($field, $resizeR, $dst);
+            }
+        }
 
         // If there is currently no file uploaded - return
         if (!($abs = $this->abs($field))) return;
