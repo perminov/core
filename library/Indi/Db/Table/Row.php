@@ -2889,11 +2889,17 @@ class Indi_Db_Table_Row implements ArrayAccess
             return;
         }
 
+        // Get the list of entities, that should be skipped while checking username unicity
+        $exclude = $this->model()->_roleFrom;
+
         // For each account model
         foreach (Indi_Db::role() as $entityId) {
 
             // Model shortcut
             $m = Indi::model($entityId);
+
+            // Exclude some entities from username unicity check
+            if ($exclude && in($m->table(), ar($exclude))) continue;
 
             // Try to find an account with such a username, and if found
             if ($m->fetchRow(array(
