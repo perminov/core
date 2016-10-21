@@ -267,6 +267,9 @@ class Indi_View_Helper_Admin_FormCombo {
 
         // If combo mode is 'extjs', we prepare a data object containing all involved info
         $this->extjs($options);
+
+        // Return itself
+        return $this;
     }
 
     /**
