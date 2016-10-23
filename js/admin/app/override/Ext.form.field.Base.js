@@ -291,11 +291,13 @@ Ext.override(Ext.form.field.Base, {
                         c.setDisabled(c.enabler(c, 'boxready', arguments) ? false : true);
                         if (c.target.hidden) {
                             c.target.on('boxready', function(){
-                                c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                                var w = 0; c.ownerCt.items.each(function(item){w += item.getWidth();});
+                                c.ownerCt.setWidth(w + (c.ownerCt.items.length - 1) * 2 + 1);
                                 c.ownerCt.setHeight((me.triggerWrap || me.inputEl).getHeight() - 1);
                             });
                         } else {
-                            c.ownerCt.setWidth(c.ownerCt.getWidth() + c.getWidth() + 1);
+                            var w = 0; c.ownerCt.items.each(function(item){w += item.getWidth();});
+                            c.ownerCt.setWidth(w + (c.ownerCt.items.length - 1) * 2 + 1);
                         }
                         c.enablerEvents.split(',').forEach(function(eventName){
                             c.target.on(eventName, function(newValue){
