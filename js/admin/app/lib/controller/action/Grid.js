@@ -477,6 +477,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     *
+     * @param c
+     * @param f
+     * @return {Object}
+     */
+    gridColumnXMulticheck_Editor: function(c) {
+        return this.gridColumnEditor_Combo(c);
+    },
+
+    /**
      * Default config for price-columns
      *
      * @param column
