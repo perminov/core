@@ -36,8 +36,32 @@ Ext.override(Ext.form.field.Number, {
 
         return value;
     },
-    
+
     delta: function() {
         return this.val() - (this.decimalPrecision ? parseFloat(this.originalValue) : parseInt(this.originalValue));
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Update measure depend on current value
+        if (me.tbq) me.on('change', function(c, v){
+            c.bodyEl.down('.i-field-number-after').update(Indi.tbq(v, me.tbq, false));
+        })
+    },
+
+    // @inheritdoc
+    afterRender: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Update measure depend on current value
+        if (me.tbq) me.bodyEl.down('.i-field-number-after').update(Indi.tbq(me.value, me.tbq, false));
     }
 });

@@ -225,7 +225,7 @@ Ext.override(Ext.form.field.Base, {
      */
     _afterRender: function() {
         var me = this;
-        if (!me.disabled && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
+        if ((!me.disabled || me.readOnly) && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
     },
 
     /**

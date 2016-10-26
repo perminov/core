@@ -599,13 +599,15 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXNumber: function(item) {
+        var tbq = item.field.params.measure.match(/^tbq:([^;]+)/);
         return {
             xtype: 'numberfield',
             cls: 'i-field-number',
-            afterSubTpl: '<span class="i-field-number-after">'+item.field.params.measure+'</span>',
+            afterSubTpl: '<span class="i-field-number-after">' + (tbq ? '' : item.field.params.measure) + '</span>',
             maxLength: item.field.params.maxlength,
             minValue: 0,
-            maxValue: Math.pow(2, 32) - 1
+            maxValue: Math.pow(2, 32) - 1,
+            tbq: tbq ? tbq[1] : ''
         };
     },
 

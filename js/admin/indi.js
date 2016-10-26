@@ -832,12 +832,13 @@ Ext.define('Indi', {
          * @return {String}
          */
         tbq: function(q, versions012, showNumber) {
-            var versions210, formatKA = ['2-4', '1', '0,11-19,5-9'], formatA = {}, formatK, formatV, spanA, k, interval, m;
+            var versions210, formatKA = ['0,11-19,5-9', '1', '2-4'], formatA = {}, formatK, formatV, spanA, k, interval, m;
 
             // Set up default values for arguments
             if (arguments.length < 1) q = 2;
             if (arguments.length < 2) versions012 = '';
             if (arguments.length < 3) showNumber = true;
+            if (q !== 0 && !q) q = 0;
 
             // Force q arg to be string
             q += '';
@@ -887,7 +888,7 @@ Ext.define('Indi', {
                     }
                 }
             }
-            return q;
+            return q || '';
         },
 
         /**
