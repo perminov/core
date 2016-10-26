@@ -35,8 +35,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
 
         // Setup $this->actions
-        foreach ($sectionR->nested('section2action') as $section2actionR)
-            $actionA[] = $section2actionR->foreign('actionId');
+        foreach ($sectionR->nested('section2action') as $section2actionR) {
+            $actionI = $section2actionR->foreign('actionId');
+            if (strlen($section2actionR->rename)) $actionI->title = $section2actionR->rename;
+            $actionA[] = $actionI;
+        }
         $this->actions = Indi::model('Action')->createRowset(array('rows' => $actionA));
 
         // Setup subsections
