@@ -211,7 +211,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             tooltip: tooltip ? {html: tooltip, constrainParent: false, constrainPosition: false} : '',
             cls: tooltip ? 'i-tooltip' : undefined,
             tdCls: tdClsA.join(' '),
-            sortable: true
+            sortable: true,
+            editor: column.editor
         }
     },
 
