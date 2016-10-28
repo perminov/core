@@ -226,9 +226,10 @@ function usubstr($string, $length, $dots = true) {
  * @param string|int $date1 Can be formatted date or unix-timestamp
  * @param string|int|null $date2 Can be formatted date or unix-timestamp. If not given, time() will be used instead
  * @param string $mode Can be 'ago' or 'left'
+ * @param bool $exact If passed non-false, return value will be exact
  * @return string
  */
-function ago($date1, $date2 = null, $mode = 'ago') {
+function ago($date1, $date2 = null, $mode = 'ago', $exact = false) {
 
     // Convert $date1 and $date2 dates to unix-timestamps
     $date1 = is_numeric($date1) ? $date1 : strtotime($date1);
@@ -253,8 +254,8 @@ function ago($date1, $date2 = null, $mode = 'ago') {
         'n' => date('n', $duration) - 1,
         'j' => date('j', $duration) - 1,
         'G' => date('G', $duration) - 3,
-        'i' => trim(date('i', $duration), '0'),
-        's' => trim(date('s', $duration), '0')
+        'i' => ltrim(date('i', $duration), '0'),
+        's' => ltrim(date('s', $duration), '0')
     );
 
     // Build an array of difference levels quantity spelling, depends on their values
@@ -267,8 +268,21 @@ function ago($date1, $date2 = null, $mode = 'ago') {
         's' => 'секунд,секунда,секунды'
     );
 
+    // If $exact arg is true
+    if ($exact) {
+
+        // Start building exact value
+        $exact = $sign;
+
+        // Build exact value
+        foreach ($levelA as $levelK => $levelV) if ((int) $levelV) $exact .=  tbq($levelV, $tbqA[$levelK]) . ' ';
+
+        // Return exact value
+        return trim($exact);
+    }
+
     // Foreach difference level, check if it is has non-zero value and return correct spelling
-    foreach ($levelA as $levelK => $levelV) if ($levelV) return $sign . tbq($levelV, $tbqA[$levelK]);
+    foreach ($levelA as $levelK => $levelV) if ((int) $levelV) return $sign . tbq($levelV, $tbqA[$levelK]);
 }
 
 /**
