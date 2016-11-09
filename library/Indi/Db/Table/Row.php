@@ -2879,9 +2879,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If current entry already has a mismatch-message for 'email' field - return
         if ($this->_mismatch['email']) return;
 
-        // Strip unsafe characters
-        $this->email = preg_replace('/[^0-9a-zA-Z\.-_@]/', '', $this->email);
-
         // If `email` prop became empty
         if (!$this->email) {
 
