@@ -317,6 +317,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-author{background-image: url('/i/admin/btn-icon-author.png');}
 .i-btn-icon-login{background-image: url('/i/admin/btn-icon-login.png');}
 .i-btn-icon-confirm{background-image: url('/i/admin/btn-icon-confirm.png');}
+.i-btn-icon-wand-plus{background-image: url('/i/admin/btn-icon-wand-plus.png');}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {

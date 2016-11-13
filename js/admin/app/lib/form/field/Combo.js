@@ -91,11 +91,22 @@ Ext.define('Indi.lib.form.field.Combo', {
     nbspPx: 4,
 
     /**
-     * Only for multiSelect: true
      * This prop is for ability to set up an url, that will be involved in Indi.load(..) call
-     * one of the selected items was clicked
+     * once of the selected items was clicked
      */
     jump: false,
+
+    /**
+     * This prop is for ability to create NEW foreign key entries. Note that new entry creation itself should
+     * be explicitly implemented within save() method, using *_Row->wand($prop, $ctor = array()), this option
+     * is only responsible for instantiation and enabling/disabling wand-button at the right side of the combo's
+     * labelCell element. Possible values are:
+     *
+     * false  - no wand-button will be instantiated
+     * true   - wand button will be instantiated with default tooltip
+     * string - wand button will be instantiated with a custom tooltip
+     */
+    wand: false,
 
     /**
      * Regular expression for color detecting
@@ -602,6 +613,26 @@ Ext.define('Indi.lib.form.field.Combo', {
                 }
             });
         }
+
+        // If `wand` prop is `true` - create wand-button
+        if (me.wand) me.lbarItems.push({
+            iconCls: 'i-btn-icon-wand-plus',
+            enableToggle: true,
+            enablerEvents: 'keywordnothingfound,keywordfound,keyworderased',
+            tooltip: {
+                html: Ext.isString(me.wand) ? me.wand : Indi.lang.I_COMBO_WAND_TOOLTIP,
+                constrainParent: false
+            },
+            enabler: function(c, eventName) {
+                var e = (c.target.hasZeroValue() || c.target.submitMode == 'keyword')
+                    && c.target.keywordEl.val().length && eventName != 'keywordfound';
+                if (!e && c.pressed) c.toggle();
+                return e;
+            },
+            toggleHandler: function(c, state) {
+                c.target.setSubmitMode(state ? 'keyword' : 'hidden');
+            }
+        });
 
         // Call parent
         me.callParent(arguments);
