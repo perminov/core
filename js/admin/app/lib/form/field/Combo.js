@@ -615,7 +615,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
 
         // If `wand` prop is `true` - create wand-button
-        if (me.wand) me.lbarItems.push({
+        if (me.wand && !me.store.enumset) me.lbarItems.push({
             iconCls: 'i-btn-icon-wand-plus',
             enableToggle: true,
             enablerEvents: 'keywordnothingfound,keywordfound,keyworderased',
