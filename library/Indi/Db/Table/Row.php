@@ -4331,4 +4331,30 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($field->storeRelationAbility == 'one') $this->$prop = $entry->id;
         else if ($field->storeRelationAbility == 'many') $this->push($prop, $entry->id, true);
     }
+
+    /**
+     * Check whether current value of some prop - is a zero-value, or set it to be zero
+     *
+     * @param $prop
+     * @param null $mode
+     * @return bool
+     */
+    public function zero($prop, $mode = null) {
+
+        // If mode is null/false/empty/not-given, or is a string
+        if (!$mode || is_string($mode))
+
+            // Check if current value of $this->$prop is a zero-value
+            return $this->fieldIsZero($prop, $mode);
+
+        // Else
+        else {
+
+            // Set zero-value for $this->$prop
+            $this->$prop = $this->field($prop)->zeroValue();
+
+            // Return *_Row instance itself
+            return $this;
+        }
+    }
 }
