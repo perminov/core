@@ -2879,9 +2879,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If current entry already has a mismatch-message for 'email' field - return
         if ($this->_mismatch['email']) return;
 
-        // Strip unsafe characters
-        $this->email = preg_replace('/[^0-9a-zA-Z\.-_@]/', '', $this->email);
-
         // If `email` prop became empty
         if (!$this->email) {
 
@@ -4296,5 +4293,68 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->table() . 'Id' => $this->id,
             $connector => $id
         ), true)->save();
+    }
+
+    /**
+     * Create a new foreign-entry and use it's id to overwrite the current value or append to the current value
+     *
+     * @param $prop
+     * @param array $ctor
+     * @return mixed
+     */
+    public function wand($prop, $ctor = array()) {
+
+        // If $prop is not a field - return
+        if (!$field = $this->field($prop)) return;
+
+        // If field relates to `enumset` table/entity - return
+        if ($field->relation == 6) return;
+
+        // If field can store only one foreign key's value and value is an integer - return
+        if ($field->storeRelationAbility == 'one' && Indi::rexm('int11', $this->$prop)) return;
+
+        // If field can store multiple foreign key's values and value is a comma-separated list of integer values - return
+        if ($field->storeRelationAbility == 'many' && Indi::rexm('int11list', $this->$prop)) return;
+
+        // If $prop prop does not deal with foreign-keys
+        if (!$entityId = $this->field($prop)->relation) return;
+
+        // Create new entry
+        $entry = Indi::model($entityId)->createRow(array_merge(array(
+            'title' => $this->$prop
+        ), $ctor), true);
+
+        // Save entry
+        $entry->save();
+
+        // Assign or append new entry's id, depend of field's storeRelationAbility
+        if ($field->storeRelationAbility == 'one') $this->$prop = $entry->id;
+        else if ($field->storeRelationAbility == 'many') $this->push($prop, $entry->id, true);
+    }
+
+    /**
+     * Check whether current value of some prop - is a zero-value, or set it to be zero
+     *
+     * @param $prop
+     * @param null $mode
+     * @return bool
+     */
+    public function zero($prop, $mode = null) {
+
+        // If mode is null/false/empty/not-given, or is a string
+        if (!$mode || is_string($mode))
+
+            // Check if current value of $this->$prop is a zero-value
+            return $this->fieldIsZero($prop, $mode);
+
+        // Else
+        else {
+
+            // Set zero-value for $this->$prop
+            $this->$prop = $this->field($prop)->zeroValue();
+
+            // Return *_Row instance itself
+            return $this;
+        }
     }
 }
