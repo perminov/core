@@ -439,6 +439,12 @@ function grs($length = 15, $charTypes = 'an') {
     // Set of characters
     $chars = array();
 
+    // Strip unsupported values from $charTypes arg
+    $charTypes = preg_replace('/[^ans]/', '', $charTypes);
+
+    // If $charTypes arg was given, but it does not contain supported values, reset it's value to default
+    if (!$charTypes) $charTypes = 'an';
+
     // If $charTypes arg contains 'a' letter, include alpha-characters in the chars list
     if (preg_match('/a/', $charTypes)) $chars = array_merge($chars, array(
         'a', 'b', 'c', 'd', 'e', 'f',
