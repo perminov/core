@@ -36,11 +36,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
         // Setup $this->actions
         foreach ($sectionR->nested('section2action') as $section2actionR) {
-            $actionI = $section2actionR->foreign('actionId');
-            if (strlen($section2actionR->rename)) $actionI->title = $section2actionR->rename;
+            $actionI = $section2actionR->foreign('actionId')->toArray();
+            if (strlen($section2actionR->rename)) $actionI['title'] = $section2actionR->rename;
             $actionA[] = $actionI;
         }
-        $this->actions = Indi::model('Action')->createRowset(array('rows' => $actionA));
+        $this->actions = Indi::model('Action')->createRowset(array('data' => $actionA));
 
         // Setup subsections
         $this->sections = $sectionR->nested('section');
