@@ -2,30 +2,30 @@ Ext.define('Ext.ux.desktop.TaskBar', {
     extend: 'Ext.toolbar.Toolbar',
     alias: 'widget.taskbar',
     border: 0,
-    height: 20,
+    height: '100%',
     padding: 0,
     margin: 0,
     style: {
-        background: 'none'
+        background: 'transparent'
     },
+
+    /**
+     *
+     */
     initComponent: function () {
         var me = this;
 
-        me.ubar = {
-            xtype: 'panel',
-            html: '<div id="i-center-north-admin">' + Indi.user + ' <a href="' + Indi.pre + '/logout/">' + Indi.lang.I_LOGOUT + '</a></div>',
-            padding: 0,
-            border: 0,
-            margin: '10 20 0 0'
-        };
-
+        // Instantiate windowbar
         me.wbar = Ext.widget({
             xtype: 'windowbar',
-            maxWindows: 15
+            maxWindows: 15,
+            margin: '0 0 0 0'
         });
 
-        me.items = [me.ubar, me.wbar];
+        // Add windowbar
+        me.items = [me.wbar];
 
+        // Call parent
         me.callParent();
     },
 

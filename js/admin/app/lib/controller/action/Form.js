@@ -309,7 +309,7 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemA: function(fieldA) {
 
         // Declare a number of auxiliary variables
-        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, build;
+        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, xtype, build;
 
         // If `fieldA` argument was given - use it rather than me.ti().fields
         fieldA = fieldA || me.ti().fields;
@@ -354,13 +354,16 @@ Ext.define('Indi.lib.controller.action.Form', {
                 // Setup default config
                 itemI = me.formItemDefault(fieldA[i]);
 
+                // Get control element name
+                xtype = fieldA[i].xtype || fieldA[i].foreign('elementId').alias;
+
                 // Apply specific control element config, as fields control elements/xtypes may be different
-                eItemX = 'formItemX' + Indi.ucfirst(fieldA[i].foreign('elementId').alias);
+                eItemX = 'formItemX' + Indi.ucfirst(xtype);
                 if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
                     itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI) : me[eItemX];
                     itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
                 } else Ext.merge(itemI, {
-                    fieldLabel: '!!! ' + fieldA[i].foreign('elementId').alias
+                    fieldLabel: '!!! ' + xtype
                 });
 
                 // Apply field custom config
@@ -368,7 +371,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
                     item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
                     itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
-                }
+                } else if (me[eItem$] === false) itemI = me[eItem$];
 
                 // If itemI is still not empty/null/false
                 if (itemI) {
@@ -599,13 +602,15 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXNumber: function(item) {
+        var tbq = item.field.params.measure.match(/^tbq:([^;]+)/);
         return {
             xtype: 'numberfield',
             cls: 'i-field-number',
-            afterSubTpl: '<span class="i-field-number-after">'+item.field.params.measure+'</span>',
+            afterSubTpl: '<span class="i-field-number-after">' + (tbq ? '' : item.field.params.measure) + '</span>',
             maxLength: item.field.params.maxlength,
             minValue: 0,
-            maxValue: Math.pow(2, 32) - 1
+            maxValue: Math.pow(2, 32) - 1,
+            tbq: tbq ? tbq[1] : ''
         };
     },
 
@@ -660,7 +665,6 @@ Ext.define('Indi.lib.controller.action.Form', {
             grow: true,
             growMin: 30,
             rows: 2,
-            allowBlank: true,
             getInputWidthUsage: function() {
                 return this.getLabelWidthUsage();
             },
@@ -957,8 +961,15 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 });
 
-            // Else hide mask
-            } else me.getMask().hide();
+            // Else
+            } else {
+
+                // Scroll to the first invalid field
+                formCmp.down('[activeError]').el.scrollIntoView(formCmp.body, false, true);
+
+                // Hide mask
+                me.getMask().hide();
+            }
 
         // Else
         } else {

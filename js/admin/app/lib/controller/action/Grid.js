@@ -49,8 +49,16 @@ Ext.define('Indi.lib.controller.action.Grid', {
          */
         viewConfig: {
             getRowClass: function (row) {
-                if (row.raw._system && row.raw._system.disabled)
-                    return 'i-grid-row-disabled';
+                var cls = [];
+
+                // Append 'i-grid-row-disabled' css class if need
+                if (row.raw._system && row.raw._system.disabled) cls.push('i-grid-row-disabled');
+
+                // Append 'i-grid-row-m4d-(1|2)' css class if need
+                if (row.raw.$keys && row.raw.$keys.hasOwnProperty('m4d')) cls.push('i-grid-row-m4d-' + row.raw.$keys.m4d);
+
+                // Return whitespace-separated list of css clases
+                return cls.join(' ');
             },
             loadingText: Ext.LoadMask.prototype.msg,
             cellOverflow: true,
@@ -105,8 +113,34 @@ Ext.define('Indi.lib.controller.action.Grid', {
                             selectionModel.deselect(row, true);
                     });
             },
-            itemdblclick: function() {
-                var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) {
+            itemdblclick: function(gridview) {
+                var btn, press = true, cls, dataIndex, col, me = gridview.ctx(), bid = me.bid(), field, canSave;
+
+                // Prevent collisions in cases when item was clicked in cell, having inline-editor,
+                // that have 'celldblclick' it's trigger event
+                if (me.ti().actions.r('save', 'alias') && me.rowsetPlugin$Cellediting.triggerEvent == 'celldblclick') {
+
+                    // Get td's css classes list
+                    cls = Ext.EventObject.getTarget('.x-grid-cell', 10, true).attr('class');
+
+                    // Find a css class, containing bid, and pick column's dataIndex from it
+                    Ext.String.trim(cls).split(' ').forEach(function(i){
+                        if (i.match(new RegExp(bid))) dataIndex = i.split('-').pop();
+                    });
+
+                    // Get column by it's dataIndex
+                    if (col = gridview.headerCt.down('[dataIndex="' + dataIndex + '"]')) {
+
+                        // Get field by alias
+                        field = me.ti().fields.r(dataIndex, 'alias');
+
+                        // If field is not in the list of disabled fields
+                        if (!me.ti().disabledFields.r(field.id, 'fieldId') && col.initialConfig.editor) press = false;
+                    }
+                }
+
+                // Press 'Details' btn if ok
+                btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn && press) {
                     this.view.dblclick = true;
                     btn.press();
                 }
@@ -127,7 +161,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // If 'Save' action is accessible, and column is linked to 'enumset' field
                 // and that field is not in the list of disabled fields - provide some kind
                 // of cell-editor functionality, so enumset values can be switched from one to another
-                if (canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
+                if (!col.initialConfig.editor && canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
                     && field.storeRelationAbility == 'one'
                     && (col.allowCycle !== false || enumset.length <= 2)) {
 
@@ -184,7 +218,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cls: tooltip ? 'i-tooltip' : undefined,
             $ctx: me,
             tdCls: tdClsA.join(' '),
-            sortable: true
+            sortable: true,
+            editor: column.editor
         }
     },
 
@@ -426,6 +461,46 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
+    gridColumnEditor_Combo: function(c) {
+        var me = this, f = me.ti().fields.r(c.dataIndex, 'alias'), r = me.ti().row;
+        if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one' && !c.editor) return null;
+        return {
+            xtype: 'combo.cell',
+            store: {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, js: '', optionHeight: "14", page: 1},
+            field: f
+        }
+    },
+
+    /**
+     *
+     * @param c
+     * @param f
+     * @return {Object}
+     */
+    gridColumnXRadio_Editor: function(c) {
+        return this.gridColumnEditor_Combo(c);
+    },
+
+    /**
+     *
+     * @param c
+     * @param f
+     * @return {Object}
+     */
+    gridColumnXCombo_Editor: function(c) {
+        return this.gridColumnEditor_Combo(c);
+    },
+
+    /**
+     *
+     * @param c
+     * @param f
+     * @return {Object}
+     */
+    gridColumnXMulticheck_Editor: function(c) {
+        return this.gridColumnEditor_Combo(c);
+    },
+
     /**
      * Default config for price-columns
      *
@@ -471,6 +546,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
+     * Hide m4d-columns, as 'i-grid-row-m4d-1' css-class added within getRowClass() fn,
+     * for each row having '1' as value of `m4d` prop. That provide visual distinction
+     * between regular rows and rows, marked for deletion, and this way is more user-friendly
+     * than keeping visibility for cell-values who just saying 'Yes' or 'No' within that column
+     */
+    gridColumn$M4d: {hidden: true},
+
+    /**
+     * Default config for fileupload-columns
+     */
+    gridColumnXUpload: {sortable: false},
+
+    /**
      * Default config for date-columns
      *
      * @param column
@@ -507,7 +595,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnADeep: function(colA) {
         var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
-            eColumnXRenderer, eColumnXEditor;
+            eColumnXRenderer, eColumnXEditor, canSave = me.ti().actions.r('save', 'alias');
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -595,11 +683,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Apply editor
                 if (Ext.isObject(columnI) && columnI.editor) {
-                    eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
-                    if (Ext.isFunction(me[eColumnXEditor]) || Ext.isObject(me[eColumnXEditor])) {
-                        columnI.editor = Ext.isFunction(me[eColumnXEditor]) ? me[eColumnXEditor](columnI, field, Ext.isObject(columnI.editor) ? columnI.editor : {}) : me[eColumnXEditor];
-                    } else if (!Ext.isObject(columnI.editor)) {
+                    if (!canSave || me.ti().disabledFields.r(field.id, 'fieldId')) {
                         columnI.editor = false;
+                    } else {
+                        eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
+                        if (Ext.isFunction(me[eColumnXEditor]) || Ext.isObject(me[eColumnXEditor])) {
+                            columnI.editor = Ext.isFunction(me[eColumnXEditor]) ? me[eColumnXEditor](columnI, field, Ext.isObject(columnI.editor) ? columnI.editor : {}) : me[eColumnXEditor];
+                        } else if (!Ext.isObject(columnI.editor)) {
+                            columnI.editor = false;
+                        }
                     }
                 }
 
@@ -1301,19 +1393,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
         ptype: 'cellediting',
         triggerEvent: 'cellsecondclick',
         listeners: {
-            edit: function(editor, e) {
+            edit: function(editor, e, eOpts) {
                 var grid = editor.grid, ctx = grid.ctx();
 
                 // Make sure pressing ENTER will not cause call of it's ordinary handler
                 grid.preventEnter = true;
 
                 // Try to save
-                ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(){
+                ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(json){
                     var cell = editor.view.getCellByPosition({
                         column: e.colIdx,
                         row: e.rowIdx
                     });
                     Ext.fly(cell).addCls('i-grid-cell-editor-focus');
+
+                    // Call additional callback, defined as one of listeners, and pass json-decoded response
+                    if (Ext.isFunction(eOpts.remotesave))
+                        eOpts.remotesave.call(editor, e, json);
                 });
             }
         }

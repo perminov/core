@@ -47,7 +47,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
 
         // Do stuff
-        ob_start(); echo parent::formCombo($filter->foreign('fieldId')->alias); return ob_get_clean();
+        return parent::formCombo($filter->foreign('fieldId')->alias);
     }
 
     /**

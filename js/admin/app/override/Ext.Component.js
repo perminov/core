@@ -17,7 +17,8 @@ Ext.override(Ext.Component, {
      * @return {Indi.lib.controller.action.Action}
      */
     ctx: function() {
-        var me = this, wrapper = me.isWrapper ? me : me.up('[isWrapper]'); return wrapper.ctx();
+        var me = this, hasCtx, wrapper = me.isWrapper ? me : me.up('[isWrapper]');
+        if (wrapper) return wrapper.ctx(); else if (hasCtx = me.up('[hasCtx]')) return hasCtx.$ctx;
     },
 
     /**

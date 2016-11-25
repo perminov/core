@@ -35,9 +35,12 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
 
         // Setup $this->actions
-        foreach ($sectionR->nested('section2action') as $section2actionR)
-            $actionA[] = $section2actionR->foreign('actionId');
-        $this->actions = Indi::model('Action')->createRowset(array('rows' => $actionA));
+        foreach ($sectionR->nested('section2action') as $section2actionR) {
+            $actionI = $section2actionR->foreign('actionId')->toArray();
+            if (strlen($section2actionR->rename)) $actionI['title'] = $section2actionR->rename;
+            $actionA[] = $actionI;
+        }
+        $this->actions = Indi::model('Action')->createRowset(array('data' => $actionA));
 
         // Setup subsections
         $this->sections = $sectionR->nested('section');
@@ -149,7 +152,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             if (Indi::uri('id')) {
 
                 // If action is not 'index', so it mean that we are dealing with not rowset, but certain row
-                if (Indi::uri('action') != 'index') {
+                if ($this->action->rowRequired == 'y') {
 
                     // Get primary WHERE clause
                     $where = Indi_Trail_Admin::$controller->primaryWHERE();
@@ -236,7 +239,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 : Indi::trail($index)->model->table() . 'Id';
 
             // Get the id
-            $id = Indi::uri('action') == 'index' && $index == 1
+            $id = Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1
                 ? Indi::uri('id')
                 : (preg_match('/,/', Indi::trail($index-1)->row->$connector) // ambiguous check
                     ? $_SESSION['indi']['admin']['trail']['parentId'][$this->section->id]
