@@ -431,35 +431,45 @@ function hrgb($rgb = '') {
  * Generate a sequence, consisting of random characters
  *
  * @param int $length
- * @param bool $useSpecialChars
+ * @param string $charTypes
  * @return string
  */
-function grs($length = 15, $useSpecialChars = false) {
+function grs($length = 15, $charTypes = 'an') {
 
-    // Initial set of characters
-    $chars = array(
+    // Set of characters
+    $chars = array();
+
+    // Strip unsupported values from $charTypes arg
+    $charTypes = preg_replace('/[^ans]/', '', $charTypes);
+
+    // If $charTypes arg was given, but it does not contain supported values, reset it's value to default
+    if (!$charTypes) $charTypes = 'an';
+
+    // If $charTypes arg contains 'a' letter, include alpha-characters in the chars list
+    if (preg_match('/a/', $charTypes)) $chars = array_merge($chars, array(
         'a', 'b', 'c', 'd', 'e', 'f',
         'g', 'h', 'i', 'j', 'k', 'l',
-        'm', 'n', 'o', 'p', 'r', 's',
-        't', 'u', 'v', 'x', 'y', 'z',
-        'A', 'B', 'C', 'D', 'E', 'F',
-        'G', 'H', 'I', 'J', 'K', 'L',
-        'M', 'N', 'O', 'P', 'R', 'S',
-        'T', 'U', 'V', 'X', 'Y', 'Z',
-        '1', '2', '3', '4', '5', '6',
-        '7', '8', '9', '0'
-    );
+        'm', 'n', 'o', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x',
+        'y', 'z', 'A', 'B', 'C', 'D',
+        'E', 'F', 'G', 'H', 'I', 'J',
+        'K', 'L', 'M', 'N', 'O', 'P',
+        'Q', 'R', 'S', 'T', 'U', 'V',
+        'W', 'X', 'Y', 'Z'
+    ));
 
-    // If $useSpecialChars argument is boolean true
-    if ($useSpecialChars)
+    // If $charTypes arg contains 'a' letter, include numeric-characters in the chars list
+    if (preg_match('/n/', $charTypes)) $chars = array_merge($chars, array(
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+    ));
 
-        // Append set of special characters to initial set of characters
-        $chars = array_merge($chars, array(
-            '.', ',', '(', ')', '[', ']',
-            '!', '?', '&', '^', '%', '@',
-            '*', '$', '<', '>', '/', '|',
-            '+', '-', '{', '}', '`', '~'
-        ));
+    // If $charTypes arg contains 's' letter, include special-characters in the chars list
+    if (preg_match('/s/', $charTypes)) $chars = array_merge($chars, array(
+        '.', ',', '(', ')', '[', ']',
+        '!', '?', '&', '^', '%', '@',
+        '*', '$', '<', '>', '/', '|',
+        '+', '-', '{', '}', '`', '~'
+    ));
 
     // Generate
     $s = ''; for ($i = 0; $i < $length; $i++) $s .= $chars[rand(0, count($chars) - 1)];
@@ -876,7 +886,7 @@ function alias($title){
 
     // Replacements
     $r = array('a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
-        '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+        '','y','','e','yu','ya','','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
         't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
         'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-', '_');
 
