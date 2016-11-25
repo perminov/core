@@ -86,7 +86,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $this->adjustTrail();
 
             // If action is 'index'
-            if (Indi::uri('action') == 'index') {
+            if (Indi::trail()->action->rowRequired == 'n') {
 
                 // Get the primary WHERE clause
                 $primaryWHERE = $this->primaryWHERE();
@@ -123,8 +123,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                     Indi::get()->limit = Indi::trail()->section->rowsOnPage;
                 }
 
-                // If 'format' uri's param was specified
-                if (/* // */Indi::uri()->format || !$this->_isRowsetSeparate) {
+                // If a rowset should be fetched
+                if (Indi::uri()->format || Indi::uri('action') != 'index' || !$this->_isRowsetSeparate) {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
@@ -271,8 +271,27 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Do pre delete maintenance
         $this->preDelete();
 
-        // Delete row
-        if ($deleted = (int) $this->row->delete()) {
+        // Declare array of ids of entries, that should be deleted, and push main entry's id as first item
+        $toBeDeletedIdA[] = $this->row->id;
+
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
+
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+            // If $otherIdA array is still not empty append it's item into $toBeMovedIdA array
+            if ($otherIdA) $toBeDeletedIdA = array_merge($toBeDeletedIdA, $otherIdA);
+        }
+
+        // Fetch rows that should be moved
+        $toBeDeletedRs = Indi::trail()->model->fetchAll(
+            array('`id` IN (' . im($toBeDeletedIdA) . ')', Indi::trail()->scope->WHERE),
+            Indi::trail()->scope->ORDER
+        );
+
+        // For each row
+        foreach ($toBeDeletedRs as $toBeDeletedR) if ($deleted = (int) $toBeDeletedR->delete()) {
 
             // Get the page of results, that we were at
             $wasPage = Indi::trail()->scope->page;
@@ -958,6 +977,11 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
                 // because gd image will override cell value otherwise
                 $columnI['title'] = str_pad('', 6, ' ');
+
+            // Else if current column is a row-numberer column
+            } else if (preg_match('/^&#160;?$/', $columnI['title'])) {
+                $columnI['title'] = ' ';
+                $columnA[$n]['type'] = 'rownumberer';
             }
 
             // Write header title of a certain column to a header cell
@@ -1051,6 +1075,34 @@ class Indi_Controller_Admin extends Indi_Controller {
                     )
                 )
             );
+
+            // Apply background color for all cells within current column, in caseif current column is
+            // a rownumberer-column
+            if ($columnA[$n]['type'] == 'rownumberer') $objPHPExcel->getActiveSheet()
+                ->getStyle($columnL . ($currentRowIndex + 1) . ':' . $columnL . $lastRowIndex)
+                ->applyFromArray(
+                array(
+                    'borders' => array(
+                        'right' => array(
+                            'style' => PHPExcel_Style_Border::BORDER_THIN,
+                            'color' => array(
+                                'rgb' => ($columnI['dataIndex'] == $order->property ? 'BDD5F1':'d5d5d5')
+                            )
+                        ),
+                    ),
+                    'fill' => array(
+                        'type' => PHPExcel_Style_Fill::FILL_GRADIENT_LINEAR,
+                        'rotation' => 0,
+                        'startcolor' => array(
+                            'rgb' => 'F9F9F9',
+                        ),
+                        'endcolor' => array(
+                            'rgb' => 'E3E4E6',
+                        ),
+                    )
+                )
+            );
+
         }
 
         // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
@@ -1072,8 +1124,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Convert the column index to excel column letter
                 $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
-                // Get the value
-                $value = $data[$i][$columnI['dataIndex']];
+                // Get the index/value
+                if ($columnI['dataIndex']) $value = $data[$i][$columnI['dataIndex']];
+                else if ($columnI['type'] == 'rownumberer') $value = $i + 1;
+                else $value = '';
 
                 // If cell value contains a .i-color-box item, we replaced it with same-looking GD image box
                 if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);" title="[^"]+">/', $value, $c)) {
@@ -1221,7 +1275,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $value);
 
                 // Set odd-even rows background difference
-                if ($i%2) {
+                if ($i%2 && $columnA[$n]['type'] != 'rownumberer') {
                     $objPHPExcel->getActiveSheet()
                         ->getStyle($columnL . $currentRowIndex)
                         ->getFill()
@@ -1723,7 +1777,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Logout
                 if (Indi::uri()->section == 'index') iexit(header('Location: ' . PRE . '/logout/'));
                 else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
-                else jflush(false, array('trowOutMsg' => $data));
+                else jflush(false, array('throwOutMsg' => $data));
 
             // Else if current section is 'index', e.g we are in the root of interface
             } else if (Indi::uri()->section != 'index') {
@@ -1993,8 +2047,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Save form data
      *
      * @param bool $redirect
+     * @param bool $return
      */
-    public function saveAction($redirect = true) {
+    public function saveAction($redirect = true, $return = false) {
 
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
@@ -2123,9 +2178,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Assign row's grid data into 'affected' key within $response
         $response['affected'] = $data;
+        $response['success'] = true;
 
         // Flush response
-        jflush(true, $response);
+        if ($return) return $response; else jflush($response);
     }
 
     /**
@@ -2217,42 +2273,6 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function adjustTrail() {
 
-    }
-
-    /**
-     * Append the field, identified by $alias, to the list of disabled fields
-     *
-     * @param string $alias Field name/alias
-     * @param bool $displayInForm Whether or not field should be totally disabled, or disabled but however visible
-     * @param string $defaultValue The default value for the disabled field
-     */
-    public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
-
-        // Append
-        foreach(ar($alias) as $a) Indi::trail()->disabledFields->append(array(
-            'id' => 0,
-            'sectionId' => Indi::trail()->section->id,
-            'fieldId' => Indi::trail()->model->fields($a)->id,
-            'defaultValue' => $defaultValue,
-            'displayInForm' => $displayInForm ? 1 : 0,
-        ));
-    }
-
-    /**
-     * Exclude field/fields from the list of disabled fields by their aliases/names
-     *
-     * @param string $fields Comma-separated list of fields's aliases to be excluded from the list of disabled fields
-     */
-    public function excludeDisabledFields($fields) {
-
-        // Convert $fields argument into an array
-        $fieldA_alias = ar($fields);
-
-        // Get the ids
-        $fieldA_id = Indi::trail()->fields->select($fieldA_alias, 'alias')->column('id');
-
-        // Exclude
-        Indi::trail()->disabledFields->exclude($fieldA_id, 'fieldId');
     }
 
     /**

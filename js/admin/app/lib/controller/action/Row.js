@@ -245,8 +245,8 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @param autosave {Boolean}
      * @return {String}
      */
-    panelDockedInner$Reload_uri: function (autosave) {
-        var me = this, uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
+    panelDockedInner$Reload_uri: function (autosave, action) {
+        var me = this, uri = '/' + me.ti().section.alias + '/' + (action || me.ti().action.alias);
 
         // Append 'id' param to the uri
         uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
@@ -829,11 +829,18 @@ Ext.define('Indi.lib.controller.action.Row', {
         // Append tab (south region) panel only if it's consistent
         if (me.panel.xtype != 'actiontabrow' && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
             if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
-                if (me.ti().scope.actionrow.south.height == 25) southItem.height = 25;
+                //if (me.ti().scope.actionrow.south.height == 25) southItem.height = 25;
+                if (!Ext.isFunction(me.south.height)) southItem.height = me.ti().scope.actionrow.south.height;
                 southItem.activeTab = me.ti().sections.column('alias').indexOf(me.ti().scope.actionrow.south.activeTab);
             }
 
-            // Push `southItem` into `itemA` array
+            // If south panel's  height should be calculated on-the-fly - do it
+            if (Ext.isFunction(me.south.height)) {
+                southItem.heightFn = me.south.height;
+                southItem.height = me.south.height(me);
+            }
+
+            // Push south panel into items array
             itemA.push(southItem);
         }
 

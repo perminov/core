@@ -46,12 +46,16 @@ Ext.define('Indi.lib.controller.Controller', {
      * @param {Object} scope Object, containing `route`, `plain`, `uri` and `cfg` properties
      */
     dispatch: function(scope) {
+        var me = this, action, actionExtendCmpName, actionCmpName;
 
         // Pre-dispatch
-        this.preDispatch(scope);
+        me.preDispatch(scope);
 
-        // Init aux variables
-        var me = this, action = scope.route.last().action.alias, actionExtendCmpName, actionCmpName;
+        // Init model
+        me.initModel(scope);
+
+        // Get action alias
+        action = scope.route.last().action.alias;
 
         // Setup `actions` property, for being a storage for action classes instances
         me.actions = me.actions || {};
@@ -109,6 +113,10 @@ Ext.define('Indi.lib.controller.Controller', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    initModel: function(scope) {
+        var me = this;
     }
 }, function() {
 

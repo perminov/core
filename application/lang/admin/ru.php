@@ -160,6 +160,8 @@ define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количес�
 define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Выбранное значение отключено и поэтому недоступно для выбора');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Ничего не найдено');
 define('I_COMBO_ODATA_FIELD404', 'Поле "%s" не является ни реальным полем, ни псевдо-полем');
+define('I_COMBO_GROUPBY_NOGROUP', 'Принадлежность не указана');
+define('I_COMBO_WAND_TOOLTIP', 'Создать новую опцию в этом выпадающем списке<br> используя наименование, указанное в этом поле');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Запись не найдена');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'Среди набора записей, доступных в рамках данного раздела,');
@@ -175,7 +177,8 @@ define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_MSG_END', ' - не�
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'Отсутствуют');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Выберите--');
 
-define('I_ACTION_INDEX_KEYWORD_LABEL', 'Искать');
+define('I_ACTION_INDEX_KEYWORD_LABEL', 'Искать…');
+define('I_ACTION_INDEX_KEYWORD_TOOLTIP', 'Искать по всем столбцам');
 define('I_ACTION_INDEX_SUBSECTIONS_LABEL', 'Подразделы');
 define('I_ACTION_INDEX_SUBSECTIONS_VALUE', '--Выберите--');
 define('I_ACTION_INDEX_SUBSECTIONS_NO', 'Отсутствуют');

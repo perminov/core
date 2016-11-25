@@ -226,9 +226,10 @@ function usubstr($string, $length, $dots = true) {
  * @param string|int $date1 Can be formatted date or unix-timestamp
  * @param string|int|null $date2 Can be formatted date or unix-timestamp. If not given, time() will be used instead
  * @param string $mode Can be 'ago' or 'left'
+ * @param bool $exact If passed non-false, return value will be exact
  * @return string
  */
-function ago($date1, $date2 = null, $mode = 'ago') {
+function ago($date1, $date2 = null, $mode = 'ago', $exact = false) {
 
     // Convert $date1 and $date2 dates to unix-timestamps
     $date1 = is_numeric($date1) ? $date1 : strtotime($date1);
@@ -253,8 +254,8 @@ function ago($date1, $date2 = null, $mode = 'ago') {
         'n' => date('n', $duration) - 1,
         'j' => date('j', $duration) - 1,
         'G' => date('G', $duration) - 3,
-        'i' => trim(date('i', $duration), '0'),
-        's' => trim(date('s', $duration), '0')
+        'i' => ltrim(date('i', $duration), '0'),
+        's' => ltrim(date('s', $duration), '0')
     );
 
     // Build an array of difference levels quantity spelling, depends on their values
@@ -267,8 +268,21 @@ function ago($date1, $date2 = null, $mode = 'ago') {
         's' => 'секунд,секунда,секунды'
     );
 
+    // If $exact arg is true
+    if ($exact) {
+
+        // Start building exact value
+        $exact = $sign;
+
+        // Build exact value
+        foreach ($levelA as $levelK => $levelV) if ((int) $levelV) $exact .=  tbq($levelV, $tbqA[$levelK]) . ' ';
+
+        // Return exact value
+        return trim($exact);
+    }
+
     // Foreach difference level, check if it is has non-zero value and return correct spelling
-    foreach ($levelA as $levelK => $levelV) if ($levelV) return $sign . tbq($levelV, $tbqA[$levelK]);
+    foreach ($levelA as $levelK => $levelV) if ((int) $levelV) return $sign . tbq($levelV, $tbqA[$levelK]);
 }
 
 /**
@@ -417,35 +431,45 @@ function hrgb($rgb = '') {
  * Generate a sequence, consisting of random characters
  *
  * @param int $length
- * @param bool $useSpecialChars
+ * @param string $charTypes
  * @return string
  */
-function grs($length = 15, $useSpecialChars = false) {
+function grs($length = 15, $charTypes = 'an') {
 
-    // Initial set of characters
-    $chars = array(
+    // Set of characters
+    $chars = array();
+
+    // Strip unsupported values from $charTypes arg
+    $charTypes = preg_replace('/[^ans]/', '', $charTypes);
+
+    // If $charTypes arg was given, but it does not contain supported values, reset it's value to default
+    if (!$charTypes) $charTypes = 'an';
+
+    // If $charTypes arg contains 'a' letter, include alpha-characters in the chars list
+    if (preg_match('/a/', $charTypes)) $chars = array_merge($chars, array(
         'a', 'b', 'c', 'd', 'e', 'f',
         'g', 'h', 'i', 'j', 'k', 'l',
-        'm', 'n', 'o', 'p', 'r', 's',
-        't', 'u', 'v', 'x', 'y', 'z',
-        'A', 'B', 'C', 'D', 'E', 'F',
-        'G', 'H', 'I', 'J', 'K', 'L',
-        'M', 'N', 'O', 'P', 'R', 'S',
-        'T', 'U', 'V', 'X', 'Y', 'Z',
-        '1', '2', '3', '4', '5', '6',
-        '7', '8', '9', '0'
-    );
+        'm', 'n', 'o', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x',
+        'y', 'z', 'A', 'B', 'C', 'D',
+        'E', 'F', 'G', 'H', 'I', 'J',
+        'K', 'L', 'M', 'N', 'O', 'P',
+        'Q', 'R', 'S', 'T', 'U', 'V',
+        'W', 'X', 'Y', 'Z'
+    ));
 
-    // If $useSpecialChars argument is boolean true
-    if ($useSpecialChars)
+    // If $charTypes arg contains 'a' letter, include numeric-characters in the chars list
+    if (preg_match('/n/', $charTypes)) $chars = array_merge($chars, array(
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+    ));
 
-        // Append set of special characters to initial set of characters
-        $chars = array_merge($chars, array(
-            '.', ',', '(', ')', '[', ']',
-            '!', '?', '&', '^', '%', '@',
-            '*', '$', '<', '>', '/', '|',
-            '+', '-', '{', '}', '`', '~'
-        ));
+    // If $charTypes arg contains 's' letter, include special-characters in the chars list
+    if (preg_match('/s/', $charTypes)) $chars = array_merge($chars, array(
+        '.', ',', '(', ')', '[', ']',
+        '!', '?', '&', '^', '%', '@',
+        '*', '$', '<', '>', '/', '|',
+        '+', '-', '{', '}', '`', '~'
+    ));
 
     // Generate
     $s = ''; for ($i = 0; $i < $length; $i++) $s .= $chars[rand(0, count($chars) - 1)];
@@ -485,7 +509,7 @@ function ldate($format, $date = '', $when = '') {
 
         // Force Russian-style month name endings
         if (in('month', ar($when))) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
-            $date = preg_replace('/' . $s . '\b/u', $r, $date);
+            $date = preg_replace('/([а-яА-Я]{2,})' . $s . '\b/u', '$1' . $r, $date);
             $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
             $date = preg_replace('/' . $s . '$/u', $r, $date);
         }
@@ -544,21 +568,29 @@ if (!function_exists('array_column')) {
  */
 if (!function_exists('http_parse_headers')) {
     function http_parse_headers($raw){
-        $headers = array(); $key = '';
-        foreach(explode("\n", $raw) as $h) {
-            $h = explode(':', $h, 2);
-            if (isset($h[1])){
-                if (!isset($headers[$h[0]])) $headers[$h[0]] = trim($h[1]);
-                else if (is_array($headers[$h[0]])) $headers[$h[0]] = array_merge($headers[$h[0]], array(trim($h[1])));
-                else $headers[$h[0]] = array_merge(array($headers[$h[0]]), array(trim($h[1])));
-                $key = $h[0];
-            } else {
-                if (substr($h[0], 0, 1) == "\t") $headers[$key] .= "\r\n\t".trim($h[0]);
-                else if (!$key) $headers[0] = trim($h[0]);trim($h[0]);
-            }
-        }
-        return $headers;
+        return parsepairs($raw, ':');
     }
+}
+
+/**
+ * 
+ *
+ */
+function parsepairs($raw, $delimiter = ':'){
+    $headers = array(); $key = '';
+    foreach(explode("\n", $raw) as $h) {
+        $h = explode($delimiter, $h, 2);
+        if (isset($h[1])){
+            if (!isset($headers[$h[0]])) $headers[$h[0]] = trim($h[1]);
+            else if (is_array($headers[$h[0]])) $headers[$h[0]] = array_merge($headers[$h[0]], array(trim($h[1])));
+            else $headers[$h[0]] = array_merge(array($headers[$h[0]]), array(trim($h[1])));
+            $key = $h[0];
+        } else {
+            if (substr($h[0], 0, 1) == "\t") $headers[$key] .= "\r\n\t".trim($h[0]);
+            else if (!$key) $headers[0] = trim($h[0]);trim($h[0]);
+        }
+    }
+    return $headers;
 }
 
 /**
@@ -665,7 +697,7 @@ function ar($items, $allowEmpty = false) {
     if (is_array($items)) return $items;
 
     // Else if $items arg is strict null - return array containing that null as a first item
-    if ($items === null) return array(null);
+    if ($items === null) return $allowEmpty ? array(null) : array();
 
     // Else if $items arg is a boolean value - return array containing that boolean value as a first item
     if (is_bool($items)) return array($items);
@@ -755,7 +787,7 @@ function num2str($num, $iunit = true, $dunit = true) {
 function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Start building data for flushing
-    $flush = array('success' => $success);
+    $flush = is_array($success) && array_key_exists('success', $success) ? $success : array('success' => $success);
 
     // Deal with first data-argument
     if (func_num_args() > 1 && func_get_arg(1) != null)
@@ -776,14 +808,17 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     // If headers were not already sent - flush an error message
     if (!headers_sent()) header('Content-Type: application/json');
 
-    // Flush contents
-    echo json_encode($flush);
+    // Check if redirect should be performed
+    $redir = func_num_args() == 4 ? is_string($die) && Indi::rex('url', $die) : ($_ = Indi::$jfr) && $die = $_;
 
     // Log this error if logging of 'jerror's is turned On
-    if (Indi::logging('jflush')) Indi::log('jflush', $flush);
+    if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
+
+    // If $die arg is an url - do not flush data
+    if (!$redir) echo json_encode($flush);
 
     // Exit if need
-    if ($die) iexit();
+    if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
 }
 
 /**
@@ -851,7 +886,7 @@ function alias($title){
 
     // Replacements
     $r = array('a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
-        '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+        '','y','','e','yu','ya','','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
         't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
         'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-', '_');
 
@@ -1008,4 +1043,52 @@ function url2a($text) {
 
     // Return
     return ob_get_clean();
+}
+
+/**
+ * Try to detect phone number within the given string
+ * and if detected, return it in +7 (123) 456-78-90 format
+ *
+ * If nothing detected - return empty string
+ * If multiple phone numbers detected - return first one
+ *
+ * @param $str
+ * @return mixed|string
+ */
+function phone($str) {
+    $parts = preg_split('/[,;\/б]/', $str);
+    $phone = array_shift($parts);
+    $phone = preg_replace('/^[^0-9+()]+/', '', $phone);
+    $phone = array_shift(explode(' +7', $phone));
+    $phone = preg_replace('/([0-9])[ -]([0-9])/', '$1$2', $phone);
+    $phone = array_shift(explode('. ', $phone));
+    $phone = array_shift(preg_split('/ [а-яА-Я]/', $phone));
+    $phone = array_shift(explode('||', $phone));
+    $phone = preg_replace('/\) 8/', ')8', $phone);
+    $phone = array_shift(explode(' 8', $phone));
+    $phone = preg_replace('/\) ([0-9])/', ')$1', $phone);
+    $phone = array_shift(preg_split('/ \([а-яА-Я]/', $phone));
+    $phone = preg_replace('/- /', '-', $phone);
+    $phone = preg_replace('/([0-9])-([0-9])/', '$1$2', $phone);
+    $phone = preg_replace('/\)-/', ')', $phone);
+    $phone = array_shift(preg_split('/\.[а-яА-Я]/', $phone));
+    $phone = preg_replace('/-[а-яА-Я]+$/', '', $phone);
+    $phone = rtrim($phone, ' -(');
+    $phone = preg_replace('/[ ()-]/', '', $phone);
+    $phone = preg_replace('/831831/', '831', $phone);
+    if (strlen($phone) == 7) $phone = '+7831' . $phone;
+    else if (strlen($phone) == 11 && preg_match('/^8/', $phone)) $phone = preg_replace('/^8/', '+7', $phone);
+    else if (strlen($phone) == 10 && preg_match('/^83/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 11 && preg_match('/^7/', $phone)) $phone = '+' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^9/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^495/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 8 && preg_match('/^257/', $phone)) $phone = '+78' . $phone;
+    else if (strlen($phone) == 8 && preg_match('/^23/', $phone)) $phone = '+783' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^383/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 10 && preg_match('/^093/', $phone)) $phone = '+7493' . preg_replace('/^093/', '', $phone);
+    else if (strlen($phone) == 10 && preg_match('/^343/', $phone)) $phone = '+7' . $phone;
+    else if (strlen($phone) == 12 && preg_match('/^\+7/', $phone)) $phone = $phone;
+    else $phone = '';
+    if ($phone) $phone = preg_replace('/(\+7)([0-9]{3})([0-9]{3})([0-9]{2})([0-9]{2})/', '$1 ($2) $3-$4-$5', $phone);
+    return $phone;
 }

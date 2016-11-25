@@ -10,7 +10,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     extend: 'Indi.lib.controller.action.Action',
 
     // @inheritdoc
-    mcopwso: ['store', 'rowset', 'south', 'panel'],
+    mcopwso: ['store', 'rowset', 'south', 'panel', 'rowsetPlugin$Cellediting'],
 
     // @inheritdoc
     panel: {
@@ -21,12 +21,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'm4d', 'cancel'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
+            'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm'],
 
         /**
          * Tools special config
          */
-        tools: [{alias: 'reset'}],
+        tools: [{alias: 'fundock'}, {alias: 'reset'}],
 
         /**
          * Docked items special config
@@ -36,6 +37,41 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
                 master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
+            }
+        },
+
+        /**
+         * Instance of {xtype: window}, created for filters toolbar to be injected in
+         */
+        filterWin: null,
+
+        // @inheritdoc
+        listeners: {
+            resize: function(c, w, h, ow, oh) {
+                var me = Ext.getCmp(c.id.replace('-wrapper', '')),
+                    f = Ext.getCmp(c.id.replace('-wrapper', '-toolbar$filter'));
+
+                // If filters toolbar has no items (e.g. there is no filters) - return
+                if (f.empty || !c.down('tool[alias="fundock"]')) return;
+
+                // If filters toolbar's height wastes more than 20% of total height, available for wrapper-panel
+                if (f.lastBox.height / c.getHeight() > 0.2) {
+                    if (f.up('[isWrapper]')) f.hide(); else if (!me.panel.filterWin.hidden) {
+                        if (me.panel.filterWin) me.panel.filterWin.maxWidth = c.getWidth() - 30;
+                        me.panel.filterWin.setWidth(Indi.viewport.getWidth() - 30);
+                        me.panel.filterWin.setHeight(f.getHeight() + 1);
+                        me.panel.filterWin.center();
+                    }
+                    c.down('tool[alias="fundock"]').show();
+                } else {
+                    c.down('tool[alias="fundock"]').hide();
+                    if (f.up('[hasCtx]')) {
+                        c.insertDocked(0, f);
+                        if (me.panel.filterWin) me.panel.filterWin.close();
+                    } else if (f.hidden) {
+                        f.show();
+                    }
+                }
             }
         }
     },
@@ -53,8 +89,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 this.$ctx.filterChange({noReload: true});
             },
             load: function(){
-                this.$ctx.storeLoadCallbackDefault();
-                this.$ctx.storeLoadCallback();
+                var ctx = this.ctx() || this.$ctx;
+                ctx.storeLoadCallbackDefault.apply(ctx, arguments);
+                ctx.storeLoadCallback.apply(ctx, arguments);
             }
         },
         ctx: function() {
@@ -66,11 +103,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * This function provide batch-adjustment ability for each row within the store
      */
     storeLoadCallbackDataRowAdjust: Ext.emptyFn,
-
-    /**
-     * Force 'Mark for deletion' filter to be not clearable
-     */
-    panelDocked$Filter$M4d: {allowClear: false},
 
     /**
      * Get store, that current action is dealing with
@@ -110,6 +142,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Get all filter components
         var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
+
+        // If filters toolbar was undocked from main panel into a window - try search within that window
+        if (!filterCmpA.length && me.panel.filterWin) filterCmpA = me.panel.filterWin.query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
@@ -290,6 +325,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.store = Ext.merge({
             id: me.bid() + '-store',
             fields: me.storeFieldA(),
+            table: me.ti().model.tableName,
             sorters: me.storeSorters(),
             pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
@@ -388,8 +424,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
-        if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        }
 
         // Return
         return atLeastOneFilterIsUsed;
@@ -478,8 +516,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        keywordC = Ext.getCmp(me.bid() + '-toolbar-master').query('[isKeyword]')[0];
-        if (keywordC && keywordC.getValue()) keywordC.setValue('');
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) keywordC.setValue('');
+        }
 
         // Reload store for empty filter values to be picked up.
         if (!noReload) me.filterChange({});
@@ -507,12 +547,84 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Get filter window. If if not yet exists - preliminary create it
+     *
+     * @return {*}
+     */
+    getFilterWindow: function() {
+        var me = this;
+
+        // If filter window was not yet created - create it
+        if (!me.panel.filterWin) me.panel.filterWin = Ext.widget({
+            xtype: 'window',
+            frame: false,
+            $ctx: me,
+            hasCtx: true,
+            frameHeader: false,
+            layout: 'fit',
+            style: 'background: transparent; border: 0;',
+            bodyStyle: 'background: transparent; border-bottom-width: 0;',
+            modal: true,
+            width: Ext.getCmp(me.panel.id).getWidth() - 30,
+            border: '1 1 2 1',
+            padding: 0,
+            closable: false,
+            closeAction: 'hide',
+            resizable: {
+                handles: 'e w'
+            },
+            header: false,
+            listeners: {
+                afterrender: function(с) {
+                    с.mon(Ext.getBody(), 'click', function(el, e){
+                        с.close(с.closeAction);
+                    }, с, {delegate: '.x-mask'});
+                },
+                resize: function(c, w, h, ow, oh) {
+                    if (Ext.EventObject.getTarget() && Ext.EventObject.getTarget('.x-resizable-proxy')) {
+                        if (w != ow) c.setHeight(c.down('[name="toolbar$filter"]').getHeight() + 1);
+                    }
+                }
+            }
+        });
+
+        // Return
+        return me.panel.filterWin;
+    },
+
+    /**
+     * Filters reset tool config builder
+     *
+     * @return {Object}
+     */
+    panelTool$Fundock: function() {
+        var me = this;
+
+        // We add the filter-reset tool only if there is at least one filter defined for current section
+        if (!me.ti().filters.length) return null;
+
+        // Append tool data object to the 'tools' array
+        return {
+            type: 'search',
+            hidden: true,
+            tooltip: 'Показать фильтры',
+            handler: function() {
+                var f = Ext.getCmp(me.bid() + '-toolbar$filter');
+                Ext.getCmp(me.panel.id).removeDocked(f, false);
+                me.getFilterWindow().show().center().addDocked(f.show(), 'top');
+                me.getFilterWindow().center();
+            }
+        }
+    },
+
+    /**
      * Panel filter toolbar builder
      *
      * @return {Object}
      */
     panelDocked$Filter: function() {
-        var me = this;
+        var me = this, hidden = !me.ti().filters.length &&
+            (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length);
 
         // 'Filter' toolbar config
         return {
@@ -547,11 +659,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /*return {
             xtype: 'toolbar',
             dock: 'top',
-            hidden: !me.ti().filters.length &&
-                (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
             padding: '1 5 5 5',
             id: me.bid() + '-toolbar$filter',
             layout: 'auto',
+            hidden: hidden,
+            empty: hidden,
+            name: 'toolbar$filter',
             items: [{
                 xtype:'fieldset',
                 id: me.bid()+'-toolbar$filter-fieldset',
@@ -840,6 +953,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Price-filters configurator function
+     *
+     * @param filter
+     * @return {Object}
+     */
+    panelDocked$FilterXPrice: function(filter) {
+        return this.panelDocked$FilterXNumber(filter);
+    },
+
+    /**
      * Number-filters configurator function
      *
      * @param filter
@@ -860,6 +983,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-gte',
             name: alias + '-gte',
+            isFilter: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 50 + Indi.metrics.getWidth(fieldLabel),
@@ -877,6 +1001,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-lte',
             name: alias + '-lte',
+            isFilter: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
             width: 50 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
@@ -1101,7 +1226,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
         me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
             params: {
-                'others[]': Ext.Array.remove(srs, row.get('id'))
+                'others[]': srs.length ? Ext.Array.remove(srs, row.get('id')) : []
             }
         });
     },
@@ -1133,7 +1258,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix, btn) {
-        var me = this;
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
 
         // Show the deletion confirmation message box
         Ext.MessageBox.show({
@@ -1142,7 +1267,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             buttons: Ext.MessageBox.YESNO,
             icon: Ext.MessageBox.QUESTION,
             fn: function(answer) {
-                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn)
+                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn, {
+                    params: {
+                        'others[]': Ext.Array.remove(srs, row.get('id'))
+                    }
+                })
                 else Ext.getCmp(me.rowset.id).getView().focus();
             }
         });
@@ -1206,7 +1335,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
-        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+        uri = '/' + section.alias + '/' + action.alias
+            + '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
+            + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
+            + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix) + '/';
 
         // Load it
         Indi.load(uri, ajaxCfg);
@@ -1278,12 +1410,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.bid() + '-toolbar-master-keyword',
             xtype: 'textfield',
             isKeyword: true,
-            fieldLabel: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
-            labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
             labelSeparator: '',
+            tooltip: Indi.lang.I_ACTION_INDEX_KEYWORD_TOOLTIP,
+            emptyText: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
             value: me.ti().scope.keyword ? Indi.urldecode(me.ti().scope.keyword) : '',
-            width: 100 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+            width: 100,
             height: 19,
             cls: 'i-form-text',
             margin: '0 0 0 5',
@@ -1973,7 +2105,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 record.commit();
 
                 // Call callback
-                if (Ext.isFunction(callback)) callback();
+                if (Ext.isFunction(callback)) callback(json);
             },
 
             // Failure handler
@@ -1986,5 +2118,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 record.reject();
             }
         });
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+
+        // Destroy filters window, if it was created
+        if (me.panel.filterWin) me.panel.filterWin.destroy();
+
+        // Destroy store
+        if (me.getStore()) me.getStore().destroyStore();
+
+        // Call parent
+        me.callParent();
     }
 });

@@ -69,6 +69,7 @@ Indi::implode(array(
     '/js/admin/app/lib/toolbar/Info.js',
     '/js/admin/app/lib/toolbar/Filter.js',
     '/js/admin/app/lib/form/field/SiblingCombo.js',
+    '/js/admin/app/lib/form/field/CellCombo.js',
     '/js/admin/app/lib/form/field/AutoCombo.js',
     '/js/admin/app/lib/form/field/FilterCombo.js',
     '/js/admin/app/lib/form/field/CkEditor.js',

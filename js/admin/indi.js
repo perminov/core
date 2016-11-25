@@ -433,7 +433,7 @@ Ext.define('Indi', {
             json = Ext.JSON.decode(response.responseText, true);
 
             // The the info about invalid fields from the response, and mark the as invalid
-            if (Ext.isObject(json) && Ext.isObject(json.mismatch)) {
+            if (Ext.isObject(json.mismatch)) {
 
                 // Shortcut to json.mismatch
                 mismatch = json.mismatch;
@@ -466,6 +466,8 @@ Ext.define('Indi', {
                         icon: Ext.MessageBox.ERROR
                     });
                 }
+            } else if (json.throwOutMsg) {
+                top.window.location.reload();
             }
         },
 
@@ -862,12 +864,13 @@ Ext.define('Indi', {
          * @return {String}
          */
         tbq: function(q, versions012, showNumber) {
-            var versions210, formatKA = ['2-4', '1', '0,11-19,5-9'], formatA = {}, formatK, formatV, spanA, k, interval, m;
+            var versions210, formatKA = ['0,11-19,5-9', '1', '2-4'], formatA = {}, formatK, formatV, spanA, k, interval, m;
 
             // Set up default values for arguments
             if (arguments.length < 1) q = 2;
             if (arguments.length < 2) versions012 = '';
             if (arguments.length < 3) showNumber = true;
+            if (q !== 0 && !q) q = 0;
 
             // Force q arg to be string
             q += '';
@@ -917,7 +920,7 @@ Ext.define('Indi', {
                     }
                 }
             }
-            return q;
+            return q || '';
         },
 
         /**
@@ -1099,7 +1102,7 @@ Ext.define('Indi', {
         // If we've found window that is the top most within maximized window
         // set up bread crumb trail to represent it's location within the system,
         // or erase bread crumb trail contents
-        Ext.get('i-center-north-trail-panel-body').setHTML(
+        Ext.get('i-center-north-trail').setHTML(
             topMaximized ? Indi.trail(true).breadCrumbs(topMaximized.ctx.route) : ''
         );
     },
@@ -1122,6 +1125,10 @@ Ext.define('Indi', {
 
             // Create loadmask
             Indi.loadmask = new Ext.LoadMask(Indi.viewport);
+
+            // If websockets enabled
+            if (Indi.ini.ws && parseInt(Indi.ini.ws.enabled))
+                Ext.Loader.loadScriptFile(Indi.std + '/js/admin/ws.js', Ext.emptyFn, Ext.emptyFn, this, false);
 
             // Load dashboard
             if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);

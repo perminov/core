@@ -267,6 +267,9 @@ class Indi_View_Helper_Admin_FormCombo {
 
         // If combo mode is 'extjs', we prepare a data object containing all involved info
         $this->extjs($options);
+
+        // Return itself
+        return $this;
     }
 
     /**
@@ -330,8 +333,8 @@ class Indi_View_Helper_Admin_FormCombo {
         ($v = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', is_string($option['value']) ? $option['value'] : '', $color)) ||
         ($t = preg_match('/^[0-9]{3}(#[0-9a-fA-F]{6})$/', $option['title'], $color)) ||
         ($s = preg_match('/color[:=][ ]*[\'"]{0,1}([#a-zA-Z0-9]+)/i', $option['title'], $color)) ||
-        ($b = preg_match('/^<span class="i-color-box" style="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color)) ||
-        ($b = preg_match('/^<span class="i-color-box" style="background: (url\(.*\));[^"]*"[^>]*>/', $option['title'], $color));
+        ($b = preg_match('/^<span[^>]*\sclass="[^"]*i-color-box[^"]*"[^>]*\sstyle="background: ([#0-9a-zA-Z]{3,20});[^"]*"[^>]*>/', $option['title'], $color)) ||
+        ($b = preg_match('/^<span[^>]*\sclass="[^"]*i-color-box[^"]*"[^>]*\sstyle="background: (url\(.*\));[^"]*"[^>]*>/', $option['title'], $color));
 
         // If color was detected somewhere
         if ($v || $t || $s || $b || $option['boxColor']) {
