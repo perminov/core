@@ -514,3 +514,6 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 .x-window-default {
     border-radius: 0;
 }
+.x-window-header-default-top {
+    border-radius: 0;
+}
