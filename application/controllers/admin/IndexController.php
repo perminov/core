@@ -7,20 +7,52 @@ class Admin_IndexController extends Indi_Controller_Admin {
      */
     public function adjustMenu(&$menu) {
 
-        // If admin is not a teacher - return
-        if (!Indi::admin()->alternate == 'teacher') return;
+        // Get array of ids of 1st-level sections
+        $sectionIdA = array_column($menu, 'id');
 
-        // Find 'myTalks' menu item
-        foreach ($menu as &$item) if ($item['alias'] == 'myTalks') {
+        // Get notices
+        $_noticeRs = Indi::model('Notice')->fetchAll(array(
+            'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
+            'CONCAT(",", `sectionId`, ",") REGEXP ",(' . im($sectionIdA, '|') . '),"',
+            '`toggle` = "y"'
+        ));
 
-            // Get number of messages, unread by teacher
-            $urQty = Indi::db()->query('
-                SELECT SUM(`teacherUnread`) FROM `talk` WHERE `teacherId` = "' . Indi::admin()->id . '"
-            ')->fetchColumn();
+        // If no notices - return
+        if (!$_noticeRs->count()) return;
 
-            // Append it to menu item's title
-            $item['title'] .= '<span id="urQty-' . $item['alias'] . '" class="urQty '
-                . ($urQty ? '' : 'urQty-none') . '">' . $urQty . '</span>';
+        // Qtys array, containing quantities of rows, matched for each notice, per each section/menu-item
+        $qtyA = array();
+
+        // Foreach notice
+        foreach ($_noticeRs as $_noticeR) {
+
+            // Get qty
+            $_noticeR->qty = Indi::db()->query('
+                SELECT COUNT(`id`)
+                FROM `' . Indi::model($_noticeR->entityId)->table().'`
+                WHERE ' . $_noticeR->matchSql
+            )->fetchColumn();
+
+            // Collect qtys for each sections
+            foreach (ar($_noticeR->sectionId) as $sectionId)
+                $qtyA[$sectionId][] = array(
+                    'qty' => $_noticeR->qty,
+                    'id' => $_noticeR->id,
+                    'bg' => $_noticeR->colorHex('bg')
+                );
+        }
+
+        // Foreach menu item
+        foreach ($menu as &$item) {
+
+            // If $item relates to 0-level section, or is not linked to some entity - return
+            if (!$qtyA[$item['id']]) continue;
+
+            // Append each qty to menu item's title
+            foreach ($qtyA[$item['id']] as $qtyI)
+                $item['title'] .= '<span id="menu-qty-' . $qtyI['id']
+                    . '" style="background: ' . $qtyI['bg'] . '" class="menu-qty '
+                    . ($qtyI['qty'] ? '' : 'menu-qty-zero') . '">' . $qtyI['qty'] . '</span>';
         }
     }
 }
