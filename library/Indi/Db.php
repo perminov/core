@@ -313,7 +313,7 @@ class Indi_Db {
                 $eNoticeA = array();
                 foreach ($noticeA as $noticeI)
                     $eNoticeA[$modelNameA[$noticeI['entityId']]][]
-                        = new Indi_Db_Table_Row(array('original' => $noticeI, 'table' => 'notice'));
+                        = new Notice_Row(array('original' => $noticeI));
 
                 // Free memory
                 unset($noticeA);
