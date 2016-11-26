@@ -82,6 +82,12 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_mismatch = array();
 
     /**
+     *
+     * @var array
+     */
+    protected $_notices = array();
+
+    /**
      * Count of options that will be fetched. It's 300 by default - hundred-rounded number of countries in the world
      *
      * @var int
@@ -287,11 +293,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->onBeforeInsert();
 
             // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
-            $this->_original['id'] = $this->model()->insert($this->_modified);
+            $this->_modified['id'] = $this->model()->insert($this->_modified);
 
             // Setup $return variable as id of current (a moment ago inserted) row
-            $return = $this->_original['id'];
+            $return = $this->_modified['id'];
         }
+
+        // Check if row (in it's original state) matches each separate notification's criteria,
+        // and remember the results separately for each notification, attached to current row's entity
+        $this->_noticesStep1();
 
         // Merge $this->_original and $this->_modified arrays into $this->_original array
         $this->_original = (array) array_merge($this->_original, $this->_modified);
@@ -341,8 +351,98 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Do some needed operations that are required to be done right after row was inserted/updated
         if ($new) $this->onInsert(); else if ($this->_onUpdate) $this->onUpdate($original); else $this->_onUpdate = true;
 
+        // Check if row (in it's current/modified state) matches each separate notification's criteria,
+        // and compare results with the results of previous check, that was made before any modifications
+        $this->_noticesStep2($original);
+
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
+    }
+
+    /**
+     * Check if row (in it's original state) matches each separate notification's criteria,
+     * and remember the results separately for each notification, attached to current row's entity
+     *
+     * @param string $caller
+     * @return mixed
+     */
+    private function _noticesStep1($caller = 'save') {
+
+        // If no modifications made - return
+        if (!$this->_modified && $caller == 'save') return;
+
+        // If no notices attached - return
+        if (!$this->model()->notices()) return;
+
+        // Backup $this->_modified
+        $modified = $this->_modified;
+
+        // Reset modifications
+        $this->_modified = array();
+
+        // Foreach notice
+        foreach ($this->model()->notices() as $noticeR) {
+
+            // No match by default
+            $match = false;
+
+            // If this was an existing row - check if it (in it's original state) matched the criteria
+            if ($this->_original['id']) eval('$match = ' . $noticeR->matchPhp . ';');
+
+            // Save result
+            $this->_notices[$noticeR->id]['was'] = $match;
+        }
+
+        // Restore $this->_modified
+        $this->_modified = $modified;
+    }
+
+
+    /**
+     * Check if row (in it's current/modified state) matches each separate notification's criteria,
+     * and compare results with the results of previous check, that was made before any modifications
+     *
+     * If results are NOT equal, function calls Notice_Row->counter() method, passing the direction
+     * that counter should be changed (e.g. incremented or decremented)
+     *
+     * @param $original
+     * @return mixed
+     */
+    private function _noticesStep2($original = null) {
+
+        // If $original arg is given but no modifications made - return
+        if ($original && !$affected = array_diff_assoc($original, $this->_original)) return;
+
+        // If no notices attached - return
+        if (!$this->model()->notices()) return;
+
+        // Foreach notice
+        foreach ($this->model()->notices() as $noticeR) {
+
+            // No match by default
+            $match = false;
+
+            // If $original arg is given - check if row (in it's current/modified state) matches the criteria
+            // Note: if $original arg is NOT given, assume that we'd deleted this row from database,
+            // so all matches results are false
+            if ($original) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;');
+
+            // Save result
+            $this->_notices[$noticeR->id]['now'] = $match;
+
+            // If match value changed
+            if ($this->_notices[$noticeR->id]['now'] != $this->_notices[$noticeR->id]['was']) {
+
+                // Inform the counter
+                $noticeR->counter(
+                    $this->_notices[$noticeR->id]['now'] > $this->_notices[$noticeR->id]['was'] ? 'up' : 'down',
+                    $this
+                );
+            }
+
+            // Unset results
+            unset($this->_notices[$noticeR->id]);
+        }
     }
 
     /**
@@ -467,6 +567,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function delete() {
 
+        // Check if row (in it's current state) matches each separate notification's criteria,
+        // and remember the results separately for each notification, attached to current row's entity
+        $this->_noticesStep1('delete');
+
         // Delete other rows of entities, that have fields, related to entity of current row
         // This function also covers other situations, such as if entity of current row has a tree structure,
         // or row has dependent rowsets
@@ -489,6 +593,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Unset `id` prop
         $this->id = null;
+
+        // Force false to be the result of all matches each separate notification's criteria,
+        // and compare results with the results of previous check, that was made before any modifications
+        $this->_noticesStep2();
 
         // Return
         return $return;

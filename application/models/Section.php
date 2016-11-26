@@ -34,7 +34,7 @@ class Section extends Indi_Db_Table {
 
         // Fetch menu items, that are 1st-level children for root items
         $nestedA = Indi::db()->query('
-            SELECT `s`.`sectionId`, `s`.`title`, `s`.`alias`
+            SELECT `s`.`id`, `s`.`sectionId`, `s`.`title`, `s`.`alias`
             FROM `section` `s`, `section2action` `sa`
             WHERE 1
                 AND `s`.`sectionId` IN (' . implode(',', array_keys($rootA)) . ')
