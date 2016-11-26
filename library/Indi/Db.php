@@ -267,14 +267,20 @@ class Indi_Db {
                     unset(self::$_entityA[$class], self::$_modelA[$class]);
             }
 
+            // Array for collecting "entityId => modelName" pairs
+            $modelNameA = array();
+
             // Foreach existing entity
             foreach ($entityA as $entityI) {
 
                 // Append 'admin'-entity's id to self::$_roleA array
                 if ($entityI['table'] == 'admin') self::$_roleA[] = $entityI['id'];
 
+                // Collect "entityId => modelName" pairs
+                $modelNameA[$entityI['id']] = ucfirst($entityI['table']);
+
                 // Create an item within self::$_entityA array, containing some basic info
-                self::$_entityA[ucfirst($entityI['table'])] = array(
+                self::$_entityA[$modelNameA[$entityI['id']]] = array(
                     'id' => $entityI['id'],
                     'title' => $entityI['title'],
                     'extends' => $entityI['extends'],
@@ -294,6 +300,34 @@ class Indi_Db {
 
                 // If cache usage is setup for current entity, we append it's table name as a key in self::$_cacheA array
                 if ($entityI['useCache']) self::$_cacheA[$entityI['table']] = true;
+            }
+
+            // Setup notices
+            if (self::$_entityA['Notice']) {
+
+                // Get info about notices, attached to entities
+                $noticeA = self::$_instance->query('SELECT * FROM `notice` WHERE `toggle` = "y"')->fetchAll();
+
+                // Group notices by their entity ids, preliminary converting
+                // each notice into an instance of Indi_Db_Table_Row
+                $eNoticeA = array();
+                foreach ($noticeA as $noticeI)
+                    $eNoticeA[$modelNameA[$noticeI['entityId']]][]
+                        = new Notice_Row(array('original' => $noticeI));
+
+                // Free memory
+                unset($noticeA);
+
+                // Convert array of notices into an instance of Indi_Db_Table_Rowset object,
+                // and inject into entity specs array, under 'notices' key
+                foreach ($eNoticeA as $modelName => $eNoticeRa)
+                    self::$_entityA[$modelName]['notices'] = new Indi_Db_Table_Rowset(array(
+                        'table' => 'notice',
+                        'rows' => $eNoticeRa
+                    ));
+
+                // Free memory
+                unset($eNoticeA);
             }
         }
 

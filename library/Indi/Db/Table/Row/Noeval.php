@@ -13,7 +13,7 @@ class Indi_Db_Table_Row_Noeval extends Indi_Db_Table_Row {
     }
 
     /**
-     * Here we override this method withan empty body, to prevent compiling of default values
+     * Here we override this method with an empty body, to prevent compiling of default values
      *
      * @param $prop
      */
