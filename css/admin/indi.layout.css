@@ -518,9 +518,6 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
     border-radius: 0;
 }
 
-#i-menu .menu-qty.menu-qty-zero {
-    display: none;
-}
 #i-menu .menu-qty {
     font-weight: bold;
     font-weight: bold;

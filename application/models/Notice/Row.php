@@ -15,7 +15,21 @@ class Notice_Row extends Indi_Db_Table_Row {
         parent::__construct($config);
     }
 
+    /**
+     * Increase counter
+     *
+     * @param $dir
+     * @param $row
+     */
     public function counter($dir, $row) {
-        i($dir . ' ' . $row->id, 'a');
+
+        // Do it using websockets
+        Indi::ws($msg = array(
+            'type' => 'notice',
+            'mode' => 'menu-qty',
+            'noticeId' => $this->id,
+            'diff' => $dir == 'up' ? 1 : -1,
+            'row' => $row->id
+        ));
     }
 }

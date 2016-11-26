@@ -363,12 +363,13 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Check if row (in it's original state) matches each separate notification's criteria,
      * and remember the results separately for each notification, attached to current row's entity
      *
+     * @param string $caller
      * @return mixed
      */
-    private function _noticesStep1() {
+    private function _noticesStep1($caller = 'save') {
 
         // If no modifications made - return
-        if (!$this->_modified) return;
+        if (!$this->_modified && $caller == 'save') return;
 
         // If no notices attached - return
         if (!$this->model()->notices()) return;
@@ -407,10 +408,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $original
      * @return mixed
      */
-    private function _noticesStep2($original) {
+    private function _noticesStep2($original = null) {
 
-        // If no modifications made - return
-        if (!$affected = array_diff_assoc($original, $this->_original)) return;
+        // If $original arg is given but no modifications made - return
+        if ($original && !$affected = array_diff_assoc($original, $this->_original)) return;
 
         // If no notices attached - return
         if (!$this->model()->notices()) return;
@@ -421,8 +422,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             // No match by default
             $match = false;
 
-            // Check if row (in it's current/modified state) matches the criteria
-            eval('$match = ' . $noticeR->matchPhp . ' ? true : false;');
+            // If $original arg is given - check if row (in it's current/modified state) matches the criteria
+            // Note: if $original arg is NOT given, assume that we'd deleted this row from database,
+            // so all matches results are false
+            if ($original) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;');
 
             // Save result
             $this->_notices[$noticeR->id]['now'] = $match;
@@ -435,10 +438,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $this->_notices[$noticeR->id]['now'] > $this->_notices[$noticeR->id]['was'] ? 'up' : 'down',
                     $this
                 );
-
-                // Unset results
-                unset($this->_notices[$noticeR->id]);
             }
+
+            // Unset results
+            unset($this->_notices[$noticeR->id]);
         }
     }
 
@@ -564,6 +567,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function delete() {
 
+        // Check if row (in it's current state) matches each separate notification's criteria,
+        // and remember the results separately for each notification, attached to current row's entity
+        $this->_noticesStep1('delete');
+
         // Delete other rows of entities, that have fields, related to entity of current row
         // This function also covers other situations, such as if entity of current row has a tree structure,
         // or row has dependent rowsets
@@ -586,6 +593,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Unset `id` prop
         $this->id = null;
+
+        // Force false to be the result of all matches each separate notification's criteria,
+        // and compare results with the results of previous check, that was made before any modifications
+        $this->_noticesStep2();
 
         // Return
         return $return;

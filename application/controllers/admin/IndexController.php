@@ -36,7 +36,7 @@ class Admin_IndexController extends Indi_Controller_Admin {
             // Collect qtys for each sections
             foreach (ar($_noticeR->sectionId) as $sectionId)
                 $qtyA[$sectionId][] = array(
-                    'qty' => $_noticeR->qty,
+                    'qty' => $_noticeR->qty ?: 0,
                     'id' => $_noticeR->id,
                     'bg' => $_noticeR->colorHex('bg')
                 );
@@ -51,8 +51,9 @@ class Admin_IndexController extends Indi_Controller_Admin {
             // Append each qty to menu item's title
             foreach ($qtyA[$item['id']] as $qtyI)
                 $item['title'] .= '<span id="menu-qty-' . $qtyI['id']
-                    . '" style="background: ' . $qtyI['bg'] . '" class="menu-qty '
-                    . ($qtyI['qty'] ? '' : 'menu-qty-zero') . '">' . $qtyI['qty'] . '</span>';
+                    . '" style="background: ' . $qtyI['bg'] . ';'
+                    . ($qtyI['qty'] ? '' : 'display: none')
+                    . '" class="menu-qty">' . $qtyI['qty'] . '</span>';
         }
     }
 }
