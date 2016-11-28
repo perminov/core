@@ -10,6 +10,9 @@ class Admin_IndexController extends Indi_Controller_Admin {
         // Get array of ids of 1st-level sections
         $sectionIdA = array_column($menu, 'id');
 
+        // If no 'Notice' entity found - return
+        if (!Indi::model('Notice', true)) return;
+        
         // Get notices
         $_noticeRs = Indi::model('Notice')->fetchAll(array(
             'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
