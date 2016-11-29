@@ -33,7 +33,7 @@ class Admin_IndexController extends Indi_Controller_Admin {
             $_noticeR->qty = Indi::db()->query('
                 SELECT COUNT(`id`)
                 FROM `' . Indi::model($_noticeR->entityId)->table().'`
-                WHERE ' . $_noticeR->matchSql
+                WHERE ' . $_noticeR->compiled('matchSql')
             )->fetchColumn();
 
             // Collect qtys for each sections
