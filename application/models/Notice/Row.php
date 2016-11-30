@@ -47,7 +47,11 @@ class Notice_Row extends Indi_Db_Table_Row {
             'noticeId' => $this->id,
             'diff' => $dir == 'up' ? 1 : -1,
             'row' => $row->id,
-            'to' => $to
+            'to' => $to,
+            'msg' => array(
+                'header' => $this->{'tpl' . ucfirst($dir) . 'Header'},
+                'body' => $this->{'tpl' . ucfirst($dir) . 'Body'}
+            )
         ));
     }
 }

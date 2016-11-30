@@ -254,8 +254,16 @@ Ext.override(Ext.Msg, {
     jflushFn: 'show',
     msgCt: null,
     side: function(cfg){
-        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
-        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default msg"><p>' + cfg.msg + '</p></div>', true);
-        m.hide().slideIn('b').fadeOut({delay: 5000, remove: true});
+        if (Ext.isString(cfg) && !cfg.lenth) return;
+        if (Ext.isObject(cfg) && !cfg.body.length) return;
+        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'i-notice-div'}, true);
+        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default i-notice">' +
+            '<img src="'+Indi.std+'/i/admin/btn-icon-close-side.png" class="i-notice-close">' +
+            (Ext.isObject(cfg) && cfg.header ? '<h1>' + cfg.header + '</h1>' : '') +
+            '<p>' + (Ext.isString(cfg) ? cfg : cfg.body) + '</p>' +
+        '</div>', true);
+        m.down('.i-notice-close').on('click', function(e, dom){
+            Ext.get(dom).up('.i-notice').fadeOut({remove: true});
+        });
     }
 });

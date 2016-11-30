@@ -529,3 +529,32 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 #i-menu img + .menu-qty {
     margin-left: 5px;
 }
+#i-notice-div {
+    z-index: 1000000;
+    position: absolute;
+    display: table;
+    bottom: 10px;
+}
+.i-notice {
+    margin: 2px 2px 0 10px;
+    max-width: 300px;
+    width: 300px;
+    min-height: 50px;
+    border-color: transparent;
+    border: none !important;
+    background: rgba(0, 0, 0, 0.7);
+    outline: none;
+    box-shadow: 2px 2px 5px gray;
+    color: white;
+}
+.i-notice p {color: inherit;}
+.i-notice .i-notice-close {
+    cursor: pointer;
+    float: right;
+}
+.i-notice h1 {
+    color: inherit;
+    margin-left: -1px;
+    padding: 0;
+    margin-bottom: 3px;
+}
