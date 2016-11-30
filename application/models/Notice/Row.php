@@ -2,6 +2,11 @@
 class Notice_Row extends Indi_Db_Table_Row {
 
     /**
+     * @var null
+     */
+    public $row = null;
+
+    /**
      * Constructor
      *
      * @param array $config
@@ -40,6 +45,12 @@ class Notice_Row extends Indi_Db_Table_Row {
         foreach ($this->nested('noticeGetter') as $noticeGetterR)
             $to[$noticeGetterR->profileId] = $noticeGetterR->ar($row);
 
+        // Assign `row` prop, that will be visible in compiling context
+        $this->row = $row;
+
+        // Unset previously compiled criteria
+        unset($this->_compiled['tpl' . ucfirst($dir) . 'Body']);
+
         // Do it using websockets
         Indi::ws($msg = array(
             'type' => 'notice',
@@ -50,7 +61,7 @@ class Notice_Row extends Indi_Db_Table_Row {
             'to' => $to,
             'msg' => array(
                 'header' => $this->{'tpl' . ucfirst($dir) . 'Header'},
-                'body' => $this->{'tpl' . ucfirst($dir) . 'Body'}
+                'body' => $this->compiled('tpl' . ucfirst($dir) . 'Body')
             )
         ));
     }
