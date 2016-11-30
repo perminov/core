@@ -6,8 +6,13 @@ class NoticeGetter_Row extends Indi_Db_Table_Row {
      */
     public function save(){
 
-
         // Standard save
-        return parent::save();
+        $return = parent::save();
+        
+        // Update criteria
+        $this->foreign('noticeId')->updateCriteria();
+        
+        // Return
+        return $return;
     }
 }
