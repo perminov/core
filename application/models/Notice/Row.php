@@ -22,6 +22,18 @@ class Notice_Row extends Indi_Db_Table_Row {
 
         // Sync keys, mentioned as comma-sepaarted values in `profileId` prop, with entries, nested in `noticeGetter` table
         $this->keys2nested('profileId', 'noticeGetter');
+        
+        if ($this->affected('profileId')) {
+        
+            // Build criteria-by-profileId array
+            foreach ($this->nested('noticeGetter') as $noticeGetterR) $criteria[$noticeGetterR->profileId] = $noticeGetterR->criteria;
+                
+            // Assign criteria
+            $this->criteria = json_encode($criteria);
+            
+            // Save
+            parent::save();
+        }
 
         // Return
         return $return;
