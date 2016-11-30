@@ -1692,7 +1692,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // is or should be stored under $alias key within $this->_nested array, or under $table key otherwise.
         // This is useful in cases when we need to deal with nested rowsets, got from same database table, but
         // with different fetch params, such as WHERE, ORDER, LIMIT clauses, etc.
-        $key = $alias ? $alias : $table;
+        $key = $alias ?: $table;
 
         // If needed nested rowset is already exists within $this->_nested array, and it shouldn't be refreshed
         if (array_key_exists($key, $this->_nested) && !$fresh) {
@@ -4394,7 +4394,14 @@ class Indi_Db_Table_Row implements ArrayAccess
         $connector = Indi::model($this->field($field)->relation)->table() . 'Id';
 
         // Remove nested rows, having keys that were removed from comma-separated list within $field-prop value
-        if ($del) $this->nested($nested)->select($del, $connector)->delete();
+        if ($del) {
+
+            // Remove certain nested entries from database
+            $this->nested($nested)->select($del, $connector)->delete();
+
+            // Remove certain nested entries from $this->_nested[..]
+            $this->nested($nested)->exclude($del, $connector);
+        }
 
         // Create and append nested rows, having keys
         foreach ($new as $id) Indi::model($nested)->createRow(array(
