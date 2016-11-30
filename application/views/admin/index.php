@@ -32,7 +32,7 @@ Ext.create('Indi', {
         },
         user: {
             title: '<?=Indi::admin()->title()?>',
-            uid: '<?=Indi::admin()->id . '-' . Indi::admin()->profileId?>',
+            uid: '<?=Indi::admin()->profileId . '-' . Indi::admin()->id?>',
             role: '<?=Indi::admin()->foreign('profileId')->title?>',
             dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>
         }

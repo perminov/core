@@ -22,29 +22,11 @@ class Notice_Row extends Indi_Db_Table_Row {
 
         // Sync keys, mentioned as comma-sepaarted values in `profileId` prop, with entries, nested in `noticeGetter` table
         $this->keys2nested('profileId', 'noticeGetter');
-        
-        // Update criteria
-        if ($this->affected('profileId')) $this->updateCriteria();
 
         // Return
         return $return;
     }
 
-    /**
-     * Update JSON-version of criteria-by-profileId array
-     */
-    public function updateCriteria() {
-        
-        // Build criteria-by-profileId array
-        foreach ($this->nested('noticeGetter') as $noticeGetterR) $criteria[$noticeGetterR->profileId] = $noticeGetterR->criteria;
-            
-        // Assign criteria
-        $this->criteria = json_encode($criteria);
-        
-        // Save
-        parent::save();
-    }
-    
     /**
      * Increase counter
      *
@@ -53,13 +35,19 @@ class Notice_Row extends Indi_Db_Table_Row {
      */
     public function counter($dir, $row) {
 
+        // Get recipients
+        $to = array();
+        foreach ($this->nested('noticeGetter') as $noticeGetterR)
+            $to[$noticeGetterR->profileId] = $noticeGetterR->ar($row);
+
         // Do it using websockets
         Indi::ws($msg = array(
             'type' => 'notice',
             'mode' => 'menu-qty',
             'noticeId' => $this->id,
             'diff' => $dir == 'up' ? 1 : -1,
-            'row' => $row->id
+            'row' => $row->id,
+            'to' => $to
         ));
     }
 }
