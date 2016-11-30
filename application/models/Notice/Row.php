@@ -1,5 +1,5 @@
 <?php
-class Notice_Row extends Indi_Db_Table_Row {
+class Notice_Row extends Indi_Db_Table_Row_Noeval {
 
     /**
      * @var null
