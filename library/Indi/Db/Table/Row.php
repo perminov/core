@@ -4472,4 +4472,16 @@ class Indi_Db_Table_Row implements ArrayAccess
             return $this;
         }
     }
+
+    /**
+     * Build a string representation of a date and time in special format
+     *
+     * @param $dateField
+     * @param string $timeIdField
+     * @return string
+     */
+    public function when($dateField, $timeIdField = '') {
+        if (func_num_args() == 1) return when($this->$dateField);
+        return when($this->$dateField, $this->foreign($timeIdField)->title);
+    }
 }
