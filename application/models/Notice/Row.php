@@ -15,6 +15,18 @@ class Notice_Row extends Indi_Db_Table_Row {
         parent::__construct($config);
     }
 
+    public function save() {
+        
+        // Call parent
+        $return = parent::save();
+
+        // Sync keys, mentioned as comma-sepaarted values in `profileId` prop, with entries, nested in `noticeGetter` table
+        $this->keys2nested('profileId', 'noticeGetter');
+
+        // Return
+        return $return;
+    }
+
     /**
      * Increase counter
      *
