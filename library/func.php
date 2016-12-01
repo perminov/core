@@ -1092,3 +1092,32 @@ function phone($str) {
     if ($phone) $phone = preg_replace('/(\+7)([0-9]{3})([0-9]{3})([0-9]{2})([0-9]{2})/', '$1 ($2) $3-$4-$5', $phone);
     return $phone;
 }
+
+/**
+ * Build a string representation of a date and time in special format
+ *
+ * @param $date
+ * @param string $time
+ * @return string
+ */
+function when($date, $time = '') {
+    $when = array(); $when_ = '';
+
+    // Detect yesterday/today/tomorrow/etc part
+    if ($date == date('Y-m-d', time() - 60 * 60 * 24 * 2)) $when_ = 'позавчера';
+    else if ($date == date('Y-m-d', time() - 60 * 60 * 24)) $when_ = 'вчера';
+    else if ($date == date('Y-m-d')) $when_ = 'сегодня';
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24)) $when_ = 'завтра';
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24 * 2)) $when_ = 'послезавтра';
+    if ($when_) $when[] = $when_ . ',';
+
+    // Append date
+    $when[] = date('N', strtotime($date)) == 2 ? 'во' : 'в';
+    $when[] = ldate('l d F', $date, 'month,weekday');
+
+    // Append time
+    if ($time) $when[] = 'в ' . $time;
+
+    // Return
+    return im($when, ' ');
+}
