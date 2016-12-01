@@ -45,7 +45,7 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
         foreach ($this->nested('noticeGetter') as $noticeGetterR) {
             $to[$noticeGetterR->profileId] = $noticeGetterR->ar($row);
             $ws[$noticeGetterR->profileId] = strlen($noticeGetterR->criteria)
-                ? array_keys($to[$noticeGetterR->profileId])
+                ? array_column($to[$noticeGetterR->profileId], 'id')
                 : true;
         }
 
@@ -73,11 +73,14 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
             )
         ));
 
-        // Send mail
-        $this->mail($to, $header, $body);
+        // Send notices by email
+        $this->_mail($to, $header, $body);
+
+        // Send notices by VK API
+        $this->_vk($to, $header, $body);
     }
 
-    public function mail($to, $subject, $body) {
+    private function _mail($to, $subject, $body) {
 
         // Foreach notice getter
         foreach ($this->nested('noticeGetter') as $noticeGetterR) {
@@ -91,15 +94,43 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
             $mailer->Body = $body;
 
             // Add each valid email address to BCC
-            foreach($to[$noticeGetterR->profileId] as $email)
-                if (Indi::rexm('email', $email))
+            foreach(array_column($to[$noticeGetterR->profileId], 'email') as $email)
+                if (Indi::rexm('email', $email) && $atLeastOne = true)
                     $mailer->addBCC($email);
 
+            // If at least one valid email found - send notices by email
+            if ($atLeastOne) $mailer->send();
+        }
+    }
+
+    private function _vk($to, $subject, $body) {
+
+        // VK uid collection
+        $vkA = array();
+
+        // Foreach notice getter
+        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
+
+            // If notice getter should not receive emails - skip
+            if ($noticeGetterR->vk == 'n') continue;
+
+            // Add each valid VK page address to $vkA array as a key (to prevent duplicates)
+            foreach(array_column($to[$noticeGetterR->profileId], 'vk') as $i => $vk)
+                if ($vk = Indi::rexm('vk', $vk))
+                    $vkA[$vk[1]] = $to[$noticeGetterR->profileId][$i]['title'];
+        }
+
+        // If no valid VK pages found - return
+        if (!$vkA) return;
+
+        // Foreach found
+        foreach ($vkA as $vk => $title) {
+
+            // Build msg
+            $msg = $title ? $msg = $title . ', ' . mb_lcfirst($body) : $body;
+
             // Send
-            i($noticeGetterR->foreign('profileId')->title, 'a');
-            i($mailer->getBccAddresses(), 'a');
-            i($mailer->Body, 'a');
-            //$mailer->send();
+            Vk::send($vk, '<strong>' . $subject . '</strong><br>' . $msg);
         }
     }
 }
