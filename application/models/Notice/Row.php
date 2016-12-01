@@ -136,7 +136,7 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
             $msg = $title ? $msg = $title . ', ' . mb_lcfirst($body) : $body;
 
             // Send
-            Vk::send($vk, '<strong>' . $subject . '</strong><br>' . $msg);
+            Vk::send($vk, $subject . '<br>' . $msg);
         }
     }
 }
