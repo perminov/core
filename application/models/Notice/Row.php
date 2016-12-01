@@ -42,14 +42,22 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
 
         // Get recipients
         $to = array();
-        foreach ($this->nested('noticeGetter') as $noticeGetterR)
+        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
             $to[$noticeGetterR->profileId] = $noticeGetterR->ar($row);
+            $ws[$noticeGetterR->profileId] = strlen($noticeGetterR->criteria)
+                ? array_keys($to[$noticeGetterR->profileId])
+                : true;
+        }
 
         // Assign `row` prop, that will be visible in compiling context
         $this->row = $row;
 
         // Unset previously compiled criteria
         unset($this->_compiled['tpl' . ucfirst($dir) . 'Body']);
+
+        // Get header and body
+        $header = $this->{'tpl' . ucfirst($dir) . 'Header'};
+        $body = $this->compiled('tpl' . ucfirst($dir) . 'Body');
 
         // Do it using websockets
         Indi::ws($msg = array(
@@ -58,11 +66,40 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
             'noticeId' => $this->id,
             'diff' => $dir == 'up' ? 1 : -1,
             'row' => $row->id,
-            'to' => $to,
+            'to' => $ws,
             'msg' => array(
-                'header' => $this->{'tpl' . ucfirst($dir) . 'Header'},
-                'body' => $this->compiled('tpl' . ucfirst($dir) . 'Body')
+                'header' => $header,
+                'body' => $body
             )
         ));
+
+        // Send mail
+        $this->mail($to, $header, $body);
+    }
+
+    public function mail($to, $subject, $body) {
+
+        // Foreach notice getter
+        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
+
+            // If notice getter should not receive emails - skip
+            if ($noticeGetterR->mail == 'n') continue;
+
+            // Init mailer
+            $mailer = Indi::mailer();
+            $mailer->Subject = $subject;
+            $mailer->Body = $body;
+
+            // Add each valid email address to BCC
+            foreach($to[$noticeGetterR->profileId] as $email)
+                if (Indi::rexm('email', $email))
+                    $mailer->addBCC($email);
+
+            // Send
+            i($noticeGetterR->foreign('profileId')->title, 'a');
+            i($mailer->getBccAddresses(), 'a');
+            i($mailer->Body, 'a');
+            //$mailer->send();
+        }
     }
 }
