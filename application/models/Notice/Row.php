@@ -82,6 +82,9 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
 
     private function _mail($to, $subject, $body) {
 
+        // If $body arg is empty - return
+        if (!$body) return;
+
         // Foreach notice getter
         foreach ($this->nested('noticeGetter') as $noticeGetterR) {
 
@@ -104,6 +107,9 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     private function _vk($to, $subject, $body) {
+
+        // If $body arg is empty - return
+        if (!$body) return;
 
         // VK uid collection
         $vkA = array();
