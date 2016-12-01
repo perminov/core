@@ -77,7 +77,7 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
         $this->_mail($to, $header, $body);
 
         // Send notices by VK API
-        $this->_vk($to, $header, $body);
+        if (Indi::ini('vk')->enabled) $this->_vk($to, $header, $body);
     }
 
     private function _mail($to, $subject, $body) {
