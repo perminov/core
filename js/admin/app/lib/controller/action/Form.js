@@ -401,7 +401,10 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemXUpload: function(item) {
         return {
             xtype: 'filepanel',
-            allowBlank: true
+            allowBlank: true,
+            allowTypes: item.field.params.allowTypes,
+            minSize: item.field.params.minSize,
+            maxSize: item.field.params.maxSize
         }
     },
 
