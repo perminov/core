@@ -89,7 +89,8 @@ class Indi {
         'varchar255' => '/^[.\s]{0,255}$/',
         'dir' => ':^([A-Z][\:])?/.*/$:',
         'grs' => '/^[a-zA-Z0-9]{15}$/',
-        'phone' => '/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/'
+        'phone' => '/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/',
+        'vk' => '~^https://vk.com/([a-zA-Z0-9_\.]{3,})~'
     );
 
     /**
@@ -2288,5 +2289,33 @@ class Indi {
         foreach (ar('www,coref,core') as $rep)
             if (file_exists($abs = DOC . STD . '/' . $rep . $src))
                 return $abs;
+    }
+
+    /**
+     * Send websockets message
+     */
+    public static function ws(array $data) {
+
+        // If websockets is not enabled - return
+        if (!Indi::ini('ws')->enabled) return;
+
+        // If websockets server is not running - return
+        ob_start(); file_get_contents(Indi::ini('ws')->socket); if (ob_get_clean()) return;
+
+        // Build path
+        $path = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT) .'/' . grs(8) . '/websocket';
+
+        // Include scripts
+        include_once('WebSocket/Base.php');
+        include_once('WebSocket/Client.php');
+
+        // Create client
+        $client = new WebSocket\Client('ws://' . array_pop(explode('://', Indi::ini('ws')->socket)) . '/' . $path);
+
+        // Send message
+        $client->send(json_encode($data));
+
+        // Close client
+        $client->close();
     }
 }

@@ -11,13 +11,24 @@ username = empty
 password = empty
 dbname   = empty
 
-[lang]
-front = ru
-admin = ru
+[ws]
+enabled = false
+socket =
 
 [mail]
 default.from.name = empty.local
 default.from.email = info@empty.local
+
+[vk]
+enabled = false
+url = https://api.vk.com/method/
+app =
+token =
+v = 5.59
+
+[lang]
+front = ru
+admin = ru
 
 [view]
 scriptPath = application/views

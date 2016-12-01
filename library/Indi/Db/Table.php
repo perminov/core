@@ -73,6 +73,12 @@ class Indi_Db_Table
     protected $_fileFields = null;
 
     /**
+     *
+     * @var Indi_Db_Table_Rowset|array
+     */
+    protected $_notices = array();
+
+    /**
      * Class name for row
      *
      * @var string
@@ -113,6 +119,9 @@ class Indi_Db_Table
 
         // Set fields
         $this->_fields = $config['fields'];
+
+        // Set notices
+        if (isset($config['notices'])) $this->_notices = $config['notices'];
 
         // Set title
         $this->_title = $config['title'];
@@ -1265,5 +1274,14 @@ class Indi_Db_Table
      */
     public function changeLog($arg = null) {
         return $arg ? $this->_changeLog[$arg] : $this->_changeLog;
+    }
+
+    /**
+     * Getter function for $this->_notices prop
+     *
+     * @return array|Indi_Db_Table_Rowset
+     */
+    public function notices() {
+        return $this->_notices;
     }
 }
