@@ -1,5 +1,5 @@
 <?php
-class {Model} extends Indi_Db_Table {
+class {Model} extends {extends} {
 
     /**
      * Classname for row
