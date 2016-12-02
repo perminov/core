@@ -4484,4 +4484,21 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (func_num_args() == 1) return when($this->$dateField);
         return when($this->$dateField, $this->foreign($timeIdField)->title);
     }
+
+    /**
+     * Get a substring of a $prop prop's current value
+     *
+     * @param $prop
+     * @param int $length
+     * @param bool $hellip
+     * @return string|bool
+     */
+    public function substr($prop, $length = 100, $hellip = true) {
+
+        // Check that current value of $this->$prop is either a string or a number
+        if (!is_string($this->$prop) && !is_numeric($this->$prop)) return false;
+
+        // Return substring
+        return usubstr($this->$prop, $length, $hellip);
+    }
 }

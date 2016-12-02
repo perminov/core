@@ -214,7 +214,7 @@ function usubstr($string, $length, $dots = true) {
 
     // If $dots argument is true, and length of $string argument
     // is greater that the value of $length argument set $dots as '..'
-    $dots = mb_strlen($string, 'utf-8') > $length && $dots ? '..' : '';
+    $dots = mb_strlen($string, 'utf-8') > $length && $dots ? '…' : '';
 
     // Trim the $string by the $length characters, add dots, if need, and return the result string
     return mb_substr($string, 0, $length, 'utf-8') . $dots;
