@@ -37,6 +37,9 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
             // Replace {Model} keyword with an actual model name
             $modelSc = preg_replace(':\{Model\}:', $model, $emptyModelSc);
 
+            // Replace {extends} keyword with an actual parent class name
+            $modelSc = preg_replace(':\{extends\}:', $this->row->extends, $modelSc);
+
             // Put the contents to a model file
             file_put_contents($modelFn, $modelSc);            
 
