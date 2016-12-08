@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @class Ext.ux.GMapPanel
  * @extends Ext.Panel
  * @author Shea Frederick
@@ -9,7 +9,7 @@ Ext.define('Ext.ux.GMapPanel', {
     alias: 'widget.gmappanel',
     
     requires: ['Ext.window.MessageBox'],
-    markers: [],
+    
     initComponent : function(){
         Ext.applyIf(this,{
             plain: true,
@@ -41,13 +41,13 @@ Ext.define('Ext.ux.GMapPanel', {
         options = Ext.applyIf(options, {
             zoom: 14,
             center: center,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
+            mapTypeId: google.maps.MapTypeId.HYBRID
         });
         this.gmap = new google.maps.Map(this.body.dom, options);
         if (marker) {
-            this.markers.push(this.addMarker(Ext.applyIf(marker, {
+            this.addMarker(Ext.applyIf(marker, {
                 position: center
-            })));
+            }));
         }
         
         Ext.each(this.markers, this.addMarker, this);
@@ -75,7 +75,7 @@ Ext.define('Ext.ux.GMapPanel', {
         }, Ext.Function.bind(this.onLookupComplete, this, [marker], true));
     },
     
-    onLookupComplete: function(data, response, marker) {
+    onLookupComplete: function(data, response, marker){
         if (response != 'OK') {
             Ext.MessageBox.alert('Error', 'An error occured: "' + response + '"');
             return;
