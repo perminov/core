@@ -9,6 +9,9 @@
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
+    <?if (Indi::ini('gmap')->key){?>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?=Indi::ini('gmap')->key?>"></script>
+    <?}?>
     <?if (Indi::ini('ws')->enabled){?>
     <script type="text/javascript" src="/js/admin/sockjs-0.3.js"></script>
     <?}?>

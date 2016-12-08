@@ -1,5 +1,6 @@
 <?php
-Indi::implode(array(
+// Array of js files to be imploded
+$js = array(
     '/js/jquery-1.9.1.min.js',
     '/library/extjs4/ext-all.js',
     '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
@@ -81,8 +82,13 @@ Indi::implode(array(
     '/js/admin/app/lib/controller/action/Row.js',
     '/js/admin/app/lib/controller/action/Form.js',
     '/js/admin/app/lib/controller/action/Print.js'
-));
-Indi::implode(array(
+);
+
+// If google maps API key defined - append GmapPanel.js
+if (Indi::ini('gmap')->key) $js[] = '/library/extjs4/examples/ux/GMapPanel.js';
+
+// Array of css files to be imploded
+$css = array(
     '/library/extjs4/resources/css/ext-all.css',
     '/library/extjs4/examples/ux/css/CheckHeader.css',
     '/library/extjs4/resources/css/colorpicker.css',
@@ -93,4 +99,9 @@ Indi::implode(array(
     '/css/admin/indi.trail.css',
     '/css/admin/indi.combo.css',
     '/css/admin/indi.combo.default.css'
-));
+);
+// Implode js files
+Indi::implode($js);
+
+// Implode css files
+Indi::implode($css);
