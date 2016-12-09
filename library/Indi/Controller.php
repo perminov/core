@@ -303,6 +303,9 @@ class Indi_Controller {
                 $filterSearchFieldAlias = key($searchOnField);
                 $filterSearchFieldValue = current($searchOnField);
 
+                // Check $filterSearchFieldAlias
+                if (!preg_match('/^[a-zA-Z\-0-9]+$/', $filterSearchFieldAlias)) continue;
+                
                 // Get a field row object, that is related to current filter field alias. We need to do it because there
                 // can be a case then filter field alias can be not the same as any field's alias - if filter is working
                 // in range-mode. This can only happen for filters, that are linked to fields, that have column types:
@@ -335,6 +338,9 @@ class Indi_Controller {
                         // Get the hue range borders
                         list($hueFrom, $hueTo) = $filterSearchFieldValue;
 
+                        // Check $hueFrom and $hueTo
+                        if (!Indi::rexm('int11', $hueFrom) || !Indi::rexm('int11', $hueTo) || $hueFrom < 0 || $hueTo > 360)  continue;
+                        
                         // Build a WHERE clause for that hue range borders. If $hueTo > $hueFrom, use BETWEEN clause,
                         // else if $hueTo < $hueFrom, use '>=' and '<=' clauses, or else if $hueTo = $hueFrom, use '='
                         // clause
@@ -353,14 +359,14 @@ class Indi_Controller {
 
                         // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
                     } else if ($found->elementId == 9 || $found->elementId == 23) {
-                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` = "' . str_replace('"', '\"', $filterSearchFieldValue) . '"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue ? I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES : I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO;
 
                         // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
                     } else if ($found->elementId == 1) {
-                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` LIKE "%' . $filterSearchFieldValue . '%"';
+                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` LIKE "%' . str_replace('"', '\"', $filterSearchFieldValue) . '%"';
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
@@ -388,13 +394,13 @@ class Indi_Controller {
                             $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
                         // Use a '>=' or '<=' clause, according to specified range border's type
-                        $where[$found->alias][$matches[2]] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . $filterSearchFieldValue . '"';
+                        $where[$found->alias][$matches[2]] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . str_replace('"', '\"', $filterSearchFieldValue) . '"';
 
                         // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
 
                         // Use 'MATCH AGAINST' clause
-                        $where[$found->alias] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . $filterSearchFieldValue .
+                        $where[$found->alias] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . str_replace('"', '\"', $filterSearchFieldValue) .
                             '*" IN BOOLEAN MODE)';
 
                         // Pick the current filter value and field type to $excelA
