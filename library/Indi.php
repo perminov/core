@@ -1284,6 +1284,7 @@ class Indi {
      * @return array
      */
     public static function order($entityId, $idA, $dir = 'ASC'){
+
         // Load the model
         $model = Indi::model($entityId);
 
@@ -1291,7 +1292,7 @@ class Indi {
         $columnA = $model->fields(null, 'aliases');
 
         // Determine title column name
-        if ($titleColumn = current(array_intersect($columnA, array('title', '_title')))) {
+        if ($titleColumn = $model->comboDataOrder ?: current(array_intersect($columnA, array('title', '_title')))) {
 
             // Setup a new order for $idA
             $idA = Indi::db()->query('
