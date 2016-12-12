@@ -2226,14 +2226,6 @@ class Indi_Controller_Admin extends Indi_Controller {
 
     }
 
-
-    /**
-     * This function is an injection that allows to adjust any trail items before their involvement
-     */
-    public function adjustTrail() {
-
-    }
-
     /**
      * Do auth for selected row, assuming it is a row of `User` model
      */

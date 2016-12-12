@@ -840,4 +840,11 @@ class Indi_Controller {
         // Exclude
         Indi::trail()->disabledFields->exclude($fieldA_id, 'fieldId');
     }
+    
+    /**
+     * This function is an injection that allows to adjust any trail items before their involvement
+     */
+    public function adjustTrail() {
+
+    }    
 }
