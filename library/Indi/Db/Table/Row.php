@@ -4377,7 +4377,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $field
      * @param $nested
      */
-    public function keys2nested($field, $nested) {
+    public function keys2nested($field, $nested, $ctor = array()) {
 
         // If $field field's value was not modified
         if (!$this->affected($field)) return;
@@ -4404,10 +4404,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Create and append nested rows, having keys
-        foreach ($new as $id) Indi::model($nested)->createRow(array(
+        foreach ($new as $id) Indi::model($nested)->createRow(array_merge(array(
             $this->table() . 'Id' => $this->id,
             $connector => $id
-        ), true)->save();
+        ), $ctor), true)->save();
     }
 
     /**
