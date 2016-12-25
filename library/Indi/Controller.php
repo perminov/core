@@ -25,7 +25,7 @@ class Indi_Controller {
         if (Indi::uri('module') == 'front' && is_array($dsdirA = (array) Indi::ini('view')->design))
             foreach($dsdirA as $dsdirI => $domainS)
                 if (in($_SERVER['HTTP_HOST'], explode(' ', $domainS)))
-                    $dsdir = $dsdirI;
+                    Indi::ini()->design = $dsdirI;
 
         // Do paths setup twice: first for module-specific paths, second for general-paths
         for ($i = 0; $i < 2; $i++) {
@@ -39,7 +39,7 @@ class Indi_Controller {
             if (is_dir(DOC . STD . '/www/' . $spath)) {
 
                 // Add design-specific script path
-                if ($dsdir) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath . '/' . $dsdir);
+                if (Indi::ini()->design) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath . '/' . Indi::ini()->design);
 
                 // Add general script path
                 $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
@@ -53,7 +53,7 @@ class Indi_Controller {
             if (is_dir(DOC . STD . '/www/library')) {
 
                 // Add design-specific helper path
-                if ($dsdir) $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp . '/' . $dsdir, 'Project_View_Helper_'. $mhcp);
+                if (Indi::ini()->design) $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp . '/' . Indi::ini()->design, 'Project_View_Helper_'. $mhcp);
 
                 // Add default helper path
                 $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
