@@ -3559,7 +3559,13 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Get some basic info about uploaded file
+     * Usages: 
+     *   ->file($field) - get some basic info about file, uploaded within certain field
+     *   ->file($field, '/path/to/new.file') - Replace current file with any another one. 
+     *    Consider that path to new file should start with '/'. 
+     *    If you want to pass an URL as a 2nd arg, you should use ->wget($field, $url) method instead
+     *    If field's settings asume resized copies should be created - they will be created if new file is an image
+     *  ->file($field, $copy) - get info about one of image's copies
      *
      * @param $field
      * @param $src
@@ -3570,8 +3576,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If given field alias - is not an alias of one of filefields - return
         if (!$this->model()->getFileFields($field)) return;
 
-        // If $src arg is given
-        if ($src) {
+        // If $src arg is given, and $src value starts from '/'
+        if ($src && preg_match('~^/~', $src)) {
 
             // If value, got by $this->model()->dir() call, is not a directory name
             if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
@@ -3617,7 +3623,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // If there is currently no file uploaded - return
-        if (!($abs = $this->abs($field))) return;
+        if (!($abs = $this->abs($field, preg_match('~^/~', $src) ? '' : $src))) return;
 
         // Get the extension
         $ext = array_pop(explode('.', $abs));
