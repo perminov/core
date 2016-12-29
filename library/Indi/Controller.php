@@ -19,6 +19,14 @@ class Indi_Controller {
         // Get the script path
         $spath = Indi::ini('view')->scriptPath;
 
+        // If module is 'front', and design-specific config was set up,
+        // detect design specific dir name, that will be used to build
+        // additional paths for both scripts and helpers
+        if (Indi::uri('module') == 'front' && is_array($dsdirA = (array) Indi::ini('view')->design))
+            foreach($dsdirA as $dsdirI => $domainS)
+                if (in($_SERVER['HTTP_HOST'], explode(' ', $domainS)))
+                    Indi::ini()->design = $dsdirI;
+
         // Do paths setup twice: first for module-specific paths, second for general-paths
         for ($i = 0; $i < 2; $i++) {
 
@@ -27,16 +35,29 @@ class Indi_Controller {
             $mhpp =   !$i ? '/' . ucfirst(Indi::uri('module')) : '';
             $mhcp =   !$i ? ucfirst(Indi::uri('module')) . '_' : '';
 
-            // Add script path for certain/current project
-            if (is_dir(DOC . STD . '/www/' . $spath)) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
+            // Add script paths for certain/current project
+            if (is_dir(DOC . STD . '/www/' . $spath)) {
+
+                // Add design-specific script path
+                if (Indi::ini()->design) $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath . '/' . Indi::ini()->design);
+
+                // Add general script path
+                $view->addScriptPath(DOC . STD . '/www/' . $spath . $mpath);
+            }
 
             // Add script paths for major core part and for front core part
             $view->addScriptPath(DOC . STD . '/coref/' . $spath . $mpath);
             $view->addScriptPath(DOC . STD . '/core/' . $spath . $mpath);
 
-            // Add helper paths for certain/current project
-            if (is_dir(DOC . STD . '/www/library'))
+            // If certain project has 'library' dir
+            if (is_dir(DOC . STD . '/www/library')) {
+
+                // Add design-specific helper path
+                if (Indi::ini()->design) $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp . '/' . Indi::ini()->design, 'Project_View_Helper_'. $mhcp);
+
+                // Add default helper path
                 $view->addHelperPath(DOC . STD . '/www/library/Project/View/Helper' . $mhpp, 'Project_View_Helper_'. $mhcp);
+            }
 
             // Add helper paths for major core part and for front core part
             $view->addHelperPath(DOC . STD . '/coref/library/Indi/View/Helper' . $mhpp, 'Indi_View_Helper_' . $mhcp);
