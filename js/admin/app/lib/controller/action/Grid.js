@@ -66,6 +66,23 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
                 },
+                itemkeydown: function(view, row, item, index, e) {
+
+                    // Load previous page on Page Up, if need
+                    if (e.keyCode == Ext.EventObject.PAGE_UP
+                        &&  index == 0 && view.store.indexOfTotal(row) > 0)
+                        view.store.previousPage({callback: function(records){
+                            view.getSelectionModel().select(view.store.getCount() - 1);
+                        }});
+
+                    // Load previous page on Page Down, if need
+                    if (e.keyCode == Ext.EventObject.PAGE_DOWN
+                        && index == view.store.getCount() - 1 && view.store.indexOfTotal(row) < view.store.getTotalCount() - 1)
+                        view.store.nextPage({callback: function(records){
+                            view.getSelectionModel().select(0);
+                        }});
+
+                },
                 cellmouseover: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
                     if (view.cellOverflow) {
                         if (Indi.metrics.getWidth(Ext.get(td).getHTML()) > Ext.get(td).getWidth())
