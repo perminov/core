@@ -33,6 +33,11 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->entityId = Indi::trail()->section->entityId;
         $pseudoFieldR->alias = $name;
         $pseudoFieldR->storeRelationAbility = 'one';
+
+        if (($groupFieldId = Indi::trail()->section->groupBy)
+            && ($groupFieldR = Indi::trail()->fields->gb($groupFieldId)))
+            $pseudoFieldR->param('groupBy', $groupFieldR->alias);
+
         $pseudoFieldR->elementId = 23;
         $pseudoFieldR->columnTypeId = 3;
         //$pseudoFieldR->defaultValue = Indi::trail()->row->id;

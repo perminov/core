@@ -217,71 +217,13 @@ class Indi_Controller {
 
                 // If column's name is 'id' create new item in $orderA array
                 if ($column == 'id') $orderA[] = '`' . $column . '` ' . $direction;
-                //return $column == 'id' ? '`' . $column . '` ' . $direction : null;
+
+                // Continue
                 continue;
             }
 
-            // Setup a foreign rows for $fieldR's foreign keys
-            $fieldR->foreign('columnTypeId');
-
-            // If this is a simple column
-            if ($fieldR->storeRelationAbility == 'none') {
-
-                // If sorting column type is BOOLEAN (use for Checkbox control element only)
-                if ($fieldR->foreign('columnTypeId')->type == 'BOOLEAN') {
-
-                    // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
-                    // values, depending on current language
-                    $orderA[] = (Indi::ini('view')->lang == 'en'
-                        ? 'IF(`' . $column . '`, "' . I_YES .'", "' . I_NO . '") '
-                        : 'IF(`' . $column . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
-
-                // Else build the simplest ORDER clause
-                } else $orderA[] = '`' . $column . '` ' . $direction;
-
-                // Else if column is storing single foreign keys
-            } else if ($fieldR->storeRelationAbility == 'one') {
-
-                // If column is of type ENUM
-                if ($fieldR->foreign('columnTypeId')->type == 'ENUM') {
-
-                    // Get a list of comma-imploded aliases, ordered by their titles
-                    $set = Indi::db()->query($sql = '
-
-                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
-                    FROM `enumset`
-                    WHERE `fieldId` = "' . $fieldR->id . '"
-
-                ')->fetchColumn(0);
-
-                    // Build the order clause, using FIND_IN_SET function
-                    $orderA[] = 'FIND_IN_SET(`' . $column . '`, "' . $set . '") ' . $direction;
-
-                // If column is of type (BIG|SMALL|MEDIUM|)INT
-                } else if (preg_match('/INT/', $fieldR->foreign('columnTypeId')->type)) {
-
-                    // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
-                    if (!$fieldR->satellite || $fieldR->dependency != 'e') {
-
-                        // Get the possible foreign keys
-                        $setA = Indi::db()->query('
-                        SELECT DISTINCT `' . $column . '` AS `id`
-                        FROM `' . Indi::trail()->model->table() . '`
-                        ' . ($finalWHERE ? 'WHERE ' . $finalWHERE : '') . '
-                    ')->fetchAll(PDO::FETCH_COLUMN);
-
-                        // If at least one key was found
-                        if (count($setA)) {
-
-                            // Setup a proper order of elements in $setA array, depending on their titles
-                            $setA = Indi::order($fieldR->relation, $setA);
-
-                            // Build the order clause, using FIND_IN_SET function
-                            $orderA[] = 'FIND_IN_SET(`' . $column . '`, "' . implode(',', $setA) . '") ' . $direction;
-                        }
-                    }
-                }
-            }
+            //
+            if (strlen($order = $fieldR->order($direction, $finalWHERE))) $orderA[] = $order;
         }
 
         // Return
