@@ -499,7 +499,7 @@ function ldate($format, $date = '', $when = '') {
         $formatted = strftime($format, strtotime($date));
 
         // Return
-        return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
+        return mb_strtolower($_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted, 'utf-8');
 
     // Else
     } else {
@@ -508,14 +508,14 @@ function ldate($format, $date = '', $when = '') {
         $date = ldate(Indi::date2strftime($format), $date);
 
         // Force Russian-style month name endings
-        if (in('month', ar($when))) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
+        if (in('month', $when)) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
             $date = preg_replace('/([а-яА-Я]{2,})' . $s . '\b/u', '$1' . $r, $date);
             $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
             $date = preg_replace('/' . $s . '$/u', $r, $date);
         }
 
         // Force Russian-style weekday name endings, suitable for version, spelling-compatible for question 'When?'
-        if (in('weekday', ar($when)))
+        if (in('weekday', $when))
             foreach (array('а' => 'у') as $s => $r) {
                 $date = preg_replace('/' . $s . '\b/u', $r, $date);
                 $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
@@ -668,8 +668,15 @@ if (!function_exists('apache_request_headers')) {
  * @return boolean
  */
 function in($item, $array) {
-    if (!is_array($array)) $array = explode(',', $array);
-    return in_array($item, $array);
+
+    // If $array arg is bool or is null - set $strict flag as true
+    $strict = is_bool($array) || is_null($array);
+
+    // Normalize $array arg
+    $array = ar($array);
+
+    // Return
+    return in_array($item, $array, $strict);
 }
 
 /**

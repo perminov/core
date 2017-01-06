@@ -69,6 +69,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 $sectionR->save();
             }
 
+        // Prevent deletion of `section` entries, having current `field` entry as `groupBy`
+        if (Indi::model('Section')->fields('groupBy')->count()
+            && $sectionRs = Indi::model('Section')->fetchAll('`groupBy` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->groupBy = 0;
+                $sectionR->save();
+            }
+
         // Standard deletion
         $return = parent::delete();
 
@@ -1121,6 +1129,80 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Return conversion result
         return $return;
+    }
+
+
+    /**
+     * Build ORDER clause for the field
+     *
+     * @param string $direction
+     * @param null $where
+     * @return string
+     */
+    public function order($direction = 'ASC', $where = null) {
+
+        // Unallow bad values of $direction arg
+        if (!in($direction, 'ASC,DESC')) $direction = 'ASC';
+
+        // If this is a simple column
+        if ($this->storeRelationAbility == 'none') {
+
+            // If sorting column type is BOOLEAN (use for Checkbox control element only)
+            if ($this->foreign('columnTypeId')->type == 'BOOLEAN') {
+
+                // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
+                // values, depending on current language
+                $orderA[] = (Indi::ini('view')->lang == 'en'
+                    ? 'IF(`' . $this->alias . '`, "' . I_YES .'", "' . I_NO . '") '
+                    : 'IF(`' . $this->alias . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
+
+            // Else build the simplest ORDER clause
+            } else $order = '`' . $this->alias . '` ' . $direction;
+
+        // Else if column is storing single foreign keys
+        } else if ($this->storeRelationAbility == 'one') {
+
+            // If column is of type ENUM
+            if ($this->foreign('columnTypeId')->type == 'ENUM') {
+
+                // Get a list of comma-imploded aliases, ordered by their titles
+                $set = Indi::db()->query($sql = '
+                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
+                    FROM `enumset`
+                    WHERE `fieldId` = "' . $this->id . '"
+                ')->fetchColumn(0);
+
+                // Build the order clause, using FIND_IN_SET function
+                $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . $set . '") ' . $direction;
+
+            // If column is of type (BIG|SMALL|MEDIUM|)INT
+            } else if (preg_match('/INT/', $this->foreign('columnTypeId')->type)) {
+
+                // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
+                if (!$this->satellite || $this->dependency != 'e') {
+
+                    // Get the possible foreign keys
+                    $setA = Indi::db()->query('
+                        SELECT DISTINCT `' . $this->alias . '` AS `id`
+                        FROM `' . Indi::model($this->entityId)->table() . '`
+                        ' . ($where ? 'WHERE ' . (is_array($where) ? implode($where, ' AND ') : $where) : '') . '
+                    ')->fetchAll(PDO::FETCH_COLUMN);
+
+                    // If at least one key was found
+                    if (count($setA)) {
+
+                        // Setup a proper order of elements in $setA array, depending on their titles
+                        $setA = Indi::order($this->relation, $setA);
+
+                        // Build the order clause, using FIND_IN_SET function
+                        $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $setA) . '") ' . 'ASC';
+                    }
+                }
+            }
+        }
+
+        // Return ORDER clause
+        return $order;
     }
 
     /**
