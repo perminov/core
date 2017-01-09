@@ -15,45 +15,12 @@ Ext.override(Ext.data.Connection, {
             response = {
                 responseText: '',
                 responseXML: null
-            }, doc, contentNode,
-            phpErrors, json, success = true;
+            }, doc, contentNode;
 
         try {
             doc = frame.contentWindow.document || frame.contentDocument || window.frames[frame.id].document;
-            
             if (doc) {
-            
                 if (doc.body) {
-
-                    phpErrors = Indi.serverErrorObjectA(doc.body.innerHTML, true);
-
-                    if (phpErrors.length) {
-                        var err = Indi.serverErrorStringA(phpErrors);
-                        success = false;
-
-                        // Write php-errors to the console, additionally
-                        if (console && (console.log || console.error))
-                            for (var i in err) console[console.error ? 'error' : 'log'](err[i]);
-
-                        Ext.Msg.show({
-                            title: 'Server error',
-                            msg: err.join('<br><br>'),
-                            buttons: Ext.Msg.OK,
-                            icon: Ext.MessageBox.ERROR
-                        });
-                    } else if (doc.body.innerHTML.substr(0, 1).match(/[{\[]/)
-                        && typeof (json = Ext.JSON.decode(doc.body.innerHTML, true)) == 'object') {
-                        if (json.hasOwnProperty('success')) success = json.success;
-                        if (json.hasOwnProperty('msg')) {
-                            Ext.Msg.show({
-                                title: Indi.lang[json.hasOwnProperty('success') && json.success ? 'I_MSG' : 'I_ERROR'],
-                                msg: json.msg,
-                                buttons: Ext.Msg.OK,
-                                icon: Ext.Msg[json.hasOwnProperty('success') && json.success ? 'INFO' : 'WARNING'],
-                                modal: true
-                            });
-                        }
-                    }
 
                     // Response sent as Content-Type: text/json or text/plain. Browser will embed in a <pre> element
                     // Note: The statement below tests the result of an assignment.
@@ -77,14 +44,9 @@ Ext.override(Ext.data.Connection, {
         } catch (e) {
         }
 
-        if (success) {
-            me.fireEvent('requestcomplete', me, response, options);
-            Ext.callback(options.success, options.scope, [response, options]);
-        } else {
-            me.fireEvent('requestexception', me, response, options);
-            Ext.callback(options.failure, options.scope, [response, options]);
-        }
+        me.fireEvent('requestcomplete', me, response, options);
 
+        Ext.callback(options.success, options.scope, [response, options]);
         Ext.callback(options.callback, options.scope, [options, true, response]);
 
         setTimeout(function() {
@@ -103,9 +65,7 @@ Ext.override(Ext.data.Connection, {
             options = request.options,
             result,
             success,
-            response,
-            phpErrors,
-            json;
+            response;
 
         try {
             result = me.parseStatus(request.xhr.status);
@@ -116,73 +76,8 @@ Ext.override(Ext.data.Connection, {
                 isException : false
             };
         }
-
         success = result.success;
 
-        if (success) {
-            phpErrors = Indi.serverErrorObjectA(request.xhr.responseText);
-            if (phpErrors.length) {
-                success = false;
-                var err = Indi.serverErrorStringA(phpErrors);
-
-                // Write php-errors to the console, additionally
-                if (console && (console.log || console.error))
-                    for (var i in err) console[console.error ? 'error' : 'log'](err[i]);
-
-                Ext.Msg.show({
-                    title: 'Server error',
-                    msg: err.join('<br><br>'),
-                    buttons: Ext.Msg.OK,
-                    icon: Ext.MessageBox.ERROR
-                });
-
-            // Else if responseText can possibly be a json-encoded string
-            } else if (request.xhr.responseText.substr(0, 1).match(/[{\[]/)
-                && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object') {
-                if (json.hasOwnProperty('success')) success = json.success;
-                if (json.hasOwnProperty('msg')) {
-                    Ext.Msg[Ext.Msg.jflushFn](json.hasOwnProperty('confirm') ? {
-                        title: Indi.lang.I_MSG,
-                        msg: json.msg,
-                        buttons: Ext.Msg.OKCANCEL,
-                        icon: Ext.Msg.QUESTION,
-                        modal: true,
-                        fn: function(answer) {
-
-                            // Remove 'answer' param, if it exists within url
-                            request.options.url = request.options.url.replace(/\banswer=(ok|no|cancel)/, '');
-
-                            // Append new answer param
-                            request.options.url = request.options.url.split('?')[0] + '?answer=' + answer
-                                + (request.options.url.split('?')[1] ? '&' + request.options.url.split('?')[1] : '');
-
-                            // If answer is 'ok'
-                            if (answer == 'ok') {
-
-                                // Show load mask
-                                Indi.loadmask.show();
-
-                                // Setup callback for mask to hide
-                                request.options.callback = function(){
-                                    Indi.loadmask.hide();
-                                };
-                            }
-
-                            // Make new request
-                            me.request(request.options);
-                        }
-                    } : {
-                        title: Indi.lang[json.hasOwnProperty('success') && json.success ? 'I_MSG' : 'I_ERROR'],
-                        msg: json.msg,
-                        buttons: Ext.Msg.OK,
-                        icon: Ext.Msg[json.hasOwnProperty('success') && json.success ? 'INFO' : 'WARNING'],
-                        modal: true
-                    });
-                }
-            }
-        }
-
-        // If still success
         if (success) {
             response = me.createResponse(request);
             me.fireEvent('requestcomplete', me, response, options);
