@@ -44,10 +44,17 @@ Ext.override(Ext.data.Connection, {
         } catch (e) {
         }
 
-        me.fireEvent('requestcomplete', me, response, options);
+        var success = Indi.parseResponse(response, options);
 
-        Ext.callback(options.success, options.scope, [response, options]);
-        Ext.callback(options.callback, options.scope, [options, true, response]);
+        if (success) {
+            me.fireEvent('requestcomplete', me, response, options);
+            Ext.callback(options.success, options.scope, [response, options]);
+        } else {
+            me.fireEvent('requestexception', me, response, options);
+            Ext.callback(options.failure, options.scope, [response, options]);
+        }
+
+        Ext.callback(options.callback, options.scope, [options, success, response]);
 
         setTimeout(function() {
             Ext.removeNode(frame);
@@ -80,6 +87,7 @@ Ext.override(Ext.data.Connection, {
 
         if (success) {
             response = me.createResponse(request);
+            Indi.parseResponse(response, options);
             me.fireEvent('requestcomplete', me, response, options);
             Ext.callback(options.success, options.scope, [response, options]);
         } else {
@@ -87,6 +95,7 @@ Ext.override(Ext.data.Connection, {
                 response = me.createException(request);
             } else {
                 response = me.createResponse(request);
+                Indi.parseResponse(response, options);
             }
             me.fireEvent('requestexception', me, response, options);
             Ext.callback(options.failure, options.scope, [response, options]);
