@@ -432,8 +432,7 @@ Ext.define('Indi', {
                         } else Ext.get('i-center-center-body').update(response.responseText, true);
 
                     }, 10);
-                },
-                failure: Indi.ajaxFailure
+                }
             }, cfg));
         },
 
@@ -486,12 +485,19 @@ Ext.define('Indi', {
         },
 
         /**
-         * Common function for handling 'mismatch' - failures
+         * Common function for handling ajax/iframe responses
+         * It detects <error>...</error> elements in responseText prop of `response` arg,
+         * show them along with trimming them from responseText. It also detects whether
+         * the trimmed responseText can be decoded into JSON, and if so, does it have
+         * `mismatch`, `confirm` and `success` props and if so - handle them certain ways
+         * and return `success` prop that can be undefined, null, boolean or other value
          *
          * @param response
+         * @return {Boolean}
          */
-        ajaxFailure: function(response, arg2) {
-            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg, form = arg2 && arg2._fields ? arg2 : null, trigger,
+        parseResponse: function(response, arg2) {
+            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg,
+                form = arg2 && arg2.scope && arg2.scope.form ? arg2.scope.form : null, trigger,
                 certainFieldMsg, cmp, seoA = Indi.serverErrorObjectA(response.responseText), sesA,
                 logger = console && (console.log || console.error), boxA = [], urlOwner = form || response.request.options;
 
@@ -528,8 +534,8 @@ Ext.define('Indi', {
                 // Show box
                 if (boxA.length) Ext.Msg.show(boxA[0]);
 
-                // Return
-                return;
+                // Return success as true or false
+                return boxA.length ? false : true;
             }
 
             // The the info about invalid fields from the response, and mark the as invalid
@@ -640,13 +646,16 @@ Ext.define('Indi', {
             else if (json.throwOutMsg) top.window.location.reload();
 
             // If no boxes should be shown - return
-            if (!boxA.length) return;
+            if (!boxA.length) return json.success;
 
             // Ensure second box will be shown after first box closed
             if (boxA[1]) boxA[0].fn = function() { Ext.Msg.show(boxA[1]); }
 
             // Show first box
             Ext.Msg.show(boxA[0]);
+
+            // Return
+            return json.success;
         },
 
         /**

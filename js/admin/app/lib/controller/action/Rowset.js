@@ -2004,9 +2004,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Failure handler
             failure: function(response) {
 
-                // General failure
-                Indi.ajaxFailure(response);
-
                 // Reject changes
                 record.reject();
             }

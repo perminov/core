@@ -164,8 +164,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
 
                         // Show editor
                         me.editTask.delay(0, me.showEditor, me, [ed, context, value]);
-                    },
-                    failure: Indi.ajaxFailure
+                    }
                 });
             } else {
                 me.editTask.delay(15, me.showEditor, me, [ed, context, value]);

@@ -849,6 +849,9 @@ function jconfirm($msg) {
     if (!headers_sent()) header('Content-Type: application/json');
     header('Content-Type: application/json');
 
+    // Here we send HTTP/1.1 400 Bad Request to prevent success handler from being fired
+    header('HTTP/1.1 400 Bad Request');
+
     // Flush
     iexit(json_encode($flush));
 }
