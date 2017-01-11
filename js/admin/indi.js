@@ -505,7 +505,7 @@ Ext.define('Indi', {
             urlOwner.url = urlOwner.url.replace(/\banswer=(ok|no|cancel)/, '');
 
             // Hide loadmask
-            Indi.loadmask.hide();
+            if (Indi.loadmask) Indi.loadmask.hide();
 
             // Try to detect error messages, wrapped in <error/> tag, within responseText
             if (seoA.length) {
@@ -620,7 +620,7 @@ Ext.define('Indi', {
                         + (urlOwner.url.split('?')[1] ? '&' + urlOwner.url.split('?')[1] : '');
 
                     // If answer is 'ok' show load mask
-                    if (answer == 'ok') Indi.loadmask.show();
+                    if (answer == 'ok' && Indi.loadmask) Indi.loadmask.show();
 
                     // Make new request
                     if (form) form.owner.submit({
