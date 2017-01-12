@@ -40,19 +40,10 @@ class Admin_TemporaryController extends Indi_Controller {
                 'courseLesson' => 'lessonId'
             ),
             'ota' => array(
-                'autorespondMessage' => 'autorespondEventId',
                 'bannerShow' => 'datetime',
-                'capturedDataGridColumn' => 'capturedDataFieldId',
-                'capturedDataGridFilter' => 'capturedDataFieldId',
-                'capturedDataLog' => 'datetime',
-                'capturedDataUser' => 'userId',
                 'courseClick' => 'datetime',
                 'courseUser' => 'userId',
-                'micrositeClick' => 'datetime',
-                'newsletterDelivery' => 'date',
-                'pollAnswerVote' => 'datetime',
-                'userReward' => 'datetime',
-                'rewardedActionReward' => 'reward'
+                'pollAnswerVote' => 'datetime'
             ),
             'vkenguru' => array(
                 'eventAnimator' => 'animatorId',

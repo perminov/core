@@ -1023,7 +1023,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 item += '>';
 
                 // Detect and apply color to '<li>', and append '<li>' to 'items' array
-                color = me.color(groups[j], j);
+                color = me.color(groups[j], groups[j].id);
                 item += color.box + color.title + '</li>';
                 items.push(item);
             }
@@ -1032,7 +1032,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             for (var i = 0; i < json['ids'].length; i++) {
 
                 // If data item is owner by current group
-                if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {
+                if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == groups[j].id)) {
 
                     // Classes for option
                     var cls = ['x-boundlist-item'], indent = groupIndent + '';
@@ -2658,11 +2658,17 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     mergeOptgroupInfo: function (info1, info2) {
-        for (var j in info2.groups) {
-            if (info1.groups[j] == undefined) {
-                info1.groups[j] = info2.groups[j];
-            }
-        }
+        var i, j, existing = {};
+
+        // Collect keys of existing groups
+        for (i in info1.groups) existing[info1.groups[i].id] = true;
+
+        // For each new group check whether it's an existing group, and if not - append it
+        for (j in info2.groups)
+            if (existing[info2.groups[j].id] == undefined)
+                info1.groups.push(info2.groups[j]);
+
+        // Return merged optgroup info
         return info1;
     },
 

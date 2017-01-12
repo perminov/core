@@ -71,17 +71,21 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // If user's browser is Microsoft Internet Explorer - do a filename encoding conversion
         if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) $title = iconv('utf-8', 'windows-1251', $title);
 
-        // Create a file_info resource
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        // If finfo-extension enabled
+        if (function_exists('finfo_open')) {
+        
+            // Create a file_info resource
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
-        // Get the mime-type
-        $type = finfo_file($finfo, $abs);
+            // Get the mime-type
+            $type = finfo_file($finfo, $abs);
 
-        // If there was an error while getting info about file
-        if (!$type) die(I_DOWNLOAD_ERROR_FILEINFO_FAILED);
+            // If there was an error while getting info about file
+            if (!$type) die(I_DOWNLOAD_ERROR_FILEINFO_FAILED);
 
-        // Close the fileinfo resource
-        finfo_close($finfo);
+            // Close the fileinfo resource
+            finfo_close($finfo);
+        }
 
         // Replace " with ', as browsers replaces " with _ or - or, maybe, with something else
         $title = str_replace('"', "'", $title);

@@ -89,7 +89,8 @@ class Indi {
         'varchar255' => '/^[.\s]{0,255}$/',
         'dir' => ':^([A-Z][\:])?/.*/$:',
         'grs' => '/^[a-zA-Z0-9]{15}$/',
-        'phone' => '/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/'
+        'phone' => '/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/',
+        'vk' => '~^https://vk.com/([a-zA-Z0-9_\.]{3,})~'
     );
 
     /**
@@ -1283,6 +1284,7 @@ class Indi {
      * @return array
      */
     public static function order($entityId, $idA, $dir = 'ASC'){
+
         // Load the model
         $model = Indi::model($entityId);
 
@@ -1290,7 +1292,7 @@ class Indi {
         $columnA = $model->fields(null, 'aliases');
 
         // Determine title column name
-        if ($titleColumn = current(array_intersect($columnA, array('title', '_title')))) {
+        if ($titleColumn = $model->comboDataOrder ?: current(array_intersect($columnA, array('title', '_title')))) {
 
             // Setup a new order for $idA
             $idA = Indi::db()->query('
@@ -2271,6 +2273,11 @@ class Indi {
      * @return string
      */
     public static function date2strftime($format) {
+
+        // Check for Windows to find and replace the %e modifier correctly
+        Indi::$date2strftime['j'] = strtoupper(substr(PHP_OS, 0, 3)) == 'WIN' ? '%#d' : '%e';
+
+        // Convert format
         return preg_replace_callback('/(' . implode('|', array_keys(Indi::$date2strftime)) .  ')/', function($m){
             return Indi::$date2strftime[$m[1]];
         }, $format);
@@ -2357,5 +2364,16 @@ class Indi {
 
         // Close client
         $client->close();
+    }
+
+    /**
+     * Create and return a new instance of Indi_Space class,
+     * @static
+     * @param $since
+     * @param null $until
+     * @return Indi_Schedule
+     */
+    public static function schedule($since, $until = null) {
+        return new Indi_Schedule($since, $until);
     }
 }

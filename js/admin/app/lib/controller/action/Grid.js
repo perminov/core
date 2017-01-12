@@ -25,6 +25,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
          * Features
          */
         features: [{
+            ftype: 'grouping',
+            groupHeaderTpl: '{name}'
+        }, {
             ftype: 'summary',
             remoteRoot: 'summary'
         }],
@@ -71,6 +74,22 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     Ext.defer(function(){
                         if(c.getEl()) c.getEl().setStyle('overflow', 'auto');
                     }, 1);
+                },
+                itemkeydown: function(view, row, item, index, e) {
+
+                    // Load previous page on Page Up, if need
+                    if (e.keyCode == Ext.EventObject.PAGE_UP
+                        &&  index == 0 && view.store.indexOfTotal(row) > 0)
+                        view.store.previousPage({callback: function(records){
+                            view.getSelectionModel().select(view.store.getCount() - 1);
+                        }});
+
+                    // Load previous page on Page Down, if need
+                    if (e.keyCode == Ext.EventObject.PAGE_DOWN
+                        && index == view.store.getCount() - 1 && view.store.indexOfTotal(row) < view.store.getTotalCount() - 1)
+                        view.store.nextPage({callback: function(records){
+                            view.getSelectionModel().select(0);
+                        }});
                 },
                 cellmouseover: function(view, td, tdIdx, record, tr, trIdx, e, eOpts) {
                     if (view.cellOverflow) {
@@ -200,7 +219,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     gridColumnDefault: function(field, column) {
-        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [];
+        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [], cfg;
 
         // Setup align
         tdClsA.push('i-grid-column-align-' + ((field.storeRelationAbility == 'none' &&
@@ -210,7 +229,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         if (parseInt(field.relation) == 6) tdClsA.push('i-grid-column-enumset');
 
         // Default column config
-        return {
+        cfg = {
             id: me.bid() + '-rowset-grid-column-' + field.alias,
             header: column.alterTitle || field.title,
             dataIndex: field.alias,
@@ -220,7 +239,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
             tdCls: tdClsA.join(' '),
             sortable: true,
             editor: column.editor
-        }
+        };
+
+        // If current column's field is a grouping field - hide it
+        if (me.ti().section.groupBy == field.id) cfg.hidden = true;
+
+        // Return
+        return cfg;
     },
 
     /**
