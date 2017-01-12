@@ -422,15 +422,93 @@ Ext.define('Indi', {
         },
 
         /**
+         * Detect json-stringified error messages, wrapped with <error/> tag, within the raw responseText,
+         * convert each error to JSON-object, and return an array of such objects
+         *
+         * @param rt Response text, for trying to find errors in
+         * @return {Array} Found errors
+         */
+        serverErrorObjectA: function(rt, entitiesEncoded) {
+
+            // If response text is empty - return false
+            if (!rt.length) return ['Empty response'];
+
+            // If `entitiesEncoded` arg is `true`, we decode back htmlentities
+            if (entitiesEncoded) rt = rt.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+            // Define variables
+            var errorA = [], errorI;
+
+            // Pick errors
+            Indi.fly('<response>'+rt+'</response>').select('error').each(function(item){
+                if (errorI = Ext.JSON.decode(item.getHTML(), true)) errorA.push(errorI);
+            });
+
+            // Return errors
+            return errorA;
+        },
+
+        /**
+         * Builds a string representation of a given error objects, suitable for use as Ext.MessageBox contents
+         *
+         * @param {Array} serverErrorObjectA
+         * @return {Array}
+         */
+        serverErrorStringA: function(serverErrorObjectA) {
+
+            // Define auxilliary variables
+            var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query', 3: 'MYSQL PDO'},
+                type, seoA = serverErrorObjectA;
+
+            // Convert each error message object to a string
+            for (var i = 0; i < seoA.length; i++)
+                errorSA.push(((type = typeO[seoA[i].code]) ? type + ': ' : '') + seoA[i].text + ' at ' +
+                    seoA[i].file + ' on line ' + seoA[i].line);
+
+            // Return error strings array
+            return errorSA;
+        },
+
+        /**
          * Common function for handling 'mismatch' - failures
          *
          * @param response
          */
-        ajaxFailure: function(response) {
-            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg;
+        ajaxFailure: function(response, arg2) {
+            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg, form = arg2._fields ? arg2 : null, trigger,
+                certainFieldMsg, cmp, seoA = Indi.serverErrorObjectA(response.responseText), sesA,
+                logger = console && (console.log || console.error), boxA = [];
 
-            // Parse response text
-            json = Ext.JSON.decode(response.responseText, true);
+            // Try to detect error messages, wrapped in <error/> tag, within responseText
+            if (seoA.length) {
+
+                // Build array of error strings from error objects
+                sesA = Indi.serverErrorStringA(seoA);
+
+                // Write php-errors to the console, additionally
+                if (logger) for (var i in sesA) logger(sesA[i]);
+
+                // Show errors within a message box
+                boxA.push({
+                    title: 'Server error',
+                    msg: sesA.join('<br><br>'),
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                });
+
+                // Strip errors from response
+                response.responseText = response.responseText.split('</error>').pop();
+            }
+
+            // Parse response text as JSON, and if no success - return
+            if (!(json = Ext.JSON.decode(response.responseText, true))) {
+
+                // Show box
+                if (boxA.length) Ext.Msg.show(boxA[0]);
+
+                // Return
+                return;
+            }
 
             // The the info about invalid fields from the response, and mark the as invalid
             if (Ext.isObject(json.mismatch)) {
@@ -441,34 +519,85 @@ Ext.define('Indi', {
                 // Error messages storage
                 errorByFieldO = mismatch.errors;
 
+                // Detect are error related to current form fields, or related to fields of some other entry,
+                // that is set up to be automatically updated (as a trigger operation, queuing after the primary one)
+                trigger = form ? mismatch.entity.title != form.owner.ctx().ti().model.title || mismatch.entity.entry != form.owner.ctx().ti().row.id : true;
+
                 // Collect all messages for them to be bit later displayed within Ext.MessageBox
                 Object.keys(errorByFieldO).forEach(function(i){
-                    wholeFormMsg.push(errorByFieldO[i]);
+
+                    // If mismatch key starts with a '#' symbol, we assume that message, assigned
+                    // under such key - is not related to any certain field within form, so we
+                    // collect al such messages for them to be bit later displayed within Ext.MessageBox
+                    if (i.substring(0, 1) == '#' || trigger) wholeFormMsg.push(errorByFieldO[i]);
+
+                    // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
+                    // under such key - is related to some certain field within form, so we get that field's
+                    // component and mark it as invalid
+                    else if (form && (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i))) {
+
+                        // Get the mismatch message
+                        certainFieldMsg = errorByFieldO[i];
+
+                        // If mismatch message is a string
+                        if (Ext.isString(certainFieldMsg))
+
+                            // Cut off field title mention from message
+                            certainFieldMsg = certainFieldMsg.replace('"' + cmp.fieldLabel + '"', '').replace(/""/g, '');
+
+                        // Mark field as invalid
+                        cmp.markInvalid(certainFieldMsg);
+
+                        // If field is currently hidden - we duplicate error message for it to be shown within
+                        // Ext.MessageBox, additionally
+                        if (cmp.hidden) wholeFormMsg.push(errorByFieldO[i]);
+
+                    // Else mismatch message is related to field, that currently, for some reason, is not available
+                    // within the form - push that message to the wholeFormMsg array
+                    } else wholeFormMsg.push(errorByFieldO[i]);
                 });
 
                 // If we collected at least one error message, that is related to the whole form rather than
                 // some certain field - use an Ext.MessageBox to display it
                 if (wholeFormMsg.length) {
 
-                    msg = '&raquo; ' + wholeFormMsg.join('<br>&raquo; ');
+                    msg = (wholeFormMsg.length > 1 || trigger ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; ');
 
-                    // Build message
-                    msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                    // If this is a mismatch, caused by background php-triggers
+                    if (trigger) msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
                         + mismatch.entity.title + '"'
                         + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
                         + ' - выдала следующие ошибки: <br><br>' + msg;
 
                     // Show message box
-                    Ext.MessageBox.show({
+                    boxA.push({
                         title: Indi.lang.I_ERROR,
                         msg: msg,
                         buttons: Ext.MessageBox.OK,
                         icon: Ext.MessageBox.ERROR
                     });
                 }
-            } else if (json.throwOutMsg) {
-                top.window.location.reload();
-            }
+
+            // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
+            } else if (json.throwOutMsg) top.window.location.reload();
+
+            // Else if `msg` prop is set - show it within Ext.MessageBox
+            else if (json.msg) boxA.push({
+                title: Indi.lang.I_ERROR,
+                msg: json.msg,
+                buttons: Ext.Msg.OK,
+                icon: Ext.Msg.WARNING,
+                modal: true
+            });
+
+            // If no boxes should be shown - return
+            if (!boxA.length) return;
+
+            // Ensure second box will be shown after first box closed
+            if (boxA[1]) boxA[0].fn = function() { Ext.Msg.show(boxA[1]); }
+
+            // Show first box
+            Ext.Msg.show(boxA[0]);
         },
 
         /**

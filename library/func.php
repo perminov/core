@@ -100,6 +100,9 @@ function jerror($errno, $errstr, $errfile, $errline) {
     // Log this error if logging of 'jerror's is turned On
     if (Indi::logging('jerror')) Indi::log('jerror', $error);
 
+    // Send HTTP 500 code
+    header('HTTP/1.1 500 Internal Server Error');
+
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
 }
@@ -214,7 +217,7 @@ function usubstr($string, $length, $dots = true) {
 
     // If $dots argument is true, and length of $string argument
     // is greater that the value of $length argument set $dots as '..'
-    $dots = mb_strlen($string, 'utf-8') > $length && $dots ? '..' : '';
+    $dots = mb_strlen($string, 'utf-8') > $length && $dots ? '…' : '';
 
     // Trim the $string by the $length characters, add dots, if need, and return the result string
     return mb_substr($string, 0, $length, 'utf-8') . $dots;
@@ -499,7 +502,7 @@ function ldate($format, $date = '', $when = '') {
         $formatted = strftime($format, strtotime($date));
 
         // Return
-        return $_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted;
+        return mb_strtolower($_SERVER['WINDIR'] ? iconv('windows-1251', 'UTF-8', $formatted) : $formatted, 'utf-8');
 
     // Else
     } else {
@@ -508,14 +511,14 @@ function ldate($format, $date = '', $when = '') {
         $date = ldate(Indi::date2strftime($format), $date);
 
         // Force Russian-style month name endings
-        if (in('month', ar($when))) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
+        if (in('month', $when)) foreach (array('ь' => 'я', 'т' => 'та', 'й' => 'я') as $s => $r) {
             $date = preg_replace('/([а-яА-Я]{2,})' . $s . '\b/u', '$1' . $r, $date);
             $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
             $date = preg_replace('/' . $s . '$/u', $r, $date);
         }
 
         // Force Russian-style weekday name endings, suitable for version, spelling-compatible for question 'When?'
-        if (in('weekday', ar($when)))
+        if (in('weekday', $when))
             foreach (array('а' => 'у') as $s => $r) {
                 $date = preg_replace('/' . $s . '\b/u', $r, $date);
                 $date = preg_replace('/' . $s . '(\s)/u', $r . '$1', $date);
@@ -668,8 +671,15 @@ if (!function_exists('apache_request_headers')) {
  * @return boolean
  */
 function in($item, $array) {
-    if (!is_array($array)) $array = explode(',', $array);
-    return in_array($item, $array);
+
+    // If $array arg is bool or is null - set $strict flag as true
+    $strict = is_bool($array) || is_null($array);
+
+    // Normalize $array arg
+    $array = ar($array);
+
+    // Return
+    return in_array($item, $array, $strict);
 }
 
 /**
@@ -813,6 +823,10 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 
     // Log this error if logging of 'jerror's is turned On
     if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
+
+    // Send HTTP 400 or 200 status code
+    if ($flush['success'] === false) header('HTTP/1.1 400 Bad Request');
+    if ($flush['success'] === true) header('HTTP/1.1 200 OK');
 
     // If $die arg is an url - do not flush data
     if (!$redir) echo json_encode($flush);
@@ -1091,4 +1105,33 @@ function phone($str) {
     else $phone = '';
     if ($phone) $phone = preg_replace('/(\+7)([0-9]{3})([0-9]{3})([0-9]{2})([0-9]{2})/', '$1 ($2) $3-$4-$5', $phone);
     return $phone;
+}
+
+/**
+ * Build a string representation of a date and time in special format
+ *
+ * @param $date
+ * @param string $time
+ * @return string
+ */
+function when($date, $time = '') {
+    $when = array(); $when_ = '';
+
+    // Detect yesterday/today/tomorrow/etc part
+    if ($date == date('Y-m-d', time() - 60 * 60 * 24 * 2)) $when_ = 'позавчера';
+    else if ($date == date('Y-m-d', time() - 60 * 60 * 24)) $when_ = 'вчера';
+    else if ($date == date('Y-m-d')) $when_ = 'сегодня';
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24)) $when_ = 'завтра';
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24 * 2)) $when_ = 'послезавтра';
+    if ($when_) $when[] = $when_ . ',';
+
+    // Append date
+    $when[] = date('N', strtotime($date)) == 2 ? 'во' : 'в';
+    $when[] = ldate('l d F', $date, 'month,weekday');
+
+    // Append time
+    if ($time) $when[] = 'в ' . $time;
+
+    // Return
+    return im($when, ' ');
 }

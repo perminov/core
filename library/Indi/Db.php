@@ -112,8 +112,12 @@ class Indi_Db {
 
             // Get ids of entities, linked to access roles
             self::$_roleA = self::$_instance->query('
-                SELECT `entityId` FROM `profile` WHERE `entityId` != "0"
-            ')->fetchAll(PDO::FETCH_COLUMN);
+                SELECT
+                  GROUP_CONCAT(`id`) AS `profileIds`,
+                  IF(`entityId`,`entityId`,11) AS `entityId`
+                FROM `profile`
+                GROUP BY `entityId`
+            ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
             // Fix tablename case, if need
             if (!$entityId && !preg_match('/^WIN/i', PHP_OS) && self::$_instance->query('SHOW TABLES LIKE "columntype"')->fetchColumn()) {
@@ -272,9 +276,6 @@ class Indi_Db {
 
             // Foreach existing entity
             foreach ($entityA as $entityI) {
-
-                // Append 'admin'-entity's id to self::$_roleA array
-                if ($entityI['table'] == 'admin') self::$_roleA[] = $entityI['id'];
 
                 // Collect "entityId => modelName" pairs
                 $modelNameA[$entityI['id']] = ucfirst($entityI['table']);

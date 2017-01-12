@@ -37,6 +37,9 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
             // Replace {Model} keyword with an actual model name
             $modelSc = preg_replace(':\{Model\}:', $model, $emptyModelSc);
 
+            // Replace {extends} keyword with an actual parent class name
+            $modelSc = preg_replace(':\{extends\}:', $this->row->extends, $modelSc);
+
             // Put the contents to a model file
             file_put_contents($modelFn, $modelSc);            
 
@@ -176,5 +179,61 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
 
         // Flush success
         jflush(true, 'Поле "Статус" было добавлено в структуру сущности "' . $this->row->title . '"');
+    }
+
+    /**
+     * Create a group of fields, that will contain info describing the space,
+     * that current entity's entries will hold within the schedule
+     */
+    public function spaceAction() {
+
+        // Get model
+        $model = Indi::model($this->row->id);
+
+        // If `author` field exists - flush error
+        if ($model->fields('space'))
+            jflush(false, 'Группа полей "Расписание" уже существует в структуре сущности "' . $this->row->title . '"');
+
+        // Get involded `element` entries
+        $elementRs = Indi::model('Element')->fetchAll('FIND_IN_SET(`alias`, "span,number,datetime")');
+
+        // Prepare fields config
+        $fieldA = array(
+            'space' => array(
+                'title' => 'Расписание',
+                'elementId' => $elementRs->gb('span', 'alias')->id,
+                'mode' => 'hidden'
+            ),
+            'spaceSince' => array(
+                'title' => 'Начало',
+                'elementId' => $elementRs->gb('datetime', 'alias')->id,
+                'columnTypeId' => 9,
+                'mode' => 'hidden'
+            ),
+            'spaceUntil' => array(
+                'title' => 'Конец',
+                'elementId' => $elementRs->gb('datetime', 'alias')->id,
+                'columnTypeId' => 9,
+                'mode' => 'hidden'
+            ),
+            'spaceFrame' => array(
+                'title' => 'Длительность',
+                'elementId' => $elementRs->gb('number', 'alias')->id,
+                'columnTypeId' => 3,
+                'mode' => 'hidden'
+            )
+        );
+
+        // Create fields
+        foreach ($fieldA as $alias => $fieldI) {
+            $fieldRA[$alias] = Indi::model('Field')->createRow();
+            $fieldRA[$alias]->entityId = $this->row->id;
+            $fieldRA[$alias]->alias = $alias;
+            $fieldRA[$alias]->assign($fieldI);
+            $fieldRA[$alias]->save();
+        }
+
+        // Flush success
+        jflush(true, 'Группа полей "Расписание" была добавлена в структуру сущности "' . $this->row->title . '"');
     }
 }

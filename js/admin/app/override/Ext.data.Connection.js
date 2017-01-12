@@ -25,10 +25,10 @@ Ext.override(Ext.data.Connection, {
             
                 if (doc.body) {
 
-                    phpErrors = me.phpErrors(doc.body.innerHTML, true);
+                    phpErrors = Indi.serverErrorObjectA(doc.body.innerHTML, true);
 
                     if (phpErrors.length) {
-                        var err = me.errorExplorer(phpErrors);
+                        var err = Indi.serverErrorStringA(phpErrors);
                         success = false;
 
                         // Write php-errors to the console, additionally
@@ -120,10 +120,10 @@ Ext.override(Ext.data.Connection, {
         success = result.success;
 
         if (success) {
-            phpErrors = me.phpErrors(request.xhr.responseText);
+            phpErrors = Indi.serverErrorObjectA(request.xhr.responseText);
             if (phpErrors.length) {
                 success = false;
-                var err = me.errorExplorer(phpErrors);
+                var err = Indi.serverErrorStringA(phpErrors);
 
                 // Write php-errors to the console, additionally
                 if (console && (console.log || console.error))
@@ -199,53 +199,6 @@ Ext.override(Ext.data.Connection, {
         Ext.callback(options.callback, options.scope, [options, success, response]);
         delete me.requests[request.id];
         return response;
-    },
-
-    /**
-     * Detect error messages, encapsulated with <error/> tag, within the raw responseText
-     *
-     * @param rt Response text, for trying to find errors in
-     * @return {Array} Found errors
-     */
-    phpErrors: function(rt, entitiesEncoded){
-
-        // If response text is empty - return false
-        if (!rt.length) return ['Empty response'];
-        
-        // If `entitiesEncoded` arg is `true`, we decode back htmlentities
-        if (entitiesEncoded) rt = rt.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-
-        // Define variables
-        var errorA = [], errorI;
-
-        // Find an parse errors
-        Indi.fly('<response>'+rt+'</response>').select('error').each(function(item){
-            if (errorI = Ext.JSON.decode(item.getHTML(), true)) errorA.push(errorI);
-        });
-
-        // Return errors
-        return errorA;
-    },
-
-    /**
-     * Builds a string representation of a given errors, suitable for use as Ext.MessageBox contents
-     *
-     * @param errorOA
-     * @param asStringsArray
-     * @return {Array}
-     */
-    errorExplorer: function(errorOA, asStringsArray) {
-
-        // Define auxilliary variables
-        var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query', 3: 'MYSQL PDO'}, type;
-
-        // Convert each error message object to a string
-        for (var i = 0; i < errorOA.length; i++)
-            errorSA.push(((type = typeO[errorOA[i].code]) ? type + ': ' : '') + errorOA[i].text + ' at ' +
-                errorOA[i].file + ' on line ' + errorOA[i].line);
-
-        // Return error strings array
-        return errorSA;
     }
 });
 
@@ -254,8 +207,16 @@ Ext.override(Ext.Msg, {
     jflushFn: 'show',
     msgCt: null,
     side: function(cfg){
-        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
-        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default msg"><p>' + cfg.msg + '</p></div>', true);
-        m.hide().slideIn('b').fadeOut({delay: 5000, remove: true});
+        if (Ext.isString(cfg) && !cfg.length) return;
+        if (Ext.isObject(cfg) && (!cfg.body || !cfg.body.length)) return;
+        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'i-notice-div'}, true);
+        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default i-notice">' +
+            '<img src="'+Indi.std+'/i/admin/btn-icon-close-side.png" class="i-notice-close">' +
+            (Ext.isObject(cfg) && cfg.header ? '<h1>' + cfg.header + '</h1>' : '') +
+            '<p>' + (Ext.isString(cfg) ? cfg : cfg.body) + '</p>' +
+        '</div>', true);
+        m.down('.i-notice-close').on('click', function(e, dom){
+            Ext.get(dom).up('.i-notice').fadeOut({remove: true});
+        });
     }
 });

@@ -890,12 +890,28 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // attribute is set depending on 'found' property existence in response json
                 $unsetFoundRows = true;
             }
-            // Fetch results
+
+            // If $selected arg is a keyword
             if ($selectedTypeIsKeyword) {
+
+                // Append additional ORDER clause, for grouping
+                if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                        $order = array($groupByFieldOrder, $order);
+
+                // Fetch results
                 $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
+
+            // Else
             } else {
 
+                // Append order direction
                 if (!is_array($order)) $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                // Append additional ORDER clause, for grouping
+                if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                        $order = array($groupByFieldOrder, $order);
 
                 if (is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
@@ -1010,6 +1026,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if (!$selectedTypeIsKeyword && is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
                 }
 
+                // Append additional ORDER clause, for grouping
+                if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                        $order = array($groupByFieldOrder, $order);
+
                 // Fetch raw combo data
                 $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page, $offset);
 
@@ -1044,6 +1065,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // Adjust WHERE clause so it surely match consistence values
                     if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_get_arg(4))) 
                         $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
+
+                    // Append additional ORDER clause, for grouping
+                    if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                        if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                            $order = array($groupByFieldOrder, $order);
 
                     // Fetch raw combo data
                     $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page + 1);
@@ -1089,7 +1115,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Get groups by ids
                 $groupByRs = $groupByFieldEntityM->fetchAll(
-                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")',
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '") ASC'
                 );
 
                 // Set key prop
@@ -1125,7 +1152,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($info['style']) $system['color'] = $info['color'];
 
                 // Setup primary option data
-                $groupByOptions[$groupByR->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+                $groupByOptions[] = array(
+                    'id' => $groupByR->$keyProperty,
+                    'title' => usubstr($info['title'], 50),
+                    'system' => $system
+                );
             }
 
             $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);
@@ -1692,7 +1723,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // is or should be stored under $alias key within $this->_nested array, or under $table key otherwise.
         // This is useful in cases when we need to deal with nested rowsets, got from same database table, but
         // with different fetch params, such as WHERE, ORDER, LIMIT clauses, etc.
-        $key = $alias ? $alias : $table;
+        $key = $alias ?: $table;
 
         // If needed nested rowset is already exists within $this->_nested array, and it shouldn't be refreshed
         if (array_key_exists($key, $this->_nested) && !$fresh) {
@@ -4377,7 +4408,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $field
      * @param $nested
      */
-    public function keys2nested($field, $nested) {
+    public function keys2nested($field, $nested, $ctor = array()) {
 
         // If $field field's value was not modified
         if (!$this->affected($field)) return;
@@ -4394,13 +4425,20 @@ class Indi_Db_Table_Row implements ArrayAccess
         $connector = Indi::model($this->field($field)->relation)->table() . 'Id';
 
         // Remove nested rows, having keys that were removed from comma-separated list within $field-prop value
-        if ($del) $this->nested($nested)->select($del, $connector)->delete();
+        if ($del) {
+
+            // Remove certain nested entries from database
+            $this->nested($nested)->select($del, $connector)->delete();
+
+            // Remove certain nested entries from $this->_nested[..]
+            $this->nested($nested)->exclude($del, $connector);
+        }
 
         // Create and append nested rows, having keys
-        foreach ($new as $id) Indi::model($nested)->createRow(array(
+        foreach ($new as $id) Indi::model($nested)->createRow(array_merge(array(
             $this->table() . 'Id' => $this->id,
             $connector => $id
-        ), true)->save();
+        ), $ctor), true)->save();
     }
 
     /**
@@ -4464,5 +4502,34 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Return *_Row instance itself
             return $this;
         }
+    }
+
+    /**
+     * Build a string representation of a date and time in special format
+     *
+     * @param $dateField
+     * @param string $timeIdField
+     * @return string
+     */
+    public function when($dateField, $timeIdField = '') {
+        if (func_num_args() == 1) return when($this->$dateField);
+        return when($this->$dateField, $this->foreign($timeIdField)->title);
+    }
+
+    /**
+     * Get a substring of a $prop prop's current value
+     *
+     * @param $prop
+     * @param int $length
+     * @param bool $hellip
+     * @return string|bool
+     */
+    public function substr($prop, $length = 100, $hellip = true) {
+
+        // Check that current value of $this->$prop is either a string or a number
+        if (!is_string($this->$prop) && !is_numeric($this->$prop)) return false;
+
+        // Return substring
+        return usubstr($this->$prop, $length, $hellip);
     }
 }
