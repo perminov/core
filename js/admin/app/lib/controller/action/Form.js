@@ -110,9 +110,6 @@ Ext.define('Indi.lib.controller.action.Form', {
             },
             actionfailed: function(form, action) {
 
-                // Handle the failure by a common way
-                Indi.ajaxFailure(action.response, form);
-
                 // Reset value of the 'ID' master toolbar item to the last valid value
                 var idCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'id');
                 if (idCmp) idCmp.setValue(idCmp.lastValidValue);

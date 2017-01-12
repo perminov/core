@@ -470,14 +470,27 @@ Ext.define('Indi', {
         },
 
         /**
-         * Common function for handling 'mismatch' - failures
+         * Common function for handling ajax/iframe responses
+         * It detects <error>...</error> elements in responseText prop of `response` arg,
+         * show them along with trimming them from responseText. It also detects whether
+         * the trimmed responseText can be decoded into JSON, and if so, does it have
+         * `mismatch`, `confirm` and `success` props and if so - handle them certain ways
+         * and return `success` prop that can be undefined, null, boolean or other value
          *
          * @param response
+         * @return {Boolean}
          */
-        ajaxFailure: function(response, arg2) {
-            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg, form = arg2._fields ? arg2 : null, trigger,
+        parseResponse: function(response, arg2) {
+            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg,
+                form = arg2 && arg2.scope && arg2.scope.form ? arg2.scope.form : null, trigger,
                 certainFieldMsg, cmp, seoA = Indi.serverErrorObjectA(response.responseText), sesA,
-                logger = console && (console.log || console.error), boxA = [];
+                logger = console && (console.log || console.error), boxA = [], urlOwner = form || response.request.options;
+
+            // Remove 'answer' param, if it exists within url
+            urlOwner.url = urlOwner.url.replace(/\banswer=(ok|no|cancel)/, '');
+
+            // Hide loadmask
+            if (Indi.loadmask) Indi.loadmask.hide();
 
             // Try to detect error messages, wrapped in <error/> tag, within responseText
             if (seoA.length) {
@@ -506,12 +519,12 @@ Ext.define('Indi', {
                 // Show box
                 if (boxA.length) Ext.Msg.show(boxA[0]);
 
-                // Return
-                return;
+                // Return success as true or false
+                return boxA.length ? false : true;
             }
 
             // The the info about invalid fields from the response, and mark the as invalid
-            if (Ext.isObject(json.mismatch)) {
+            if ('mismatch' in json && Ext.isObject(json.mismatch)) {
 
                 // Shortcut to json.mismatch
                 mismatch = json.mismatch;
@@ -578,26 +591,56 @@ Ext.define('Indi', {
                     });
                 }
 
-            // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
-            } else if (json.throwOutMsg) top.window.location.reload();
-
-            // Else if `msg` prop is set - show it within Ext.MessageBox
-            else if (json.msg) boxA.push({
-                title: Indi.lang.I_ERROR,
+            // Else if `confirm` prop is set - show it within Ext.MessageBox
+            } else if ('confirm' in json) boxA.push({
+                title: Indi.lang.I_MSG,
                 msg: json.msg,
-                buttons: Ext.Msg.OK,
-                icon: Ext.Msg.WARNING,
-                modal: true
-            });
+                buttons: Ext.Msg.OKCANCEL,
+                icon: Ext.Msg.QUESTION,
+                modal: true,
+                fn: function(answer) {
+
+                    // Append new answer param
+                    urlOwner.url = urlOwner.url.split('?')[0] + '?answer=' + answer
+                        + (urlOwner.url.split('?')[1] ? '&' + urlOwner.url.split('?')[1] : '');
+
+                    // If answer is 'ok' show load mask
+                    if (answer == 'ok' && Indi.loadmask) Indi.loadmask.show();
+
+                    // Make new request
+                    if (form) form.owner.submit({
+                        submitEmptyText: false,
+                        dirtyOnly: true
+                    }); else Ext.Ajax.request(response.request.options);
+                }
+
+            // Else if `success` prop is set
+            }); else if ('success' in json && 'msg' in json) {
+
+                // If `msg` prop is set - show it within Ext.MessageBox
+                boxA.push({
+                    title: Indi.lang[json.success ? 'I_MSG' : 'I_ERROR'],
+                    msg: json.msg,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.Msg[json.success ? 'INFO' : 'WARNING'],
+                    modal: true
+                });
+            }
+
+            // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
+            else if (json.throwOutMsg) top.window.location.reload();
 
             // If no boxes should be shown - return
-            if (!boxA.length) return;
+            if (!boxA.length) return json.success;
 
             // Ensure second box will be shown after first box closed
             if (boxA[1]) boxA[0].fn = function() { Ext.Msg.show(boxA[1]); }
 
             // Show first box
             Ext.Msg.show(boxA[0]);
+
+            // Return
+            return json.success;
         },
 
         /**
