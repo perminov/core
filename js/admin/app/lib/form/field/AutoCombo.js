@@ -70,8 +70,7 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
                     if (params.satellite && params.satellite.length && params.satellite != '0')
                         me.fireEvent('refreshchildren', me, parseInt(json.found));
                 }
-            },
-            failure: Indi.ajaxFailure
+            }
         });
     },
 
