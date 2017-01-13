@@ -337,6 +337,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             })
         }, me.store);
 
+        // Set group field
+        if (me.ti().section.groupBy && me.ti().fields.r(me.ti().section.groupBy))
+            me.store.groupField = me.ti().fields.r(me.ti().section.groupBy).alias;
+
         // Create store
         Ext.create('Ext.data.Store', me.store);
 
