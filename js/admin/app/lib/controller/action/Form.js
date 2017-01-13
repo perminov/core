@@ -109,78 +109,9 @@ Ext.define('Indi.lib.controller.action.Form', {
                 Indi.load(uri, cfg);
             },
             actionfailed: function(form, action) {
-                var cmp, certainFieldMsg, wholeFormMsg = [], mismatch, errorByFieldO, trigger, msg;
 
-                // Parse response text
-                action.result = Ext.JSON.decode(action.response.responseText, true);
-
-                // The the info about invalid fields from the response, and mark the as invalid
-                if (Ext.isObject(action.result) && Ext.isObject(action.result.mismatch)) {
-
-                    // Shortcut to action.result.mismatch
-                    mismatch = action.result.mismatch;
-
-                    // Error messages storage
-                    errorByFieldO = mismatch.errors;
-
-                    // Detect are error related to current form fields, or related to fields of some other entry,
-                    // that is set up to be automatically updated (as a trigger operation, queuing after the primary one)
-                    trigger = mismatch.entity.title != this.ctx().ti().model.title || mismatch.entity.entry != this.ctx().ti().row.id;
-
-                    Object.keys(errorByFieldO).forEach(function(i){
-
-                        // If mismatch key starts with a '#' symbol, we assume that message, assigned
-                        // under such key - is not related to any certain field within form, so we
-                        // collect al such messages for them to be bit later displayed within Ext.MessageBox
-                        if (i.substring(0, 1) == '#' || trigger) wholeFormMsg.push(errorByFieldO[i]);
-
-                        // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
-                        // under such key - is related to some certain field within form, so we get that field's
-                        // component and mark it as invalid
-                        else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
-
-                            // Get the mismatch message
-                            certainFieldMsg = errorByFieldO[i];
-
-                            // If mismatch message is a string
-                            if (Ext.isString(certainFieldMsg))
-
-                                // Cut off field title mention from message
-                                certainFieldMsg = certainFieldMsg.replace('"' + cmp.fieldLabel + '"', '').replace(/""/g, '');
-
-                            // Mark field as invalid
-                            cmp.markInvalid(certainFieldMsg);
-
-                            // If field is currently hidden - we duplicate erroк message for it to be shown within
-                            // Ext.MessageBox, additionally
-                            if (cmp.hidden) wholeFormMsg.push(errorByFieldO[i])
-
-                        // Else mismatch message is related to field, that currently, for some reason, is not available
-                        // within the form - push that message to the wholeFormMsg array
-                        } else wholeFormMsg.push(errorByFieldO[i]);
-                    });
-
-                    // If we collected at least one error message, that is related to the whole form rather than
-                    // some certain field - use an Ext.MessageBox to display it
-                    if (wholeFormMsg.length) {
-
-                        msg = (wholeFormMsg.length > 1 || trigger ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; ');
-
-                        // If this is a mismatch, caused by background php-triggers
-                        if (trigger) msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
-                            + mismatch.entity.title + '"'
-                            + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                            + ' - выдала следующие ошибки: <br><br>' + msg;
-
-                        // Show message box
-                        Ext.MessageBox.show({
-                            title: Indi.lang.I_ERROR,
-                            msg: msg,
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.ERROR
-                        });
-                    }
-                }
+                // Handle the failure by a common way
+                Indi.ajaxFailure(action.response, form);
 
                 // Reset value of the 'ID' master toolbar item to the last valid value
                 var idCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'id');

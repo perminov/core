@@ -890,12 +890,28 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // attribute is set depending on 'found' property existence in response json
                 $unsetFoundRows = true;
             }
-            // Fetch results
+
+            // If $selected arg is a keyword
             if ($selectedTypeIsKeyword) {
+
+                // Append additional ORDER clause, for grouping
+                if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                        $order = array($groupByFieldOrder, $order);
+
+                // Fetch results
                 $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, $keyword);
+
+            // Else
             } else {
 
+                // Append order direction
                 if (!is_array($order)) $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
+
+                // Append additional ORDER clause, for grouping
+                if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                        $order = array($groupByFieldOrder, $order);
 
                 if (is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
@@ -1010,6 +1026,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if (!$selectedTypeIsKeyword && is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
                 }
 
+                // Append additional ORDER clause, for grouping
+                if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                        $order = array($groupByFieldOrder, $order);
+
                 // Fetch raw combo data
                 $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page, $offset);
 
@@ -1044,6 +1065,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // Adjust WHERE clause so it surely match consistence values
                     if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_get_arg(4))) 
                         $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
+
+                    // Append additional ORDER clause, for grouping
+                    if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
+                        if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                            $order = array($groupByFieldOrder, $order);
 
                     // Fetch raw combo data
                     $dataRs = $relatedM->fetchAll($where, $order, self::$comboOptionsVisibleCount, $page + 1);
@@ -1089,7 +1115,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Get groups by ids
                 $groupByRs = $groupByFieldEntityM->fetchAll(
-                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")'
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '")',
+                    'FIND_IN_SET(`id`, "' . implode(',', array_keys($distinctGroupByFieldValues)) . '") ASC'
                 );
 
                 // Set key prop
@@ -1125,7 +1152,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($info['style']) $system['color'] = $info['color'];
 
                 // Setup primary option data
-                $groupByOptions[$groupByR->$keyProperty] = array('title' => usubstr($info['title'], 50), 'system' => $system);
+                $groupByOptions[] = array(
+                    'id' => $groupByR->$keyProperty,
+                    'title' => usubstr($info['title'], 50),
+                    'system' => $system
+                );
             }
 
             $dataRs->optgroup = array('by' => $groupByFieldR->alias, 'groups' => $groupByOptions);
