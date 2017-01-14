@@ -1188,7 +1188,7 @@ function xml2ar($xml, $options = array()) {
     foreach ($namespaces as $prefix => $namespace) {
         foreach ($xml->children($namespace) as $childXml) {
             //recurse into child nodes
-            $childArray = xmlToArray($childXml, $options);
+            $childArray = xml2ar($childXml, $options);
             list($childTagName, $childProperties) = each($childArray);
 
             //replace characters in tag name
