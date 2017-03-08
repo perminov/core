@@ -169,7 +169,7 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
             // Setup an info about selected value
-            if ($key) $selected = array(
+            if (strlen($key)) $selected = array(
                 'title' => $options[$key]['title'],
                 'value' => $key
             );
