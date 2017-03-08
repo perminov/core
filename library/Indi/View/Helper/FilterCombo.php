@@ -159,7 +159,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
     public function getDefaultValue() {
         $gotFromScope = Indi::trail()->scope->filter($this->field->alias);
 
-        if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '')) {
+        if ($gotFromScope || ($this->field->columnTypeId == 12 && $gotFromScope != '' && $gotFromScope !== array())) {
             if ($this->isMultiSelect())
                 if(is_array($gotFromScope))
                     $gotFromScope = implode(',', $gotFromScope);
