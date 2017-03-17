@@ -12,6 +12,9 @@
     <?if (Indi::ini('gmap')->key){?>
     <script src="https://maps.googleapis.com/maps/api/js?key=<?=Indi::ini('gmap')->key?>"></script>
     <?}?>
+    <?if (Indi::ini('ymap')->mode){?>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+    <?}?>
     <?if (Indi::ini('ws')->enabled){?>
     <script type="text/javascript" src="/js/admin/sockjs-0.3.js"></script>
     <?}?>
