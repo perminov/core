@@ -914,7 +914,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 wrp = Ext.getCmp(me.panel.id), sth = wrp.up('[isSouth]'), sthItm = wrp.up('[isSouthItem]');
 
             // If current wrapper is placed within a tab, and we gonna go to same-type wrapper
-            if (isTab && gotoO.section == me.ti().section.alias && gotoO.action == 'form') {
+            if (isTab && gotoO.section == me.ti().section.alias && (gotoO.action == 'form' || gotoO.action == 'print')) {
 
                 // If tab, that we are gonna goto - is already exists
                 if (sthItm.name != gotoO.id && (found = sth.down('[isSouthItem][name="' + gotoO.id + '"]'))) {
