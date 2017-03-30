@@ -154,6 +154,9 @@ Ext.define('Indi.lib.controller.action.Print', {
         // If src is not a string, or is an empty string - return
         if (!Ext.isString(src) || !src.length) return false;
 
+        // If we gonna embed a pdf-file
+        if (src.match(/\.pdf$/)) me.row.bodyPadding = 0;
+
         // Build iframe markup
         xcfg.html = '<iframe name="'+ dcfg.id + '" src="' + src +'" frameborder="no" width="100%" height="100%"></iframe>'
 
