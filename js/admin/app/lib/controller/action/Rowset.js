@@ -1292,11 +1292,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             else south.add(me.southItemIDefault({
                 id: row.get('id'),
                 title: row.raw._system.title,
-                aix: aix
+                aix: aix,
+                action: action.alias
             }));
 
         // Else proceed standard behaviour
         } else me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn);
+    },
+
+    /**
+     * Default inner handler for print-action - same as for form-action
+     */
+    panelDockedInner$Actions$Print_InnerHandler: function() {
+        this.panelDockedInner$Actions$Form_InnerHandler.apply(this, arguments);
     },
 
     /**
@@ -1827,7 +1835,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             items: [{
                 xtype: 'actiontabrow',
                 id: 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
-                load: '/' + section.alias + '/form'
+                load: '/' + section.alias + '/' + (src.action || 'form')
                     + (parseInt(src.id) ? '/id/' + src.id : '')
                     + '/ph/' + scope.hash + '/'
                     + (parseInt(src.id) ? 'aix/' + src.aix + '/' : '')

@@ -824,7 +824,8 @@ Ext.define('Indi.lib.controller.action.Form', {
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
             btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
             cbAutosave = Ext.getCmp(me.panelDockedInnerBid() + 'autosave'),
-            formCmp = Ext.getCmp(me.bid() + '-row'), gotoO, isTab = Ext.getCmp(me.panel.id).isTab, found;
+            formCmp = Ext.getCmp(me.bid() + '-row'), gotoO, isTab = Ext.getCmp(me.panel.id).isTab, found,
+            cfg = cfg || {};
 
         // If `noGoto` flag is turned on, or previous save request is not yet completed - return
         if (me.noGoto || formCmp.getForm().isLoading) return;
