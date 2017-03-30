@@ -1802,7 +1802,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * South-panel config
      */
     south: {
-        xtype: 'rowsetactionsouth'
+        xtype: 'rowsetactionsouth',
+        maxTabs: 0
     },
 
     /**
