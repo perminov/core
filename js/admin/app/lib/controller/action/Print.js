@@ -146,7 +146,7 @@ Ext.define('Indi.lib.controller.action.Print', {
         if (!item$) return false;
 
         // Get iframe src, either from item$'s `field` prop, if item$ is an object
-        if (Ext.isObject(item$) && item$.field) src = me.ti().row[item$.field];
+        if (Ext.isObject(item$) && item$.field) src = Indi.std + me.ti().row[item$.field];
 
         // Or from item$ itself, if it is a string
         else if (Ext.isString(item$)) src = item$;
