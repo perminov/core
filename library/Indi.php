@@ -75,7 +75,7 @@ class Indi {
         'htmleventattr' => 'on[a-zA-Z]+\s*=\s*"[^"]+"',
         'php' => '/<\?/',
         'phpsplit' => '/(<\?|\?>)/',
-        'int11' => '/^(-?[1-9][0-9]{0,9}|0)$/',
+        'int11' => '/^-?[1-9][0-9]{0,9}|0$/',
         'int11lz' => '/^-?[0-9]{1,10}$/',
         'int11list' => '/^[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*$/',
         'bool' => '/^(0|1)$/',
@@ -1466,23 +1466,27 @@ class Indi {
 
 
     /**
-     * Call preg_match() using pattern, stored within Indi::$_rex array under $rex key and using given $subject
+     * Call preg_match() using pattern, stored within Indi::$_rex array under $rex key and using given $subject.
+     * If no pre-defined pattern found in Indi::$_rex under $rex key, function will assume that $rex is a regular
+     * expression.
      *
      * @static
      * @param $rex
      * @param $subject
-     * @return array|null
+     * @param null $sub If regular expression contains submask(s), $sub arg can be used as
+     *                  a way to specify a submask index, that you need to pick the value at
+     * @return array|null|string
      */
-    public static function rexm($rex, $subject){
+    public static function rexm($rex, $subject, $sub = null){
 
         // Check that self::$_rex array has a value under $alias key
-        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+        if ($_ = Indi::rex($rex)) $rex = $_;
 
         // Match
         preg_match($rex, $subject, $found);
 
         // Return
-        return $found;
+        return $found ? ($sub ? $found[$sub] : $found) : $found;
     }
 
     /**
