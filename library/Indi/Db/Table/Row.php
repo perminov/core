@@ -4544,4 +4544,16 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return substring
         return usubstr($this->$prop, $length, $hellip);
     }
+
+    /**
+     * Build the string that will be used as entry's title,
+     * involved in the process of building the filename, that downloaded file will have.
+     * Here it is equal to entry's actual title, but this can be altered in child classes
+     *
+     * @param null $fileProp
+     * @return string
+     */
+    public function dftitle($fileProp = null) {
+        return $this->title();
+    }
 }
