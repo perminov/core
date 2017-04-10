@@ -1540,6 +1540,9 @@ Ext.define('Indi.lib.form.field.Combo', {
     keyUpHandler: function (event) {
         var me = this, eo = Ext.EventObject, k = eo.getKey();
 
+        // Ignore keyup event for ctrl-keys, for cases of ctrl+v, etc
+        if (event.keyCode == 17) return;
+
         // If combo is read-only - return
         if (me.readOnly) return;
         
