@@ -30,6 +30,10 @@ Ext.define('Indi.lib.view.action.south.Rowset', {
 
             // Show tabpanel and set added tab as active
             container.show().setActiveTab(component);
+
+            // If `maxTabs` config is set, and current count of tabs exceeds the limit
+            if (me.maxTabs) while (container.items.getCount() > me.maxTabs)
+                container.remove(container.items.getAt(0));
         });
 
         // Provide rowset panel's paging toolbar to be re-added back once there is no more tabs left within tabpanel,
