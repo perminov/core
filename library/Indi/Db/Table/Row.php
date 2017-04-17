@@ -242,6 +242,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $mismatch = array(
                 'entity' => array(
                     'title' => $this->model()->title(),
+                    'table' => $this->model()->table(),
                     'entry' => $this->id
                 ),
                 'errors' => $this->_mismatch,
@@ -3590,19 +3591,26 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Get some basic info about uploaded file
+     * Usages: 
+     *   ->file($field) - get some basic info about file, uploaded within certain field
+     *   ->file($field, '/path/to/new.file') - Replace current file with any another one. 
+     *    Consider that path to new file should start with '/'. 
+     *    If you want to pass an URL as a 2nd arg, you should use ->wget($field, $url) method instead
+     *    If field's settings asume resized copies should be created - they will be created if new file is an image
+     *  ->file($field, $copy) - get info about one of image's copies
      *
      * @param $field
      * @param $src
+     * @param $raw
      * @return array
      */
-    public function file($field, $src = false) {
+    public function file($field, $src = false, $raw = null) {
 
         // If given field alias - is not an alias of one of filefields - return
         if (!$this->model()->getFileFields($field)) return;
 
-        // If $src arg is given
-        if ($src) {
+        // If $src arg is given, and $src value starts from '/'
+        if ($src && (preg_match('~^/~', $src) || func_num_args() == 3)) {
 
             // If value, got by $this->model()->dir() call, is not a directory name
             if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
@@ -3614,24 +3622,28 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
             }
 
-            // Get absolute pathto file
-            $abs = DOC . STD . $src;
+            // If $raw arg is given, we assume that $src arg is an extension, else
+            if (func_num_args() == 3) $ext = $src; else {
 
-            // If $src is not an existing file
-            if (!is_file($abs)) {
+                // Get absolute pathto file
+                $abs = DOC . STD . $src;
 
-                // Assign an error message
-                $this->_mismatch[$field] = 'Filename "' . $src . '" is not a file';
+                // If $src is not an existing file
+                if (!is_file($abs)) {
+
+                    // Assign an error message
+                    $this->_mismatch[$field] = 'Filename "' . $src . '" is not a file';
+                }
+
+                // Get extension
+                $ext = pathinfo($src, PATHINFO_EXTENSION);
             }
-
-            // Get extension
-            $ext = pathinfo($src, PATHINFO_EXTENSION);
 
             // Build the full filename into $dst variable
             $dst = $dir . $this->id . '_' . $field . '.' . $ext;
 
-            // Copy the remote file
-            copy($abs, $dst);
+            // Copy the remote file or create new file with contents, specified by $raw arg
+            func_num_args() == 3 ? file_put_contents($dst, $raw) : copy($abs, $dst);
 
             // Change access rights
             chmod($dst, 0666);
@@ -3648,7 +3660,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // If there is currently no file uploaded - return
-        if (!($abs = $this->abs($field))) return;
+        if (!($abs = $this->abs($field, preg_match('~^/~', $src) ? '' : $src))) return;
 
         // Get the extension
         $ext = array_pop(explode('.', $abs));
@@ -4531,5 +4543,17 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return substring
         return usubstr($this->$prop, $length, $hellip);
+    }
+
+    /**
+     * Build the string that will be used as entry's title,
+     * involved in the process of building the filename, that downloaded file will have.
+     * Here it is equal to entry's actual title, but this can be altered in child classes
+     *
+     * @param null $fileProp
+     * @return string
+     */
+    public function dftitle($fileProp = null) {
+        return $this->title();
     }
 }

@@ -267,7 +267,7 @@ class Indi_Controller {
                 $filterSearchFieldValue = current($searchOnField);
 
                 // Check $filterSearchFieldAlias
-                if (!preg_match('/^[a-zA-Z\-0-9]+$/', $filterSearchFieldAlias)) continue;
+                if (!preg_match('/^[a-zA-Z\-0-9_]+$/', $filterSearchFieldAlias)) continue;
                 
                 // Get a field row object, that is related to current filter field alias. We need to do it because there
                 // can be a case then filter field alias can be not the same as any field's alias - if filter is working

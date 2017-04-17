@@ -57,10 +57,13 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             'foreign' => 'actionId'
         ));
 
-        // Exclude inaccessbile subsections from subsections list
+        // Collect inaccessbile subsections ids from subsections list
         foreach ($sectionR->nested('section') as $subsection)
             if (!$subsection->nested('section2action')->count())
-                $this->sections->exclude($subsection->id);
+                $exclude[] = $subsection->id;
+
+        // Exclude inaccessible sections
+        $this->sections->exclude($exclude);
 
         // If current trail item will be a first item
         if (count(Indi_Trail_Admin::$items) == 0) {
