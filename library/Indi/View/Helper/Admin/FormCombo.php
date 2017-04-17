@@ -169,10 +169,17 @@ class Indi_View_Helper_Admin_FormCombo {
             }
 
             // Setup an info about selected value
-            if ($key) $selected = array(
-                'title' => $options[$key]['title'],
-                'value' => $key
-            );
+            if (strlen($key)) {
+                $selected = array(
+                    'title' => $options[$key]['title'],
+                    'value' => $key
+                ); 
+            } else {
+                $selected = array(
+                    'title' => null,
+                    'value' => null
+                );            
+            }
 
         // Else if current field column type is ENUM or SET, and current row have no selected value, we use first
         // option to get default info about what title should be displayed in input keyword field and what value

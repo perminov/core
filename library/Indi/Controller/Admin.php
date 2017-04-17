@@ -432,10 +432,19 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @return string
      */
     public function alternateWHERE($trailStepsUp = 0) {
-        if (Indi::admin()->alternate && $alternateFieldR = Indi::trail($trailStepsUp)->model->fields(Indi::admin()->alternate . 'Id'))
+
+        // If current admin is not alternate - return
+        if (!Indi::admin()->alternate) return;
+
+        // If one of model's fields relates to alternate
+        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields(Indi::admin()->alternate . 'Id'))
             return $alternateFieldR->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . Indi::admin()->alternate . 'Id' . '`)'
                 : '`' . Indi::admin()->alternate . 'Id' . '` = "' . Indi::admin()->id . '"';
+
+        // Else if model itself is the same as alternate
+        else if (Indi::trail($trailStepsUp)->model->table() == Indi::admin()->alternate)
+            return '`id` = "' . Indi::admin()->id . '"';
     }
 
     /**
@@ -1879,7 +1888,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
 
             // Setup the left menu
-            $menu = Section::menu(); $this->adjustMenu($menu); Indi::view()->menu = $menu;
+            $menu = Section::menu(); $this->menuNotices($menu); $this->adjustMenu($menu); Indi::view()->menu = $menu;
 
             // Setup info about current logged in cms user
             Indi::view()->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
@@ -2524,5 +2533,64 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function adjustMenu(&$menu) {
 
+    }
+
+    /**
+     * @param $menu
+     * @return mixed|void
+     */
+    public function menuNotices(&$menu) {
+
+        // Get array of ids of 1st-level sections
+        $sectionIdA = array_column($menu, 'id');
+
+        // If no 'Notice' entity found - return
+        if (!Indi::model('Notice', true)) return;
+
+        // Get notices
+        $_noticeRs = Indi::model('Notice')->fetchAll(array(
+            'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
+            'CONCAT(",", `sectionId`, ",") REGEXP ",(' . im($sectionIdA, '|') . '),"',
+            '`toggle` = "y"'
+        ));
+
+        // If no notices - return
+        if (!$_noticeRs->count()) return;
+
+        // Qtys array, containing quantities of rows, matched for each notice, per each section/menu-item
+        $qtyA = array();
+
+        // Foreach notice
+        foreach ($_noticeRs as $_noticeR) {
+
+            // Get qty
+            $_noticeR->qty = Indi::db()->query('
+                SELECT COUNT(`id`)
+                FROM `' . Indi::model($_noticeR->entityId)->table().'`
+                WHERE ' . $_noticeR->compiled('matchSql')
+            )->fetchColumn();
+
+            // Collect qtys for each sections
+            foreach (ar($_noticeR->sectionId) as $sectionId)
+                $qtyA[$sectionId][] = array(
+                    'qty' => $_noticeR->qty ?: 0,
+                    'id' => $_noticeR->id,
+                    'bg' => $_noticeR->colorHex('bg')
+                );
+        }
+
+        // Foreach menu item
+        foreach ($menu as &$item) {
+
+            // If $item relates to 0-level section, or is not linked to some entity - return
+            if (!$qtyA[$item['id']]) continue;
+
+            // Append each qty to menu item's title
+            foreach ($qtyA[$item['id']] as $qtyI)
+                $item['title'] .= '<span id="menu-qty-' . $qtyI['id']
+                    . '" style="background: ' . $qtyI['bg'] . ';'
+                    . ($qtyI['qty'] ? '' : 'display: none')
+                    . '" class="menu-qty">' . $qtyI['qty'] . '</span>';
+        }
     }
 }

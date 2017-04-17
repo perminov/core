@@ -99,6 +99,7 @@ $js = array(
 
 // If google maps API key defined - append GmapPanel.js
 if (Indi::ini('gmap')->key) $js[] = '/library/extjs4/examples/ux/GMapPanel.js';
+if (Indi::ini('ymap')->mode) $js[] = '/library/extjs4/examples/ux/YMapPanel.js';
 
 // Array of css files to be imploded
 $css = array(

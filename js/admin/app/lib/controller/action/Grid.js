@@ -101,6 +101,36 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     if (view.cellOverflow) {
                         Ext.get(td).removeCls('i-overflow');
                     }
+                },
+                cellclick: function(gridview, tdDom, cellIndex, record, trDom, rowIndex, e) {
+                    var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
+                        dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
+                        enumset = field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
+                        canSave = me.ti().actions.r('save', 'alias'), cb;
+
+                    // If 'Save' action is accessible, and column is linked to 'enumset' field
+                    // and that field is not in the list of disabled fields - provide some kind
+                    // of cell-editor functionality, so enumset values can be switched from one to another
+                    if (!col.initialConfig.editor && canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
+                        && field.storeRelationAbility == 'one'
+                        && (col.allowCycle !== false || enumset.length <= 2)) {
+
+                        s = me.getStore();
+                        value = record.key(dataIndex);
+                        valueItem = enumset.r(value, 'alias');
+                        enumset.forEach(function(item, i){
+                            if (item.alias == value) valueItemIndex = i;
+                            if (item.title.match(/i-color-box/)) cb = true;
+                        });
+                        if (!cb) return;
+                        valueItemIndex ++;
+                        valueItemIndex = valueItemIndex > enumset.length - 1 ? 0 : valueItemIndex;
+                        valueItem = enumset[valueItemIndex];
+                        value = valueItem.alias;
+                        record.key(dataIndex, value);
+                        record.set(dataIndex, valueItem.title.replace(/(<\/span>).*$/, '\1'));
+                        me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti());
+                    }
                 }
             }
         },
@@ -168,37 +198,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
             itemclick: function() {
                 if (Ext.EventObject.ctrlKey && !this.multiSelect) {
                     var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
-                }
-            },
-
-            cellclick: function(gridview, tdDom, cellIndex, record, trDom, rowIndex, e) {
-                var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
-                    dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
-                    enumset = field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
-                    canSave = me.ti().actions.r('save', 'alias'), cb;
-
-                // If 'Save' action is accessible, and column is linked to 'enumset' field
-                // and that field is not in the list of disabled fields - provide some kind
-                // of cell-editor functionality, so enumset values can be switched from one to another
-                if (!col.initialConfig.editor && canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
-                    && field.storeRelationAbility == 'one'
-                    && (col.allowCycle !== false || enumset.length <= 2)) {
-
-                    s = me.getStore();
-                    value = record.key(dataIndex);
-                    valueItem = enumset.r(value, 'alias');
-                    enumset.forEach(function(item, i){
-                        if (item.alias == value) valueItemIndex = i;
-                        if (item.title.match(/i-color-box/)) cb = true;
-                    });
-                    if (!cb) return;
-                    valueItemIndex ++;
-                    valueItemIndex = valueItemIndex > enumset.length - 1 ? 0 : valueItemIndex;
-                    valueItem = enumset[valueItemIndex];
-                    value = valueItem.alias;
-                    record.key(dataIndex, value);
-                    record.set(dataIndex, valueItem.title.replace(/(<\/span>).*$/, '\1'));
-                    me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti());
                 }
             }
         }

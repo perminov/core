@@ -1321,11 +1321,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             else south.add(me.southItemIDefault({
                 id: row.get('id'),
                 title: row.raw._system.title,
-                aix: aix
+                aix: aix,
+                action: action.alias
             }));
 
         // Else proceed standard behaviour
         } else me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn);
+    },
+
+    /**
+     * Default inner handler for print-action - same as for form-action
+     */
+    panelDockedInner$Actions$Print_InnerHandler: function() {
+        this.panelDockedInner$Actions$Form_InnerHandler.apply(this, arguments);
     },
 
     /**
@@ -1833,7 +1841,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * South-panel config
      */
     south: {
-        xtype: 'rowsetactionsouth'
+        xtype: 'rowsetactionsouth',
+        maxTabs: 0
     },
 
     /**
@@ -1880,7 +1889,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      */
     southItemIDefault: function(src) {
         var me = this, section = me.ti().section, scope = me.ti().scope,
-            id = 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
+            id = 'i-section-' + section.alias + '-action-' + (src.action || 'form') + '-row-' + src.id + '-wrapper',
             exst = Ext.getCmp(id), exstWin;
 
         // Close the window, containing existing wrapper having same id
@@ -1898,7 +1907,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             items: [{
                 xtype: 'actiontabrow',
                 id: id,
-                load: '/' + section.alias + '/form'
+                load: '/' + section.alias + '/' + (src.action || 'form')
                     + (parseInt(src.id) ? '/id/' + src.id : '')
                     + '/ph/' + scope.hash + '/'
                     + (parseInt(src.id) ? 'aix/' + src.aix + '/' : '')

@@ -70,7 +70,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             }
 
         // Prevent deletion of `section` entries, having current `field` entry as `groupBy`
-        if (Indi::model('Section')->fields('groupBy')->count()
+        if (Indi::model('Section')->fields('groupBy')
             && $sectionRs = Indi::model('Section')->fetchAll('`groupBy` = "' . $this->id . '"'))
             foreach ($sectionRs as $sectionR) {
                 $sectionR->groupBy = 0;
