@@ -144,4 +144,21 @@ class Admin_TemporaryController extends Indi_Controller {
         Indi::wrapCss('/css/admin/indi.all.neptune.css');
         die('ok');
     }*/
+    public function toggleAction() {
+        $fieldRs = Indi::model('Field')->fetchAll('`alias` = "toggle"');
+        $fieldRs->foreign('entityId');
+        $fieldRs->nested('enumset');
+        foreach ($fieldRs as $fieldR) {
+            foreach ($fieldR->nested('enumset') as $enumsetR) {
+                if (preg_match('/i-color-box/', $enumsetR->title)) continue;
+                echo $fieldR->foreign('entityId')->title . ': ' . strip_tags($enumsetR->title);
+                $color = preg_match('/color:\s*([^"\'; ]+)/', $enumsetR->title, $m) ? $m[1] : 'lime';
+                d($color);
+                $enumsetR->title = '<span class="i-color-box" style="background: ' . $color . ';"></span>' . strip_tags($enumsetR->title);
+                $enumsetR->save();
+                echo "\n";
+            }
+        }
+        die('zxc');
+    }
 }
