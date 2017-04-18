@@ -51,6 +51,16 @@ class Indi_Uri_Base {
             array_shift($uri);
         }
 
+        // Check all uri parts for format validity
+        for ($i = 0; $i < count($uri); $i++) if (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/', urldecode($uri[$i]))) {
+
+            // Turn on logging for 'jflush' call, as this may be attack attempt
+            Indi::logging('jflush', true);
+
+            // Flush failure
+            jflush(false, I_URI_ERROR_CHUNK_FORMAT);
+        }
+
         // Setup all other params
         for ($i = 0; $i < count($uri); $i++)
 
