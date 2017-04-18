@@ -46,7 +46,7 @@ Ext.define('Indi.lib.controller.Controller', {
      * @param {Object} scope Object, containing `route`, `plain`, `uri` and `cfg` properties
      */
     dispatch: function(scope) {
-        var me = this, action, actionExtendCmpName, actionCmpName;
+        var me = this, action, actionExtendCmpName, actionCmpName, exst;
 
         // Pre-dispatch
         me.preDispatch(scope);
@@ -94,11 +94,15 @@ Ext.define('Indi.lib.controller.Controller', {
 
         // Build the id for action object
         scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;
+
         if (scope.route.last().row) {
             scope.id += '-row-' + (scope.route.last().row.id || 0);
         } else if (scope.route.last(1) && scope.route.last(1).row) {
             scope.id += '-parentrow-' + scope.route.last(1).row.id;
         }
+
+        // If wrapper already exists for current action - destroy it before re-instantiate
+        if (exst = Ext.getCmp(scope.id + '-wrapper')) exst.getWindow().destroy();
 
         // Create action component instance, related to current action
         Ext.create(actionCmpName, scope);
