@@ -320,16 +320,20 @@ class Indi_Controller {
                         $excelA[$found->alias]['value'] = array($hueFrom, $hueTo);
                         $excelA[$found->alias]['offset'] = $searchOnField['_xlsLabelWidth'];
 
-                        // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
+                    // Else if $found field's control element is 'Check' or 'Combo', we use '=' clause
                     } else if ($found->elementId == 9 || $found->elementId == 23) {
-                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` = "' . str_replace('"', '\"', $filterSearchFieldValue) . '"';
+
+                        // Build WHERE clause for current field
+                        $where[$found->alias] = Indi::db()->sql('`' . $filterSearchFieldAlias . '` = :s', $filterSearchFieldValue);
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue ? I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_YES : I_ACTION_INDEX_FILTER_TOOLBAR_CHECK_NO;
 
-                        // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
+                    // Else if $found field's control element is 'String', we use 'LIKE "%xxx%"' clause
                     } else if ($found->elementId == 1) {
-                        $where[$found->alias] = '`' . $filterSearchFieldAlias . '` LIKE "%' . str_replace('"', '\"', $filterSearchFieldValue) . '%"';
+
+                        // Build WHERE clause for current field
+                        $where[$found->alias] = Indi::db()->sql('`' . $filterSearchFieldAlias . '` LIKE :s', '%' . $filterSearchFieldValue . '%');
 
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
@@ -357,14 +361,13 @@ class Indi_Controller {
                             $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
                         // Use a '>=' or '<=' clause, according to specified range border's type
-                        $where[$found->alias][$matches[2]] = '`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= "' . str_replace('"', '\"', $filterSearchFieldValue) . '"';
+                        $where[$found->alias][$matches[2]] = Indi::db()->sql('`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= :s', $filterSearchFieldValue);
 
-                        // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
+                    // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
 
                         // Use 'MATCH AGAINST' clause
-                        $where[$found->alias] = 'MATCH(`' . $filterSearchFieldAlias . '`) AGAINST("' . str_replace('"', '\"', $filterSearchFieldValue) .
-                            '*" IN BOOLEAN MODE)';
+                        $where[$found->alias] = Indi::db()->sql('MATCH(`' . $filterSearchFieldAlias . '`) AGAINST(:s IN BOOLEAN MODE)', $filterSearchFieldValue . '*');
 
                         // Pick the current filter value and field type to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
@@ -387,9 +390,9 @@ class Indi_Controller {
                     }
 
                     // Set up WHERE clause according to value of $any flag
-                    $where[$found->alias] = $any
-                        ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, "' . $filterSearchFieldValue . '")'
-                        : '`' . $filterSearchFieldAlias . '` = "' . $filterSearchFieldValue . '"';
+                    $where[$found->alias] = Indi::db()->sql($any
+                        ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, :s)'
+                        : '`' . $filterSearchFieldAlias . '` = :s', $filterSearchFieldValue);
 
                     // Pick the current filter value and fieldId (if foreign table name is 'enumset')
                     // or foreign table name, to $excelA
@@ -425,7 +428,7 @@ class Indi_Controller {
 
                     // Fill that array
                     foreach ($filterSearchFieldValue as $filterSearchFieldValueItem)
-                        $fisA[] = 'FIND_IN_SET("' . $filterSearchFieldValueItem . '", `' . $filterSearchFieldAlias . '`)';
+                        $fisA[] = Indi::db()->sql('FIND_IN_SET(:s, `' . $filterSearchFieldAlias . '`)', $filterSearchFieldValueItem);
 
                     // Implode array of FIND_IN_SET clauses with AND, and enclose by round brackets
                     $where[$found->alias] = '(' . implode(' ' . ($any ? 'OR' : 'AND') . ' ', $fisA) . ')';
