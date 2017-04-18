@@ -210,7 +210,7 @@ class Indi_Controller {
             foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
 
             // If no direction - set as ASC by default
-            if (!preg_match('/^ASC|DESC$/', $direction)) $direction = 'ASC';
+            if (!preg_match('/^(ASC|DESC)$/', $direction)) $direction = 'ASC';
 
             // If there is no field with such a name
             if ($fieldR->alias !== $column) {
