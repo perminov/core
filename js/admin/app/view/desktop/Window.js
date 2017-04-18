@@ -121,10 +121,36 @@ Ext.define('Indi.view.desktop.Window', {
         me.on('minimize', Indi.app.updateActiveWindow, Indi.app);
         me.on('maximize', Indi.app.updateTrail, Indi.app);
         me.on('restore', Indi.app.updateTrail, Indi.app);
+        me.on('beforeclose', me.onBeforeClose, me);
         me.on('close', Indi.app.updateTrail, Indi.app);
 
         // Set window to be centered
         me.center();
+    },
+
+    /**
+     * Check if there is a wrapper-holder for the wrapper-panel, rendered into current window,
+     * and if so - replace holder with wrapper. This is currently used to get back wrappers
+     * into south-panel tabs
+     *
+     * @return {Boolean}
+     */
+    onBeforeClose: function() {
+        var me = this, holder = Ext.getCmp(me.wrapperId + '-holder');
+
+        // If holder exists
+        if (holder && !me.isGettingBack) {
+
+            // Get wrapper back to tab
+            Indi.app.putWindowBackToTab(holder.body.dom);
+
+            // Return false to prevent window closing at this time,
+            // as it will be done within Indi.app.putWindowBackToTab method
+            return false;
+        }
+
+        // Return true
+        return true;
     },
 
     /**

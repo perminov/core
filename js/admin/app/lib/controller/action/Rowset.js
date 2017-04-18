@@ -1857,27 +1857,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return Ext.merge({
             id: me.id + '-rowset',
             dockedItems: me.rowsetDockedA(),
-            store: me.getStore(),
-            onBoxReady: function() {
-
-                // If store raw data is available right now
-                if (me.ti().scope.pageData) {
-
-                    // Prevent separate autoload
-                    Ext.getCmp(me.panel.id).autoLoadStore = false;
-
-                    // Load raw data straight into the store
-                    me.getStore().loadRawData(me.ti().scope.pageData);
-                    me.getStore().each(function(r, i) {
-                        r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
-                    });
-
-                    // Ensure column widths will be recalculated each time grid width was changed
-                    this.on('resize', function(grid, w, h, ow, oh) {
-                        if (w != ow) me.gridColumnAFit();
-                    });
-                }
-            }
+            store: me.getStore()
         }, me.rowset);
     },
 
@@ -2082,40 +2062,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 // Parse response text
                 json = Ext.JSON.decode(response.responseText, true);
 
-                // If response contains info about affected fields
-                if (Ext.isObject(json) && Ext.isObject(json.affected)) {
-
-                    // Walk through affected fields
-                    Object.keys(json.affected).forEach(function(i){
-
-                        // If affected field's name starts with '_' - skip
-                        if (i.match(/^_/)) return;
-
-                        // If affected field's name starts with '$'
-                        if (i.match(/^\$/)) {
-
-                            // If affected field's name is '$keys' - update field's key values
-                            if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
-                                record.key(j, json.affected[i][j]);
-                            });
-
-                        // Update field's rendered values
-                        } else {
-
-                            // Shortcuts
-                            value = json.affected[i]; field = record.fields.get(i);
-
-                            // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
-                            if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
-
-                            // Set field's value
-                            record.set(i, value);
-                        }
-                    });
-                }
-
-                // Commit row
-                record.commit();
+                // Visually update record
+                me.affectRecord(record, json);
 
                 // Call callback
                 if (Ext.isFunction(callback)) callback(json);
@@ -2128,6 +2076,49 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 record.reject();
             }
         });
+    },
+
+    /**
+     *
+     * @param record
+     * @param json
+     */
+    affectRecord: function(record, json) {
+
+        // If response contains info about affected fields
+        if (Ext.isObject(json) && Ext.isObject(json.affected)) {
+
+            // Walk through affected fields
+            Object.keys(json.affected).forEach(function(i){
+
+                // If affected field's name starts with '_' - skip
+                if (i.match(/^_/)) return;
+
+                // If affected field's name starts with '$'
+                if (i.match(/^\$/)) {
+
+                    // If affected field's name is '$keys' - update field's key values
+                    if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
+                        record.key(j, json.affected[i][j]);
+                    });
+
+                    // Update field's rendered values
+                } else {
+
+                    // Shortcuts
+                    value = json.affected[i]; field = record.fields.get(i);
+
+                    // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
+                    if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
+
+                    // Set field's value
+                    record.set(i, value);
+                }
+            });
+        }
+
+        // Commit row
+        record.commit();
     },
 
     // @inheritdoc

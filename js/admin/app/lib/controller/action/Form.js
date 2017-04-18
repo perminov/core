@@ -58,10 +58,18 @@ Ext.define('Indi.lib.controller.action.Form', {
             actioncomplete: function(form, action) {
                 var me = this, json = action.response.responseText.json(), gotoO, uri, cfg = {},
                     wrp = me.up('[isWrapper]'), isTab = wrp.isTab, sth = wrp.up('[isSouth]'),
-                    sthItm = wrp.up('[isSouthItem]'), found;
+                    sthItm = wrp.up('[isSouthItem]'), found, rowsetActId, rowsetActCmp, record;
 
                 // If response text is not json-convertable, or does not have `redirect` property - return
                 if (!Ext.isObject(json) || !(uri = json.redirect || '').length) return;
+
+                // Check if there is a rowset containing affected record,
+                // and if so - make that record affected within rowset's store
+                rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index';
+                if (me.ctx().ti(1) && me.ctx().ti(1).row) rowsetActId += '-parentrow-' + me.ctx().ti(1).row.id;
+                if (rowsetActCmp = Ext.getCmp(rowsetActId))
+                    if (record = rowsetActCmp.getStore().getById(json.affected.id))
+                        rowsetActCmp.affectRecord(record, json);
 
                 // Parse request url
                 gotoO = Indi.parseUri(uri);
@@ -108,13 +116,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 } else if (gotoO.section == me.ti().section.alias && gotoO.action == 'index') {
 
                     // Close the form's window
-                    wrp.getWindow().close();
-
-                    // Build rowset wrapper id
-                    var rowsetWrpId = 'i-section-' + gotoO.section + '-action-' + gotoO.action + '-wrapper';
-
-                    // If rowset wrapper cmp exists
-                    if (Ext.getCmp(rowsetWrpId)) cfg.insteadOf = rowsetWrpId;
+                    return wrp.getWindow().close();
                 }
 
                 // Load required contents

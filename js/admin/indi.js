@@ -1247,6 +1247,9 @@ Ext.define('Indi', {
             load = Ext.getCmp(wrapperId).$ctx.uri, name = Ext.getCmp(wrapperId).$ctx.ti().section.alias,
             window = Indi.app.getWindowByWrapperId(wrapperId);
 
+        // Set up special flag to prevent looping
+        window.isGettingBack = true;
+
         // Close separate window, containing contents that we want to put back to tab
         window.close();
 
@@ -1255,6 +1258,7 @@ Ext.define('Indi', {
             xtype: 'actiontabrowset',
             id: wrapperId,
             load: load,
+            back: true,
             name: name
         });
 

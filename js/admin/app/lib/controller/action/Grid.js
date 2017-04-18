@@ -787,6 +787,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             hctw = 0, busy = 0, free, longest = [], summaryData, summaryFeature,
             isTree = !!me.ti().fields.r(me.ti().model.tableName + 'Id', 'alias'), level, _longestWidth;
 
+        //console.log('fit', new Error().stack);
+
         // If view not consists from normalView and lockedView
         if (view.headerCt) {
 
@@ -1024,6 +1026,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Adjust grid column widths
+        //console.log('1st fit', me.getStore().getCount());
         me.gridColumnAFit();
 
         // Bind Indi.load(...) for all DOM nodes (within grid), that have 'load' attibute
@@ -1413,9 +1416,33 @@ Ext.define('Indi.lib.controller.action.Grid', {
             store: me.getStore(),
             dockedItems: me.rowsetDockedA(),
             plugins: me.rowsetPluginA(),
+            onBoxReady: function() {
+
+                // If store raw data is available right now
+                if (me.ti().scope.pageData) {
+
+                    // Prevent separate autoload
+                    Ext.getCmp(me.panel.id).autoLoadStore = false;
+
+                    // Load raw data straight into the store
+                    me.getStore().loadRawData(me.ti().scope.pageData);
+                    me.getStore().each(function(r, i) {
+                        r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
+                    });
+
+                    // Ensure column widths will be recalculated each time grid width was changed
+                    this.on('resize', function(grid, w, h, ow, oh) {
+                        if (w != ow) {
+                            //console.log('3rd fit', w, ow);
+                            //me.gridColumnAFit();
+                        }
+                    });
+                }
+            },
             listeners: {
                 boxready: function() {
-                    me.gridColumnAFit();
+                    //console.log('2nd fit');
+                    //me.gridColumnAFit();
                 }
             }
         }, me.rowset);
