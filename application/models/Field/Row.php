@@ -1221,8 +1221,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
             // If column store boolean values
             if (preg_match('/BOOLEAN/', $this->foreign('columnTypeId')->type)) {
-                return 'IF(`' . $this->alias . '`, "' . I_YES . '", "' .
-                    I_NO . '") LIKE "%' . $keyword . '%"';
+                return Indi::db()->sql('IF(`' . $this->alias . '`, "' . I_YES . '", "' .
+                    I_NO . '") LIKE :s', '%' . $keyword . '%');
 
             // Otherwise handle keyword search on other non-relation column types
             } else {
@@ -1243,7 +1243,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                     $this->foreign('columnTypeId')->type, $matches
                 )) {
                     if (preg_match('/^' . $reg[$matches[1]] . '+$/', $keyword)) {
-                        return '`' . $this->alias . '` LIKE "%' . $keyword . '%"';
+                        return Indi::db()->sql('`' . $this->alias . '` LIKE :s', '%' . $keyword . '%');
                     } else {
                         return 'FALSE';
                     }
@@ -1252,7 +1252,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 }/* else if ($this->foreign('columnTypeId')->type == 'TEXT') {
                     return 'MATCH(`' . $this->alias . '`) AGAINST("' . implode('* ', explode(' ', $keyword)) . '*' . '" IN BOOLEAN MODE)';
                 }*/ else {
-                    return '`' . $this->alias . '` LIKE "%' . $keyword . '%"';
+                    return Indi::db()->sql('`' . $this->alias . '` LIKE :s', '%' . $keyword . '%');
                 }
             }
 
@@ -1262,8 +1262,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             // Find `enumset` keys (mean `alias`-es), that have `title`-s, that match keyword
             $idA = Indi::db()->query('
                 SELECT `alias` FROM `enumset`
-                WHERE `fieldId` = "' . $this->id . '" AND `title` LIKE "%' . $keyword . '%"
-            ')->fetchAll(PDO::FETCH_COLUMN);
+                WHERE `fieldId` = "' . $this->id . '" AND `title` LIKE :s
+            ', '%' . $keyword . '%')->fetchAll(PDO::FETCH_COLUMN);
 
             // Return clause
             return count($idA)
@@ -1294,8 +1294,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                         // Get the ids
                         $idA = Indi::db()->query('
                             SELECT `id` FROM `' . $relatedM->table() . '`
-                            WHERE `id` LIKE "%' . $keyword . '%"
-                        ')->fetchAll(PDO::FETCH_COLUMN);
+                            WHERE `id` LIKE :s
+                        ', '%' . $keyword . '%')->fetchAll(PDO::FETCH_COLUMN);
 
                 // Else if WHERE clause, got for keyword search on related model title field - is not 'FALSE'
                 } else if (($titleColumnWHERE = $relatedM->titleField()->keywordWHERE($keyword)) != 'FALSE') {
