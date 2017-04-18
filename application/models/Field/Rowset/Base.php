@@ -151,14 +151,14 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
     public function keywordWHERE($keyword, $exclude = array(), array $nested = array()) {
 
         // Convert quotes and perform an urldecode
-        $keyword = str_replace('"', '&quot;', strip_tags(urldecode($keyword)));
+        $keyword = strip_tags(urldecode($keyword));
 
         // Explode the keyword by spaces
         $keywordA = explode(' ', $keyword);
 
         // Remove unfriendly characters from each word within the keyword
         foreach ($keywordA as $i => $keywordI) {
-            $keywordI = preg_replace('/[^a-zA-Z0-9а-яА-Я]/u', '', $keywordI);
+            //$keywordI = preg_replace('/[^a-zA-Z0-9а-яА-Я]/u', '', $keywordI);
             $keywordI = trim($keywordI);
             if (!mb_strlen($keywordI, 'utf-8')) unset($keywordA[$i]);
         }
