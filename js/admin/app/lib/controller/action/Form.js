@@ -103,6 +103,18 @@ Ext.define('Indi.lib.controller.action.Form', {
                         insteadOf: wrp.id,
                         into: sthItm.id
                     });
+
+                // Else if we are going to go to same-section rowset -
+                } else if (gotoO.section == me.ti().section.alias && gotoO.action == 'index') {
+
+                    // Close the form's window
+                    wrp.getWindow().close();
+
+                    // Build rowset wrapper id
+                    var rowsetWrpId = 'i-section-' + gotoO.section + '-action-' + gotoO.action + '-wrapper';
+
+                    // If rowset wrapper cmp exists
+                    if (Ext.getCmp(rowsetWrpId)) cfg.insteadOf = rowsetWrpId;
                 }
 
                 // Load required contents

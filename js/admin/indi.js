@@ -651,14 +651,11 @@ Ext.define('Indi', {
          */
         _beforeApplyResponse: function(cfg) {
 
-            // In no 'into' property given within `cfg` object - destroy center panel
-            if (!cfg.into) void(0);
-
-            // Else if 'insteadOf' property is additionally given within `cfg` object
-            else if (cfg.insteadOf) {
+            // If 'insteadOf' property is given within `cfg` object
+            if (cfg.insteadOf) {
 
                 // Set title for a container, that results will be injected in
-                if (cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
+                if (cfg.into && cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
 
                 // Destroy the component, that will have a one to replace it
                 Ext.getCmp(cfg.insteadOf).destroy();
