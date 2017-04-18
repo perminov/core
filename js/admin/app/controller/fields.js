@@ -4,13 +4,9 @@ Ext.define('Indi.controller.fields', {
         index: {
             gridColumn$Title: {editor: true},
             gridColumn$Alias: {editor: true},
-            gridColumn$Mode: function() {
-                return {
-                    cls: 'i-column-header-icon',
-                    header: '<img src="' + Indi.std + '/i/admin/field/readonly.png" style="left: -1px;">',
-                    tooltip: arguments[0].tooltip || arguments[0].header,
-                    allowCycle: true
-                }
+            gridColumn$Mode: {
+                icon: '/i/admin/field/readonly.png',
+                allowCycle: true
             },
             rowset: {multiSelect: true}
         },
