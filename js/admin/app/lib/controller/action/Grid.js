@@ -561,12 +561,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
     /**
      * Default config for move-columns
      */
-    gridColumn$Toggle: function(){
-        return {
-            cls: 'i-column-header-icon',
-            header: '<img src="' + Indi.std + '/i/admin/btn-icon-toggle.png">',
-            tooltip: arguments[0].tooltip || arguments[0].header
-        }
+    gridColumn$Toggle: {
+        icon: '/i/admin/btn-icon-toggle.png'
     },
 
     /**
@@ -785,10 +781,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
-            widthA = [], px = {ellipsis: {usual: 18, rownumberer: 12}, sort: 18},
-            store = grid.getStore(), total = 0, i, j, longestWidth, cell, fnhci = -1,
+            widthA = [], px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18},
+            store = grid.getStore(), total = 0, i, j, k, longestWidth, cell, fnhci = -1,
             visible, scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw,
-            hctw = 0, busy = 0, free, longest, summaryData, summaryFeature;
+            hctw = 0, busy = 0, free, longest = [], summaryData, summaryFeature,
+            isTree = !!me.ti().fields.r(me.ti().model.tableName + 'Id', 'alias'), level, _longestWidth;
 
         // If view not consists from normalView and lockedView
         if (view.headerCt) {
@@ -823,10 +820,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
         for (i = 0; i < columnA.length; i++) {
 
             // Get initial column width, based on a column title metrics
-            widthA[i] = Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
+            widthA[i] = columnA[i].icon ? 16 : Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
+
+            // Reset level
+            level = 0; longest = [];
 
             // Reset length
-            longest = columnA[i].text;
+            longest[level] = columnA[i].text;
 
             // If columns does not have a dataIndex - skip this iteration
             if (columnA[i].dataIndex) {
@@ -840,9 +840,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     cell = typeof columnA[i].renderer == 'function'
                         ? columnA[i].renderer(r.get(columnA[i].dataIndex))
                         : r.get(columnA[i].dataIndex);
-                    if (cell && cell.length > longest.length &&
-                        (!cell.match(/class="i-color-box"/) || (cell = Indi.stripTags(cell)).length > longest.length))
-                        longest = cell;
+
+                    level = 0;
+                    if (Ext.isString(cell) && isTree && columnA[i].dataIndex == 'title') {
+                        cell = cell.replace(/&nbsp;/g, ' ');
+                        level = cell.match(/^ */)[0].length;
+                        if (level) cell = cell.substr(level - 1);
+                        if (!longest[level]) longest[level] = cell;
+                        else if (cell.length > longest[level].length) longest[level] = cell;
+                    }
+
+                    if (cell && cell.length > longest[level].length &&
+                        (!cell.match(/class="i-color-box"/) || (cell = Indi.stripTags(cell)).length > longest[level].length))
+                        longest[level] = cell;
                 });
 
                 // Don't forgot about summaries
@@ -850,27 +860,37 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     cell = typeof columnA[i].renderer == 'function'
                         ? columnA[i].renderer(summaryData[columnA[i].id])
                         : summaryData[columnA[i].id];
-                    if (cell.length > longest.length) longest = cell;
+                    if (cell.length > longest[0].length) longest[0] = cell;
                 } else if (columnA[i].summaryText) {
                     cell = columnA[i].summaryText;
-                    if (cell.length > longest.length) longest = cell;
+                    if (cell.length > longest[0].length) longest[0] = cell;
                 }
 
             // Else if column does not have `dataIndex` prop
             } else {
 
                 // If column's xtype is 'rownumberer'
-                if (columnA[i].xtype == 'rownumberer') longest = (store.last() ? store.indexOfTotal(store.last()) + 1 : 1) + '';
+                if (columnA[i].xtype == 'rownumberer') longest[0] = (store.last() ? store.indexOfTotal(store.last()) + 1 : 1) + '';
             }
 
             // Get width of the longest cell
-            longestWidth = Indi.metrics.getWidth(longest);
+            longestWidth = Indi.metrics.getWidth(longest[0].replace(/ /g, '&nbsp;'));
+
+            // Mind indents
+            if (isTree && columnA[i].dataIndex == 'title') {
+                for (k in longest) if (k) {
+                    for (var l = 0; l < k; l++) longest[k] = '&nbsp;' + longest[k];
+                    if ((_longestWidth = Indi.metrics.getWidth(longest[k])) > longestWidth)
+                       longestWidth = _longestWidth;
+                }
+            }
 
             // Update widthA[i] if need
             if (longestWidth > widthA[i]) widthA[i] = longestWidth;
 
             // Append ellipsis space
             if (columnA[i].xtype == 'rownumberer') widthA[i] += px.ellipsis.rownumberer;
+            else if (columnA[i].icon) widthA[i] += px.ellipsis.icon;
             else widthA[i] += px.ellipsis.usual;
 
             // Limit the maximum column width, if such a config was set
