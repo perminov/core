@@ -10,8 +10,15 @@ Ext.override(Ext.grid.column.Column, {
     editableCls: 'i-grid-column-editable',
 
     // @inheritdoc
-    constructor: function() {
+    constructor: function(config) {
         var me = this;
+
+        // Use icon as a column header contents
+        if (config.icon) {
+            config.cls = 'i-column-header-icon';
+            config.tooltip = config.tooltip || config.header;
+            config.header = '<img src="' + Indi.std + config.icon + '">';
+        }
 
         // Call parent
         me.callParent(arguments);
