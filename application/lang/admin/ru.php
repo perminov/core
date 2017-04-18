@@ -2,6 +2,7 @@
 define('I_URI_ERROR_SECTION_FORMAT', 'Имя раздела имеет неправильный формат');
 define('I_URI_ERROR_ACTION_FORMAT', 'Имя действия имеет неправильный формат');
 define('I_URI_ERROR_ID_FORMAT', 'Параметр \'id\' должен быть имеет целым положительным числом');
+define('I_URI_ERROR_CHUNK_FORMAT', 'Одна из частей URI имеет неправильный формат');
 
 define('I_LOGIN_BOX_USERNAME', 'Пользователь');
 define('I_LOGIN_BOX_PASSWORD', 'Пароль');
