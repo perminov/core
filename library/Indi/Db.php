@@ -409,13 +409,20 @@ class Indi_Db {
     }
 
     /**
-     * Execute a sql-query. If $silence argument is set to true, no mysql error will be displayed
+     * Execute a sql-query. :s, :i, and :p placeholders are supported to be within $sql arg,
+     * but require additional args to be passed. See Indi_Db::sql() method description
+     * for more details and usage examples. The difference betweeb query() and sql() methods is
+     * that sql() only builds the sql query's string, unlike query(), that is not only building,
+     * but executing too
      *
+     * @uses Indi_Db::sql()
      * @param $sql
-     * @param bool $silence
      * @return Indi_Cache_Fetcher|int|PDOStatement
      */
-    public function query($sql, $silence = false) {
+    public function query($sql) {
+
+        // If more than 1 arg is given, assume that other args are values to be injected into a sql query
+        if (func_num_args() > 1) $sql = call_user_func_array(array($this, 'sql'), func_get_args());
 
         // Trim the query
         $sql = trim($sql);
@@ -439,7 +446,7 @@ class Indi_Db {
 
             // If no rows were affected and error reporting ($silence argument) is turned on
             // Display error message, backtrace info and make the global stop
-            if ($affected === false && $silence == false) $this->jerror($sql);
+            if ($affected === false) $this->jerror($sql);
 
             // Return affected rows count as a result of query execution
             return $affected;
@@ -461,7 +468,7 @@ class Indi_Db {
 
             // If query execition was not successful and mysql error reporting is on
             // Display error message, backtrace info and make the global stop
-            if (!$stmt && $silence == false) $this->jerror($sql);
+            if (!$stmt) $this->jerror($sql);
 
             // Else if all was ok, setup fetch mode as PDO::FETCH_ASSOC
             else if ($stmt) $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -589,5 +596,83 @@ class Indi_Db {
 
         // Return `false`. Here we do it because we will be using 'return Indi::db()->rollback()' statements
         return true;
+    }
+
+    /**
+     * Replace placeholders with values - either in the full query or a query part
+     * unlike native prepared statements, allows any query part to be parsed
+     *
+     * Supported placeholders
+     *  :s - strings
+     *  :i - integers
+     *  :p - already parsed query parts
+     *
+     * Example:
+     * $qpart = $someBool ? Indi::db()->sql(' AND `bar` = :s', $bar) : '';
+     * $sql = Indi::db()->sql('SELECT * FROM `table` WHERE `foo` = :s :p LIMIT :i', $foo, $qpart, $qty);
+     * echo $sql;
+     *
+     * @param string $tpl - whatever expression that contains placeholders
+     * @param mixed  $arg1,... unlimited number of arguments to match placeholders in the expression
+     * @return string - initial expression with placeholders substituted with data.
+     */
+    public function sql($tpl, $arg1 = null) {
+
+        // Get arguments
+        $args = func_get_args();
+
+        // Get the sql-query template
+        $tpl = array_shift($args);
+
+        // If no args remaining after shifting - return
+        if (!$args) return $tpl;
+
+        // Final query, empty yet
+        $sql = '';
+
+        // Split given sql-query template by variable-expressions
+        $rawA = preg_split('~(:[spi])~u', $tpl, null, PREG_SPLIT_DELIM_CAPTURE);
+
+        // Get quantity of given arguments, excluding first, as we assume it's a sql query
+        $aQty  = count($args);
+
+        // Get quantity of placeholder-expressions, mentioned within sql query
+        $pQty  = floor(count($rawA) / 2);
+
+        // Check that both quantities are equal
+        if ($pQty != $aQty) jflush(false, 'Number of args ('. $aQty
+            . ') doesn\'t match number of placeholders ('. $pQty . ') in [' . $tpl . ']');
+
+        // Walk through sql-template parts
+        foreach ($rawA as $i => $rawI) {
+
+            // Concat non-placeholder part and jump to next iteration
+            if (($i % 2) == 0) {
+                $sql .= $rawI;
+                continue;
+            }
+
+            // Pick arg
+            $value = array_shift($args);
+
+            // Apply different behaviour depend on placeholder type
+            switch ($rawI) {
+                case ':s':
+                    $rawI = $value === null ? 'NULL' : self::$_pdo->quote($value, PDO::PARAM_STR);
+                    break;
+                case ':i':
+                    $rawI = $value === null ? 'NULL' : (is_numeric($value) ? decimal($value, 0) : self::$_pdo->quote($value, PDO::PARAM_STR));
+                    break;
+                case ':p':
+                    $rawI = $value;
+                    break;
+            }
+
+            // Concat
+            $sql .= $rawI;
+        }
+
+        // Return
+        return $sql;
     }
 }
