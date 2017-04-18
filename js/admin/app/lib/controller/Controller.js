@@ -102,7 +102,7 @@ Ext.define('Indi.lib.controller.Controller', {
         }
 
         // If wrapper already exists for current action - destroy it before re-instantiate
-        if (exst = Ext.getCmp(scope.id + '-wrapper')) exst.getWindow().destroy();
+        if (exst = Ext.getCmp(scope.id)) exst.destroy();
 
         // Create action component instance, related to current action
         Ext.create(actionCmpName, scope);
