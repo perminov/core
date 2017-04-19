@@ -479,7 +479,7 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // If we're going create a wrapper within a window
         // but wrapper with same id is already exist within a south-panel tab
-        if (wrp = Ext.getCmp(me.panel.id) && !me.cfg.into) {
+        if ((wrp = Ext.getCmp(me.panel.id)) && !me.cfg.into) {
 
             // Backup some info (tab id and wrapper initial config),
             // that will help us to re-instantiate wrapper within tab
