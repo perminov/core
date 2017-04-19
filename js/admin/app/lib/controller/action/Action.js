@@ -675,5 +675,18 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Return
         return false;
+    },
+
+    /**
+     * Destroy wrapper
+     */
+    onDestroy: function() {
+        var me = this;
+
+        // Destroy wrapper
+        Ext.getCmp(me.panel.id).destroy();
+
+        // Call parent
+        me.callParent();
     }
 });

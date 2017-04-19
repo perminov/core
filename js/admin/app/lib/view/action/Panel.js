@@ -28,19 +28,6 @@ Ext.define('Indi.lib.view.action.Panel', {
     },
 
     /**
-     * Force context to be destroyed along with wrapper
-     */
-    onDestroy: function() {
-        var me = this;
-
-        // Destroy context
-        if (me.ctx()) me.ctx().destroy();
-
-        // Call parent
-        me.callParent();
-    },
-
-    /**
      * Provide bread crumbs to be created/updated
      */
     afterRender: function() {
