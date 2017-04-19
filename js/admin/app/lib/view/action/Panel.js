@@ -143,5 +143,22 @@ Ext.define('Indi.lib.view.action.Panel', {
     /**
      * Set up a height for south panel, for it to be as user-friendly as it possible
      */
-    fitSouth: Ext.emptyFn
+    fitSouth: Ext.emptyFn,
+
+    /**
+     * Restore wrapper within a south-panel tab
+     */
+    onDestroy: function() {
+        var me = this, tab;
+
+        // Call parent
+        me.callParent();
+
+        // Restore tab's wrapper
+        if (me.tabDraft && (tab = Ext.getCmp(me.tabDraft.containerId))) {
+            Ext.defer(function(){
+                if (tab) tab.add(me.tabDraft.itemConfig);
+            }, 1);
+        }
+    }
 });

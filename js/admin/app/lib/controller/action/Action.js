@@ -450,7 +450,7 @@ Ext.define('Indi.lib.controller.action.Action', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this;
+        var me = this, wrp;
 
         // Set up docked items
         me.panel.dockedItems = me.panelDockedA();
@@ -475,6 +475,23 @@ Ext.define('Indi.lib.controller.action.Action', {
 
             // Remove layout definition
             delete me.panel.layout;
+        }
+
+        // If we're going create a wrapper within a window
+        // but wrapper with same id is already exist within a south-panel tab
+        if (wrp = Ext.getCmp(me.panel.id) && !me.cfg.into) {
+
+            // Backup some info (tab id and wrapper initial config),
+            // that will help us to re-instantiate wrapper within tab
+            // in case if user will close the window
+            me.panel.tabDraft = {
+                containerId: wrp.ownerCt.id,
+                itemConfig: wrp.initialConfig
+            }
+
+            // Destroy wrapper, that currently exists within a south-panel tab
+            // as we're going to create same wrapper within a separate window
+            wrp.destroy();
         }
 
         // Create panel instance
