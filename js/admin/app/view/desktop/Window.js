@@ -142,7 +142,7 @@ Ext.define('Indi.view.desktop.Window', {
         if (holder && !me.isGettingBack) {
 
             // Get wrapper back to tab
-            Indi.app.putWindowBackToTab(holder.body.dom);
+            Indi.app.putWindowBackToTab(me.wrapperId);
 
             // Return false to prevent window closing at this time,
             // as it will be done within Indi.app.putWindowBackToTab method

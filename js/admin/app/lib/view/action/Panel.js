@@ -155,7 +155,8 @@ Ext.define('Indi.lib.view.action.Panel', {
         me.callParent();
 
         // Restore tab's wrapper
-        if (me.tabDraft && (tab = Ext.getCmp(me.tabDraft.containerId))) {
+        if (me.tabDraft && (tab = Ext.getCmp(me.tabDraft.containerId))
+            && tab.up('[isSouth]').height == tab.up('[isSouth]').collapsedHeight) {
             Ext.defer(function(){
                 if (tab) tab.add(me.tabDraft.itemConfig);
             }, 1);
