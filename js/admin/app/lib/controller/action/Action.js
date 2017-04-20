@@ -489,6 +489,9 @@ Ext.define('Indi.lib.controller.action.Action', {
                 itemConfig: wrp.initialConfig
             }
 
+            // Add placeholder into the tab
+            wrp.up('[isSouth]').addTabPlaceholder(wrp.ownerCt.id, wrp.initialConfig.id, 'action');
+
             // Destroy wrapper, that currently exists within a south-panel tab
             // as we're going to create same wrapper within a separate window
             wrp.destroy();

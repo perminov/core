@@ -110,7 +110,7 @@ Ext.define('Indi.lib.view.action.south.South', {
      * @param e Event
      */
     onTabBarClick: function(e) {
-        var me = this, h = me.getHeight(), w = me.up('[isWrapper]').getWindow();
+        var me = this, h = me.getHeight(), w = me.up('[isWrapper]').getWindow(), att, nh;
 
         // If click was made on tab close icon, or on a scroller - return
         if (e.getTarget('.x-tab-close-btn') || e.getTarget('.x-box-scroller')) return;
@@ -143,24 +143,23 @@ Ext.define('Indi.lib.view.action.south.South', {
                 delete me.minHeightBackup;
             }
 
-            if (!w.maximized) {
+            // Active tab shortcut
+            att = me.getActiveTab().down('[isTab]');
 
-                if (me.getActiveTab().down('[isTab]').loaded) {
+            // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
+            me.setHeight();
 
-                    // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
-                    me.setHeight();
+            // If window is not maximized
+            if (!w.maximized && att) {
 
-                    w.setHeight(w.getHeight() + (me.getHeight() - me.collapsedHeight));
-                    w.center();
+                // Calc new height
+                nh = w.getHeight() + me.getHeight() - me.collapsedHeight;
 
-                } else {
-                    me.setHeight();
-                }
+                // If active tab's inside wrapper-panel contents was previously loaded
+                w.setHeight(att.loaded ? nh : w.height = nh);
 
-            } else {
-
-                // Apply height, stored in `height` prop, as we do not pass an argument while setHeight() call
-                me.setHeight();
+                // Center window
+                w.center();
             }
         }
     },
@@ -213,5 +212,27 @@ Ext.define('Indi.lib.view.action.south.South', {
     /**
      * Empty function. To be overridden in child classes
      */
-    initHeight: Ext.emptyFn
+    initHeight: Ext.emptyFn,
+
+    /**
+     * Add placeholder panel, saying that tab contents is currently displayed in a separate window
+     *
+     * @param tabId
+     * @param wrapperId
+     * @param tmp
+     */
+    addTabPlaceholder: function(tabId, wrapperId, tmp) {
+        Ext.getCmp(tabId).add({
+            id: wrapperId + '-holder',
+            cls: 'i-panelholder',
+            isTab: true,
+            doLoad: Ext.emptyFn,
+            html: 'Содержимое этой панели открыто в отдельном окне' +
+                '<hr size="1" color="#04408C">' +
+                '<ul>' +
+                    '<li><a onclick="Indi.app.getWindowByWrapperId(\''+wrapperId+'\').toFront();">Перейти</a> к окну</li>' +
+                    '<li><a onclick="Indi.app.putWindowBackToTab(\''+wrapperId+'\');">Вернуть</a> содержимое обратно сюда</li>' +
+                '</ul>'
+        });
+    }
 });

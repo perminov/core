@@ -1241,11 +1241,9 @@ Ext.define('Indi', {
      *
      * @param a
      */
-    putWindowBackToTab: function(a) {
-        var aEl = Ext.get(a), holderEl = aEl.up('.x-panel'), wrapperId = holderEl.attr('id').replace('-holder', ''),
-            tabId = holderEl.up('.x-panel-body').up('.x-panel').attr('id'), holder = Ext.getCmp(holderEl.attr('id')),
-            load = Ext.getCmp(wrapperId).$ctx.uri, name = Ext.getCmp(wrapperId).$ctx.ti().section.alias,
-            window = Indi.app.getWindowByWrapperId(wrapperId);
+    putWindowBackToTab: function(wrapperId) {
+        var wrp = Ext.getCmp(wrapperId), holder = Ext.getCmp(wrapperId + '-holder'), tab = holder.up('[isSouthItem]'),
+            load = wrp.$ctx.uri, name = wrp.$ctx.ti().section.alias, window = Indi.app.getWindowByWrapperId(wrapperId);
 
         // Set up special flag to prevent looping
         window.isGettingBack = true;
@@ -1254,7 +1252,7 @@ Ext.define('Indi', {
         window.close();
 
         // Re-add tab
-        Ext.getCmp(tabId).add({
+        tab.add({
             xtype: 'actiontabrowset',
             id: wrapperId,
             load: load,

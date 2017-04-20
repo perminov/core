@@ -1953,16 +1953,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 if (Ext.get(id)) Ext.get(id).remove();
 
                 // Add wrapper-panel placeholder, so it will appear instead of destroyed wrapper-panel
-                southItem.add({
-                    id: id + '-holder',
-                    cls: 'i-panelholder',
-                    html: 'Содержимое этой панели открыто в отдельном окне' +
-                        '<hr size="1" color="#04408C">' +
-                        '<ul>' +
-                            '<li><a onclick="Indi.app.getWindowByWrapperId(\''+id+'\').toFront();">Перейти</a> к окну</li>' +
-                            '<li><a onclick="Indi.app.putWindowBackToTab(this);">Вернуть</a> содержимое обратно сюда</li>' +
-                        '</ul>'
-                });
+                southItem.up('[isSouth]').addTabPlaceholder(southItem.id, id, 'rowset');
             }
         }
 
