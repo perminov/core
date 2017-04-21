@@ -3024,13 +3024,16 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
-     * Adjust combo width, so all involved things are taken into consideration while calculating least combo width
+     * Calculate mininum width, required by combo
+     *
+     * @return {Number}
      */
-    fitWidth: function(detectOnly) {
-        var me = this, width = 0, maxPseudoTitle = '', pseudoTitle = '', color, optionContentsMaxWidth;
+    getFitWidth: function() {
+        var me = this, width = 0, maxPseudoTitle = '', maxGroupTitle = '', pseudoTitle = '', color,
+            optionContentsMaxWidth, optionGroupMaxWidth;
 
         // Append labelWidth
-        width += me.getLabelWidthUsage();// me.labelCell.getWidth();
+        width += me.getLabelWidthUsage();
 
         // Append borders (left and right) widths
         width += parseInt(me.comboInner.css('border-left-width')) + parseInt(me.comboInner.css('border-right-width'));
@@ -3038,8 +3041,16 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Append option paddings (left and right)
         width += 2 + 2;
 
-        // If optgroups are used - append optgroup indent
-        if (me.store.optgroup) width += 15;
+        // If optgroups are used
+        if (me.store.optgroup) {
+
+            // For each group
+            me.store.optgroup.groups.forEach(function(group){
+
+                // If length of group.title variable is less than length of 'maxPseudoTitle' - renew last one
+                if (group.title.length > maxGroupTitle.length) maxGroupTitle = group.title;
+            });
+        }
 
         // Detect maximum option contents length
         for (var i = 0; i < me.store.data.length; i++) {
@@ -3053,12 +3064,19 @@ Ext.define('Indi.lib.form.field.Combo', {
             // And append their length to current option width, assuming that color box is equal to '---' by width
             pseudoTitle += (color.box ? '---' : '') + color.title;
 
-            // If length 'pseudoTitle' variable is less than length of 'maxPseudoTitle' - renew las one
+            // If length of 'pseudoTitle' variable is less than length of 'maxPseudoTitle' - renew last one
             if (pseudoTitle.length > maxPseudoTitle.length) maxPseudoTitle = pseudoTitle;
         }
 
         // Find actual width of longest option, using Indi.metrics.getWidth() call, or set up default if store is empty
         optionContentsMaxWidth = me.store.data.length == 0 ? 23 : Indi.metrics.getWidth(maxPseudoTitle);
+
+        // Find actual width of longest option group
+        optionGroupMaxWidth = me.store.data.length == 0 ? 0 : Indi.metrics.getWidth(maxGroupTitle);
+
+        // Increase with by 15px if need, or use optionGroupMaxWidth as optionContentsMaxWidth
+        if (Indi.metrics.getWidth(maxGroupTitle) < optionContentsMaxWidth + 15) width += 15;
+        else optionContentsMaxWidth = optionGroupMaxWidth;
 
         // Prevent possible width decrease
         if (optionContentsMaxWidth > me.optionContentsMaxWidth) me.optionContentsMaxWidth = optionContentsMaxWidth;
@@ -3077,8 +3095,8 @@ Ext.define('Indi.lib.form.field.Combo', {
             width += el.getWidth();
         });
 
-        // Set width or return it, if `detectOnly` argument is given as `true`
-        if (detectOnly) return width; else me.setWidth(width);
+        // Return required width
+        return width;
     },
 
     /**
@@ -3087,7 +3105,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {Number}
      */
     getInputWidthUsage: function() {
-        return this.fitWidth(true) - this.getLabelWidthUsage();
+        return this.getFitWidth() - this.getLabelWidthUsage();
     },
 
     // @inheritdoc
