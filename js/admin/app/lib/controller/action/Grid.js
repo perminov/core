@@ -876,7 +876,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             }
 
             // Get width of the longest cell
-            longestWidth = Indi.metrics.getWidth(longest[0].replace(/ /g, '&nbsp;'));
+            longestWidth = Indi.metrics.getWidth(longest[0].toString().replace(/ /g, '&nbsp;'));
 
             // Mind indents
             if (isTree && columnA[i].dataIndex == 'title') {
