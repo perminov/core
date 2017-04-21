@@ -658,38 +658,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 }
             }]
         }
-
-        // 'Filter' toolbar config
-        /*return {
-            xtype: 'toolbar',
-            dock: 'top',
-            padding: '1 5 5 5',
-            id: me.bid() + '-toolbar$filter',
-            layout: 'auto',
-            hidden: hidden,
-            empty: hidden,
-            name: 'toolbar$filter',
-            items: [{
-                xtype:'fieldset',
-                id: me.bid()+'-toolbar$filter-fieldset',
-                padding: '0 0 1 3',
-                title: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_TITLE,
-                width: '100%',
-                layout: 'column',
-                defaults: {
-                    margin: '0 5 4 2',
-                    labelSeparator: '',
-                    labelPad: 6,
-                    labelStyle: 'padding-left: 0'
-                },
-                items: me.panelDocked$FilterItemA(),
-                listeners: {
-                    afterrender: function(){
-                        me.setFilterValues();
-                    }
-                }
-            }]
-        }*/
     },
 
     /**
