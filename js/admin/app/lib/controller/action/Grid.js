@@ -256,8 +256,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Recursively build the columns
         columnA = columnA.concat(me.gridColumnADeep(me.ti().grid));
 
-        if (columnA[1] && !columnA[1].columns && !columnA[1].locked) columnA[1].flex = 1;
-
+        // Return array of column config objects
         return columnA;
     },
 
@@ -770,10 +769,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
     },
 
     /**
-     * Adjust grid columns widths, for widths to match column contents
+     * Adjust grid columns widths, for widths to match column contents if possible
      */
-    gridColumnAFit: function(grid, locked) {
-        var me = this, columnA, i;
+    gridColumnAFit: function(grid) {
+        var me = this, columnA, i, available, flex = false, ignoreA = [], w = {
+            float: {minWidth: 100, reqWidth: 0, avgWidth: 0, qty: 0},
+            total: {minWidth:   0, reqWidth: 0, fixWidth: 0}
+        };
 
         // If `grid` arg is not given - use current grid
         if (!grid) grid = Ext.getCmp(me.rowset.id);
@@ -784,8 +786,116 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Get columns
         columnA = grid.getGridColumnsWidthUsage();
 
-        // Set width
-        for (i in columnA) if (!columnA[i].resizable) columnA[i].setWidth(columnA[i].widthUsage);
+        // Foreach column
+        for (i in columnA) {
+
+            // Collect total width, required for non-hidden columns contents to be displayed without clipping
+            if (!columnA[i].hidden) w.total.reqWidth += columnA[i].widthUsage;
+
+            // If icon is used as a column heading - set column to be not resizable
+            if (columnA[i].icon) columnA[i].resizable = false;
+
+            // If column is not resizable
+            if (columnA[i].resizable === false) {
+
+                // Collect total width, used by non-hidden columns, that should not be resized in any circumstances
+                if (!columnA[i].hidden) w.total.fixWidth += columnA[i].widthUsage;
+
+                // Set column width so contents won't be clipped
+                columnA[i].setWidth(columnA[i].widthUsage);
+
+            // Else if column may be resized, manually or automatically
+            } else {
+
+                // If column is not hidden
+                if (!columnA[i].hidden) {
+
+                    // Collect total width, required for non-hidden floating-width columns
+                    w.float.reqWidth += columnA[i].widthUsage;
+
+                    // Increase such columns counter
+                    w.float.qty ++;
+                }
+            }
+        }
+
+        // Calc available width as
+        available =
+
+            // Main area width (minus it's border width at both left and right sides)
+            Ext.getCmp('i-center-center').getWidth() - 2
+
+            // Minus left-scrollbar width, if left-scrollbar exists
+            - ((grid.normalGrid ? grid.normalGrid.view.hasScrollY() : grid.view.hasScrollY()) ? 16 : 0);
+
+        // If available width is sufficient for all columns contents to be displayed without clipping
+        if (available >= w.total.reqWidth) {
+
+            // Foreach non-hidden column
+            for (i in columnA) if (!columnA[i].hidden)
+
+                // If column is locked or `flex` flag is non-false
+                // Set columns width to be as per actual usage
+                if (columnA[i].locked || flex) columnA[i].setWidth(columnA[i].widthUsage);
+
+                // Else set column's `flex` prop and `flex` flag to be 1 (e.g. non false)
+                else columnA[i].flex = flex = 1;
+
+        // Else if available width is insufficient
+        } else {
+
+            // Calculate average width
+            w.float.avgWidth = (available - w.total.fixWidth) / w.float.qty;
+
+            // Foreach column
+            columnA.forEach(function(columnI, index) {
+
+                // Ignore hidden and non-resizable columns, as their widths is not a question
+                if (columnI.hidden || !columnI.resizable) return;
+
+                // If column's required width that width is smaller than average width
+                if (columnI.widthUsage <= w.float.avgWidth) {
+
+                    // Push columns's index into 'ignoreA' array to remember
+                    // that there is no need for that column's width to differ from it's `widthUsage` prop
+                    ignoreA.push(index);
+
+                    // Increase 'constant' variable by the value of 'itemTitleRequiredWidth' variable,
+                    // as widths of items, that are smaller than average width - should not be involved
+                    // in the process of width adjustment amount calculation
+                    w.total.fixWidth += columnI.widthUsage;
+                }
+            });
+
+            // Recalculate average width
+            w.float.avgWidth = Math.floor((available - w.total.fixWidth)/(w.float.qty - ignoreA.length));
+
+            // Get lost value. We need this because there may be undistributed number of pixels, that
+            // we need to redistribute to columns by a one-lost-pixel-to-one-column logic. This will provide
+            // a visual impression that all columns have dimensions that allow them to have exact fit within
+            // the grid panel, despite on mathematically it's impossible
+             var lost = (available - w.total.fixWidth) - w.float.avgWidth * (w.float.qty - ignoreA.length);
+
+            // For each column
+            columnA.forEach(function(item, index) {
+
+                // If column's width shouldn't be adjusted
+                if (ignoreA.indexOf(index) != -1) {
+
+                    // Set width to be as column contents require
+                    item.setWidth(item.widthUsage);
+
+                // Else if item's width should be adjusted
+                } else if (item.resizable && !item.hidden) {
+
+                    // Set width to be average or minimum
+                    item.setWidth(Math.max(w.float.avgWidth + (lost > 0 ? 1 : 0), w.float.minWidth));
+
+                    // Decrease lost
+                    lost--;
+                }
+            });
+        }
 
         // Resume layouts
         Ext.resumeLayouts(true);

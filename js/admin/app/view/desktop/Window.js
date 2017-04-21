@@ -1,8 +1,6 @@
 Ext.define('Indi.view.desktop.Window', {
     extend: 'Ext.window.Window',
     alias: 'widget.desktopwindow',
-    width: '100%',
-    height: '100%',
     maximized: false,
     maximizable: true,
     minimizable: true,
@@ -11,7 +9,11 @@ Ext.define('Indi.view.desktop.Window', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this;
+        var me = this, center = Ext.getCmp('i-center-center');
+
+        // Set default width and height to be same as center panel
+        me.width = center.getWidth();
+        me.height = center.getHeight();
 
         // Depress currently pressed windowbutton(s)
         Indi.app.taskbar.wbar.query('> [pressed]').forEach(function(btn){btn.toggle();});
