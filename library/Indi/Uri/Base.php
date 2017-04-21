@@ -45,6 +45,9 @@ class Indi_Uri_Base {
         $this->section = 'index';
         $this->action = 'index';
 
+        // If URI is '/' - return
+        if (!$uri[0]) return;
+
         // If first chunk of $uri is 'admin', we set 'module' param as 'admin' and drop that chunk from $uri
         if ($uri[0] == 'admin') {
             $this->module = $uri[0];
@@ -65,7 +68,7 @@ class Indi_Uri_Base {
         for ($i = 0; $i < count($uri); $i++)
 
             // Setup section
-            if ($i == 0 && $uri[$i]) $this->section = $uri[$i];
+            if ($i == 0) $this->section = $uri[$i];
 
             // Setup action
             else if ($i == 1) $this->action = $uri[$i];
