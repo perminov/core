@@ -69,12 +69,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 beforeitemkeydown: function(view, r, d, i, e) {
                     if (e.altKey) return false;
                 },
-                resize: function(c) {
-                    c.getEl().setStyle('overflow', '');
-                    Ext.defer(function(){
-                        if(c.getEl()) c.getEl().setStyle('overflow', 'auto');
-                    }, 1);
-                },
                 itemkeydown: function(view, row, item, index, e) {
 
                     // Load previous page on Page Up, if need
@@ -209,7 +203,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     gridColumn$Id: function() {
-        return {header: 'ID', dataIndex: 'id', width: 30, sortable: true, align: 'right', hidden: true}
+        return {header: 'ID', dataIndex: 'id', width: 5, sortable: true, align: 'right', hidden: true, resizable: false}
     },
 
     /**
@@ -237,7 +231,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
             $ctx: me,
             tdCls: tdClsA.join(' '),
             sortable: true,
-            editor: column.editor
+            editor: column.editor,
+            resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1
         };
 
         // If current column's field is a grouping field - hide it
@@ -778,10 +773,33 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * Adjust grid columns widths, for widths to match column contents
      */
     gridColumnAFit: function(grid, locked) {
+        var me = this, columnA, i;
+
+        // If `grid` arg is not given - use current grid
+        if (!grid) grid = Ext.getCmp(me.rowset.id);
+
+        // Suspend layouts
+        Ext.suspendLayouts();
+
+        // Get columns
+        columnA = grid.getGridColumnsWidthUsage();
+
+        // Set width
+        for (i in columnA) if (!columnA[i].resizable) columnA[i].setWidth(columnA[i].widthUsage);
+
+        // Resume layouts
+        Ext.resumeLayouts(true);
+    },
+
+
+    /**
+     * Adjust grid columns widths, for widths to match column contents
+     */
+    gridColumnAFit_backup: function(grid, locked) {
 
         // Setup auxiliary variables
         var me = this, grid = grid || Ext.getCmp(me.rowset.id), view = grid.getView(), columnA = [],
-            widthA = [], px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18},
+            widthA = [], widthO = {}, px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18},
             store = grid.getStore(), total = 0, i, j, k, longestWidth, cell, fnhci = -1,
             visible, scw = me.rowset.smallColumnWidth, fcwf = me.rowset.firstColumnWidthFraction, sctw = 0, fcw,
             hctw = 0, busy = 0, free, longest = [], summaryData, summaryFeature,
@@ -808,7 +826,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         } else {
 
             // Pass exection directly to locked and non-locked part of grid
-            me.gridColumnAFit(view.lockedGrid, true);
+            me.gridColumnAFit(view.lockedGrid);
             me.gridColumnAFit(view.normalGrid);
 
             // Return
@@ -822,7 +840,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         for (i = 0; i < columnA.length; i++) {
 
             // Get initial column width, based on a column title metrics
-            widthA[i] = columnA[i].icon ? 16 : Indi.metrics.getWidth(columnA[i].text);// + px.ellipsis;
+            widthA[i] = columnA[i].icon ? 16 : Indi.metrics.getWidth(columnA[i].text);
 
             // Reset level
             level = 0; longest = [];
@@ -900,22 +918,25 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
             // Increase the total width
             total += widthA[i];
+            widthO[columnA[i].dataIndex || columnA[i].xtype] = widthA[i];
 
             // If column is hidden - sum it's width into `hctw` variable
-            if (columnA[i].hidden) hctw += widthA[i]; else if (fnhci == -1) fnhci = parseInt(i);
+            if (columnA[i].hidden) hctw += widthA[i]; // else if (fnhci == -1) fnhci = parseInt(i);
         }
 
         // Remember width, best suitable for grid if it was no width limitations
         grid.widthUsage = parseInt(total - hctw);
 
+        console.log(locked ? 'locked' : 'normal', widthO, grid.widthUsage, visible);
+
         // If visible width completely match required width
-        if (visible == grid.widthUsage || grid.fitUsage) {
+        //if (visible == grid.widthUsage) {
 
             // For each column, set width
             for (i = 0; i < widthA.length; i++) columnA[i].setWidth(widthA[i]);
 
         // Else
-        } else {
+        /*} else {
 
             if (fnhci != -1) {
 
@@ -982,7 +1003,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             if (columnA[1]) columnA[1].setWidth(widthA[1]);
         } else {
             columnA[1].setWidth((free = visible - busy) > fcw ? free : fcw);
-        }
+        }*/
 
         // If current grid view is not consists from locked and non-locked parts - resume layouts
         if (view.headerCt) Ext.resumeLayouts(true);
