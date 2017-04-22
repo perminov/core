@@ -1196,7 +1196,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     /**
      * Key map for gridpanel body
      */
-    keyMap: function() {
+    gridKeyMap: function() {
         var me = this;
 
         // Add keyboard event handelers
@@ -1585,7 +1585,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         me.callParent();
 
         // Attach key map
-        me.keyMap();
+        me.gridKeyMap();
     },
 
     /**

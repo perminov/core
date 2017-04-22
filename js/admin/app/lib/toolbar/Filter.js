@@ -23,7 +23,7 @@ Ext.define('Indi.lib.toolbar.Filter', {
         });
 
         // Append fieldset's constant width
-        sum += fs.el.getMargin('lr') + fs.el.getPadding('lr') + fs.el.getBorderWidth('lr');
+        sum += fs.el.getMargin('lr') + fs.el.getPadding('lr') + fs.el.getBorderWidth('lr') + 8;
 
         // Return
         return sum;
