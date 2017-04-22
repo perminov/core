@@ -28,21 +28,6 @@ Ext.define('Indi.lib.view.action.Panel', {
     },
 
     /**
-     * Provide bread crumbs to be created/updated
-     */
-    afterRender: function() {
-        var me = this;
-
-        // Set up bread crubms
-        if (!me.isTab) Ext.defer(function() {
-            Indi.trail(true).breadCrumbs(me.ctx().route);
-        }, 1);
-
-        // Call parent
-        me.callParent(arguments);
-    },
-
-    /**
      * This is for override in child classes
      */
     forScope: function() {

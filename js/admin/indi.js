@@ -1188,7 +1188,7 @@ Ext.define('Indi', {
         var me = this, activeWindow = me.getActiveWindow(), last = me.lastActiveWindow;
 
         // If currently active window - is the last focused - update bread crumb trail and return
-        if (activeWindow === last) return Indi.app.updateTrail();
+        if (activeWindow === last) return;// Indi.app.updateTrail();
 
         // If we previously had active window, and that window is still exists
         if (last) {
