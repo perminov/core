@@ -1575,7 +1575,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
                             //me.gridColumnAFit();
                         }
                     });
-                }
+
+                // Else fit grid as it's required because window height should be calculated
+                } else me.gridColumnAFit();
             },
             listeners: {
                 boxready: function() {
