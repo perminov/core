@@ -881,7 +881,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // we need to redistribute to columns by a one-lost-pixel-to-one-column logic. This will provide
             // a visual impression that all columns have dimensions that allow them to have exact fit within
             // the grid panel, despite on mathematically it's impossible
-             var lost = (available - w.total.fixWidth) - w.float.avgWidth * (w.float.qty - ignoreA.length);
+            var lost = (available - w.total.fixWidth) - w.float.avgWidth * (w.float.qty - ignoreA.length);
 
             // For each column
             columnA.forEach(function(item, index) {
@@ -896,7 +896,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 } else if (item.resizable && !item.hidden) {
 
                     // Set width to be average or minimum
-                    item.setWidth(Math.max(w.float.avgWidth + (lost > 0 ? 1 : 0), w.float.minWidth));
+                    item.setWidth(Math.max(w.float.avgWidth + (lost > 0 ? 1 : 0), Math.min(w.float.minWidth, item.widthUsage)));
 
                     // Decrease lost
                     lost--;
