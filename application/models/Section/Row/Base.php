@@ -97,17 +97,31 @@ class Section_Row_Base extends Indi_Db_Table_Row {
      * into a special kind of json-encoded array, suitable for usage
      * with ExtJS
      *
+     * Also, before json-encoding, prepend additional item into that array,
+     * responsible for grouping, if `groupBy` prop is set
+     *
      * @return string
      */
     public function jsonSort() {
 
-        // If no default sort - return empty json array
-        if (!$this->foreign('defaultSortField')) return '[]';
+        // Blank array
+        $json = array();
+
+        // Mind grouping, as it also should be involved while building ORDER clause
+        if ($this->groupBy && $this->foreign('groupBy'))
+            $json[] = array(
+                'property' => $this->foreign('groupBy')->alias,
+                'direction' => 'ASC'
+            );
+
+        // Ming sorting
+        if ($this->foreign('defaultSortField'))
+            $json[] = array(
+                'property' => $this->foreign('defaultSortField')->alias,
+                'direction' => $this->defaultSortDirection,
+            );
 
         // Return json-encoded sort params
-        return json_encode(array(array(
-            'property' => $this->foreign('defaultSortField')->alias,
-            'direction' => $this->defaultSortDirection,
-        )));
+        return json_encode($json);
     }
 }
