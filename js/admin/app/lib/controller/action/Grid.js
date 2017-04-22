@@ -185,8 +185,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Press 'Details' btn if ok
                 btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn && press) {
-                    this.view.dblclick = true;
+
+                    // Set dblclick flag to prevent cell-editing
+                    gridview.dblclick = true;
+
+                    // Press form-action button
                     btn.press();
+
+                    // Reset dblclick flag, with some delay
+                    Ext.defer(function() { if (gridview) gridview.dblclick = false; }, 506);
                 }
             },
 
