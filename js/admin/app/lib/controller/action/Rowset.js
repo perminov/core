@@ -1929,8 +1929,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.callParent();
 
         // Attach key map
-        me.keyMap();
+        me.rowsetKeyMap();
     },
+
+    /**
+     *
+     */
+    rowsetKeyMap: Ext.emptyFn,
 
     /**
      * Build and return an array, containing plugin definitions for rowset panel

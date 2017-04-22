@@ -966,7 +966,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         if (config.route) me.route = config.route;
 
         // Setup main panel title as current secion title
-        me.panel.title = me.ti().row.id ? me.ti().row.title : Indi.lang.I_CREATE;
+        me.panel.title = me.ti().row.id ? Indi.trail(true).breadCrumbsRowTitle(me.ti()) : Indi.lang.I_CREATE;
 
         // Merge configs
         me.mergeParent(config);

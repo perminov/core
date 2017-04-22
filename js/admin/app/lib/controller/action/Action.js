@@ -429,11 +429,6 @@ Ext.define('Indi.lib.controller.action.Action', {
         });
     },
 
-    /**
-     * Empty function
-     */
-    keyMap: Ext.emptyFn,
-
     // @inheritdoc
     constructor: function(config) {
         var me = this;
@@ -513,6 +508,12 @@ Ext.define('Indi.lib.controller.action.Action', {
         me.callParent();
     },
 
+    /**
+     * Here we decide whether existing window should be used as place where wrapper should be rendered in,
+     * or new separate window should be created for that
+     *
+     * @return {*}
+     */
     prepareWindow: function() {
         var me = this, app = Indi.app, window, active = app.getActiveWindow(), create = false, a = {}, n = {}, i, cfg;
 
