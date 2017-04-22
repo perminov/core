@@ -673,6 +673,9 @@ Ext.define('Indi.lib.controller.action.Action', {
 
             // Apply new contents to active window
             window = active.apply(cfg);
+
+            // Update trail
+            Indi.app.updateTrail();
         }
 
         // Return
