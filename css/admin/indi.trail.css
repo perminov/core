@@ -4,6 +4,38 @@
     top: 1px;
     left: -1px;
 }
+.i-trail {
+    margin-top: 0 !important;
+}
+.i-trail .x-btn-default-toolbar-small-over {
+    background: none;
+}
+.i-trail .x-btn.x-btn-default-toolbar-small .x-btn-inner {
+    font-size: 12px;
+    padding: 0;
+}
+.i-trail-item-row-title.x-btn-default-toolbar-small-over .x-btn-inner,
+.i-trail-item-section.x-btn-default-toolbar-small-over .x-btn-inner{
+    color: #a5bce8;
+}
+.i-trail .x-btn.i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner {
+    font-style: italic;
+    padding-right: 2px;
+}
+.i-trail-item-section.x-btn-default-toolbar-small .x-btn-inner:before,
+.i-trail-item-action.x-btn-default-toolbar-small .x-btn-inner:before,
+.i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner:before {
+    content: '» ';
+    font-style: normal;
+}
+#i-center-north-trail .i-trail-item-row-title span,
+#i-center-north-trail .i-trail-item-section span{
+    cursor: pointer;
+}
+#i-center-north-trail .x-btn-default-toolbar-small-over,
+#i-center-north-trail .x-btn-default-toolbar-small {
+    border-width: 0 !important;
+}
 #i-center-north-trail span{
     cursor: default;
 }

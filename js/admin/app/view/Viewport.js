@@ -142,8 +142,12 @@ Ext.define('Indi.view.Viewport', {
                         margin: '0 0 0 0'
                     }]
                 }],
-                bodyStyle: 'border-top: 0;',
-                html: '<div id="i-center-north-trail"></div>'
+                bodyStyle: 'border-top: 0;'
+            }, {
+                id: 'i-center-north-trail',
+                height: 17,
+                border: 0,
+                padding: 0
             }]
         }, {
             region: 'center',

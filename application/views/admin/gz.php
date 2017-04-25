@@ -44,6 +44,7 @@ $js = array(
     '/js/admin/app/view/LoginBox.js',
     '/js/admin/app/view/Menu.js',
     '/js/admin/app/view/Viewport.js',
+    '/js/admin/app/lib/trail/Button.js',
     '/js/admin/app/view/desktop/Window.js',
     '/js/admin/app/view/desktop/WindowButton.js',
     '/js/admin/app/view/desktop/WindowBar.js',

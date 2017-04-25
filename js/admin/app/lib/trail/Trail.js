@@ -294,6 +294,155 @@ Ext.define('Indi.lib.trail.Trail', {
     },
 
     /**
+     * Build the breadcrumbs
+     */
+    breadCrumbA: function(route){
+        var me = this, crumbA = [], sd, i, item;
+
+        // If no trail items exist yet
+        if (route.length == 0) return crumbA;
+
+        // Push the first item - section group
+        crumbA.push({
+            text: route[0].section.title,
+            cls: 'i-trail-section-group',
+            tag: 'span'
+        });
+
+        // For each remaining trail items
+        for (i = 1; i < route.length; i++) {
+
+            // Define a shortcut for current trail item
+            item = route[i];
+
+            // Define a shortcut for previous trail item
+            if (i > 1) var prev = route[i-1];
+
+            // Define an array for html-nodes, for representing current trail item siblings
+            sd = [];
+
+            // If this is at least second iteration within current 'for' loop, and item, that was current at
+            // first iteration ( - previous item, actually) has > 1 nested sections, we start building
+            // html for siblings.
+            if (i > 1 && prev.sections.length > 1) {
+
+                // Append opening '<div>' and '<ul>' tags
+                sd = ['<div class="i-trail-item-sections">'];
+                sd.push('<ul>');
+
+                // Foreach nested sections, within previous trail item
+                for (var s = 0; s < prev.sections.length; s++) {
+
+                    // Defined a shortcut for sibling
+                    var sibling = prev.sections[s];
+
+                    // If current nested section of previous trail item is not the same as section of
+                    // current trail item, we add a '<ul>' tags, containing '<a>' tag. We need to do
+                    // this check because there will be visual duplicates otherwise
+                    if (sibling.id != item.section.id) {
+                        sd.push(
+                            '<li>' +
+                                '<a page-href="' + me._crumbHref(sibling.alias, prev) + '">' +
+                                '&raquo; ' + sibling.title +
+                                '</a>' +
+                            '</li>'
+                        );
+                    }
+                }
+
+                // Append closing '<div>' and '<ul>' tags
+                sd.push('</ul>');
+                sd.push('</div>');
+            }
+
+            // We append a section name (with link) as a crumb item, prepending it with html of builded
+            // siblings div
+            crumbA.push({
+                text: item.section.title,
+                cls: 'i-trail-item-section',
+                tag: 'a',
+                sd: sd.join(''),
+                load: me._crumbHref(item.section.alias, prev)
+            });
+
+            // If current trail item has a row
+            if (item.row) {
+
+                // If that row has an id
+                if (parseInt(item.row.id)) {
+
+                    // Check 'form' action availability
+                    var formActionIsAllowed = false;
+                    for (var a = 0; a < item.actions.length; a++)
+                        if (item.actions[a].alias == 'form') formActionIsAllowed = true;
+
+                    // If current trail item is not a last item
+                    if (route[i+1]) {
+
+                        // If 'form' action is allowed, we append an 'a' tag, pointing to 'form' action for
+                        // current trail item row
+                        if (formActionIsAllowed) {
+                            crumbA.push({
+                                text: me.breadCrumbsRowTitle(item),
+                                cls: 'i-trail-item-row-title',
+                                tag: 'a',
+                                load: this._crumbHref(item.section.alias, item)
+                            });
+
+                        // Else 'form' action is not allowed, we just append current trail item row title,
+                        // within 'span' tag, instead of 'a' tag
+                        } else {
+                            crumbA.push({
+                                text: me.breadCrumbsRowTitle(item),
+                                cls: 'i-trail-item-row-title',
+                                tag: 'span'
+                            });
+                        }
+
+                    // Else if current trail item - is the last item
+                    } else {
+
+                        // We apend current trail item row title within 'span' tag, and append current trail
+                        // item action title, by the same way
+                        crumbA.push({
+                            text: me.breadCrumbsRowTitle(item),
+                            cls: 'i-trail-item-row-title',
+                            tag: 'span'
+                        });
+                        crumbA.push({
+                            text: item.action.title,
+                            tag: 'span',
+                            cls: 'i-trail-item-action'
+                        });
+                    }
+
+                // Else if current trail item row does not have and id, and current action alias is 'form'
+                } else if (item.action.alias == 'form') {
+
+                    // We append 'form' action title, but it' version for case then new row is going to be
+                    // created, hovewer, got from localization object, instead of actual action title
+                    crumbA.push({
+                        text: Indi.lang.I_CREATE,
+                        tag: 'span',
+                        cls: 'i-trail-item-action'
+                    });
+                }
+
+            // Else if action is not 'index'
+            } else if (item.action.alias != 'index') {
+
+                // Push action title into crumbs
+                crumbA.push({
+                    text: item.action.title,
+                    tag: 'span'
+                });
+            }
+        }
+
+        return crumbA;
+    },
+
+    /**
      * Apply the store
      *
      * @param route
