@@ -1268,14 +1268,40 @@ Ext.define('Indi', {
      * Update bread crumb trail contents to represent current window
      */
     updateTrail: function() {
-        var me = this, topMaximized = me.getTopMaximizedWindow();
+        var me = this, topMaximized = me.getTopMaximizedWindow(), crumbs = [], crumbA = [];
 
-        // If we've found window that is the top most within maximized window
-        // set up bread crumb trail to represent it's location within the system,
-        // or erase bread crumb trail contents
-        Ext.get('i-center-north-trail').setHTML(
-            topMaximized ? Indi.trail(true).breadCrumbs(topMaximized.ctx.route) : ''
-        );
+        // Destroy existing trail buttons
+        if (me.tb) me.tb.destroy();
+
+        // Return
+        if (!topMaximized) return;
+
+        // Get trail buttons
+        crumbA = Indi.trail(true).breadCrumbA(topMaximized.ctx.route);
+
+        // Setup special
+        crumbA.forEach(function(i, idx){
+            if (i.load) crumbA[idx].handler = function(btn) { Indi.load(btn.load); }
+            //if (idx) crumbA[idx].text = i.text;
+        });
+
+        var tb = Ext.widget({
+            xtype: 'toolbar',
+            onAdd: Ext.emptyFn,
+            cls: 'i-trail',
+            padding: '0 0 0 2',
+            style: 'background: none;',
+            defaults: {
+                xtype: 'trailbutton',
+                padding: '0 4 0 0',
+                margin: 0,
+                height: 15,
+                border: 1
+            },
+            items: crumbA
+        });
+
+        Ext.getCmp('i-center-north-trail').add(me.tb = tb);
     },
 
     /**

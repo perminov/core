@@ -1,5 +1,5 @@
 Ext.define('Indi.view.desktop.WindowButton', {
-    extend: 'Ext.button.Button',
+    extend: 'Indi.lib.trail.Button',
     alias: 'widget.windowbutton',
 
     toggleGroup: 'all',
