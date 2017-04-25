@@ -70,57 +70,27 @@ Ext.define('Indi.lib.view.action.Panel', {
             center = Ext.getCmp('i-center-center'), maxWidth = center.getWidth(), maxHeight = center.getHeight();
 
         // If window exists
-        if (window && !window.maximized) {
-
-            // Get window's frame width usage
-            windowFrameWidth = window.getWidth() - me.getWidth();
-
-            // Get window's frame height usage
-            windowFrameHeight = window.getHeight() - me.getHeight();
+        if (window && (me.$ctx.route.length > 2 || (me.$ctx.ti().action.alias != 'index'))) {
 
             // Get real height usage
-            width = (arguments.length ? me.widthUsage : me.getWidthUsage()) + windowFrameWidth;
+            width = (arguments.length ? me.widthUsage : me.getWidthUsage()) + 12;
 
-            // Set window's height to fit actual content's height
-            window.setWidth(width);
+            if (width <= maxWidth * 0.9) {
 
-            // Get real height usage
-            height = (arguments.length ? me.heightUsage.total + delta : me.getHeightUsage()) + windowFrameHeight + 1;
+                // Restore the window for it to be non-maximized
+                if (window.maximized) window.restore();
 
-            // Decide whether to maximize window or make it fit-sized
-            if (height > maxHeight * 0.9) {
+                // Set width
+                window.setWidth(width);
 
-                // Set height to be bit smaller than maximum height
-                window.setHeight(maxHeight * 0.9);
+                // Get real height usage
+                height = (arguments.length ? me.heightUsage.total + (delta || 0) : me.getHeightUsage()) + 32 + 1;
 
-                // Here we do center window before maximizing, that will provide window
-                // to be positioned at center if user will pop-out window from being maximized
+                // Set height
+                if (height <= maxHeight * 0.9) window.setHeight(height);
+
+                // Make window to appear at center
                 window.center();
-
-                // Maximize window
-                window.maximize();
-
-            // Else if height does not exceed maximum height
-            } else {
-
-                // Set that height for window
-                window.setHeight(height);
-
-                // If width exceeds maximum width
-                if (width > maxWidth) {
-
-                    // Set window to have maximum possible width
-                    window.setWidth(maxWidth);
-
-                    // Here we do center window before maximizing, that will provide window
-                    // to be positioned at center if user will pop-out window from being maximized
-                    window.center();
-
-                    // Maximize window
-                    window.maximize();
-
-                // Else just center window
-                } else window.center();
             }
         }
     },

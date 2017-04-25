@@ -648,7 +648,8 @@ Ext.define('Indi.lib.controller.action.Action', {
             if (i == -1)
                 window = Ext.widget(Ext.merge({
                     xtype: 'desktopwindow',
-                    tools: me.panelToolA()
+                    tools: me.panelToolA(),
+                    maximized: true
                 }, cfg));
 
             // Else use existing window
