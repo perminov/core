@@ -626,8 +626,8 @@ Ext.define('Indi.lib.controller.action.Action', {
             // that is not a parent or child for active window's section
             } else {
 
-                // Set up `create` flag as `true`
-                create = true;
+                // Set up `create` flag as `false`
+                create = false;
             }
         }
 
