@@ -99,205 +99,8 @@ Ext.define('Indi.lib.trail.Trail', {
     /**
      * Build the breadcrumbs
      */
-    breadCrumbs: function(route){
-        var me = this, crumbA = [], sd, i, item;
-
-        // Prepend trail bread crumbs with 'Home' link, if needed
-        if (me.options.crumbs.home)
-            crumbA.push('<a href="' + Indi.pre + '/"><img src="' + Indi.std + '/i/admin/trl-icon-home.gif"/></a>');
-
-        // If no trail items exist yet
-        if (route.length == 0) {
-
-            // Replace the current contents of #i-center-north-trail DOM node with 'Home' link
-            Ext.get('i-center-north-trail').setHTML(crumbA[0]);
-
-            // Return
-            return;
-        }
-
-        // Push the first item - section group
-        crumbA.push('<span class="i-trail-section-group">' + route[0].section.title + '</span>');
-
-        // For each remaining trail items
-        for (i = 1; i < route.length; i++) {
-
-            // Define a shortcut for current trail item
-            item = route[i];
-
-            // Define a shortcut for previous trail item
-            if (i > 1) var prev = route[i-1];
-
-            // Define an array for html-nodes, for representing current trail item siblings
-            sd = [];
-
-            // If this is at least second iteration within current 'for' loop, and item, that was current at
-            // first iteration ( - previous item, actually) has > 1 nested sections, we start building
-            // html for siblings.
-            if (i > 1 && prev.sections.length > 1) {
-
-                // Append opening '<div>' and '<ul>' tags
-                sd = ['<div class="i-trail-item-sections">'];
-                sd.push('<ul>');
-
-                // Foreach nested sections, within previous trail item
-                for (var s = 0; s < prev.sections.length; s++) {
-
-                    // Defined a shortcut for sibling
-                    var sibling = prev.sections[s];
-
-                    // If current nested section of previous trail item is not the same as section of
-                    // current trail item, we add a '<ul>' tags, containing '<a>' tag. We need to do
-                    // this check because there will be visual duplicates otherwise
-                    if (sibling.id != item.section.id) {
-                        sd.push(
-                            '<li>' +
-                                '<a page-href="' + me._crumbHref(sibling.alias, prev) + '">' +
-                                '&raquo; ' + sibling.title +
-                                '</a>' +
-                                '</li>'
-                        );
-                    }
-                }
-
-                // Append closing '<div>' and '<ul>' tags
-                sd.push('</ul>');
-                sd.push('</div>');
-            }
-
-            // We append a section name (with link) as a crumb item, prepending it with html of builded
-            // siblings div
-            crumbA.push(sd.join('') +
-                '<a page-href="'+me._crumbHref(item.section.alias, prev)+'" class="i-trail-item-section">' +
-                item.section.title +
-                '</a>'
-            );
-
-            // If current trail item has a row
-            if (item.row) {
-
-                // If that row has an id
-                if (parseInt(item.row.id)) {
-
-                    // Check 'form' action availability
-                    var formActionIsAllowed = false;
-                    for (var a = 0; a < item.actions.length; a++)
-                        if (item.actions[a].alias == 'form') formActionIsAllowed = true;
-
-                    // If current trail item is not a last item
-                    if (route[i+1]) {
-
-                        // If 'form' action is allowed, we append an 'a' tag, pointing to 'form' action for
-                        // current trail item row
-                        if (formActionIsAllowed) {
-                            crumbA.push(
-                                '<a page-href="' + this._crumbHref(item.section.alias, item) + '" ' +
-                                    'class="i-trail-item-row-title">' +
-                                    me.breadCrumbsRowTitle(item) +
-                                    '</a>'
-                            );
-
-                            // Else 'form' action is not allowed, we just append current trail item row title,
-                            // within 'span' tag, instead of 'a' tag
-                        } else {
-                            crumbA.push(
-                                '<span class="i-trail-item-row-title">' +
-                                    me.breadCrumbsRowTitle(item) +
-                                    '</span>'
-                            );
-                        }
-
-                        // Else if current trail item - is the last item
-                    } else {
-
-                        // We apend current trail item row title within 'span' tag, and append current trail
-                        // item action title, by the same way
-                        crumbA.push(
-                            '<span class="i-trail-item-row-title">' +
-                                me.breadCrumbsRowTitle(item) +
-                                '</span>'
-                        );
-                        crumbA.push('<span>' + item.action.title + '</span>');
-                    }
-
-                    // Else if current trail item row does not have and id, and current action alias is 'form'
-                } else if (item.action.alias == 'form') {
-
-                    // We append 'form' action title, but it' version for case then new row is going to be
-                    // created, hovewer, got from localization object, instead of actual action title
-                    crumbA.push('<span>' + Indi.lang.I_CREATE + '</span>');
-                }
-
-            // Else if action is not 'index'
-            } else if (item.action.alias != 'index') {
-
-                // Push action title into crumbs
-                crumbA.push('<span>' + item.action.title + '</span>');
-            }
-        }
-
-        // If this.options.crumbs.pop is a positive integer - we pop N items from the crumbA array
-        if (me.options.crumbs.pop) for (i = 0; i < me.options.crumbs.pop; i++) crumbA.pop();
-
-        // Reset this.options.crumbs.pop to '0'
-        me.options.crumbs.pop = 0;
-
-        // Replace the current contents of #i-center-north-trail DOM node with imploded crumbA array
-        /*Indi.app.getActiveWindow().getWrapper().addDocked({
-            id: Indi.app.getActiveWindow().wrapperId + '-crumbs',
-            xtype: 'toolbar',
-            items: {
-                xtype: 'panel',
-                html: '<div style="padding-right: 1px; padding-left: 1px;">' + crumbA.join('<span> &raquo; </span>') + '</div>',
-                width: '100%',
-                height: 17
-            }
-        }, 0);*/
-
-        //Indi.app.getActiveWindow().setTitle(crumbA.join('<span> &raquo; </span>'));
-        //Indi.app.getActiveWindow().setTitle('<div style="border: 1px solid #99BCE8; height: 16px; font-size: 12px; line-height: 13px; padding-right: 1px; padding-left: 1px; background: white;">' + crumbA.join('<span> &raquo; </span>') + '</div>');
-        //Ext.get('i-center-north-trail-panel-body').setHTML(crumbA.join('<span> &raquo; </span>'));
-        return crumbA.join('<span> &raquo; </span>');
-        //if (w.maximized) {
-            ;
-        //} else {
-          //  w.setTitle(crumbA.join('<span> &raquo; </span>'));
-        //}
-        //Ext.get('i-center-north-trail').setHTML(crumbA.join('<span> &raquo; </span>'));
-
-        // Bind a click event listener to all 'a' items within imploded crumbs
-        /*top.window.$('#' + Indi.app.getActiveWindow().wrapperId + '-crumbs  a').click(function(){
-            if ($(this).attr('page-href')) {
-                top.window.Indi.load($(this).attr('page-href'));
-                return false;
-            }
-        });
-
-        // Provide and ability for .i-trail-item-section nodes to be shown and hidden then they need to be
-        top.window.$('.i-trail-item-section').hover(function(){
-            $('.i-trail-item-sections').hide();
-            if ($(this).prev().hasClass('i-trail-item-sections')) {
-                $(this).prev().css({
-                    'min-width': (parseInt($(this).width()) + 21) + 'px',
-                    display: 'inline-block'
-                });
-            }
-        }, function(e){
-            if (parseInt(e.pageY) < parseInt($(this).offset().top) ||
-                parseInt(e.pageX) < parseInt($(this).offset().left) ||
-                parseInt(e.pageX) >= parseInt($(this).offset().left) + $(this).width())
-                top.window.$('.i-trail-item-sections').hide();
-        });
-        top.window.$('.i-trail-item-sections').mouseleave(function(){
-            top.window.$(this).hide();
-        });*/
-    },
-
-    /**
-     * Build the breadcrumbs
-     */
     breadCrumbA: function(route){
-        var me = this, crumbA = [], sd, i, item;
+        var me = this, crumbA = [], menuItems, i, item;
 
         // If no trail items exist yet
         if (route.length == 0) return crumbA;
@@ -305,8 +108,7 @@ Ext.define('Indi.lib.trail.Trail', {
         // Push the first item - section group
         crumbA.push({
             text: route[0].section.title,
-            cls: 'i-trail-section-group',
-            tag: 'span'
+            cls: 'i-trail-section-group'
         });
 
         // For each remaining trail items
@@ -318,17 +120,13 @@ Ext.define('Indi.lib.trail.Trail', {
             // Define a shortcut for previous trail item
             if (i > 1) var prev = route[i-1];
 
-            // Define an array for html-nodes, for representing current trail item siblings
-            sd = [];
+            // Define an array for menu-items, for representing current trail item siblings
+            menuItems = [];
 
             // If this is at least second iteration within current 'for' loop, and item, that was current at
             // first iteration ( - previous item, actually) has > 1 nested sections, we start building
             // html for siblings.
             if (i > 1 && prev.sections.length > 1) {
-
-                // Append opening '<div>' and '<ul>' tags
-                sd = ['<div class="i-trail-item-sections">'];
-                sd.push('<ul>');
 
                 // Foreach nested sections, within previous trail item
                 for (var s = 0; s < prev.sections.length; s++) {
@@ -340,19 +138,12 @@ Ext.define('Indi.lib.trail.Trail', {
                     // current trail item, we add a '<ul>' tags, containing '<a>' tag. We need to do
                     // this check because there will be visual duplicates otherwise
                     if (sibling.id != item.section.id) {
-                        sd.push(
-                            '<li>' +
-                                '<a page-href="' + me._crumbHref(sibling.alias, prev) + '">' +
-                                '&raquo; ' + sibling.title +
-                                '</a>' +
-                            '</li>'
-                        );
+                        menuItems.push({
+                            text: ' &raquo; ' + sibling.title,
+                            load: me._crumbHref(sibling.alias, prev)
+                        });
                     }
                 }
-
-                // Append closing '<div>' and '<ul>' tags
-                sd.push('</ul>');
-                sd.push('</div>');
             }
 
             // We append a section name (with link) as a crumb item, prepending it with html of builded
@@ -360,8 +151,7 @@ Ext.define('Indi.lib.trail.Trail', {
             crumbA.push({
                 text: item.section.title,
                 cls: 'i-trail-item-section',
-                tag: 'a',
-                sd: sd.join(''),
+                menuItems: menuItems,
                 load: me._crumbHref(item.section.alias, prev)
             });
 
@@ -385,7 +175,6 @@ Ext.define('Indi.lib.trail.Trail', {
                             crumbA.push({
                                 text: me.breadCrumbsRowTitle(item),
                                 cls: 'i-trail-item-row-title',
-                                tag: 'a',
                                 load: this._crumbHref(item.section.alias, item)
                             });
 
@@ -394,8 +183,7 @@ Ext.define('Indi.lib.trail.Trail', {
                         } else {
                             crumbA.push({
                                 text: me.breadCrumbsRowTitle(item),
-                                cls: 'i-trail-item-row-title',
-                                tag: 'span'
+                                cls: 'i-trail-item-row-title'
                             });
                         }
 
@@ -406,12 +194,10 @@ Ext.define('Indi.lib.trail.Trail', {
                         // item action title, by the same way
                         crumbA.push({
                             text: me.breadCrumbsRowTitle(item),
-                            cls: 'i-trail-item-row-title',
-                            tag: 'span'
+                            cls: 'i-trail-item-row-title'
                         });
                         crumbA.push({
                             text: item.action.title,
-                            tag: 'span',
                             cls: 'i-trail-item-action'
                         });
                     }
@@ -423,7 +209,6 @@ Ext.define('Indi.lib.trail.Trail', {
                     // created, hovewer, got from localization object, instead of actual action title
                     crumbA.push({
                         text: Indi.lang.I_CREATE,
-                        tag: 'span',
                         cls: 'i-trail-item-action'
                     });
                 }
@@ -433,8 +218,7 @@ Ext.define('Indi.lib.trail.Trail', {
 
                 // Push action title into crumbs
                 crumbA.push({
-                    text: item.action.title,
-                    tag: 'span'
+                    text: item.action.title
                 });
             }
         }

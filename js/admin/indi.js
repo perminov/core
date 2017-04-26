@@ -1271,7 +1271,10 @@ Ext.define('Indi', {
         var me = this, topMaximized = me.getTopMaximizedWindow(), crumbs = [], crumbA = [];
 
         // Destroy existing trail buttons
-        if (me.tb) me.tb.destroy();
+        if (me.tb) {
+            me.tb.destroy();
+            delete me.tb;
+        }
 
         // Return
         if (!topMaximized) return;
@@ -1279,29 +1282,25 @@ Ext.define('Indi', {
         // Get trail buttons
         crumbA = Indi.trail(true).breadCrumbA(topMaximized.ctx.route);
 
-        // Setup special
-        crumbA.forEach(function(i, idx){
-            if (i.load) crumbA[idx].handler = function(btn) { Indi.load(btn.load); }
-            //if (idx) crumbA[idx].text = i.text;
-        });
-
-        var tb = Ext.widget({
+        // Add trail toolbar
+        me.tb = Ext.getCmp('i-center-north-trail').add({
             xtype: 'toolbar',
-            onAdd: Ext.emptyFn,
             cls: 'i-trail',
             padding: '0 0 0 2',
             style: 'background: none;',
+            enableOverflow: true,
             defaults: {
                 xtype: 'trailbutton',
-                padding: '0 4 0 0',
+                padding: 0,
                 margin: 0,
                 height: 15,
-                border: 1
+                border: 1,
+                handler: function(btn) {
+                    if (btn.load) Indi.load(btn.load);
+                }
             },
             items: crumbA
         });
-
-        Ext.getCmp('i-center-north-trail').add(me.tb = tb);
     },
 
     /**

@@ -12,6 +12,7 @@ $js = array(
     '/js/admin/app/override/Ext.data.Connection.js',
     '/js/admin/app/override/Ext.dom.Element.js',
     '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
+    '/js/admin/app/override/Ext.ZIndexManager.js',
     '/js/admin/app/override/Ext.button.Button.js',
     '/js/admin/app/override/Ext.tip.ToolTip.js',
     '/js/admin/app/override/Ext.Component.js',

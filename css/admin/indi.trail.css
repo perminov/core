@@ -7,8 +7,15 @@
 .i-trail {
     margin-top: 0 !important;
 }
-.i-trail .x-btn-default-toolbar-small-over {
+.i-trail .x-btn-default-toolbar-small-over,
+.i-trail .x-btn-default-toolbar-small-menu-active,
+.i-trail .x-btn-default-toolbar-small-pressed {
     background: none;
+}
+.i-trail-item-menu .x-menu-item-active .x-menu-item-link{
+    background: none;
+    border-color: transparent;
+    color: #a5bce8;
 }
 .i-trail .x-btn.x-btn-default-toolbar-small .x-btn-inner {
     font-size: 12px;
@@ -27,6 +34,19 @@
 .i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner:before {
     content: '» ';
     font-style: normal;
+    padding-left: 4px;
+}
+.x-menu-item-text {
+    font-size: 12px;
+    color: inherit;
+}
+.x-menu-item-link {
+    display: block;
+    margin: 1px;
+    padding: 0 0 0 0;
+    text-decoration: none!important;
+    line-height: 12px;
+    cursor: default;
 }
 #i-center-north-trail .i-trail-item-row-title span,
 #i-center-north-trail .i-trail-item-section span{
