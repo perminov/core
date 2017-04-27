@@ -17,6 +17,12 @@
     border-color: transparent;
     color: #a5bce8;
 }
+.i-trail-item-menu .x-menu-body {
+    background: white !important;
+    top: -1px !important;
+    padding: 0 2px 0 2px;
+    border-top-width: 0;
+}
 .i-trail .x-btn.x-btn-default-toolbar-small .x-btn-inner {
     font-size: 12px;
     padding: 0;
@@ -99,9 +105,8 @@
 .i-trail-item-sections ul li:hover{
     background-color: #ecffeb;
 }
-.x-gecko .i-trail-item-sections ul li a{
-    position: relative;
-    top: -1px;
+.x-gecko .i-trail .x-btn{
+    padding-top: 1px !important;
 }
 .x-gecko #i-center-north-trail a img {
     top: 2px;
@@ -135,4 +140,7 @@
 .x-safari #i-center-north-trail{
     padding-top: 0px;
     margin-top: -3px;
+}
+.x-nlg .i-trail.x-toolbar.x-toolbar-default {
+    background-image: none !important;
 }
