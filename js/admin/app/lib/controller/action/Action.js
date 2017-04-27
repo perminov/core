@@ -622,12 +622,17 @@ Ext.define('Indi.lib.controller.action.Action', {
                     create = false;
                 }
 
-            // Else if we're going to create panel, that have section,
-            // that is not a parent or child for active window's section
-            } else {
+            // Else if we're here because of some of trail-buttons was clicked
+            } else if (me.cfg.trail) {
 
                 // Set up `create` flag as `false`
                 create = false;
+
+            // All other situations
+            } else {
+
+                // Set up `create` flag as `false`
+                create = true;
             }
         }
 

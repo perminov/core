@@ -1296,7 +1296,7 @@ Ext.define('Indi', {
                 height: 15,
                 border: 1,
                 handler: function(btn) {
-                    if (btn.load) Indi.load(btn.load);
+                    if (btn.load) Indi.load(btn.load, {trail: true});
                 }
             },
             items: crumbA
