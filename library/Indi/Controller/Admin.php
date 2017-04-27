@@ -10,6 +10,20 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected $_isRowsetSeparate = false;
 
     /**
+     * Flag for set up whether nested tabs rowset data should be fetched ONLY
+     * as a result of a separate http request
+     * This flag is involved in cases when current action is a row-action,
+     * but current section has nested sections, and first of them can be
+     * displayed as a south-panel tab within main wrapper panel.
+     * For example current section is 'Countries', and first among nested sections is 'Cities',
+     * so if user is at some country's details screen, $_isNestedSeparate flag will be responsible
+     * for whether or not 'Cities' south-panel tab will be build using response got by additional ajax request
+     *
+     * @var bool
+     */
+    protected $_isNestedSeparate = false;
+
+    /**
      * Array of section ids, starting from current section and up to the top.
      *
      * @var array
@@ -1896,6 +1910,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Else, if we are doing something in a certain section
         } else {
+
+            // Prevent sub-request
+            Indi::trail()->section->southSeparate = $this->_isNestedSeparate;
 
             // Get the action
             $action = Indi::trail()->view(true);

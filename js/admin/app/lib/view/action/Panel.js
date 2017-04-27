@@ -18,6 +18,13 @@ Ext.define('Indi.lib.view.action.Panel', {
     isWrapper: true,
 
     /**
+     * Special flag for skipping fitWindow() call
+     * This can be used for wrappers having huge number of contents,
+     * for example form with a lot of fields, etc, as in such cases  fitWindow() take a lot of time
+     */
+    skipFitWindow: false,
+
+    /**
      * Get the context. Context here is an instance of a Indi.Controller.Action class,
      * or instance of one of it's child classes
      *
@@ -57,7 +64,7 @@ Ext.define('Indi.lib.view.action.Panel', {
         me.callParent(arguments);
 
         // Fit window size to match inner contents
-        me.fitWindow();
+        if (!me.skipFitWindow) me.fitWindow();
     },
 
     /**
