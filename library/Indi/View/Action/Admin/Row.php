@@ -25,6 +25,9 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
         // If no subsections - return
         if (!Indi::trail()->sections->count()) return;
 
+        // If `southSeparate` flag is `true` - return
+        if (Indi::trail()->section->southSeparate) return;
+
         // Get last active tab
         $nested = Indi::trail()->scope->actionrow['south']['activeTab'];
 

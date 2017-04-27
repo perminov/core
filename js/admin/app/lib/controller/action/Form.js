@@ -137,7 +137,7 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // Hide mask
                 this.ctx().getMask().hide();
-                
+
                 // Turn `isLoading` flag back to `false`
                 form.isLoading = false;
             },
