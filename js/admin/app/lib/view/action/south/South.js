@@ -227,11 +227,17 @@ Ext.define('Indi.lib.view.action.south.South', {
             cls: 'i-panelholder',
             isTab: true,
             doLoad: Ext.emptyFn,
-            html: 'Содержимое этой панели открыто в отдельном окне' +
+            html: Indi.lang.I_SOUTH_PLACEHOLDER_TITLE +
                 '<hr size="1" color="#04408C">' +
                 '<ul>' +
-                    '<li><a onclick="Indi.app.getWindowByWrapperId(\''+wrapperId+'\').toFront();">Перейти</a> к окну</li>' +
-                    '<li><a onclick="Indi.app.putWindowBackToTab(\''+wrapperId+'\');">Вернуть</a> содержимое обратно сюда</li>' +
+                    '<li>' +
+                        '<a onclick="Indi.app.getWindowByWrapperId(\''+wrapperId+'\').toFront();">' +
+                            Indi.lang.I_SOUTH_PLACEHOLDER_GO +
+                        '</a>' + Indi.lang.I_SOUTH_PLACEHOLDER_TOWINDOW  + '</li>' +
+                    '<li>' +
+                '       <a onclick="Indi.app.putWindowBackToTab(\''+wrapperId+'\');">' +
+                            Indi.lang.I_SOUTH_PLACEHOLDER_GET +
+                        '</a>' + Indi.lang.I_SOUTH_PLACEHOLDER_BACK + '</li>' +
                 '</ul>'
         });
     }

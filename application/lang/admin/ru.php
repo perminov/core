@@ -197,3 +197,9 @@ define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Фильтры уже с
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Подтверждение');
 define('I_ACTION_DELETE_CONFIRM_MSG', 'Вы уверены что хотите удалить запись');
+
+define('I_SOUTH_PLACEHOLDER_TITLE', 'Содержимое этой панели открыто в отдельном окне');
+define('I_SOUTH_PLACEHOLDER_GO', 'Перейти');
+define('I_SOUTH_PLACEHOLDER_TOWINDOW', ' к окну');
+define('I_SOUTH_PLACEHOLDER_GET', 'Вернуть');
+define('I_SOUTH_PLACEHOLDER_BACK', ' содержимое обратно сюда');
