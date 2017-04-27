@@ -33,7 +33,7 @@ Ext.define('Indi.lib.trail.Button', {
                     height: 15,
                     border: 0,
                     handler: function(btn) {
-                        if (btn.load) Indi.load(btn.load);
+                        if (btn.load) Indi.load(btn.load, {trail: true});
                     }
                 },
                 items: me.menuItems,
