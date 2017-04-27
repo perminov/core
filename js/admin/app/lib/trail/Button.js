@@ -24,7 +24,6 @@ Ext.define('Indi.lib.trail.Button', {
                 plain: true,
                 cls: 'i-trail-item-menu',
                 style: 'border-top-width:0',
-                bodyStyle: 'background: white !important; top: -1px !important; padding: 0 2px 0 2px; border-top-width: 0',
                 margin: 0,
                 padding: 0,
                 border: 1,
