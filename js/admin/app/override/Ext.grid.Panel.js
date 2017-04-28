@@ -91,7 +91,7 @@ Ext.override(Ext.grid.Panel, {
      */
     getGridColumnsWidthUsage: function(isTree) {
         var me = this, columnA = me.getGridColumns(), s = me.getStore(), sortA = s.sorters.keys, sd = me.getSummaryData(),
-            i, widthA = [], level, longest, px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18}, cell,
+            i, widthA = [], level, longest, px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18, id: 15}, cell,
             longestWidth, _longestWidth, k, total = 0;
 
         // For each column, mapped to a store field
@@ -117,7 +117,7 @@ Ext.override(Ext.grid.Panel, {
                 me.getStore().each(function(r){
                     cell = typeof columnA[i].renderer == 'function'
                         ? columnA[i].renderer(r.get(columnA[i].dataIndex))
-                        : r.get(columnA[i].dataIndex);
+                        : r.get(columnA[i].dataIndex).toString();
 
                     level = 0;
                     if (Ext.isString(cell) && isTree && columnA[i].dataIndex == 'title') {
@@ -169,6 +169,7 @@ Ext.override(Ext.grid.Panel, {
             // Append ellipsis space
             if (columnA[i].xtype == 'rownumberer') widthA[i] += px.ellipsis.rownumberer;
             else if (columnA[i].icon) widthA[i] += px.ellipsis.icon;
+            else if (columnA[i].dataIndex == 'id') widthA[i] += px.id;
             else widthA[i] += px.ellipsis.usual;
 
             // Limit the maximum column width, if such a config was set

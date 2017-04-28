@@ -126,6 +126,14 @@ Ext.define('Indi.view.desktop.Window', {
         me.on('beforeclose', me.onBeforeClose, me);
         me.on('close', Indi.app.updateTrail, Indi.app);
 
+        // Ensure that there will be no windows shown behind current/active maximized window
+        me.on('activate', function(){
+            if (!this.maximized) return;
+            Ext.ComponentQuery
+                .query('desktopwindow[maximized=false]')
+                .forEach(function(w){ w.minimize(); });
+        }, me);
+
         // Set window to be centered
         me.center();
     },

@@ -620,7 +620,7 @@ class Indi_Controller {
             $this->adjustGridDataRowset();
 
             // Build the grid data, based on current rowset
-            $data = $this->rowset->toGridData(Indi::trail()->gridFields->column('alias'));
+            $data = $this->rowset->toGridData(Indi::trail()->gridFields ? Indi::trail()->gridFields->column('alias') : array());
 
             // Adjust grid data
             $this->adjustGridData($data);
@@ -648,7 +648,7 @@ class Indi_Controller {
                 if ($summary = $this->rowsetSummary()) $pageData['summary'] = $summary;
 
                 // Provide combo filters consistency
-                foreach (Indi::trail()->filters as $filter)
+                foreach (Indi::trail()->filters ?: array() as $filter)
                     if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
                         $alias = $filter->foreign('fieldId')->alias;
                         Indi::view()->filterCombo($filter, 'extjs');
