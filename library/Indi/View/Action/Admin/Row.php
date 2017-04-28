@@ -37,6 +37,9 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
         // If no last active tab, use first section alias instead
         if (!$nested) $nested = Indi::trail()->sections->at(0)->alias;
 
+        // If current row does not have id - return
+        if (!Indi::trail()->row->id) return;
+
         // Build url
         $url = '/' . $nested . '/index/id/' . Indi::trail()->row->id
             . '/ph/' . Indi::uri('ph') . '/aix/' . Indi::uri('aix') . '/';
