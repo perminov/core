@@ -1574,6 +1574,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
         });
 
+        // Set index-of-total, for each data-row
+        me.getStore().each(function(r, i) {
+            r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
+        });
+
         // Adjust each data-row within the store
         me.getStore().each(me.storeLoadCallbackDataRowAdjust);
     },

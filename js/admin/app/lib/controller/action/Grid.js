@@ -839,14 +839,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
         if (available >= w.total.reqWidth) {
 
             // Foreach non-hidden column
-            for (i in columnA) if (!columnA[i].hidden)
+            for (i in columnA) if (!columnA[i].hidden) {
 
                 // If column is locked or `flex` flag is non-false
                 // Set columns width to be as per actual usage
                 if (columnA[i].locked || flex) columnA[i].setWidth(columnA[i].widthUsage);
 
                 // Else set column's `flex` prop and `flex` flag to be 1 (e.g. non false)
-                else columnA[i].flex = flex = 1;
+                else if (columnA[i].resizable) columnA[i].flex = flex = 1;
+            }
 
         // Else if available width is insufficient
         } else {
@@ -1564,9 +1565,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                     // Load raw data straight into the store
                     me.getStore().loadRawData(me.ti().scope.pageData);
-                    me.getStore().each(function(r, i) {
-                        r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
-                    });
 
                     // Ensure column widths will be recalculated each time grid width was changed
                     this.on('resize', function(grid, w, h, ow, oh) {

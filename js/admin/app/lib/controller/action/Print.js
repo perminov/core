@@ -17,7 +17,7 @@ Ext.define('Indi.lib.controller.action.Print', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, {alias: 'close'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'print'}, '-',
@@ -161,7 +161,18 @@ Ext.define('Indi.lib.controller.action.Print', {
         if (src.match(/\.pdf$/)) me.row.bodyPadding = 0;
 
         // Build iframe markup
-        xcfg.html = '<iframe name="'+ dcfg.id + '" src="' + src +'" frameborder="no" width="100%" height="100%"></iframe>'
+        xcfg.html = '<iframe name="'+ dcfg.id + '" src="' + src +'" frameborder="no" width="100%" height="100%"></iframe>';
+
+        // Define dummy size usage calculation functions
+        Ext.merge(xcfg, {
+            getWidthUsage: function() {
+                return 400;
+            },
+            getHeightUsage: function() {
+                return 400;
+            }
+        });
+
 
         // Return
         return xcfg;
