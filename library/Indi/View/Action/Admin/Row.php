@@ -47,18 +47,24 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
         // Get the response
         $out = Indi::lwget($url);
 
-        // Split raw contents by errors and others
-        /*list ($error, $out) = explode('</error>', $raw);
+        // Delimiter for error detection within $out
+        $split = '</error>';
 
-        // If errors detected
-        if ($error) {
+        // If error delimiter detected
+        if (preg_match('~'. $split .'~', $out)) {
+
+            // Split content by delimiter
+            $raw = explode('</error>', $out);
+
+            // Pick raw contents, not related to errors
+            $out = array_pop($raw);
 
             // Send HTTP 500 code
             header('HTTP/1.1 500 Internal Server Error');
 
             // Echo errors
-            echo $error . '</error>';
-        }*/
+            echo implode('</error>', $raw) . '</error>';
+        }
 
         // Assign response text
         foreach (Indi::trail()->sections as $sectionR) if ($sectionR->alias == $nested) $sectionR->responseText = $out;
