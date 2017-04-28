@@ -175,6 +175,7 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Set up context
         me.ctx = cfg.ctx;
+        me.maximize();
 
         // Set icons
         me.setIconCls(me.getIconCls());
