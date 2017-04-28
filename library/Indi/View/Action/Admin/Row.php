@@ -45,10 +45,10 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
             . '/ph/' . Indi::uri('ph') . '/aix/' . Indi::uri('aix') . '/';
 
         // Get the response
-        $raw = Indi::lwget($url);
+        $out = Indi::lwget($url);
 
         // Split raw contents by errors and others
-        list ($error, $out) = explode('</error>', $raw);
+        /*list ($error, $out) = explode('</error>', $raw);
 
         // If errors detected
         if ($error) {
@@ -58,7 +58,7 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
 
             // Echo errors
             echo $error . '</error>';
-        }
+        }*/
 
         // Assign response text
         foreach (Indi::trail()->sections as $sectionR) if ($sectionR->alias == $nested) $sectionR->responseText = $out;
