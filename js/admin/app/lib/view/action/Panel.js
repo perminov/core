@@ -73,19 +73,26 @@ Ext.define('Indi.lib.view.action.Panel', {
      */
     fitWindow: function(delta) {
 
-        var me = this, window = me.getWindow(), windowFrameHeight, windowFrameWidth, height, width,
-            center = Ext.getCmp('i-center-center'), maxWidth = center.getWidth(), maxHeight = center.getHeight();
+        var me = this, window = me.getWindow(), height, width, center = Ext.getCmp('i-center-center'),
+            maxWidth = center.getWidth(), maxHeight = center.getHeight();
 
-        // If window exists
-        if (window && (me.$ctx.route.length > 2 || (me.$ctx.ti().action.alias != 'index'))) {
+        // If window not yet exists - return
+        if (!window) return;
 
-            // Get real height usage
+        // We're in a section located deeper than at 1st level, or current action is not 'index'
+        if (me.$ctx.route.length > 2 || (me.$ctx.ti().action.alias != 'index')) {
+
+            // Get real width usage
             width = (arguments.length ? me.widthUsage : me.getWidthUsage()) + 12;
 
+            // If real width usage less or equal than/to 0.9 of total width
             if (width <= maxWidth * 0.9) {
 
                 // Restore the window for it to be non-maximized
-                if (window.maximized) window.restore();
+                if (window.maximized) {
+                    window.restore();
+                    window.maximized = false;
+                }
 
                 // Set width
                 window.setWidth(width);
@@ -100,6 +107,10 @@ Ext.define('Indi.lib.view.action.Panel', {
                 window.center();
             }
         }
+
+        // Ensure that there will be no windows shown behind current/active maximized window
+        window.on('activate', window.hideOthers, window);
+        window.hideOthers();
     },
 
     /**
