@@ -2028,7 +2028,7 @@ class Indi {
         session_start();
 
         // Return $raw response, or error, if it has occured
-        return $error ? $error : $raw;
+        return $error ?: $raw;
     }
 
     /**

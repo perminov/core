@@ -45,7 +45,20 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
             . '/ph/' . Indi::uri('ph') . '/aix/' . Indi::uri('aix') . '/';
 
         // Get the response
-        $out = Indi::lwget($url);
+        $raw = Indi::lwget($url);
+
+        // Split raw contents by errors and others
+        list ($error, $out) = explode('</error>', $raw);
+
+        // If errors detected
+        if ($error) {
+
+            // Send HTTP 500 code
+            header('HTTP/1.1 500 Internal Server Error');
+
+            // Echo errors
+            echo $error . '</error>';
+        }
 
         // Assign response text
         foreach (Indi::trail()->sections as $sectionR) if ($sectionR->alias == $nested) $sectionR->responseText = $out;
