@@ -19,7 +19,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         me.wbar = Ext.widget({
             xtype: 'windowbar',
             maxWindows: 15,
-            margin: '0 0 0 0'
+            margin: 0
         });
 
         // Add windowbar
