@@ -9,7 +9,6 @@ Ext.define('Indi.view.desktop.WindowButton', {
     margin: 0,
     padding: 0,
     border: 1,
-    cls: 'x-windowbar-btn',
 
     requires: [
         'Ext.util.KeyNav'

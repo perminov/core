@@ -1331,27 +1331,15 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      */
     panelDockedInner$Nested: function(){
         var me = this;
-
-        // 'Nested' item config
         return {
             id: me.bid() + '-docked-inner$nested',
-            xtype: 'shrinklist',
-            displayField: 'title',
+            xtype: 'shrinkbar',
             hidden: !me.ti().sections.length,
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
-            },
-            store: {
-                xtype: 'store',
-                fields: ['alias', 'title'],
-                data : me.ti().sections
-            },
-            listeners: {
-                itemclick: function(sl, row) {
+            defaults: {
+                margin: 0,
+                padding: 0,
+                border: 1,
+                handler: function(btn) {
 
                     // Get selection
                     var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection();
@@ -1368,10 +1356,25 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             }
                         });
 
-                    // Else load the nested subsection contents
-                    } else if (row.get('alias')) Indi.load('/' + row.get('alias') + '/index/id/'
-                        + selection[0].data.id + '/' + 'ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
+                        // Else load the nested subsection contents
+                    } else if (btn.alias) Indi.load('/' + btn.alias + '/index/id/'
+                        + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
                 }
+            },
+            shrinkCfg: {
+                prop: 'title'
+            },
+            items: Ext.clone(me.ti().sections)
+        }
+
+        // 'Nested' item config
+        return {
+            tooltip: {
+                html: Indi.lang.I_NAVTO_NESTED,
+                hideDelay: 0,
+                showDelay: 1000,
+                dismissDelay: 2000,
+                staticOffset: [0, 1]
             }
         }
     },

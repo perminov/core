@@ -608,6 +608,31 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelDockedInner$Nested: function() {
         var me = this, btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
 
+        return {
+            id: me.panelDockedInnerBid() + 'nested',
+            xtype: 'shrinkbar',
+            hidden: !me.ti().sections.length,
+            defaults: {
+                margin: 0,
+                padding: 0,
+                border: 1,
+                handler: function(btn) {
+                    me.goto('/' + btn.alias + '/index/id/'+ me.ti().row.id
+                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
+                }
+            },
+            shrinkCfg: {
+                prop: 'title'
+            },
+            items: Ext.clone(me.ti().sections),
+            listeners: {
+                afterrender: function(cmp) {
+                    var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
+                    cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
+                }
+            }
+        }
+
         // 'Nested' item config
         return {
             id: me.panelDockedInnerBid() + 'nested',

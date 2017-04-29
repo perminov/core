@@ -580,34 +580,42 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-grid-column-multiline .x-column-header-inner {
     text-align: center;
 }
-
-/* Window bar and button */
-.x-windowbar {background: white; border-color: #b5b8c8; margin-top: -3px !important; margin-right: 2px !important; box-shadow: 0 0 5px gray; height: 16px; overflow: hidden;}
-
-.x-windowbar .x-windowbar-btn .x-btn-inner{
+/* Shrinkable toolbar and its inner buttons */
+.x-shrinkbar {
+    background: white;
+    /*margin-right: 2px !important;*/
+    /*overflow: hidden;*/
+    border: 1px solid #b5b8c8;
+    height: 18px;
+}
+.x-shrinkbar .x-btn .x-btn-inner{
     line-height: 14px !important;
     display: block;
     white-space: nowrap;
     overflow: hidden;
-    padding: 0 4 0 4px;
 }
-.x-windowbar .x-windowbar-btn.i-btn-ellipsis .x-btn-inner{
+.x-shrinkbar .x-btn-icon.x-toolbar-more-icon {
+    height: 10px;
+}
+.x-shrinkbar .x-btn.x-btn-default-toolbar-small .x-btn-inner {
+    padding: 0 4px;
+}
+.x-windowbar .x-btn.x-btn-default-toolbar-small .x-btn-inner {
+    padding: 0 4px;
+}
+.x-shrinkbar .x-btn.i-btn-ellipsis .x-btn-inner{
     text-overflow: ellipsis;
     -o-text-overflow: ellipsis;
     padding: 0 0 0 3px;
     position: relative;
     left: 1px;
 }
-.x-windowbar .x-windowbar-btn em { line-height: 1; display: block; overflow: hidden;}
-.x-windowbar .x-windowbar-btn.x-closable em { padding-right: 10px; }
-.x-windowbar .x-windowbar-btn:first-child {
+.x-shrinkbar .x-btn em { line-height: 1; display: block; overflow: hidden;}
+.x-shrinkbar .x-btn.x-closable em { padding-right: 10px; }
+.x-shrinkbar .x-btn:first-child {
     border-left-width: 1px !important;
 }
-.x-windowbar .x-windowbar-btn {
-    /*position: relative !important;
-    left: 0 !important;*/
-
-    border-top-width: 0 !important;
+.x-shrinkbar .x-btn {
     border-right-width: 1px !important;
     border-bottom-width: 1px !important;
     border-left-width: 0 !important;
@@ -620,7 +628,17 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background-image: linear-gradient(top,#dbeeff,#d0e7ff 48%,#BBF0EE 52%,#bed6f5);
     border-color: white;
 }
-.x-windowbar .x-windowbar-btn.x-pressed,.x-windowbar .x-windowbar-btn.x-over, .x-windowbar .x-windowbar-btn.x-over.x-pressed {
+.x-shrinkbar .x-btn.x-over {
+    background-color: #aaccf6;
+    background-image: -webkit-gradient(linear,50% 0,50% 100%,color-stop(0%,#ebf3fd),color-stop(39%,#ebf3fd),color-stop(40%,#d9e8fb),color-stop(100%,#d9e8fb));
+    background-image: -webkit-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
+    background-image: -moz-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
+    background-image: -o-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
+    background-image: -ms-linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
+    background-image: linear-gradient(top,#ebf3fd,#ebf3fd 39%,#d9e8fb 40%,#d9e8fb);
+}
+
+.x-shrinkbar .x-btn.x-pressed, .x-windowbar .x-btn.x-over {
     background-color: #bed6f5;
     background-image: -webkit-gradient(linear,50% 0,50% 100%,color-stop(0%,#bccfe5),color-stop(48%,#c5d6e7),color-stop(52%,#A7D2FD),color-stop(100%,#9fc9f5));
     background-image: -webkit-linear-gradient(top,#bccfe5,#c5d6e7 48%,#A7D2FD 52%,#9fc9f5);
@@ -629,7 +647,10 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background-image: -ms-linear-gradient(top,#bccfe5,#c5d6e7 48%,#A7D2FD 52%,#9fc9f5);
     background-image: linear-gradient(top,#bccfe5,#c5d6e7 48%,#A7D2FD 52%,#9fc9f5);
 }
-.x-windowbar-btn .x-btn-close-btn {
+/* Window bar and button */
+.x-windowbar {margin-top: -3px !important; box-shadow: 0 0 5px gray; height: 16px;}
+.x-windowbar .x-btn {border-top-width: 0 !important;}
+.x-windowbar .x-btn-close-btn {
     background-repeat: no-repeat;
     background-image: url(/i/admin/wbtn-icon-close-gray.png);
     background-position: 0 4px;
@@ -639,7 +660,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     top: 0;
     right: 0;
 }
-.x-windowbar-btn.x-pressed .x-btn-close-btn:hover, .x-windowbar-btn.x-over .x-btn-close-btn:hover {
+.x-windowbar .x-pressed .x-btn-close-btn:hover,
+.x-windowbar .x-over .x-btn-close-btn:hover {
     background-image: url(/i/admin/wbtn-icon-close-white.png);
 }
 
