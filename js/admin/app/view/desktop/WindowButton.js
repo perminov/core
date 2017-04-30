@@ -274,15 +274,5 @@ Ext.define('Indi.view.desktop.WindowButton', {
      */
     fireClose: function(){
         this.fireEvent('close', this);
-    },
-
-    /**
-     * On click
-     */
-    onClick: function() {
-        var me = this, win = me.window;
-
-        // Show/minimize/toFront
-        if (win.minimized || win.hidden) win.show(); else if (win.active) win.minimize(); else win.toFront();
     }
 });
