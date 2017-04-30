@@ -19,7 +19,16 @@ Ext.define('Indi.view.desktop.Window', {
         Indi.app.taskbar.wbar.query('> [pressed]').forEach(function(btn){btn.toggle();});
 
         // Add new windowbutton
-        me.taskButton = Indi.app.taskbar.wbar.add({window: me});
+        me.taskButton = Indi.app.taskbar.wbar.add({
+            window: me,
+            handler: function(btn) {
+                // Show/minimize/toFront
+                var win = btn.window;
+                if (win.minimized || win.hidden) win.show();
+                else if (win.active) win.minimize();
+                else win.toFront();
+            }
+        });
 
         // Set iconCls
         me.iconCls = me.getIconCls();
