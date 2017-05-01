@@ -608,7 +608,16 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     z-index: 100000 !important;
 }
 .x-shrinkbar-overflow-menu .x-menu-item-link {
+    padding: 3px 2px 3px 7px;
+}
+.x-shrinkbar-overflow-menu .x-menu-icon-separator {
+    display: none;
+}
+.x-windowbar-overflow-menu .x-menu-item-link {
     padding: 3px 2px 3px 34px;
+}
+.x-windowbar-overflow-menu .x-menu-icon-separator {
+    display: block;
 }
 .x-shrinkbar-overflow-menu .x-menu-item-icon {
     top: 4px;
