@@ -56,7 +56,10 @@ Ext.override(Ext.layout.container.boxOverflow.Menu, {
         var me = this,
             layout = me.layout,
             oid = layout.owner.id,
-            menuCfg = Ext.isSimpleObject(layout.owner.enableOverflow) ? layout.owner.enableOverflow : {};
+            overflowCfg = Ext.isSimpleObject(layout.owner.enableOverflow) ? layout.owner.enableOverflow : {};
+
+        // Make `menu` and `menuTrigger` props defined for cases then they're not in `overflowCfg`
+        overflowCfg = Ext.merge({menu: {}, menuTrigger: {}}, overflowCfg);
 
         /**
          * @private
@@ -69,14 +72,14 @@ Ext.override(Ext.layout.container.boxOverflow.Menu, {
                 scope: me,
                 beforeshow: me.beforeMenuShow
             }
-        }, menuCfg));
+        }, overflowCfg.menu));
 
         /**
          * @private
          * @property {Ext.button.Button} menuTrigger
          * The expand button which triggers the overflow menu to be shown
          */
-        me.menuTrigger = new Ext.button.Button({
+        me.menuTrigger = new Ext.button.Button(Ext.merge({
             id      : oid + '-menu-trigger',
             cls     : Ext.layout.container.Box.prototype.innerCls + ' ' + me.triggerButtonCls,
             hidden  : true,
@@ -86,8 +89,69 @@ Ext.override(Ext.layout.container.boxOverflow.Menu, {
             ui      : layout.owner instanceof Ext.toolbar.Toolbar ? 'default-toolbar' : 'default',
             menu    : me.menu,
             getSplitCls: function() { return '';}
-        });
+        }, overflowCfg.menuTrigger));
 
         return me.menuTrigger.getRenderTree();
+    },
+
+    /**
+     * @private
+     * Returns a menu config for a given component. This config is used to create a menu item
+     * to be added to the expander menu
+     * @param {Ext.Component} component The component to create the config for
+     * @param {Boolean} hideOnClick Passed through to the menu item
+     */
+    createMenuConfig : function(component, hideOnClick) {
+        var config = Ext.apply({}, component.initialConfig),
+            group  = component.toggleGroup;
+
+        Ext.copyTo(config, component, [
+            'iconCls', 'icon', 'itemId', 'disabled', 'handler', 'scope', 'menu'
+        ]);
+
+        Ext.apply(config, {
+            text       : component.overflowText || component.text,
+            hideOnClick: hideOnClick,
+            destroyMenu: false
+        });
+
+        // Clone must have same value, and must sync original's value on change
+        if (component.isFormField) {
+            config.value = component.getValue();
+
+            // We're going to add a listener
+            if (!config.listeners) {
+                config.listeners = {};
+            }
+
+            // Sync the original component's value when the clone changes value.
+            // This intentionally overwrites any developer-configured change listener on the clone.
+            // That's because we monitor the clone's change event, and sync the
+            // original field by calling setValue, so the original field's change
+            // event will still fire.
+            config.listeners.change = function(c, newVal, oldVal) {
+                component.setValue(newVal);
+            }
+        }
+
+        // ToggleButtons become CheckItems
+        else if (group || component.enableToggle) {
+            Ext.apply(config, {
+                //iconAlign: 'right',
+                hideOnClick: false,
+                group  : group,
+                checked: component.pressed,
+                listeners: {
+                    checkchange: function(item, checked) {
+                        component.toggle(checked);
+                    }
+                }
+            });
+        }
+
+        delete config.ownerCt;
+        delete config.xtype;
+        delete config.id;
+        return config;
     }
 });

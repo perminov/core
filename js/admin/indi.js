@@ -1289,8 +1289,10 @@ Ext.define('Indi', {
             padding: '0 0 0 2',
             style: 'background: none;',
             enableOverflow: {
-                cls: 'i-trail-item-menu i-trail-overflow-menu',
-                plain: true
+                menu: {
+                    cls: 'i-trail-item-menu i-trail-overflow-menu',
+                    plain: true
+                }
             },
             defaults: {
                 xtype: 'trailbutton',
