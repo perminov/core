@@ -8,11 +8,10 @@ Ext.define('Indi.view.desktop.WindowBar', {
         menu: {
             defaults: {
                 xtype: 'menuitem',
-                hideOnClick: true,
                 minWidth: 0,
                 iconCls: 'i-btn-icon-close'
             },
-            cls: 'x-shrinkbar-overflow-menu'
+            cls: 'x-shrinkbar-overflow-menu x-windowbar-overflow-menu'
         },
         menuTrigger: {
             listeners: {
@@ -108,7 +107,24 @@ Ext.define('Indi.lib.toolbar.Shrinkbar', {
     margin: 0,
     padding: 0,
     minWidth: 23,
-    enableOverflow: true,
+    enableOverflow: {
+        menu: {
+            defaults: {
+                xtype: 'menuitem',
+                minWidth: 0,
+                iconCls: 'no-icon'
+            },
+            cls: 'x-shrinkbar-overflow-menu'
+        },
+        menuTrigger: {
+            listeners: {
+                mouseover: function(b){
+                    b.showMenu();
+                }
+            },
+            menuAlign: 'tr-br?'
+        }
+    },
     baseCls: Ext.baseCSSPrefix + 'shrinkbar',
     shrinkCfg: {
         item: {
