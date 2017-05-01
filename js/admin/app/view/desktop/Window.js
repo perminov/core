@@ -21,12 +21,18 @@ Ext.define('Indi.view.desktop.Window', {
         // Add new windowbutton
         me.taskButton = Indi.app.taskbar.wbar.add({
             window: me,
-            handler: function(btn) {
-                // Show/minimize/toFront
-                var win = btn.window;
-                if (win.minimized || win.hidden) win.show();
-                else if (win.active) win.minimize();
-                else win.toFront();
+            handler: function(btn, e) {
+                var win = btn.window, menu = btn.up('menu');
+                if (menu && e.getTarget('.i-btn-icon-close')) {
+                    menu.remove(btn);
+                    if (!menu.items.getCount()) menu.hide();
+                    win.close();
+                } else {
+                    // Show/minimize/toFront
+                    if (win.minimized || win.hidden) win.show();
+                    else if (win.active) win.minimize();
+                    else win.toFront();
+                }
             }
         });
 
@@ -170,7 +176,7 @@ Ext.define('Indi.view.desktop.Window', {
      * @param cfg
      */
     apply: function(cfg) {
-        var me = this;
+        var me = this, ot = me.taskButton.getText(), wbar = me.taskButton.up('windowbar');
 
         // Set window-title and windowbutton-text
         me.setTitle(cfg.title);
@@ -188,6 +194,12 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Set icons
         me.setIconCls(me.getIconCls());
+
+        // Prevent wbar width sizing from being refreshed, as if title haven't changed then there is no need
+        if (cfg.title != ot) {
+            wbar.calcWidthUsage();
+            wbar.setWidth(wbar.getMaxWidth());
+        }
 
         // Return
         return me;

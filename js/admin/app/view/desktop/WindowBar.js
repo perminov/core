@@ -4,7 +4,25 @@ Ext.define('Indi.view.desktop.WindowBar', {
     mixins: {shrink: 'Indi.util.Shrinkable'},
     baseCls: Ext.baseCSSPrefix + 'windowbar ' + Ext.baseCSSPrefix + 'shrinkbar',
     maxWindows: 15,
-    enableOverflow: true,
+    enableOverflow: {
+        menu: {
+            defaults: {
+                xtype: 'menuitem',
+                hideOnClick: true,
+                minWidth: 0,
+                iconCls: 'i-btn-icon-close'
+            },
+            cls: 'x-shrinkbar-overflow-menu'
+        },
+        menuTrigger: {
+            listeners: {
+                mouseover: function(b){
+                    b.showMenu();
+                }
+            },
+            menuAlign: 'tr-br?'
+        }
+    },
     border: 0,
     margin: 0,
     padding: 0,
