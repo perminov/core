@@ -73,7 +73,7 @@ Ext.define('Indi.view.desktop.WindowBar', {
     },
 
     // @inheritdoc
-    onAdd: function() {
+    onAdd: function(item) {
         var me = this, wA = [], maximized = 0, closed = false;
 
         // Call parent
@@ -98,6 +98,18 @@ Ext.define('Indi.view.desktop.WindowBar', {
 
         // Recalc width usage
         me.calcWidthUsage();
+
+        // Fix for cases when window-button is shown in bar, but overflow-menu item,
+        // that had been representing that window-button - was not removed
+        item.on('show', function(){
+            if (item.up('windowbar')) {
+                var oh = item.up('windowbar').layout.overflowHandler;
+                var menu = oh.menu;
+                Ext.defer(function(){
+                    if (!oh.menuItems.length) menu.hide();
+                }, 100);
+            }
+        });
     }
 });
 Ext.define('Indi.lib.toolbar.Shrinkbar', {
