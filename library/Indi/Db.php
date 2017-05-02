@@ -658,10 +658,10 @@ class Indi_Db {
             // Apply different behaviour depend on placeholder type
             switch ($rawI) {
                 case ':s':
-                    $rawI = $value === null ? 'NULL' : self::$_pdo->quote($value, PDO::PARAM_STR);
+                    $rawI = $value === null ? '""' : self::$_pdo->quote($value, PDO::PARAM_STR);
                     break;
                 case ':i':
-                    $rawI = $value === null ? 'NULL' : (is_numeric($value) ? decimal($value, 0) : self::$_pdo->quote($value, PDO::PARAM_STR));
+                    $rawI = $value === null ? '0' : (is_numeric($value) ? decimal($value, 0) : self::$_pdo->quote($value, PDO::PARAM_STR));
                     break;
                 case ':p':
                     $rawI = $value;
