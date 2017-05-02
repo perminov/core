@@ -404,21 +404,28 @@ Ext.define('Indi', {
                 // Apply response with no any additional actual ajax-request
                 Indi._applyResponse(cfg.responseText, cfg, uri);
 
-            // Else make the ajax-request
-            } else Ext.Ajax.request(Ext.merge({
-                url: Indi.pre + (uri = uri.replace(/^\/admin\//, '\/')),
-                timeout: 300000,
-                success: function(response){
+            // Else
+            } else {
 
-                    // Update title, and destroy target panel, if needed
-                    Indi._beforeApplyResponse(cfg);
+                // Show loader
+                Ext.get('loader').css('opacity', 1).show();
 
-                    // Process response. Here we use Ext.defer to provide a visual
-                    // 'white-blink' effect between destroying old and creating new
-                    Ext.defer(function(){ Indi._applyResponse(response.responseText, cfg, uri); }, 10);
-                },
-                failure: Indi.ajaxFailure
-            }, cfg));
+                // Make ajax request
+                Ext.Ajax.request(Ext.merge({
+                    url: Indi.pre + (uri = uri.replace(/^\/admin\//, '\/')),
+                    timeout: 300000,
+                    success: function(response){
+
+                        // Update title, and destroy target panel, if needed
+                        Indi._beforeApplyResponse(cfg);
+
+                        // Process response. Here we use Ext.defer to provide a visual
+                        // 'white-blink' effect between destroying old and creating new
+                        Ext.defer(function(){ Indi._applyResponse(response.responseText, cfg, uri); }, 10);
+                    },
+                    failure: Indi.ajaxFailure
+                }, cfg));
+            }
         },
 
         /**
