@@ -440,7 +440,7 @@ Ext.define('Indi', {
             var errorA = [], errorI;
 
             // Pick errors
-            Indi.fly('<response>'+rt+'</response>').select('error').each(function(item){
+            Indi.fly('<response>'+rt.replace('<img ', '<img_ ')+'</response>').select('error').each(function(item){
                 if (errorI = Ext.JSON.decode(item.getHTML(), true)) errorA.push(errorI);
             });
 
