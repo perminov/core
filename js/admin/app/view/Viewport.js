@@ -119,7 +119,7 @@ Ext.define('Indi.view.Viewport', {
                     }, {
                         xtype: 'panel',
                         border: 0,
-                        margin: '0 15 0 0',
+                        margin: '0 6 0 0',
                         padding: '2 0 0 0',
                         bodyStyle: 'background: transparent',
                         html: '<a href="{pre}/logout/" style="font-size: 11px; display: inline-block; line-height: 16px;">{logout}</a>',
@@ -134,6 +134,15 @@ Ext.define('Indi.view.Viewport', {
                                 this.setWidth();
                             }
                          }
+                    }, {
+                        xtype: 'panel',
+                        border: 0,
+                        margin: '0 6 0 0',
+                        padding: '0 0 0 0',
+                        height: 15,
+                        width: 4,
+                        bodyStyle: 'background: transparent',
+                        html: '<video src="/i/admin/loader.mp4" id="loader" style="width: 3px; opacity: 0; visibility: hidden; display: inline-block;" loop="true" autoplay="true"/>'
                     }, {
                         id: 'i-center-north',
                         region: 'north',

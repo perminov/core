@@ -65,6 +65,9 @@ Ext.define('Indi.lib.view.action.Panel', {
 
         // Fit window size to match inner contents
         if (!me.skipFitWindow) me.fitWindow();
+
+        // Fade out loader
+        Ext.get('loader').fadeOut();
     },
 
     /**
