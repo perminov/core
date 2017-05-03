@@ -110,7 +110,7 @@ Ext.override(Ext.layout.container.boxOverflow.Menu, {
         ]);
 
         Ext.apply(config, {
-            text       : component.overflowText || component.text,
+            text       : component.overflowText || component.text || (component.tooltip ? (Ext.isObject(component.tooltip) ? component.tooltip.html : component.tooltip) : ''),
             hideOnClick: hideOnClick,
             destroyMenu: false
         });
@@ -148,7 +148,7 @@ Ext.override(Ext.layout.container.boxOverflow.Menu, {
                 }
             });
         }
-
+        delete config.tooltip;
         delete config.ownerCt;
         delete config.xtype;
         delete config.id;

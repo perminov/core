@@ -613,15 +613,21 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-shrinkbar-overflow-menu .x-menu-icon-separator {
     display: none;
 }
-.x-windowbar-overflow-menu .x-menu-item-link {
+.x-menu-item-link {
+    padding: 3px 2px 3px 34px;
+}
+.x-toolbar-text.x-menu-item-cmp {
     padding: 3px 2px 3px 34px;
 }
 .x-windowbar-overflow-menu .x-menu-icon-separator {
     display: block;
 }
-.x-shrinkbar-overflow-menu .x-menu-item-icon {
+.x-menu-item-icon {
     top: 4px;
     left: 4px;
+}
+.x-menu-item-arrow {
+    top: 8px;
 }
 .x-shrinkbar .x-btn.i-btn-ellipsis .x-btn-inner{
     text-overflow: ellipsis;
