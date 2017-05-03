@@ -1321,6 +1321,14 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return {
             xtype: 'pagingtoolbar',
             dock: 'bottom',
+            enableOverflow: {
+                menuTrigger: {
+                    margin: '2 0 0 0'
+                },
+                menu: {
+
+                }
+            },
             store: this.getStore(),
             displayInfo: true,
             items: this.push(this.rowset.docked.inner.paging, 'rowsetInner', true)
