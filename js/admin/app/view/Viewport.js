@@ -174,14 +174,13 @@ Ext.define('Indi.view.Viewport', {
         me.menu = Ext.create('Indi.Menu', me.menu);
         me.menu.on({
             collapse: function(){
-                Ext.ComponentQuery.query('desktopwindow[maximized]').forEach(function(w){
-                    w.fitContainer();
-                });
+                var top = Indi.app.getTopMaximizedWindow(); if (top) top.fitContainer();
                 me.down('#i-mobile-menu-trigger').enable();
             },
             expand: function() {
+                var top = Indi.app.getTopMaximizedWindow(); if (top) top.fitContainer();
                 Ext.ComponentQuery.query('desktopwindow[maximized]').forEach(function(w){
-                    w.fitContainer();
+                    if (w.id != top.id && !w.hidden) w.hide();
                 });
                 me.down('#i-mobile-menu-trigger').disable();
             }

@@ -200,6 +200,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (Ext.EventObject.ctrlKey && !this.multiSelect) {
                     var btn = Ext.getCmp(this.ctx().bid() + '-docked-inner$form'); if (btn) btn.press();
                 }
+            },
+            resize: function(grid, nw, nh, ow, oh) {
+                if (!ow || !grid.ctx()) return;
+                grid.ctx().gridColumnAFit(null, true);
             }
         }
     },
@@ -778,7 +782,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     /**
      * Adjust grid columns widths, for widths to match column contents if possible
      */
-    gridColumnAFit: function(grid) {
+    gridColumnAFit: function(grid, noUsageRecalc) {
         var me = this, columnA, i, available, flex = false, ignoreA = [], w = {
             float: {minWidth: 100, reqWidth: 0, avgWidth: 0, qty: 0},
             total: {minWidth:   0, reqWidth: 0, fixWidth: 0}
@@ -791,7 +795,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         Ext.suspendLayouts();
 
         // Get columns
-        columnA = grid.getGridColumnsWidthUsage();
+        columnA = noUsageRecalc ? grid.getGridColumns() : grid.getGridColumnsWidthUsage();
 
         // Foreach column
         for (i in columnA) {
