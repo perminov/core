@@ -73,13 +73,14 @@ Ext.define('Indi.view.desktop.Window', {
      * Here we override fitContainer method, as it acts not (for some reason) how we need
      */
     fitContainer: function() {
-        var me = this, container = Ext.get('i-center-center-body'), xy = container.getXY();
+        var me = this, container = Ext.get('i-center-center-body'), xy = container.getXY(), size = container.getViewSize(false);
 
         // Set size to fit container
-        me.setSize(container.getViewSize(false));
+        if (JSON.stringify(size) != JSON.stringify(me.getSize())) me.setSize(size);
 
         // Set position
-        me.setPosition.apply(me, [xy[0]+1, xy[1]+1]);
+        if (JSON.stringify([xy[0]+1, xy[1]+1]) != JSON.stringify(me.getPosition()))
+            me.setPosition.apply(me, [xy[0]+1, xy[1]+1]);
     },
 
     // @inheritdoc
@@ -133,6 +134,9 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Init event handlers
         me.on('activate', Indi.app.updateActiveWindow, Indi.app);
+        me.on('activate', function(){
+            if (me.maximized) me.fitContainer()
+        }, me);
         me.on('beforeshow', Indi.app.updateActiveWindow, Indi.app);
         me.on('deactivate', Indi.app.updateActiveWindow, Indi.app);
         me.on('minimize', Indi.app.updateActiveWindow, Indi.app);
