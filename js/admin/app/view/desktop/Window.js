@@ -1,7 +1,7 @@
 Ext.define('Indi.view.desktop.Window', {
     extend: 'Ext.window.Window',
     alias: 'widget.desktopwindow',
-    maximized: false,
+    maximized: true,
     maximizable: true,
     minimizable: true,
     autoRender: true,
@@ -240,5 +240,21 @@ Ext.define('Indi.view.desktop.Window', {
             .forEach(function(w){
                 if (w.id != window.id && !w.maximized) w.minimize();
             });
+    },
+
+    /**
+     * Prevent it from being moved/resized by default
+     */
+    onBoxReady: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // If window is maximized - prevent it from being moved/resized
+        if (me.maximized) {
+            if (me.dd) me.dd.disable();
+            if (me.resizer) me.resizer.disable();
+        }
     }
 });
