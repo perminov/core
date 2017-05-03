@@ -33,7 +33,8 @@ Ext.define('Indi.view.Viewport', {
         id: 'i-menu',
         title: Indi.lang.I_MENU,
         collapsible: true,
-        padding: '55 0 0 0'
+        padding: '55 0 0 0',
+        animCollapse: false
     },
 
     /**
@@ -173,9 +174,15 @@ Ext.define('Indi.view.Viewport', {
         me.menu = Ext.create('Indi.Menu', me.menu);
         me.menu.on({
             collapse: function(){
+                Ext.ComponentQuery.query('desktopwindow[maximized]').forEach(function(w){
+                    w.fitContainer();
+                });
                 me.down('#i-mobile-menu-trigger').enable();
             },
             expand: function() {
+                Ext.ComponentQuery.query('desktopwindow[maximized]').forEach(function(w){
+                    w.fitContainer();
+                });
                 me.down('#i-mobile-menu-trigger').disable();
             }
         });
