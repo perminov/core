@@ -613,7 +613,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .x-shrinkbar-overflow-menu .x-menu-icon-separator {
     display: none;
 }
-.x-windowbar-overflow-menu .x-menu-item-link, .x-menu-item-link {
+.x-windowbar-overflow-menu .x-menu-item-link,
+.x-shrinkbar-overflow-menu.x-windowbar-overflow-menu .x-menu-item-link,
+.x-menu-item-link {
     padding: 3px 2px 3px 34px;
 }
 .x-toolbar-text.x-menu-item-cmp {
