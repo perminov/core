@@ -406,28 +406,27 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 if (preg_match('/^(\/|#|\+|%)[^\1]*\1[imsxeu]*$/', $expr))
                     eval('$match = preg_match($expr, $m_);'); else eval('$match = $m_ ' . $expr . ';');
 
-                // If item id is in exclusion/selection list
-                if ($inverse ? !$match : $match) {
-
-                    // Unset row from current rowset
-                    unset($this->_rows[$index]);
-
-                    // Decrement count of items in current rowset
-                    $this->_count --;
-                }
+                // Set $cond flag
+                $cond = $inverse ? !$match : $match;
 
                 // Else
             } else {
 
-                // If item id is in exclusion/selection list
-                if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+                // Check key
+                $ake = array_key_exists($row->$type, $keys);
 
-                    // Unset row from current rowset
-                    unset($this->_rows[$index]);
+                // Set $cond flag
+                $cond = $inverse ? !$ake : $ake;
+            }
 
-                    // Decrement count of items in current rowset
-                    $this->_count --;
-                }
+            // Finally, if row should be unset
+            if ($cond) {
+
+                // Unset row
+                unset($this->_rows[$index]);
+
+                // Decrement count of items in current rowset
+                $this->_count --;
             }
         }
 
