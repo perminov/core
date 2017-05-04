@@ -44,11 +44,12 @@ Ext.override(Ext.panel.Panel, {
      * @return {Number}
      */
     getInnerItemsHeightUsage: function() {
-        var me = this, height = 0;
+        var me = this, height = 0, itemHeight = 0;
 
-        // Collect dockedItems heights
+        // Collect inner items total height
         me.items.each(function(item){
-            height += item.getHeightUsage();
+            itemHeight = item.getHeightUsage();
+            if (!item.hidden) height += itemHeight;
         });
 
         // Return
