@@ -105,17 +105,47 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      */
     public function exclude($keys, $type = 'id', $inverse = false) {
 
-        // If $ids argument is not an array, we convert it to it by exploding by comma
-        if (!is_array($keys)) $keys = explode(',', $keys);
+        // If $keys argument is a string
+        if (is_string($keys) || is_integer($keys) || is_null($keys)) {
 
-        // Flip array
-        $keys = array_flip($keys);
+            // Check if it contains a match expression
+            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
+
+            // If $keys argument is not an array, we convert it to it by exploding by comma
+            else if (!is_array($keys)) $keys = explode(',', $keys);
+        }
+
+        // Flip $keys array
+        if (is_array($keys)) $keys = array_flip($keys);
 
         // For each item in $this->_original array
         foreach ($this->_rows as $index => $row) {
 
-            // If item id is in exclusion/selection list
-            if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+            // If we deal with an expression
+            if ($expr) {
+
+                // Temporary value
+                $m_ = $row->$type; $match = false;
+
+                // Detect match
+                if (preg_match('/^(\/|#|\+|%)[^\1]*\1[imsxeu]*$/', $expr))
+                    eval('$match = preg_match($expr, $m_);'); else eval('$match = $m_ ' . $expr . ';');
+
+                // Set $cond flag
+                $cond = $inverse ? !$match : $match;
+
+            // Else
+            } else {
+
+                // Check key
+                $ake = array_key_exists($row->$type, $keys);
+
+                // Set $cond flag
+                $cond = $inverse ? !$ake : $ake;
+            }
+
+            // Finally, if row should be unset
+            if ($cond) {
 
                 // Unset row and it's alias
                 unset($this->_indexes[$this->_rows[$index]->alias]);

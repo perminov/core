@@ -632,36 +632,6 @@ Ext.define('Indi.lib.controller.action.Row', {
                 }
             }
         }
-
-        // 'Nested' item config
-        return {
-            id: me.panelDockedInnerBid() + 'nested',
-            xtype: 'shrinklist',
-            displayField: 'title',
-            hidden: !me.ti().sections.length,
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
-            },
-            store: {
-                xtype: 'store',
-                fields: ['alias', 'title'],
-                data : me.ti().sections
-            },
-            listeners: {
-                afterrender: function(cmp) {
-                    var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
-                    cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
-                },
-                itemclick: function(cmp, row) {
-                    me.goto('/' + row.get('alias') + '/index/id/'+ me.ti().row.id
-                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
-                }
-            }
-        }
     },
 
     /**
@@ -852,7 +822,12 @@ Ext.define('Indi.lib.controller.action.Row', {
         if (rowItem) itemA.push(rowItem);
 
         // Append tab (south region) panel only if it's consistent
-        if (me.panel.xtype != 'actiontabrow' && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
+        if (me.ti().action.south == 'yes'
+            && me.panel.xtype != 'actiontabrow'
+            && southItem
+            && (southItem.items = me.southItemA()).length
+            && me.ti().row.id) {
+
             if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
                 //if (me.ti().scope.actionrow.south.height == 25) southItem.height = 25;
                 if (!Ext.isFunction(me.south.height)) southItem.height = me.ti().scope.actionrow.south.height;
