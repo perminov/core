@@ -15,7 +15,7 @@ Ext.override(Ext.form.Panel, {
      * @return {Number}
      */
     getInnerItemsWidthUsage: function() {
-        var me = this, labelWidth = 0, inputWidth = 0, itemWidth;
+        var me = this, labelWidth = 0, inputWidth = 0, itemWidth, bothWidth = 0;
 
         // Walk through items and detect width usage
         me.items.each(function(item){
@@ -23,12 +23,25 @@ Ext.override(Ext.form.Panel, {
             // Get item's width usage
             itemWidth = item.getWidthUsage();
 
-            // Update widths if they are greater than we faced before
-            labelWidth = Math.max(labelWidth, itemWidth.label);
-            inputWidth = Math.max(inputWidth, itemWidth.input);
+            // Skip hidden item
+            if (item.hidden) return;
+
+            // If item's `labelAlign` is 'top' (field's label is above field's input)
+            if (item.labelAlign == 'top') {
+
+                // Update max width for both label and input
+                bothWidth = Math.max(bothWidth, itemWidth.label, itemWidth.input);
+
+            // Else if field's label is at the left/right side of field's input
+            } else {
+
+                // Update widths if they are greater than we faced before
+                labelWidth = Math.max(labelWidth, itemWidth.label);
+                inputWidth = Math.max(inputWidth, itemWidth.input);
+            }
         });
 
         // Return
-        return Math.max(labelWidth, inputWidth) * 2 + me.bodyPadding * 2;
+        return Math.max(Math.max(labelWidth, inputWidth) * 2, bothWidth) + me.bodyPadding * 2;
     }
 });

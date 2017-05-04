@@ -104,7 +104,7 @@ Ext.define('Indi.lib.view.action.Panel', {
                 height = (arguments.length ? me.heightUsage.total + (delta || 0) : me.getHeightUsage()) + 32 + 1;
 
                 // Set height
-                if (height <= maxHeight * 0.9) window.setHeight(height);
+                window.setHeight(Math.min(height, maxHeight));
 
                 // Make window to appear at center
                 window.center();
