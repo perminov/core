@@ -63,7 +63,27 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // Return whitespace-separated list of css clases
                 return cls.join(' ');
             },
-            loadingText: Ext.LoadMask.prototype.msg,
+            loadMask: {
+                shadow: false,
+                msg: Ext.LoadMask.prototype.msg,
+                autoRender: true,
+                setZIndex: function(index) {
+                    var me = this, owner = me.activeOwner, w;
+
+                    if (owner) {
+                        // it seems silly to add 1 to have it subtracted in the call below,
+                        // but this allows the x-mask el to have the correct z-index (same as the component)
+                        // so instead of directly changing the zIndexStack just get the z-index of the owner comp
+                        index = parseInt(owner.el.getStyle('zIndex'), 10) + 1;
+
+                    } else if (w = me.container.up('.x-window[id^=desktopwindow-]')) {
+                        index = w.zindex + 9;
+                    }
+
+                    me.getMaskEl().setStyle('zIndex', index - 1);
+                    return me.mixins.floating.setZIndex.apply(me, arguments);
+                }
+            },
             cellOverflow: true,
             listeners: {
                 beforeitemkeydown: function(view, r, d, i, e) {
