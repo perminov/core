@@ -274,5 +274,50 @@ Ext.define('Indi.view.desktop.WindowButton', {
      */
     fireClose: function(){
         this.fireEvent('close', this);
+    },
+
+    /**
+     * Added third part in 'if (pos.left !== me.el.getLeft() || pos.top !== me.el.getTop() || !me.el.lastBox) {'
+     *
+     *
+     * @param x
+     * @param y
+     * @param animate
+     * @return {*}
+     */
+    setPosition : function(x, y, animate) {
+        var me = this,
+            pos = me.beforeSetPosition.apply(me, arguments);
+
+        if (pos && me.rendered) {
+            // Convert position WRT RTL
+            pos = me.convertPosition(pos);
+
+            // Proceed only if the new position is different from the current one.
+            if (pos.left !== me.el.getLeft() || pos.top !== me.el.getTop() || !me.el.lastBox) {
+                if (animate) {
+                    me.stopAnimation();
+                    me.animate(Ext.apply({
+                        duration: 1000,
+                        listeners: {
+                            afteranimate: Ext.Function.bind(me.afterSetPosition, me, [pos.left, pos.top])
+                        },
+                        to: pos
+                    }, animate));
+                } else {
+                    // Must use Element's methods to set element position because, if it is a Layer (floater), it may need to sync a shadow
+                    // We must also only set the properties which are defined because Element.setLeftTop autos any undefined coordinates
+                    if (pos.left !== undefined && pos.top !== undefined) {
+                        me.el.setLeftTop(pos.left, pos.top);
+                    } else if (pos.left !== undefined) {
+                        me.el.setLeft(pos.left);
+                    } else if (pos.top !==undefined) {
+                        me.el.setTop(pos.top);
+                    }
+                    me.afterSetPosition(pos.left, pos.top);
+                }
+            }
+        }
+        return me;
     }
 });
