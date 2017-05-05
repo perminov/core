@@ -419,11 +419,9 @@ Ext.define('Indi', {
                         // Update title, and destroy target panel, if needed
                         Indi._beforeApplyResponse(cfg);
 
-                        // Process response. Here we use Ext.defer to provide a visual
-                        // 'white-blink' effect between destroying old and creating new
-                        Ext.defer(function(){ Indi._applyResponse(response.responseText, cfg, uri); }, 10);
-                    },
-                    failure: Indi.ajaxFailure
+                        // Apply response
+                        Indi._applyResponse(response.responseText, cfg, uri);
+                    }
                 }, cfg));
             }
         },
@@ -686,13 +684,16 @@ Ext.define('Indi', {
             if (json) {
 
                 // If `json` has `trail` property, apply/dispatch it
-                if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+                if (json.route) return Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
 
                 // Else if
                 else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
 
-                // Run response
+            // Run response
             } else Ext.get('i-center-center-body').update(responseText, true);
+
+            // Fade out loader
+            Ext.get('loader').fadeOut();
         },
 
         /**
