@@ -212,7 +212,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         var me = this, ihu = me.getInputHeightUsage();
 
         // Return
-        return this.labelAlign == 'top' ? ihu + me.labelCell.getHeight() : ihu;
+        return me.labelAlign == 'top' ? ihu + me.labelCell.getHeight() : ihu;
     },
 
     /**

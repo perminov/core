@@ -26,7 +26,9 @@
     border-style: solid;
     margin-bottom: 0;
 }
-
+.i-field.i-field-combo-form > tbody > tr > .x-form-item-body > .x-form-trigger-wrap {
+    width: 100%;
+}
 .i-field > tbody > tr > .x-form-item-body, .i-field > tr > .x-form-item-body{
     width: 50% !important;
 }
