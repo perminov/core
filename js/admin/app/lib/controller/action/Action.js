@@ -597,11 +597,30 @@ Ext.define('Indi.lib.controller.action.Action', {
                         // Set up `create` flag as `true`
                         create = true;
 
-                        // Else iа we're going to create a rowset-panel
+                    // Else if we're going to create a rowset-panel
                     } else if (n.mode == 'rowset') {
 
-                        // Set up `create` flag as `true`
-                        create = true;
+                        // If current panel is a row-panel, related to an existing row
+                        if (parseInt(a.row)) {
+
+                            // If current action is 'form'
+                            if (a.action == 'form') {
+
+                                // Setup `create` flag as `true` only if autosave-checkbox was not checked
+                                create = !Ext.getCmp(active.ctx.panelDockedInnerBid() + 'autosave').checked;
+
+                            } else {
+
+                                // Set up `create` flag as `true`
+                                create = true;
+                            }
+
+                        // Else if current panel relates to row, not yet exisiting and the moment of current panel rendering
+                        } else {
+
+                            // Set up `create` flag as `true`
+                            create = false;
+                        }
                     }
                 }
 
