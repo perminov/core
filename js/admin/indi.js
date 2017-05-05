@@ -524,6 +524,9 @@ Ext.define('Indi', {
                 // Show box
                 if (boxA.length) Ext.Msg.show(boxA[0]);
 
+                // Fade out loader
+                Ext.get('loader').fadeOut();
+
                 // Return success as true or false
                 return boxA.length ? false : true;
             }
@@ -616,7 +619,10 @@ Ext.define('Indi', {
                     if (form) form.owner.submit({
                         submitEmptyText: false,
                         dirtyOnly: true
-                    }); else Ext.Ajax.request(response.request.options);
+                    }); else {
+                        Ext.get('loader').css('opacity', 1).show();
+                        Ext.Ajax.request(response.request.options);
+                    }
                 }
 
             // Else if `success` prop is set
@@ -634,6 +640,9 @@ Ext.define('Indi', {
 
             // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
             else if (json.throwOutMsg) top.window.location.reload();
+
+            // Fade out loader
+            Ext.get('loader').fadeOut();
 
             // If no boxes should be shown - return
             if (!boxA.length) return json.success;

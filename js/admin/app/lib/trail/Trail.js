@@ -241,6 +241,9 @@ Ext.define('Indi.lib.trail.Trail', {
             });
         });
 
+        // Show loader
+        Ext.get('loader').css('opacity', 1).show();
+
         // Try to pick up loaded controller and dispatch it's certain action
         try {
 

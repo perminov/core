@@ -55,6 +55,9 @@ Ext.define('Indi.lib.controller.action.Form', {
                 var resetBtn = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'reset');
                 if (resetBtn) resetBtn.setDisabled(!dirty);
             },
+            beforeaction: function() {
+                Ext.get('loader').css('opacity', 1).show();
+            },
             actioncomplete: function(form, action) {
                 var me = this, json = action.response.responseText.json(), gotoO, uri, cfg = {},
                     wrp = me.up('[isWrapper]'), isTab = wrp.isTab, sth = wrp.up('[isSouth]'),
