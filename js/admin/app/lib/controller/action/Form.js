@@ -40,10 +40,10 @@ Ext.define('Indi.lib.controller.action.Form', {
         overflowY: 'auto',
 
         // Fields will be arranged vertically, stretched to full width
-        layout: 'anchor',
+        layout: 'auto',
         defaults: {
-            anchor: '100%',
-            labelWidth: '50%'
+            labelWidth: '50%',
+            width: '100%'
         },
 
         // @inheritdoc
@@ -674,7 +674,7 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemXCombo: function(item) {
         return {
             xtype: 'combo.form',
-            layout: 'hbox',
+            cls: 'i-field i-field-combo-form',
             value: Ext.isNumeric(item.row[item.name]) ? parseInt(item.row[item.name]) : item.row[item.name],
             subTplData: item.row.view(item.name).subTplData,
             store: item.row.view(item.name).store,
