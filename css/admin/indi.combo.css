@@ -6,7 +6,7 @@
 .i-combo .i-combo-multiple.i-combo-multiple-inlined {overflow: hidden;}
 
 /* Combo keyword */
-.i-combo .i-combo-keyword {border: 0; width: 100%; padding-left: 1px; background: transparent;}
+.i-combo .i-combo-keyword {border: 0; width: 100% !important; padding-left: 1px; background: transparent;}
 .x-panel .i-combo .i-combo-keyword{border: 0; background: transparent;}
 
 /* Combo options data */
