@@ -525,7 +525,7 @@ Ext.define('Indi', {
                 if (boxA.length) Ext.Msg.show(boxA[0]);
 
                 // Fade out loader
-                Ext.get('loader').fadeOut();
+                if (Ext.get('loader')) Ext.get('loader').fadeOut();
 
                 // Return success as true or false
                 return boxA.length ? false : true;
@@ -642,7 +642,7 @@ Ext.define('Indi', {
             else if (json.throwOutMsg) top.window.location.reload();
 
             // Fade out loader
-            Ext.get('loader').fadeOut();
+            if (Ext.get('loader')) Ext.get('loader').fadeOut();
 
             // If no boxes should be shown - return
             if (!boxA.length) return json.success;
