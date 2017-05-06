@@ -134,7 +134,7 @@ Ext.define('Indi.view.Viewport', {
                                 }));
                                 this.setWidth();
                             }
-                         }
+                        }
                     }, {
                         xtype: 'panel',
                         border: 0,
@@ -143,7 +143,12 @@ Ext.define('Indi.view.Viewport', {
                         height: 15,
                         width: 4,
                         bodyStyle: 'background: transparent',
-                        html: '<video src="/i/admin/loader.mp4" id="loader" style="width: 3px; opacity: 0; visibility: hidden; display: inline-block;" loop="true" autoplay="true"/>'
+                        html: '<video src="{std}/i/admin/loader.mp4" id="loader" style="width: 3px; opacity: 0; visibility: hidden; display: inline-block;" loop="true" autoplay="true"/>',
+                        listeners: {
+                            beforerender: function() {
+                                this.html = new Ext.Template(this.html).apply({std: Indi.std});
+                            }
+                        }
                     }, {
                         id: 'i-center-north',
                         region: 'north',
