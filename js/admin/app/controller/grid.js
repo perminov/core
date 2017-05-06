@@ -3,7 +3,7 @@ Ext.define('Indi.controller.grid', {
     actionsConfig: {
         index: {
             gridColumn$Editor: {
-                icon: '/i/admin/btn-icon-editor.png">'
+                icon: '/i/admin/btn-icon-editor.png'
             }
         },
         form: {
