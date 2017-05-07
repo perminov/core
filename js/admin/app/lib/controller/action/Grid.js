@@ -859,6 +859,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
             // Minus left-scrollbar width, if left-scrollbar exists
             - ((grid.normalGrid ? grid.normalGrid.view.hasScrollY() : grid.view.hasScrollY()) ? 16 : 0);
 
+        // Get count of visible columns
+        var nonHidden = 0; for (i in columnA) if (!columnA[i].hidden) nonHidden ++;
+
         // If available width is sufficient for all columns contents to be displayed without clipping
         if (available >= w.total.reqWidth) {
 
@@ -870,7 +873,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 if (columnA[i].locked || flex) columnA[i].setWidth(columnA[i].widthUsage);
 
                 // Else set column's `flex` prop and `flex` flag to be 1 (e.g. non false)
-                else if (columnA[i].resizable) columnA[i].flex = flex = 1;
+                else if (columnA[i].resizable || nonHidden == 1) columnA[i].flex = flex = 1;
             }
 
         // Else if available width is insufficient
