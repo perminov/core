@@ -15,8 +15,15 @@
     font-size: 12px;
     padding: 0;
 }
+.i-trail-item-action.x-btn *, .i-trail-section-group.x-btn *{
+    cursor: default;
+}
+.i-trail-item-action.i-trail-item-action-active.x-btn * {
+    cursor: pointer;
+}
 .i-trail-item-row-title.x-btn-default-toolbar-small-over .x-btn-inner,
-.i-trail-item-section.x-btn-default-toolbar-small-over .x-btn-inner{
+.i-trail-item-section.x-btn-default-toolbar-small-over .x-btn-inner,
+.i-trail-item-action-active.x-btn-default-toolbar-small-over .x-btn-inner{
     color: #a5bce8;
 }
 .i-trail .x-btn.i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner {

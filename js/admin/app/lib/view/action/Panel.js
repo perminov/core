@@ -83,7 +83,7 @@ Ext.define('Indi.lib.view.action.Panel', {
         if (!window) return;
 
         // We're in a section located deeper than at 1st level, or current action is not 'index'
-        if (me.$ctx.route.length > 2 || (me.$ctx.ti().action.alias != 'index')) {
+        if (me.$ctx.route.length > 2 || (me.$ctx.ti().action.mode.toLowerCase() != 'rowset')) {
 
             // Get real width usage
             width = (arguments.length ? me.widthUsage : me.getWidthUsage()) + 12;

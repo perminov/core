@@ -77,22 +77,30 @@ Ext.define('Indi.lib.trail.Trail', {
      */
     _crumbHref: function(section, hero) {
 
-        // All hrefs start from project's root, concatenated with a current section alias
+        // Any href starts from project's root, concatenated with a current section alias
         var href = '/' + section + '/';
 
         // If source of a scope of additional info is provided
         if (hero) {
 
-            // We determine an action
-            href += (hero.row && hero.section.alias == section) ? 'form' : 'index';
+            // If `row` prop exists
+            if (hero.row) {
 
-            // We append an extra params and their values to href
-            href += '/id/' + hero.row.id + '/' +
-                (hero.section.primaryHash ? 'ph/' + hero.section.primaryHash + '/' : '') +
-                (hero.section.rowIndex ? 'aix/' + hero.section.rowIndex + '/' : '');
+                // Append action
+                href += hero.section.alias == section ? 'form' : 'index';
+
+                // Append id
+                href += '/id/' + hero.row.id + '/';
+
+            // Else if action is not 'index'
+            } else if (hero.action.alias != 'index') href += hero.action.alias + '/';
+
+            // Append ph and aix
+            href += (hero.section.primaryHash ? 'ph/' + hero.section.primaryHash + '/' : '') +
+                    (hero.section.rowIndex ? 'aix/' + hero.section.rowIndex + '/' : '');
         }
 
-        // Return builded href
+        // Return built href
         return href;
     },
 
@@ -194,7 +202,8 @@ Ext.define('Indi.lib.trail.Trail', {
                         // item action title, by the same way
                         crumbA.push({
                             text: me.breadCrumbsRowTitle(item),
-                            cls: 'i-trail-item-row-title'
+                            cls: 'i-trail-item-row-title',
+                            load: this._crumbHref(item.section.alias, item)
                         });
                         crumbA.push({
                             text: item.action.title,
@@ -218,7 +227,9 @@ Ext.define('Indi.lib.trail.Trail', {
 
                 // Push action title into crumbs
                 crumbA.push({
-                    text: item.action.title
+                    text: item.action.title,
+                    cls: 'i-trail-item-action i-trail-item-action-active',
+                    load: this._crumbHref(item.section.alias, item)
                 });
             }
         }
