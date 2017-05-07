@@ -315,8 +315,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Setup `route` property
         if (config.route) me.route = config.route;
 
-        // Setup main panel title as current secion title
-        me.panel.title = me.ti().section.title;
+        // Setup main panel title
+        me.panel.title = me.ti().action.alias == 'index' ? me.ti().section.title : me.ti().action.title;
 
         // Merge configs
         me.mergeParent(config);

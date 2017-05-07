@@ -52,7 +52,7 @@ Ext.define('Indi.view.desktop.Window', {
         var me = this, prefix = 'i-btn-icon-', action = me.ctx.route.last().action, icon;
 
         // Detect icon
-        icon = me.ctx.route.last().action.mode.toLowerCase() == 'row' && !me.ctx.ti().row.id
+        icon = action.mode.toLowerCase() == 'row' && !me.ctx.ti().row.id
             ? 'create'
             : action.view.toLowerCase();
 
