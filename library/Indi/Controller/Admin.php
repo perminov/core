@@ -1479,7 +1479,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         return Indi::db()->query('
             SELECT
                 `a`.*,
-                `a`.`password` IN (IF(' . ($_SESSION['admin'] ? 1 : 0) . ', :s, ""), PASSWORD(:s), OLD_PASSWORD(:s)) AS `passwordOk`,
+                `a`.`password` IN (IF(' . ($_SESSION['admin'] || $place != 'admin' ? 1 : 0) . ', :s, ""), PASSWORD(:s)) AS `passwordOk`,
                 '. $adminToggle . ' AS `adminToggle`,
                 IF(`p`.`entityId`, `p`.`entityId`, 11) as `mid`,
                 `p`.`toggle` = "y" AS `profileToggle`,
@@ -1495,7 +1495,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 )
             WHERE `a`.`email` = :s
             LIMIT 1
-        ', $password, $password, $password, $username)->fetch();
+        ', $password, $password, $username)->fetch();
     }
 
     /**
