@@ -113,6 +113,7 @@ Ext.define('Indi.lib.view.action.Panel', {
 
         // Ensure that there will be no windows shown behind current/active maximized window
         window.on('activate', window.hideOthers, window);
+        window.on('maximize', window.hideOthers, window);
         window.hideOthers();
     },
 

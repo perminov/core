@@ -317,6 +317,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-reload{background-image: url('/i/admin/btn-icon-reload.png');}
 .i-btn-icon-close{background-image: url('/i/admin/btn-icon-close.png');}
 .i-btn-icon-grid{background-image: url('/i/admin/btn-icon-grid.png?1');}
+.i-btn-icon-changelog{background-image: url('/i/admin/btn-icon-grid.png');}
 .i-btn-icon-loading{background-image: url('/i/admin/btn-icon-loading.gif'); background-position: inherit;}
 .i-btn-icon-form-goto{background-image: url('/i/admin/btn-icon-form-goto.png');}
 .i-btn-icon-video{background-image: url('/i/admin/btn-icon-video.png');}
