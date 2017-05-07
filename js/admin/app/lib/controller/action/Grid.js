@@ -1196,7 +1196,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
         me.bindLoads(grid);
 
         // Bind Indi.load(...) for all DOM nodes (within grid), that have 'jump' attibute
-        me.bindJumps(grid);
+        Ext.defer(function(){
+            me.bindJumps(grid);
+        }, 100);
     },
 
     /**
