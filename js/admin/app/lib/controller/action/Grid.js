@@ -233,9 +233,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      *
      * @return {Object}
      */
-    gridColumn$Id: function() {
-        return {header: 'ID', dataIndex: 'id', width: 5, sortable: true, align: 'right', hidden: true, resizable: false}
-    },
+    gridColumn$Id: {header: 'ID', dataIndex: 'id', minWidth: 29, sortable: true, align: 'right', hidden: true, resizable: false},
 
     /**
      * Builds and returns default/initial config for all grid columns (except 'Id' columns)
@@ -279,7 +277,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Array}
      */
     gridColumnA: function() {
-        var me = this, columnA = [], column$Id = me.gridColumn$Id();
+        var me = this, columnA = [], column$Id = Ext.isFunction(me.gridColumn$Id) ? me.gridColumn$Id() : me.gridColumn$Id;
 
         // Append Id column
         if (column$Id) columnA.push(column$Id);
@@ -705,6 +703,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     column$ = Ext.isFunction(me[eColumn$]) ? me[eColumn$](columnI, field) : me[eColumn$];
                     columnI = Ext.isObject(column$) ? Ext.merge(columnI, column$) : column$;
                 } else if (me[eColumn$] === false) columnI = me[eColumn$];
+
+                // Set initial width for locked columns, having minWidth, because Ext.grid.Panel
+                // for some reason does not preserve minWidth for locked columns
+                if (columnI && columnI.locked && columnI.minWidth) columnI.width = columnI.minWidth;
 
                 // Apply renderer
                 if (Ext.isObject(columnI) && columnI.renderer === undefined) {

@@ -25,6 +25,9 @@ class Indi_View_Action_Admin_Rowset extends Indi_View_Action_Admin {
      */
     public function renderTab() {
 
+        // Disable this feature
+        return;
+
         // Get the id
         $id = Indi::trail()->scope->actionrowset['south']['activeTab'];
 
