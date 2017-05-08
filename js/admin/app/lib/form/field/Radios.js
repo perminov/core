@@ -261,7 +261,7 @@ Ext.define('Indi.lib.form.field.Radios', {
         me.items.each(function(item){
 
             // Get item's label
-            cbLabelWidth = item.getEl().down('.x-form-cb-label').getWidth();
+            cbLabelWidth = item.getEl().down('.x-form-cb-label').getWidth(true) + 10;
 
             // Get width
             width = Math.max(width, item.inputEl.getWidth() + cbLabelWidth);
