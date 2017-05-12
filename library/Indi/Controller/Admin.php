@@ -102,6 +102,9 @@ class Indi_Controller_Admin extends Indi_Controller {
             // If action is 'index'
             if (Indi::trail()->action->rowRequired == 'n') {
 
+                // Set rowset mode
+                $this->_isRowsetSeparate();
+
                 // Get the primary WHERE clause
                 $primaryWHERE = $this->primaryWHERE();
 
@@ -2606,5 +2609,30 @@ class Indi_Controller_Admin extends Indi_Controller {
                     . ($qtyI['qty'] ? '' : 'display: none')
                     . '" class="menu-qty">' . $qtyI['qty'] . '</span>';
         }
+    }
+
+    /**
+     * Set $this->_isRowsetSeparate prop
+     */
+    public function _isRowsetSeparate() {
+
+        // Setup shortcut
+        $mode = Indi::trail()->section->rowsetSeparate;
+
+        // If mode feature is not yet implemented - set it as 'auto'
+        if (!$mode) $mode = 'auto';
+
+        // If mode is 'auto'
+        if ($mode == 'auto') {
+
+            // If current section is a first-level section - set data to be loaded via separate request
+            if (Indi::trail()->level == 1) $mode = 'yes';
+
+            // Else if grid columns count is more than 10 - set data to be loaded via separate request
+            else if (Indi::trail()->gridFields->count() > 10) $mode = 'yes';
+        }
+
+        // Set trail section's `rowsetSeparate` prop` and _isRowsetSeparate` flag
+        $this->_isRowsetSeparate = ((Indi::trail()->section->rowsetSeparate = $mode) == 'yes');
     }
 }

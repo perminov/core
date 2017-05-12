@@ -9,6 +9,9 @@ Ext.define('Indi.controller.sections', {
         form: {
             formItem$SectionId: {
                 jump: '/sections/form/id/{id}/'
+            },
+            formItem$EntityId: {
+                jump: '/entities/form/id/{id}/'
             }
         }
     }

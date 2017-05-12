@@ -261,7 +261,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             tdCls: tdClsA.join(' '),
             sortable: true,
             editor: column.editor,
-            resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1
+            resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
 
         // If current column's field is a grouping field - hide it
@@ -924,6 +924,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Else if item's width should be adjusted
                 } else if (item.resizable && !item.hidden) {
+
+                    // Set min width for flex column
+                    if (item.flex && !item.minWidth) item.minWidth = w.float.minWidth;
 
                     // Set width to be average or minimum
                     item.setWidth(Math.max(w.float.avgWidth + (lost > 0 ? 1 : 0), Math.min(w.float.minWidth, item.widthUsage)));

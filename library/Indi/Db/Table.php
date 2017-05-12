@@ -772,6 +772,7 @@ class Indi_Db_Table
     public function toArray() {
         $array['tableName'] = $this->_table;
         $array['title'] = $this->_title;
+        $array['titleFieldId'] = $this->_titleFieldId;
         return $array;
     }
 
