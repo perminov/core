@@ -67,7 +67,7 @@ Ext.define('Indi.lib.view.action.Panel', {
         if (!me.skipFitWindow) me.fitWindow();
 
         // Fade out loader
-        Ext.get('loader').fadeOut();
+        Indi.app.loader(false);
     },
 
     /**
