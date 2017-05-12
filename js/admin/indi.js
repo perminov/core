@@ -408,7 +408,7 @@ Ext.define('Indi', {
             } else {
 
                 // Show loader
-                Ext.get('loader').css('opacity', 1).show();
+                Indi.app.loader();
 
                 // Make ajax request
                 Ext.Ajax.request(Ext.merge({
@@ -525,7 +525,7 @@ Ext.define('Indi', {
                 if (boxA.length) Ext.Msg.show(boxA[0]);
 
                 // Fade out loader
-                if (Ext.get('loader')) Ext.get('loader').fadeOut();
+                Indi.app.loader(false);
 
                 // Return success as true or false
                 return boxA.length ? false : true;
@@ -642,7 +642,7 @@ Ext.define('Indi', {
             else if (json.throwOutMsg) top.window.location.reload();
 
             // Fade out loader
-            if (Ext.get('loader')) Ext.get('loader').fadeOut();
+            Indi.app.loader(false);
 
             // If no boxes should be shown - return
             if (!boxA.length) return json.success;
@@ -702,7 +702,7 @@ Ext.define('Indi', {
             } else Ext.get('i-center-center-body').update(responseText, true);
 
             // Fade out loader
-            Ext.get('loader').fadeOut();
+            Indi.app.loader(false);
         },
 
         /**
@@ -1279,6 +1279,34 @@ Ext.define('Indi', {
 
         // Destroy placeholder
         holder.destroy();
+    },
+
+    /**
+     * Toggle loader
+     */
+    loader: function() {
+        var loader = Ext.get('loader');
+
+        // Workaround for auth screen
+        if (!loader) return;
+
+        // If no arguments given, or first argument is true
+        if (!arguments.length || arguments[0]) {
+
+            // Show loader
+            Ext.get('loader').css('opacity', 1).show();
+
+        // Else
+        } else {
+
+            // Fade out loader
+            Ext.get('loader').fadeOut();
+
+            // Stop animation explicitly, as for some reason in some cases it does not stop as it should
+            Ext.defer(function(){
+                Ext.get('loader').stopAnimation();
+            }, 350);
+        }
     },
 
     /**
