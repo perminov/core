@@ -151,6 +151,12 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
         if ($model->fields('toggle'))
             jflush(false, 'Группа полей "Статус" уже существует в структуре сущности "' . $this->row->title . '"');
 
+        // Drop `toggle` column from `action` table. We do it here because historically it was
+        // set up that column `toggle` was created not by using Indi Engine, so it does not have
+        // assotiated entries neither in `field` table, nor in `enumset` table, so the below line
+        // just remove the column, for the ability to re-create in as a part of the process of field creation
+        if ($this->row->table == 'action') Indi::db()->query('ALTER TABLE `action` DROP `toggle`');
+
         // Create field
         $fieldR = Indi::model('Field')->createRow(array(
             'entityId' => $this->row->id,

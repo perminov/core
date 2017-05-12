@@ -168,5 +168,23 @@ Ext.define('Indi.util.Shrinkable', {
 
         // Return
         return me.maxWidth;
+    },
+
+    /**
+     * Ability to programmatically click on some of the items within current shrinkable collection,
+     *
+     * @param index Zero-based index of the item within the shrinkable collection
+     */
+    press: function(index) {
+        var me = this, b, el;
+
+        // If shrinklist is disabled - return
+        if (me.disabled) return;
+
+        // If shrinklist's store does not contain a record, related to given index - return
+        if (!(b = me.getComponent(index))) return;
+
+        // Press the button
+        b.press();
     }
 });

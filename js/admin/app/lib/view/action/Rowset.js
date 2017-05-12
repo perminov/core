@@ -39,8 +39,8 @@ Ext.define('Indi.lib.view.action.Rowset', {
             // If context is ready
             if (me.ctx()) {
 
-                // Load the store, if `autoLoadStore` flag is still turned On
-                if (me.autoLoadStore) me.ctx().getStore().load();
+                // Load the store, if scope does not already contain page data
+                if (!me.ctx().ti().scope.pageData) me.ctx().getStore().load();
 
                 // Clear interval
                 clearInterval(interval);

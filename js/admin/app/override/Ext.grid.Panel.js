@@ -92,13 +92,27 @@ Ext.override(Ext.grid.Panel, {
     getGridColumnsWidthUsage: function(isTree) {
         var me = this, columnA = me.getGridColumns(), s = me.getStore(), sortA = s.sorters.keys, sd = me.getSummaryData(),
             i, widthA = [], level, longest, px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18, id: 15}, cell,
-            longestWidth, _longestWidth, k, total = 0;
+            longestWidth, _longestWidth, k, total = 0, cb = false, lineA, longestLine;
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
 
             // Get initial column width, based on a column title metrics
-            widthA[i] = columnA[i].icon ? 16 : Indi.metrics.getWidth(columnA[i].text);
+            if (columnA[i].icon) widthA[i] = 16; else {
+
+                // Here we check if column header's inner text is multiline, and if so
+                // 1. Detect the longest line
+                longestLine = '';
+                (lineA = columnA[i].text.toString().split('<br>')).forEach(function(line){
+                    if (line.length > longestLine.length) longestLine = line;
+                });
+
+                // 2. Add .i-grid-column-multiline css class to the header DOM
+                if (lineA.length > 1) columnA[i].addCls('i-grid-column-multiline');
+
+                // Get width of longest line within column's header text
+                widthA[i] = Indi.metrics.getWidth(longestLine);
+            }
 
             // Reset level
             level = 0; longest = [];
@@ -128,8 +142,16 @@ Ext.override(Ext.grid.Panel, {
                         else if (cell.length > longest[level].length) longest[level] = cell;
                     }
 
-                    if (cell && cell.length > longest[level].length &&
-                        (!cell.match(/class="i-color-box"/) || (cell = Indi.stripTags(cell)).length > longest[level].length))
+                    // If cell is empty - return
+                    if (!cell) return;
+
+                    // If cell's html have a color-box inside, append '---' to mind color-box width,
+                    // as '---' addition will provide a same-width alternative
+                    if (Ext.isString(cell) && (cb = cell.match(/class="i-color-box"/))) cell += '---';
+
+                    // Strip tags from cell's inner text/html and re-check longest cell contents
+                    if (cell.length > longest[level].length &&
+                        (!cb || (cell = Indi.stripTags(cell)).length > longest[level].length))
                         longest[level] = cell;
                 });
 
