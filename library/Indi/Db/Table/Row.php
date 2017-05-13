@@ -163,6 +163,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Else if prop's value is a string, containing decimal value - force value type to be float, not string
             else if (preg_match(Indi::rex('decimal112'), $v)) $data[$k] = (float) $v;
+            
+            // Else if prop's value is a string, containing relative src - prepend STD
+            else if ($m = Indi::rexm('~\burl\((/[^/]+)~', $v)) $data[$k] = preg_replace('~\burl\((/[^/]+)~', 'url(' . STD . '$1', $v);
         }
 
         // Return
