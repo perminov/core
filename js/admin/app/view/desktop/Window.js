@@ -141,7 +141,13 @@ Ext.define('Indi.view.desktop.Window', {
         me.on('deactivate', Indi.app.updateActiveWindow, Indi.app);
         me.on('minimize', Indi.app.updateActiveWindow, Indi.app);
         me.on('maximize', Indi.app.updateTrail, Indi.app);
+        me.on('maximize', function(){
+            me.resizer.east.hide();
+        }, Indi.app);
         me.on('restore', Indi.app.updateTrail, Indi.app);
+        me.on('restore', function(){
+            me.resizer.east.show();
+        }, Indi.app);
         me.on('beforeclose', me.onBeforeClose, me);
         me.on('close', Indi.app.updateTrail, Indi.app);
 
@@ -254,7 +260,10 @@ Ext.define('Indi.view.desktop.Window', {
         // If window is maximized - prevent it from being moved/resized
         if (me.maximized) {
             if (me.dd) me.dd.disable();
-            if (me.resizer) me.resizer.disable();
+            if (me.resizer) {
+                me.resizer.disable();
+                me.resizer.east.hide();
+            }
         }
     }
 });
