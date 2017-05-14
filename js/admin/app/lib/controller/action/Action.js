@@ -560,11 +560,11 @@ Ext.define('Indi.lib.controller.action.Action', {
                         // If active window's panel is a same-action panel as the panel we're going to create
                         create = false;//a.action != n.action;
 
-                        // Else iа we're going to create a rowset-panel
+                    // Else iа we're going to create a rowset-panel
                     } else if (n.mode == 'rowset') {
 
                         // Set up `create` flag as `false`
-                        create = true;
+                        create = false;
                     }
                 }
 
