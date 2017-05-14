@@ -101,8 +101,8 @@ Ext.define('Indi.lib.controller.Controller', {
             scope.id += '-parentrow-' + scope.route.last(1).row.id;
         }
 
-        // If window already exists for current action - destroy it before re-instantiate
-        if ((exst = Ext.getCmp(scope.id + '-wrapper')) && (exst = exst.getWindow())) exst.destroy();
+        // If wrapper and scope already exists for current action - destroy scope before re-instantiate
+        if (Ext.getCmp(scope.id + '-wrapper') && (exst = Ext.getCmp(scope.id))) exst.destroy();
 
         // Create action component instance, related to current action
         Ext.create(actionCmpName, scope);
