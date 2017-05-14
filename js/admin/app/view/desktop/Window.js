@@ -106,7 +106,7 @@ Ext.define('Indi.view.desktop.Window', {
         var me = this;
 
         // Destroy action
-        me.getWrapper().ctx().destroy();
+        me.getWrapper().destroy();
 
         // Remove current window from Indi.app.windows collection
         Indi.app.windows.remove(me);
@@ -200,7 +200,7 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Set up context
         me.ctx = cfg.ctx;
-        me.maximize();
+        //me.maximize();
 
         // Set icons
         me.setIconCls(me.getIconCls());

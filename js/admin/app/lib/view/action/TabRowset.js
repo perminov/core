@@ -67,5 +67,16 @@ Ext.define('Indi.lib.view.action.TabRowset', {
     checkPreloadedResponse: function(cfg) {
         if (this.back) return;
         try { cfg.responseText = this.up('[isWrapper]').$ctx.ti().sections.r(this.name, 'alias').responseText; } catch (e) {}
+    },
+
+    // @inheritdocs
+    destroy: function() {
+        var me = this;
+
+        // Destroy scope if exists
+        if (me.ctx()) me.ctx().destroy();
+
+        // Call parent
+        me.callParent(arguments);
     }
 });

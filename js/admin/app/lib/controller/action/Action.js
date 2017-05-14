@@ -680,7 +680,7 @@ Ext.define('Indi.lib.controller.action.Action', {
             else {
 
                 // Close active window
-                //if (app.windows.getAt(i).id != active.id) active.close();
+                if (app.windows.getAt(i).id != active.id) active.close();
 
                 // Apply new contents to existing window
                 window = app.windows.getAt(i).apply(cfg).toFront();
@@ -724,18 +724,5 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Return
         return false;
-    },
-
-    /**
-     * Destroy wrapper
-     */
-    onDestroy: function() {
-        var me = this;
-
-        // Destroy wrapper
-        Ext.getCmp(me.panel.id).destroy();
-
-        // Call parent
-        me.callParent();
     }
 });
