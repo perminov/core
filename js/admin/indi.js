@@ -416,6 +416,9 @@ Ext.define('Indi', {
                     timeout: 300000,
                     success: function(response){
 
+                        // Start timer
+                        Indi.mt();
+
                         // Update title, and destroy target panel, if needed
                         Indi._beforeApplyResponse(cfg);
 

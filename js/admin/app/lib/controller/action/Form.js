@@ -38,9 +38,10 @@ Ext.define('Indi.lib.controller.action.Form', {
         bodyPadding: 10,
         closable: false,
         overflowY: 'auto',
-
-        // Fields will be arranged vertically, stretched to full width
-        layout: 'auto',
+        layout: {
+            type: 'form',
+            tableCls: 'x-form-layout-table i-table'
+        },
         defaults: {
             labelWidth: '50%',
             width: '100%'
@@ -48,6 +49,11 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // @inheritdoc
         listeners: {
+            boxready: function(){
+                Ext.defer(function(){
+                    this.el.removeAttr('tabindex');
+                }, 100, this);
+            },
             validitychange: function(form, valid){
                 if (valid) this.ctx().toggleSaveAbility(valid);
             },
@@ -644,7 +650,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXRadio: function(item) {
-        return item.field.relation == '6' ? {xtype: 'radios'} : this.formItemXCombo(item);
+        return item.field.relation == '6' ? {xtype: 'radios', cls: 'i-field-radio'} : this.formItemXCombo(item);
     },
 
     /**
