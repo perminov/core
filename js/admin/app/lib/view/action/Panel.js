@@ -70,6 +70,16 @@ Ext.define('Indi.lib.view.action.Panel', {
         Indi.app.loader(false);
     },
 
+    // @inheritdoc
+    completeLayout: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        //Indi.mt('afterlayout'); console.log(new Error().stack);
+    },
+
     /**
      * Set window's height to fit actual content's height
      *
