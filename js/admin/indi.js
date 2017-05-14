@@ -39,7 +39,12 @@ Ext.define('Indi', {
         /**
          * Microtime
          */
-        _mt: 0,
+        _mt0: 0,
+
+        /**
+         * Microtime
+         */
+        _mtN: 0,
 
         /**
          * Global fields storage. Contains all fields that were even initialised
@@ -417,7 +422,7 @@ Ext.define('Indi', {
                     success: function(response){
 
                         // Start timer
-                        Indi.mt();
+                        Indi._mt0 = 0; Indi.mt();
 
                         // Update title, and destroy target panel, if needed
                         Indi._beforeApplyResponse(cfg);
@@ -1040,8 +1045,17 @@ Ext.define('Indi', {
          * @return {Number}
          */
         mt: function() {
-            var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
-            Indi._mt = m; if (arguments.length) console.log(d, arguments); return d;
+            var m = Indi.microtime(true), d, t;
+            if (Indi._mt0) {
+                d = parseInt((m - Indi._mtN)*1000),
+                t = parseInt((m - Indi._mt0)*1000);
+                Indi._mtN = m;
+                if (arguments.length) console.log(d, t, arguments);
+                return [d, t];
+            } else {
+                Indi._mtN = m;
+                return Indi._mt0 = Indi.microtime(true);
+            }
         },
 
         /**
