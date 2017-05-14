@@ -101,20 +101,19 @@ Ext.define('Indi.lib.view.action.Panel', {
             // If real width usage less or equal than/to 0.9 of total width
             if (width <= maxWidth * 0.9) {
 
-                // Restore the window for it to be non-maximized
-                if (window.maximized) {
-                    window.restore();
-                    window.maximized = false;
-                }
-
-                // Set width
-                window.setWidth(width);
-
                 // Get real height usage
                 height = (arguments.length ? me.heightUsage.total + (delta || 0) : me.getHeightUsage()) + 32 + 1;
 
-                // Set height
-                window.setHeight(Math.min(height, maxHeight));
+                // Restore the window for it to be non-maximized
+                if (window.maximized) {
+                    window.maxWidth = width;
+                    window.maxHeight = Math.min(height, maxHeight);
+                    window.restore();
+                    window.maxWidth = maxWidth;
+                    window.maxHeight = maxHeight;
+                } else {
+                    window.setSize(width, Math.min(height, maxHeight));
+                }
 
                 // Make window to appear at center
                 window.center();

@@ -105,8 +105,8 @@ Ext.define('Indi.view.desktop.Window', {
     onDestroy: function() {
         var me = this;
 
-        // Destroy action
-        me.getWrapper().destroy();
+        // Destroy wrapper
+        if (me.getWrapper()) me.getWrapper().destroy();
 
         // Remove current window from Indi.app.windows collection
         Indi.app.windows.remove(me);
