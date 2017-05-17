@@ -1379,9 +1379,11 @@ Ext.define('Indi', {
         // Merge static properties, passed within construction, with prototype's static properties
         me.self = Ext.merge(me.self, me.statics);
 
-        if (Ext.get('i-login-box')) {
-            Ext.create('Indi.view.LoginBox', {title: Indi.title});
-        } else {
+        // Static shortcut to this app
+        Indi.app = this;
+
+        // If login-box DOM element detected - create LoginBox, else
+        if (Ext.get('i-login-box')) Ext.create('Indi.view.LoginBox', {title: Indi.title}); else {
 
             // Create viewport
             Indi.viewport = Ext.create('Indi.view.Viewport');
@@ -1393,15 +1395,12 @@ Ext.define('Indi', {
             if (Indi.ini.ws && parseInt(Indi.ini.ws.enabled))
                 Ext.Loader.loadScriptFile(Indi.std + '/js/admin/ws.js', Ext.emptyFn, Ext.emptyFn, this, false);
 
+            // Static shortcut to this app's taskbar
+            Indi.app.taskbar = Ext.getCmp('i-center-north');
+
             // Load dashboard
             if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
         }
-
-        // Static shortcut to this app
-        Indi.app = this;
-
-        // Static shortcut to this app's taskbar
-        Indi.app.taskbar = Ext.getCmp('i-center-north');
     }
 }, function() {
     var me = this;
