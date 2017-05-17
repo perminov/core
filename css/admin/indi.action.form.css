@@ -107,7 +107,7 @@
 .i-field-time .x-form-text{
     text-align: right;
 }
-.i-field > tbody > tr > .x-form-item-body, .i-field > tr > .x-form-item-body{
+.i-field > tbody > tr > .x-form-item-body[colspan=""], .i-field > tr > .x-form-item-body[colspan=""]{
     width: 50% !important;
 }
 

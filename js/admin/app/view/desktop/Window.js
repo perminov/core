@@ -75,6 +75,10 @@ Ext.define('Indi.view.desktop.Window', {
     fitContainer: function() {
         var me = this, container = Ext.get('i-center-center-body'), xy = container.getXY(), size = container.getViewSize(false);
 
+        // Update maxWidth and maxHeight
+        me.maxWidth = size.width;
+        me.maxHeight = size.height;
+
         // Set size to fit container
         if (JSON.stringify(size) != JSON.stringify(me.getSize())) me.setSize(size);
 
