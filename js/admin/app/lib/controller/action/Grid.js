@@ -638,7 +638,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnADeep: function(colA) {
         var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
-            eColumnXRenderer, eColumnXEditor, canSave = me.ti().actions.r('save', 'alias');
+            eColumnXRenderer, eColumn$Renderer, eColumnXEditor, canSave = me.ti().actions.r('save', 'alias');
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -710,8 +710,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Apply renderer
                 if (Ext.isObject(columnI) && columnI.renderer === undefined) {
+                    eColumn$Renderer = 'gridColumn$' + Indi.ucfirst(field.alias) + '_Renderer';
                     eColumnXRenderer = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Renderer';
-                    if (Ext.isFunction(me[eColumnXRenderer])) columnI.renderer = me[eColumnXRenderer];
+                    if (Ext.isFunction(me[eColumn$Renderer])) columnI.renderer = me[eColumn$Renderer];
+                    else if (Ext.isFunction(me[eColumnXRenderer])) columnI.renderer = me[eColumnXRenderer];
                 }
 
                 // Apply string-summary, if column's non-empty `summaryText` property detected
