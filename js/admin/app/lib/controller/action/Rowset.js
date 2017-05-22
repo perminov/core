@@ -57,18 +57,18 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                 // If filters toolbar's height wastes more than 20% of total height, available for wrapper-panel
                 if (f.lastBox.height / c.getHeight() > 0.2) {
-                    if (f.up('[isWrapper]')) f.hide(); else if (!me.panel.filterWin.hidden) {
-                        if (me.panel.filterWin) me.panel.filterWin.maxWidth = c.getWidth() - 30;
-                        me.panel.filterWin.setWidth(Indi.viewport.getWidth() - 30);
-                        me.panel.filterWin.setHeight(f.getHeight() + 1);
-                        me.panel.filterWin.center();
+                    if (f.up('[isWrapper]')) f.hide(); else if (!c.filterWin.hidden) {
+                        if (c.filterWin) c.filterWin.maxWidth = c.getWidth() - 30;
+                        c.filterWin.setWidth(Indi.viewport.getWidth() - 30);
+                        c.filterWin.setHeight(f.getHeight() + 1);
+                        c.filterWin.center();
                     }
                     win.down('tool[alias="fundock"]').show();
                 } else {
                     win.down('tool[alias="fundock"]').hide();
                     if (f.up('[hasCtx]')) {
                         c.insertDocked(0, f);
-                        if (me.panel.filterWin) me.panel.filterWin.close();
+                        if (c.filterWin) c.filterWin.close();
                     } else if (f.hidden) {
                         f.show();
                     }
@@ -145,7 +145,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
         // If filters toolbar was undocked from main panel into a window - try search within that window
-        if (!filterCmpA.length && me.panel.filterWin) filterCmpA = me.panel.filterWin.query('[isFilter][name]');
+        if (!filterCmpA.length && Ext.getCmp(me.panel.id).filterWin)
+            filterCmpA = Ext.getCmp(me.panel.id).filterWin.query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
@@ -560,7 +561,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this;
 
         // If filter window was not yet created - create it
-        if (!me.panel.filterWin) me.panel.filterWin = Ext.widget({
+        if (!Ext.getCmp(me.panel.id).filterWin) Ext.getCmp(me.panel.id).filterWin = Ext.widget({
             xtype: 'window',
             frame: false,
             $ctx: me,
@@ -594,7 +595,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         });
 
         // Return
-        return me.panel.filterWin;
+        return Ext.getCmp(me.panel.id).filterWin;
     },
 
     /**
@@ -2102,7 +2103,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this;
 
         // Destroy filters window, if it was created
-        if (me.panel.filterWin) me.panel.filterWin.destroy();
+        if (Ext.getCmp(me.panel.id).filterWin) Ext.getCmp(me.panel.id).filterWin.destroy();
 
         // Destroy store
         if (me.getStore()) me.getStore().destroyStore();
