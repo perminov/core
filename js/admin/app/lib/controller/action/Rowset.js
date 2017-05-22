@@ -49,10 +49,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         listeners: {
             resize: function(c, w, h, ow, oh) {
                 var me = Ext.getCmp(c.id.replace('-wrapper', '')),
-                    f = Ext.getCmp(c.id.replace('-wrapper', '-toolbar$filter'));
+                    f = Ext.getCmp(c.id.replace('-wrapper', '-toolbar$filter')),
+                    win = c.getWindow();
 
                 // If filters toolbar has no items (e.g. there is no filters) - return
-                if (f.empty || !c.down('tool[alias="fundock"]')) return;
+                if (f.empty || !win || !win.down('tool[alias="fundock"]')) return;
 
                 // If filters toolbar's height wastes more than 20% of total height, available for wrapper-panel
                 if (f.lastBox.height / c.getHeight() > 0.2) {
@@ -62,9 +63,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         me.panel.filterWin.setHeight(f.getHeight() + 1);
                         me.panel.filterWin.center();
                     }
-                    c.down('tool[alias="fundock"]').show();
+                    win.down('tool[alias="fundock"]').show();
                 } else {
-                    c.down('tool[alias="fundock"]').hide();
+                    win.down('tool[alias="fundock"]').hide();
                     if (f.up('[hasCtx]')) {
                         c.insertDocked(0, f);
                         if (me.panel.filterWin) me.panel.filterWin.close();
@@ -637,6 +638,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             hidden: !me.ti().filters.length &&
                 (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
             id: me.bid() + '-toolbar$filter',
+            cls: 'x-poppable',
             items: [{
                 xtype:'fieldset',
                 id: me.bid()+'-toolbar$filter-fieldset',
@@ -1037,7 +1039,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Master toolbar cfg
         return {
             id: this.bid() + '-toolbar-master',
-            items: this.panelDocked$MasterItemA()
+            items: this.panelDocked$MasterItemA(),
+            border: 0
         }
     },
 
@@ -1335,6 +1338,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.bid() + '-docked-inner$nested',
             xtype: 'shrinkbar',
             hidden: !me.ti().sections.length,
+            border: 1,
             defaults: {
                 margin: 0,
                 padding: 0,

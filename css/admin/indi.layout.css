@@ -238,6 +238,12 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     filter: alpha(opacity=100);
     opacity: 1;
 }
+.x-poppable {
+    border-bottom-width: 1px !important;
+}
+.x-window > .x-poppable {
+    border-bottom-width: 0 !important;
+}
 
 /* Fieldset default style adjustments*/
 .x-fieldset-header-text{
