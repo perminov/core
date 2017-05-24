@@ -18,7 +18,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         // Instantiate windowbar
         me.wbar = Ext.widget({
             xtype: 'windowbar',
-            maxWindows: 15,
+            maxWindows: Indi.user.maxWindows || 15,
             margin: 0
         });
 
