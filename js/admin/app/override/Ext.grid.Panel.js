@@ -196,6 +196,7 @@ Ext.override(Ext.grid.Panel, {
 
             // Limit the maximum column width, if such a config was set
             if (columnA[i].maxWidth && widthA[i] > columnA[i].maxWidth) widthA[i] = columnA[i].maxWidth;
+            if (columnA[i].minWidth && widthA[i] < columnA[i].minWidth) widthA[i] = columnA[i].minWidth;
 
             // Set width usage for current column
             columnA[i].widthUsage = widthA[i];
