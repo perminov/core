@@ -86,14 +86,16 @@ Ext.define('Indi.view.desktop.WindowBar', {
             // visually (at current stage of windows-feature development) it would look like background
             // removal at the user point of view
             me.items.each(function(item){
-                if (!item.window.maximized && !closed) {
+                if (!closed) {
                     closed = true;
-                    item.window.close();
+                    Ext.defer(function(){
+                        item.window.close();
+                    }, 100);
                 }
             });
 
             // If all windows are maximized and that is why first them was not close - force first to be closed
-            if (!closed) me.items.getAt(0).window.close();
+            if (!closed) Ext.defer(function(){me.items.getAt(0).window.close();}, 100);
         }
 
         // Recalc width usage
