@@ -150,6 +150,11 @@ Ext.override(Ext.grid.plugin.CellEditing, {
                 var ctx = me.view.ctx(), ti = ctx.ti(), section = ti.section, scope = ti.scope,
                     url = '/' + section.alias + '/form/id/' + record.get('id') + '/ph/' + scope.hash
                         + '/aix/' + context.rowIdx + '/';
+
+                // Show loader
+                Indi.app.loader();
+
+                // Make odata-request
                 Ext.Ajax.request({
                     url: Indi.pre.replace(/\/$/, '') + url + 'odata/' + ed.field.name + '/',
                     success: function(response) {

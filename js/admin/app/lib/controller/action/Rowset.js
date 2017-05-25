@@ -2023,6 +2023,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
         });
 
+        // Show loader
+        Indi.app.loader();
+
         // Try to save via Ajax-request
         Ext.Ajax.request({
 

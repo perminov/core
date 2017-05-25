@@ -52,6 +52,9 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
         if (me.satellite && me.ownerCt && (f = ti.fields.r(me.satellite)) && (he = me.sbl(f.alias)))
             params.satellite = he.val();
 
+        // Show loader
+        Indi.app.loader();
+
         // Load
         Ext.Ajax.request({
             url: Indi.pre.replace(/\/$/, '') + url + 'odata/' + me.field.alias + '/',

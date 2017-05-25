@@ -2701,6 +2701,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Show loading pic
         me.infoEl.addCls('i-combo-info-loading');
 
+        // Show loader
+        Indi.app.loader();
+
         // Fetch request
         Ext.Ajax.request({
             url: Indi.pre.replace(/\/$/, '') + url,
