@@ -13,7 +13,7 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     panel: {
         docked: {
             default: {minHeight: 27},
-            items: [{alias: 'filter'}],
+            items: [{alias: 'filter', cls: 'x-poppable x-nobelow'}],
             inner: {
                 filter: [{alias: 'keyword', margin: '0 5 4 2'}]
             }
