@@ -644,7 +644,7 @@ class Indi_Controller {
                 // Append summary data
                 if ($summary = $this->rowsetSummary()) $json['summary'] = $summary;
 
-                // Provide combo filters consistency
+                // Provide combo filters consistence
                 foreach (Indi::trail()->filters as $filter)
                     if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
                         $alias = $filter->foreign('fieldId')->alias;
