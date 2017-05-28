@@ -12,7 +12,7 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
     }
 
     /**
-     * Here is the temporary solution for filters consistency
+     * Here is the temporary solution for filters consistence
      */
     public function adjustTrail() {
 
