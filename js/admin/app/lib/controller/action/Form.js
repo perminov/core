@@ -62,7 +62,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 if (resetBtn) resetBtn.setDisabled(!dirty);
             },
             beforeaction: function() {
-                Ext.get('loader').css('opacity', 1).show();
+                Indi.app.loader();
             },
             actioncomplete: function(form, action) {
                 var me = this, json = action.response.responseText.json(), gotoO, uri, cfg = {},
