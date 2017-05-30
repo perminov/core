@@ -178,9 +178,6 @@ class Indi_Db_Table
         // Fetch data
         $data = Indi::db()->query($sql)->fetchAll();
 
-        // Pick localized values
-        foreach($data as &$entry) $entry = $this->l10n($entry);
-
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this->_table,
@@ -865,7 +862,7 @@ class Indi_Db_Table
             // Prepare data for Indi_Db_Table_Row object construction
             $constructData = array(
                 'table'    => $this->_table,
-                'original' => $this->l10n($data),
+                'original' => $data,
             );
 
             // Release memory
@@ -883,24 +880,6 @@ class Indi_Db_Table
 
         // NULL return
         return null;
-    }
-
-    /**
-     * Force $data to contain only single translation (according to current language settings)
-     * but only for localized fields
-     *
-     * @param $data
-     * @return array
-     */
-    public function l10n($data) {
-
-        // Get localized
-        foreach ($this->fields()->select('y', 'l10n') as $fieldR)
-            if ($fieldR->relation != 6)
-                $data[$fieldR->alias] = json_decode($data[$fieldR->alias])->{Indi::ini('lang')->admin};
-
-        // Return data
-        return $data;
     }
 
     /**
@@ -1172,7 +1151,7 @@ class Indi_Db_Table
                     if (array_key_exists($fieldR->alias, $data))
 
                         // If localization is enabled for this field
-                        if ($fieldR->l10n == 'y' || ($this->_table == 'enumset' && $forceL10n)) {
+                        if (($fieldR->storeRelationAbility == 'none' && $fieldR->l10n == 'y') || ($this->_table == 'enumset' && $forceL10n)) {
 
                             // Build part of a query, that will update the value under certain key within JSON-string
                             $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = REPLACE(`' . $fieldR->alias . '`, :s, :s)',

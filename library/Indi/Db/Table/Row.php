@@ -124,6 +124,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup initial properties
         $this->_init($config);
 
+        // Pick translation
+        $this->_original = $this->l10n($this->_original);
+
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
             if (strlen($this->_original[$evalField])) {
@@ -145,6 +148,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
         $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
         $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
+    }
+
+    /**
+     * Force $data to contain only single translation (according to current language settings)
+     * but only for localized fields
+     *
+     * @param $data
+     * @return array
+     */
+    public function l10n($data) {
+
+        // Get localized
+        foreach ($this->model()->fields()->select('y', 'l10n') as $fieldR)
+            if ($fieldR->relation != 6 && array_key_exists($fieldR->alias, $data))
+                if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $data[$fieldR->alias]))
+                    $data[$fieldR->alias] = json_decode($data[$fieldR->alias])->{Indi::ini('lang')->admin};
+
+        // Return data
+        return $data;
     }
 
     /**
@@ -1847,9 +1869,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 foreach ($this->_nested as $alias => $rowset)
                     if (is_object($rowset) && $rowset instanceof Indi_Db_Table_Rowset)
                         $array['_nested'][$alias] = $rowset->toArray($deep);
-
         }
 
+        // Return
         return $array;
     }
 
