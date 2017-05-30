@@ -16,6 +16,110 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
+     * Toggle localization on/off for the current field
+     *
+     * @param bool $toggle
+     * @return mixed
+     */
+    public function l10n($toggle = true) {
+
+        // If no 'Lang' model found - return
+        if (!Indi::model('Lang', true)) return;
+
+        // If no languages set yet - return
+        if (!$jtpl = Indi::db()->query('
+            SELECT `alias`, "" AS `holder`
+            FROM `lang`
+        ')->fetchAll(PDO::FETCH_KEY_PAIR)) return;
+
+        // If current field is a non-key field
+        if ($this->storeRelationAbility == 'none') {
+
+            // Get table name
+            $table = Indi::model($this->entityId)->table();
+            $prop = $this->alias;
+
+        // Else if current field is a enumset-field
+        } else if ($this->relation == 6) {
+
+            // Set $table to 'enumset'
+            $table = 'enumset';
+            $prop = 'title';
+        }
+
+        // Set $enumset flag
+        $enumset = $table == 'enumset';
+
+        // If $toggle arg is `true` and current field is not a enumset-field
+        if ($toggle && !$enumset) {
+
+            // Change column type to TEXT
+            $this->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "TEXT"')->id;
+            $this->_onUpdate = false;
+            $this->save();
+        }
+
+        // Append special part of WHERE clause, for enumset-data
+        $where = array($enumset ? '`fieldId` = "' . $this->id . '"' : 1);
+
+        // Get all values, that should be converted to JSON or back to simple string/text
+        foreach (Indi::db()->query('
+            SELECT `id`, `' . $prop . '` FROM `' . $table . '` WHERE ' . im($where, ' AND ')
+        )->fetchAll(PDO::FETCH_KEY_PAIR) as $id => $value) {
+
+            // If $toggle arg is `true`
+            if ($toggle) {
+
+                // Apply current value as a translation for ALL languages (initially)
+                $json = $jtpl; foreach ($json as &$holder) $holder = $value;
+
+                // Get value
+                $value = json_encode($json);
+
+            // Else if we need to convert data back to non-localized format
+            } else {
+
+                // Pick current translation from JSON
+                $value = json_decode($value)->{Indi::ini('lang')->admin};
+            }
+
+            // WHERE clause
+            array_unshift($where, '`id` = "' . $id . '"');
+
+            // Build sql-query to convert plain text values to stringified JSON values
+            $sql = Indi::db()->sql('
+                UPDATE `' . $table . '`
+                SET `' . $prop . '` = :s
+                WHERE ' . im($where, ' AND ')
+            , $value);
+
+            // Run sql-query
+            Indi::db()->query($sql);
+
+            // Remove id-clause
+            array_shift($where);
+        }
+
+        // If $toggle arg is `false`, and current field is not a enumset-field
+        if (!$toggle && !$enumset) {
+
+            // Change column type to VARCHAR(255)
+            $this->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "VARCHAR(255)"')->id;
+            $this->_onUpdate = false;
+            $this->save();
+        }
+    }
+
+    /**
+     * Ensure that if value of `l10n` prop have been changed - l10n() method will be called
+     */
+    public function onUpdate() {
+
+        // If value of `l10n` prop have been changed - convert field data
+        if ($this->affected('l10n')) $this->l10n($this->l10n == 'y');
+    }
+
+    /**
      * Set row field value, by creating an item of $this->_modified array, in case if
      * value is different from value of $this->_original at same key ($columnName)
      *

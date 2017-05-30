@@ -178,6 +178,9 @@ class Indi_Db_Table
         // Fetch data
         $data = Indi::db()->query($sql)->fetchAll();
 
+        // Pick localized values
+        foreach($data as &$entry) $entry = $this->l10n($entry);
+
         // Prepare data for Indi_Db_Table_Rowset object construction
         $data = array(
             'table'   => $this->_table,
@@ -862,7 +865,7 @@ class Indi_Db_Table
             // Prepare data for Indi_Db_Table_Row object construction
             $constructData = array(
                 'table'    => $this->_table,
-                'original' => $data,
+                'original' => $this->l10n($data),
             );
 
             // Release memory
@@ -880,6 +883,24 @@ class Indi_Db_Table
 
         // NULL return
         return null;
+    }
+
+    /**
+     * Force $data to contain only single translation (according to current language settings)
+     * but only for localized fields
+     *
+     * @param $data
+     * @return array
+     */
+    public function l10n($data) {
+
+        // Get localized
+        foreach ($this->fields()->select('y', 'l10n') as $fieldR)
+            if ($fieldR->relation != 6)
+                $data[$fieldR->alias] = json_decode($data[$fieldR->alias])->{Indi::ini('lang')->admin};
+
+        // Return data
+        return $data;
     }
 
     /**
@@ -1060,6 +1081,11 @@ class Indi_Db_Table
         // Build the first part of sql expression
         $sql = 'INSERT INTO `' . $this->_table . '` SET ';
 
+        // Get languages
+        if (Indi::model('Lang', true)) $jtpl = Indi::db()->query('
+            SELECT `alias`, "" AS `holder` FROM `lang`
+        ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
         // Declare array for sql SET statements
         $setA = array();
 
@@ -1069,16 +1095,38 @@ class Indi_Db_Table
             // We will insert values for fields, that are actually exist in database table structure
             if ($fieldR->columnTypeId) {
 
+                // Declare/reset $set flag
+                $set = false;
+
                 // If current field alias is one of keys within data to be inserted,
-                // and if data's value for that field alias is not null
                 if (array_key_exists($fieldR->alias, $data)) {
+
+                    // Set $set flag to `true`
+                    $set = true;
+
+                // Else if column type is TEXT
+                } else if ($set = $fieldR->foreign('columnTypeId')->type == 'TEXT')
+
+                    // Use field's default value as value for insertion,
+                    // as MySQL does not support native default values for TEXT-columns
+                    $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
+
+                // If $set flag is `true`
+                if ($set) {
+
+                    // If localization is enabled for this field
+                    if ($fieldR->l10n == 'y' && $jtpl) {
+
+                        // Initially, we set current value as a value of all existing translations
+                        $json = $jtpl; foreach ($json as &$holder) $holder = $data[$fieldR->alias];
+
+                        // Get JSON
+                        $data[$fieldR->alias] = json_encode($json);
+                    }
 
                     // We append value with related field alias to $set array
                     $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
-
-                // Else if column type is TEXT, we use field's default value as value for insertion
-                } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                    $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $fieldR->compiled('defaultValue'));
+                }
             }
         }
 
@@ -1100,7 +1148,7 @@ class Indi_Db_Table
      * @return int
      * @throws Exception
      */
-    public function update(array $data, $where = '') {
+    public function update(array $data, $where = '', $original = array(), $forceL10n) {
 
         // Check if $data array is not empty
         if (count($data)) {
@@ -1123,8 +1171,21 @@ class Indi_Db_Table
                     // If current field alias is one of keys within data to be updated,
                     if (array_key_exists($fieldR->alias, $data))
 
-                        // We append value with related field alias to $set array
-                        $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
+                        // If localization is enabled for this field
+                        if ($fieldR->l10n == 'y' || ($this->_table == 'enumset' && $forceL10n)) {
+
+                            // Build part of a query, that will update the value under certain key within JSON-string
+                            $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = REPLACE(`' . $fieldR->alias . '`, :s, :s)',
+                                '"' . Indi::ini('lang')->admin . '":' . json_encode($original[$fieldR->alias]) . '',
+                                '"' . Indi::ini('lang')->admin . '":' . json_encode($data[$fieldR->alias]) . ''
+                            );
+
+                        // Else
+                        } else {
+
+                            // We append value with related field alias to $set array
+                            $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
+                        }
                 }
             }
 
