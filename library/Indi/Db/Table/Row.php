@@ -188,7 +188,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param Field_Row $titleFieldR
      */
-    public function titleUpdate(Field_Row $titleFieldR) {
+    public function titleUpdate(Field_Row $titleFieldR, $original = array()) {
 
         // If field, used as title field - is storing single foreign key
         if ($titleFieldR->storeRelationAbility == 'one') {
@@ -219,7 +219,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (preg_match('/^one|many$/', $titleFieldR->storeRelationAbility)) {
             $this->model()->update(
                 array('title' => ($this->title = mb_substr($this->title, 0, 255, 'utf-8'))),
-                '`id` = "' . $this->id . '"'
+                '`id` = "' . $this->id . '"',
+                $original ?: $this->original()
             );
         }
 
@@ -281,8 +282,11 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If current row is an existing row
         if ($this->_original['id']) {
 
+            // Set $forceL10n flag if current row is a enumset row, linked to a field that having localization turned On
+            $forceL10n = $this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y';
+
             // Update it
-            $affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"');
+            $affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"', $original, $forceL10n);
 
             // Setup $return variable as a number of affected rows, e.g 1 or 0
             $return = $affected;
@@ -335,7 +339,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (in_array($titleFieldR->alias, array_keys($modified))) {
 
                 // Update title
-                $this->titleUpdate($titleFieldR);
+                $this->titleUpdate($titleFieldR, $original);
             }
 
         // Else if current entity has an empty/zero `titleFieldId` property, but current row was an already existing row
@@ -4254,7 +4258,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
 
             // Else if single prop name is given as $prop arg - detect whether or not it is in the list of affected props
-            } else return $prev ? $this->_affected[$prop] : array_key_exists($prop, $this->_affected);
+            } else if (is_string($prop) && $prop) {
+                return $prev ? $this->_affected[$prop] : array_key_exists($prop, $this->_affected);
+
+            } else if ($prop === true) {
+                $prev = true;
+            }
         }
 
         // Return array of affected props
