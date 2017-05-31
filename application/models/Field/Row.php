@@ -50,6 +50,13 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Set $enumset flag
         $enumset = $table == 'enumset';
 
+        // Toggle localization for rename-fields
+        $rename = array('grid' => 'alterTitle', 'search' => 'alt', 'section2action' => 'rename');
+        if ($this->alias == 'title' && $rename[$table] && $fieldR_rename = Indi::model($table)->fields($rename[$table])) {
+            $fieldR_rename->l10n = $toggle ? 'y' : 'n';
+            $fieldR_rename->save();
+        }
+
         // Get usages
         if (!$enumset && $this->id == Indi::model($this->entityId)->titleField()->id) {
 
