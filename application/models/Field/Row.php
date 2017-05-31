@@ -50,6 +50,25 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Set $enumset flag
         $enumset = $table == 'enumset';
 
+        // Get usages
+        if (!$enumset && $this->id == Indi::model($this->entityId)->titleField()->id) {
+
+            // Get the model-usages info as entityId and titleFieldAlias
+            $usageA = Indi::db()->query('
+                SELECT `e`.`id` AS `entityId`, `e`.`table`, `f`.`alias` AS `titleFieldAlias`
+                FROM `entity` `e`, `field` `f`
+                WHERE `f`.`relation` = "' . $this->entityId . '" AND `e`.`titleFieldId` = `f`.`id`
+            ')->fetchAll();
+
+            // Foreach usage
+            foreach ($usageA as $usageI) {
+                if ($fieldR_title = Indi::model($usageI['table'])->fields('title')) {
+                    $fieldR_title->l10n = $toggle ? 'y' : 'n';
+                    $fieldR_title->save();
+                }
+            }
+        }
+
         // If $toggle arg is `true` and current field is not a enumset-field
         if ($toggle && !$enumset) {
 
