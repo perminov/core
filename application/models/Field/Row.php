@@ -21,7 +21,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      * @param bool $toggle
      * @return mixed
      */
-    public function l10n($toggle = true) {
+    public function toggleL10n($toggle = true) {
 
         // If no 'Lang' model found - return
         if (!Indi::model('Lang', true)) return;
@@ -116,7 +116,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     public function onUpdate() {
 
         // If value of `l10n` prop have been changed - convert field data
-        if ($this->affected('l10n')) $this->l10n($this->l10n == 'y');
+        if ($this->affected('l10n')) $this->toggleL10n($this->l10n == 'y');
     }
 
     /**

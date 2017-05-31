@@ -29,6 +29,9 @@ class Section extends Indi_Db_Table {
             ORDER BY `move`
         ')->fetchAll();
 
+        // Localize
+        $tmpA = l10n($tmpA, 'title');
+
         // Convert that temporary data to an array, that is using items ids as items keys, and unset $tmpA array
         $rootA = array(); for ($i = 0; $i < count($tmpA); $i++) $rootA[$tmpA[$i]['id']] = $tmpA[$i]; unset($tmpA);
 
@@ -45,6 +48,9 @@ class Section extends Indi_Db_Table {
                 AND `sa`.`toggle` = "y"
             ORDER BY `s`.`move`
         ')->fetchAll();
+
+        // Localize
+        $nestedA = l10n($nestedA, 'title');
 
         // Declare an array for function return
         $menu = array();
