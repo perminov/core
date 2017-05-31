@@ -1,15 +1,6 @@
 <?php
 class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
-    public function __construct($config) {
-
-        // Pick translation
-        $config['original'] = $this->l10n($config['original']);
-
-        // Call parent
-        return parent::__construct($config);
-    }
-
     /**
      * Here we override parent's l10n() method, as enumset-model has it's special way of handling translations
      *

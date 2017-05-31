@@ -124,9 +124,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup initial properties
         $this->_init($config);
 
-        // Pick translation
-        $this->_original = $this->l10n($this->_original);
-
         // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
         foreach ($this->model()->getEvalFields() as $evalField) {
             if (strlen($this->_original[$evalField])) {
@@ -148,6 +145,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
         $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
         $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
+
+        // Pick translation
+        $this->_original = $this->l10n($this->_original);
     }
 
     /**
@@ -160,10 +160,10 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function l10n($data) {
 
         // Get localized
-        foreach ($this->model()->fields()->select('y', 'l10n') as $fieldR)
-            if ($fieldR->relation != 6 && array_key_exists($fieldR->alias, $data))
-                if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $data[$fieldR->alias]))
-                    $data[$fieldR->alias] = json_decode($data[$fieldR->alias])->{Indi::ini('lang')->admin};
+        foreach (Indi_Db::l10n($this->_table) ?: array() as $field)
+            if (/*$fieldR->relation != 6 && */array_key_exists($field, $data))
+                if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $data[$field]))
+                    $data[$field] = json_decode($data[$field])->{Indi::ini('lang')->admin};
 
         // Return data
         return $data;

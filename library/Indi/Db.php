@@ -44,6 +44,13 @@ class Indi_Db {
     protected static $_roleA = array();
 
     /**
+     * Localized fields, grouped by table names
+     *
+     * @var array
+     */
+    protected static $_l10nA = array();
+
+    /**
      * Store queries count
      *
      * @var Indi_Db
@@ -140,6 +147,17 @@ class Indi_Db {
                 ($entityId ? ' WHERE `entityId` = "' . $entityId . '" ' : '') .
                 'ORDER BY `move`'
             )->fetchAll();
+
+            // Get temporary table names array
+            foreach($entityA as $entityI) $_[$entityI['id']] = $entityI['table'];
+
+            // Collect localized fields
+            foreach ($fieldA as $fieldI)
+                if ($fieldI['l10n'] == 'y')
+                    self::$_l10nA[$_[$fieldI['entityId']]][] = $fieldI['alias'];
+
+            // Unset tmp variable
+            unset($_);
 
             // Get info about existing control elements
             $elementA = self::$_instance->query('SELECT * FROM `element`')->fetchAll();
@@ -674,5 +692,21 @@ class Indi_Db {
 
         // Return
         return $sql;
+    }
+
+    /**
+     * Get all localized field, grouped by by table name,
+     * or get localized fields for a given table,
+     * or check if some field is localized within given table
+     *
+     * @static
+     * @param null $table
+     * @param null $field
+     * @return array|bool
+     */
+    public static function l10n($table = null, $field = null) {
+        if (func_num_args() == 0) return self::$_l10nA;
+        else if (func_num_args() == 1) return self::$_l10nA[$table];
+        else if (func_num_args() > 1) return in_array($field, self::$_l10nA[$table]);
     }
 }

@@ -1230,3 +1230,23 @@ function xml2ar($xml, $options = array()) {
         $xml->getName() => $propertiesArray
     );
 }
+
+function l10n($dataA, $props = '') {
+
+    // Localize each data item
+    foreach ($dataA as &$dataI) $dataI = l10n_dataI($dataI, $props);
+
+    // Return
+    return $dataA;
+}
+
+function l10n_dataI($dataI, $props) {
+
+    // Localize needed props within data item
+    foreach(ar($props) as $prop)
+        if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $dataI[$prop]))
+            $dataI[$prop] = json_decode($dataI[$prop])->{Indi::ini('lang')->admin};
+
+    // Return
+    return $dataI;
+}

@@ -773,7 +773,7 @@ class Indi_Db_Table
         $array['tableName'] = $this->_table;
         $array['title'] = $this->_title;
         $array['titleFieldId'] = $this->_titleFieldId;
-        return $array;
+        return l10n_dataI($array, 'title');
     }
 
     /**
@@ -1127,7 +1127,7 @@ class Indi_Db_Table
      * @return int
      * @throws Exception
      */
-    public function update(array $data, $where = '', $original = array(), $forceL10n) {
+    public function update(array $data, $where = '', $original = array(), $forceL10n = false) {
 
         // Check if $data array is not empty
         if (count($data)) {
