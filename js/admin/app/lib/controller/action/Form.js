@@ -76,7 +76,8 @@ Ext.define('Indi.lib.controller.action.Form', {
                 // and if so - make that record affected within rowset's store
                 rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index';
                 if (me.ctx().ti(1) && me.ctx().ti(1).row) rowsetActId += '-parentrow-' + me.ctx().ti(1).row.id;
-                if (rowsetActCmp = Ext.getCmp(rowsetActId)) {
+                // todo: check why second cond needed
+                if ((rowsetActCmp = Ext.getCmp(rowsetActId)) && Ext.getCmp(rowsetActId + '-wrapper')) {
                     if (record = rowsetActCmp.getStore().getById(json.affected.id)) rowsetActCmp.affectRecord(record, json);
                     else rowsetActCmp.getStore().reload();
                 }
