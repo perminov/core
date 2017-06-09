@@ -62,7 +62,7 @@ define('I_SHOULD', 'should');
 define('I_HOME', 'Home');
 define('I_LOGOUT', 'Logout');
 define('I_MENU', 'Menu');
-define('I_CREATE', 'Create new item');
+define('I_CREATE', 'Create new');
 define('I_BACK', 'Back');
 define('I_SAVE', 'Save');
 define('I_CLOSE', 'Close');

@@ -320,9 +320,18 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {*}
      */
     gridColumnRenderer_Numeric: function(v, m, r, i, c, s) {
-        var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c];
-        if (column.displayZeroes === false && parseFloat(v) == 0) return '';
-        return Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
+        var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c], s;
+        if (column.displayZeroes !== true && parseFloat(v) == 0) return '' ;
+        s = Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
+        if (column.colors && m) {
+            if (v > 0) {
+                return '<span style="color:limegreen;">' + s + '</span>';
+            } else if (v < 0) {
+                return '<span style="color:red;">' + s + '</span>';
+            } else {
+                return '<span style="color:lightgray;">' + s + '</span>';
+            }
+        } else return s;
     },
 
     /**
@@ -408,6 +417,21 @@ Ext.define('Indi.lib.controller.action.Grid', {
             allowBlank: true,
             margin: '0 2 0 3',
             height: 18
+        }
+    },
+
+    /**
+     * Default editor config for string-columns
+     *
+     * @param column
+     * @param field
+     * @return {Object}
+     */
+    gridColumnXTextarea_Editor: function(column, field) {
+        return {
+            xtype: 'textareafield',
+            margin: '0 2 0 3',
+            height: 40
         }
     },
 
@@ -655,7 +679,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 // Base cfg. Note that here we set up whole column group to be hidden, initialy,
                 // and if at least one of the sub-columns is not hidden - we will set `hidden` prop as `false`
                 columnI = {
-                    text: colI.title,
+                    text: colI.alterTitle || colI.title,
                     hidden: true,
                     columns: me.gridColumnADeep(colI._nested.grid)
                 }

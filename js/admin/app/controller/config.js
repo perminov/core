@@ -180,7 +180,7 @@ Ext.define('Indi.controller.config', {
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.elementId);
+                        c.setVisible(d.elementId && d.expiryType == 'temporary');
                         if (d.expiryType == 'temporary') c.val(new Date()); else c.reset();
                     }
                 }

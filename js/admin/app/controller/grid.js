@@ -28,6 +28,9 @@ Ext.define('Indi.controller.grid', {
                         c.setVisible(d.access != 'all');
                     }
                 }
+            },
+            formItem$FieldId: {
+                jump: '/fields/form/id/{id}/'
             }
         }
     }
