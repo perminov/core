@@ -12,7 +12,7 @@ Ext.override(Ext.grid.plugin.Editing, {
                 column: parseInt(view.lastClickCell.split(':')[0]),
                 row: parseInt(view.lastClickCell.split(':')[1])
             });
-            Ext.fly(lastCell).removeCls('i-grid-cell-editor-focus');
+            if (Ext.fly(lastCell)) Ext.fly(lastCell).removeCls('i-grid-cell-editor-focus');
         }
         if (Ext.fly(view.getHeaderAtIndex(colIdx).getEl()).hasCls('i-grid-column-editable'))
             Ext.fly(cell).addCls('i-grid-cell-editor-focus');
@@ -29,7 +29,7 @@ Ext.override(Ext.grid.plugin.Editing, {
         if(!view.expanderSelector || !e.getTarget(view.expanderSelector)) {
             Ext.defer(function(){
                 if (!view.dblclick) {
-                    Ext.fly(cell).removeCls('i-grid-cell-editor-focus');
+                    if (Ext.fly(cell)) Ext.fly(cell).removeCls('i-grid-cell-editor-focus');
                     me.startEdit(record, view.getHeaderAtIndex(colIdx));
                 }
             }, 506);

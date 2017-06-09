@@ -3152,7 +3152,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (array_key_exists($evalField, $this->_compiled)) {
 
                 // Return that compiled value
-                return $this->_compiled[$evalField];
+                return $this->_compiled[$evalField] ?: '';
 
             // Else if field original value is not empty, and field is within
             // list of fields that are allowed for being compiled
@@ -3169,7 +3169,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Else return already existing value
                 } else return $this->_compiled[$evalField] = $this->_original[$evalField];
-            }
+
+            // Else return empty string
+            } else return '';
 
         // Else if two arguments passed, we assume they are key and value, and there
         // should be explicit setup performed, so we do it
