@@ -100,11 +100,7 @@
 .x-item-disabled .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     cursor: default;
 }
-.x-item-disabled .x-form-text {
-    filter: alpha(opacity=30);
-    opacity: .3;
-}
 .x-toolbar .x-item-disabled .i-combo .x-form-text {
-    filter: alpha(opacity=30);
-    opacity: .3;
+    filter: alpha(opacity=50);
+    opacity: .5;
 }

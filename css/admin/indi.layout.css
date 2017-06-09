@@ -232,6 +232,15 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     background: transparent;
 }
 
+.x-item-disabled .x-form-item-label,
+.x-item-disabled .x-form-field,
+.x-item-disabled .x-form-cb-label,
+.x-item-disabled .x-form-trigger,
+.x-item-disabled .x-form-text {
+    filter: alpha(opacity=50);
+    opacity: .5;
+}
+
 /* Adjustments, especially for filtering panels */
 .x-toolbar .x-item-disabled .x-form-item-label,
 .x-toolbar .x-item-disabled .x-form-cb-label {
@@ -242,6 +251,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 
 .x-poppable {
     border-bottom-width: 1px !important;
+}
+.x-poppable.x-poppable-under {
+    border-top-width: 0 !important;
 }
 .x-window > .x-poppable, .x-poppable.x-nobelow {
     border-bottom-width: 0 !important;

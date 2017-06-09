@@ -1,6 +1,11 @@
 Ext.define('Indi.controller.disabledFields', {
     extend: 'Indi.Controller',
     actionsConfig: {
+        index: {
+            rowset: {
+                multiSelect: true
+            }
+        },
         form: {
             formItem$ProfileIds: {
                 allowBlank: true,
