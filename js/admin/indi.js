@@ -1078,6 +1078,10 @@ Ext.define('Indi', {
             // Force q arg to be string
             q += '';
 
+            // If current language is not 'ru' - use different logic
+            // as we assume that we need only 2 versions, for example 'item,items'
+            if (Indi.lang.name != 'ru') return (showNumber ? q + ' ' : '') + versions012.split(',')[q == 1 ? 0 : 1];
+
             // Get versions reversed array
             versions210 = versions012.split(',').reverse();
 
