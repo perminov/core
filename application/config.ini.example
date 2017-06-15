@@ -2,6 +2,7 @@
 domain = empty.local
 seoUri = false
 title = false
+demo = false
 
 [db]
 adapter = mysql

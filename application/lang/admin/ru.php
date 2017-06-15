@@ -203,3 +203,5 @@ define('I_SOUTH_PLACEHOLDER_GO', 'Перейти');
 define('I_SOUTH_PLACEHOLDER_TOWINDOW', ' к окну');
 define('I_SOUTH_PLACEHOLDER_GET', 'Вернуть');
 define('I_SOUTH_PLACEHOLDER_BACK', ' содержимое обратно сюда');
+
+define('I_DEMO_ACTION_OFF', 'Это действие отключено в демо-режиме');
