@@ -294,9 +294,21 @@ function ago($date1, $date2 = null, $mode = 'ago', $exact = false) {
  * @param int $q
  * @param string $versions012
  * @param bool $showNumber
+ * @param string $lang
  * @return string
  */
-function tbq($q = 2, $versions012 = '', $showNumber = true) {
+function tbq($q = 2, $versions012 = '', $showNumber = true, $lang = null) {
+
+    // If lang is not 'ru' - use different logic
+    if (($lang ?: Indi::ini('lang')->admin) != 'ru') {
+
+        // Convert $versions012 string into an array
+        // We assume that we need only 2 versions, for example 'item,items'
+        $versions12 = ar($versions012);
+
+        // Return
+        return  ($showNumber ? $q . ' ' : '') . $versions12[$q == 1 ? 0 : 1];
+    }
 
     // Distribute quantity measure spell versions
     list($formatA['2-4'], $formatA['1'], $formatA['0,11-19,5-9']) = array_reverse(ar($versions012));
