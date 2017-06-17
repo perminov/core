@@ -2381,4 +2381,11 @@ class Indi {
     public static function schedule($since, $until = null) {
         return new Indi_Schedule($since, $until);
     }
+    
+    /**
+     * Prevent user from doing something when demo-mode is turned On
+     */
+    public static function demo() {
+        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1) jflush(false, I_DEMO_ACTION_OFF);
+    }
 }

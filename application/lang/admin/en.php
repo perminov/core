@@ -203,3 +203,5 @@ define('I_SOUTH_PLACEHOLDER_GO', 'Go to');
 define('I_SOUTH_PLACEHOLDER_TOWINDOW', ' that window');
 define('I_SOUTH_PLACEHOLDER_GET', 'Get contents');
 define('I_SOUTH_PLACEHOLDER_BACK', ' back here');
+
+define('I_DEMO_ACTION_OFF', 'This action is turned Off in demo-mode');
