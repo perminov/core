@@ -1234,7 +1234,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix, btn) {
-        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data'),
+            v = rs.getView();
 
         // Show the deletion confirmation message box
         Ext.MessageBox.show({
@@ -1248,7 +1249,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         'others[]': Ext.Array.remove(srs, row.get('id'))
                     }
                 })
-                else Ext.getCmp(me.rowset.id).getView().focus();
+                else (v.lockedView || v).focus();
             }
         });
     },
