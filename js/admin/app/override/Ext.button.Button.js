@@ -46,6 +46,21 @@ Ext.override(Ext.button.Button, {
         /*if (Ext.isObject(this.tooltip) && this.tooltip.id) {
             Ext.tip.QuickTipManager.unregister(this.btnEl);
         }*/
+    },
+
+    // @inheritdoc
+    constructor: function(config) {
+        var me = this;
+
+        // Add icon and move text to tooltip
+        if (config.icon) {
+            config.icon = Indi.std + config.icon;
+            config.tooltip = config.text + '';
+            config.text = '';
+        }
+
+        // Call parent
+        me.callParent(arguments);
     }
 });
 
