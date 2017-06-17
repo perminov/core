@@ -112,12 +112,12 @@ Ext.override(Ext.Msg, {
     msgCt: null,
     side: function(cfg){
         if (Ext.isString(cfg) && !cfg.length) return;
-        if (Ext.isObject(cfg) && (!cfg.body || !cfg.body.length)) return;
+        if (Ext.isObject(cfg) && (!cfg.msg || !cfg.msg.length) && (!cfg.body || !cfg.body.length)) return;
         if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'i-notice-div'}, true);
         var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default i-notice">' +
             '<img src="'+Indi.std+'/i/admin/btn-icon-close-side.png" class="i-notice-close">' +
             (Ext.isObject(cfg) && cfg.header ? '<h1>' + cfg.header + '</h1>' : '') +
-            '<p>' + (Ext.isString(cfg) ? cfg : cfg.body) + '</p>' +
+            '<p>' + (Ext.isString(cfg) ? cfg : (cfg.body || cfg.msg)) + '</p>' +
         '</div>', true);
         m.down('.i-notice-close').on('click', function(e, dom){
             Ext.get(dom).up('.i-notice').fadeOut({remove: true});
