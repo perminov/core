@@ -656,10 +656,10 @@ Ext.define('Indi', {
             if (!boxA.length) return json.success;
 
             // Ensure second box will be shown after first box closed
-            if (boxA[1]) boxA[0].fn = function() { Ext.Msg.show(boxA[1]); }
+            if (boxA[1]) boxA[0].fn = function() { Ext.Msg[Ext.Msg.jflushFn](boxA[1]); }
 
             // Show first box
-            Ext.Msg.show(boxA[0]);
+            Ext.Msg[Ext.Msg.jflushFn](boxA[0]);
 
             // Return
             return json.success;
