@@ -284,7 +284,10 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Provide delete action
      */
     public function deleteAction($redirect = true) {
-
+        
+        // Demo mode
+        Indi::demo();
+        
         // Do pre delete maintenance
         $this->preDelete();
 
@@ -2076,6 +2079,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param bool $return
      */
     public function saveAction($redirect = true, $return = false) {
+
+        // Demo mode
+        Indi::demo();
 
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
