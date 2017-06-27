@@ -1,7 +1,8 @@
 [general]
-domain = empty
+domain = empty.local
 seoUri = false
 title = false
+demo = false
 
 [db]
 adapter = mysql
@@ -10,6 +11,21 @@ host = localhost
 username = empty
 password = empty
 dbname   = empty
+
+[ws]
+enabled = false
+socket =
+
+[mail]
+default.from.name = empty.local
+default.from.email = info@empty.local
+
+[vk]
+enabled = false
+url = https://api.vk.com/method/
+app =
+token =
+v = 5.59
 
 [lang]
 front = ru

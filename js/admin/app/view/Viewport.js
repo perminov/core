@@ -3,30 +3,9 @@
  */
 Ext.define('Indi.view.Viewport', {
     extend: 'Ext.container.Viewport',
-    layout: {type: 'border', padding: 5},
+    layout: {type: 'border', padding: '0 5 5 5'},
     defaults: {split: true},
     alternateClassName: 'Indi.Viewport',
-    statics: {
-
-        /**
-         * Format of date, that is displayed at the top right corner
-         *
-         * @type {String}
-         */
-        dateUpdaterFormat: '<b>l</b>, d.m.Y [H:i] \\G\\M\\TP',
-
-        /**
-         * Date updater, updates the top right date
-         */
-        dateUpdater: function() {
-            Ext.get('i-center-north-date').setHTML(
-                Ext.Date.format(
-                    new Date(Indi.time * 1000),
-                    Indi.view.Viewport.dateUpdaterFormat
-                )
-            );
-        }
-    },
 
     /**
      * Logo small panel
@@ -36,7 +15,7 @@ Ext.define('Indi.view.Viewport', {
     logo: {
         id: 'i-logo',
         width: 200,
-        height: 45,
+        height: 50,
         border: 0,
         tpl: new Ext.XTemplate('<img src="{std}/i/admin/logo.png"/>'),
         afterRender: function() {
@@ -51,6 +30,11 @@ Ext.define('Indi.view.Viewport', {
      * @type {Object}
      */
     menu: {
+        id: 'i-menu',
+        title: Indi.lang.I_MENU,
+        collapsible: true,
+        padding: '55 0 0 0',
+        animCollapse: false
     },
 
     /**
@@ -60,42 +44,154 @@ Ext.define('Indi.view.Viewport', {
         region: 'center',
         defaults: {split: true},
         border: 1,
-        layout: {type: 'border', padding: '0 0 0 0'},
+        layout: {type: 'border', padding: 0, resizable: false},
         id: 'i-center',
+        resizable: false,
         items: [{
-            id: 'i-center-north',
+            id: 'i-center-north-trail-panel',
             region: 'north',
-            tpl:
-                '<div>' +
-                    '<div id="i-center-north-date">{date}</div>' +
-                    '<div id="i-center-north-admin">{admin} <a href="{pre}/logout/">{logout}</a></div>' +
-                    '<div id="i-center-north-trail"></div>' +
-                    '</div>',
-            minHeight: 36,
+            resizable: false,
+            minHeight: 41,
             border: 0,
-            afterRender: function() {
-                setInterval(Indi.view.Viewport.dateUpdater, 1000);
-                this.tpl.overwrite(this.el, {
-                    date: Ext.Date.format(new Date(Indi.time * 1000), Indi.view.Viewport.dateUpdaterFormat),
-                    admin: Indi.user,
-                    pre: Indi.pre,
-                    logout: Indi.lang.I_LOGOUT
-                });
-                this.superclass.afterRender.apply(this, arguments);
-            }
+            margin: 0,
+            items: [{
+                border: 0,
+                margin: 0,
+                padding: 0,
+                dockedItems: [{
+                    dock: 'top',
+                    xtype: 'toolbar',
+                    style: 'background: transparent',
+                    padding: 0,
+                    margin: '0 0 2 0',
+                    height: 22,
+                    border: 0,
+                    items: [{
+                        xtype: 'panel',
+                        bodyStyle: 'background: transparent',
+                        margin: '0 2 0 0',
+                        padding: 0,
+                        border: 0,
+                        html: '<div id="i-center-north-admin">{admin}</div>',
+                        listeners: {
+                            boxready: function() {
+                                var div = this.body.down('div');
+                                var tpl = new Ext.Template(div.dom.outerHTML);
+                                div.update(tpl.apply({
+                                    admin: Indi.user.title,
+                                    pre: Indi.pre,
+                                    logout: Indi.lang.I_LOGOUT
+                                }));
+                                this.setWidth();
+                            }
+                        }
+                    }, {
+                        margin: '0 2 0 0',
+                        padding: 0,
+                        xtype: 'button',
+                        bodyStyle: 'background: transparent',
+                        height: 17,
+                        id: 'i-mobile-menu-trigger',
+                        arrowCls: '',
+                        text: '[{role}]',
+                        menu: {
+                            floating: true,
+                            items: [{
+                                xtype: 'mainmenu',
+                                id: 'i-mobile-menu'
+                            }],
+                            listeners: {
+                                afterrender: function(c) {
+                                    c.down('mainmenu').maxHeight = Ext.getCmp('i-center-center').getHeight();
+                                }
+                            }
+                        },
+                        listeners: {
+                            boxready: function() {
+                                this.btnInnerEl.css('padding', '0');
+                                var div = this.btnInnerEl;
+                                var tpl = new Ext.Template(div.dom.innerHTML);
+                                div.update(tpl.apply({
+                                    role: Indi.user.role
+                                }));
+                                this.setWidth();
+                            }
+                        }
+                    }, {
+                        xtype: 'panel',
+                        border: 0,
+                        margin: '0 6 0 0',
+                        padding: '2 0 0 0',
+                        bodyStyle: 'background: transparent',
+                        html: '<a href="{pre}/logout/" style="font-size: 11px; display: inline-block; line-height: 16px;">{logout}</a>',
+                        listeners: {
+                            boxready: function() {
+                                var div = this.body.down('a');
+                                var tpl = new Ext.Template(div.dom.outerHTML);
+                                div.update(tpl.apply({
+                                    pre: Indi.pre,
+                                    logout: Indi.lang.I_LOGOUT
+                                }));
+                                this.setWidth();
+                            }
+                        }
+                    }, {
+                        xtype: 'panel',
+                        border: 0,
+                        margin: '0 6 0 0',
+                        padding: '0 0 0 0',
+                        height: 15,
+                        width: 4,
+                        bodyStyle: 'background: transparent',
+                        html: '<video src="{std}/i/admin/loader.mp4" id="loader" style="width: 3px; opacity: 0; visibility: hidden; display: inline-block;" loop="true" autoplay="true"/>',
+                        listeners: {
+                            beforerender: function() {
+                                this.html = new Ext.Template(this.html).apply({std: Indi.std});
+                            }
+                        }
+                    }, {
+                        id: 'i-center-north',
+                        region: 'north',
+                        flex: 1,
+                        xtype: 'taskbar',
+                        margin: '0 0 0 0'
+                    }]
+                }],
+                bodyStyle: 'border-top: 0;'
+            }, {
+                id: 'i-center-north-trail',
+                height: 17,
+                border: 0,
+                padding: 0
+            }]
         }, {
             region: 'center',
             id: 'i-center-center',
-            border: 1,
+            resizable: false,
+            border: 1
             //contentEl: 'i-section-index-action-index-content'
         }]
     },
 
     // @inheritdoc
     initComponent: function() {
-        this.menu = Ext.create('Indi.Menu', this.menu);
-        this.items = [this.logo, this.menu, this.center];
-        this.callParent();
+        var me = this;
+        me.menu = Ext.create('Indi.Menu', me.menu);
+        me.menu.on({
+            collapse: function(){
+                var top = Indi.app.getTopMaximizedWindow(); if (top) top.fitContainer();
+                me.down('#i-mobile-menu-trigger').enable();
+            },
+            expand: function() {
+                var top = Indi.app.getTopMaximizedWindow(); if (top) top.fitContainer();
+                Ext.ComponentQuery.query('desktopwindow[maximized]').forEach(function(w){
+                    if (w.id != top.id && !w.hidden) w.hide();
+                });
+                me.down('#i-mobile-menu-trigger').disable();
+            }
+        });
+        me.items = [me.logo, me.menu, me.center];
+        me.callParent();
     },
 
     // @inheritdoc
@@ -105,6 +201,22 @@ Ext.define('Indi.view.Viewport', {
         },
         afterlayout: function(){
             if (Ext.getCmp(Indi.centerId)) Ext.getCmp(Indi.centerId).doComponentLayout();
+        },
+        boxready: function(c, w, h) {
+            if (w > 600) c.down('#i-mobile-menu-trigger').setDisabled(true);
+        },
+        resize: function(c, w, h) {
+            var m = c.down('#i-menu'), t = c.down('#i-mobile-menu-trigger');
+            if (w <= 600) {
+                if (!m.hidden || m.collapsed) m.hide();
+            } else {
+                if (m.hidden) m.show();
+            }
+            t.setDisabled(w > 600 && !m.collapsed);
+            if (c.down('#i-mobile-menu')) {
+                c.down('#i-mobile-menu').maxHeight = c.down('#i-center-center').getHeight();
+                if (!c.down('#i-mobile-menu').up('menu').hidden) c.down('#i-mobile-menu').setHeight();
+            }
         }
     }
 });

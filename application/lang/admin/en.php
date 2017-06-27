@@ -2,6 +2,7 @@
 define('I_URI_ERROR_SECTION_FORMAT', 'Section name is in wrong format');
 define('I_URI_ERROR_ACTION_FORMAT', 'Action name is in wrong format');
 define('I_URI_ERROR_ID_FORMAT', 'Uri param \'id\' should have a positive integer value');
+define('I_URI_ERROR_CHUNK_FORMAT', 'One of URI chunk has invalid format');
 
 define('I_LOGIN_BOX_USERNAME', 'Username');
 define('I_LOGIN_BOX_PASSWORD', 'Password');
@@ -61,7 +62,7 @@ define('I_SHOULD', 'should');
 define('I_HOME', 'Home');
 define('I_LOGOUT', 'Logout');
 define('I_MENU', 'Menu');
-define('I_CREATE', 'Create new item');
+define('I_CREATE', 'Create new');
 define('I_BACK', 'Back');
 define('I_SAVE', 'Save');
 define('I_CLOSE', 'Close');
@@ -80,6 +81,7 @@ define('I_NAVTO_CREATE', 'Goto new row creation');
 define('I_NAVTO_NESTED', 'Goto nested objects');
 define('I_NAVTO_ROWINDEX', 'Goto row by #');
 
+define('I_ROWSAVE_ERROR_VALUE_REQUIRED', 'Field "%s" is required');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_OBJECT', 'Value of field "%s" can\'t be an object');
 define('I_ROWSAVE_ERROR_VALUE_CANT_BE_ARRAY', 'Value of field "%s" can\'t be an array');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11', 'Value "%s" of field "%s" should not be greater than a 11-digit decimal');
@@ -96,16 +98,25 @@ define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_DATE', 'Value "%s", mentioned in fi
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_DATE', 'Date "%s", mentioned in field "%s"  - is not a valid date');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_TIME', 'Value "%s", mentioned in field "%s" as a time - should be a time in format HH:MM:SS');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_CONTAIN_VALID_TIME', 'Time "%s", mentioned in field "%s" - is not a valid time');
-define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 5 or less digits in integer part, and 2 or less/none digits in fractional part');
-define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Value "%s" of field "%s" should be a number with 8 or less digits in integer part, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DOUBLE72', 'Value "%s" of field "%s" should be a number with 4 or less digits in integer part, optionally prepended with "-" sign, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL112', 'Value "%s" of field "%s" should be a number with 8 or less digits in integer part, optionally prepended with "-" sign, and 2 or less/none digits in fractional part');
+define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_DECIMAL143', 'Value "%s" of field "%s" should be a number with 10 or less digits in integer part, optionally prepended with "-" sign, and 3 or less/none digits in fractional part');
 define('I_ROWSAVE_ERROR_VALUE_SHOULD_BE_YEAR', 'Value "%s" of field "%s" should be a year in format YYYY');
 define('I_ROWSAVE_ERROR_NOTDIRTY_TITLE', 'Nothing to save');
 define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
-define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID', 'Current row cannot be set as parent for itself in field "%"');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Current row cannot be set as parent for itself in field "%s"');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Row with id "%s", specified in field "%s", - is not exists, so can not be set up as parent row');
+define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Row "%s", specified in field "%s", - is a child/descendant row for a current row "%s", so it can not be set up as parent row');
+
+define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Field "%s" is required');
+define('I_ADMIN_ROWSAVE_LOGIN_OCCUPIED', 'Value "%s" of field "%s" is already used as an username for another account');
+
 define('I_ROWFILE_ERROR_MKDIR', 'Recursive creation of directory "%s" within path "%s" is failed, despite on that path is writable');
 define('I_ROWFILE_ERROR_UPPER_DIR_NOT_WRITABLE', 'Recursive creation of directory "%s" within path "%s" is failed, because that path is not writable');
 define('I_ROWFILE_ERROR_TARGET_DIR_NOT_WRITABLE', 'Target directory "%s" exists, but is not writable');
 define('I_ROWFILE_ERROR_NONEXISTENT_ROW', 'There is no possibility to deal with files of nonexistent row');
+
+define('I_ROWM4D_NO_SUCH_FIELD', 'Field `m4d` does not exist within "%s" entity');
 
 define('I_UPLOAD_ERR_INI_SIZE', 'The uploaded file in field "%s" exceeds the upload_max_filesize directive in php.ini');
 define('I_UPLOAD_ERR_FORM_SIZE', 'The uploaded file in field "%s" exceeds the MAX_FILE_SIZE directive that was specified ');
@@ -140,6 +151,7 @@ define('I_FORM_UPLOAD_INFMT', 'in format');
 define('I_FORM_UPLOAD_HSIZE', 'have size');
 define('I_FORM_UPLOAD_NOTGT', 'not greater than');
 define('I_FORM_UPLOAD_NOTLT', 'not less than');
+define('I_FORM_UPLOAD_FPREF', 'Foto %s');
 
 define('I_FORM_DATETIME_HOURS', 'hours');
 define('I_FORM_DATETIME_MINUTES', 'minutes');
@@ -147,6 +159,10 @@ define('I_FORM_DATETIME_SECONDS', 'seconds');
 define('I_COMBO_OF', 'of');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected options is');
 define('I_COMBO_MISMATCH_DISABLED_VALUE', 'The chosen option is not allowed as it is disabled');
+define('I_COMBO_KEYWORD_NO_RESULTS', 'Nothing found using this keyword');
+define('I_COMBO_ODATA_FIELD404', 'Field "%s" is neither real field nor pseudo field');
+define('I_COMBO_GROUPBY_NOGROUP', 'Grouping not set');
+define('I_COMBO_WAND_TOOLTIP', 'Create new option in this list using title, entered in this field');
 
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_TITLE', 'Row is not found');
 define('I_ACTION_FORM_TOPBAR_NAVTOROWID_NOT_FOUND_MSGBOX_MSG_START', 'The current section\'s scope of available rows');
@@ -162,7 +178,8 @@ define('I_ACTION_FORM_TOPBAR_NAVTOROWOFFSET_NOT_FOUND_MSGBOX_MSG_END', ' - does 
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_NO_SUBSECTIONS', 'No');
 define('I_ACTION_FORM_TOPBAR_NAVTOSUBSECTION_SELECT', '--Select--');
 
-define('I_ACTION_INDEX_KEYWORD_LABEL', 'Search');
+define('I_ACTION_INDEX_KEYWORD_LABEL', 'Search…');
+define('I_ACTION_INDEX_KEYWORD_TOOLTIP', 'Search on all columns');
 define('I_ACTION_INDEX_SUBSECTIONS_LABEL', 'Subsections');
 define('I_ACTION_INDEX_SUBSECTIONS_VALUE', '--Select--');
 define('I_ACTION_INDEX_SUBSECTIONS_NO', 'No');
@@ -180,3 +197,11 @@ define('I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG', 'Options are already empt
 
 define('I_ACTION_DELETE_CONFIRM_TITLE', 'Confirm');
 define('I_ACTION_DELETE_CONFIRM_MSG', 'Are you sure you want to delete');
+
+define('I_SOUTH_PLACEHOLDER_TITLE', 'Contents of this tab is opened in a separate window');
+define('I_SOUTH_PLACEHOLDER_GO', 'Go to');
+define('I_SOUTH_PLACEHOLDER_TOWINDOW', ' that window');
+define('I_SOUTH_PLACEHOLDER_GET', 'Get contents');
+define('I_SOUTH_PLACEHOLDER_BACK', ' back here');
+
+define('I_DEMO_ACTION_OFF', 'This action is turned Off in demo-mode');

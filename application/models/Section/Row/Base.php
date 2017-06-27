@@ -46,11 +46,8 @@ class Section_Row_Base extends Indi_Db_Table_Row {
 
                     // Exclude columns that have controls of several types, listed below
                     for ($i = 0; $i < count($fields); $i++) {
-                        // 6 - text
                         // 13 - html-editor
-                        // 14 - file upload
-                        // 16 - span (group of fields)
-                        if (in_array($fields[$i]['elementId'], array(6, 13, 14))) {
+                        if (in_array($fields[$i]['elementId'], array(13))) {
                             if ($fields[$i]['elementId'] == 6 && $fields[$i]['alias'] == 'title') {} else {
                                 $exclusions[] = $fields[$i]['alias'];
                             }
@@ -93,5 +90,38 @@ class Section_Row_Base extends Indi_Db_Table_Row {
                 } else return parent::save();
             } else return parent::save();
         } else return parent::save();
+    }
+
+    /**
+     * Convert values of `defaultSortField` and `defaultSortDirection`
+     * into a special kind of json-encoded array, suitable for usage
+     * with ExtJS
+     *
+     * Also, before json-encoding, prepend additional item into that array,
+     * responsible for grouping, if `groupBy` prop is set
+     *
+     * @return string
+     */
+    public function jsonSort() {
+
+        // Blank array
+        $json = array();
+
+        // Mind grouping, as it also should be involved while building ORDER clause
+        if ($this->groupBy && $this->foreign('groupBy'))
+            $json[] = array(
+                'property' => $this->foreign('groupBy')->alias,
+                'direction' => 'ASC'
+            );
+
+        // Ming sorting
+        if ($this->foreign('defaultSortField'))
+            $json[] = array(
+                'property' => $this->foreign('defaultSortField')->alias,
+                'direction' => $this->defaultSortDirection,
+            );
+
+        // Return json-encoded sort params
+        return json_encode($json);
     }
 }

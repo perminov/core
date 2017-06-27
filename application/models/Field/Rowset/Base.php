@@ -2,6 +2,13 @@
 class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
     /**
+     * Table name of table, that current rowset is related to
+     *
+     * @var string
+     */
+    protected $_table = 'field';
+
+    /**
      * Contains an array with fields aliases as keys, and their indexes within $this->_rows array as values.
      * Is need for ability to direct fetch a needed row from rowset, by it's alias.
      *
@@ -98,17 +105,47 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      */
     public function exclude($keys, $type = 'id', $inverse = false) {
 
-        // If $ids argument is not an array, we convert it to it by exploding by comma
-        if (!is_array($keys)) $keys = explode(',', $keys);
+        // If $keys argument is a string
+        if (is_string($keys) || is_integer($keys) || is_null($keys)) {
 
-        // Flip array
-        $keys = array_flip($keys);
+            // Check if it contains a match expression
+            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
+
+            // If $keys argument is not an array, we convert it to it by exploding by comma
+            else if (!is_array($keys)) $keys = explode(',', $keys);
+        }
+
+        // Flip $keys array
+        if (is_array($keys)) $keys = array_flip($keys);
 
         // For each item in $this->_original array
         foreach ($this->_rows as $index => $row) {
 
-            // If item id is in exclusion/selection list
-            if ($inverse ? !array_key_exists($row->$type, $keys) : array_key_exists($row->$type, $keys)) {
+            // If we deal with an expression
+            if ($expr) {
+
+                // Temporary value
+                $m_ = $row->$type; $match = false;
+
+                // Detect match
+                if (preg_match('/^(\/|#|\+|%)[^\1]*\1[imsxeu]*$/', $expr))
+                    eval('$match = preg_match($expr, $m_);'); else eval('$match = $m_ ' . $expr . ';');
+
+                // Set $cond flag
+                $cond = $inverse ? !$match : $match;
+
+            // Else
+            } else {
+
+                // Check key
+                $ake = array_key_exists($row->$type, $keys);
+
+                // Set $cond flag
+                $cond = $inverse ? !$ake : $ake;
+            }
+
+            // Finally, if row should be unset
+            if ($cond) {
 
                 // Unset row and it's alias
                 unset($this->_indexes[$this->_rows[$index]->alias]);
@@ -144,14 +181,14 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
     public function keywordWHERE($keyword, $exclude = array(), array $nested = array()) {
 
         // Convert quotes and perform an urldecode
-        $keyword = str_replace('"', '&quot;', strip_tags(urldecode($keyword)));
+        $keyword = strip_tags(urldecode($keyword));
 
         // Explode the keyword by spaces
         $keywordA = explode(' ', $keyword);
 
         // Remove unfriendly characters from each word within the keyword
         foreach ($keywordA as $i => $keywordI) {
-            $keywordI = preg_replace('/[^a-zA-Z0-9а-яА-Я]/u', '', $keywordI);
+            //$keywordI = preg_replace('/[^a-zA-Z0-9а-яА-Я]/u', '', $keywordI);
             $keywordI = trim($keywordI);
             if (!mb_strlen($keywordI, 'utf-8')) unset($keywordA[$i]);
         }
@@ -194,5 +231,68 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // If we have at least one non-FALSE clause - return them all, imploded by 'OR', else if
         // we have only FALSE clauses - return single 'FALSE', otherwise, if we have no clauses at all - return null
         return count($nonFALSE) ? '(' . implode(' OR ', $nonFALSE) . ')' : (count($where) ? 'FALSE' : null);
+    }
+
+    /**
+     * Merge with another instance of Field_Rowset_Base
+     *
+     * @param Field_Rowset_Base $rowset
+     * @return Field_Rowset_Base|Indi_Db_Table_Rowset
+     */
+    public function merge(Field_Rowset_Base $rowset) {
+
+        // Call parent
+        $this->callParent();
+
+        // Merge indexes
+        foreach ($rowset as $r) $this->_indexes[$r->alias] = count($this->_indexes);
+
+        // Return itself
+        return $this;
+    }
+
+    /**
+     * Append row to current rowset, using $original argument as the base data for
+     * construction of a row, that will be appended
+     *
+     * @param array $original
+     * @return Field_Rowset_Base|Indi_Db_Table_Rowset|Field_Rowset
+     */
+    public function append(array $original) {
+
+        // Push alias into indexes
+        $this->_indexes[$original['alias']] = $this->_count;
+
+        // Call parent
+        $this->callParent();
+
+        // Return
+        return $this;
+    }
+
+    /**
+     * Create pseudo-field
+     *
+     * @param $name
+     * @param $table
+     * @param bool $multiple
+     * @return mixed
+     */
+    public function combo($name, $table, $multiple = false) {
+
+        // Append
+        $this->append(array(
+            'alias' => 'contactId',
+            'columnTypeId' => $multiple ? 1 : 3,
+            'storeRelationAbility' => $multiple ? 'many' : 'one',
+            'elementId' => 23,
+            'defaultValue' => $multiple ? '' : 0,
+            'relation' => Indi::model($table)->id(),
+            'dependency' => 'u',
+            'satellite' => 0
+        ));
+
+        // Return field itself
+        return $this->field($name);
     }
 }

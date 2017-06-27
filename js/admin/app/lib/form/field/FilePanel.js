@@ -8,7 +8,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
 
     // @inheritdoc
     mixins: {
-        field: 'Ext.form.field.Field'
+        field: 'Ext.form.field.Field',
+        fieldBase: 'Ext.form.field.Base'
     },
 
     // @inheritdoc
@@ -326,9 +327,10 @@ Ext.define('Indi.lib.form.field.FilePanel', {
                     if (d = parseFloat(me.minSize)) {
                         sizeType = (me.minSize + '').replace(d.toString(), '').toUpperCase();
                         if (minSize = d * Math.pow(1024, sizeTypeO.hasOwnProperty(sizeType) ? sizeTypeO[sizeType] : 0)) {
-                            if (nativeFile.size > minSize) {
-                                errors.push(Indi.lang.I_FORM_UPLOAD_HSIZE + ' ' + Indi.lang.I_FORM_UPLOAD_NOTGT + ' '
-                                    + Indi.size2str(minSize).toUpperCase());
+                            if (nativeFile.size < minSize) {
+                                errors.push(
+                                    Indi.lang.I_FORM_UPLOAD_HSIZE + ' ' + Indi.lang.I_FORM_UPLOAD_NOTLT + ' '
+                                        + Indi.size2str(minSize).toUpperCase());
                             }
                         }
                     }
@@ -464,7 +466,9 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         // 'Dims' item config
         return {
             xtype: 'displayfield',
-            value: '<a style="text-decoration: none;" href="' + Indi.std + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
+            value: '<a style="text-decoration: none;" href="'
+                + (me.data.hasOwnProperty('std') ? me.data.std : Indi.std)
+                + me.value + '" target="_blank">' + me.data.width + 'x' + me.data.height + '</a>',
             width: Indi.metrics.getWidth(me.data.width + 'x' + me.data.height),
             tooltip: {
                 html: Indi.lang.I_FORM_UPLOAD_ORIGINAL,
@@ -503,7 +507,8 @@ Ext.define('Indi.lib.form.field.FilePanel', {
                 me.toolbar$Master$Modify(),
                 me.toolbar$Master$Browse(),
                 me.toolbar$Master$Browsed(),
-                me.toolbar$Master$Mode()
+                me.toolbar$Master$Mode(),
+                '->'
             ]
         }
     },
@@ -515,6 +520,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         me.preview = me.getPreview();
         me.items = [me.toolbar$Master(), me.previewWrap()];
         me.callParent();
+        me.mixins.fieldBase._initComponent.call(this, arguments);
         me.initField();
     },
 
@@ -564,6 +570,9 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             // Setup positioning
             me.bodyEl.select('[alias="embed"]').first().setStyle({position: 'absolute', top: '50%'});
         }
+
+        // Fire `enablebysatellite` event
+        me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
     /**
@@ -707,7 +716,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         var me = this, embedSpec = {
             tag: 'embed',
             alias: 'embed',
-            src: Indi.std + me.data.src + '?' + me.data.mtime,
+            src: (me.data.hasOwnProperty('std') ? me.data.std : Indi.std) + me.data.src + '?' + me.data.mtime,
             type: 'application/x-shockwave-flash',
             pluginspace: 'http://www.macromedia.com/go/getflashplayer',
             play: 'true',
@@ -726,7 +735,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
         var me = this, imgSpec = {
             tag: 'img',
             alias: 'embed',
-            src: Indi.std + me.data.src + '?' + me.data.mtime
+            src: (me.data.hasOwnProperty('std') ? me.data.std : Indi.std) + me.data.src + '?' + me.data.mtime
         };
         return Ext.DomHelper.markup(imgSpec);
     },
@@ -865,5 +874,37 @@ Ext.define('Indi.lib.form.field.FilePanel', {
      */
     clearInvalid: function() {
         this.get('browsed').clearInvalid();
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, tb = me.get('toolbar'), cb = me.get('mode');
+
+        // Return
+        return tb.getWidth() - tb.down('tbfill').getWidth() + Indi.metrics.getWidth(cb.tooltip.html)/2 + 10;
+    },
+
+    /**
+     * Ensure 'fieldBase'-mixin's _onChange method will be called
+     */
+    onChange: function() {
+
+        // Setup auxilliary variables
+        var me = this;
+
+        // Call parent
+        //me.callParent(arguments);
+
+        // Call mixin's _onChange() method
+        me.mixins.fieldBase._onChange.call(this, arguments);
     }
+
+}, function(){
+
+    // Borrow dimension-usage-detection functions from Ext.form.field.Base
+    this.borrow(Ext.form.field.Base, ['getHeightUsage', 'getWidthUsage', 'getLabelWidthUsage']);
 });

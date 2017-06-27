@@ -106,48 +106,12 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Build the tail part of base id
         if (me.ti(up).row) {
             s += '-row-' + (me.ti(up).row.id || 0);
-        } else if (me.ti(up + 1).row) {
+        } else if (me.ti(up + 1) && me.ti(up + 1).row) {
             s += '-parentrow-' + me.ti(up + 1).row.id;
         }
 
         // Return
         return s;
-    },
-
-    // @inheritdoc
-    initComponent: function() {
-        var me = this;
-
-        // Set up docked items
-        me.panel.dockedItems = me.panelDockedA();
-
-        // If all contents should be added to existing panel
-        if (me.cfg.into) me.panel.header = false; else {
-
-            // Append tools and toolbars to the main panel
-            Ext.merge(me.panel, {
-                renderTo: 'i-center-center-body',
-                tools: me.panelToolA()
-            });
-
-            // Update id of the main panel (temporary)
-            Indi.centerId = me.panel.id;
-        }
-
-        // Create panel instance
-        var panel = Ext.widget(me.panel);
-
-        // If created instance should be inserted as a tab - do it
-        if (me.cfg.into) Ext.getCmp(me.cfg.into).add(panel);
-
-        // If panel has `onLoad` property, and it's a function - call it
-        if (Ext.isFunction(panel.onLoad)) panel.onLoad(me);
-
-        // If special `onLoad` callback is provided within me.cfg - call it
-        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, me);
-
-        // Call parent
-        me.callParent();
     },
 
     /**
@@ -162,7 +126,7 @@ Ext.define('Indi.lib.controller.action.Action', {
     push: function(itemCfgA, fnItemPrefix, allowNaO, adjust) {
 
         // Setup auxilliary variables
-        var me = this, itemA = [], itemI, fnItemI;
+        var me = this, itemA = [], itemI, $ItemI;
 
         // Build itemA array
         for (var i = 0; i < itemCfgA.length; i++) {
@@ -177,13 +141,14 @@ Ext.define('Indi.lib.controller.action.Action', {
             if (itemCfgA[i].hasOwnProperty('alias')) {
 
                 // Get the item's creator function name
-                fnItemI = fnItemPrefix + '$' + Indi.ucfirst(itemCfgA[i].alias);
+                $ItemI = fnItemPrefix + '$' + Indi.ucfirst(itemCfgA[i].alias);
 
                 // If such function exists and return value of that function call
-                if (typeof me[fnItemI] == 'function') itemI = me[fnItemI]();
+                if (typeof me[$ItemI] == 'function') itemI = me[$ItemI]();
+                else if (Ext.isObject(me[$ItemI])) itemI = me[$ItemI];
 
                 // If config is an object, merge itemI with it
-                if (Ext.isObject(itemCfgA[i]) && (itemI || typeof me[fnItemI] != 'function'))
+                if (Ext.isObject(itemCfgA[i]) && (itemI || typeof me[$ItemI] != 'function'))
                     Ext.merge(itemI = itemI ? itemI : {}, itemCfgA[i]);
 
             // Else use as is
@@ -217,6 +182,17 @@ Ext.define('Indi.lib.controller.action.Action', {
      */
     panelDockedA: function() {
         return this._docked('panel');
+    },
+
+    /**
+     * Build and return array of master toolbar items configs
+     *
+     * @return {Array}
+     */
+    panelDocked$MasterItemA: function() {
+        var merged = [], pushed = this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
+        for (var i = 0; i < pushed.length; i++) merged = merged.concat(pushed[i]);
+        return merged;
     },
 
     /**
@@ -453,11 +429,6 @@ Ext.define('Indi.lib.controller.action.Action', {
         });
     },
 
-    /**
-     * Empty function
-     */
-    keyMap: Ext.emptyFn,
-
     // @inheritdoc
     constructor: function(config) {
         var me = this;
@@ -470,5 +441,288 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this, wrp;
+
+        // Set up docked items
+        me.panel.dockedItems = me.panelDockedA();
+
+        // Remove panel header
+        me.panel.header = false;
+
+        // Set up context to be available as panel's `$ctx` prop
+        me.panel.$ctx = me;
+
+        // If all contents should be added to a window
+        if (!me.cfg.into) {
+
+            // Append tools and toolbars to the main panel
+            me.panel.renderTo = me.prepareWindow().getTargetEl();
+
+            // Update id of the main panel (temporary)
+            Indi.centerId = me.panel.id;
+
+        // Else
+        } else {
+
+            // Remove layout definition
+            delete me.panel.layout;
+        }
+
+        // If we're going create a wrapper within a window
+        // but wrapper with same id is already exist within a south-panel tab
+        if ((wrp = Ext.getCmp(me.panel.id)) && !me.cfg.into) {
+
+            // Backup some info (tab id and wrapper initial config),
+            // that will help us to re-instantiate wrapper within tab
+            // in case if user will close the window
+            me.panel.tabDraft = {
+                containerId: wrp.ownerCt.id,
+                itemConfig: wrp.initialConfig
+            }
+
+            // Add placeholder into the tab
+            wrp.up('[isSouth]').addTabPlaceholder(wrp.ownerCt.id, wrp.initialConfig.id, 'action');
+
+            // Destroy wrapper, that currently exists within a south-panel tab
+            // as we're going to create same wrapper within a separate window
+            wrp.destroy();
+        }
+
+        // Create panel instance
+        var panel = Ext.widget(me.panel);
+
+        // If created instance should be inserted as a tab - do it
+        if (me.cfg.into) Ext.getCmp(me.cfg.into).add(panel);
+
+        // If panel has `onLoad` property, and it's a function - call it
+        if (Ext.isFunction(panel.onLoad)) panel.onLoad(me);
+
+        // If special `onLoad` callback is provided within me.cfg - call it
+        if (Ext.isFunction(me.cfg.onLoad)) me.cfg.onLoad.call(panel, me);
+
+        // Call parent
+        me.callParent();
+    },
+
+    /**
+     * Here we decide whether existing window should be used as place where wrapper should be rendered in,
+     * or new separate window should be created for that
+     *
+     * @return {*}
+     */
+    prepareWindow: function() {
+        var me = this, app = Indi.app, window, active = app.getActiveWindow(), create = false, a = {}, n = {}, i, cfg;
+
+        // If we have no windows yet - set `create` as `true`, else
+        if (!active) create = true; else {
+
+            // Get info about active window
+            a.section = active.ctx.ti().section.alias;
+            a.action = active.ctx.ti().action.alias;
+            a.mode = active.ctx.ti().action.mode.toLowerCase();
+            a.row =  active.ctx.ti().row ? active.ctx.ti().row.id : null;
+
+            // Get info about new-window-candidate
+            n.section = me.ti().section.alias;
+            n.action = me.ti().action.alias;
+            n.mode = me.ti().action.mode.toLowerCase();
+            n.row =  me.ti().row ? me.ti().row.id : null;
+
+            // If we're going to create same-section panel
+            if (a.section == n.section) {
+
+                // If active window's panel is a rowset-panel
+                if (a.mode == 'rowset') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+
+                    // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `false`
+                        create = false;
+                    }
+
+                // Else if active window's panel is a row-panel
+                } else if (a.mode == 'row') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // If active window's panel is a same-action panel as the panel we're going to create
+                        create = false;//a.action != n.action;
+
+                    // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `false`
+                        create = false;
+                    }
+                }
+
+            // Else if we're going to create panel, that have section,
+            // that is a child section for active window's section
+            } else if (me.isChildOf(a.section)) {
+
+                // If active window's panel is a rowset-panel
+                if (a.mode == 'rowset') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+
+                    // Else iа we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // Set up `create` flag as `false`
+                        create = true;
+                    }
+
+                    // Else if active window's panel is a row-panel
+                } else if (a.mode == 'row') {
+
+                    // If we're going to create a row-panel
+                    if (n.mode == 'row') {
+
+                        // Set up `create` flag as `true`
+                        create = true;
+
+                    // Else if we're going to create a rowset-panel
+                    } else if (n.mode == 'rowset') {
+
+                        // If current panel is a row-panel, related to an existing row
+                        if (parseInt(a.row)) {
+
+                            // If current action is 'form'
+                            if (a.action == 'form') {
+
+                                // Setup `create` flag as `true` only if autosave-checkbox was not checked
+                                create = !Ext.getCmp(active.ctx.panelDockedInnerBid() + 'autosave').checked;
+
+                            } else {
+
+                                // Set up `create` flag as `true`
+                                create = true;
+                            }
+
+                        // Else if current panel relates to row, not yet exisiting and the moment of current panel rendering
+                        } else {
+
+                            // Set up `create` flag as `true`
+                            create = false;
+                        }
+                    }
+                }
+
+            // Else if we're going to create panel, that have section,
+            // that is a parent section for active window's section
+            } else if (active.ctx.isChildOf(n.section)) {
+
+                // If we're going to create a row-panel
+                if (n.mode == 'row') {
+
+                    // Set up `create` flag as `false`
+                    create = false;
+
+                    // Else iа we're going to create a rowset-panel
+                } else if (n.mode == 'rowset') {
+
+                    // Set up `create` flag as `false`
+                    create = false;
+                }
+
+            // Else if we're here because of some of trail-buttons was clicked
+            } else if (me.cfg.trail) {
+
+                // Set up `create` flag as `false`
+                create = false;
+
+            // All other situations
+            } else {
+
+                // Set up `create` flag as `false`
+                create = true;
+            }
+        }
+
+        // Set up window partial cfg
+        cfg = {
+            wrapperId: me.panel.id,
+            title: me.panel.title,
+            ctx: me
+        }
+
+        // If new window should be created
+        if (create) {
+
+            // Try to check if current windows collection already contains a window that we're going to create
+            i = app.windows.collect('wrapperId').indexOf(me.panel.id);
+
+            // Id not contains - create that window
+            if (i == -1)
+                window = Ext.widget(Ext.merge({
+                    xtype: 'desktopwindow',
+                    tools: me.panelToolA(),
+                    maximized: true
+                }, cfg));
+
+            // Else use existing window
+            else {
+
+                // Close active window
+                if (app.windows.getAt(i).id != active.id) active.close();
+
+                // Apply new contents to existing window
+                window = app.windows.getAt(i).apply(cfg).toFront();
+                //window = app.windows.getAt(i).toFront();
+            }
+
+        // Else set up active window usage as a place for new panel
+        } else {
+
+            // Try to check if current windows collection already contains a window that we're going to create
+            i = app.windows.collect('wrapperId').indexOf(me.panel.id);
+
+            // If contains - close that existing window
+            if (i != -1 && app.windows.getAt(i).id != active.id) app.windows.getAt(i).close();
+
+            // Apply new contents to active window
+            window = active.apply(cfg);
+
+            // Update trail
+            Indi.app.updateTrail();
+        }
+
+        // Return
+        return window;
+    },
+
+    /**
+     * Check whether or not current section is child for `parent` section
+     *
+     * @param parent
+     * @return {Boolean}
+     */
+    isChildOf: function(parent) {
+        var me = this, i;
+
+        // Check all parent trail items and investigate whether or not
+        // some of them has section.alias equal to `parent` argument
+        for (i = me.route.length - 2; i > 0; i--)
+            if (me.route[i].section.alias == parent)
+                return true;
+
+        // Return
+        return false;
     }
 });

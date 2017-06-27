@@ -18,7 +18,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, {alias: 'close'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'save'}, {alias: 'autosave'}, '-',
@@ -38,16 +38,22 @@ Ext.define('Indi.lib.controller.action.Form', {
         bodyPadding: 10,
         closable: false,
         overflowY: 'auto',
-
-        // Fields will be arranged vertically, stretched to full width
-        layout: 'anchor',
+        layout: {
+            type: 'form',
+            tableCls: 'x-form-layout-table i-table'
+        },
         defaults: {
-            anchor: '100%',
-            labelWidth: '50%'
+            labelWidth: '50%',
+            width: '100%'
         },
 
         // @inheritdoc
         listeners: {
+            boxready: function(){
+                Ext.defer(function(){
+                    this.el.removeAttr('tabindex');
+                }, 100, this);
+            },
             validitychange: function(form, valid){
                 if (valid) this.ctx().toggleSaveAbility(valid);
             },
@@ -55,13 +61,26 @@ Ext.define('Indi.lib.controller.action.Form', {
                 var resetBtn = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'reset');
                 if (resetBtn) resetBtn.setDisabled(!dirty);
             },
+            beforeaction: function() {
+                Indi.app.loader();
+            },
             actioncomplete: function(form, action) {
                 var me = this, json = action.response.responseText.json(), gotoO, uri, cfg = {},
                     wrp = me.up('[isWrapper]'), isTab = wrp.isTab, sth = wrp.up('[isSouth]'),
-                    sthItm = wrp.up('[isSouthItem]'), found;
+                    sthItm = wrp.up('[isSouthItem]'), found, rowsetActId, rowsetActCmp, record;
 
                 // If response text is not json-convertable, or does not have `redirect` property - return
-                if (!Ext.isObject(json) || !(uri = json.redirect).length) return;
+                if (!Ext.isObject(json) || !(uri = json.redirect || '').length) return;
+
+                // Check if there is a rowset containing affected record,
+                // and if so - make that record affected within rowset's store
+                rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index';
+                if (me.ctx().ti(1) && me.ctx().ti(1).row) rowsetActId += '-parentrow-' + me.ctx().ti(1).row.id;
+                // todo: check why second cond needed
+                if ((rowsetActCmp = Ext.getCmp(rowsetActId)) && Ext.getCmp(rowsetActId + '-wrapper')) {
+                    if (record = rowsetActCmp.getStore().getById(json.affected.id)) rowsetActCmp.affectRecord(record, json);
+                    else rowsetActCmp.getStore().reload();
+                }
 
                 // Parse request url
                 gotoO = Indi.parseUri(uri);
@@ -103,84 +122,18 @@ Ext.define('Indi.lib.controller.action.Form', {
                         insteadOf: wrp.id,
                         into: sthItm.id
                     });
+
+                // Else if we are going to go to same-section rowset -
+                } else if (gotoO.section == me.ti().section.alias && gotoO.action == 'index') {
+
+                    // Close the form's window
+                    return wrp.getWindow().close();
                 }
 
                 // Load required contents
                 Indi.load(uri, cfg);
             },
             actionfailed: function(form, action) {
-                var cmp, certainFieldMsg, wholeFormMsg = [], mismatch, errorByFieldO, trigger, msg;
-
-                // Parse response text
-                action.result = Ext.JSON.decode(action.response.responseText, true);
-
-                // The the info about invalid fields from the response, and mark the as invalid
-                if (Ext.isObject(action.result) && Ext.isObject(action.result.mismatch)) {
-
-                    // Shortcut to action.result.mismatch
-                    mismatch = action.result.mismatch;
-
-                    // Error messages storage
-                    errorByFieldO = mismatch.errors;
-
-                    // Detect are error related to current form fields, or related to fields of some other entry,
-                    // that is set up to be automatically updated (as an trigger operation, queuing after the primary one)
-                    trigger = mismatch.entity.title != this.ctx().ti().model.title || mismatch.entity.entry != this.ctx().ti().row.id;
-
-                    Object.keys(errorByFieldO).forEach(function(i){
-
-                        // If mismatch key starts with a '#' symbol, we assume that message, assigned
-                        // under such key - is not related to any certain field within form, so we
-                        // collect al such messages for them to be bit later displayed within Ext.MessageBox
-                        if (i.substring(0, 1) == '#' || trigger) wholeFormMsg.push(errorByFieldO[i]);
-
-                        // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
-                        // under such key - is related to some certain field within form, so we get that field's
-                        // component and mark it as invalid
-                        else if (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i)) {
-
-                            // Get the mismatch message
-                            certainFieldMsg = errorByFieldO[i];
-
-                            // If mismatch message is a string
-                            if (Ext.isString(certainFieldMsg))
-
-                                // Cut off field title mention from message
-                                certainFieldMsg = certainFieldMsg.replace(cmp.fieldLabel, '').replace(/""/g, '');
-
-                            // Mark field as invalid
-                            cmp.markInvalid(certainFieldMsg);
-
-                            // If field is currently hidden - we duplicate erroк message for it to be shown within
-                            // Ext.MessageBox, additionally
-                            if (cmp.hidden) wholeFormMsg.push(errorByFieldO[i])
-
-                        // Else mismatch message is related to field, that currently, for some reason, is not available
-                        // within the form - push that message to the wholeFormMsg array
-                        } else wholeFormMsg.push(errorByFieldO[i]);
-                    });
-
-                    // If we collected at least one error message, that is related to the whole form rather than
-                    // some certain field - use an Ext.MessageBox to display it
-                    if (wholeFormMsg.length) {
-
-                        msg = (wholeFormMsg.length > 1 || trigger ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; ');
-
-                        // If this is a mismatch, caused by background php-triggers
-                        if (trigger) msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
-                            + mismatch.entity.title + '"'
-                            + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                            + ' - выдала следующие ошибки: <br><br>' + msg;
-
-                        // Show message box
-                        Ext.MessageBox.show({
-                            title: Indi.lang.I_ERROR,
-                            msg: msg,
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.ERROR
-                        });
-                    }
-                }
 
                 // Reset value of the 'ID' master toolbar item to the last valid value
                 var idCmp = Ext.getCmp(this.ctx().panelDockedInnerBid() + 'id');
@@ -195,6 +148,9 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // Hide mask
                 this.ctx().getMask().hide();
+
+                // Turn `isLoading` flag back to `false`
+                form.isLoading = false;
             },
 
             /**
@@ -296,14 +252,20 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemOnlyA: [],
 
     /**
-     * Build and return array of form panel items
+     * Build and return array of form panel items.
+     * If `fieldA` argument is given, function will will use it instead of me.ti().fields for building
+     * array of form fields configuration objects
      *
+     * @param fieldA
      * @return {Array}
      */
-    formItemA: function() {
+    formItemA: function(fieldA) {
 
         // Declare a number of auxiliary variables
-        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, build;
+        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, xtype, build;
+
+        // If `fieldA` argument was given - use it rather than me.ti().fields
+        fieldA = fieldA || me.ti().fields;
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
@@ -320,22 +282,22 @@ Ext.define('Indi.lib.controller.action.Form', {
         if (Ext.isString(formItemOnlyA) && formItemOnlyA.length) formItemOnlyA = formItemOnlyA.split(',');
 
         // Header form item
-        itemA.push(me.formItemXSpan());
+        if (!arguments.length) itemA.push(me.formItemXSpan());
 
         // Other form items (fields)
-        for (var i = 0; i < me.ti().fields.length; i++) {
+        for (var i = 0; i < fieldA.length; i++) {
 
             // Reset `build` to `false`
             build = false;
 
             // Detect whether or not field should be presented in form
             if (formItemOnlyA.length) {
-                if (formItemOnlyA.indexOf(me.ti().fields[i].id) != -1) {
+                if (formItemOnlyA.indexOf(fieldA[i].id) != -1) {
                     build = true;
-                } else if (formItemOnlyA.indexOf(me.ti().fields[i].alias) != -1) {
+                } else if (formItemOnlyA.indexOf(fieldA[i].alias) != -1) {
                     build = true;
                 }
-            } else if (disabledA.indexOf(me.ti().fields[i].id) == -1) {
+            } else if (disabledA.indexOf(fieldA[i].id) == -1) {
                 build = true;
             }
 
@@ -343,29 +305,32 @@ Ext.define('Indi.lib.controller.action.Form', {
             if (build) {
 
                 // Setup default config
-                itemI = me.formItemDefault(me.ti().fields[i]);
+                itemI = me.formItemDefault(fieldA[i]);
+
+                // Get control element name
+                xtype = fieldA[i].xtype || fieldA[i].foreign('elementId').alias;
 
                 // Apply specific control element config, as fields control elements/xtypes may be different
-                eItemX = 'formItemX' + Indi.ucfirst(me.ti().fields[i].foreign('elementId').alias);
+                eItemX = 'formItemX' + Indi.ucfirst(xtype);
                 if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
                     itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI) : me[eItemX];
                     itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
                 } else Ext.merge(itemI, {
-                    fieldLabel: '!!! ' + me.ti().fields[i].foreign('elementId').alias
+                    fieldLabel: '!!! ' + xtype
                 });
 
                 // Apply field custom config
-                eItem$ = 'formItem$' + Indi.ucfirst(me.ti().fields[i].alias);
+                eItem$ = 'formItem$' + Indi.ucfirst(fieldA[i].alias);
                 if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
                     item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
                     itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
-                }
+                } else if (me[eItem$] === false) itemI = me[eItem$];
 
                 // If itemI is still not empty/null/false
                 if (itemI) {
 
                     // Setup `disabled` property as boolean true, if current field is disabled-but-visible
-                    if (visibleA.indexOf(me.ti().fields[i].id) != -1) itemI.disabled = true;
+                    if (visibleA.indexOf(fieldA[i].id) != -1) itemI.disabled = true;
 
                     // Prepend `cls` property with 'i-field' css class name
                     itemI.cls = 'i-field' + (itemI.cls ? ' ' + itemI.cls : '');
@@ -389,6 +354,22 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemXUpload: function(item) {
         return {
             xtype: 'filepanel',
+            allowBlank: true,
+            allowTypes: item.field.params.allowTypes,
+            minSize: item.field.params.minSize,
+            maxSize: item.field.params.maxSize
+        }
+    },
+
+    /**
+     * Color-picker fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXColor: function(item) {
+        return {
+            xtype: 'colorfield',
             allowBlank: true
         }
     },
@@ -411,7 +392,10 @@ Ext.define('Indi.lib.controller.action.Form', {
             name: field.alias,
             satellite: field.satellite,
             value: this.ti().row[field.alias],
-            allowBlank: me.ti().section.type != 'p',
+            allowBlank: field.mode != 'required' && (parseInt(field.relation) != 6 || field.storeRelationAbility == 'many'),
+            disabled: field.mode == 'readonly',
+            labelAlign: field.params && field.params.wide == 'true' ? 'top' : 'left',
+            cls: field.params && field.params.wide == 'true' ? 'i-field-wide' : '',
             field: field,
             row: this.ti().row,
             listeners: {
@@ -432,6 +416,16 @@ Ext.define('Indi.lib.controller.action.Form', {
                 },
                 resize: function(cmp) {
                     if (cmp.dirtyIcon) cmp.dirtyIcon.alignTo(cmp.el, 'tl', [0, 1]);
+                },
+                show: function(cmp) {
+                    cmp.ownerCt.query('> *').forEach(function(sbl){
+                        if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
+                    })
+                },
+                hide: function(cmp) {
+                    cmp.ownerCt.query('> *').forEach(function(sbl){
+                        if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
+                    })
                 }
             },
             getDirtyIcon: function() {
@@ -451,10 +445,13 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             id: this.bid() + (item ? '-field$' + item.field.alias : '-header'),
             xtype: 'displayfield',
-            cls: (item ? '' : 'i-field ') + 'i-field-span',
+            cls: (item ? '' : 'i-field ') + 'i-field-span' + (item ? '' : ' i-field-span-title'),
             fieldLabel: '',
-            value: (item ? item.field.title : this.ti().model.title),
-            align: 'center'
+            value: '<span>' + (item ? item.field.title : this.ti().model.title) + '</span>',
+            align: 'center',
+            getInputWidthUsage: function() {
+                return this.inputEl.down('span').getWidth() + this.getEl().getBorderWidth('rl');
+            }
         }
     },
 
@@ -477,9 +474,6 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     formItemXString: function(item) {
 
-        // If this is an auto-created field - return
-        if (item.fieldLabel == 'Auto title') return null;
-
         // Cfg object
         var cfgO = {
             maxLength: 255
@@ -487,6 +481,12 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // If field's name is 'alias' - setup `allowBlank` property as `false`
         if (item.name == 'alias') cfgO.allowBlank = false;
+
+        // Apply input mask
+        if (item.field.params && item.field.params.inputMask) cfgO.inputMask = item.field.params.inputMask;
+
+        // Apply vtype
+        if (item.field.params && item.field.params.vtype) cfgO.vtype = item.field.params.vtype;
 
         // Return config
         return cfgO
@@ -558,13 +558,15 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXNumber: function(item) {
+        var tbq = item.field.params.measure.match(/^tbq:([^;]+)/);
         return {
             xtype: 'numberfield',
             cls: 'i-field-number',
-            afterSubTpl: '<span class="i-field-number-after">'+item.field.params.measure+'</span>',
+            afterSubTpl: '<span class="i-field-number-after">' + (tbq ? '' : item.field.params.measure) + '</span>',
             maxLength: item.field.params.maxlength,
             minValue: 0,
-            maxValue: Math.pow(2, 32) - 1
+            maxValue: Math.pow(2, 32) - 1,
+            tbq: tbq ? tbq[1] : ''
         };
     },
 
@@ -582,7 +584,28 @@ Ext.define('Indi.lib.controller.action.Form', {
             maxLength: 12,
             minValue: 0,
             maxValue: Math.pow(10, 9) - 0.01,
-            precisionPad: true
+            precisionPad: true,
+            value: parseFloat(item.value) || item.value
+        };
+    },
+
+    /**
+     * Decimal143-fields config adjuster
+     *
+     * @param item
+     * @return {Object}
+     */
+    formItemXDecimal143: function(item) {
+        return {
+            xtype: 'numberfield',
+            cls: 'i-field-number',
+            afterSubTpl: '<span class="i-field-number-after">'+ (item.field.params && item.field.params.measure ? item.field.params.measure : '')+'</span>',
+            maxLength: 15,
+            minValue: 0,
+            maxValue: Math.pow(10, 11) - 0.01,
+            decimalPrecision: 3,
+            precisionPad: true,
+            value: parseFloat(item.value) || item.value
         };
     },
 
@@ -596,8 +619,12 @@ Ext.define('Indi.lib.controller.action.Form', {
         return {
             xtype: 'textarea',
             grow: true,
-            minHeight: 32,
-            allowBlank: true
+            growMin: 30,
+            rows: 2,
+            getInputWidthUsage: function() {
+                return this.getLabelWidthUsage();
+            },
+            value: Ext.isNumber(item.value) ? item.value + '' : (item.value || '')
         }
     },
 
@@ -624,7 +651,7 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     formItemXRadio: function(item) {
-        return item.field.relation == '6' ? {xtype: 'radios'} : this.formItemXCombo(item);
+        return item.field.relation == '6' ? {xtype: 'radios', cls: 'i-field-radio'} : this.formItemXCombo(item);
     },
 
     /**
@@ -642,6 +669,9 @@ Ext.define('Indi.lib.controller.action.Form', {
             checked: item.row[item.name] == '1',
             getSubmitValue: function() {
                 return this.checked ? 1 : 0;
+            },
+            getInputWidthUsage: function() {
+                return this.inputEl.getWidth();
             }
         }
     },
@@ -655,7 +685,7 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemXCombo: function(item) {
         return {
             xtype: 'combo.form',
-            layout: 'hbox',
+            cls: 'i-field i-field-combo-form',
             value: Ext.isNumeric(item.row[item.name]) ? parseInt(item.row[item.name]) : item.row[item.name],
             subTplData: item.row.view(item.name).subTplData,
             store: item.row.view(item.name).store,
@@ -824,14 +854,15 @@ Ext.define('Indi.lib.controller.action.Form', {
      */
     goto: function(url, btnSaveClick, cfg) {
 
-        // If `noGoto` flag is turned on - return
-        if (this.noGoto) return;
-
         // Create shortcuts for involved components
         var me = this, hidden = Ext.getCmp(me.bid() + '-redirect-url'),
             btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
             cbAutosave = Ext.getCmp(me.panelDockedInnerBid() + 'autosave'),
-            formCmp = Ext.getCmp(me.bid() + '-row'), gotoO, isTab = Ext.getCmp(me.panel.id).isTab, found;
+            formCmp = Ext.getCmp(me.bid() + '-row'), gotoO, isTab = Ext.getCmp(me.panel.id).isTab, found,
+            cfg = cfg || {};
+
+        // If `noGoto` flag is turned on, or previous save request is not yet completed - return
+        if (me.noGoto || formCmp.getForm().isLoading) return;
 
         // If save button is toggled
         if (btnSave && !btnSave.disabled && (btnSave.pressed || btnSaveClick)) {
@@ -868,7 +899,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     if (isTab) me.getMask().show();
 
                     // Prevent duplicate save request
-                    btnSave.setDisabled(true);
+                    formCmp.getForm().isLoading = true;
 
                     // Submit form
                     formCmp.submit({
@@ -887,8 +918,15 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 });
 
-            // Else hide mask
-            } else me.getMask().hide();
+            // Else
+            } else {
+
+                // Scroll to the first invalid field
+                formCmp.down('[activeError]').el.scrollIntoView(formCmp.body, false, true);
+
+                // Hide mask
+                me.getMask().hide();
+            }
 
         // Else
         } else {
@@ -911,7 +949,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 wrp = Ext.getCmp(me.panel.id), sth = wrp.up('[isSouth]'), sthItm = wrp.up('[isSouthItem]');
 
             // If current wrapper is placed within a tab, and we gonna go to same-type wrapper
-            if (isTab && gotoO.section == me.ti().section.alias && gotoO.action == 'form') {
+            if (isTab && gotoO.section == me.ti().section.alias && (gotoO.action == 'form' || gotoO.action == 'print')) {
 
                 // If tab, that we are gonna goto - is already exists
                 if (sthItm.name != gotoO.id && (found = sth.down('[isSouthItem][name="' + gotoO.id + '"]'))) {

@@ -43,7 +43,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         // current combo is not a boolean combo, and it's hidden value is '0', we set value to
         // empty string, as filter name and value will be sent as one of store fetch params otherwise,
         // so we prevent it
-        if (me.hiddenEl.val() == '0' && me.hiddenEl.attr('boolean') != 'true') me.hiddenEl.val('');
+        if (me.hiddenEl.val() == '0' && me.hiddenEl.attr('boolean') != 'true' && !me.store.enumset) me.hiddenEl.val('');
 
         // Execute javascript code, if it was assigned to selected option. The additional clause for execution
         // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
@@ -53,13 +53,13 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
         if (me.store.enumset && !me.multiSelect) {
             var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && me.store['data'][index].system.js) {
+            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
                 Indi.eval(me.store['data'][index].system.js, me);
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) Indi.eval(me.store.js, me);
+        if (me.store.js && !me.nojs) Indi.eval(me.store.js, me);
 
         // Call superclass setValue method to provide 'change' event firing
         me.getNative().setValue.call(me, me.hiddenEl.val());
@@ -105,7 +105,10 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      */
     setReadonlyIfNeeded: function() {
         var me = this;
-        if (me.store.enumset) me.keywordEl.attr('no-lookup', 'true');
+        if (me.store.enumset || me.allowClear === false) {
+            me.keywordEl.attr('no-lookup', 'true');
+            me.keywordEl.attr('readonly', 'readonly');
+        }
     },
 
     // @inheritdoc
@@ -138,7 +141,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      * @return {*}
      */
     getValue: function() {
-        return this.boolean || this.multiSelect ? this.value : (this.value + '' == '0' ? '' : this.value || '');
+        return this.boolean || this.multiSelect ? this.value : (this.value + '' == '0' ? (this.store.enumset ? this.value : '') : this.value || '');
     },
 
     /**
@@ -147,7 +150,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
      * @return {Boolean}
      */
     isClearable: function() {
-        return true;
+        return this.allowClear !== false;
     },
 
     // @inheritdoc

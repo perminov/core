@@ -11,6 +11,9 @@ Ext.define('Indi.lib.form.field.Radios', {
     alternateClassName: 'Indi.form.Radios',
 
     // @inheritdoc
+    mixins: {fieldBase: 'Ext.form.field.Base'},
+
+    // @inheritdoc
     alias: 'widget.radios',
 
     // @inheritdoc
@@ -19,11 +22,41 @@ Ext.define('Indi.lib.form.field.Radios', {
     // @inheritdoc
     vertical: true,
 
+    /**
+     * Temporary config, for switching enumset options javascript execution on/off
+     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
+     */
+    nojs: false,
+
+    /**
+     * Array or comma-separated list of values of `inputValue` prop, that should be disabled
+     */
+    disabledOptions: [],
+
+    /**
+     * Append `zeroValue` property initialisation
+     */
+    constructor: function() {
+        var me = this;
+        me.callParent(arguments);
+        me.mixins.fieldBase._constructor.call(this, arguments);
+    },
+
     // @inheritdoc
     initComponent: function() {
         var me = this;
+
+        // Build items
         me.items = me.itemA();
+
+        // Setup disabled options
+        if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
+
+        // Call parent
         me.callParent();
+
+        // Call mixin's initComponent method
+        me.mixins.fieldBase._initComponent.call(this, arguments);
     },
 
     /**
@@ -49,9 +82,20 @@ Ext.define('Indi.lib.form.field.Radios', {
                 inputValue: inputValue,
                 checked: inputValue == me.row[me.name],
                 enumset: enumset,
+                disabled: me.disabledOptions.indexOf(inputValue) != -1,
+                onBoxClick: function(e) {
+                    var me = this;
+                    if (!me.disabled && !me.readOnly) {
+                        if (me.getValue() === true && me.ownerCt.allowBlank === true) {
+                            me.setValue(false);
+                        } else {
+                            me.setValue(true);
+                        }
+                    }
+                },
                 listeners: {
                     change: function(rb, now) {
-                        if (now) {
+                        if (now && !me.nojs) {
                             try {
                                 Indi.eval(rb.enumset.system.js, rb.ownerCt);
                             } catch (e) {
@@ -79,10 +123,37 @@ Ext.define('Indi.lib.form.field.Radios', {
         if (checked) checked.fireEvent('change', checked, true);
 
         // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent();
+
+        // Fire `enablebysatellite` event
+        me.mixins.fieldBase._afterRender.call(this, arguments);
+    },
+
+    /**
+     * Disable options.
+     *
+     * @param disabledOptions May be passed as comma-separated string, or array
+     * @return {*}
+     */
+    setDisabledOptions: function(disabledOptions) {
+        var me = this;
+
+        // If `disabledOptions` arg is a string - split it by comma
+        if (Ext.isString(disabledOptions)) disabledOptions = disabledOptions.split(',');
+
+        // Toggle options
+        me.items.each(function(item, i, l){
+            item.setDisabled(disabledOptions.indexOf(item.inputValue) != -1);
+        });
+
+        // Update `disabledOptions` prop
+        me.disabledOptions = disabledOptions;
+
+        // Return
+        return me;
     },
 
     /**
@@ -95,7 +166,7 @@ Ext.define('Indi.lib.form.field.Radios', {
         var me = this, name = me.name, dComboName, dCombo;
 
         // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript) Indi.eval(me.field.javascript, me);
+        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent(arguments);
@@ -112,6 +183,9 @@ Ext.define('Indi.lib.form.field.Radios', {
                 }
             }
         });
+
+        // Call mixin's _onChange() method
+        me.mixins.fieldBase._onChange.call(this, arguments);
     },
 
     /**
@@ -124,6 +198,14 @@ Ext.define('Indi.lib.form.field.Radios', {
         return this.callParent(arguments)[this.name];
     },
 
+    /**
+     * This function is declared here, because it was not declared in parent class
+     *
+     * @return {*}
+     */
+    getSubmitValue: function() {
+        return this.getValue();
+    },
 
     /**
      * Override native {xtype:radiogroup}'s checkChange() method, and use {Ext.form.field.Field}'s one directly,
@@ -165,5 +247,27 @@ Ext.define('Indi.lib.form.field.Radios', {
 
         // Return normalized value
         return normalized;
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, width = 0, cbLabelWidth;
+
+        // Walk through radio buttons
+        me.items.each(function(item){
+
+            // Get item's label
+            cbLabelWidth = item.getEl().down('.x-form-cb-label').getWidth(true) + 10;
+
+            // Get width
+            width = Math.max(width, item.inputEl.getWidth() + cbLabelWidth);
+        });
+
+        // Return
+        return width;
     }
 });

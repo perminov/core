@@ -32,7 +32,7 @@ Ext.define('Indi.lib.view.action.Tab', {
      * representing a collection of tabs in a south region of main screen
      */
     doLoad: function() {
-        var me = this;
+        var me = this, cfg;
 
         // If no `load` property - return
         if (!me.load) return;
@@ -41,10 +41,17 @@ Ext.define('Indi.lib.view.action.Tab', {
         if (me.loaded || me.isLoading) return;
 
         // If south panel is minified - return
-        if (me.up('tabpanel').height == me.up('tabpanel').minHeight) return;
+        if (me.up('tabpanel').height == me.up('tabpanel').collapsedHeight) return;
+
+        // Build load config
+        cfg = {into: me.up('[isSouthItem]').id, insteadOf: me.insteadOf};
+
+        // Check if there is no need to do an actual request for loading tab contents,
+        // as tab contents may have been already loaded and should be just picked up
+        me.checkPreloadedResponse(cfg);
 
         // Load
-        Indi.load(me.load, {into: me.up('[isSouthItem]').id, insteadOf: me.insteadOf});
+        Indi.load(me.load, cfg);
 
         // Setup is loading
         me.isLoading = true;
@@ -61,5 +68,11 @@ Ext.define('Indi.lib.view.action.Tab', {
 
         // Set up `isLoading` flag as `false`
         me.isLoading = false;
-    }
+    },
+
+    /**
+     * Check if current context has a preloaded response for active tab within south panel
+     * To be implemented via different approaches separately for TabRow.js and TabRowset.js
+     */
+    checkPreloadedResponse: Ext.emptyFn
 });

@@ -6,7 +6,7 @@
 .i-combo .i-combo-multiple.i-combo-multiple-inlined {overflow: hidden;}
 
 /* Combo keyword */
-.i-combo .i-combo-keyword {border: 0; width: 100%; padding-left: 1px; background: transparent;}
+.i-combo .i-combo-keyword {border: 0; width: 100% !important; padding-left: 1px; background: transparent;}
 .x-panel .i-combo .i-combo-keyword{border: 0; background: transparent;}
 
 /* Combo options data */
@@ -40,6 +40,7 @@
 }
 .i-combo .i-combo-multiple .i-combo-selected-item {
     white-space: nowrap; display: inline-block; float: left;
+    margin-left: 1px; margin-top: 1px; font-size: 11px; line-height: 15px;
 }
 
 /* Combo info */
@@ -87,6 +88,10 @@
 }
 .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     background-repeat: no-repeat; background-position: 0 0; width: 8px; height: 8px; display: inline-block;
+    cursor: pointer; vertical-align: initial;
+    margin-left: 2px; background-image: url(/i/admin/combo-multiple-selected-item-delete.png);
+}
+.i-combo.i-combo-jump .i-combo-multiple .i-combo-selected-item {
     cursor: pointer;
 }
 
@@ -95,11 +100,7 @@
 .x-item-disabled .i-combo .i-combo-multiple .i-combo-selected-item .i-combo-selected-item-delete {
     cursor: default;
 }
-.x-item-disabled .x-form-text {
-    filter: alpha(opacity=30);
-    opacity: .3;
-}
 .x-toolbar .x-item-disabled .i-combo .x-form-text {
-    filter: alpha(opacity=30);
-    opacity: .3;
+    filter: alpha(opacity=50);
+    opacity: .5;
 }

@@ -40,19 +40,10 @@ class Admin_TemporaryController extends Indi_Controller {
                 'courseLesson' => 'lessonId'
             ),
             'ota' => array(
-                'autorespondMessage' => 'autorespondEventId',
                 'bannerShow' => 'datetime',
-                'capturedDataGridColumn' => 'capturedDataFieldId',
-                'capturedDataGridFilter' => 'capturedDataFieldId',
-                'capturedDataLog' => 'datetime',
-                'capturedDataUser' => 'userId',
                 'courseClick' => 'datetime',
                 'courseUser' => 'userId',
-                'micrositeClick' => 'datetime',
-                'newsletterDelivery' => 'date',
-                'pollAnswerVote' => 'datetime',
-                'userReward' => 'datetime',
-                'rewardedActionReward' => 'reward'
+                'pollAnswerVote' => 'datetime'
             ),
             'vkenguru' => array(
                 'eventAnimator' => 'animatorId',
@@ -127,5 +118,47 @@ class Admin_TemporaryController extends Indi_Controller {
             foreach (Indi::model($ckeEntityIdI)->fetchAll() as $r)
                 $r->trimSTDfromCKEvalues()->save();
         }
+    }
+    
+    public function title2aliasAction() {
+        $materialRs = Indi::model('Material')->fetchAll();
+        foreach ($materialRs as $materialR) {
+            $materialR->alias = alias($materialR->title);
+            $materialR->save();
+            d($materialR->alias);
+        }
+        die('ok');
+    }
+    
+    /*public function accessAction() {
+        Indi::db()->query('
+            UPDATE `section2action`
+            SET `profileIds` = CONCAT(`profileIds`, ",18")
+            WHERE FIND_IN_SET("12", `profileIds`) AND CONCAT(",", `profileIds`, ",") NOT LIKE ",18,"
+        ');
+        die('ok');
+    }*/
+
+    /*public function wrapcssAction() {
+        Indi::wrapCss('/library/extjs4/resources/css/ext-neptune.css');
+        Indi::wrapCss('/css/admin/indi.all.neptune.css');
+        die('ok');
+    }*/
+    public function toggleAction() {
+        $fieldRs = Indi::model('Field')->fetchAll('`alias` = "toggle"');
+        $fieldRs->foreign('entityId');
+        $fieldRs->nested('enumset');
+        foreach ($fieldRs as $fieldR) {
+            foreach ($fieldR->nested('enumset') as $enumsetR) {
+                if (preg_match('/i-color-box/', $enumsetR->title)) continue;
+                echo $fieldR->foreign('entityId')->title . ': ' . strip_tags($enumsetR->title);
+                $color = preg_match('/color:\s*([^"\'; ]+)/', $enumsetR->title, $m) ? $m[1] : 'lime';
+                d($color);
+                $enumsetR->title = '<span class="i-color-box" style="background: ' . $color . ';"></span>' . strip_tags($enumsetR->title);
+                $enumsetR->save();
+                echo "\n";
+            }
+        }
+        die('zxc');
     }
 }

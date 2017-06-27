@@ -12,6 +12,8 @@ Ext.define('Indi', {
     name: 'Indi',
     appFolder: '/js/admin/app',
 
+    lastActiveWindow: null,
+
     // @inheritdoc
     constructor: function (cfg) {
         var me = this;
@@ -37,7 +39,12 @@ Ext.define('Indi', {
         /**
          * Microtime
          */
-        _mt: 0,
+        _mt0: 0,
+
+        /**
+         * Microtime
+         */
+        _mtN: 0,
 
         /**
          * Global fields storage. Contains all fields that were even initialised
@@ -55,6 +62,51 @@ Ext.define('Indi', {
         },
 
         /**
+         * Check whether `item` argument is exists within `array` argument.
+         * `array` arguments can be given not only as an array, but also as
+         * a string containing comma-separated values
+         *
+         * @param item
+         * @param array
+         * @return {Boolean}
+         */
+        in: function(item, array) {
+            var a, i;
+
+            // If `array` arg is null/undefined return false
+            if (array === null || array == undefined || typeof array == 'function') return false;
+
+            // If `array` arg is a string/number
+            if (typeof array == 'string' || typeof array == 'number') {
+
+                // Cast `array` arg as string
+                a = array + '';
+
+                // If `array` arg is an empty string return false
+                if (!a.length) return false;
+
+                // If `array` arg is null/undefined return false
+                if (item === null || item == undefined || typeof item == 'function' || typeof item == 'object') return false;
+
+                // Split `array` arg by comma
+                a = a.split(',');
+
+                // Cast `item` as string
+                if (typeof item == 'boolean') {
+                    i = (item ? 1 : 0) + '';
+                } else if (typeof item == 'number' || typeof item == 'string') {
+                    i = item + '';
+                }
+
+                // Return
+                return a.indexOf(i) != -1;
+            }
+
+            // Return
+            return array.indexOf(item) != -1;
+        },
+
+        /**
          * Shortcut to trail singleton instance
          *
          * @return {Indi.lib.trail.Trail}
@@ -67,12 +119,17 @@ Ext.define('Indi', {
          * Retrieve query string ($_GET) any param, identified by `param` key
          *
          * @param param
+         * @param url User-defined url for picking GET param from, instead of document.locaton.toString()
          * @return {*}
          */
-        get: function(param) {
+        get: function(param, url) {
+            var qs = (url || document.location.toString()).split('?')[1];
+
+            // If no GET params - return
+            if (!qs) return;
 
             // Setup auxilliary variables
-            var pairA = document.location.search.substr(1).split('&'), pairI, getO = {};
+            var pairA = qs.split('&'), pairI, getO = {};
 
             // Build getO object
             for (var i = 0; i < pairA.length; i++) {
@@ -186,13 +243,13 @@ Ext.define('Indi', {
             var s = ['а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ',
                 'ъ','ы','ь','э','ю','я','№',' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
                 't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','Ë','À','Ì','Â','Í','Ã','Î','Ä','Ï',
-                'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&'];
+                'Ç','Ò','È','Ó','É','Ô','Ê','Õ','Ö','ê','Ù','ë','Ú','î','Û','ï','Ü','ô','Ý','õ','â','û','ã','ÿ','ç','&', '/'];
 
             // Replacements
             var r = ['a','b','v','g','d','e','yo','zh','z','i','i','k','l','m','n','o','p','r','s','t','u','f','h','c','ch','sh','shh',
                 '','y','','e','yu','ya','#','-','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
                 't','u','v','w','x','y','z','-','0','1','2','3','4','5','6','7','8','9','e','a','i','a','i','a','i','a','i',
-                'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-'];
+                'c','o','e','o','e','o','e','o','o','e','u','e','u','i','u','i','u','o','u','o','a','u','a','y','c','-and-', '-'];
 
             // Declare variable for alias
             var alias = '';
@@ -259,7 +316,7 @@ Ext.define('Indi', {
          * @param me
          */
         eval: function(js, me) {
-            if (!Ext.isString(js)) return;
+            if (!Ext.isString(js) || !js.length) return;
             var s = "(hide|show)\\('((tr-[a-zA-Z0-9]+,?)+)'\\);?", ttrMRex = new RegExp(s, 'g'), ttrSRex = new RegExp(s),
                 ttrMMatch, ttrSMatch, ttrSFoundTrA, ttrSReplace, ttrSReplaceTrA = [], trA, replace = [], trueTr;
             if (ttrMMatch = js.match(ttrMRex)) {
@@ -343,46 +400,317 @@ Ext.define('Indi', {
             // Get data for remember
             if (centerPnl) Ext.merge(cfg, {params: {forScope: Ext.JSON.encode(centerPnl.forScope())}});
 
-            // Make the request
-            Ext.Ajax.request(Ext.merge({
-                url: Indi.pre + uri,
-                success: function(response, request){
+            // If `cfg` argument has `responseText` property
+            if (cfg.responseText) {
 
-                    // In no 'into' property given within `cfg` object - destroy center panel
-                    if (!cfg.into) Indi.clearCenter();
+                // Update title, and destroy target panel, if needed
+                Indi._beforeApplyResponse(cfg);
 
-                    // Else if 'insteadOf' property is additionally given within `cfg` object
-                    else if (cfg.insteadOf) {
+                // Apply response with no any additional actual ajax-request
+                Indi._applyResponse(cfg.responseText, cfg, uri);
 
-                        // Set title for a container, that results will be injected in
-                        if (cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
+            // Else
+            } else {
 
-                        // Destroy the component, that will have a one to replace it
-                        Ext.getCmp(cfg.insteadOf).destroy();
+                // Show loader
+                Indi.app.loader();
+
+                // Make ajax request
+                Ext.Ajax.request(Ext.merge({
+                    url: Indi.pre + (uri = uri.replace(/^\/admin\//, '\/')),
+                    timeout: 300000,
+                    success: function(response){
+
+                        // Start timer
+                        Indi._mt0 = 0; Indi.mt();
+
+                        // Update title, and destroy target panel, if needed
+                        Indi._beforeApplyResponse(cfg);
+
+                        // Apply response
+                        Indi._applyResponse(response.responseText, cfg, uri);
                     }
+                }, cfg));
+            }
+        },
 
-                    // Process response. Here we use Ext.defer to provide a visual
-                    // 'white-blink' effect between destroying old and creating new
-                    Ext.defer(function(){
+        /**
+         * Detect json-stringified error messages, wrapped with <error/> tag, within the raw responseText,
+         * convert each error to JSON-object, and return an array of such objects
+         *
+         * @param rt Response text, for trying to find errors in
+         * @return {Array} Found errors
+         */
+        serverErrorObjectA: function(rt, entitiesEncoded) {
 
-                        // Try to convert responseText to json-object
-                        var json = response.responseText.json();
+            // If response text is empty - return false
+            if (!rt.length) return ['Empty response'];
 
-                        // If responseText converstion to json-object was successful
-                        if (json) {
+            // If `entitiesEncoded` arg is `true`, we decode back htmlentities
+            if (entitiesEncoded) rt = rt.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
-                            // If `json` has `trail` property, apply/dispatch it
-                            if (json.route) Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+            // Define variables
+            var errorA = [], errorI;
 
-                            // Else if
-                            else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+            // Pick errors
+            Indi.fly('<response>'+rt.replace(/<img /g, '<img_ ')+'</response>').select('error').each(function(item){
+                if (errorI = Ext.JSON.decode(item.getHTML(), true)) errorA.push(errorI);
+            });
 
-                        // Run response
-                        } else Ext.get('i-center-center-body').update(response.responseText, true);
+            // Return errors
+            return errorA;
+        },
 
-                    }, 10);
+        /**
+         * Builds a string representation of a given error objects, suitable for use as Ext.MessageBox contents
+         *
+         * @param {Array} serverErrorObjectA
+         * @return {Array}
+         */
+        serverErrorStringA: function(serverErrorObjectA) {
+
+            // Define auxilliary variables
+            var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query', 3: 'MYSQL PDO'},
+                type, seoA = serverErrorObjectA;
+
+            // Convert each error message object to a string
+            for (var i = 0; i < seoA.length; i++)
+                errorSA.push(((type = typeO[seoA[i].code]) ? type + ': ' : '') + seoA[i].text + ' at ' +
+                    seoA[i].file + ' on line ' + seoA[i].line);
+
+            // Return error strings array
+            return errorSA;
+        },
+
+        /**
+         * Common function for handling ajax/iframe responses
+         * It detects <error>...</error> elements in responseText prop of `response` arg,
+         * show them along with trimming them from responseText. It also detects whether
+         * the trimmed responseText can be decoded into JSON, and if so, does it have
+         * `mismatch`, `confirm` and `success` props and if so - handle them certain ways
+         * and return `success` prop that can be undefined, null, boolean or other value
+         *
+         * @param response
+         * @return {Boolean}
+         */
+        parseResponse: function(response, arg2) {
+            var json, wholeFormMsg = [], mismatch, errorByFieldO, msg,
+                form = arg2 && arg2.scope && arg2.scope.form ? arg2.scope.form : null, trigger,
+                certainFieldMsg, cmp, seoA = Indi.serverErrorObjectA(response.responseText), sesA,
+                logger = console && (console.log || console.error), boxA = [], urlOwner = form || response.request.options;
+
+            // Remove 'answer' param, if it exists within url
+            urlOwner.url = urlOwner.url.replace(/\banswer=(ok|no|cancel)/, '');
+
+            // Hide loadmask
+            if (Indi.loadmask) Indi.loadmask.hide();
+
+            // Try to detect error messages, wrapped in <error/> tag, within responseText
+            if (seoA.length) {
+
+                // Build array of error strings from error objects
+                sesA = Indi.serverErrorStringA(seoA);
+
+                // Write php-errors to the console, additionally
+                if (logger) for (var i in sesA) logger(sesA[i]);
+
+                // Show errors within a message box
+                boxA.push({
+                    title: 'Server error',
+                    msg: sesA.join('<br><br>'),
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.MessageBox.ERROR
+                });
+
+                // Strip errors from response
+                response.responseText = response.responseText.split('</error>').pop();
+            }
+
+            // Parse response text as JSON, and if no success - return
+            if (!(json = Ext.JSON.decode(response.responseText, true))) {
+
+                // Show box
+                if (boxA.length) Ext.Msg.show(boxA[0]);
+
+                // Fade out loader
+                Indi.app.loader(false);
+
+                // Return success as true or false
+                return boxA.length ? false : true;
+            }
+
+            // The the info about invalid fields from the response, and mark the as invalid
+            if ('mismatch' in json && Ext.isObject(json.mismatch)) {
+
+                // Shortcut to json.mismatch
+                mismatch = json.mismatch;
+
+                // Error messages storage
+                errorByFieldO = mismatch.errors;
+
+                // Detect are error related to current form fields, or related to fields of some other entry,
+                // that is set up to be automatically updated (as a trigger operation, queuing after the primary one)
+                trigger = form ? mismatch.entity.title != form.owner.ctx().ti().model.title || mismatch.entity.entry != form.owner.ctx().ti().row.id : true;
+
+                // Collect all messages for them to be bit later displayed within Ext.MessageBox
+                Object.keys(errorByFieldO).forEach(function(i){
+
+                    // If mismatch key starts with a '#' symbol, we assume that message, assigned
+                    // under such key - is not related to any certain field within form, so we
+                    // collect al such messages for them to be bit later displayed within Ext.MessageBox
+                    if (i.substring(0, 1) == '#' || trigger) wholeFormMsg.push(errorByFieldO[i]);
+
+                    // Else if mismatch key doesn't start with a '#' symbol, we assume that message, assigned
+                    // under such key - is related to some certain field within form, so we get that field's
+                    // component and mark it as invalid
+                    else if (form && (cmp = Ext.getCmp(form.owner.ctx().bid() + '-field$' + i))) {
+
+                        // Get the mismatch message
+                        certainFieldMsg = errorByFieldO[i];
+
+                        // If mismatch message is a string
+                        if (Ext.isString(certainFieldMsg))
+
+                            // Cut off field title mention from message
+                            certainFieldMsg = certainFieldMsg.replace('"' + cmp.fieldLabel + '"', '').replace(/""/g, '');
+
+                        // Mark field as invalid
+                        cmp.markInvalid(certainFieldMsg);
+
+                        // If field is currently hidden - we duplicate error message for it to be shown within
+                        // Ext.MessageBox, additionally
+                        if (cmp.hidden) wholeFormMsg.push(errorByFieldO[i]);
+
+                    // Else mismatch message is related to field, that currently, for some reason, is not available
+                    // within the form - push that message to the wholeFormMsg array
+                    } else wholeFormMsg.push(errorByFieldO[i]);
+                });
+
+                // If we collected at least one error message, that is related to the whole form rather than
+                // some certain field - use an Ext.MessageBox to display it
+                if (wholeFormMsg.length) {
+
+                    msg = (wholeFormMsg.length > 1 || trigger ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; ');
+
+                    // If this is a mismatch, caused by background php-triggers
+                    if (trigger) msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                        + mismatch.entity.title + '"'
+                        + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
+                        + ' - выдала следующие ошибки: <br><br>' + msg;
+
+                    // Show message box
+                    boxA.push({
+                        title: Indi.lang.I_ERROR,
+                        msg: msg,
+                        buttons: Ext.MessageBox.OK,
+                        icon: Ext.MessageBox.ERROR
+                    });
                 }
-            }, cfg));
+
+            // Else if `confirm` prop is set - show it within Ext.MessageBox
+            } else if ('confirm' in json) boxA.push({
+                title: Indi.lang.I_MSG,
+                msg: json.msg,
+                buttons: Ext.Msg.OKCANCEL,
+                icon: Ext.Msg.QUESTION,
+                modal: true,
+                fn: function(answer) {
+
+                    // Append new answer param
+                    urlOwner.url = urlOwner.url.split('?')[0] + '?answer=' + answer
+                        + (urlOwner.url.split('?')[1] ? '&' + urlOwner.url.split('?')[1] : '');
+
+                    // If answer is 'ok' show load mask
+                    if (answer == 'ok' && Indi.loadmask) Indi.loadmask.show();
+
+                    // Make new request
+                    if (form) form.owner.submit({
+                        submitEmptyText: false,
+                        dirtyOnly: true
+                    }); else {
+                        Ext.get('loader').css('opacity', 1).show();
+                        Ext.Ajax.request(response.request.options);
+                    }
+                }
+
+            // Else if `success` prop is set
+            }); else if ('success' in json && 'msg' in json) {
+
+                // If `msg` prop is set - show it within Ext.MessageBox
+                boxA.push({
+                    title: Indi.lang[json.success ? 'I_MSG' : 'I_ERROR'],
+                    msg: json.msg,
+                    buttons: Ext.Msg.OK,
+                    icon: Ext.Msg[json.success ? 'INFO' : 'WARNING'],
+                    modal: true
+                });
+            }
+
+            // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
+            else if (json.throwOutMsg) top.window.location.reload();
+
+            // Fade out loader
+            Indi.app.loader(false);
+
+            // If no boxes should be shown - return
+            if (!boxA.length) return json.success;
+
+            // Ensure second box will be shown after first box closed
+            if (boxA[1]) boxA[0].fn = function() { Ext.Msg.show(boxA[1]); }
+
+            // Show first box
+            Ext.Msg.show(boxA[0]);
+
+            // Return
+            return json.success;
+        },
+
+        /**
+         * Update title, and destroy target panel, if needed
+         *
+         * @param cfg
+         * @private
+         */
+        _beforeApplyResponse: function(cfg) {
+
+            // If 'insteadOf' property is given within `cfg` object
+            if (cfg.insteadOf) {
+
+                // Set title for a container, that results will be injected in
+                if (cfg.into && cfg.title) Ext.getCmp(cfg.into).setTitle(cfg.title);
+
+                // Destroy the component, that will have a one to replace it
+                Ext.getCmp(cfg.insteadOf).destroy();
+            }
+        },
+
+        /**
+         * Apply response
+         *
+         * @param responseText
+         * @param cfg
+         * @param uri
+         * @private
+         */
+        _applyResponse: function(responseText, cfg, uri) {
+
+            // Try to convert responseText to json-object
+            var json = responseText.json();
+
+            // If responseText conversion to json-object was successful
+            if (json) {
+
+                // If `json` has `trail` property, apply/dispatch it
+                if (json.route) return Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
+
+                // Else if
+                else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+
+            // Run response
+            } else Ext.get('i-center-center-body').update(responseText, true);
+
+            // Fade out loader
+            Indi.app.loader(false);
         },
 
         /**
@@ -636,7 +964,7 @@ Ext.define('Indi', {
                     enumerable: false,
                     configurable: false,
                     value: function() {
-                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = JSON.parse(this)) ? r : false
+                        var r; return this.substr(0, 1).match(/[{\[]/) && (r = Ext.JSON.decode(this)) ? r : false
                     }
                 });
             }
@@ -716,33 +1044,370 @@ Ext.define('Indi', {
          *
          * @return {Number}
          */
-        mt: function(msg) {
-            var m = Indi.microtime(true), d = parseInt((m - Indi._mt)*1000);
-            Indi._mt = m; if (msg) console.log(msg, d); return d;
+        mt: function() {
+            var m = Indi.microtime(true), d, t;
+            if (Indi._mt0) {
+                d = parseInt((m - Indi._mtN)*1000),
+                t = parseInt((m - Indi._mt0)*1000);
+                Indi._mtN = m;
+                if (arguments.length) console.log(d, t, arguments);
+                return [d, t];
+            } else {
+                Indi._mtN = m;
+                return Indi._mt0 = Indi.microtime(true);
+            }
+        },
+
+        /**
+         * Add the measure version to a given quantity
+         *
+         * @param q
+         * @param versions012
+         * @param showNumber
+         * @return {String}
+         */
+        tbq: function(q, versions012, showNumber) {
+            var versions210, formatKA = ['0,11-19,5-9', '1', '2-4'], formatA = {}, formatK, formatV, spanA, k, interval, m;
+
+            // Set up default values for arguments
+            if (arguments.length < 1) q = 2;
+            if (arguments.length < 2) versions012 = '';
+            if (arguments.length < 3) showNumber = true;
+            if (q !== 0 && !q) q = 0;
+
+            // Force q arg to be string
+            q += '';
+
+            // Get versions reversed array
+            versions210 = versions012.split(',').reverse();
+
+            // Distribute quantity measure spell versions
+            formatA['2-4'] = versions210[0]; formatA['1'] = versions210[1]; formatA['0,11-19,5-9'] = versions210[2];
+
+            // Foreach format
+            for (var i in formatKA) {
+
+                formatK = formatKA[i];
+                formatV = formatA[formatK];
+
+                // Extract the intervals from format key
+                spanA = formatK.split(',');
+
+                // Foreach interval
+                for (k = 0; k < spanA.length; k++) {
+
+                    // If current interval is actually not interval, e.g it constits from only one digit
+                    if (spanA[k].indexOf('-') == -1) {
+
+                        // If quantity count ends with that digit
+                        if (q.match(new RegExp(spanA[k] + '$')))
+
+                            // Return the quantity (if showNumber argument is true), with appended spell version
+                            return (showNumber ? q + ' ' : '') + formatV;
+
+                    // Else current interval really is an interval
+                    } else {
+
+                        // Get the start and end digits of that interval
+                        interval = spanA[k].split('-');
+
+                        // Foreach digit within start and end interval digits
+                        for (m = parseInt(interval[0]); m <= parseInt(interval[1]); m ++) {
+
+                            // If quantity count ends with that digit
+                            if (q.match(new RegExp(m + '$')))
+
+                                // Return the quantity (if showNumber argument is true), with appended spell version
+                                return (showNumber ? q + ' ' : '') + formatV;
+                        }
+                    }
+                }
+            }
+            return q || '';
+        },
+
+        /**
+         * Calculate the time, left until certain datetime
+         *
+         * @param to
+         * @return {Object}
+         */
+        timeleft: function(to, ago, append){
+            var interval = ago ? (new Date - Date.parse(to)) : (Date.parse(to) - new Date + (append || 0) * 60 * 1000), r = {
+                days: Math.floor(interval/(60*60*1000*24)*1),
+                hours: Math.floor((interval%(60*60*1000*24))/(60*60*1000)*1),
+                minutes: Math.floor(((interval%(60*60*1000*24))%(60*60*1000))/(60*1000)*1),
+                seconds: Math.floor((((interval%(60*60*1000*24))%(60*60*1000))%(60*1000))/1000*1)
+            };
+
+            // Get total time
+            r.none = r.days + r.hours + r.minutes + r.seconds ? false : true;
+
+            // Get string representation
+            r.str = (r.days ? r.days + 'д ' : '')
+                + (r.hours ? ((r.hours + '').length == 1 ? '0' : '') + r.hours + ':' : '')
+                + ((r.minutes + '').length == 1 ? '0' : '') + r.minutes + ':'
+                + ((r.seconds + '').length == 1 ? '0' : '') + r.seconds;
+
+            // Return
+            return r;
         }
+    },
+
+    /**
+     * Windows storage
+     */
+    windows: new Ext.util.MixedCollection(),
+
+    /**
+     * Get active window
+     *
+     * @return {*}
+     */
+    getActiveWindow: function () {
+        var win = null, zmgr = Indi.app.getDesktopZIndexManager();
+
+        // Walk through z-indexed windows and find the top one
+        if (zmgr) zmgr.eachTopDown(function (comp) {
+            if (comp.isWindow && !comp.hidden) {
+                win = comp;
+                return false;
+            }
+            return true;
+        });
+
+        // Return
+        return win;
+    },
+
+    /**
+     * Get active window
+     *
+     * @return {*}
+     */
+    getTopMaximizedWindow: function () {
+        var win = null, zmgr = Indi.app.getDesktopZIndexManager();
+
+        // Walk through z-indexed windows and find the top one that is maximized
+        if (zmgr)
+            zmgr.eachTopDown(function (comp) {
+                if (comp.isWindow && !comp.hidden && comp.maximized) {
+                    win = comp;
+                    return false;
+                }
+                return true;
+            });
+
+        // Return
+        return win;
+    },
+
+    /**
+     * Get windows zIndex manager
+     *
+     * @return {*}
+     */
+    getDesktopZIndexManager: function () {
+        var windows = this.windows;
+
+        // Return
+        return (windows.getCount() && windows.getAt(0).zIndexManager) || null;
+    },
+
+    /**
+     * This function does all things, that are required to be done each time focus moves from one window to another
+     */
+    updateActiveWindow: function () {
+
+        var me = this, activeWindow = me.getActiveWindow(), last = me.lastActiveWindow;
+
+        // If currently active window - is the last focused - update bread crumb trail and return
+        if (activeWindow === last) return;// Indi.app.updateTrail();
+
+        // If we previously had active window, and that window is still exists
+        if (last) {
+
+            // Remove active style and add inactive style
+            if (last.el.dom) {
+                last.addCls(me.inactiveWindowCls);
+                last.removeCls(me.activeWindowCls);
+            }
+
+            // Set up `active` prop as false`
+            last.active = false;
+        }
+
+        // Set up currently active window as last active window
+        me.lastActiveWindow = activeWindow;
+
+        // Misc things
+        if (activeWindow) {
+
+            // Remove active style and add inactive style
+            activeWindow.addCls(me.activeWindowCls);
+            activeWindow.removeCls(me.inactiveWindowCls);
+
+            // Set up window as non-mimimized, and set it's `active` flag to On
+            activeWindow.minimized = false;
+            activeWindow.active = true;
+        }
+
+        // Make button, likned to window, as active, too
+        me.taskbar.setActiveButton(activeWindow && activeWindow.taskButton);
+    },
+
+    /**
+     * Get window, containing wrapper-panel having given id, assuming that `wrapperId`
+     * argument - is that wrapper-panel id
+     *
+     * @param wrapperId
+     * @return {*}
+     */
+    getWindowByWrapperId: function(wrapperId) {
+       return Ext.ComponentQuery.query('desktopwindow[wrapperId="' + wrapperId + '"]')[0];
+    },
+
+    /**
+     * This function assumes, that `a` argument is a DOM <a>-element, contained within a certain tab,
+     * that currently contains a placeholder for a wrapper-panel, rather than wrapper-panel itself,
+     * so it determines that exact tab, and the window, where desired wrapper-panel is currently opened.
+     * After that, function closes that window and reload the tab and remove placeholder
+     *
+     * @param a
+     */
+    putWindowBackToTab: function(wrapperId) {
+        var wrp = Ext.getCmp(wrapperId), holder = Ext.getCmp(wrapperId + '-holder'), tab = holder.up('[isSouthItem]'),
+            load = wrp.$ctx.uri, name = wrp.$ctx.ti().section.alias, window = Indi.app.getWindowByWrapperId(wrapperId);
+
+        // Set up special flag to prevent looping
+        window.isGettingBack = true;
+
+        // Close separate window, containing contents that we want to put back to tab
+        window.close();
+
+        // Re-add tab
+        tab.add({
+            xtype: 'actiontabrowset',
+            id: wrapperId,
+            load: load,
+            back: true,
+            name: name
+        });
+
+        // Destroy placeholder
+        holder.destroy();
+    },
+
+    /**
+     * Toggle loader
+     */
+    loader: function() {
+        var loader = Ext.get('loader');
+
+        // Workaround for auth screen
+        if (!loader) return;
+
+        // If no arguments given, or first argument is true
+        if (!arguments.length || arguments[0]) {
+
+            // Show loader
+            Ext.get('loader').css('opacity', 1).show();
+
+        // Else
+        } else {
+
+            // Fade out loader
+            Ext.get('loader').fadeOut();
+
+            // Stop animation explicitly, as for some reason in some cases it does not stop as it should
+            Ext.defer(function(){
+                Ext.get('loader').stopAnimation();
+            }, 350);
+        }
+    },
+
+    /**
+     * Update bread crumb trail contents to represent current window
+     */
+    updateTrail: function() {
+        var me = this, topMaximized = me.getTopMaximizedWindow(), crumbs = [], crumbA = [];
+
+        // Destroy existing trail buttons
+        if (me.tb) {
+            me.tb.destroy();
+            delete me.tb;
+        }
+
+        // Return
+        if (!topMaximized) return;
+
+        // Get trail buttons
+        crumbA = Indi.trail(true).breadCrumbA(topMaximized.ctx.route);
+
+        // Add trail toolbar
+        me.tb = Ext.getCmp('i-center-north-trail').add({
+            xtype: 'toolbar',
+            cls: 'i-trail',
+            padding: '0 0 0 2',
+            style: 'background: none;',
+            enableOverflow: {
+                menu: {
+                    cls: 'i-trail-item-menu i-trail-overflow-menu',
+                    plain: true
+                }
+            },
+            defaults: {
+                xtype: 'trailbutton',
+                padding: 0,
+                margin: 0,
+                height: 15,
+                border: 1,
+                handler: function(btn) {
+                    if (btn.load) Indi.load(btn.load, {trail: true});
+                }
+            },
+            items: crumbA
+        });
     },
 
     /**
      * Launch callback
      */
     launch: function() {
+        var me = this;
 
         // Merge static properties, passed within construction, with prototype's static properties
-        this.self = Ext.merge(this.self, this.statics);
+        me.self = Ext.merge(me.self, me.statics);
 
-        if (Ext.get('i-login-box')) {
-            Ext.create('Indi.view.LoginBox', {title: Indi.title});
-        } else {
-            Indi.viewport = Ext.create('Indi.view.Viewport');
-        }
-
+        // Static shortcut to this app
         Indi.app = this;
+
+        // If login-box DOM element detected - create LoginBox, else
+        if (Ext.get('i-login-box')) Ext.create('Indi.view.LoginBox', {title: Indi.title}); else {
+
+            // Create viewport
+            Indi.viewport = Ext.create('Indi.view.Viewport');
+
+            // Create loadmask
+            Indi.loadmask = new Ext.LoadMask(Indi.viewport);
+
+            // If websockets enabled
+            if (Indi.ini.ws && parseInt(Indi.ini.ws.enabled))
+                Ext.Loader.loadScriptFile(Indi.std + '/js/admin/ws.js', Ext.emptyFn, Ext.emptyFn, this, false);
+
+            // Static shortcut to this app's taskbar
+            Indi.app.taskbar = Ext.getCmp('i-center-north');
+
+            // Load dashboard
+            if (Indi.user.dashboard) Indi.load(Indi.user.dashboard);
+        }
     }
 }, function() {
+    var me = this;
 
     // Apply system object's additional prototype functions, because some browsers do not have it as built-in
-    for (var i in this.modernizer) this.modernizer[i]();
+    for (var i in me.modernizer) me.modernizer[i]();
 
     // Share some Indi's functions with window object
-    this.shareWith(window);
+    me.shareWith(window);
 });

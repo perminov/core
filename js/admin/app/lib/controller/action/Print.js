@@ -17,7 +17,7 @@ Ext.define('Indi.lib.controller.action.Print', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'print'}, '-',
@@ -30,6 +30,18 @@ Ext.define('Indi.lib.controller.action.Print', {
             }
         }
     },
+
+    /**
+     * row-panel config
+     */
+    row: {
+        layout: 'fit'
+    },
+
+    /**
+     * Omit south panel
+     */
+    south: false,
 
     /**
      * Master toolbar 'Print' item, for ability to print the built document
@@ -47,9 +59,13 @@ Ext.define('Indi.lib.controller.action.Print', {
             xtype: 'button',
             text: 'Распечатать',
             handler: function() {
-                Ext.getCmp(me.row.id).query('[name="document"]')[0].print()
-            },
-            //iconCls: 'i-btn-icon-print'
+                var r = Ext.getCmp(me.row.id),
+                    editor = r.query('[name="editor"]')[0],
+                    frame = r.getEl().down('iframe');
+
+                // Print
+                if (editor) editor.print(); else if (frame) window.frames[frame.attr('name')].print();
+            }
         }
     },
 
@@ -77,7 +93,13 @@ Ext.define('Indi.lib.controller.action.Print', {
 
     // @inheritdoc
     formItemA: function() {
-        return [Ext.merge(this.formItemXSpan()), this.formItem$Print()];
+        var me = this, fieldA = [
+            {xtype: 'editor', alias: 'editor'},
+            {xtype: 'frame', alias: 'frame'}
+        ];
+
+        // Return
+        return me.callParent([fieldA]);
     },
 
     /**
@@ -85,11 +107,10 @@ Ext.define('Indi.lib.controller.action.Print', {
      *
      * @return {Object}
      */
-    formItem$Print: function() {
+    formItemXEditor: function() {
         var me = this;
         return {
             xtype: 'ckeditor',
-            name: 'document',
             cls: 'i-field',
             value: me.ti().row.view('#print'),
             field: {
@@ -103,5 +124,62 @@ Ext.define('Indi.lib.controller.action.Print', {
                 width: 710
             }
         }
-    }
+    },
+
+    /**
+     * Iframe base config. Will only work
+     *
+     * @param dcfg
+     * @return {*}
+     */
+    formItemXFrame: function(dcfg) {
+        var me = this, eItem$, item$, itemI, src, xcfg = {xtype: 'component', cls: 'i-print-iframe', border: 0};
+
+        // Get custom config
+        eItem$ = 'formItem$' + Indi.ucfirst(dcfg.field.alias);
+        if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+            item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](dcfg) : me[eItem$];
+        } else if (Ext.isString(me[eItem$])) item$ = me[eItem$]; else return false;
+
+        // If no custom config - return false, because custom config is
+        // the only place where iframe's src attr can be found in
+        if (!item$) return false;
+
+        // Get iframe src, either from item$'s `field` prop, if item$ is an object
+        if (Ext.isObject(item$) && item$.field) src = me.ti().row[item$.field];
+
+        // Or from item$ itself, if it is a string
+        else if (Ext.isString(item$)) src = item$;
+
+        // If src is not a string, or is an empty string - return
+        if (!Ext.isString(src) || !src.length) return false;
+
+        // Else prepend src with Indi.std
+        else src = Indi.std + src;
+
+        // If we gonna embed a pdf-file
+        if (src.match(/\.pdf$/)) me.row.bodyPadding = 0;
+
+        // Build iframe markup
+        xcfg.html = '<iframe name="'+ dcfg.id + '" src="' + src +'" frameborder="no" width="100%" height="100%"></iframe>';
+
+        // Define dummy size usage calculation functions
+        Ext.merge(xcfg, {
+            getWidthUsage: function() {
+                return 400;
+            },
+            getHeightUsage: function() {
+                return 400;
+            }
+        });
+
+
+        // Return
+        return xcfg;
+    },
+
+    /**
+     * Can be {field: 'myFileFieldAlias'}, or 'http://mysite.com'
+     */
+    formItem$Frame: false
 });

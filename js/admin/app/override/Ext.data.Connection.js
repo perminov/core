@@ -15,40 +15,12 @@ Ext.override(Ext.data.Connection, {
             response = {
                 responseText: '',
                 responseXML: null
-            }, doc, contentNode,
-            phpErrors, json;
+            }, doc, contentNode;
 
         try {
             doc = frame.contentWindow.document || frame.contentDocument || window.frames[frame.id].document;
             if (doc) {
                 if (doc.body) {
-
-                    phpErrors = me.phpErrors(doc.body.innerHTML);
-                    if (phpErrors.length) {
-                        var err = me.errorExplorer(phpErrors);
-
-                        // Write php-errors to the console, additionally
-                        if (console && (console.log || console.error))
-                            for (var i in err) console[console.error ? 'error' : 'log'](err[i]);
-
-                        Ext.Msg.show({
-                            title: 'Server error',
-                            msg: err.join('<br><br>'),
-                            buttons: Ext.Msg.OK,
-                            icon: Ext.MessageBox.ERROR
-                        });
-                    } else if (doc.body.innerHTML.substr(0, 1).match(/[{\[]/)
-                        && typeof (json = Ext.JSON.decode(doc.body.innerHTML, true)) == 'object') {
-                        if (json.hasOwnProperty('msg')) {
-                            Ext.Msg.show({
-                                title: Indi.lang[json.hasOwnProperty('success') && json.success ? 'I_MSG' : 'I_ERROR'],
-                                msg: json.msg,
-                                buttons: Ext.Msg.OK,
-                                icon: Ext.Msg[json.hasOwnProperty('success') && json.success ? 'INFO' : 'WARNING'],
-                                modal: true
-                            });
-                        }
-                    }
 
                     // Response sent as Content-Type: text/json or text/plain. Browser will embed in a <pre> element
                     // Note: The statement below tests the result of an assignment.
@@ -72,10 +44,17 @@ Ext.override(Ext.data.Connection, {
         } catch (e) {
         }
 
-        me.fireEvent('requestcomplete', me, response, options);
+        var success = Indi.parseResponse(response, options);
 
-        Ext.callback(options.success, options.scope, [response, options]);
-        Ext.callback(options.callback, options.scope, [options, true, response]);
+        if (success) {
+            me.fireEvent('requestcomplete', me, response, options);
+            Ext.callback(options.success, options.scope, [response, options]);
+        } else {
+            me.fireEvent('requestexception', me, response, options);
+            Ext.callback(options.failure, options.scope, [response, options]);
+        }
+
+        Ext.callback(options.callback, options.scope, [options, success, response]);
 
         setTimeout(function() {
             Ext.removeNode(frame);
@@ -93,9 +72,7 @@ Ext.override(Ext.data.Connection, {
             options = request.options,
             result,
             success,
-            response,
-            phpErrors,
-            json;
+            response;
 
         try {
             result = me.parseStatus(request.xhr.status);
@@ -106,63 +83,11 @@ Ext.override(Ext.data.Connection, {
                 isException : false
             };
         }
-
         success = result.success;
 
         if (success) {
-            phpErrors = me.phpErrors(request.xhr.responseText);
-            if (phpErrors.length) {
-                success = false;
-                var err = me.errorExplorer(phpErrors);
-
-                // Write php-errors to the console, additionally
-                if (console && (console.log || console.error))
-                    for (var i in err) console[console.error ? 'error' : 'log'](err[i]);
-
-                Ext.Msg.show({
-                    title: 'Server error',
-                    msg: err.join('<br><br>'),
-                    buttons: Ext.Msg.OK,
-                    icon: Ext.MessageBox.ERROR
-                });
-
-            // Else if responseText can possibly be a json-encoded string
-            } else if (request.xhr.responseText.substr(0, 1).match(/[{\[]/)
-                && typeof (json = Ext.JSON.decode(request.xhr.responseText, true)) == 'object') {
-                if (json.hasOwnProperty('success')) success = json.success;
-                if (json.hasOwnProperty('msg')) {
-                    Ext.Msg.show(json.hasOwnProperty('confirm') ? {
-                        title: Indi.lang.I_MSG,
-                        msg: json.msg,
-                        buttons: Ext.Msg.OKCANCEL,
-                        icon: Ext.Msg.QUESTION,
-                        modal: true,
-                        fn: function(answer) {
-
-                            // Remove 'answer' param, if it exists within url
-                            request.options.url = request.options.url.replace(/\banswer=(ok|no|cancel)/, '');
-
-                            // Append new answer param
-                            request.options.url = request.options.url.split('?')[0] + '?answer=' + answer
-                                + (request.options.url.split('?')[1] ? '&' + request.options.url.split('?')[1] : '');
-
-                            // Make new request
-                            me.request(request.options);
-                        }
-                    } : {
-                        title: Indi.lang[json.hasOwnProperty('success') && json.success ? 'I_MSG' : 'I_ERROR'],
-                        msg: json.msg,
-                        buttons: Ext.Msg.OK,
-                        icon: Ext.Msg[json.hasOwnProperty('success') && json.success ? 'INFO' : 'WARNING'],
-                        modal: true
-                    });
-                }
-            }
-        }
-
-        // If still success
-        if (success) {
             response = me.createResponse(request);
+            Indi.parseResponse(response, options);
             me.fireEvent('requestcomplete', me, response, options);
             Ext.callback(options.success, options.scope, [response, options]);
         } else {
@@ -170,6 +95,7 @@ Ext.override(Ext.data.Connection, {
                 response = me.createException(request);
             } else {
                 response = me.createResponse(request);
+                Indi.parseResponse(response, options);
             }
             me.fireEvent('requestexception', me, response, options);
             Ext.callback(options.failure, options.scope, [response, options]);
@@ -177,49 +103,24 @@ Ext.override(Ext.data.Connection, {
         Ext.callback(options.callback, options.scope, [options, success, response]);
         delete me.requests[request.id];
         return response;
-    },
+    }
+});
 
-    /**
-     * Detect error messages, encapsulated with <error/> tag, within the raw responseText
-     *
-     * @param rt Response text, for trying to find errors in
-     * @return {Array} Found errors
-     */
-    phpErrors: function(rt){
-
-        // If response text is empty - return false
-        if (!rt.length) return ['Empty response'];
-
-        // Define variables
-        var errorA = [], errorI;
-
-        // Find an parse errors
-        Indi.fly('<response>'+rt+'</response>').select('error').each(function(item){
-            if (errorI = Ext.JSON.decode(item.getHTML(), true)) errorA.push(errorI);
+// Small override for Ext.Msg
+Ext.override(Ext.Msg, {
+    jflushFn: 'show',
+    msgCt: null,
+    side: function(cfg){
+        if (Ext.isString(cfg) && !cfg.length) return;
+        if (Ext.isObject(cfg) && (!cfg.body || !cfg.body.length)) return;
+        if (!this.msgCt) this.msgCt = Ext.DomHelper.insertFirst(document.body, {id:'i-notice-div'}, true);
+        var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default i-notice">' +
+            '<img src="'+Indi.std+'/i/admin/btn-icon-close-side.png" class="i-notice-close">' +
+            (Ext.isObject(cfg) && cfg.header ? '<h1>' + cfg.header + '</h1>' : '') +
+            '<p>' + (Ext.isString(cfg) ? cfg : cfg.body) + '</p>' +
+        '</div>', true);
+        m.down('.i-notice-close').on('click', function(e, dom){
+            Ext.get(dom).up('.i-notice').fadeOut({remove: true});
         });
-
-        // Return errors
-        return errorA;
-    },
-
-    /**
-     * Builds a string representation of a given errors, suitable for use as Ext.MessageBox contents
-     *
-     * @param errorOA
-     * @param asStringsArray
-     * @return {Array}
-     */
-    errorExplorer: function(errorOA, asStringsArray) {
-
-        // Define auxilliary variables
-        var errorSA = [], typeO = {1: 'PHP Fatal error', 2: 'PHP Warning', 4: 'PHP Parse error', 0: 'MySQL query'};
-
-        // Convert each error message object to a string
-        for (var i = 0; i < errorOA.length; i++)
-            errorSA.push(typeO[errorOA[i].code] + ': ' + errorOA[i].text + ' at ' +
-                errorOA[i].file + ' on line ' + errorOA[i].line);
-
-        // Return error strings array
-        return errorSA;
     }
 });

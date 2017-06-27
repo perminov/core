@@ -22,6 +22,13 @@ class Field_Base extends Indi_Db_Table {
     protected $_evalFields = array('defaultValue', 'filter');
 
     /**
+     * Default order for combo data
+     *
+     * @var string
+     */
+    public $comboDataOrder = 'move';
+
+    /**
      * Create Indi_Db_Table_Rowset object with some data, if passed
      *
      * @param array $input

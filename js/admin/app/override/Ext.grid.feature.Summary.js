@@ -1,4 +1,45 @@
+Ext.override(Ext.XTemplate, {
+    recurse : function(values, reference) {
+        this.recursiveCall = true;
+        var returnValue = this.apply(reference ? values[reference] : values);
+        this.recursiveCall = false;
+        return returnValue;
+    }
+});
+
+Ext.override(Ext.grid.feature.Grouping, {
+
+    // Create an associated DOM id for the group's header element given the group name
+    getGroupHeaderId: function(groupName) {
+        return this.view.id + '-hd-' + Indi.stripTags(groupName);
+    },
+
+    // Create an associated DOM id for the group's body element given the group name
+    getGroupBodyId: function(groupName) {
+        return this.view.id + '-bd-' + Indi.stripTags(groupName);
+    },
+
+    // Here we replaced "!changedFields ||" with "Ext.isArray(changedFields) &&",
+    // as view.refresh() was called after record.commit() call (`type` arg is 'commit')
+    // and this forced grid contents scroll to top, unneeded
+    onUpdate: function(store, record, type, changedFields){
+        var view = this.view;
+        if (view.rendered && Ext.isArray(changedFields) && Ext.Array.contains(changedFields, this.getGroupField())) {
+            view.refresh();
+        }
+    }
+});
+
 Ext.override(Ext.grid.feature.Summary, {
+
+    /**
+     * This override is a part of solution, that fixes the bug, related to summary and grouping features together usage
+     *
+     * @return {String}
+     */
+    closeRows: function() {
+        return '</tpl>{[this.recursiveCall ? "" : this.printSummaryRow()]}';
+    },
 
     /**
      * Refresh summary row

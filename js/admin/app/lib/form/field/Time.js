@@ -249,5 +249,22 @@ Ext.define('Ext.lib.form.field.Time', {
      */
     showSeconds: function(show) {
         this.sSpinner[show ? 'show' : 'hide']();
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this, width = 0;
+
+        // Walk through spinners and sum their widths
+        me.spinners.forEach(function(item){
+            width += item.getWidth() + item.getEl().getMargin('rl');
+        });
+
+        // Return
+        return width;
     }
 });
