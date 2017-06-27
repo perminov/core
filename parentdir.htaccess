@@ -10,6 +10,9 @@ Options FollowSymLinks
 <Files config.ini>
   Deny from all 
 </Files>
+<Files .git>
+  Deny from all 
+</Files>
 
 #################
 ## Compression ##
@@ -58,6 +61,9 @@ RewriteRule .* coref%{ENV:URI} [L]
 
 RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/core%{ENV:URI} -f
 RewriteRule .* core%{ENV:URI} [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule \.(jpg|jpeg|png|gif|css|js|ico|txt)$ core/application/static404.php
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/www/index.php -f

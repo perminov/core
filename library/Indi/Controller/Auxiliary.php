@@ -52,10 +52,15 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         //if ($fieldR->params['prependEntityTitle'] == 'true') $title[] = Indi::model($fieldR->entityId)->title() . ',';
 
         // Append row title to filename parts array
-        $title[] = $r->title;
+        if ($fieldR->params['rowTitle'] != 'false') $title[] = $r->dftitle($fieldR->alias);
 
         // Append entity title to filename parts array, if needed
         if ($fieldR->params['appendFieldTitle'] != 'false') $title[] = '- ' . $fieldR->title;
+
+        // Append entity title to filename parts array, if needed
+        if (strlen($fieldR->params['postfix'])) {
+            Indi::$cmpTpl = $fieldR->params['postfix']; eval(Indi::$cmpRun); $title[] = Indi::cmpOut();
+        }
 
         // Get the extension of the file
         $ext = preg_replace('/.*\.([^\.]+)$/', '$1', $abs);
@@ -66,21 +71,29 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // If user's browser is Microsoft Internet Explorer - do a filename encoding conversion
         if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT'])) $title = iconv('utf-8', 'windows-1251', $title);
 
-        // Create a file_info resource
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        // If finfo-extension enabled
+        if (function_exists('finfo_open')) {
+        
+            // Create a file_info resource
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
 
-        // Get the mime-type
-        $type = finfo_file($finfo, $abs);
+            // Get the mime-type
+            $type = finfo_file($finfo, $abs);
 
-        // If there was an error while getting info about file
-        if (!$type) die(I_DOWNLOAD_ERROR_FILEINFO_FAILED);
+            // If there was an error while getting info about file
+            if (!$type) die(I_DOWNLOAD_ERROR_FILEINFO_FAILED);
 
-        // Close the fileinfo resource
-        finfo_close($finfo);
+            // Close the fileinfo resource
+            finfo_close($finfo);
+        }
 
-        // Start donwload
+        // Replace " with ', as browsers replaces " with _ or - or, maybe, with something else
+        $title = str_replace('"', "'", $title);
+        
+        // Start download
         header('Content-Type: ' . $type);
         header('Content-Disposition: attachment; filename="' . $title . '";');
+        header('Content-Length: ' . filesize($abs));
         readfile($abs);
         die();
     }

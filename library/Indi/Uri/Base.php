@@ -45,17 +45,30 @@ class Indi_Uri_Base {
         $this->section = 'index';
         $this->action = 'index';
 
+        // If URI is '/' - return
+        if (!$uri[0]) return;
+
         // If first chunk of $uri is 'admin', we set 'module' param as 'admin' and drop that chunk from $uri
         if ($uri[0] == 'admin') {
             $this->module = $uri[0];
             array_shift($uri);
         }
 
+        // Check all uri parts for format validity
+        for ($i = 0; $i < count($uri); $i++) if (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/', urldecode($uri[$i]))) {
+
+            // Turn on logging for 'jflush' call, as this may be attack attempt
+            Indi::logging('jflush', true);
+
+            // Flush failure
+            jflush(false, I_URI_ERROR_CHUNK_FORMAT);
+        }
+
         // Setup all other params
         for ($i = 0; $i < count($uri); $i++)
 
             // Setup section
-            if ($i == 0 && $uri[$i]) $this->section = $uri[$i];
+            if ($i == 0) $this->section = $uri[$i];
 
             // Setup action
             else if ($i == 1) $this->action = $uri[$i];
@@ -137,9 +150,15 @@ class Indi_Uri_Base {
      * Set cookie domain and path
      */
     public function setCookieDomain(){
+        
+        // Detect domain
+	$domainA = explode(' ', Indi::ini()->general->domain);
+        foreach ($domainA as $domainI) 
+            if (preg_match('/' . preg_quote($domainI) . '$/', $_SERVER['HTTP_HOST']))
+                $domain = Indi::ini('general')->domain = $domainI;
 
         // Set cookie domain and path
-        ini_set('session.cookie_domain', '.' . Indi::ini()->general->domain);
+        ini_set('session.cookie_domain', (preg_match('/^[0-9\.]+$/', $domain) ? '' : '.') . $domain);
 
         // If project runs not from document root, but from some
         // subfolder of document root - setup an appropriate cookie path

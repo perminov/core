@@ -35,5 +35,35 @@ Ext.define('Indi.lib.view.action.TabRow', {
 
         // Update `name` property for the tab, to provide tabs remember at it's most recent state
         me.up('[isSouthItem]').name = parseInt(ctx.ti().row.id) || 0;
+
+        // Fit
+        me.up('[isSouth]').getHeightUsage();
+        me.up('[isWrapper]').fitSouth();
+        me.up('[isSouth]').setHeight();
+    },
+
+    /**
+     * Check if there is no need to do an actual request for loading tab contents,
+     * as tab contents may have been already loaded and should be just picked up
+     *
+     * @param cfg
+     */
+    checkPreloadedResponse: function(cfg) {
+        var me = this, scope, panel;
+
+        // Wrap this block into try..catch to prevent error messages
+        try {
+
+            // Get scope's south panel settings
+            scope = me.up('[isWrapper]').$ctx.ti().scope.actionrowset.south;
+
+            // Get south panel
+            panel = me.up('[isSouth]');
+
+            // Assign `responseText` property to `cfg` argument
+            cfg.responseText = scope.activeTabResponse[panel.getActiveTab().name];
+
+        // Catch and do nothing
+        } catch (e) {}
     }
 });

@@ -5,5 +5,22 @@ Ext.override(Ext.tab.Bar, {
     onClick: function(e) {
         this.fireClickEvent('click', e);
         this.callParent(arguments);
+    },
+
+    /**
+     * Get this actual width usage
+     *
+     * @return {Number}
+     */
+    getWidthUsage: function() {
+        var me = this, width = 0;
+
+        // Walk through tabs an sum their widths
+        me.items.each(function(item){
+            width += item.getWidth() + 5 * 2;
+        });
+
+        // Return
+        return width;
     }
 });

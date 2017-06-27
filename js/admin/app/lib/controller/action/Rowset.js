@@ -7,10 +7,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     alternateClassName: 'Indi.Controller.Action.Rowset',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action',
+    extend: 'Indi.lib.controller.action.Action',
 
     // @inheritdoc
-    mcopwso: ['store', 'rowset', 'south', 'panel'],
+    mcopwso: ['store', 'rowset', 'south', 'panel', 'rowsetPlugin$Cellediting'],
 
     // @inheritdoc
     panel: {
@@ -21,21 +21,58 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         /**
          * Array of action-button aliases, that have special icons
          */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down', 'print', 'mark4delete'],
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
+            'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm', 'goto'],
 
         /**
          * Tools special config
          */
-        tools: [{alias: 'reset'}],
+        tools: [{alias: 'fundock'}, {alias: 'reset'}],
 
         /**
          * Docked items special config
          */
         docked: {
-            default: {minHeight: 27},
+            default: {minHeight: 26},
             items: [{alias: 'filter'}, {alias: 'master'}],
             inner: {
                 master: [{alias: 'actions'}, {alias: 'nested'}, '->', {alias: 'keyword'}]
+            }
+        },
+
+        /**
+         * Instance of {xtype: window}, created for filters toolbar to be injected in
+         */
+        filterWin: null,
+
+        // @inheritdoc
+        listeners: {
+            resize: function(c, w, h, ow, oh) {
+                var me = Ext.getCmp(c.id.replace('-wrapper', '')),
+                    f = Ext.getCmp(c.id.replace('-wrapper', '-toolbar$filter')),
+                    win = c.getWindow();
+
+                // If filters toolbar has no items (e.g. there is no filters) - return
+                if (f.empty || !win || !win.down('tool[alias="fundock"]') || !f.lastBox) return;
+
+                // If filters toolbar's height wastes more than 20% of total height, available for wrapper-panel
+                if (f.lastBox.height / c.getHeight() > 0.2) {
+                    if (f.up('[isWrapper]')) f.hide(); else if (!c.filterWin.hidden) {
+                        if (c.filterWin) c.filterWin.maxWidth = c.getWidth() - 30;
+                        c.filterWin.setWidth(Indi.viewport.getWidth() - 30);
+                        c.filterWin.setHeight(f.getHeight() + 1);
+                        c.filterWin.center();
+                    }
+                    win.down('tool[alias="fundock"]').show();
+                } else {
+                    win.down('tool[alias="fundock"]').hide();
+                    if (f.up('[hasCtx]')) {
+                        c.insertDocked(0, f);
+                        if (c.filterWin) c.filterWin.close();
+                    } else if (f.hidden) {
+                        f.show();
+                    }
+                }
             }
         }
     },
@@ -50,11 +87,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         remoteSort: true,
         listeners: {
             beforeload: function(){
-                this.ctx().filterChange({noReload: true});
+                this.$ctx.filterChange({noReload: true});
             },
             load: function(){
-                this.ctx().storeLoadCallbackDefault();
-                this.ctx().storeLoadCallback();
+                var ctx = this.ctx() || this.$ctx;
+                ctx.storeLoadCallbackDefault.apply(ctx, arguments);
+                ctx.storeLoadCallback.apply(ctx, arguments);
             }
         },
         ctx: function() {
@@ -87,7 +125,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.onFilterChange(cmp);
 
         // Declare and fulfil an array with properties, available for each row in the rowset
-        var columnA = []; for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
+        var columnA = []; if (me.ti().gridFields) for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
 
         // Declare an array for params, which will be fulfiled with filters's values
         var paramA = [];
@@ -106,11 +144,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Get all filter components
         var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
+        // If filters toolbar was undocked from main panel into a window - try search within that window
+        if (!filterCmpA.length && Ext.getCmp(me.panel.id).filterWin)
+            filterCmpA = Ext.getCmp(me.panel.id).filterWin.query('[isFilter][name]');
+
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
 
             // We do not involve values of hidden or disabled filter components in request query building
-            if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || filterCmpA[i].disabled) continue;
+            // if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || filterCmpA[i].disabled) continue;
+            if (filterCmpA[i].hidden || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field.satellite)) continue;
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpA[i].name;
@@ -183,21 +226,32 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Append `keyword` property to the request extra params
         if (keyword) extraParams.keyword = keyword;
 
-        // Append summary definition
-        var summary = me.rowsetSummary(); if (Ext.isObject(summary) && Ext.Object.getSize(summary))
-            extraParams.summary = JSON.stringify(summary);
+        // If me.rowsetSummary is a function
+        if (Ext.isFunction(me.rowsetSummary)) {
+
+            // Get summary definitions
+            var summary = me.rowsetSummary();
+
+            // Append them to extraParams
+            if (Ext.isObject(summary) && Ext.Object.getSize(summary))
+                extraParams.summary = JSON.stringify(summary);
+        }
 
         // Set extra params for store's proxy
         me.getStore().getProxy().extraParams = extraParams;
 
         // Adjust an 'url' property of  this.getStore().proxy object, to apply keyword search usage
-        me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/index/' +
+        me.getStore().getProxy().url = Indi.pre + '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/' +
             (me.ti(1).row ? 'id/' + me.ti(1).row.id + '/' : '') + 'format/json/';
 
         // Disable keyword component, if all available properties are already involved in search by
         // corresponding filters usage
         if (Ext.getCmp(keywordCmpId))
             Ext.getCmp(keywordCmpId).setDisabled(usedFilterAliasesThatHasGridColumnRepresentedByA.length == columnA.length);
+
+        // Ensure page size to be fully dependent on me.ti().section.rowsOnPage
+        me.getStore().pageSize = me.getStore().getProxy().extraParams.limit = me.ti().section.rowsOnPage || me.ti().section.defaultLimit;
+        if (me.getStore().lastOptions) me.getStore().lastOptions.limit = me.getStore().pageSize;
 
         // If there is no noReload flag turned on
         if (!cmp.noReload) {
@@ -211,8 +265,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // matched our keyword/filters search, to at least 1 row to be displayed, but there is no guarantee
             // that there will be such number of results, that match our search criteria
             me.getStore().currentPage = 1;
-            me.getStore().lastOptions.page = 1;
-            me.getStore().lastOptions.start = 0;
+            if (me.getStore().lastOptions) {
+                me.getStore().lastOptions.page = 1;
+                me.getStore().lastOptions.start = 0;
+            }
 
             // If used filter is a combobox or multislider, we reload store data immideatly
             if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
@@ -262,8 +318,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Setup `route` property
         if (config.route) me.route = config.route;
 
-        // Setup main panel title as current secion title
-        me.panel.title = me.ti().section.title;
+        // Setup main panel title
+        me.panel.title = me.ti().action.alias == 'index' ? me.ti().section.title : me.ti().action.title;
 
         // Merge configs
         me.mergeParent(config);
@@ -272,9 +328,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.store = Ext.merge({
             id: me.bid() + '-store',
             fields: me.storeFieldA(),
+            table: me.ti().model.tableName,
             sorters: me.storeSorters(),
-            pageSize: parseInt(me.ti().section.rowsOnPage),
+            pageSize: me.ti().section.rowsOnPage,
             currentPage: me.storeCurrentPage(),
+            $ctx: me,
             proxy: new Ext.data.HttpProxy({
                 method: 'POST',
                 reader: {
@@ -285,6 +343,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 }
             })
         }, me.store);
+
+        // Set group field
+        if (me.ti().section.groupBy && me.ti().fields.r(me.ti().section.groupBy))
+            me.store.groupField = me.ti().fields.r(me.ti().section.groupBy).alias;
 
         // Create store
         Ext.create('Ext.data.Store', me.store);
@@ -305,86 +367,156 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Reset all rowset filters
+     * Check whether filter/keyword search is currently used.
+     *
+     * @return {Boolean}
      */
-    filterReset: function() {
-        var me = this;
+    atLeastOneFilterIsUsed: function() {
+        var me = this, filterCmpIdPrefix, j, l, i, v, alias, control, atLeastOneFilterIsUsed = false,
+            loopA, limits, keywordC;
 
         // Prepare a prefix for filter component ids
-        var filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
-
-        // Setup a flag, what will
-        var atLeastOneFilterIsUsed = false;
+        filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
 
         // We define an array of functions, first within which will check if at least one filter is used
         // and if so, second will do a store reload
-        var loopA = [function(cmp, control){
-            if (cmp.isImportantDespiteHidden) return;
+        loopA = [function(cmp, control){
+            //if (cmp.isImportantDespiteHidden) return;
             if (control == 'color') {
                 if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
             } else {
                 if ([null, ''].indexOf(cmp.getValue()) == -1) {
-                    if (JSON.stringify(cmp.getValue()) != '[""]') {
-                        atLeastOneFilterIsUsed = true;
-                    }
+                    if (JSON.stringify(cmp.getValue()) != '[""]') atLeastOneFilterIsUsed = true;
                 }
-            }
-        }, function(cmp, control){
-            if (cmp.isImportantDespiteHidden) return;
-            if (control == 'color') {
-                cmp.setValue(0, 0, false);
-                cmp.setValue(1, 360, false);
-            } else {
-                cmp.setValue('');
             }
         }];
 
         // We iterate throgh filter twice - for each function within loopA array
-        for (var l = 0; l < loopA.length; l++) {
+        for (l = 0; l < loopA.length; l++) {
 
             // We prevent unsetting filters values if they are already empty
             if (l == 1 && atLeastOneFilterIsUsed == false) break;
 
             // For each filter
-            for (var i = 0; i < me.ti().filters.length; i++) {
+            for (i = 0; i < me.ti().filters.length; i++) {
 
                 // Define a shortcut for filter field alias
-                var alias =  me.ti().filters[i].foreign('fieldId').alias;
+                alias =  me.ti().filters[i].foreign('fieldId').alias;
 
                 // Shortcut for control element, assigned to filter field
-                var control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
+                control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
 
                 // If current filter is a range-filter, we reset values for two filter components, that
                 // are representing min and max values
                 if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
 
                     // Range filters limits's postfixes
-                    var limits = ['gte', 'lte'];
+                    limits = ['gte', 'lte'];
 
                     // Setup empty values for range filters
-                    for (var j = 0; j < limits.length; j++) {
-                        Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
-                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
-                        Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
-                    }
+                    for (j = 0; j < limits.length; j++) loopA[l](Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
 
                     // Else we reset one filter component
                 } else if (control == 'color') {
 
                     // Resetted values for color multislider filter
-                    var v = [0, 360];
+                    v = [0, 360];
 
                     // Set a value for each multislider thumb
-                    for (var j = 0; j < v.length; j++) {
-                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                        loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
-                        Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
-                    }
+                    for (j = 0; j < v.length; j++) loopA[l](Ext.getCmp(filterCmpIdPrefix + alias), control);
 
                     // Else set by original way
-                } else {
+                } else loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
+            }
+        }
+
+        // Here we handle case, then we have keyword-search field injected into
+        // filters docked panel, rather than in master docked panel
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) atLeastOneFilterIsUsed = true;
+        }
+
+        // Return
+        return atLeastOneFilterIsUsed;
+    },
+
+    /**
+     * Reset all rowset filters and keyword
+     */
+    filterReset: function(noReload) {
+        var me = this, resetFn, keywordC, filterCmpIdPrefix, v, limits, control, alias, i, j;
+
+        // If filter/keyword search is not currently used
+        if (!me.atLeastOneFilterIsUsed()) {
+
+            // Show message box
+            if (!noReload) Ext.MessageBox.show({
+                title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
+                msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
+                buttons: Ext.MessageBox.OK,
+                icon: Ext.MessageBox.INFO
+            });
+
+            // Return
+            return;
+        }
+
+        // Prepare a prefix for filter component ids
+        filterCmpIdPrefix = me.bid() + '-toolbar$filter$';
+
+        // We define an array of functions, first within which will check if at least one filter is used
+        // and if so, second will do a store reload
+        resetFn = function(cmp, control){
+            if (control == 'color') {
+                cmp.setValue(0, 0, false);
+                cmp.setValue(1, 360, false);
+            } else {
+                cmp.setValue('');
+            }
+        };
+
+        // For each filter
+        for (i = 0; i < me.ti().filters.length; i++) {
+
+            // Define a shortcut for filter field alias
+            alias =  me.ti().filters[i].foreign('fieldId').alias;
+
+            // Shortcut for control element, assigned to filter field
+            control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
+
+            // If current filter is a range-filter, we reset values for two filter components, that
+            // are representing min and max values
+            if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
+
+                // Range filters limits's postfixes
+                limits = ['gte', 'lte'];
+
+                // Setup empty values for range filters
+                for (j = 0; j < limits.length; j++) {
+                    Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = true;
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]));
+                    Ext.getCmp(filterCmpIdPrefix + alias + '-' + limits[j]).noReload = false;
+                }
+
+                // Else we reset one filter component
+            } else if (control == 'color') {
+
+                // Resetted values for color multislider filter
+                v = [0, 360];
+
+                // Set a value for each multislider thumb
+                for (j = 0; j < v.length; j++) {
                     Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
-                    loopA[l](Ext.getCmp(filterCmpIdPrefix + alias));
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias), control);
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
+                }
+
+            // Else set by original way
+            } else {
+                if (Ext.getCmp(filterCmpIdPrefix + alias).allowClear !== false) {
+                    Ext.getCmp(filterCmpIdPrefix + alias).noReload = true;
+                    resetFn(Ext.getCmp(filterCmpIdPrefix + alias));
                     Ext.getCmp(filterCmpIdPrefix + alias).noReload = false;
                 }
             }
@@ -392,24 +524,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Here we handle case, then we have keyword-search field injected into
         // filters docked panel, rather than in master docked panel
-        var keywordCmp = Ext.getCmp(filterCmpIdPrefix.replace(/\$$/, '')).query('[isKeyword]')[0];
-        if (keywordCmp && keywordCmp.getValue()) {
-            keywordCmp.setValue('');
-            atLeastOneFilterIsUsed = true;
+        var mtb; if (mtb = Ext.getCmp(me.bid() + '-toolbar-master')) {
+            keywordC = mtb.down('[isKeyword]');
+            if (keywordC && keywordC.getValue()) keywordC.setValue('');
         }
 
         // Reload store for empty filter values to be picked up.
-        // We do reload only in case if at least one filter was emptied by reset filter tool
-        if (atLeastOneFilterIsUsed) me.filterChange({});
-
-        // Otherwise we display a message box saying that filters cannot be emptied because
-        // they are already empty
-        else Ext.MessageBox.show({
-            title: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_TITLE,
-            msg: Indi.lang.I_ACTION_INDEX_FILTERS_ARE_ALREADY_EMPTY_MSG,
-            buttons: Ext.MessageBox.OK,
-            icon: Ext.MessageBox.INFO
-        });
+        if (!noReload) me.filterChange({});
     },
 
     /**
@@ -434,22 +555,93 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Get filter window. If if not yet exists - preliminary create it
+     *
+     * @return {*}
+     */
+    getFilterWindow: function() {
+        var me = this;
+
+        // If filter window was not yet created - create it
+        if (!Ext.getCmp(me.panel.id).filterWin) Ext.getCmp(me.panel.id).filterWin = Ext.widget({
+            xtype: 'window',
+            frame: false,
+            $ctx: me,
+            hasCtx: true,
+            frameHeader: false,
+            layout: 'fit',
+            style: 'background: transparent; border: 0;',
+            bodyStyle: 'background: transparent; border-bottom-width: 0;',
+            modal: true,
+            width: Ext.getCmp(me.panel.id).getWidth() - 30,
+            border: '1 1 2 1',
+            padding: 0,
+            closable: false,
+            closeAction: 'hide',
+            resizable: {
+                handles: 'e w'
+            },
+            header: false,
+            listeners: {
+                afterrender: function(с) {
+                    с.mon(Ext.getBody(), 'click', function(el, e){
+                        с.close(с.closeAction);
+                    }, с, {delegate: '.x-mask'});
+                },
+                resize: function(c, w, h, ow, oh) {
+                    if (Ext.EventObject.getTarget() && Ext.EventObject.getTarget('.x-resizable-proxy')) {
+                        if (w != ow) c.setHeight(c.down('[name="toolbar$filter"]').getHeight() + 1);
+                    }
+                }
+            }
+        });
+
+        // Return
+        return Ext.getCmp(me.panel.id).filterWin;
+    },
+
+    /**
+     * Filters reset tool config builder
+     *
+     * @return {Object}
+     */
+    panelTool$Fundock: function() {
+        var me = this;
+
+        // We add the filter-reset tool only if there is at least one filter defined for current section
+        if (!me.ti().filters.length) return null;
+
+        // Append tool data object to the 'tools' array
+        return {
+            type: 'search',
+            hidden: true,
+            tooltip: 'Показать фильтры',
+            handler: function() {
+                var f = Ext.getCmp(me.bid() + '-toolbar$filter');
+                Ext.getCmp(me.panel.id).removeDocked(f, false);
+                me.getFilterWindow().show().center().addDocked(f.show(), 'top');
+                me.getFilterWindow().center();
+            }
+        }
+    },
+
+    /**
      * Panel filter toolbar builder
      *
      * @return {Object}
      */
     panelDocked$Filter: function() {
-        var me = this;
+        var me = this, hidden = !me.ti().filters.length &&
+            (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length);
 
         // 'Filter' toolbar config
         return {
-            xtype: 'toolbar',
-            dock: 'top',
+            xtype: 'filtertoolbar',
+            ctx: me,
             hidden: !me.ti().filters.length &&
                 (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
-            padding: '1 5 5 5',
             id: me.bid() + '-toolbar$filter',
-            layout: 'auto',
+            cls: 'x-poppable',
             items: [{
                 xtype:'fieldset',
                 id: me.bid()+'-toolbar$filter-fieldset',
@@ -481,15 +673,33 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterItemA: function() {
 
         // Declare toolbar filter panel items array, and some additional variables
-        var me = this, itemA = [], itemI, itemICustom, moreItemA = [];
+        var me = this, itemA = [], itemI, item$, itemICustom, moreItemA = [], eItem$;
 
         // Fulfil items array
         for (var i = 0; i < me.ti().filters.length; i++) {
+
+            // Get default filter config
             itemI = me.panelDocked$Filter_Default(me.ti().filters[i]);
-            itemICustom = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
-            if (typeof me[itemICustom] == 'function') itemI = me[itemICustom](itemI);
+
+            // Own element/prop, related to current filter
+            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
+
+            // Apply filter custom config
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // If item is non-empty/null/false/undefined
             if (itemI) {
+
+                // If it has no `name` prop yet - setit up
                 if (!itemI.name) itemI.name = me.ti().filters[i].foreign('fieldId').alias;
+
+                // Refresh label width
+                if (itemI.fieldLabel) itemI.labelWidth = Indi.metrics.getWidth(itemI.fieldLabel);
+
+                // Push into itemA array
                 itemA = itemA.concat(itemI.length ? itemI: [itemI]);
             }
         }
@@ -560,7 +770,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store,
-            multiSelect: parseInt(filter.any) ? true : false
+            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false
         }
     },
 
@@ -722,6 +932,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Price-filters configurator function
+     *
+     * @param filter
+     * @return {Object}
+     */
+    panelDocked$FilterXPrice: function(filter) {
+        return this.panelDocked$FilterXNumber(filter);
+    },
+
+    /**
      * Number-filters configurator function
      *
      * @param filter
@@ -742,6 +962,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-gte',
             name: alias + '-gte',
+            isFilter: true,
             fieldLabel: fieldLabel,
             labelWidth: Indi.metrics.getWidth(fieldLabel),
             width: 50 + Indi.metrics.getWidth(fieldLabel),
@@ -759,6 +980,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             xtype: 'numberfield',
             id: filterCmpId + '-lte',
             name: alias + '-lte',
+            isFilter: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
             width: 50 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_NUMBER_TO),
@@ -822,19 +1044,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Master toolbar cfg
         return {
             id: this.bid() + '-toolbar-master',
-            items: this.panelDocked$MasterItemA()
+            items: this.panelDocked$MasterItemA(),
+            border: 0
         }
-    },
-
-    /**
-     * Build and return array of master toolbar items configs
-     *
-     * @return {Array}
-     */
-    panelDocked$MasterItemA: function() {
-        var merged = [], pushed = this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
-        for (var i = 0; i < pushed.length; i++) merged = merged.concat(pushed[i]);
-        return merged;
     },
 
     /**
@@ -845,24 +1057,33 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDockedInner$Actions: function() {
 
         // Setup auxillirary variables
-        var me = this, actionItemA = [], actionItem, actionItemCustom, actionItemCreate = me.panelDockedInner$Actions$Create();
+        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
 
         // Append 'Create' action button
-        if (actionItemCreate) actionItemA.push(actionItemCreate);
+        if (itemICreate) itemA.push(itemICreate);
 
         // Append other action buttons
         for (var i = 0; i < me.ti().actions.length; i++) {
-            actionItem = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
-            actionItemCustom = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (typeof me[actionItemCustom] == 'function') actionItem = me[actionItemCustom](actionItem);
-            if (actionItem) actionItemA.push(actionItem);
+
+            // Get default column config
+            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
+
+            // Apply custom config
+            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
         }
 
         // Push a separator
-        if (actionItemA.length) actionItemA.push('-');
+        if (itemA.length) itemA.push('-');
 
         // Return
-        return actionItemA;
+        return itemA;
     },
 
     /**
@@ -890,18 +1111,25 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 iconCls: 'i-btn-icon-create',
                 actionAlias: 'form',
                 handler: function(){
+                    var south, already;
 
                     // If Ctrl-key is pressed
-                    if (Ext.EventObject.ctrlKey)
+                    if (Ext.EventObject.ctrlKey) {
 
-                        // Add new tab within south panel
-                        Ext.getCmp(me.panel.id).down('[isSouth]').add(me.southItemIDefault({
+                        // Get south region panel
+                        south = Ext.getCmp(me.panel.id).down('[isSouth]');
+
+                        // If tab, that we want to add - is already exists within south region panel - set it active
+                        if (already = south.down('[isSouthItem][name="0"]')) south.setActiveTab(already);
+
+                        // Else add new tab within south panel
+                        else south.add(me.southItemIDefault({
                             id: 0,
                             title: Indi.lang.I_CREATE
                         }));
 
                     // Else proceed standard behaviour
-                    else Indi.load('/' + section.alias + '/' + this.actionAlias + '/ph/' + section.primaryHash + '/');
+                    } else Indi.load('/' + section.alias + '/' + this.actionAlias + '/ph/' + section.primaryHash + '/');
                 }
             }
         }
@@ -974,18 +1202,17 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
     },
 
-    panelDockedInner$Actions$Toggle_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
-    },
-    panelDockedInner$Actions$Up_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
-    },
-    panelDockedInner$Actions$Down_InnerHandler: function(action, row, aix, btn) {
-        this.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn);
+    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn) {
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data');
+        me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(this, action, row, aix, btn, {
+            params: {
+                'others[]': srs.length ? Ext.Array.remove(srs, row.get('id')) : []
+            }
+        });
     },
 
     /**
-     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandler,
+     * This action-button inner handler is the same as me.panelDockedInner$Actions_DefaultInnerHandlerLoad,
      * but it does not reload the whole panel - it just reload store only instead
      *
      * @param action
@@ -994,7 +1221,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param btn
      */
     panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn, ajaxCfg) {
-        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn, Ext.merge({
+        var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn, Ext.merge({
             success: function(response) {
                 var json = Ext.JSON.decode(response.responseText, true), page;
                 if (Ext.isObject(json) && (page = json.page)) me.getStore().loadPage(page);
@@ -1011,7 +1238,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param aix
      */
     panelDockedInner$Actions$Delete_InnerHandler: function(action, row, aix, btn) {
-        var me = this;
+        var me = this, rs = Ext.getCmp(me.rowset.id), srs = rs.getSelectionModel().selected.collect('id', 'data'),
+            v = rs.getView();
 
         // Show the deletion confirmation message box
         Ext.MessageBox.show({
@@ -1020,8 +1248,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             buttons: Ext.MessageBox.YESNO,
             icon: Ext.MessageBox.QUESTION,
             fn: function(answer) {
-                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn)
-                else Ext.getCmp(me.rowset.id).getView().focus();
+                if (answer == 'yes') me.panelDockedInner$Actions_DefaultInnerHandlerReload.call(me, action, row, aix, btn, {
+                    params: {
+                        'others[]': Ext.Array.remove(srs, row.get('id'))
+                    }
+                })
+                else (v.lockedView || v).focus();
             }
         });
     },
@@ -1066,11 +1298,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             else south.add(me.southItemIDefault({
                 id: row.get('id'),
                 title: row.raw._system.title,
-                aix: aix
+                aix: aix,
+                action: action.alias
             }));
 
         // Else proceed standard behaviour
-        } else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
+        } else me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn);
+    },
+
+    /**
+     * Default inner handler for print-action - same as for form-action
+     */
+    panelDockedInner$Actions$Print_InnerHandler: function() {
+        this.panelDockedInner$Actions$Form_InnerHandler.apply(this, arguments);
     },
 
     /**
@@ -1080,11 +1320,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param row
      * @param aix
      */
-    panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn, ajaxCfg) {
+    panelDockedInner$Actions_DefaultInnerHandlerLoad: function(action, row, aix, btn, ajaxCfg) {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
-        uri = '/' + section.alias + '/' + action.alias + '/id/' + row.get('id') + '/ph/' + section.primaryHash + '/aix/' + aix + '/';
+        uri = '/' + section.alias + '/' + action.alias
+            + '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
+            + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
+            + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix) + '/';
 
         // Load it
         Indi.load(uri, ajaxCfg);
@@ -1097,27 +1340,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      */
     panelDockedInner$Nested: function(){
         var me = this;
-
-        // 'Nested' item config
         return {
             id: me.bid() + '-docked-inner$nested',
-            xtype: 'shrinklist',
-            displayField: 'title',
+            xtype: 'shrinkbar',
             hidden: !me.ti().sections.length,
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
-            },
-            store: {
-                xtype: 'store',
-                fields: ['alias', 'title'],
-                data : me.ti().sections
-            },
-            listeners: {
-                itemclick: function(sl, row) {
+            border: 1,
+            defaults: {
+                margin: 0,
+                padding: 0,
+                border: 1,
+                handler: function(btn) {
 
                     // Get selection
                     var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection();
@@ -1134,10 +1366,25 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             }
                         });
 
-                    // Else load the nested subsection contents
-                    } else if (row.get('alias')) Indi.load('/' + row.get('alias') + '/index/id/'
-                        + selection[0].data.id + '/' + 'ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
+                        // Else load the nested subsection contents
+                    } else if (btn.alias) Indi.load('/' + btn.alias + '/index/id/'
+                        + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
                 }
+            },
+            shrinkCfg: {
+                prop: 'title'
+            },
+            items: Ext.clone(me.ti().sections)
+        }
+
+        // 'Nested' item config
+        return {
+            tooltip: {
+                html: Indi.lang.I_NAVTO_NESTED,
+                hideDelay: 0,
+                showDelay: 1000,
+                dismissDelay: 2000,
+                staticOffset: [0, 1]
             }
         }
     },
@@ -1156,12 +1403,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: me.bid() + '-toolbar-master-keyword',
             xtype: 'textfield',
             isKeyword: true,
-            fieldLabel: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
-            labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
             labelClsExtra: 'i-action-index-keyword-toolbar-keyword-label',
             labelSeparator: '',
+            tooltip: Indi.lang.I_ACTION_INDEX_KEYWORD_TOOLTIP,
+            emptyText: Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL,
             value: me.ti().scope.keyword ? Indi.urldecode(me.ti().scope.keyword) : '',
-            width: 100 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_KEYWORD_LABEL),
+            width: 100,
             height: 19,
             cls: 'i-form-text',
             margin: '0 0 0 5',
@@ -1184,21 +1431,40 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     storeFieldA: function (){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, fieldA = [], fieldI$Id = me.storeField$Id(), fieldI, fieldICustom;
+        var me = this, itemA = [], itemI$Id = me.storeField$Id(), itemI, eItemX, itemX, eItem$, item$, fieldR, renderer;
 
         // Push 'id' store field to fields configs array
-        if (fieldI$Id) fieldA.push(fieldI$Id);
+        if (itemI$Id) itemA.push(itemI$Id);
 
         // Other fields
         for (var i = 0; i < me.ti().gridFields.length; i++) {
-            fieldI = me.storeField_Default(me.ti().fields.r(me.ti().gridFields[i].id));
-            fieldICustom = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
-            if (typeof me[fieldICustom] == 'function') fieldI = me[fieldICustom](fieldI);
-            if (fieldI) fieldA.push(fieldI);
+
+            // Get Indi Engine's field
+            fieldR = me.ti().fields.r(me.ti().gridFields[i].id);
+
+            // Get default field config
+            itemI = me.storeField_Default(fieldR);
+
+            // Apply specific control element config, as fields control elements/xtypes may be different
+            eItemX = 'storeFieldX' + Indi.ucfirst(fieldR.foreign('elementId').alias);
+            if (Ext.isFunction(me[eItemX]) || Ext.isObject(me[eItemX])) {
+                itemX = Ext.isFunction(me[eItemX]) ? me[eItemX](itemI, fieldR) : me[eItemX];
+                itemI = Ext.isObject(itemX) ? Ext.merge(itemI, itemX) : itemX;
+            } else if (me[eItemX] === false) itemI = me[eItemX];
+
+            // Apply custom config
+            eItem$ = 'storeField$' + Indi.ucfirst(me.ti().gridFields[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI, fieldR) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
         }
 
         // Return array
-        return fieldA;
+        return itemA;
     },
 
     /**
@@ -1224,12 +1490,50 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Default config for date-fields
+     *
+     * @param field
+     * @param fieldR
+     * @return {Object}
+     */
+    storeFieldXCalendar: function (field, fieldR){
+        return {
+            type: 'date',
+            dateFormat: fieldR.params.displayFormat
+        }
+    },
+
+    /**
+     * Default config for datetime-fields
+     *
+     * @param field
+     * @param fieldR
+     * @return {Object}
+     */
+    storeFieldXDatetime: function (field, fieldR){
+        return {
+            type: 'date',
+            dateFormat: fieldR.params.displayDateFormat + ' ' + fieldR.params.displayTimeFormat
+        }
+    },
+
+    /**
      * Set up and return store full request string (but without paging params)
      */
     storeLastRequest: function(){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, url = me.getStore().getProxy().url, extra = me.getStore().getProxy().extraParams, get = [];
+        var me = this, url, extra, get = [];
+
+        // If first store data was got not by separate request - make filterChange() call,
+        // that will set up `url` and `extraParams` props within proxy
+        if (!me.getStore().lastOptions) me.filterChange({noReload: true});
+
+        // Get url
+        url = me.getStore().getProxy().url;
+
+        // Extra
+        extra = me.getStore().getProxy().extraParams;
 
         // Append param-value pairs
         ['search', 'keyword', 'summary'].forEach(function(r){
@@ -1281,6 +1585,11 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             if (f = Ext.getCmp(me.panel.id).query('[isFilter][name='+name+']')[0]) {
                 f.store = store; f[f.store.ids.length ? 'enable' : 'disable']();
             }
+        });
+
+        // Set index-of-total, for each data-row
+        me.getStore().each(function(r, i) {
+            r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
         });
 
         // Adjust each data-row within the store
@@ -1378,7 +1687,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
 
             // Finally, if filter has a non-null default value
-            if (me.ti().filters[i].defaultValue) {
+            if (me.ti().filters[i].defaultValue || (control == 'check' && me.ti().filters[i].defaultValue === 0)) {
 
                 // Setup a shortcut for filter's default value
                 d = me.ti().filters[i].defaultValue;
@@ -1518,7 +1827,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * South-panel config
      */
     south: {
-        xtype: 'rowsetactionsouth'
+        xtype: 'rowsetactionsouth',
+        maxTabs: 0
     },
 
     /**
@@ -1527,7 +1837,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {*}
      */
     rowsetPanel: function() {
-        return this.rowset;
+        var me = this;
+
+        // Return
+        return Ext.merge({
+            id: me.id + '-rowset',
+            dockedItems: me.rowsetDockedA(),
+            store: me.getStore()
+        }, me.rowset);
     },
 
     /**
@@ -1537,7 +1854,12 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     southItemIDefault: function(src) {
-        var me = this, section = me.ti().section, scope = me.ti().scope;
+        var me = this, section = me.ti().section, scope = me.ti().scope,
+            id = 'i-section-' + section.alias + '-action-' + (src.action || 'form') + '-row-' + src.id + '-wrapper',
+            exst = Ext.getCmp(id), exstWin;
+
+        // Close the window, containing existing wrapper having same id
+        if (exst && (exstWin = exst.getWindow())) exstWin.close();
 
         // Config
         return {
@@ -1550,8 +1872,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             layout: 'fit',
             items: [{
                 xtype: 'actiontabrow',
-                id: 'i-section-' + section.alias + '-action-form-row-' + src.id + '-wrapper',
-                load: '/' + section.alias + '/form'
+                id: id,
+                load: '/' + section.alias + '/' + (src.action || 'form')
                     + (parseInt(src.id) ? '/id/' + src.id : '')
                     + '/ph/' + scope.hash + '/'
                     + (parseInt(src.id) ? 'aix/' + src.aix + '/' : '')
@@ -1595,5 +1917,206 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
         // Return
         return itemA;
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this, id = me.panel.id, exst = Ext.getCmp(id), southItem;
+
+        // If such a wrapper-panel is already exists
+        if (exst && exst.$ctx) {
+
+            // Check if it exists within a tab
+            southItem = exst.up('[isSouthItem]');
+
+            // Destroy that existing panel
+            exst.destroy();
+
+            // If destroyed wrapper-panel existed within a tab
+            if (southItem) {
+
+                // Remove garbage
+                if (Ext.get(id)) Ext.get(id).remove();
+
+                // Add wrapper-panel placeholder, so it will appear instead of destroyed wrapper-panel
+                southItem.up('[isSouth]').addTabPlaceholder(southItem.id, id, 'rowset');
+            }
+        }
+
+        // Call parent
+        me.callParent();
+
+        // Attach key map
+        me.rowsetKeyMap();
+    },
+
+    /**
+     *
+     */
+    rowsetKeyMap: Ext.emptyFn,
+
+    /**
+     * Build and return an array, containing plugin definitions for rowset panel
+     *
+     * @return {Array}
+     */
+    rowsetPluginA: function() {
+        var me = this, itemA = [], itemI, eItem$, item$;
+
+        // Walk through desired plugins
+        me.rowset.$plugins.forEach(function(i){
+
+            // If plugin cfg has `alias` prop
+            if (i.alias) {
+
+                // Empty obj for now
+                itemI = i;
+
+                // Get member name, responsible for extended plugin cfg
+                eItem$ = 'rowsetPlugin$' + Indi.ucfirst(i.alias);
+
+                // Deal with extended cfg, whatever it is funcion, object or `false`
+                if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                    item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                    itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+                } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Else if plugin cfg has no 'alias' prop, but has 'ptype' prop - append it as is
+            } else if (i.ptype) itemI = i;
+
+            // Add
+            if (itemI) itemA.push(itemI);
+        });
+
+        // Return
+        return itemA;
+    },
+
+    /**
+     * Save dirty row
+     *
+     * @param record
+     * @param aix
+     */
+    recordRemoteSave: function(record, aix, $ti, callback) {
+        var me = this, ti = $ti || me.ti(), params, bool = [];
+
+        // If no changed was made - return
+        if (!record.dirty) return;
+
+        // Get changes
+        params = Ext.clone(record.getChanges());
+
+        // Convert values before submit
+        Object.keys(params).forEach(function(i){
+
+            // Boolean values to int values
+            if (Ext.isBoolean(params[i])) params[i] = params[i] ? 1 : 0;
+
+            // Process date values
+            if (Ext.isDate(params[i])) {
+                if (ti.fields.r(i, 'alias').foreign('elementId').alias == 'datetime') {
+                    params[i] = Ext.Date.format(params[i], 'Y-m-d H:i:s');
+                } else {
+                    params[i] = Ext.Date.format(params[i], 'Y-m-d');
+                }
+            }
+
+            // Process foreign key values
+            if (ti.fields.r(i, 'alias').storeRelationAbility != 'none') {
+                params[i] = record.key(i);
+            }
+        });
+
+        // Show loader
+        Indi.app.loader();
+
+        // Try to save via Ajax-request
+        Ext.Ajax.request({
+
+            // Params
+            url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/',
+            method: 'POST',
+            params: params,
+
+            // Success handler
+            success: function(response) {
+                var json, value, field;
+
+                // Parse response text
+                json = Ext.JSON.decode(response.responseText, true);
+
+                // Visually update record
+                me.affectRecord(record, json);
+
+                // Call callback
+                if (Ext.isFunction(callback)) callback(json);
+            },
+
+            // Failure handler
+            failure: function(response) {
+
+                // Reject changes
+                record.reject();
+            }
+        });
+    },
+
+    /**
+     *
+     * @param record
+     * @param json
+     */
+    affectRecord: function(record, json) {
+
+        // If response contains info about affected fields
+        if (Ext.isObject(json) && Ext.isObject(json.affected)) {
+
+            // Walk through affected fields
+            Object.keys(json.affected).forEach(function(i){
+
+                // If affected field's name starts with '_' - skip
+                if (i.match(/^_/)) return;
+
+                // If affected field's name starts with '$'
+                if (i.match(/^\$/)) {
+
+                    // If affected field's name is '$keys' - update field's key values
+                    if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
+                        record.key(j, json.affected[i][j]);
+                    });
+
+                    // Update field's rendered values
+                } else {
+
+                    // Shortcuts
+                    value = json.affected[i]; field = record.fields.get(i);
+
+                    // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
+                    if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
+
+                    // Set field's value
+                    record.set(i, value);
+                }
+            });
+        }
+
+        // Commit row
+        record.commit();
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+
+        // Destroy filters window, if it was created
+        if (Ext.getCmp(me.panel.id).filterWin) Ext.getCmp(me.panel.id).filterWin.destroy();
+
+        // Destroy store
+        if (me.getStore()) me.getStore().destroyStore();
+
+        // Call parent
+        me.callParent();
     }
 });

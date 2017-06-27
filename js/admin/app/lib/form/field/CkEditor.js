@@ -43,10 +43,11 @@ Ext.define('Indi.lib.form.field.CkEditor', {
             {items: [ 'TextColor', 'BGColor', '-', 'Blockquote', 'CreateDiv' ]},
             {items: [ 'Maximize', 'ShowBlocks', 'Find', '-', 'RemoveFormat'  ]}
         ],
+        toolbarNowrapWidth: 1254,
         enterMode: (typeof CKEDITOR == 'undefined') ? 2 : CKEDITOR.ENTER_BR,
         uiColor: '#B8D1F7',
         defaultWidth: 600,
-        defaultHeight: 200,
+        defaultHeight: 50,
         resize_minWidth: 100,
         resize_minHeight: 50,
         language: Indi.lang.name
@@ -57,7 +58,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         var me = this;
 
         // Merge field params into editor config
-        Ext.Object.merge(me.editorCfg, config.field.params);
+        if (config.field && config.field.params) Ext.Object.merge(me.editorCfg, config.field.params);
 
         // Merge field params, specified especially for current row, into editor config
         me.pickEditorCfgFromRowProps(config);
@@ -200,5 +201,54 @@ Ext.define('Indi.lib.form.field.CkEditor', {
      */
     print: function() {
         CKEDITOR.tools.callFunction(9, this.getEditor());
+    },
+
+    /**
+     * Get this field's input actual height usage
+     *
+     * @return {Number}
+     */
+    getHeightUsage: function() {
+        var me = this, ihu = me.getInputHeightUsage();
+
+        // Return
+        return me.labelAlign == 'top' ? ihu + me.labelCell.getHeight() : ihu;
+    },
+
+    /**
+     *
+     * @return {Number}
+     */
+    getInputHeightUsage: function() {
+        var me = this, oneLineSelfHeight = 28, btwLineSpaceHeight = 7, wu = me.getInputWidthUsage(),
+            topBarLineQty = Math.ceil(me.editorCfg.toolbarNowrapWidth / wu), btmBarHeight = 27,
+            topBarHeight = oneLineSelfHeight * topBarLineQty + btwLineSpaceHeight * (topBarLineQty + 1),
+            bothBarsHeight = topBarHeight + btmBarHeight + 3;
+
+        // Return
+        return bothBarsHeight + parseInt(me.editorCfg.height);
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this;
+
+        // If me.editorCfg.width is set - this means that exact width WAS set at one of the following stages:
+        // * row-level (picked from row props)
+        // * field-level (picked from field props)
+        // * element-level (picked from field's element props)
+        if (me.editorCfg.width) return parseInt(me.editorCfg.width) + 2 /* borders */;
+
+        // Else if `labelAlign` is 'top' - we assume that editor will use all available width,
+        // that will be equal to the width of labelCell, as it will be above editor
+        else if (me.labelAlign == 'top') return me.labelCell.getWidth();
+
+        // Else we assume that editor is at the right side from labelCell,
+        // so (as both cells width are equal) we return labelCell's width
+        else return me.labelCell.getWidth();
     }
 });

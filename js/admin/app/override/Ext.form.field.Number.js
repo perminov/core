@@ -36,8 +36,46 @@ Ext.override(Ext.form.field.Number, {
 
         return value;
     },
-    
+
+    /**
+     * Get the difference between current and original values
+     *
+     * @return {Number}
+     */
     delta: function() {
         return this.val() - (this.decimalPrecision ? parseFloat(this.originalValue) : parseInt(this.originalValue));
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        var me = this; return me.triggerWrap.getWidth();
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Update measure depend on current value
+        if (me.tbq) me.on('change', function(c, v){
+            c.bodyEl.down('.i-field-number-after').update(Indi.tbq(v, me.tbq, false));
+        })
+    },
+
+    // @inheritdoc
+    afterRender: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Update measure depend on current value
+        if (me.tbq) me.bodyEl.down('.i-field-number-after').update(Indi.tbq(me.value, me.tbq, false));
     }
 });

@@ -32,6 +32,23 @@ Ext.define('Indi.lib.form.field.Combo', {
     maxSelected: 0,
 
     /**
+     * Temporary config, for switching enumset options javascript execution on/off
+     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
+     */
+    nojs: false,
+
+    /**
+     * Flag indicating whether or not zero-results of keyword-search
+     * will be interpreted as a reason for validation failure
+     */
+    allowKeywordNoResults: false,
+
+    /**
+     * The text that will be displayed if nothing found using keyword-lookup
+     */
+    keywordNoResultsText: Indi.lang.I_COMBO_KEYWORD_NO_RESULTS,
+
+    /**
      * The text that will be displayed if the number of currently selected options is already reached the maximum
      * allowed count. This config takes effect only if `multiSelect` is `true`
      */
@@ -74,11 +91,44 @@ Ext.define('Indi.lib.form.field.Combo', {
     nbspPx: 4,
 
     /**
+     * This prop is for ability to set up an url, that will be involved in Indi.load(..) call
+     * once of the selected items was clicked
+     */
+    jump: false,
+
+    /**
+     * This prop is for ability to create NEW foreign key entries. Note that new entry creation itself should
+     * be explicitly implemented within save() method, using *_Row->wand($prop, $ctor = array()), this option
+     * is only responsible for instantiation and enabling/disabling wand-button at the right side of the combo's
+     * labelCell element. Possible values are:
+     *
+     * false  - no wand-button will be instantiated
+     * true   - wand button will be instantiated with default tooltip
+     * string - wand button will be instantiated with a custom tooltip
+     */
+    wand: false,
+
+    /**
      * Regular expression for color detecting
      *
      * @type {RegExp}
      */
     colorReg: new RegExp('^[0-9]{3}(#[0-9a-fA-F]{6})$', 'i'),
+
+    /**
+     * System property. Is used in cases when current combo has a satellite. For example, we changed value of
+     * satellite combo, so options of current combo are fetched with refresh-children mode. After children were
+     * refreshed, we should adjust current combo width for it to take in attention the width of longest child.
+     * But if we change satellite combo value one more time, and current combo data will be refreshed again,
+     * the width of longest child may be less than we faced earlier, and when new longest child width will be
+     * taken in attention while adjusting current combo width - it (current combo width) will decrease, and
+     * i don't like that. So this property - optionContentsMaxWidth - will be used to solve that problem: each time
+     * we refresh children - combo will calculate the longest child width, and if that width is greater than value
+     * of optionContentsMaxWidth property - it will be used while calculating new width for combo width, and
+     * value of optionContentsMaxWidth property will be updated to match maximum faced child width. Otherwise,
+     * current value of optionContentsMaxWidth property will be used without any update.
+     */
+    optionContentsMaxWidth: 0,
 
     // @inheritdoc
     renderSelectors: {
@@ -175,6 +225,17 @@ Ext.define('Indi.lib.form.field.Combo', {
         '</div>'
     ],
 
+    // @inheritdocs
+    initComponent: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Add 'remotefetch' event
+        me.addEvents('refreshchildren', 'keywordnothingfound', 'keyworderased', 'itemselect', 'selecteditemclick', 'keywordfound');
+    },
+
     /**
      * Init disabled options
      */
@@ -182,7 +243,8 @@ Ext.define('Indi.lib.form.field.Combo', {
         var me = this, i;
 
         // If `disabledOptions` prop is not an array - setup it as empty array
-        if (!Ext.isArray(me.disabledOptions)) me.disabledOptions = [];
+        if (!Ext.isArray(me.disabledOptions))
+            me.disabledOptions = Ext.isString(me.disabledOptions) ? me.disabledOptions.split(',') : [];
 
         // Else convert each value within `disabledOptions` array to a string, for a better compatibility
         else for (i = 0; i < me.disabledOptions.length; i++) me.disabledOptions[i] = String(me.disabledOptions[i]);
@@ -194,7 +256,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     getSubmitValue: function() {
-        return this.getValue();
+        return this.submitMode == 'keyword' ? this.keywordEl.val() : this.getValue();
     },
 
     /**
@@ -315,6 +377,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Get the whole option data object by option value
                 data = me.valueToRaw(value, true);
 
+                //
+                if (me.submitMode == 'keyword') data.title = me.keywordEl.val();
+
                 // Detect option color (style or box) and apply it
                 me.color(data, value).apply();
 
@@ -402,7 +467,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Execute javascript-code, assigned to appended item
         if (me.store.enumset) {
             var index = me.store['ids'].indexOf(key);
-            if (index != -1 && me.store['data'][index].system.js) {
+            if (index != -1 && !me.nojs && me.store['data'][index].system.js) {
                 Indi.eval(me.store['data'][index].system.js, me);
             }
         }
@@ -551,6 +616,39 @@ Ext.define('Indi.lib.form.field.Combo', {
     afterRender: function() {
         var me = this;
 
+        // Else if combo is multiSelect: false, but `jump` prop is not an empty string
+        if (!me.multiSelect && me.jump && Ext.isString(me.jump)) {
+
+            // Add button to leftbar
+            me.lbarItems.push({
+                iconCls: 'i-btn-icon-form-goto',
+                name: 'jump',
+                handler: function() {
+                    Indi.load(me.jump.replace('{id}', me.val()) + 'jump/1/');
+                }
+            });
+        }
+
+        // If `wand` prop is `true` - create wand-button
+        if (me.wand && !me.store.enumset) me.lbarItems.push({
+            iconCls: 'i-btn-icon-wand-plus',
+            enableToggle: true,
+            enablerEvents: 'keywordnothingfound,keywordfound,keyworderased',
+            tooltip: {
+                html: Ext.isString(me.wand) ? me.wand : Indi.lang.I_COMBO_WAND_TOOLTIP,
+                constrainParent: false
+            },
+            enabler: function(c, eventName) {
+                var e = (c.target.hasZeroValue() || c.target.submitMode == 'keyword')
+                    && c.target.keywordEl.val().length && eventName != 'keywordfound';
+                if (!e && c.pressed) c.toggle();
+                return e;
+            },
+            toggleHandler: function(c, state) {
+                c.target.setSubmitMode(state ? 'keyword' : 'hidden');
+            }
+        });
+
         // Call parent
         me.callParent(arguments);
 
@@ -582,6 +680,16 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.comboEl.on('click', me.onKeywordClick, me);
         me.comboEl.on('click', me.onTriggerClick, me);
 
+        // If combo is multiSelect: true
+        if (me.multiSelect) {
+
+            // Bind a handler for 'click' event for .i-combo-selected-item elements
+            me.el.select('.i-combo-selected-item').on('click', me.onSelectedItemClick, me);
+
+            // Add i-combo-jump css class
+            if (me.jump && Ext.isString(me.jump)) me.comboEl.addCls('i-combo-jump');
+        }
+
         // Adjust width of .i-combo-table element for it to fit all available space
         me.comboTableFit();
 
@@ -593,21 +701,38 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (me.multiSelect) {
                 me.el.select('.i-combo-selected-item').each(function(el){
                     var index = me.store['ids'].indexOf(el.attr('selected-id'));
-                    if (index != -1 && me.store['data'][index].system.js) {
+                    if (index != -1 && !me.nojs && me.store['data'][index].system.js) {
                         Indi.eval(me.store['data'][index].system.js, me);
                     }
                 });
             } else {
                 var index = me.store['ids'].indexOf(me.hiddenEl.val());
-                if (index != -1 && this.store['data'][index].system.js) {
+                if (index != -1 && !me.nojs  && this.store['data'][index].system.js) {
                     Indi.eval(this.store['data'][index].system.js, me);
                 }
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) {
+        if (me.store.js && !me.nojs) {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
+        }
+    },
+
+    /**
+     * Handler for 'click' events on .i-combo-selected-item elements
+     *
+     * @param e
+     * @param dom
+     */
+    onSelectedItemClick: function(e, dom) {
+        var me = this, id = Ext.get(dom).attr('selected-id');
+
+        // Fire 'selecteditemclick' event
+        if (me.fireEvent('selecteditemclick', me, id, me.r(id)) !== false) {
+
+            // Do jump
+            if (me.jump && Ext.isString(me.jump)) Indi.load(me.jump.replace('{id}', id) + 'jump/1/');
         }
     },
 
@@ -632,8 +757,11 @@ Ext.define('Indi.lib.form.field.Combo', {
     onTriggerClick: function() {
         var me = this;
 
+        // If click was on .i-combo-selected-item element - do nothing
+        if (Ext.EventObject.getTarget('.i-combo-selected-item')) return;
+
         // If current combo is a filter-combo, and ctrl key is pressed - clear combo
-        if (arguments.length && !me.readOnly && arguments[0].ctrlKey && (!me.store.enumset || me.xtype == 'combo.filter')) {
+        if (arguments.length && !me.readOnly && arguments[0].ctrlKey && !me.disabled && (!me.store.enumset || me.xtype == 'combo.filter')) {
             me.clearCombo();
             return;
         }
@@ -643,7 +771,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             && !Ext.get(Ext.EventObject.getTarget()).hasCls('i-combo-selected-item-delete')) {
 
             // Expand/collapse combo options boundlist
-            if (!me.lastCollapsed || (new Date().getTime() - me.lastCollapsed > 250)) {
+            if (!me.lastCollapsed || (new Date().getTime() - me.lastCollapsed > 250) || me.inEditor) {
                 if (me.isExpanded) {
                     me.collapse();
                 } else {
@@ -895,7 +1023,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 item += '>';
 
                 // Detect and apply color to '<li>', and append '<li>' to 'items' array
-                color = me.color(groups[j], j);
+                color = me.color(groups[j], groups[j].id);
                 item += color.box + color.title + '</li>';
                 items.push(item);
             }
@@ -904,7 +1032,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             for (var i = 0; i < json['ids'].length; i++) {
 
                 // If data item is owner by current group
-                if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == j)) {
+                if (json['ids'][i] != undefined && (j == 'none' || json['data'][i].system.group == groups[j].id)) {
 
                     // Classes for option
                     var cls = ['x-boundlist-item'], indent = groupIndent + '';
@@ -949,6 +1077,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                         }
                     }
 
+                    // Color detection
+                    color = json['data'][i].option ? null : me.color(json['data'][i], json['ids'][i]);
+
                     // Append css classes list as 'class' attribute for an option
                     if (cls.length) item += ' class="' + cls.join(' ') + '"';
 
@@ -957,9 +1088,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     // <span style="color: red">Some title</span>. At such cases, php code which is preparing
                     // combo data, strips that html from option, but detect defined color and
                     // store it in ...['data'][i].system['color'] property
-                    if (json['data'][i].system && json['data'][i].system['color']
-                        && typeof json['data'][i].system['color'] == 'string')
-                        css.push('color: ' + json['data'][i].system['color']);
+                    if (color && color.src == 'color' && color.color) css.push('color: ' + color.color);
 
                     // Prepend option title with indent if needed
                     if (json['data'][i].system && json['data'][i].system['indent']
@@ -983,7 +1112,6 @@ Ext.define('Indi.lib.form.field.Combo', {
                     if (json['data'][i].option) {
                         item += json['data'][i].option;
                     } else {
-                        color = me.color(json['data'][i], json['ids'][i]);
                         item += color.box;
                         item += color.title;
                     }
@@ -1058,6 +1186,18 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * Special function for implementing (if need) a custom logic of how options should be coloured
+     *
+     * @param data
+     * @param value
+     * @param info
+     * @return {*}
+     */
+    getOptionColor: function(data, value, info) {
+        return info;
+    },
+
+    /**
      * Try to find a color declaration in option title or option value or option.system.boxColor,
      * and if found, get that color and build .i-combo-color-box element
      *
@@ -1077,24 +1217,22 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Check if `title` or `value` contain a color definition
         if (color = value.toString().match(this.colorReg)) {
-            info.src = 'value';
+            info.src = 'value'; info.color = color[1];
         } else if (color = info.title.match(this.colorReg)) {
-            info.src = 'title';
+            info.src = 'title'; info.color = color[1];
         } else if (data.system) {
             if (data.system['boxColor'] && typeof data.system['boxColor'] == 'string') {
-                info.src = 'boxColor';
-                color = [true, data.system['boxColor']];
+                info.src = 'boxColor'; info.color = data.system['boxColor'];
             } else if (data.system['color'] && typeof data.system['color'] == 'string') {
-                info.src = 'color';
-                color = [true, data.system['color']];
+                info.src = 'color'; info.color = data.system['color'];
             }
         }
 
-        // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
-        if (color && color.length && color[1]) {
+        // Apply custom logic
+        info = me.getOptionColor(data, value, info);
 
-            // Setup color
-            info.color = color[1];
+        // If contains, we prepare a color box element, to be later inserted in dom - before keyword field
+        if (info.color) {
 
             // Build color box
             if (['boxColor', 'value'].indexOf(info.src) != -1)
@@ -1131,7 +1269,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return []
      */
     appendNotSameGroupParents: function(items, json) {
-        var me = this, name = me.name;
+        var me = this, name = me.name, i;
 
         // Store info about parents that were aready added, to prevent adding them more that once
         var addedParents = [];
@@ -1140,7 +1278,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         var html = '<ul>' + items.join('') + '</ul>';
 
         // Foreach element in 'items' array
-        for (var i = 0; i < items.length; i++) {
+        for (i = 0; i < items.length; i++) {
 
             // If item is a option, not optgroup
             if (Indi.fly(items[i]).attr(name)) {
@@ -1193,7 +1331,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Variable for stepping up once non-disabled option is catched
         var groupIndex = 0, reg, level, previousLevel;
-        for (var i = 0; i < items.length; i++) {
+        for (i = 0; i < items.length; i++) {
 
             // We do this action only if it is a non-disabled option
             if (!Indi.fly(items[i]).hasCls('x-boundlist-item-disabled')) {
@@ -1224,7 +1362,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Get needed items by needed indexes
         var neededItems = [];
-        for (var i = 0; i < items.length; i++) {
+        for (i = 0; i < items.length; i++) {
             if (neededIndexes.indexOf(i) != -1) {
                 neededItems.push(items[i]);
             }
@@ -1259,6 +1397,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         // results of comboEl.width() call. For some reason, outside the setTimeout body it gives result, that
         // differs from the same one, got inside. I guess it is caused by some browser rendering particularity
         Ext.defer(function(){
+            if (!me.comboEl) return;
             staticDecrease += parseInt(me.comboEl.css('padding-right')) + parseInt(me.comboEl.css('padding-left'));
             staticDecrease += parseInt(me.multipleEl.css('margin-right')) + parseInt(me.multipleEl.css('margin-left'));
             staticDecrease += parseInt(me.multipleEl.css('padding-right')) + parseInt(me.multipleEl.css('padding-left'));
@@ -1278,8 +1417,24 @@ Ext.define('Indi.lib.form.field.Combo', {
                     me.tableEl.setWidth(me.multipleEl.getWidth(true) - 1 + (me.hideTrigger ? 1 : 0));
                 }
             } else {
-                me.tableEl.setWidth(fraction);
-                me.keywordEl.scrollIntoView(me.comboInner, true, true);
+                var usage = 0; me.multipleEl.select('.i-combo-selected-item').each(function(el){
+                    usage += el.getWidth();
+                });
+                if (fraction > me.multipleEl.getWidth(true) - staticDecrease - usage + (usage ? 1 : 0)) {
+                    me.tableEl.up('div[class=""]').css({
+                        position: 'relative',
+                        right: (fraction - (me.multipleEl.getWidth(true) - staticDecrease - usage + (usage ? 1 : 0))) + 'px'
+                    });
+                    me.tableEl.setWidth(fraction);
+                } else {
+                    me.tableEl.up('div[class=""]').css({
+                        position: 'relative',
+                        right: '0px'
+                    });
+                    me.tableEl.setWidth(me.multipleEl.getWidth(true) - staticDecrease - usage + (usage ? 1 : 0));
+                }
+                //me.tableEl.setWidth(fraction);
+                //me.keywordEl.scrollIntoView(me.comboInner, true, true);
             }
         }, 10);
     },
@@ -1387,6 +1542,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         } else if (mode == 'selected-but-found-with-lookup'){
             me.rebuildComboData();
         }
+
+        // Fire 'keyworderased' event
+        me.fireEvent('keyworderased', me);
     },
 
     /**
@@ -1396,6 +1554,9 @@ Ext.define('Indi.lib.form.field.Combo', {
      */
     keyUpHandler: function (event) {
         var me = this, eo = Ext.EventObject, k = eo.getKey();
+
+        // Ignore keyup event for ctrl-keys, for cases of ctrl+v, etc
+        if (event.keyCode == 17) return;
 
         // If combo is read-only - return
         if (me.readOnly) return;
@@ -1865,6 +2026,12 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Fire 'change' event
         me.getNative().setValue.call(me, me.hiddenEl.val());
+
+        // Fire 'itemselect' event
+        me.fireEvent('itemselect', me);
+
+        // Get focus back to keywordEl
+        me.keywordEl.focus();
     },
 
 
@@ -1874,6 +2041,9 @@ Ext.define('Indi.lib.form.field.Combo', {
      */
     r: function(id) {
         var me = this, index;
+
+        // Setup default value of `id` argument
+        if (!id) id = me.val().split(',')[0];
 
         // Get the index of selected option id in me.store.ids
         index = me.store.ids.indexOf(me.store.enumset && !id.toString().match(/^[1-9][0-9]{0,9}$/) ? id : parseInt(id));
@@ -1900,7 +2070,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Get the index of selected option id in me.store.ids
         if (me.store.enumset) {
-            if (!li.attr(name).toString().match(/^[1-9][0-9]{0,9}$/) && !me.boolean) {
+            if (!li.attr(name).toString().match(/^(-?[1-9][0-9]{0,9}|0)$/) && !me.boolean) {
                 index = me.store.ids.indexOf(li.attr(name));
             } else {
                 index = me.store.ids.indexOf(parseInt(li.attr(name)));
@@ -1948,6 +2118,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Apply color
                 a.css(css);
 
+                // Bind a handler for 'click' event
+                if (me.multiSelect) a.on('click', me.onSelectedItemClick, me);
+
                 // Bind a click event handler for a .i-combo-selected-item-delete
                 // child node within newly appended item
                 me.el.select('.i-combo-selected-item-delete').last().on('click', me.onItemDelete, me);
@@ -1971,7 +2144,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Execute javascript-code, assigned to selected item
                 if (me.store.enumset) {
                     var index = me.store['ids'].indexOf(li.attr(name));
-                    if (index != -1 && me.store['data'][index].system.js) {
+                    if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
                         Indi.eval(me.store['data'][index].system.js, me);
                     }
                 }
@@ -2056,13 +2229,13 @@ Ext.define('Indi.lib.form.field.Combo', {
         // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
         if (me.store.enumset && !me.multiSelect) {
             var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && me.store['data'][index].system.js) {
+            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
                 Indi.eval(me.store['data'][index].system.js, me);
             }
         }
 
         // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js) {
+        if (me.store.js && !me.nojs) {
             if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
         }
 
@@ -2074,7 +2247,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
         if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
-            if (d.xtype == 'combo.form') {
+            if (d.xtype.match(/^combo\.(form|auto)$/)) {
                 d.setDisabled(false, true);
                 if (!d.disabled) {
                     d.remoteFetch({
@@ -2082,6 +2255,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                         mode: 'refresh-children'
                     });
                 }
+            } else if (d.xtype == 'multicheck') {
+                d.remoteFetch({
+                    satellite: me.hiddenEl.val(),
+                    mode: 'refresh-children'
+                });
             }
         });
     },
@@ -2098,7 +2276,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Check for `maxSelected` conformance
         if (me.multiSelect && v && me.maxSelected && me.maxSelected < v.split(',').length)
-            errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' - ' + me.maxSelected);
+            errorA.push(Indi.lang.I_COMBO_MISMATCH_MAXSELECTED + ' ' + me.maxSelected);
 
         // Check for value should not be/contain disabled value
         if (me.disabledOptions)
@@ -2125,25 +2303,58 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param name
      */
-    prop: function(name) {
+    prop: function(name, parse) {
         var me = this, r = me.r(me.val()), propS;
+
+        // If `parse` arg is not given, set up it as `true`, by default
+        if (arguments.length < 2) parse = true;
 
         // If data object, representing current value was not found, return null
         if (!Ext.isObject(r)) return null;
+
+        // If data object, representing current value's 'attrs' prop - was not found, return null
+        if (!Ext.isObject(r.attrs)) return null;
 
         // Setup prop shortcut
         propS = r.attrs[name].toString();
 
         // If propS is a string, representing an integer number - convert it into interger-type and return
         //if (propS.match(/^-?[0-9]{0,10}$/)) return parseInt(propS);
-        if (propS.match(/^-?[1-9][0-9]{0,9}|0$/)) return parseInt(propS);
+        if (parse && propS.match(/^(-?[1-9][0-9]{0,9}|0)$/)) return parseInt(propS);
 
         // If propS is a string, representing a floating-point number - convert it into float-type and return
         //if (propS.match(/^-?[0-9]{0,10}\.[0-9]{2}$/)) return parseFloat(propS);
-        if (propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
+        if (parse && propS.match(/^(-?[0-9]{1,8})(\.[0-9]{1,2})?$/)) return parseFloat(propS);
+
+        // If propS is a string, representing a floating-point number, containing
+        // up to 10 digits in integer part, optionally prepended with an '-' sign,
+        // and containing up to 3 digits in fractional part - convert it into float-type and return
+        if (parse && propS.match(/^(-?[0-9]{1,10})(\.[0-9]{1,3})?$/)) return parseFloat(propS);
 
         // Retun as is
         return propS;
+    },
+
+    /**
+     * Get title of foreign entry, fethed for `name` key
+     *
+     * @param name
+     * @return {*}
+     */
+    fgn: function(name) {
+        var me = this, r = me.r(me.val()), propS;
+
+        // If data object, representing current value was not found, return null
+        if (!Ext.isObject(r)) return null;
+
+        // If data object, representing current value's '_foreign' prop - was not found, return null
+        if (!Ext.isObject(r._foreign)) return null;
+
+        // If data object, representing foreign data, fethed for `name` key - was not found, return null
+        if (!r._foreign.hasOwnProperty(name)) return null;
+
+        // Return
+        return r._foreign[name];
     },
 
     /**
@@ -2233,10 +2444,20 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Update page-top|page-btm value
                 me.infoEl.attr('page-'+ (requestData.more == 'upper' ? 'top' : 'btm'), requestData.page);
+
+            } else if (requestData.mode == 'refresh-children'){
+
+                // Fire 'refreshchildren' event
+                me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
+
+            } else {
+
+                // Fire 'keywordfound' event
+                me.fireEvent('keywordfound', me, parseInt(responseData['found']));
             }
 
-            // Else if results set is empty (no non-disabled options), we hide options, and set red
-            // color for keyword, as there was no related results found
+        // Else if results set is empty (no non-disabled options), we hide options, and set red
+        // color for keyword, as there was no related results found
         } else {
 
             // Hide options list div
@@ -2245,19 +2466,66 @@ Ext.define('Indi.lib.form.field.Combo', {
             // If just got resuts are result for satellited combo, autofetched after satellite value was changed
             // and we have no results related to current satellite value, we disable satellited combo
             if (requestData.mode == 'refresh-children') {
+
+                // Disable
                 me.setDisabled(true);
 
-            // Else if reason of no results was not in satellite, we add special css class for that case
+                // Fire 'refreshchildren' event
+                me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
+
+            // Else if reason of no results was not in satellite but in keyword
             } else {
-                me.keywordEl.addCls('i-combo-keyword-no-results');
-                me.markInvalid('Ничего не найдено');
+
+                // Call special handler fn
+                me.onKeywordNothingFound();
             }
         }
     },
 
-    /*
-     * Bind 'hover' and 'click' event handlers for boundlist items
+    /**
+     * Handler for cases, when keyword-lookup was used, but nothing found
      */
+    onKeywordNothingFound: function() {
+        var me = this, keyword = me.keywordEl.val();
+
+        // Add special css class for
+        me.keywordEl.addCls('i-combo-keyword-no-results');
+
+        // If `multiSelect` prop is not `true`
+        if (!me.multiSelect) {
+
+            // Clear combo, but ensure keyword itself won't be cleared, as here we want validation to be run,
+            // so this will indicate that combo is invalid as there was nothing found using given keyword
+            me.clearCombo(); me.keywordEl.val(keyword); me.validate();
+
+        // Else just validate
+        } else me.validate();
+
+        // Fire 'keywordnothingfound' event
+        me.fireEvent('keywordnothingfound', me);
+    },
+
+    /**
+     * Do additional check for some results to be found using given keyword
+     *
+     * @param value
+     * @return {*}
+     */
+    validator: function(value) {
+        var me = this;
+
+        // Do check for non-emptyness of keyword-search results, if need
+        if (me.rendered && me.infoEl.attr('fetch-mode') == 'keyword' && me.allowKeywordNoResults == false
+            && me.keywordEl.hasCls('i-combo-keyword-no-results') && me.submitMode != 'keyword')
+            return me.keywordNoResultsText;
+
+        // Return
+        return true;
+    },
+
+    /*
+    * Bind 'hover' and 'click' event handlers for boundlist items
+    */
     bindItemHoverClick: function() {
         var me = this, query = '.x-boundlist-item:not(.x-boundlist-item-disabled)';
 
@@ -2393,11 +2661,17 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {*}
      */
     mergeOptgroupInfo: function (info1, info2) {
-        for (var j in info2.groups) {
-            if (info1.groups[j] == undefined) {
-                info1.groups[j] = info2.groups[j];
-            }
-        }
+        var i, j, existing = {};
+
+        // Collect keys of existing groups
+        for (i in info1.groups) existing[info1.groups[i].id] = true;
+
+        // For each new group check whether it's an existing group, and if not - append it
+        for (j in info2.groups)
+            if (existing[info2.groups[j].id] == undefined)
+                info1.groups.push(info2.groups[j]);
+
+        // Return merged optgroup info
         return info1;
     },
 
@@ -2407,18 +2681,28 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param data
      */
     remoteFetch: function(data) {
-        var me = this, url = me.ctx().uri.split('?')[0];
+        var me = this, url;
 
-        // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
-        // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
-        // name rather than as a separate param name within the axaj request url
-        if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        // If `fetchUrl` prop was set - use it, or build own othwerwise
+        if (me.fetchUrl) url = me.fetchUrl; else {
+
+            // Base url
+            url = me.ctx().uri.split('?')[0];
+
+            // Append 'index/' to the ajax request url, if action is 'index', but string 'index' is not mentioned
+            // within me.ctx().uri, to prevent 'odata/' string (that will be appended too) to be treated as action
+            // name rather than as a separate param name within the axaj request url
+            if (me.ctx().ti().action.alias == 'index' && !me.ctx().uri.match(/\/index\//)) url += 'index/';
+        }
 
         // Append odata specification
         url += 'odata/' + me.name + '/';
 
         // Show loading pic
         me.infoEl.addCls('i-combo-info-loading');
+
+        // Show loader
+        Indi.app.loader();
 
         // Fetch request
         Ext.Ajax.request({
@@ -2477,7 +2761,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     // Merge optgroup info
                     if (me.store.optgroup) me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                    // Otherwise we just replace current options with fetched options
+                // Otherwise we just replace current options with fetched options
                 } else {
                     var jsBackup = me.store.js;
                     var optionHeightBackup = me.store.optionHeight;
@@ -2700,6 +2984,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         this.tableEl.setWidth(1);
         this.callParent();
         this.comboTableFit();
+        if (this.lbar) this.lbar.alignTo(this.inputCell, 'tr-tl', [0, -1]);
     },
 
     /**
@@ -2724,6 +3009,10 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Get the index of selected option id in me.store.ids
                 index = me.store.ids.indexOf(me.store.enumset ? id : parseInt(id));
 
+                // If index of values was not found, but combo is enumset,
+                // try find the index guessing that but enumset key may be numeric
+                if (index == -1 && me.store.enumset) index = me.store.ids.indexOf(parseInt(id));
+
                 // Setup color box if needed
                 color = me.color(me.store.data[index], me.store.ids[index]);
 
@@ -2735,5 +3024,125 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Adjust width of .i-combo-table element for it to fit all available space
             me.comboTableFit();
         }
+    },
+
+    /**
+     * Calculate mininum width, required by combo
+     *
+     * @return {Number}
+     */
+    getFitWidth: function() {
+        var me = this, width = 0, maxPseudoTitle = '', maxGroupTitle = '', pseudoTitle = '', color,
+            optionContentsMaxWidth, optionGroupMaxWidth;
+
+        // Append labelWidth
+        width += me.getLabelWidthUsage();
+
+        // Append borders (left and right) widths
+        width += parseInt(me.comboInner.css('border-left-width')) + parseInt(me.comboInner.css('border-right-width'));
+
+        // Append option paddings (left and right)
+        width += 2 + 2;
+
+        // If optgroups are used
+        if (me.store.optgroup) {
+
+            // For each group
+            me.store.optgroup.groups.forEach(function(group){
+
+                // If length of group.title variable is less than length of 'maxPseudoTitle' - renew last one
+                if (group.title.length > maxGroupTitle.length) maxGroupTitle = group.title;
+            });
+        }
+
+        // Detect maximum option contents length
+        for (var i = 0; i < me.store.data.length; i++) {
+
+            // Get current option indent width
+            pseudoTitle = me.store.data[i].system.indent ? me.store.data[i].system.indent.replace('&nbsp;', ' ') : '';
+
+            // Detect color box and non-html title for current option,
+            color = me.color(me.store.data[i], me.store.ids[i]);
+
+            // And append their length to current option width, assuming that color box is equal to '---' by width
+            pseudoTitle += (color.box ? '---' : '') + color.title;
+
+            // If length of 'pseudoTitle' variable is less than length of 'maxPseudoTitle' - renew last one
+            if (pseudoTitle.length > maxPseudoTitle.length) maxPseudoTitle = pseudoTitle;
+        }
+
+        // Find actual width of longest option, using Indi.metrics.getWidth() call, or set up default if store is empty
+        optionContentsMaxWidth = me.store.data.length == 0 ? 23 : Indi.metrics.getWidth(maxPseudoTitle);
+
+        // Find actual width of longest option group
+        optionGroupMaxWidth = me.store.data.length == 0 ? 0 : Indi.metrics.getWidth(maxGroupTitle);
+
+        // Increase with by 15px if need, or use optionGroupMaxWidth as optionContentsMaxWidth
+        if (Indi.metrics.getWidth(maxGroupTitle) < optionContentsMaxWidth + 15) width += 15;
+        else optionContentsMaxWidth = optionGroupMaxWidth;
+
+        // Prevent possible width decrease
+        if (optionContentsMaxWidth > me.optionContentsMaxWidth) me.optionContentsMaxWidth = optionContentsMaxWidth;
+
+        // Append maximum option contents width
+        width += me.optionContentsMaxWidth;
+
+        // Append additonal space
+        width += 10;
+
+        // Append .i-combo-info width
+        if (!(me.keywordEl.attr('no-lookup') == 'true' || me.store.enumset)) width += 30;
+
+        // Append trigger width
+        me.triggerEl.each(function(el){
+            width += el.getWidth();
+        });
+
+        // Return required width
+        return width;
+    },
+
+    /**
+     * Get this field's input actual width usage
+     *
+     * @return {Number}
+     */
+    getInputWidthUsage: function() {
+        return this.getFitWidth() - this.getLabelWidthUsage();
+    },
+
+    // @inheritdoc
+    onDestroy: function() {
+        var me = this;
+
+        // Destroy lbar
+        if (me.lbar) {
+            me.lbar.destroy();
+            delete me.lbar;
+        }
+
+        // Call parent
+        me.callParent();
+    },
+
+    /**
+     *
+     * @param v
+     */
+    setRawValue: function(v) {
+        var me = this; if (me.submitMode != 'keyword') me.getNative().setRawValue.call(me, v);
+    },
+
+    /**
+     * If `mode` arg is 'keyword' - me.keywordEl.val() will be submitted instead of me.val()
+     *
+     * @param mode
+     */
+    setSubmitMode: function(mode) {
+        var me = this, k = me.keywordEl.val();
+        me.submitMode = mode == 'keyword' ? mode : 'hidden';
+        me.val(mode == 'keyword' ? k : me.zeroValue);
+        if (mode != 'keyword') me.setRawValue(k);
+        me.validate();
     }
 });

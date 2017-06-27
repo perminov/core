@@ -2,116 +2,24 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title><?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?></title>
-    <?
-    Indi::implode(array(
-        '/js/jquery-1.9.1.min.js',
-        '/library/extjs4/ext-all.js',
-
-        '/js/admin/app/lib/calendar/view/AbstractCalendar.js',
-        '/js/admin/app/lib/calendar/template/BoxLayout.js',
-        '/js/admin/app/lib/calendar/template/DayHeader.js',
-        '/js/admin/app/lib/calendar/view/MonthDayDetail.js',
-        '/js/admin/app/lib/calendar/util/Date.js',
-        '/js/admin/app/lib/calendar/util/WeekEventRenderer.js',
-        '/js/admin/app/lib/calendar/template/Month.js',
-        '/js/admin/app/lib/calendar/view/Month.js',
-        '/js/admin/app/lib/calendar/view/DayHeader.js',
-        '/js/admin/app/lib/calendar/template/DayBody.js',
-        '/js/admin/app/lib/calendar/data/EventMappings.js',
-        '/js/admin/app/lib/calendar/dd/StatusProxy.js',
-        '/js/admin/app/lib/calendar/dd/DragZone.js',
-        '/js/admin/app/lib/calendar/dd/DayDragZone.js',
-        '/js/admin/app/lib/calendar/dd/DropZone.js',
-        '/js/admin/app/lib/calendar/dd/DayDropZone.js',
-        '/js/admin/app/lib/calendar/view/DayBody.js',
-        '/js/admin/app/lib/calendar/view/Day.js',
-        '/js/admin/app/lib/calendar/view/Week.js',
-        '/js/admin/app/lib/calendar/CalendarPanel.js',
-
-        '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
-        '/library/extjs4/examples/ux/BoxReorderer.js',
-        '/library/extjs4/examples/ux/TabReorderer.js',
-
-        '/js/admin/app/override/Ext.data.Connection.js',
-        '/js/admin/app/override/Ext.dom.Element.js',
-        '/js/admin/app/override/Ext.dom.CompositeElementLite.js',
-        '/js/admin/app/override/Ext.button.Button.js',
-        '/js/admin/app/override/Ext.tip.ToolTip.js',
-        '/js/admin/app/override/Ext.Component.js',
-        '/js/admin/app/override/Ext.form.action.Submit.js',
-        '/js/admin/app/override/Ext.form.field.Base.js',
-        '/js/admin/app/override/Ext.form.field.Number.js',
-        '/js/admin/app/override/Ext.form.field.Date.js',
-        '/js/admin/app/override/Ext.picker.Date.js',
-        '/js/admin/app/override/Ext.form.field.Checkbox.js',
-        '/js/admin/app/override/Ext.grid.feature.Summary.js',
-        '/js/admin/app/override/Ext.grid.View.js',
-        '/js/admin/app/override/Ext.data.Model.js',
-        '/js/admin/app/override/Ext.tab.Bar.js',
-
-        '/js/admin/indi.js',
-        '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
-
-        '/js/admin/app/view/LoginBox.js',
-        '/js/admin/app/view/Menu.js',
-        '/js/admin/app/view/Viewport.js',
-
-        '/js/admin/app/lib/view/action/south/South.js',
-        '/js/admin/app/lib/view/action/south/Row.js',
-        '/js/admin/app/lib/view/action/south/Rowset.js',
-        '/js/admin/app/lib/view/action/Panel.js',
-        '/js/admin/app/lib/view/action/Rowset.js',
-        '/js/admin/app/lib/view/action/Row.js',
-        '/js/admin/app/lib/view/action/Tab.js',
-        '/js/admin/app/lib/view/action/TabRowset.js',
-        '/js/admin/app/lib/view/action/TabRow.js',
-
-        '/js/admin/app/lib/trail/Trail.js',
-        '/js/admin/app/lib/trail/Item.js',
-        '/js/admin/app/lib/dbtable/Row.js',
-        '/js/admin/app/lib/view/ShrinkList.js',
-        '/js/admin/app/lib/form/field/Combo.js',
-        '/js/admin/app/lib/toolbar/Info.js',
-        '/js/admin/app/lib/form/field/SiblingCombo.js',
-        '/js/admin/app/lib/form/field/FilterCombo.js',
-        '/js/admin/app/lib/form/field/CkEditor.js',
-        '/js/admin/app/lib/form/field/FilePanel.js',
-        '/js/admin/app/lib/form/field/Radios.js',
-        '/js/admin/app/lib/form/field/MultiCheck.js',
-
-        '/js/admin/app/lib/form/field/Time.js',
-        '/js/admin/app/lib/picker/DateTime.js',
-        '/js/admin/app/lib/form/field/DateTime.js',
-
-        '/js/admin/app/lib/controller/Controller.js',
-        '/js/admin/app/lib/controller/action/Action.js',
-        '/js/admin/app/lib/controller/action/Rowset.js',
-        '/js/admin/app/lib/controller/action/Grid.js',
-        '/js/admin/app/lib/controller/action/ChangeLog.js',
-        '/js/admin/app/lib/controller/action/Calendar.js',
-        '/js/admin/app/lib/controller/action/Row.js',
-        '/js/admin/app/lib/controller/action/Form.js',
-        '/js/admin/app/lib/controller/action/Print.js',
-
-        '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
-    ));
-    Indi::implode(array(
-        '/library/extjs4/resources/css/ext-all.css',
-        '/css/admin/indi.all.css',
-        '/css/admin/indi.all.default.css',
-        '/css/admin/indi.layout.css',
-        '/css/admin/indi.action.form.css',
-        '/css/admin/indi.trail.css',
-        '/css/admin/indi.combo.css',
-        '/css/admin/indi.combo.default.css',
-        '/css/admin/indi.calendar.css'
-    ));
-    ?>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title><?=Indi::ini('general')->title ?: 'Indi Engine'?></title>
+    <?$this->other('gz')?>
     <script type="text/javascript" src="/library/ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="/library/ckfinder/ckfinder.js"></script>
     <!-- Imploded and gzipped scripts and styles -->
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
+    <?if (Indi::ini('gmap')->key){?>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?=Indi::ini('gmap')->key?>"></script>
+    <?}?>
+    <?if (Indi::ini('ymap')->mode){?>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+    <?}?>
+    <?if (Indi::ini('ws')->enabled){?>
+    <script type="text/javascript" src="/js/admin/sockjs-0.3.js"></script>
+    <?}?>
+    <script type="text/javascript" src="/library/Highstock-2.1.9/js/highstock.src.js"></script>
+    <script src="/library/Highstock-2.1.9/current-price-indicator.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
 </head>
 <body id="body">
@@ -125,8 +33,16 @@ Ext.create('Indi', {
         uri: <?=json_encode(Indi::uri()->toArray())?>,
         time: <?=time()?>,
         menu: <?=json_encode($this->menu)?>,
-        user: '<?=$this->admin?>',
-        home: <?=Indi::admin()->foreign('profileId')->home ? 'true' : 'false'?>
+        ini: {
+            ws: <?=json_encode(Indi::ini('ws'))?>
+        },
+        user: {
+            title: '<?=Indi::admin()->title()?>',
+            uid: '<?=Indi::admin()->profileId . '-' . Indi::admin()->id?>',
+            role: '<?=Indi::admin()->foreign('profileId')->title?>',
+            dashboard: <?=($d=Indi::admin()->foreign('profileId')->dashboard) ? '\'' . $d . '\'': 'false'?>,
+            maxWindows: <?=Indi::admin()->foreign('profileId')->maxWindows ?: 15?>
+        }
     }
 });
 </script>

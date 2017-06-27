@@ -5,49 +5,46 @@
  */
 Ext.define('Ext.ux.GMapPanel', {
     extend: 'Ext.panel.Panel',
-    
     alias: 'widget.gmappanel',
-    
     requires: ['Ext.window.MessageBox'],
-    
+
+    // @inheritdoc
     initComponent : function(){
         Ext.applyIf(this,{
             plain: true,
             gmapType: 'map',
             border: false
         });
-        
-        this.callParent();        
+        this.markers = [];
+        this.callParent();
     },
-    
+
+    // @inheritdoc
     afterFirstLayout : function(){
-        var center = this.center;
-        this.callParent();       
-        
-        if (center) {
-            if (center.geoCodeAddr) {
-                this.lookupCode(center.geoCodeAddr, center.marker);
-            } else {
-                this.createMap(center);
-            }
-        } else {
-            Ext.Error.raise('center is required');
-        }
-              
+        var me = this;
+
+        // Call parent
+        me.callParent();
+
+        // Try set center
+        if (me.center) {
+            if (me.center.geoCodeAddr) me.lookupCode(me.center.geoCodeAddr, me.center.marker);
+            else me.createMap(me.center);
+        } else Ext.Error.raise('center is required');
     },
     
     createMap: function(center, marker) {
-        options = Ext.apply({}, this.mapOptions);
+        var options = Ext.apply({}, this.mapOptions);
         options = Ext.applyIf(options, {
             zoom: 14,
             center: center,
-            mapTypeId: google.maps.MapTypeId.HYBRID
+            mapTypeId: google.maps.MapTypeId.ROADMAP
         });
         this.gmap = new google.maps.Map(this.body.dom, options);
         if (marker) {
-            this.addMarker(Ext.applyIf(marker, {
+            this.markers.push(this.addMarker(Ext.applyIf(marker, {
                 position: center
-            }));
+            })));
         }
         
         Ext.each(this.markers, this.addMarker, this);
@@ -75,7 +72,7 @@ Ext.define('Ext.ux.GMapPanel', {
         }, Ext.Function.bind(this.onLookupComplete, this, [marker], true));
     },
     
-    onLookupComplete: function(data, response, marker){
+    onLookupComplete: function(data, response, marker) {
         if (response != 'OK') {
             Ext.MessageBox.alert('Error', 'An error occured: "' + response + '"');
             return;
@@ -89,10 +86,7 @@ Ext.define('Ext.ux.GMapPanel', {
     },
     
     redraw: function(){
-        var map = this.gmap;
-        if (map) {
-            google.maps.event.trigger(map, 'resize');
-        }
+        var me = this;
+        if (me.gmap) google.maps.event.trigger(me.gmap, 'resize');
     }
- 
 });

@@ -20,7 +20,7 @@ Ext.define('Indi.lib.controller.Controller', {
     /**
      * See docs at same Ext.Component class property
      */
-    mcopwso: ['actionsConfig'],
+    mcopwso: ['actionsConfig', 'actionsSharedConfig'],
 
     /**
      * Actions configuration. This config is for use in subclasses of current class
@@ -28,12 +28,34 @@ Ext.define('Indi.lib.controller.Controller', {
     actionsConfig: {},
 
     /**
+     * Actions shared configuration. This config will be applied to any action, rather than to certain action
+     */
+    actionsSharedConfig: {},
+
+    /**
+     * Empty function, for `scope` arg adjustments
+     *
+     * @param scope
+     */
+    preDispatch: function(scope) {
+    },
+
+    /**
      * Action dispatcher function
      *
      * @param {Object} scope Object, containing `route`, `plain`, `uri` and `cfg` properties
      */
     dispatch: function(scope) {
-        var me = this, action = scope.route.last().action.alias, actionExtendCmpName, actionCmpName;
+        var me = this, action, actionExtendCmpName, actionCmpName, exst;
+
+        // Pre-dispatch
+        me.preDispatch(scope);
+
+        // Init model
+        me.initModel(scope);
+
+        // Get action alias
+        action = scope.route.last().action.alias;
 
         // Setup `actions` property, for being a storage for action classes instances
         me.actions = me.actions || {};
@@ -53,16 +75,34 @@ Ext.define('Indi.lib.controller.Controller', {
         // Build the action component name
         actionCmpName = 'Indi.controller.' + scope.route.last().section.alias + '.action.' + scope.route.last().action.alias;
 
+        /*// Build array of current controller's parents
+        var parentControllerA = [];
+        while ((me = me.superclass) && (me.$className != 'Indi.lib.controller.Controller'))
+            parentControllerA.push(me); parentControllerA.reverse(); me = this;
+
+        // Define parent actions
+        var parentActionName, parentActionCfg = [];
+        for (var i = 0; i < parentControllerA.length; i++) {
+            parentActionName = parentControllerA[i].$className + '.action.' + scope.route.last().action.alias;
+            parentActionCfg[i] = parentControllerA[i].actionsConfig[scope.route.last().action.alias];
+            Ext.define(parentActionName, Ext.merge({extend: actionExtendCmpName}, parentActionCfg[i] || {}));
+            actionExtendCmpName = parentActionName;
+        }*/
+
         // Define the action component
-        Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsConfig[action]));
+        Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsSharedConfig, me.actionsConfig[action]));
 
         // Build the id for action object
         scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;
+
         if (scope.route.last().row) {
             scope.id += '-row-' + (scope.route.last().row.id || 0);
-        } else if (scope.route.last(1).row) {
+        } else if (scope.route.last(1) && scope.route.last(1).row) {
             scope.id += '-parentrow-' + scope.route.last(1).row.id;
         }
+
+        // If wrapper and scope already exists for current action - destroy scope before re-instantiate
+        if (Ext.getCmp(scope.id + '-wrapper') && (exst = Ext.getCmp(scope.id))) exst.destroy();
 
         // Create action component instance, related to current action
         Ext.create(actionCmpName, scope);
@@ -77,6 +117,10 @@ Ext.define('Indi.lib.controller.Controller', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    initModel: function(scope) {
+        var me = this;
     }
 }, function() {
 

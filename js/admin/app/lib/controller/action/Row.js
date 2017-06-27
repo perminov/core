@@ -34,7 +34,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             items: [{alias: 'master'}],
             inner: {
                 master: [
-                    {alias: 'back'}, {alias: 'close'}, '-',
+                    {alias: 'close'},
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
@@ -50,7 +50,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     row: {
         border: 0,
-        height: '40%'
+        height: '70%'
     },
 
     south: {
@@ -87,15 +87,6 @@ Ext.define('Indi.lib.controller.action.Row', {
      */
     panelDockedInnerBid: function() {
         return this.bid() + '-docked-inner$';
-    },
-
-    /**
-     * Build panel master toolbar items array
-     *
-     * @return {Array}
-     */
-    panelDocked$MasterItemA: function() {
-        return this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
     },
 
     /**
@@ -139,7 +130,7 @@ Ext.define('Indi.lib.controller.action.Row', {
         if (!isTab) return null;
 
         // Return 'Close' button config
-        return {
+        return [{
             id: me.panelDockedInnerBid() + 'close',
             text: '',
             iconCls: 'i-btn-icon-close',
@@ -147,7 +138,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             handler: function() {
                 Ext.getCmp(me.panel.id).up('[isSouth]').getActiveTab().close();
             }
-        }
+        }, '-']
     },
 
     /**
@@ -254,14 +245,14 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @param autosave {Boolean}
      * @return {String}
      */
-    panelDockedInner$Reload_uri: function (autosave) {
-        var me = this, uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias;
+    panelDockedInner$Reload_uri: function (autosave, action) {
+        var me = this, uri = '/' + me.ti().section.alias + '/' + (action || me.ti().action.alias);
 
         // Append 'id' param to the uri
         uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
 
         // Append 'ph' and 'aix' params
-        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix ? 'aix/'+ me.ti().scope.aix +'/' : '');
+        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix || autosave ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
         // Return
         return uri;
@@ -617,32 +608,27 @@ Ext.define('Indi.lib.controller.action.Row', {
     panelDockedInner$Nested: function() {
         var me = this, btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
 
-        // 'Nested' item config
         return {
             id: me.panelDockedInnerBid() + 'nested',
-            xtype: 'shrinklist',
-            displayField: 'title',
+            xtype: 'shrinkbar',
             hidden: !me.ti().sections.length,
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
+            defaults: {
+                margin: 0,
+                padding: 0,
+                border: 1,
+                handler: function(btn) {
+                    me.goto('/' + btn.alias + '/index/id/'+ me.ti().row.id
+                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
+                }
             },
-            store: {
-                xtype: 'store',
-                fields: ['alias', 'title'],
-                data : me.ti().sections
+            shrinkCfg: {
+                prop: 'title'
             },
+            items: Ext.clone(me.ti().sections),
             listeners: {
                 afterrender: function(cmp) {
                     var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
                     cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
-                },
-                itemclick: function(cmp, row) {
-                    me.goto('/' + row.get('alias') + '/index/id/'+ me.ti().row.id
-                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
                 }
             }
         }
@@ -763,7 +749,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Object}
      */
     southItemIDefault: function(src) {
-        var me = this, scope = me.ti().scope;
+        var me = this, scope = me.ti().scope, id = 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper';
 
         // Config
         return {
@@ -773,10 +759,15 @@ Ext.define('Indi.lib.controller.action.Row', {
             title: src.title,
             name: src.alias,
             border: 0,
+            bodyStyle: {
+                display: 'table-cell',
+                'vertical-align': 'middle',
+                'background-color': 'rgb(220, 220, 220)'
+            },
             layout: 'fit',
             items: [{
                 xtype: 'actiontabrowset',
-                id: 'i-section-' + src.alias + '-action-index-parentrow-' + me.ti().row.id + '-wrapper',
+                id: id,
                 load: '/' + src.alias + '/index/id/' + me.ti().row.id + '/ph/' + scope.hash + '/aix/' + scope.aix + '/',
                 name: src.alias
             }]
@@ -831,12 +822,25 @@ Ext.define('Indi.lib.controller.action.Row', {
         if (rowItem) itemA.push(rowItem);
 
         // Append tab (south region) panel only if it's consistent
-        if (me.panel.xtype != 'actiontabrow' && southItem && (southItem.items = me.southItemA()).length && me.ti().row.id) {
+        if (me.ti().action.south == 'yes'
+            && me.panel.xtype != 'actiontabrow'
+            && southItem
+            && (southItem.items = me.southItemA()).length
+            && me.ti().row.id) {
+
             if (me.ti().scope.actionrow && me.ti().scope.actionrow.south) {
-                southItem.height = me.ti().scope.actionrow.south.height;
+                //if (me.ti().scope.actionrow.south.height == 25) southItem.height = 25;
+                if (!Ext.isFunction(me.south.height)) southItem.height = me.ti().scope.actionrow.south.height;
                 southItem.activeTab = me.ti().sections.column('alias').indexOf(me.ti().scope.actionrow.south.activeTab);
             }
 
+            // If south panel's  height should be calculated on-the-fly - do it
+            if (Ext.isFunction(me.south.height)) {
+                southItem.heightFn = me.south.height;
+                southItem.height = me.south.height(me);
+            }
+
+            // Push south panel into items array
             itemA.push(southItem);
         }
 
@@ -846,7 +850,7 @@ Ext.define('Indi.lib.controller.action.Row', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this;
+        var me = this, exst = Ext.getCmp(me.panel.id);
 
         // Setup row panel
         me.row = Ext.merge({
@@ -857,6 +861,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Setup main panel items
         me.panel.items = me.panelItemA();
+
+        // If such a panel is already exists within a tab - close it
+        if (exst && exst.xtype == 'actiontabrow') exst.up('[isSouthItem]').close();
 
         // Call parent
         me.callParent();
@@ -957,6 +964,9 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Setup `route` property
         if (config.route) me.route = config.route;
+
+        // Setup main panel title as current secion title
+        me.panel.title = me.ti().row.id ? Indi.trail(true).breadCrumbsRowTitle(me.ti()) : Indi.lang.I_CREATE;
 
         // Merge configs
         me.mergeParent(config);

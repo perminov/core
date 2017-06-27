@@ -1,5 +1,5 @@
 <?php
-class Field_Row extends Indi_Db_Table_Row {
+class Field_Row extends Indi_Db_Table_Row_Noeval {
 
     /**
      * Constructor
@@ -8,23 +8,11 @@ class Field_Row extends Indi_Db_Table_Row {
      */
     public function __construct(array $config = array()) {
 
-        // Setup initial properties
-        $this->_table = 'field';
-        $this->_original = $config['original'];
-        $this->_system = is_array($config['system']) ? $config['system'] : array();
-        $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
-        $this->_foreign = is_array($config['foreign']) ? $config['foreign'] : array();
-        $this->_nested = is_array($config['nested']) ? $config['nested'] : array();
-        $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
+        // Explicitly set table name
+        $config['table'] = 'field';
 
-        // Compile php expressions stored in allowed fields and assign results under separate keys in $this->_compiled
-        if (strlen($this->_original['defaultValue'])) {
-            if (preg_match(Indi::rex('php'), $this->_original['defaultValue'])) {
-                Indi::$cmpTpl = $this->_original['defaultValue']; eval(Indi::$cmpRun); $this->_compiled['defaultValue'] = Indi::cmpOut();
-            } else {
-                $this->_compiled['defaultValue'] = $this->_original['defaultValue'];
-            }
-        }
+        // Call parent
+        parent::__construct($config);
     }
 
     /**
@@ -67,14 +55,39 @@ class Field_Row extends Indi_Db_Table_Row {
             $this->foreign('entityId')->save();
         }
 
+        // Prevent deletion of `section` entries, having current `field` entry as `defaultSortField`
+        if ($sectionRs = Indi::model('Section')->fetchAll('`defaultSortField` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->defaultSortField = 0;
+                $sectionR->save();
+            }
+
+        // Prevent deletion of `section` entries, having current `field` entry as `parentSectionConnector`
+        if ($sectionRs = Indi::model('Section')->fetchAll('`parentSectionConnector` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->parentSectionConnector = 0;
+                $sectionR->save();
+            }
+
+        // Prevent deletion of `section` entries, having current `field` entry as `groupBy`
+        if (Indi::model('Section')->fields('groupBy')
+            && $sectionRs = Indi::model('Section')->fetchAll('`groupBy` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->groupBy = 0;
+                $sectionR->save();
+            }
+
         // Standard deletion
-        parent::delete();
+        $return = parent::delete();
 
         // Delete db table associated column
         $this->deleteColumn();
 
         // Delete current field from model's fields
         Indi::model($this->entityId)->fields()->exclude($this->id);
+
+        // Return
+        return $return;
     }
 
     /**
@@ -323,6 +336,9 @@ class Field_Row extends Indi_Db_Table_Row {
         // If column type is SET or ENUM - add the secondary type definition
         if (preg_match('/^ENUM|SET$/', $columnTypeR->type)) {
 
+            // Get the column type row, representing field's column before type change (original column)
+            $curTypeR = Indi::model('ColumnType')->fetchRow('`id` = "' . $this->_original['columnTypeId'] . '"');
+
             // Get the existing enumset values
             $enumsetA = $this->id ? $this->nested('enumset')->column('alias'): array();
 
@@ -333,6 +349,11 @@ class Field_Row extends Indi_Db_Table_Row {
 
             // Get the values, that should be added to the list of possible values
             $enumsetAppendA = array_diff($defaultValueA, $enumsetA);
+
+            // If we are converting BOOLEAN to ENUM|SET, ensure both 0 and 1 will be
+            // 1. mentioned in ALTER TABLE query
+            // 2. insterted into `enumset` table
+            if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
 
             // Get the final list of possible values
             $enumsetA = array_merge($enumsetA, $enumsetAppendA);
@@ -419,6 +440,20 @@ class Field_Row extends Indi_Db_Table_Row {
 
                     // Set $defaultValue as '0'
                     $defaultValue = '0.00';
+                }
+
+            // Else if column type is DECIMAL(14,3)
+            } else if ($columnTypeR->type == 'DECIMAL(14,3)') {
+
+                // If $php is true, or default value does not match the column type signature
+                if ($php || !preg_match(Indi::rex('decimal143'), $defaultValue)) {
+
+                    // If $defaultValue does not contain php expressions and
+                    // is not a positive integer - we set field's `defaultValue` as '0.000'
+                    if (!$php) $this->defaultValue = '0.000';
+
+                    // Set $defaultValue as '0.000'
+                    $defaultValue = '0.000';
                 }
 
             // Else if column type is DATE
@@ -579,6 +614,12 @@ class Field_Row extends Indi_Db_Table_Row {
         // Run the query
         Indi::db()->query($sql);
 
+        // If we are creating move-column, e.g. this column will be used for ordering rows
+        // Force it's values to be same as values of `id` column, for it to be possible to
+        // move entries up/down once such a column was created
+        if (!$this->id && $columnTypeR->type == 'INT(11)' && $this->foreign('elementId')->alias == 'move')
+            Indi::db()->query('UPDATE `' . $table . '` SET `' . $this->alias . '` = `id`');
+
         // If field column type was ENUM or SET, but now it is not -
         // we should delete rows, related to current field, from `enumset` table
         if (!preg_match('/^ENUM|SET$/', $columnTypeR->type)
@@ -640,13 +681,15 @@ class Field_Row extends Indi_Db_Table_Row {
 
         // If earlier we detected some values, that should be inserted to `enumset` table - insert them
         if ($enumsetAppendA)
-            foreach ($enumsetAppendA as $enumsetAppendI)
+            foreach ($enumsetAppendA as $title => $enumsetAppendI) if (strlen($enumsetAppendI)  )
                 Indi::db()->query('
                     INSERT INTO `enumset` SET
                     `fieldId` = "' . $this->id . '",
-                    `title` = "' . sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI) . '",
+                    `title` = "' . (Indi::rexm('int11', $title)
+                        ? sprintf(I_ENUMSET_DEFAULT_VALUE_BLANK_TITLE, $enumsetAppendI)
+                        : $title) . '",
                     `alias` = "' . $enumsetAppendI. '",
-                    `javascript` = "",
+                    ' . (Indi::model('Enumset')->fields('javascript') ? '`javascript` = "",' : '') . '
                     `move` = "' . Indi::db()->query('SHOW TABLE STATUS LIKE "enumset"')->fetch(PDO::FETCH_OBJ)->Auto_increment . '"
                 ');
 
@@ -751,8 +794,8 @@ class Field_Row extends Indi_Db_Table_Row {
         // Define array of rex-names, related to their mysql data types
         $rex = array(
             'VARCHAR(255)' => 'varchar255', 'INT(11)' => 'int11', 'DECIMAL(11,2)' => 'decimal112',
-            'DATE' => 'date', 'YEAR' => 'year', 'TIME' => 'time', 'DATETIME' => 'datetime',
-            'ENUM' => 'enum', 'SET' => 'set', 'BOOLEAN' => 'bool', 'VARCHAR(10)' => 'hrgb'
+            'DECIMAL(14,3)' => 'decimal143', 'DATE' => 'date', 'YEAR' => 'year', 'TIME' => 'time',
+            'DATETIME' => 'datetime', 'ENUM' => 'enum', 'SET' => 'set', 'BOOLEAN' => 'bool', 'VARCHAR(10)' => 'hrgb'
         );
 
         // Prepare regular expression for usage in WHERE clause in
@@ -773,7 +816,7 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = $defaultValue;
             } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $defaultValue;
-            } else if (preg_match('/DOUBLE\(7,2\)|YEAR|BOOLEAN/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)|YEAR|BOOLEAN|DECIMAL\(11,2\)|DECIMAL\(14,3\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = false;
             } else if (preg_match('/^DATE|TIME$/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $this->storeRelationAbility == 'none' ? false : $defaultValue;
@@ -789,8 +832,24 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = false;
             } else if (preg_match('/^DATE|TIME|DATETIME$/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '0'; $q = '';
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            }
+        } else if ($newType == 'DECIMAL(14,3)') {
+            if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/ENUM|SET/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0';
+            } else if (preg_match('/YEAR|BOOLEAN/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
+            } else if (preg_match('/^DATE|TIME|DATETIME$/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = '0'; $q = '';
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = $defaultValue;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = false;
             }
         } else if ($newType == 'DATE') {
             if (preg_match('/VARCHAR|TEXT/', $curTypeR->type)) {
@@ -818,12 +877,18 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = '0000-00-00'; $w = false;
             } else if (preg_match('/^DATETIME|TIME$/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
-                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`test` AS UNSIGNED)),
-                DATE_FORMAT(CAST(`test` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+                $incompatibleValuesReplacement = 'IF(DAYOFYEAR(CAST(`' . $col .'` AS UNSIGNED)),
+                DATE_FORMAT(CAST(`' . $col .'` AS UNSIGNED), "%Y-%m-%d"), "0000-00-00")'; $q = ''; $w = false;
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(14) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00'; $w = false;
             }
         } else if ($newType == 'YEAR') {
@@ -844,9 +909,15 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(4) NOT NULL');
                 $incompatibleValuesReplacement = '0000'; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '0';
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
+                $incompatibleValuesReplacement = '0'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
+                $incompatibleValuesReplacement = '0'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` INT NOT NULL');
                 $incompatibleValuesReplacement = '0'; $w = false;
             }
@@ -868,11 +939,17 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
                 $incompatibleValuesReplacement = '00:00:00'; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
                 $incompatibleValuesReplacement = '00:00:00'; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
-                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(12) NOT NULL');
+                $incompatibleValuesReplacement = '00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(15) NOT NULL');
                 $incompatibleValuesReplacement = '00:00:00'; $w = false;
             }
         } else if ($newType == 'DATETIME') {
@@ -892,10 +969,16 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
+                $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(19) NOT NULL');
                 $incompatibleValuesReplacement = '0000-00-00 00:00:00'; $w = false;
             }
@@ -916,11 +999,17 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/TIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(8) NOT NULL');
                 $incompatibleValuesReplacement = 'IF(`' . $col . '` = "00:00:00", "0", "1")'; $w = false; $q = '';
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 $incompatibleValuesReplacement = '1';
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
                 $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/DECIMAL\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(12) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.00", "0", "1")'; $w = false; $q = '';
+            } else if (preg_match('/DECIMAL\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(15) NOT NULL');
+                $incompatibleValuesReplacement = 'IF(`' . $col . '` = "0.000", "0", "1")'; $w = false; $q = '';
             }
         } else if ($newType == 'ENUM' || $newType == 'SET') {
             if (preg_match('/TEXT/', $curTypeR->type)) {
@@ -930,10 +1019,10 @@ class Field_Row extends Indi_Db_Table_Row {
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             } else if (preg_match('/SET/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
-                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . implode('|', $enumsetA) . '$';
+                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . im($enumsetA, '|') . '$';
             } else if (preg_match('/BOOLEAN/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
-                $incompatibleValuesReplacement = $defaultValue; $w = false;
+                $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . im($enumsetA, '|') . '$';
             } else if (preg_match('/DATETIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
@@ -946,10 +1035,16 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/TIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(14,3\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             }
@@ -971,11 +1066,17 @@ class Field_Row extends Indi_Db_Table_Row {
             } else if (preg_match('/TIME/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(10) NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/INT(11)/', $curTypeR->type)) {
+            } else if (preg_match('/INT\(11\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
-            } else if (preg_match('/DOUBLE(7,2)/', $curTypeR->type)) {
+            } else if (preg_match('/DOUBLE\(7,2\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(11) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(11,2\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(12) NOT NULL');
+                $incompatibleValuesReplacement = $defaultValue; $w = false;
+            } else if (preg_match('/DOUBLE\(14,3\)/', $curTypeR->type)) {
+                Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` VARCHAR(15) NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             }
         }
@@ -1030,6 +1131,80 @@ class Field_Row extends Indi_Db_Table_Row {
         return $return;
     }
 
+
+    /**
+     * Build ORDER clause for the field
+     *
+     * @param string $direction
+     * @param null $where
+     * @return string
+     */
+    public function order($direction = 'ASC', $where = null) {
+
+        // Unallow bad values of $direction arg
+        if (!in($direction, 'ASC,DESC')) $direction = 'ASC';
+
+        // If this is a simple column
+        if ($this->storeRelationAbility == 'none') {
+
+            // If sorting column type is BOOLEAN (use for Checkbox control element only)
+            if ($this->foreign('columnTypeId')->type == 'BOOLEAN') {
+
+                // Provide an approriate SQL expression, that will handle different titles for 1 and 0 possible column
+                // values, depending on current language
+                $orderA[] = (Indi::ini('view')->lang == 'en'
+                    ? 'IF(`' . $this->alias . '`, "' . I_YES .'", "' . I_NO . '") '
+                    : 'IF(`' . $this->alias . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
+
+            // Else build the simplest ORDER clause
+            } else $order = '`' . $this->alias . '` ' . $direction;
+
+        // Else if column is storing single foreign keys
+        } else if ($this->storeRelationAbility == 'one') {
+
+            // If column is of type ENUM
+            if ($this->foreign('columnTypeId')->type == 'ENUM') {
+
+                // Get a list of comma-imploded aliases, ordered by their titles
+                $set = Indi::db()->query($sql = '
+                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
+                    FROM `enumset`
+                    WHERE `fieldId` = "' . $this->id . '"
+                ')->fetchColumn(0);
+
+                // Build the order clause, using FIND_IN_SET function
+                $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . $set . '") ' . $direction;
+
+            // If column is of type (BIG|SMALL|MEDIUM|)INT
+            } else if (preg_match('/INT/', $this->foreign('columnTypeId')->type)) {
+
+                // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
+                if (!$this->satellite || $this->dependency != 'e') {
+
+                    // Get the possible foreign keys
+                    $setA = Indi::db()->query('
+                        SELECT DISTINCT `' . $this->alias . '` AS `id`
+                        FROM `' . Indi::model($this->entityId)->table() . '`
+                        ' . ($where ? 'WHERE ' . (is_array($where) ? implode($where, ' AND ') : $where) : '') . '
+                    ')->fetchAll(PDO::FETCH_COLUMN);
+
+                    // If at least one key was found
+                    if (count($setA)) {
+
+                        // Setup a proper order of elements in $setA array, depending on their titles
+                        $setA = Indi::order($this->relation, $setA);
+
+                        // Build the order clause, using FIND_IN_SET function
+                        $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $setA) . '") ' . 'ASC';
+                    }
+                }
+            }
+        }
+
+        // Return ORDER clause
+        return $order;
+    }
+
     /**
      * Builds the part of WHERE clause, that will be involved in keyword-search, especially for current field
      *
@@ -1046,8 +1221,8 @@ class Field_Row extends Indi_Db_Table_Row {
 
             // If column store boolean values
             if (preg_match('/BOOLEAN/', $this->foreign('columnTypeId')->type)) {
-                return 'IF(`' . $this->alias . '`, "' . I_YES . '", "' .
-                    I_NO . '") LIKE "%' . $keyword . '%"';
+                return Indi::db()->sql('IF(`' . $this->alias . '`, "' . I_YES . '", "' .
+                    I_NO . '") LIKE :s', '%' . $keyword . '%');
 
             // Otherwise handle keyword search on other non-relation column types
             } else {
@@ -1068,7 +1243,7 @@ class Field_Row extends Indi_Db_Table_Row {
                     $this->foreign('columnTypeId')->type, $matches
                 )) {
                     if (preg_match('/^' . $reg[$matches[1]] . '+$/', $keyword)) {
-                        return '`' . $this->alias . '` LIKE "%' . $keyword . '%"';
+                        return Indi::db()->sql('`' . $this->alias . '` LIKE :s', '%' . $keyword . '%');
                     } else {
                         return 'FALSE';
                     }
@@ -1077,7 +1252,7 @@ class Field_Row extends Indi_Db_Table_Row {
                 }/* else if ($this->foreign('columnTypeId')->type == 'TEXT') {
                     return 'MATCH(`' . $this->alias . '`) AGAINST("' . implode('* ', explode(' ', $keyword)) . '*' . '" IN BOOLEAN MODE)';
                 }*/ else {
-                    return '`' . $this->alias . '` LIKE "%' . $keyword . '%"';
+                    return Indi::db()->sql('`' . $this->alias . '` LIKE :s', '%' . $keyword . '%');
                 }
             }
 
@@ -1087,8 +1262,8 @@ class Field_Row extends Indi_Db_Table_Row {
             // Find `enumset` keys (mean `alias`-es), that have `title`-s, that match keyword
             $idA = Indi::db()->query('
                 SELECT `alias` FROM `enumset`
-                WHERE `fieldId` = "' . $this->id . '" AND `title` LIKE "%' . $keyword . '%"
-            ')->fetchAll(PDO::FETCH_COLUMN);
+                WHERE `fieldId` = "' . $this->id . '" AND `title` LIKE :s
+            ', '%' . $keyword . '%')->fetchAll(PDO::FETCH_COLUMN);
 
             // Return clause
             return count($idA)
@@ -1102,7 +1277,7 @@ class Field_Row extends Indi_Db_Table_Row {
 
             // If column does not have a satellite (dependency='u'), or have but dependency type is set to 'c'
             // (- mean childs-by-parent logic)
-            if (preg_match('/c|u/', $this->dependency)) {
+            if (preg_match('/с|c|u/', $this->dependency)) {
 
                 // Get the related model
                 $relatedM = Indi::model($this->relation);
@@ -1119,8 +1294,8 @@ class Field_Row extends Indi_Db_Table_Row {
                         // Get the ids
                         $idA = Indi::db()->query('
                             SELECT `id` FROM `' . $relatedM->table() . '`
-                            WHERE `id` LIKE "%' . $keyword . '%"
-                        ')->fetchAll(PDO::FETCH_COLUMN);
+                            WHERE `id` LIKE :s
+                        ', '%' . $keyword . '%')->fetchAll(PDO::FETCH_COLUMN);
 
                 // Else if WHERE clause, got for keyword search on related model title field - is not 'FALSE'
                 } else if (($titleColumnWHERE = $relatedM->titleField()->keywordWHERE($keyword)) != 'FALSE') {
@@ -1185,5 +1360,33 @@ class Field_Row extends Indi_Db_Table_Row {
                 AND `column_name` = "'. $this->_original['alias'] . '"
             LIMIT 0 , 1
         ')->fetchColumn();
+    }
+
+    /**
+     * Set/Unset param, stored within $this->_temporary['params'] array
+     *
+     * @param $name
+     * @param null $value
+     * @return array
+     */
+    public function param($name = null, $value = null) {
+
+        // If $value arg was explicitly given, and it was given as NULL,
+        // and $name arg exists as a key within $this->_temporary['params'] array
+        if (func_num_args() > 1 && $value === null && array_key_exists($name, $this->_temporary['params']))
+
+            // Unset such a param
+            unset($this->_temporary['params'][$name]);
+
+        // Else set up a new param under given name with given value and return it
+        else if (func_num_args() > 1) return $this->_temporary['params'][$name] = $value;
+
+        // Else if no any args given - return whole $this->_temporary['params'] array
+        // as an instance of sdClass, for all supprops to be easily available using
+        // $fieldR->param()->optionHeight
+        else if (func_num_args() == 0) return (object) $this->_temporary['params'];
+
+        // Else just return it
+        else return $this->_temporary['params'][$name];
     }
 }

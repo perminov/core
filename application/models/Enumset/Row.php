@@ -2,6 +2,28 @@
 class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
     /**
+     * Check the unicity of value of `alias` prop, within certain ENUM|SET field
+     *
+     * @return array
+     */
+    public function validate() {
+    
+        // Get the field row
+        $fieldR = $this->foreign('fieldId');
+
+        // Get the existing possible values
+        $enumsetA = $fieldR->nested('enumset', array('order' => 'move'))->column('alias');
+
+        // If modified version of value (or value that's going to be appended) is already exists within list of possible value - set mismatch
+        if (array_key_exists('alias', $this->_modified)) 
+            if (in_array($this->alias, ar(im($enumsetA)))) 
+                $this->_mismatch['alias'] = sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias);
+        
+        // Return
+        return $this->callParent();
+    }
+
+    /**
      * Save possible value
      *
      * @return int
@@ -11,6 +33,9 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         // If `alias` property was not modified - do a standard save
         if (!array_key_exists('alias', $this->_modified)) return parent::save();
 
+        // Run validation
+        $this->mflush(true);
+        
         // Get the field row
         $fieldR = $this->foreign('fieldId');
 
@@ -26,9 +51,6 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
         // If this is an existing enumset row
         if ($this->id) {
-
-            // If modified version of value is already exists within list of possible value - throw an error message
-            if (in_array($this->alias, $enumsetA)) die(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
 
             // Convert $defaultValue to an array, for handling case if column type is SET
             $defaultValue = explode(',', $defaultValue);
@@ -52,9 +74,6 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
         // Else if it is a new enumset row
         } else {
-
-            // If value that is going to be appended - is already exists within list of possible value - throw an error message
-            if (in_array($this->alias, $enumsetA)) die(sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias));
 
             // Append a new value to the list of allowed values
             $enumsetA[] = $this->alias;
@@ -103,7 +122,7 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
             ->fetch(PDO::FETCH_OBJ)->Default;
 
         // If current row is the last enumset row, related to current field - throw an error message
-        if (count($enumsetA) == 1) die(sprintf(I_ENUMSET_ERROR_VALUE_LAST, $this->alias));
+        if (count($enumsetA) == 1) iexit(sprintf(I_ENUMSET_ERROR_VALUE_LAST, $this->alias));
 
         // Remove current item from the list of possible values
         unset($enumsetA[array_search($this->alias, $enumsetA)]);

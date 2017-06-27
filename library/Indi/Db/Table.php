@@ -30,6 +30,13 @@ class Indi_Db_Table
     protected $_useCache = false;
 
     /**
+     * Flag, indicating that this model instances may be used as an access accounts
+     *
+     * @var boolean
+     */
+    protected $_hasRole = false;
+
+    /**
      * Id of field, that is used as title-field
      *
      * @var boolean
@@ -73,6 +80,12 @@ class Indi_Db_Table
     protected $_fileFields = null;
 
     /**
+     *
+     * @var Indi_Db_Table_Rowset|array
+     */
+    protected $_notices = array();
+
+    /**
      * Class name for row
      *
      * @var string
@@ -114,6 +127,9 @@ class Indi_Db_Table
         // Set fields
         $this->_fields = $config['fields'];
 
+        // Set notices
+        if (isset($config['notices'])) $this->_notices = $config['notices'];
+
         // Set title
         $this->_title = $config['title'];
 
@@ -128,6 +144,9 @@ class Indi_Db_Table
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
+
+        // Setup 'hasRole' flag
+        $this->_hasRole = $config['hasRole'];
     }
 
     /**
@@ -142,8 +161,8 @@ class Indi_Db_Table
      */
     public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
         // Build WHERE and ORDER clauses
-        if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
-        if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
+        if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
 
         // Build LIMIT clause
         if ($count !== null || $page !== null) {
@@ -196,6 +215,7 @@ class Indi_Db_Table
      * @return Indi_Db_Table_Rowset object
      */
     public function fetchTree($where = null, $order = null, $count = null, $page = null, $parentId = 0, $selected = 0, $keyword = null, $offsetDetection = false) {
+
         // Get raw tree
         $tree = $this->fetchRawTree($order, $where);
 
@@ -221,9 +241,9 @@ class Indi_Db_Table
                 $where[] = '`' . $titleColumn . '` RLIKE "' . $rlike . '"';
 
             // Else
-            } else $where[] = ($keyword2 = Indi::kl($keyword))
-                ? '(`' . $titleColumn . '` LIKE "' . $keyword . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
-                : '`' . $titleColumn . '` LIKE "' . $keyword . '%"';
+            } else $where[] = ($keyword2 = str_replace('"', '\"', Indi::kl($keyword)))
+                ? '(`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "' . $keyword2 . '%")'
+                : '`' . $titleColumn . '` LIKE "' . str_replace('"', '\"', $keyword) . '%"';
 
             // Fetch rows that match $where clause, ant set foundRows
             $foundRs = $this->fetchAll($where, $order, $count, $page);
@@ -301,7 +321,7 @@ class Indi_Db_Table
             // so we should calculate needed page number, and replace $page argument with calculated value
             // Also, while retrieving upper and lower page (than page with selected vaue) results, we use $selected
             // argument as start point for distance and scope calculations
-            if ($selected && $found > Indi_Db_Table_Row::$comboOptionsVisibleCount){
+            if ($selected && ($found > Indi_Db_Table_Row::$comboOptionsVisibleCount || $offsetDetection)){
 
                 // Get index of selected branch in raw tree
                 $i = 0;
@@ -738,7 +758,7 @@ class Indi_Db_Table
             }
 
         // Else if $name argument is presented, and it contains only one field name
-        } else if (!preg_match('/,/', $names)) {
+        } else if (!preg_match('/,/', $names) && func_num_args() == 1) {
 
             // Return certain field as Indi_Db_Table_Row object, if found
             return $this->_fields->field($names);
@@ -763,6 +783,7 @@ class Indi_Db_Table
         $array['table'] = $this->_table;
         $array['title'] = $this->_title;
         $array['dateColumn'] = $this->_dateColumn;
+        $array['titleFieldId'] = $this->_titleFieldId;
         return $array;
     }
 
@@ -873,12 +894,28 @@ class Indi_Db_Table
     }
 
     /**
-     * Create empty row
+     * Create empty row. If non-false $assign argument is given - we assume that $input arg should not be used
+     * be used for construction, but should be used for $this->assign() call. This may me useful
+     * in case when we need to create an instance of a row and assign a values into it - and all
+     * this within a single call. So, without $assign arg usage, the desired effect would require:
+     *
+     *   Indi::model('SomeModel')->createRow()->assign(array('prop1' => 'value1', 'prop2' => 'value2'));
+     *
+     * But not, with $assign arg usage, same effect would require
+     *
+     *   Indi::model('SomeModel')->createRow(array('prop1' => 'value1', 'prop2' => 'value2'));
+     *
+     * So, with $assign arg usage, we can omit the additional 'assign(..)' cal
      *
      * @param array $input
-     * @return Indi_Db_Table_Row object
+     * @param bool $assign
+     * @return mixed
      */
-    public function createRow($input = array()) {
+    public function createRow($input = array(), $assign = false) {
+
+        // If non-false $assign argument is given - we assume that $input arg should not be used
+        // be used for construction, but should be used for $this->assign() call
+        if ($assign) { $assign = $input; $input = array(); }
 
         // Prepare data for construction
         $constructData = array(
@@ -894,16 +931,9 @@ class Indi_Db_Table
         // If $constructData['original'] is an empty array, we setup it according to model structure
         if (count($constructData['original']) == 0) {
             $constructData['original']['id'] = null;
-            foreach ($this->fields() as $fieldR) {
-                if ($fieldR->columnTypeId) {
+            foreach ($this->fields() as $fieldR)
+                if ($fieldR->columnTypeId)
                     $constructData['original'][$fieldR->alias] = $fieldR->defaultValue;
-                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
-                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
-                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
-                        $constructData['modified'][$fieldR->alias] = $fieldR->compiled('defaultValue');
-                    }
-                }
-            }
         }
 
         // Get row class name
@@ -915,15 +945,32 @@ class Indi_Db_Table
             Indi_Loader::loadClass($rowClass);
         }
 
-        // Construct and return Indi_Db_Table_Row object
-        return new $rowClass($constructData);
+        // Create an instance of a row
+        $row = new $rowClass($constructData);
+
+        // If $constructData['original'] is an empty array, we setup it according to model structure
+        if (!$row->id) {
+            foreach ($this->fields() as $fieldR) {
+                if ($fieldR->columnTypeId) {
+                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
+                        $row->compileDefaultValue($fieldR->alias);
+                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
+                        $row->compileDefaultValue($fieldR->alias);
+                    }
+                }
+            }
+        }
+
+        // Construct and return Indi_Db_Table_Row object,
+        // but, if $assign arg is given - preliminary assign data
+        return is_array($assign) ? $row->assign($assign) : $row;
     }
 
     /**
      * Create Indi_Db_Table_Rowset object with some data, if passed
      *
      * @param array $input
-     * @return mixed
+     * @return Indi_Db_Table_Rowset
      */
     public function createRowset($input = array()) {
 
@@ -970,6 +1017,7 @@ class Indi_Db_Table
      * @throws Exception
      */
     public function delete($where) {
+
         // Basic SQL expression
         $sql = 'DELETE FROM `' . $this->_table . '`';
 
@@ -1046,12 +1094,11 @@ class Indi_Db_Table
                 if (array_key_exists($fieldR->alias, $data)) {
 
                     // We append value with related field alias to $set array
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                    $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
 
                 // Else if column type is TEXT, we use field's default value as value for insertion
                 } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                    $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $fieldR->compiled('defaultValue')) .'"';
-
+                    $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $fieldR->compiled('defaultValue'));
             }
         }
 
@@ -1097,7 +1144,7 @@ class Indi_Db_Table
                     if (array_key_exists($fieldR->alias, $data))
 
                         // We append value with related field alias to $set array
-                        $setA[] = '`' . $fieldR->alias . '` = "' . str_replace('"', '\"', $data[$fieldR->alias]) .'"';
+                        $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
                 }
             }
 
@@ -1124,6 +1171,15 @@ class Indi_Db_Table
      */
     public function useCache() {
         return $this->_useCache;
+    }
+
+    /**
+     * Return the 'hasRole' flag value
+     *
+     * @return bool
+     */
+    public function hasRole() {
+        return $this->_hasRole;
     }
 
     /**
@@ -1238,5 +1294,14 @@ class Indi_Db_Table
      */
     public function changeLog($arg = null) {
         return $arg ? $this->_changeLog[$arg] : $this->_changeLog;
+    }
+
+    /**
+     * Getter function for $this->_notices prop
+     *
+     * @return array|Indi_Db_Table_Rowset
+     */
+    public function notices() {
+        return $this->_notices;
     }
 }

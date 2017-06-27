@@ -1,27 +1,5 @@
 <?php
-class Indi_Trail_Admin_Item {
-
-	/**
-	 * Store number of fields that associated with a ExtJs grid, in case if
-	 * there is an entity attached to section, and the current action is 'index'
-	 *
-	 * @var Indi_Db_Table_Rowset
-	 */
-	public $gridFields = null;
-
-    /**
-     * Store Indi_Trail_Admin_Item_Scope object, related to current trail item
-     *
-     * @var Indi_Trail_Admin_Item_Scope
-     */
-    public $scope = null;
-
-    /**
-     * Store current trail item index
-     *
-     * @var int
-     */
-    public $level = null;
+class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
     /**
      * @var Indi_Db_Table_Row
@@ -34,24 +12,16 @@ class Indi_Trail_Admin_Item {
     public $view;
 
     /**
-     * Getter. Currently declared only for getting 'model' property
-     *
-     * @param $property
-     * @return Indi_Db_Table
-     */
-    public function __get($property) {
-        if ($this->section->entityId)
-            if ($property == 'model') return Indi::model($this->section->entityId);
-            else if ($property == 'fields') return Indi::model($this->section->entityId)->fields();
-    }
-
-    /**
      * Set up all internal properties
      *
      * @param $sectionR
      * @param $level
      */
     public function __construct($sectionR, $level) {
+
+        // Call parent
+        parent::__construct();
+
         // Setup $this->section
         $config = array();
         $dataTypeA = array('original', 'temporary', 'compiled', 'foreign');
@@ -65,9 +35,14 @@ class Indi_Trail_Admin_Item {
         $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
 
         // Setup $this->actions
-        foreach ($sectionR->nested('section2action') as $section2actionR)
-            $actionA[] = $section2actionR->foreign('actionId');
-        $this->actions = Indi::model('Action')->createRowset(array('rows' => $actionA));
+        foreach ($sectionR->nested('section2action') as $section2actionR) {
+            $actionI = $section2actionR->foreign('actionId')->toArray();
+            if (strlen($section2actionR->rename)) $actionI['title'] = $section2actionR->rename;
+            $actionI['south'] = $section2actionR->south;
+            $actionI['fitWindow'] = $section2actionR->fitWindow;
+            $actionA[] = $actionI;
+        }
+        $this->actions = Indi::model('Action')->createRowset(array('data' => $actionA));
 
         // Setup subsections
         $this->sections = $sectionR->nested('section');
@@ -84,10 +59,13 @@ class Indi_Trail_Admin_Item {
             'foreign' => 'actionId'
         ));
 
-        // Exclude inaccessbile subsections from subsections list
+        // Collect inaccessbile subsections ids from subsections list
         foreach ($sectionR->nested('section') as $subsection)
             if (!$subsection->nested('section2action')->count())
-                $this->sections->exclude($subsection->id);
+                $exclude[] = $subsection->id;
+
+        // Exclude inaccessible sections
+        $this->sections->exclude($exclude);
 
         // If current trail item will be a first item
         if (count(Indi_Trail_Admin::$items) == 0) {
@@ -104,32 +82,64 @@ class Indi_Trail_Admin_Item {
             $this->view();
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
-            if (Indi::uri('action') == 'index') {
-                $gridFieldA = array();
-                foreach ($sectionR->nested('grid') as $gridR) {
-                    foreach ($this->fields as $fieldR) {
-                        if ($gridR->fieldId == $fieldR->id) {
-                            $gridFieldI = $fieldR;
-                            if ($gridR->alterTitle) $gridFieldI->title = $gridR->alterTitle;
-                            $gridFieldA[] = $gridFieldI;
-                            $gridFieldAliasA[] = $gridFieldI->alias;
-                        }
-                    }
-                }
-                $this->gridFields = Indi::model('Field')->createRowset(array(
-                    'rows' => $gridFieldA,
-                    'aliases' => $gridFieldAliasA
-                ));
-                $this->grid = $sectionR->nested('grid');
-            }
+            if (Indi::uri('action') == 'index') $this->gridFields($sectionR);
 
+            // Setup disabled fields
             $this->disabledFields = $sectionR->nested('disabledField');
+
+            // Setup additional disabled fields, depend on the value of `mode` prop of entity's fields
+            foreach ($this->fields as $fieldR)
+                if (in($fieldR->mode, 'readonly,hidden'))
+                    $this->disabledFields->append(array(
+                        'fieldId' => $fieldR->id,
+                        'displayInForm' => (int) ($fieldR->mode == 'readonly')
+                    ));
 
         } else {
 
             // Setup action as 'index'
             foreach ($this->actions as $actionR) if ($actionR->alias == 'index') $this->action = $actionR;
         }
+    }
+
+    /**
+     * This function is responsible for preparing data related to grid columns/fields
+     *
+     * @param null $sectionR
+     * @return Indi_Db_Table_Rowset|null
+     */
+    public function gridFields($sectionR = null) {
+
+        // If $sectionR arg is not given / null / false / zero - use $this->section instead
+        if (!$sectionR) $sectionR = $this->section;
+
+        // Declare array for grid fields
+        $gridFieldA = array();
+
+        // Foreach nested `grid`  entry
+        foreach ($sectionR->nested('grid') as $gridR) {
+            foreach ($this->fields as $fieldR) {
+                if ($gridR->fieldId == $fieldR->id) {
+                    if (!$gridR->access || $gridR->access == 'all' || ($gridR->access == 'only' && in(Indi::admin()->profileId, $gridR->profileIds)) || ($gridR->access == 'except' && !in(Indi::admin()->profileId, $gridR->profileIds))) {
+                        $gridFieldI = $fieldR;
+                        $gridFieldA[] = $gridFieldI;
+                        $gridFieldAliasA[] = $gridFieldI->alias;
+                    }
+                }
+            }
+        }
+
+        // Build and assign `gridFields` prop
+        $this->gridFields = Indi::model('Field')->createRowset(array(
+            'rows' => $gridFieldA,
+            'aliases' => $gridFieldAliasA
+        ));
+
+        // todo: check do we need this line
+        $this->grid = $sectionR->nested('grid');
+
+        // Return
+        return $this->gridFields;
     }
 
     /**
@@ -147,7 +157,7 @@ class Indi_Trail_Admin_Item {
             if (Indi::uri('id')) {
 
                 // If action is not 'index', so it mean that we are dealing with not rowset, but certain row
-                if (Indi::uri('action') != 'index') {
+                if ($this->action->rowRequired == 'y') {
 
                     // Get primary WHERE clause
                     $where = Indi_Trail_Admin::$controller->primaryWHERE();
@@ -234,9 +244,11 @@ class Indi_Trail_Admin_Item {
                 : Indi::trail($index)->model->table() . 'Id';
 
             // Get the id
-            $id = Indi::uri('action') == 'index' && $index == 1
+            $id = Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1
                 ? Indi::uri('id')
-                : Indi::trail($index-1)->row->$connector;
+                : (preg_match('/,/', Indi::trail($index-1)->row->$connector) // ambiguous check
+                    ? $_SESSION['indi']['admin']['trail']['parentId'][$this->section->id]
+                    : Indi::trail($index-1)->row->$connector);
 
             // Add main item to WHERE clause stack
             $where[] = '`id` = "' . $id . '"';
@@ -273,41 +285,12 @@ class Indi_Trail_Admin_Item {
      * @return array
      */
     public function toArray() {
-        $array = array();
-        if ($this->section) {
-            $array['section'] = $this->section->toArray();
-            $array['section']['defaultSortFieldAlias'] = $this->section->foreign('defaultSortField')->alias;
-        }
-        if ($this->sections) $array['sections'] = $this->sections->toArray();
-        if ($this->action) $array['action'] = $this->action->toArray();
-        if ($this->actions) $array['actions'] = $this->actions->toArray();
-        if ($this->row) {
-            $array['row'] = $this->row->toArray('current', true, $this->action->alias);
-            $array['row']['title'] = $this->row->title();
 
-            // Collect aliases of all CKEditor-fields
-            $ckeFieldA = array();
-            foreach ($this->fields as $fieldR)
-                if ($fieldR->foreign('elementId')->alias == 'html')
-                    $ckeFieldA[] = $fieldR->alias;
+        // Call parent
+        $array = parent::toArray();
 
-            // Get the aliases of fields, that are CKEditor-fields
-            $ckeDataA = array_intersect(array_keys($array['row']), $ckeFieldA);
-
-            // Left-trim the {STD . '/www'} from the values of 'href' and 'src' attributes
-            foreach ($ckeDataA as $ckeDataI) $array['row'][$ckeDataI]
-                = preg_replace(':(\s*(src|href)\s*=\s*[\'"])(/[^/]):', '$1' . STD . '$3', $array['row'][$ckeDataI]);
-
-        }
-        if ($this->model) $array['model'] = $this->model->toArray();
-        if ($this->fields) $array['fields'] = $this->fields->toArray(true);
-        if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
-        if ($this->grid) $array['grid'] = $this->grid->toNestingTree()->toArray(true);
-        if ($this->disabledFields) $array['disabledFields'] = $this->disabledFields->toArray();
-        if ($this->filters) $array['filters'] = $this->filters->toArray();
-        if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
-        if ($this->scope) {
-            $array['scope'] = $this->scope->toArray();
+        // Setup scope
+        if (array_key_exists('scope', $array)) {
             if (strlen($tabs = $array['scope']['actionrowset']['south']['tabs'])) {
                 $tabA = array_unique(ar($tabs));
                 if ($tabIdA = array_filter($tabA)) {
@@ -334,8 +317,56 @@ class Indi_Trail_Admin_Item {
                 $array['scope']['actionrowset']['south']['tabs'] = $tabA;
             }
         }
-        $array['level'] = $this->level;
+
+        // Return
         return $array;
+    }
+
+    /**
+     * Get json-encoded default filter values
+     *
+     * @return string
+     */
+    public function jsonDefaultFilters() {
+
+        // Json
+        $json = array();
+
+        // Array of range-filters
+        $rangeA = ar('number,calendar,datetime');
+
+        // Set up foreign data for `fieldId` prop
+        $this->filters->foreign('fieldId');
+
+        // Foreach filter
+        foreach ($this->filters as $filter) {
+
+            $fieldR = $filter->foreign('fieldId');
+
+            // Get control element
+            $control = $fieldR->foreign('elementId')->alias;
+
+            // If no defaultValue - try next filter
+            if (!strlen($filter->defaultValue)) continue;
+
+            // Get compiled value
+            $compiled = $filter->compiled('defaultValue');
+
+            // If current filter is a range filter
+            if (in($control, $rangeA)) {
+
+                // Get bounds, and append each bound as a separate item in $json array
+                $boundA = json_decode(str_replace('\'', '"', $compiled));
+                foreach ($boundA as $bound => $value)
+                    if (in($bound, ar('lte,gte')))
+                        $json[] = array($fieldR->alias . '-' . $bound => $value);
+
+            // Append filter's default value as an array, containing single kay and value
+            } else $json[] = array($fieldR->alias => $compiled);
+        }
+
+        // Return json-encoded default filters values
+        return json_encode($json);
     }
 
     /**
@@ -508,45 +539,5 @@ class Indi_Trail_Admin_Item {
 
         // Get the action-view instance
         return $this->view = new $actionClass();
-    }
-
-    /**
-     * Setup shared row object, that filters will be deal with
-     * (same as usual row object, that form's combos are dealing with)
-     *
-     * @param $start
-     * @return null
-     */
-    public function filtersSharedRow($start) {
-
-        // Setup filters shared row
-        $this->filtersSharedRow = $this->model->createRow();
-
-        // If current cms user is an alternate, and if there is corresponding column-field within current entity structure
-        if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $this->model->fields(null, 'columns')))
-
-            // Force setup of that field value as id of current cms user, within filters shared row
-            $this->filtersSharedRow->$aid = Indi::admin()->id;
-
-        // Setup several temporary properties within the existing row, as these may be involved in the
-        // process of parent trail items rows retrieving
-        for ($i = $start + 1; $i < count(Indi_Trail_Admin::$items) - 1; $i++) {
-
-            // Determine the connector field between, for example 'country' and 'city'. Usually it is
-            // '<parent-table-name>Id' but in some custom cases, this may differ. We do custom connector
-            // field autosetup only if it was set and only in case of one-level-up parent section. This
-            // mean that if we have 'Continents' as upper level, and we are creating city, city's property
-            // name will be determined as `continentId` mean parentSectionConnector logic won't be used for that
-            $connector = $i == 1 && Indi::trail($i-1)->section->parentSectionConnector
-                ? Indi::trail($i-1)->section->foreign('parentSectionConnector')->alias
-                : Indi::trail($i)->model->table() . 'Id';
-
-
-            // Get the connector value from session special place and assign it to current row, but only
-            // in case if that connector is not a one of existing fields
-            if ($this->model->fields($connector))
-                $this->filtersSharedRow->$connector = $_SESSION['indi']['admin']['trail']['parentId']
-                [Indi::trail($i)->section->id];
-        }
     }
 }
