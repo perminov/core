@@ -22,7 +22,7 @@ define('PRE', STD . (COM ? '' : '/admin'));
 define('DOC', rtrim($_SERVER['DOCUMENT_ROOT'], '/'));
 
 // Setup URI constant, representing $_SERVER['REQUEST_URI'] environment variable, for short-hand accessibility
-define('URI', rtrim($_SERVER['REQUEST_URI'], '/'));
+define('URI', $_SERVER['REQUEST_URI'] == '/' ? '/' : rtrim($_SERVER['REQUEST_URI'], '/'));
 
 // Set up error reporting
 error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^ E_STRICT : E_ALL ^ E_NOTICE);
