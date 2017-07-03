@@ -153,7 +153,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param array $data
      * @return array
      */
-    public final function fixTypes(array $data) {
+    public function fixTypes(array $data) {
 
         // Foreach prop check
         foreach ($data as $k => $v) {
