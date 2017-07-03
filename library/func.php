@@ -836,6 +836,34 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
 }
 
 /**
+ * Flush mismatch errors messages. This can be useful instead of jflush(false, 'Some error message'),
+ * in cases when you want 'Some error message' to appear as a certain field's error message.
+ *
+ * Example:
+ * if (!preg_match($emailRegexPattern, $_POST['email'])) mflush('email', 'Invalid email format');
+ *
+ * @param string $field
+ * @param string $msg
+ */
+function mflush($field, $msg = '') {
+
+    // Mismatches array
+    $mismatch = array();
+
+    // If $field arg is a string - add $msg into $mismatch array using $field arg as a key
+    if (is_string($field) && $msg) $mismatch[$field] = $msg;
+
+    // Else if $field arg is an array - assume that it is an array containing
+    // mismatch error messages for more than 1 field
+    else if (is_array($field)) $mismatch = $field;
+
+    // Flush
+    jflush(false, array('mismatch' => array(
+        'direct' => true,
+        'errors' => $mismatch
+    )));
+}
+/**
  * Flush the json-encoded message, containing `status` property, and other optional properties, especially for confirm
  *
  * @param string $msg
