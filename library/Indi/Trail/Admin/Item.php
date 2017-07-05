@@ -82,7 +82,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             $this->view();
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
-            if (Indi::uri('action') == 'index') $this->gridFields($sectionR);
+            if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
 
             // Setup disabled fields
             $this->disabledFields = $sectionR->nested('disabledField');
