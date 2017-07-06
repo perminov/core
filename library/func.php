@@ -101,7 +101,7 @@ function jerror($errno, $errstr, $errfile, $errline) {
     if (Indi::logging('jerror')) Indi::log('jerror', $error);
 
     // Send HTTP 500 code
-    header('HTTP/1.1 500 Internal Server Error');
+    if (!headers_sent()) header('HTTP/1.1 500 Internal Server Error');
 
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
@@ -825,8 +825,8 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
 
     // Send HTTP 400 or 200 status code
-    if ($flush['success'] === false) header('HTTP/1.1 400 Bad Request');
-    if ($flush['success'] === true) header('HTTP/1.1 200 OK');
+    if ($flush['success'] === false && !headers_sent()) header('HTTP/1.1 400 Bad Request');
+    if ($flush['success'] === true && !headers_sent()) header('HTTP/1.1 200 OK');
 
     // If $die arg is an url - do not flush data
     if (!$redir) echo json_encode($flush);
@@ -875,10 +875,9 @@ function jconfirm($msg) {
 
     // If headers were not already sent - flush an error message
     if (!headers_sent()) header('Content-Type: application/json');
-    header('Content-Type: application/json');
 
     // Here we send HTTP/1.1 400 Bad Request to prevent success handler from being fired
-    header('HTTP/1.1 400 Bad Request');
+    if (!headers_sent()) header('HTTP/1.1 400 Bad Request');
 
     // Flush
     iexit(json_encode($flush));
