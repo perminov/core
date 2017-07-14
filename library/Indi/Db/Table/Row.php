@@ -474,6 +474,14 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * This function is called right before entry's actual deletion within Indi_Db_Table_Row::delete() body.
+     * It can be useful in cases when we need to do something before an entry deletion from database table
+     */
+    public function onBeforeDelete() {
+
+    }
+
+    /**
      * This function is called right before 'return ...' statement within Indi_Db_Table_Row::delete() body.
      * It can be useful in cases when we need to do something once where was an entry deleted from database table
      */
@@ -570,6 +578,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return int Number of deleted rows (1|0)
      */
     public function delete() {
+
+        // Do some custom things before action deletion
+        $this->onBeforeDelete();
 
         // Check if row (in it's current state) matches each separate notification's criteria,
         // and remember the results separately for each notification, attached to current row's entity
