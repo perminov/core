@@ -163,12 +163,11 @@ class Admin_TemporaryController extends Indi_Controller {
     }
 
     public function noticesAction() {
-
+        die('disabled');
         Indi::db()->query('DROP TABLE IF EXISTS `notice`');
         Indi::db()->query('DROP TABLE IF EXISTS `noticeGetter`');
 
-        $entityR_notice = Indi::model('Entity')->fetchRow('`table` = "notice"')
-            ?: Indi::model('Entity')->createRow(array(
+        $entityR_notice = Indi::model('Entity')->createRow(array(
             'title' => 'Уведомление',
             'table' => 'notice',
             'system' => 'y'
