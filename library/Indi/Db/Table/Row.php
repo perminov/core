@@ -391,7 +391,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             $match = false;
 
             // If this was an existing row - check if it (in it's original state) matched the criteria
-            if ($this->_original['id']) eval('$match = ' . $noticeR->matchPhp . ';');
+            if ($this->_original['id']) {
+                if (strlen($noticeR->matchPhp)) eval('$match = ' . $noticeR->matchPhp . ';');
+                else $match = false;
+            }
 
             // Save result
             $this->_notices[$noticeR->id]['was'] = $match;
@@ -429,7 +432,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If $original arg is given - check if row (in it's current/modified state) matches the criteria
             // Note: if $original arg is NOT given, assume that we'd deleted this row from database,
             // so all matches results are false
-            if ($original) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;');
+            if ($original) {
+                if (strlen($noticeR->matchPhp)) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;'); 
+                else $match = $this->_notices[$noticeR->id]['was'];
+            }
 
             // Save result
             $this->_notices[$noticeR->id]['now'] = $match;
