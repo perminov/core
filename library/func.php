@@ -1257,3 +1257,38 @@ function xml2ar($xml, $options = array()) {
         $xml->getName() => $propertiesArray
     );
 }
+
+/**
+ * Check props, stored in $data arg to match rules, given in $ruleA arg
+ * and return array of *_Row objects, collected for props, that have 'key' rule
+ *
+ * @param $ruleA
+ * @param $data
+ * @return array
+ */
+function jcheck($ruleA, $data) {
+
+    // Declare $rowA array
+    $rowA = array();
+
+    // Foreach prop having mismatch rules
+    foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
+
+        // Shortcut to $data[$prop]
+        $value = $data[$prop];
+
+        // If prop is required, but has empty/null/zero value - flush error
+        if ($rule['req'] && !$value) jflush(false, sprintf('Param "%s" is not given', $prop));
+
+        // If prop's value should match certain regular expression, but it does not - flush error
+        if ($rule['rex'] && !Indi::rexm($rule['rex'], $value))
+            jflush(false, sprintf('Value "%s" of param "%s" is in invalid format', $value, $prop));
+
+        // If prop's value should be an identifier of an existing object, but such object not found - flush error
+        if ($value && $rule['key'] && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
+            jflush(false, sprintf('No object of type "%s" was found by key "%s"', $rule['key'], $value));
+    }
+
+    // Return *_Row objects, collected for props, that have 'key' rule
+    return $rowA;
+}
