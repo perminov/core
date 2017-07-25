@@ -1278,15 +1278,14 @@ function jcheck($ruleA, $data) {
         $value = $data[$prop];
 
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && !$value) jflush(false, sprintf('Param "%s" is not given', $prop));
+        if ($rule['req'] && !$value) jflush(false, sprintf(I_JCHECK_REQ, $prop));
 
         // If prop's value should match certain regular expression, but it does not - flush error
-        if ($rule['rex'] && !Indi::rexm($rule['rex'], $value))
-            jflush(false, sprintf('Value "%s" of param "%s" is in invalid format', $value, $prop));
+        if ($rule['rex'] && !Indi::rexm($rule['rex'], $value)) jflush(false, sprintf(I_JCHECK_REG, $value, $prop));
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
         if ($value && $rule['key'] && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
-            jflush(false, sprintf('No object of type "%s" was found by key "%s"', $rule['key'], $value));
+            jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $value));
     }
 
     // Return *_Row objects, collected for props, that have 'key' rule

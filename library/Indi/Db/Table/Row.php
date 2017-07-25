@@ -1115,7 +1115,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                     // Adjust WHERE clause so it surely match consistence values
-                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_get_arg(4))) 
+                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_num_args() > 3 ? func_get_arg(4) : null))
                         $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
 
                     // Append additional ORDER clause, for grouping
@@ -4667,7 +4667,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * e.g. $this->$prop = $data[$prop]
      *
      * Also, once 'key' checks are passed, the picked foreign data will be assigned to $this->_foreign array
-     * under $prop name, for ability to be used further. In the example above, this forein data can be accessibe by
+     * under $prop name, for ability to be used further. In the example above, this foreign data can be accessible by
      * $this->foreign('countryId') and $this->foreign('myObjectId'). Note that the second one will work despite
      * 'myObjectId' is not an alias of one of existing fields
      *
@@ -4686,31 +4686,31 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->field($prop)) {
 
                 // If prop is required, but has empty/null/zero value - flush error
-                if ($rule['req'] && ($this->zero($prop) || !$prop)) jflush(false, sprintf('Param "%s" is not given', $prop));
+                if ($rule['req'] && ($this->zero($prop) || !$this->$prop))
+                    mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title));
 
                 // If prop's value should match certain regular expression, but it does not - flush error
                 if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
-                    jflush(false, sprintf('Value "%s" of param "%s" is in invalid format', $this->$prop, $prop));
+                    mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $prop));
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
                 if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop))
-                    jflush(false, sprintf('No object of type "%s" was found by key "%s"',
-                        ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop));
+                    mflush($prop, sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop));
 
             // Else if $prop is a just some prop, assigned as temporary prop
             } else {
 
                 // If prop is required, but has empty/null/zero value - flush error
-                if ($rule['req'] && !$this->$prop) jflush(false, sprintf('Param "%s" is not given', $prop));
+                if ($rule['req'] && !$this->$prop) jflush(false, sprintf(I_JCHECK_REQ, $prop));
 
                 // If prop's value should match certain regular expression, but it does not - flush error
                 if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
-                    jflush(false, sprintf('Value "%s" of param "%s" is in invalid format', $this->$prop, $prop));
+                    jflush(false, sprintf(I_JCHECK_REG, $this->$prop, $prop));
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
                 if ($rule['key'] && $this->$prop) {
                     if ($fgn = Indi::model($rule['key'])->fetchRow('`id` = "' . $this->$prop . '"')) $this->foreign($prop, $fgn);
-                    else jflush(false, sprintf('No object of type "%s" was found by key "%s"', $rule['key'], $this->$prop));
+                    else jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $this->$prop));
                 }
             }
         }
