@@ -1223,8 +1223,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDockedInner$Actions_DefaultInnerHandlerReload: function(action, row, aix, btn, ajaxCfg) {
         var me = this, ajaxCfg = ajaxCfg || {}; me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, row, aix, btn, Ext.merge({
             success: function(response) {
-                var json = Ext.JSON.decode(response.responseText, true), page;
-                if (Ext.isObject(json) && (page = json.page)) me.getStore().loadPage(page);
+                var json = Ext.JSON.decode(response.responseText, true);
+                if (json.page) me.getStore().loadPage(json.page);
+                else if (json.affected) me.affectRecord(row, json);
                 else me.getStore().load();
             }
         }, ajaxCfg));
