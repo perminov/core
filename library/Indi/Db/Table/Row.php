@@ -4691,7 +4691,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // If prop's value should match certain regular expression, but it does not - flush error
                 if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
-                    mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $prop));
+                    mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title));
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
                 if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop))
