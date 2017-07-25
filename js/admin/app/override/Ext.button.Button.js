@@ -59,6 +59,13 @@ Ext.override(Ext.button.Button, {
             config.text = '';
         }
 
+        // Make that if `iconCls` is specified with '!'-sign at the beginning - button text will be moved to tooltip
+        if (config.iconCls && config.iconCls.match(/^!/)) {
+            config.iconCls = config.iconCls.replace(/^!/, '');
+            config.tooltip = config.text + '';
+            config.text = '';
+        }
+
         // Call parent
         me.callParent(arguments);
     }

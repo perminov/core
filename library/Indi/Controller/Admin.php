@@ -2198,6 +2198,22 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If redirect should be performed, include the location address under 'redirect' key within $response array
         if ($redirect) $response['redirect'] = $this->redirect($location, true);
 
+        // Assign row's grid data into 'affected' key within $response
+        $response['affected'] = $this->affected();
+        $response['success'] = true;
+
+        // Flush response
+        if ($return) return $response; else jflush($response);
+    }
+
+    /**
+     * Pick fresh values for affected for current row's affected fields
+     * and prepare them for being used as a grid-cells replacements
+     *
+     * @return mixed
+     */
+    public function affected() {
+
         // Wrap row in a rowset, process it by $this->adjustGridDataRowset(), and unwrap back
         $this->rowset = Indi::trail()->model->createRowset(array('rows' => array($this->row)));
         $this->adjustGridDataRowset();
@@ -2206,14 +2222,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
         $data = array($this->row->toGridData($this->row->affected()));
         $this->adjustGridData($data);
-        $data = array_shift($data);
 
-        // Assign row's grid data into 'affected' key within $response
-        $response['affected'] = $data;
-        $response['success'] = true;
-
-        // Flush response
-        if ($return) return $response; else jflush($response);
+        // Return affected data, prepared for being displayed
+        return array_shift($data);
     }
 
     /**

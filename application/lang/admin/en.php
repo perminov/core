@@ -205,3 +205,10 @@ define('I_SOUTH_PLACEHOLDER_GET', 'Get contents');
 define('I_SOUTH_PLACEHOLDER_BACK', ' back here');
 
 define('I_DEMO_ACTION_OFF', 'This action is turned Off in demo-mode');
+
+define('I_MCHECK_REQ', 'Field "%s" - is required');
+define('I_MCHECK_REG', 'Value "%s" of field "%s" - is in invalid format');
+define('I_MCHECK_KEY', 'No object of type "%s" was found by key "%s"');
+define('I_JCHECK_REQ', 'Param "%s" - is not given');
+define('I_JCHECK_REG', 'Value "%s" of param "%s" - is in invalid format');
+define('I_JCHECK_KEY', 'No object of type "%s" was found by key "%s"');

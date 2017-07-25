@@ -101,7 +101,7 @@ function jerror($errno, $errstr, $errfile, $errline) {
     if (Indi::logging('jerror')) Indi::log('jerror', $error);
 
     // Send HTTP 500 code
-    header('HTTP/1.1 500 Internal Server Error');
+    if (!headers_sent()) header('HTTP/1.1 500 Internal Server Error');
 
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
@@ -825,8 +825,8 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
 
     // Send HTTP 400 or 200 status code
-    if ($flush['success'] === false) header('HTTP/1.1 400 Bad Request');
-    if ($flush['success'] === true) header('HTTP/1.1 200 OK');
+    if ($flush['success'] === false && !headers_sent()) header('HTTP/1.1 400 Bad Request');
+    if ($flush['success'] === true && !headers_sent()) header('HTTP/1.1 200 OK');
 
     // If $die arg is an url - do not flush data
     if (!$redir) echo json_encode($flush);
@@ -835,6 +835,34 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
 }
 
+/**
+ * Flush mismatch errors messages. This can be useful instead of jflush(false, 'Some error message'),
+ * in cases when you want 'Some error message' to appear as a certain field's error message.
+ *
+ * Example:
+ * if (!preg_match($emailRegexPattern, $_POST['email'])) mflush('email', 'Invalid email format');
+ *
+ * @param string $field
+ * @param string $msg
+ */
+function mflush($field, $msg = '') {
+
+    // Mismatches array
+    $mismatch = array();
+
+    // If $field arg is a string - add $msg into $mismatch array using $field arg as a key
+    if (is_string($field) && $msg) $mismatch[$field] = $msg;
+
+    // Else if $field arg is an array - assume that it is an array containing
+    // mismatch error messages for more than 1 field
+    else if (is_array($field)) $mismatch = $field;
+
+    // Flush
+    jflush(false, array('mismatch' => array(
+        'direct' => true,
+        'errors' => $mismatch
+    )));
+}
 /**
  * Flush the json-encoded message, containing `status` property, and other optional properties, especially for confirm
  *
@@ -847,10 +875,9 @@ function jconfirm($msg) {
 
     // If headers were not already sent - flush an error message
     if (!headers_sent()) header('Content-Type: application/json');
-    header('Content-Type: application/json');
 
     // Here we send HTTP/1.1 400 Bad Request to prevent success handler from being fired
-    header('HTTP/1.1 400 Bad Request');
+    if (!headers_sent()) header('HTTP/1.1 400 Bad Request');
 
     // Flush
     iexit(json_encode($flush));
@@ -1229,4 +1256,38 @@ function xml2ar($xml, $options = array()) {
     return array(
         $xml->getName() => $propertiesArray
     );
+}
+
+/**
+ * Check props, stored in $data arg to match rules, given in $ruleA arg
+ * and return array of *_Row objects, collected for props, that have 'key' rule
+ *
+ * @param $ruleA
+ * @param $data
+ * @return array
+ */
+function jcheck($ruleA, $data) {
+
+    // Declare $rowA array
+    $rowA = array();
+
+    // Foreach prop having mismatch rules
+    foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
+
+        // Shortcut to $data[$prop]
+        $value = $data[$prop];
+
+        // If prop is required, but has empty/null/zero value - flush error
+        if ($rule['req'] && !$value) jflush(false, sprintf(I_JCHECK_REQ, $prop));
+
+        // If prop's value should match certain regular expression, but it does not - flush error
+        if ($rule['rex'] && !Indi::rexm($rule['rex'], $value)) jflush(false, sprintf(I_JCHECK_REG, $value, $prop));
+
+        // If prop's value should be an identifier of an existing object, but such object not found - flush error
+        if ($value && $rule['key'] && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
+            jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $value));
+    }
+
+    // Return *_Row objects, collected for props, that have 'key' rule
+    return $rowA;
 }
