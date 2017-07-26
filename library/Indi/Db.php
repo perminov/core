@@ -177,7 +177,7 @@ class Indi_Db {
             )->fetchAll();
 
             $fEnumsetA = array(); foreach ($enumsetA as $enumsetI)
-                $fEnumsetA[$enumsetI['fieldId']][] = new Indi_Db_Table_Row_Noeval(array(
+                $fEnumsetA[$enumsetI['fieldId']][] = new Enumset_Row(array(
                     'table' => 'enumset',
                     'original' => $enumsetI
                 ));

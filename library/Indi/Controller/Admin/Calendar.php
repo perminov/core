@@ -30,6 +30,9 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
             'fieldId' => $dateFieldR->id,
             'title' => $dateFieldR->title
         ));
+
+        // Setup colors
+        $this->colors();
     }
 
     /**
@@ -78,5 +81,61 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function adjustEventForDay($r) {
         $this->adjustEventForMonth($r);
+    }
+
+    /**
+     * Try to find enumset-field having most quantity of color-boxes,
+     * and if found - prepare object containing colors info, to be passed to view
+     *
+     * @return mixed
+     */
+    public function colors() {
+
+        // Get id of ENUM column type
+        $ENUM_columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "ENUM"')->id;
+
+        // Get ENUM fields
+        $ENUM_fieldRs = Indi::trail()->model->fields()->select($ENUM_columnTypeId, 'columnTypeId');
+
+        // Try to find color definitions
+        $found = array();
+        foreach ($ENUM_fieldRs as $ENUM_fieldR)
+            foreach ($ENUM_fieldR->nested('enumset') as $enumsetR)
+                if ($color = Indi::rexm('/(background|color):([^;]+);?/', $enumsetR->title, 2))
+                    $found[$ENUM_fieldR->alias][$enumsetR->alias] = trim($color);
+
+        // If nothing found - return
+        if (!$found) return;
+
+        // Get field having bigger qty of colored enum values
+        $info = array('field' => '', 'colors' => array());
+        foreach ($found as $field => $colors)
+            if (count($colors) > count($info['colors']) && $info['field'] = $field)
+                $info['colors'] = $colors;
+
+        // Prepare colors
+        foreach ($info['colors'] as $option => $color) {
+
+            // If $color is a color in format #rrggbb
+            if (Indi::rexm('rgb', $color)) $hex = $color;
+
+            // Else $color is a name of one of html-colors
+            else if (Indi::$colorNameA[$color]) $hex = Indi::$colorNameA[$color];
+
+            // Convert red, green and blue values from hex to decimals
+            $background = ($hex = preg_replace('/^#/', '', $hex))
+                ? sprintf('rgba(%d, %d, %d, 0.2)', hexdec(substr($hex, 0, 2)),
+                  hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))) : '';
+
+            $info['colors'][$option] = array(
+                'color' => sprintf('rgb(%d, %d, %d)', hexdec(substr($hex, 0, 2)) - 50,
+                    hexdec(substr($hex, 2, 2)) - 50, hexdec(substr($hex, 4, 2)) - 50),
+                'border-color' => $color,
+                'background-color' => $background
+            );
+        }
+
+        // Assign colors info
+        Indi::trail()->section->colors = $info;
     }
 }
