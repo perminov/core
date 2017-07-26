@@ -72,6 +72,9 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
             // Replace original value with modified value within list of possible values
             $enumsetA[array_search($this->_original['alias'], $enumsetA)] = $this->alias;
 
+            // Temporarily append original value (to avoid 'Data truncated' mysql errors)
+            $enumsetA[] = $this->_original['alias'];
+
         // Else if it is a new enumset row
         } else {
 
@@ -79,14 +82,33 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
             $enumsetA[] = $this->alias;
         }
 
-        // Build the ALTER query
-        $sql[] = 'ALTER TABLE `' . $table . '` CHANGE COLUMN `' . $fieldR->alias . '` `' . $fieldR->alias . '`';
-        $sql[] = $fieldR->foreign('columnTypeId')->type . '("' . implode('","', $enumsetA) . '")';
-        $sql[] = 'CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL';
-        $sql[] = 'DEFAULT "' . $defaultValue . '"';
+        // Build the ALTER query template
+        $tpl = 'ALTER TABLE `%s` MODIFY COLUMN `%s` %s %s CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT "%s"';
 
         // Run that query
-        Indi::db()->query(implode(' ', $sql));
+        Indi::db()->query(sprintf($tpl, $table, $fieldR->alias, $fieldR->foreign('columnTypeId')->type,
+            '("' . im($enumsetA, '","') . '")', $defaultValue));
+
+        // Deal with existing values
+        if ($this->id) {
+
+            // Replace mentions of original value with modified value
+            Indi::db()->query('
+                UPDATE `' . $table . '`
+                SET `' . $fieldR->alias . '` = TRIM(BOTH "," FROM REPLACE(
+                    CONCAT(",", `' . $fieldR->alias . '`, ","),
+                    ",' . $this->_original['alias'] . ',",
+                    ",' . $this->_modified['alias'] . ',"
+                ))
+            ');
+
+            // Remove original value that was temporarily added to $enumsetA
+            array_pop($enumsetA);
+
+            // Re-run ALTER query
+            Indi::db()->query(sprintf($tpl, $table, $fieldR->alias, $fieldR->foreign('columnTypeId')->type,
+                '("' . im($enumsetA, '","') . '")', $defaultValue));
+        }
 
         // If $updateFieldDefaultValue flag is set to true
         if ($updateFieldDefaultValue)
