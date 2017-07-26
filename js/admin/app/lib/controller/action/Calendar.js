@@ -112,18 +112,63 @@ Ext.define('Indi.lib.controller.action.Calendar', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this;
+        var me = this, colorField = me.ti().section.colors ? me.ti().section.colors.field : false;
 
         // Setup id
         me.id = me.bid();
+
+
 
         // Setup rowset panel config
         me.rowset = Ext.merge({
             id: me.id + '-rowset-calendar',
             store: me.getStore(),
-            dayViewCfg: {store: me.getStore()},
-            weekViewCfg: {store: me.getStore()},
-            monthViewCfg: {store: me.getStore()}
+            colors: me.ti().section.colors,
+            dayViewCfg: {store: me.getStore(), colorField: colorField},
+            weekViewCfg: {store: me.getStore(), colorField: colorField},
+            monthViewCfg: {store: me.getStore(), colorField: colorField},
+            listeners: {
+                boxready: function(c) {
+                    if (!c.colors) return;
+
+                    // Template styles
+                    var tpl = '' +
+                    '{scope}-month-details-panel-body .ext-color-{option}.ext-cal-evt.ext-cal-evr, ' +
+                    '{scope} .ext-color-{option}, ' +
+                    '{scope} .x-ie .ext-color-{option}-ad, ' +
+                    '{scope} .x-opera .ext-color-{option}-ad { ' +
+                        'color: {color};' +
+                    '} ' +
+                    '{scope} .ext-cal-day-col .ext-color-{option}, ' +
+                    '{scope} .ext-dd-drag-proxy .ext-color-{option}, ' +
+                    '{scope} .ext-color-{option}-ad, ' +
+                    '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
+                    '{scope} .ext-color-{option} .ext-cal-picker-icon, ' +
+                    '{scope} .ext-color-{option}-x dl, ' +
+                    '{scope} .ext-color-{option}-x .ext-cal-evb { ' +
+                        'background: {background-color}; ' +
+                    '} ' +
+                    '{scope} .ext-color-{option}-x .ext-cal-evb, ' +
+                    '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
+                    '{scope} .ext-color-{option}-ad, ' +
+                    '{scope} .ext-color-{option}-x dl { ' +
+                        'border-color: {border-color}; ' +
+                    '}';
+
+                    var cssA = [], css = '';
+                    for (var value in c.colors.colors) {
+                        css = tpl.replace(/\{scope\}/g, '#' + c.id);
+                        css = css.replace(/\{option\}/g, value);
+                        css = css.replace(/\{color\}/g, c.colors.colors[value]['color']);
+                        css = css.replace(/\{border-color\}/g, c.colors.colors[value]['border-color']);
+                        css = css.replace(/\{background-color\}/g, c.colors.colors[value]['background-color']);
+                        cssA.push(css);
+                    }
+
+                    // Insert style node
+                    Ext.DomHelper.insertFirst(c.el, '<style>' + cssA.join("\n") + '</style>');
+                }
+            }
         }, me.rowset);
 
         // Setup main panel items

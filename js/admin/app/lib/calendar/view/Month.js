@@ -258,8 +258,7 @@ Ext.define('Ext.calendar.view.Month', {
 
         return Ext.applyIf({
             _selectorCls: selector,
-            _colorCls: 'ext-color-' + (evt[M.CalendarId.name] ?
-            evt[M.CalendarId.name] : 'default') + (evt._renderAsAllDay ? '-ad': ''),
+            _colorCls: 'ext-color-' + (evt._color || 'default') + (evt._renderAsAllDay ? '-ad': ''),
             _elId: selector + '-' + evt._weekIndex,
             _isRecurring: evt.Recurrence && evt.Recurrence != '',
             _isReminder: evt[M.Reminder.name] && evt[M.Reminder.name] != '',
@@ -291,7 +290,8 @@ Ext.define('Ext.calendar.view.Month', {
             templateDataFn: Ext.bind(this.getTemplateEventData, this),
             evtMaxCount: this.evtMaxCount,
             weekCount: this.weekCount,
-            dayCount: this.dayCount
+            dayCount: this.dayCount,
+            colorField: this.colorField
         });
         this.fireEvent('eventsrendered', this);
     },

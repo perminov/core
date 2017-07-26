@@ -447,9 +447,9 @@ td.ext-cal-dtitle-today div {
 
 /* Default rounded event div (Gecko/Webkit/W3C) */
 .ext-cal-evr { /* rounded */
-    -moz-border-radius:5px;
-    -webkit-border-radius:5px;
-    border-radius:5px;
+    -moz-border-radius:0;
+    -webkit-border-radius:0;
+    border-radius:0;
     overflow:hidden;
     padding: 2px 1px 2px 5px;
     white-space:nowrap;
@@ -458,7 +458,7 @@ td.ext-cal-dtitle-today div {
 }
 .ext-cal-day-col .ext-cal-evr {
     border-width: 1px;
-    border-style: solid;
+    border-style: dotted;
 }
 /* Nested event divs (IE/Opera) */
 .ext-cal-evo { /* outer */
@@ -721,69 +721,6 @@ td.ext-cal-dtitle-today div {
 	/*color: #fff;*/
 }
 
-.ext-color-1,
-.x-ie .ext-color-1-ad,
-.x-opera .ext-color-1-ad {
-	color: #306da6;
-}
-.ext-cal-day-col .ext-color-1,
-.ext-dd-drag-proxy .ext-color-1,
-.ext-color-1-ad,
-.ext-color-1-ad .ext-cal-evm,
-.ext-color-1 .ext-cal-picker-icon,
-.ext-color-1-x dl,
-.ext-color-1-x .ext-cal-evb {
-	background: #ADCEED;
-}
-.ext-color-1-x .ext-cal-evb,
-.ext-color-1-ad .ext-cal-evm,
-.ext-color-1-ad,
-.ext-color-1-x dl {
-    border-color: #306da6;
-}
-
-.ext-color-2,
-.x-ie .ext-color-2-ad,
-.x-opera .ext-color-2-ad {
-	color: #86a723;
-}
-.ext-cal-day-col .ext-color-2,
-.ext-dd-drag-proxy .ext-color-2,
-.ext-color-2-ad,
-.ext-color-2-ad .ext-cal-evm,
-.ext-color-2 .ext-cal-picker-icon,
-.ext-color-2-x dl,
-.ext-color-2-x .ext-cal-evb {
-	background: #D5E89B;
-}
-.ext-color-2-x .ext-cal-evb,
-.ext-color-2-ad .ext-cal-evm,
-.ext-color-2-ad,
-.ext-color-2-x dl {
-    border-color: #86a723;
-}
-.ext-color-3,
-.x-ie .ext-color-3-ad,
-.x-opera .ext-color-3-ad {
-    color: #C4088C;
-}
-.ext-cal-day-col .ext-color-3,
-.ext-dd-drag-proxy .ext-color-3,
-.ext-color-3-ad,
-.ext-color-3-ad .ext-cal-evm,
-.ext-color-3 .ext-cal-picker-icon,
-.ext-color-3-x dl,
-.ext-color-3-x .ext-cal-evb {
-    border-color: #D77BED;
-    background: #F4D4FC;
-}
-.ext-color-3-x .ext-cal-evb,
-.ext-color-3-ad .ext-cal-evm,
-.ext-color-3-ad,
-.ext-color-3-x dl {
-    border-color: #b6a980;
-}
-
 .ext-cal-day-col .ext-cal-evt {
     position: absolute;
 }
@@ -934,30 +871,9 @@ td.ext-cal-dtitle-today div {
     padding-right: 5px;
 }
 
-.ext-color-4,
-.x-ie .ext-color-4-ad,
-.x-opera .ext-color-4-ad {
-    color: #980000;
-}
-.ext-cal-day-col .ext-color-4,
-.ext-dd-drag-proxy .ext-color-4,
-.ext-color-4-ad,
-.ext-color-4-ad .ext-cal-evm,
-.ext-color-4 .ext-cal-picker-icon,
-.ext-color-4-x dl,
-.ext-color-4-x .ext-cal-evb {
-    border-color: #980000;
-    background: #EC3F3F;
-}
-.ext-color-4-x .ext-cal-evb,
-.ext-color-4-ad .ext-cal-evm,
-.ext-color-4-ad,
-.ext-color-4-x dl {
-    border-color: #980000;
-}
-
 .ext-cal-day-col .ext-color-0 {
     background: rgba(239, 253, 255, 0.5);
     border-color: #71BDE5;
-    border-radius: 5px;
+    border-radius: 0;
+    border-style: dotted;
 }
