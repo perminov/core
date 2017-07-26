@@ -650,10 +650,6 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     // private
     onDataChanged: function(store) {
         if (!this.isCardActive()) return;
-        store.each(function(r){
-            r.data.calendarStart = Ext.Date.parse(r.raw._system.start, "Y-m-d H:i:s", true);
-            r.data.calendarEnd = Ext.Date.parse(r.raw._system.end, "Y-m-d H:i:s", true);
-        });
         this.refresh();
     },
 

@@ -339,7 +339,7 @@ class Indi_Controller {
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
 
                     // Else if $found field's control element are 'Number', 'Date', 'Datetime', 'Price' or 'Decimal143'
-                    } else if (preg_match('/^18|12|19|24|25$/', $found->elementId)) {
+                    } else if (preg_match('/^(18|12|19|24|25)$/', $found->elementId)) {
 
                         // Detect the type of filter value - bottom or top, in 'range' terms mean
                         // greater-or-equal or less-or-equal
@@ -445,9 +445,8 @@ class Indi_Controller {
             }
         }
 
-        // If the purpose of current request is to build an excel spreadsheet -
-        // setup filters usage information in $this->_excelA property
-        if (in(Indi::uri()->format, 'excel,pdf')) $this->_excelA = $excelA;
+        // Setup filters usage information in $this->_excelA property
+        $this->_excelA = $excelA;
 
         // Force $where array to be single-dimension
         foreach ($where as $filter => $clause) if (is_array($clause)) $where[$filter] = '(' . im($clause, ' AND ') . ')';
