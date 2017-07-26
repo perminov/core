@@ -607,9 +607,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 array_keys($typeA['foreign']['single']), array_keys($typeA['foreign']['multiple'])
             )));
 
-        // Detect if rowset contains calendar fields
-        foreach (ar('calendarStart,calendarEnd') as $cProperty) if (in($cProperty, $columnA)) $calendar = true;
-
         // Declare an array for grid data
         $data = array();
 
@@ -716,11 +713,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // for each grid data row, event if grid does not have `title` property at all, or have, but
             // affected by indents or some other manipulations
             $data[$pointer]['_system']['title'] = $titleProp ? $data[$pointer][$titleProp] : $r->title();
-
-            if ($calendar) {
-                $data[$pointer]['_system']['start'] = $r->calendarStart;
-                $data[$pointer]['_system']['end'] = $r->calendarEnd;
-            }
 
             // Implement indents if need
             if ($data[$pointer]['title']) $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];

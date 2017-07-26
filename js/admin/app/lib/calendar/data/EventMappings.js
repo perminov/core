@@ -7,7 +7,6 @@ Ext.ns('Ext.calendar.data');
 
 Ext.calendar.data.EventMappings = {
     EventId: {
-        name: 'EventId',
         name: 'id',
         mapping: 'id',
         type: 'int'
@@ -18,21 +17,18 @@ Ext.calendar.data.EventMappings = {
         type: 'int'
     },
     Title: {
-        name: 'Title',
         name: 'title',
         mapping: 'title',
         type: 'string'
     },
     StartDate: {
-        name: 'StartDate',
-        name: 'calendarStart',
+        name: 'spaceSince',
         mapping: 'start',
         type: 'date',
         dateFormat: 'c'
     },
     EndDate: {
-        name: 'EndDate',
-        name: 'calendarEnd',
+        name: 'spaceUntil',
         mapping: 'end',
         type: 'date',
         dateFormat: 'c'

@@ -152,8 +152,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         for (var i = 0; i < filterCmpA.length; i++) {
 
             // We do not involve values of hidden or disabled filter components in request query building
-            // if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || filterCmpA[i].disabled) continue;
-            if (filterCmpA[i].hidden || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field.satellite)) continue;
+            if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field.satellite)) continue;
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpA[i].name;
