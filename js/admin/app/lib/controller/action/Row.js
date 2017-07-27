@@ -206,6 +206,49 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     /**
+     * Constructor function for Delete action button
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Actions$Delete: function() {
+        var me = this, bid = me.panelDockedInnerBid(), sibling, next, prev;
+        return {
+            handler: function() {
+
+                // Show the deletion confirmation message box
+                Ext.MessageBox.show({
+                    title: Indi.lang.I_ACTION_DELETE_CONFIRM_TITLE,
+                    msg: Indi.lang.I_ACTION_DELETE_CONFIRM_MSG + ' "' + me.ti().row._system.title + '"?',
+                    buttons: Ext.MessageBox.YESNO,
+                    icon: Ext.MessageBox.QUESTION,
+                    fn: function(answer) {
+                        if (answer == 'yes') {
+
+                            // Delete
+                            me.goto('/' + me.ti().section.alias + '/delete/id/'+ me.ti().row.id
+                                +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/', false, {
+                                success: function(){
+                                    var rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index', rowsetActCmp, record;
+                                    if (me.ti(1) && me.ti(1).row) rowsetActId += '-parentrow-' + me.ti(1).row.id;
+
+                                    // Close window
+                                    Ext.getCmp(me.panel.id).getWindow().close();
+
+                                    // Remove record from store
+                                    if ((rowsetActCmp = Ext.getCmp(rowsetActId)) && Ext.getCmp(rowsetActId + '-wrapper')) {
+                                        record = rowsetActCmp.getStore().getById(me.ti().row.id);
+                                        rowsetActCmp.getStore().remove(record);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
+    },
+
+    /**
      * Panel master toolbar id constructor
      *
      * @return {String}
