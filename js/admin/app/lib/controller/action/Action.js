@@ -29,7 +29,14 @@ Ext.define('Indi.lib.controller.action.Action', {
             },
             items: [],
             inner: {}
-        }
+        },
+
+        /**
+         * Array of action-button aliases, that have special icons
+         */
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
+            'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm', 'goto'],
+
     },
 
     /**

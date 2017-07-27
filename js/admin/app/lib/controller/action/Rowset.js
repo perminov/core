@@ -19,12 +19,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         xtype: 'actionrowset',
 
         /**
-         * Array of action-button aliases, that have special icons
-         */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
-            'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm', 'goto'],
-
-        /**
          * Tools special config
          */
         tools: [{alias: 'fundock'}, {alias: 'reset'}],
@@ -1273,7 +1267,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         if (typeof me[fn] == 'function') me[fn](action, row, aix, btn);
         else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
-
 
     /**
      * Inner handler function for form-action button
