@@ -38,6 +38,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
+                    {alias: 'actions'},
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
                 ]
@@ -77,6 +78,130 @@ Ext.define('Indi.lib.controller.action.Row', {
             dock: 'top',
             minHeight: 26,
             items: this.panelDocked$MasterItemA()
+        }
+    },
+
+    /**
+     * Build and return array of configs of master toolbar items, that represent action-buttons
+     *
+     * @return {Array}
+     */
+    panelDockedInner$Actions: function() {
+
+        // Setup auxillirary variables
+        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
+
+        // Append 'Create' action button
+        if (itemICreate) itemA.push(itemICreate);
+
+        // Append other action buttons
+        for (var i = 0; i < me.ti().actions.length; i++) {
+
+            // Skip current section
+            if (me.ti().actions[i].alias == me.ti().action.alias) continue;
+
+            // Get default column config
+            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
+
+            // Apply custom config
+            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
+        }
+
+        // Push a separator
+        if (itemA.length) itemA.push('-');
+
+        // Return
+        return itemA;
+    },
+
+    /**
+     * Builds and returns default/initial config for all action-button master panel items
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Actions_Default: function(action) {
+        var me = this, bid = me.panelDockedInnerBid(), btnSave = Ext.getCmp(bid + 'save');
+
+        // If action is visible - return
+        if (action.display != 1) return null;
+
+        // If this is not a certain-row action - return
+        if (action.rowRequired != 'y') return null;
+
+        // Basic action object
+        var actionItem = {
+            id: bid + action.alias,
+            text: action.title,
+            action: action,
+            actionAlias: action.alias,
+            rowRequired: action.rowRequired,
+            javascript: action.javascript,
+            handler: function(btn) {
+                me.goto('/' + me.ti().section.alias + '/' + btn.actionAlias + '/id/'+ me.ti().row.id
+                    +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
+            },
+            listeners: {
+                afterrender: function(cmp) {
+                    cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
+                }
+            }
+        }
+
+        // Setup iconCls property, if need
+        if (me.panel.toolbarMasterItemActionIconA.indexOf(action.alias) != -1) {
+            actionItem.iconCls = 'i-btn-icon-' + action.alias;
+            actionItem.text = '';
+            actionItem.tooltip = action.title;
+        }
+
+        // Put to the actions stack
+        return actionItem;
+    },
+
+    /**
+     * Master toolbar 'Autosave' item, for ability to toggle autosave mode while navigating
+     * within the currently available rows scope
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Actions$Create: function() {
+        var me = this, bid = me.panelDockedInnerBid();
+
+        // 'Create' item config
+        return {
+            id: bid + 'create',
+            iconCls: 'i-btn-icon-create',
+            disabled: parseInt(me.ti().section.disableAdd) == 1 || (me.row.readOnly && !me.row.createOnly && parseInt(me.ti().section.disableAdd) != 2) ? true : false,
+            tooltip: Indi.lang.I_NAVTO_CREATE,
+            handler: function(){
+
+                // Create shortcuts for involved components
+                var url = '/' + me.ti().section.alias + '/form/ph/' + me.ti().section.primaryHash+'/',
+                    tfID = Ext.getCmp(bid + 'id'), btnPrev = Ext.getCmp(bid + 'prev'), btnNext = Ext.getCmp(bid + 'next'),
+                    cmbSibling = Ext.getCmp(bid + 'sibling'), spnOffset = Ext.getCmp(bid + 'offset');
+
+                // Show mask
+                me.getMask().show();
+
+                // Other items adjustments
+                if (tfID) tfID.setValue('');
+                if (btnPrev) btnPrev.disable();
+                if (cmbSibling && typeof me.ti().row.title != 'undefined') cmbSibling.keywordEl.val('');
+                if (btnNext && parseInt(me.ti().scope.found)) btnNext.enable();
+                if (spnOffset) spnOffset.setValue('');
+
+                // Goto the url
+                me.goto(url, undefined, {
+                    title: Indi.lang.I_CREATE
+                });
+            }
         }
     },
 

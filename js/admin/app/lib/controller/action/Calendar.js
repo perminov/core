@@ -117,8 +117,6 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         // Setup id
         me.id = me.bid();
 
-
-
         // Setup rowset panel config
         me.rowset = Ext.merge({
             id: me.id + '-rowset-calendar',
