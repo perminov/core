@@ -48,15 +48,19 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function adjustGridDataRowset() {
 
-        // Pick bounds
-        list ($since, $until) = ar(im($this->_excelA['date']['value']));
+        // Adjust events only if possible to detect current calendar type
+        if ($this->_excelA) {
 
-        // Detect type of calendar
-        if (strtotime($until) - strtotime($since) == 3600 * 24 * 6) $this->type = 'week';
-        else if ($since == $until) $this->type = 'day';
+            // Pick bounds
+            list ($since, $until) = ar(im($this->_excelA['date']['value']));
 
-        // Adjust event
-        foreach ($this->rowset as $r) $this->{'adjustEventFor' . ucfirst($this->type)}($r);
+            // Detect type of calendar
+            if (strtotime($until) - strtotime($since) == 3600 * 24 * 6) $this->type = 'week';
+            else if ($since == $until) $this->type = 'day';
+
+            // Adjust event
+            foreach ($this->rowset as $r) $this->{'adjustEventFor' . ucfirst($this->type)}($r);
+        }
 
         // Call parent
         $this->callParent();

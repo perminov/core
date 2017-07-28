@@ -1169,7 +1169,7 @@ Ext.define('Indi', {
 
         // Walk through z-indexed windows and find the top one
         if (zmgr) zmgr.eachTopDown(function (comp) {
-            if (comp.isWindow && !comp.hidden) {
+            if (comp.isWindow && !comp.hidden && comp.xtype == 'desktopwindow') {
                 win = comp;
                 return false;
             }
