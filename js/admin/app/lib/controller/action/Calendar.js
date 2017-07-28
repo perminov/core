@@ -130,6 +130,10 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     var action = me.ti().actions.r('form', 'alias'), aix = view.store.indexOfTotal(rec);
                     if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec, aix + 1);
                 },
+                dayclick: function(view, date) {
+                    var create = Ext.getCmp(me.id + '-docked-inner$create');
+                    if (create && !create.disabled) create.press();
+                },
                 boxready: function(c) {
                     if (!c.colors) return;
 
