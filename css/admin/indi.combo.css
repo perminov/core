@@ -104,3 +104,6 @@
     filter: alpha(opacity=50);
     opacity: .5;
 }
+.x-gecko .i-combo-table td > .i-combo-color-box-div {
+    top: 0;
+}
