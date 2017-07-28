@@ -134,6 +134,10 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },
+                viewchange: function(p, vw, dateInfo){
+                    if (dateInfo) Ext.getCmp(p.id +'-tb-month')
+                        .setText(Ext.Date.format(dateInfo.activeDate, 'F'));
+                },
                 boxready: function(c) {
                     if (!c.colors) return;
 
