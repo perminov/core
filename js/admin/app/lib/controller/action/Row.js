@@ -127,7 +127,7 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Object}
      */
     panelDockedInner$Actions_Default: function(action) {
-        var me = this, bid = me.panelDockedInnerBid(), btnSave = Ext.getCmp(bid + 'save');
+        var me = this, bid = me.panelDockedInnerBid(), btnSave;
 
         // If action is visible - return
         if (action.display != 1) return null;
@@ -148,8 +148,8 @@ Ext.define('Indi.lib.controller.action.Row', {
                     +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
             },
             listeners: {
-                afterrender: function(cmp) {
-                    cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
+                boxready: function(cmp) {
+                    cmp.setDisabled((!me.ti().row.id && (btnSave = Ext.getCmp(bid + 'save')) && !btnSave.pressed));
                 }
             }
         }
@@ -1141,5 +1141,15 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    //
+    panelDockedInner$Actions$Toggle: {
+        handler: function(btn) {
+            var me = btn.ctx();
+            me.goto(me.other('toggle'), false, {success: function(){
+                Ext.getCmp(me.panelDockedInnerBid() + 'reload').press();
+            }});
+        }
     }
 });
