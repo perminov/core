@@ -127,8 +127,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             monthViewCfg: {store: me.getStore(), colorField: colorField},
             listeners: {
                 eventclick: function(view, rec, el, eOpts) {
-                    var action = me.ti().actions.r('form', 'alias');
-                    if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec);
+                    var action = me.ti().actions.r('form', 'alias'), aix = view.store.indexOfTotal(rec);
+                    if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec, aix + 1);
                 },
                 boxready: function(c) {
                     if (!c.colors) return;
