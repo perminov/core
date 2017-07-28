@@ -319,7 +319,7 @@ Ext.define('Ext.calendar.view.DayBody', {
                 Ext.apply(item, {
                     cls: 'ext-cal-ev',
                     _positioned: true,
-                    _color: evt.key(this.colorField)
+                    _color: evt.raw._system.color
                 });
                 evts.push({
                     data: this.getTemplateEventData(item),
