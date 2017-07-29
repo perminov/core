@@ -98,7 +98,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
 
     // private
     initComponent: function() {
-        this.bbar = {
+        this.tbar = {
             cls: 'ext-cal-toolbar',
             border: true,
             dock: 'bottom',
@@ -113,7 +113,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
         this.viewCount = 0;
 
         if (this.showDayView) {
-            this.bbar.items.push({
+            this.tbar.items.push({
                 id: this.id + '-tb-day',
                 text: this.dayText,
                 handler: this.onDayClick,
@@ -123,7 +123,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
             this.viewCount++;
         }
         if (this.showWeekView) {
-            this.bbar.items.push({
+            this.tbar.items.push({
                 id: this.id + '-tb-week',
                 text: this.weekText,
                 handler: this.onWeekClick,
@@ -133,7 +133,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
             this.viewCount++;
         }
         if (this.showMonthView || this.viewCount == 0) {
-            this.bbar.items.push({
+            this.tbar.items.push({
                 id: this.id + '-tb-month',
                 text: this.monthText,
                 handler: this.onMonthClick,
@@ -143,19 +143,20 @@ Ext.define('Ext.calendar.CalendarPanel', {
             this.viewCount++;
             this.showMonthView = true;
         }
-        this.bbar.items.push({
+        this.tbar.items.push({
             id: this.id + '-tb-next',
             handler: this.onNextClick,
             scope: this,
             iconCls: 'x-tbar-page-next'
         });
-        this.bbar.items.push('->');
+        this.tbar.items.push('->');
 
         var idx = this.viewCount - 1;
         this.activeItem = this.activeItem === undefined ? idx: (this.activeItem > idx ? idx: this.activeItem);
 
         if (this.showNavBar === false) {
-            delete this.bbar;
+            this.tbarItems = Ext.clone(this.tbar.items);
+            delete this.tbar;
             this.addCls('x-calendar-nonav');
         }
 
@@ -496,7 +497,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
 
     // private
     updateNavState: function() {
-        if (this.showNavBar !== false) {
+        //if (this.showNavBar !== false) {
             var item = this.layout.activeItem,
                 suffix = item.id.split(this.id + '-')[1],
                 btn = Ext.getCmp(this.id + '-tb-' + suffix);
@@ -504,7 +505,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
             if (btn) {
                 btn.toggle(true);
             }
-        }
+        //}
     },
 
     /**

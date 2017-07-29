@@ -8,7 +8,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
     alternateClassName: 'Indi.Controller.Action.Rowset.Calendar',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action.Rowset',
+    extend: 'Indi.lib.controller.action.Rowset',
 
     /**
      * Config of panel, that will be used for representing the rowset
@@ -69,7 +69,20 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             format: {
                 time: 'H:i'
             }
-        }
+        },
+        showNavBar: false
+    },
+
+    /**
+     * Hide action-buttons
+     * 
+     * @param action
+     * @return {*}
+     */
+    panelDockedInner$Actions_Default: function(action) {
+        var me = this, btn = me.callParent(arguments);
+        if (btn) btn.hidden = true;
+        return btn;
     },
 
     /**
@@ -135,8 +148,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     if (create && !create.disabled) create.press();
                 },
                 viewchange: function(p, vw, dateInfo){
-                    if (dateInfo) Ext.getCmp(p.id +'-tb-month')
-                        .setText(Ext.Date.format(dateInfo.activeDate, 'F'));
+                    var m = Ext.getCmp(p.id +'-tb-month');
+                    if (dateInfo && m) m.setText(Ext.Date.format(dateInfo.activeDate, 'F'));
                 },
                 boxready: function(c) {
                     if (!c.colors) return;
@@ -177,6 +190,12 @@ Ext.define('Indi.lib.controller.action.Calendar', {
 
                     // Insert style node
                     Ext.DomHelper.insertFirst(c.el, '<style>' + cssA.join("\n") + '</style>');
+                    var master = Ext.getCmp(me.panel.id.replace(/wrapper$/, '') + 'toolbar-master');
+                    if (this.tbarItems && this.tbarItems.length) {
+                        this.tbarItems.pop();
+                        master.insert(0, this.tbarItems);
+                        master.insert(this.tbarItems.length, '-')
+                    }
                 }
             }
         }, me.rowset);
