@@ -101,7 +101,7 @@ function jerror($errno, $errstr, $errfile, $errline) {
     if (Indi::logging('jerror')) Indi::log('jerror', $error);
 
     // Send HTTP 500 code
-    if (!headers_sent()) header('HTTP/1.1 500 Internal Server Error');
+    if (!headers_sent() && !isIE()) header('HTTP/1.1 500 Internal Server Error');
 
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
@@ -815,24 +815,39 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     if ($mrg1) $flush = array_merge($flush, $mrg1);
     if ($mrg2) $flush = array_merge($flush, $mrg2);
 
-    // If headers were not already sent - flush an error message
-    if (!headers_sent()) header('Content-Type: application/json');
-
     // Check if redirect should be performed
     $redir = func_num_args() == 4 ? is_string($die) && Indi::rex('url', $die) : ($_ = Indi::$jfr) && $die = $_;
 
     // Log this error if logging of 'jerror's is turned On
     if (Indi::logging('jflush') || $redir) Indi::log('jflush', $flush);
 
-    // Send HTTP 400 or 200 status code
-    if ($flush['success'] === false && !headers_sent()) header('HTTP/1.1 400 Bad Request');
-    if ($flush['success'] === true && !headers_sent()) header('HTTP/1.1 200 OK');
+    // Send headers
+    if (!headers_sent()) {
+
+        // Send '400 Bad Request' status code if user agent is not IE
+        if ($flush['success'] === false && !isIE()) header('HTTP/1.1 400 Bad Request');
+
+        // Send '200 OK' status code
+        if ($flush['success'] === true) header('HTTP/1.1 200 OK');
+
+        // Send content type
+        header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
+    }
 
     // If $die arg is an url - do not flush data
     if (!$redir) echo json_encode($flush);
 
     // Exit if need
     if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
+}
+
+/**
+ * Try to detect if request was made using Internet Explorer
+ *
+ * @return bool
+ */
+function isIE() {
+    return !!preg_match('/(MSIE|Trident|rv:)/', $_SERVER['HTTP_USER_AGENT']);
 }
 
 /**
@@ -873,11 +888,11 @@ function jconfirm($msg) {
     // Start building data for flushing
     $flush = array('confirm' => true, 'msg' => $msg);
 
-    // If headers were not already sent - flush an error message
-    if (!headers_sent()) header('Content-Type: application/json');
+    // Send content type header
+    if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
 
     // Here we send HTTP/1.1 400 Bad Request to prevent success handler from being fired
-    if (!headers_sent()) header('HTTP/1.1 400 Bad Request');
+    if (!headers_sent() && !isIE()) header('HTTP/1.1 400 Bad Request');
 
     // Flush
     iexit(json_encode($flush));
