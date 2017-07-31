@@ -175,7 +175,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param array $data
      * @return array
      */
-    public final function fixTypes(array $data) {
+    public function fixTypes(array $data) {
 
         // Foreach prop check
         foreach ($data as $k => $v) {
@@ -255,32 +255,35 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param bool $check If this param is omitted or `false` (by default) - function will look at existing mismatches.
      *                    Otherwise, it will run a distinct mismatch check-up, and then behave on results
+     * @param string $message
      */
-    public function mflush($check = false) {
+    public function mflush($check = false, $message = null) {
+
+        // If second arg - $message - is given, we'll right now flush the mismatch, related to certain field
+        if (func_num_args() == 2) $this->mismatch($check, $message);
 
         // Check conformance to all requirements / Ensure that there are no mismatches
-        if (count($this->mismatch($check))) {
+        else if (!count($this->mismatch($check))) return;
 
-            // Rollback changes
-            Indi::db()->rollback();
+        // Rollback changes
+        Indi::db()->rollback();
 
-            // Build an array, containing mismatches explanations
-            $mismatch = array(
-                'entity' => array(
-                    'title' => $this->model()->title(),
-                    'table' => $this->model()->table(),
-                    'entry' => $this->id
-                ),
-                'errors' => $this->_mismatch,
-                'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
-            );
+        // Build an array, containing mismatches explanations
+        $mismatch = array(
+            'entity' => array(
+                'title' => $this->model()->title(),
+                'table' => $this->model()->table(),
+                'entry' => $this->id
+            ),
+            'errors' => $this->_mismatch,
+            'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
+        );
 
-            // Log this error if logging of 'jerror's is turned On
-            if (Indi::logging('mflush')) Indi::log('mflush', $mismatch);
+        // Log this error if logging of mflush-events is turned On
+        if (Indi::logging('mflush')) Indi::log('mflush', $mismatch);
 
-            // Flush mismatch
-            jflush(false, array('mismatch' => $mismatch));
-        }
+        // Flush mismatch
+        jflush(false, array('mismatch' => $mismatch));
     }
 
     /**
@@ -292,11 +295,11 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function save() {
 
-        // If current row has any mismatches - flush that mismatches
-        $this->mflush(true);
+        // Data types check, and if smth is not ok - flush mismatches
+        $this->scratchy(true);
 
-        // Backup original and modified data
-        $original = $this->_original; $modified = $this->_modified;
+        // Backup original data
+        $original = $this->_original;
 
         // Setup $orderAutoSet flag if need
         if (!$this->_original['id'] && array_key_exists('move', $this->_original) && !$this->move) $orderAutoSet = true;
@@ -306,6 +309,20 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Set $forceL10n flag if current row is a enumset row, linked to a field that having localization turned On
             $forceL10n = $this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y';
+
+            // Do some needed operations that are required to be done right before row update
+            $this->onBeforeUpdate();
+
+            // Do both data types check and custom validation, and if smth is not ok - flush mismatches
+            // At first sight, we could just perform custom validation, without preliminary data types check,
+            // because data types check had been already done, by $this->scratchy(true) call at the beginning
+            // of save() method, that we are currently in. BUT. $this->onBeforeUpdate() call was made after that,
+            // so some props might have been additionally changed by that call, so, to be sure that data types are
+            // STILL OK, we do $this->mflush(true) call, as it will do (among other things) data types check again
+            $this->mflush(true);
+
+            // Backup modified data
+            $modified = $this->_modified;
 
             // Update it
             $affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"', $original, $forceL10n);
@@ -321,6 +338,12 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Do some needed operations that are required to be done right before row insertion into a database table
             $this->onBeforeInsert();
+
+            // Check mismatches again, because some additional changes might have been done within $this->onBeforeInsert() call
+            $this->mflush(true);
+
+            // Backup modified data
+            $modified = $this->_modified;
 
             // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
             $this->_modified['id'] = $this->model()->insert($this->_modified);
@@ -417,7 +440,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             $match = false;
 
             // If this was an existing row - check if it (in it's original state) matched the criteria
-            if ($this->_original['id']) eval('$match = ' . $noticeR->matchPhp . ';');
+            if ($this->_original['id']) {
+                if (strlen($noticeR->matchPhp)) eval('$match = ' . $noticeR->matchPhp . ';');
+                else $match = false;
+            }
 
             // Save result
             $this->_notices[$noticeR->id]['was'] = $match;
@@ -455,7 +481,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If $original arg is given - check if row (in it's current/modified state) matches the criteria
             // Note: if $original arg is NOT given, assume that we'd deleted this row from database,
             // so all matches results are false
-            if ($original) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;');
+            if ($original) {
+                if (strlen($noticeR->matchPhp)) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;'); 
+                else $match = $this->_notices[$noticeR->id]['was'];
+            }
 
             // Save result
             $this->_notices[$noticeR->id]['now'] = $match;
@@ -496,6 +525,22 @@ class Indi_Db_Table_Row implements ArrayAccess
      * It can be useful in cases when we need to do something once where was an entry updated in database table
      */
     public function onUpdate() {
+
+    }
+
+    /**
+     * This function is called right before '$this->model()->update(..)' statement within Indi_Db_Table_Row::save() body.
+     * It can be useful in cases when we need to do something before where will be an entry updated in database table
+     */
+    public function onBeforeUpdate() {
+
+    }
+
+    /**
+     * This function is called right before entry's actual deletion within Indi_Db_Table_Row::delete() body.
+     * It can be useful in cases when we need to do something before an entry deletion from database table
+     */
+    public function onBeforeDelete() {
 
     }
 
@@ -596,6 +641,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return int Number of deleted rows (1|0)
      */
     public function delete() {
+
+        // Do some custom things before action deletion
+        $this->onBeforeDelete();
 
         // Check if row (in it's current state) matches each separate notification's criteria,
         // and remember the results separately for each notification, attached to current row's entity
@@ -1093,7 +1141,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                     // Adjust WHERE clause so it surely match consistence values
-                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_get_arg(4))) 
+                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_num_args() > 3 ? func_get_arg(4) : null))
                         $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
 
                     // Append additional ORDER clause, for grouping
@@ -2032,12 +2080,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Validate all modified fields to ensure all of them have values, convenient with their datatypes,
+     * Validate all modified fields to ensure all of them have values, convenient with their data-types,
      * collect their errors in $this->_mismatch array, with field names as keys and return it
      *
+     * If there is a need to immediately flush data-types error (if detected) - pass `true` as $mflush arg
+     *
+     * @param bool $mflush
      * @return array
      */
-    public function scratchy() {
+    public function scratchy($mflush = false) {
 
         // Declare an array, containing aliases of control elements, that can deal with array values
         $arrayAllowed = array('multicheck', 'time', 'datetime');
@@ -2913,6 +2964,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Build error message
             if ($errorA) $this->_mismatch[$field] = I_FILE . ' ' . I_SHOULD . ' ' . im($errorA, ', ' . I_AND . ' ');
         }
+
+        // If $mflush arg is `true` - flush mismatches right now
+        if ($mflush) $this->mflush(false);
 
         // Return found mismatches
         return $this->_mismatch;
@@ -4591,5 +4645,105 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function dftitle($fileProp = null) {
         return $this->title();
+    }
+
+    /**
+     * Check props against validation rules.
+     * Example:
+     *
+     * // Data
+     * $data = array('myBoolProp' => 1, 'myObjectId' => 'somevalue')
+     *
+     * // Validation rules
+     * $ruleA = array(
+     *     'countryId' => array(
+     *         'req' => true,
+     *         'reg' => 'int11',
+     *         'key' => true
+     *     ),
+     *     'myBoolProp' => array(
+     *         'reg' => '/^(0|1)$/'
+     *     ),
+     *     'myObjectId' => array(
+     *         'reg' => 'int11',
+     *         'key' => 'City'
+     *     )
+     * )
+     *
+     * // Do check
+     * $this->mcheck($ruleA, $data);
+     *
+     * Currently, only 3 types of checks are supported:
+     *
+     * 1.'req' - mean 'required'. In the example above, 'countryId' is required. But if $data arg contains
+     *           no 'countryId' key, method will try to check self same-named prop, e.g. $this->countryId
+     *           So if $data['countryId'] is unset/null/false/empty/zero and $this->countryId is too - error
+     *           msg will be immediately flushed
+     *
+     * 2.'reg' - mean 'regular expression'. Can be an alias of one of predefined regular expressions,
+     *           stored in Indi::$_rex, or can be a raw regular expression
+     *
+     * 3.'key' - mean given value is a key of a existing entry, representing instance of certain model.
+     *           If prop name is an alias of a field, then there is no need to specify model name, as field
+     *           metadata will be used for detecting the model name and checking entry existence. In the above
+     *           example it's about 'countryId' prop, so the value of 'key' rule is just boolean `true` instead
+     *           of model name 'Country'. But, for the third prop - 'myObjectId' - we explicitly provide the model
+     *           name: 'City'. This approach can be used in cases when there is some prop that is NOT a one of model's
+     *           fields, but there is anyway need to check if there is an 'City' entry having `id` = 'somevalue'
+     *
+     * Once ANY error is detected - this method is not acting like scratchy(), so method won't go further,
+     * and will flush an error message, related to the only one certain check of the only once certain prop, immediately.
+     *
+     * But if all is ok - method will assign the value of each prop, mentioned in rules, to self same-named props,
+     * e.g. $this->$prop = $data[$prop]
+     *
+     * Also, once 'key' checks are passed, the picked foreign data will be assigned to $this->_foreign array
+     * under $prop name, for ability to be used further. In the example above, this foreign data can be accessible by
+     * $this->foreign('countryId') and $this->foreign('myObjectId'). Note that the second one will work despite
+     * 'myObjectId' is not an alias of one of existing fields
+     *
+     * @param array $ruleA
+     * @param array $data
+     */
+    public function mcheck($ruleA, $data = array()) {
+
+        // Foreach prop having mismatch rules
+        foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
+
+            // If $prop exists as a key in $data arg - assign in
+            if (array_key_exists($prop, $data)) $this->$prop = $data[$prop];
+
+            // If $prop is an alias of thу existing field
+            if ($fieldR = $this->field($prop)) {
+
+                // If prop is required, but has empty/null/zero value - flush error
+                if ($rule['req'] && ($this->zero($prop) || !$this->$prop))
+                    mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title));
+
+                // If prop's value should match certain regular expression, but it does not - flush error
+                if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
+                    mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title));
+
+                // If prop's value should be an identifier of an existing object, but such object not found - flush error
+                if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop))
+                    mflush($prop, sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop));
+
+            // Else if $prop is a just some prop, assigned as temporary prop
+            } else {
+
+                // If prop is required, but has empty/null/zero value - flush error
+                if ($rule['req'] && !$this->$prop) jflush(false, sprintf(I_JCHECK_REQ, $prop));
+
+                // If prop's value should match certain regular expression, but it does not - flush error
+                if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
+                    jflush(false, sprintf(I_JCHECK_REG, $this->$prop, $prop));
+
+                // If prop's value should be an identifier of an existing object, but such object not found - flush error
+                if ($rule['key'] && $this->$prop) {
+                    if ($fgn = Indi::model($rule['key'])->fetchRow('`id` = "' . $this->$prop . '"')) $this->foreign($prop, $fgn);
+                    else jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $this->$prop));
+                }
+            }
+        }
     }
 }

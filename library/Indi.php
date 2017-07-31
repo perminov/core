@@ -1487,7 +1487,7 @@ class Indi {
         preg_match($rex, $subject, $found);
 
         // Return
-        return $found ? ($sub ? $found[$sub] : $found) : $found;
+        return $found ? (func_num_args() == 3 ? $found[$sub] : $found) : $found;
     }
 
     /**

@@ -1207,8 +1207,16 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function column($column, $imploded = false, $unique = false) {
 
+        // Check if $column arg contains multiple column names
+        if (count(ar($column)) > 1) $multi = ar($column); else $multi = false;
+
         // Declare array for single column
         $valueA = array();
+
+        // If multiple column names was passed within $column arg - force
+        // $implode and $unique arg to be `false`, as their support is not yet
+        // implemented for multi-columns mode, currently
+        if ($multi) $imploded = $unique = false;
 
         // Strip duplicate values from $valueA array, if $unique argument is `true`
         if ($unique) {
@@ -1216,7 +1224,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $valueA = array_keys($valueA);
 
         // Else simply collect column data
-        } else foreach ($this as $r) $valueA[] = $r->$column;
+        } else foreach ($this as $r) {
+            if ($multi) {
+                $valueI = array(); foreach ($multi as $c) $valueI[$c] = $r->$c; $valueA[] = $valueI;
+            } else {
+                $valueA[] = $r->$column;
+            }
+        }
 
         // Return column data
         return $imploded ? implode(is_string($imploded) ? $imploded : ',', $valueA) : $valueA;
