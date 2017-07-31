@@ -2,6 +2,7 @@
 *{color: #04408C;}
 .x-css-shadow{display: none !important;}
 .x-textmetrics{font-size: 11px !important;}
+.x-webkit .x-btn-default-toolbar-small .x-btn-inner {display: table-cell !important;}
 .x-border-box .x-field-default-toolbar .x-form-trigger,
 .x-border-box .x-field-default-toolbar .x-form-text,
 .x-border-box .x-form-trigger,.x-border-box .x-form-text{height: 19px; line-height: 13px;}

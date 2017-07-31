@@ -205,3 +205,10 @@ define('I_SOUTH_PLACEHOLDER_GET', 'Вернуть');
 define('I_SOUTH_PLACEHOLDER_BACK', ' содержимое обратно сюда');
 
 define('I_DEMO_ACTION_OFF', 'Это действие отключено в демо-режиме');
+
+define('I_MCHECK_REQ', 'Поле "%s" - обязательно для заполнения');
+define('I_MCHECK_REG', 'Значение "%s" поля "%s" - имеет неправильный формат');
+define('I_MCHECK_KEY', 'Объект типа "%s" с идентификатором "%s" - не найден');
+define('I_JCHECK_REQ', 'Параметр "%s" - является обязательным');
+define('I_JCHECK_REG', 'Значение "%s" параметра "%s" - имеет неправильный формат');
+define('I_JCHECK_KEY', 'Объект типа "%s" с идентификатором "%s" - не найден');
