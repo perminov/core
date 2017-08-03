@@ -409,7 +409,7 @@ Ext.define('Ext.calendar.view.DayBody', {
             // 30 minute increment since a row is 60 minutes
             relY = y - viewBox.y - rowH + scroll.top,
             rowIndex = Math.max(0, Math.ceil(relY / rowH)),
-            mins = rowIndex * 30,
+            mins = (rowIndex + this.fromHour * 2) * 30,
             dt = Ext.calendar.util.Date.add(this.viewStart, {days: dayIndex, minutes: mins}),
             el = this.getDayEl(dt),
             timeX = x;

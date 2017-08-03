@@ -4055,6 +4055,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                 ar($this->{$diff == 'ins' ? '_modified' : '_original'}[$prop]),
                 ar($this->{$diff == 'del' ? '_modified' : '_original'}[$prop]));
 
+            // Else if we deal with dates - return difference in seconds
+            else if (Indi::rexm('datetime', $this->_original[$prop]))
+                return strtotime($this->_modified[$prop]) - strtotime($this->_original[$prop]);
+
             // Else return result of deduction of previous value from modified value
             else return $this->_modified[$prop] - $this->_original[$prop];
 

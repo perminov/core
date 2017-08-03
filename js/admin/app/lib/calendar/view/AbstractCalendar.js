@@ -66,7 +66,7 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
      * @cfg {Boolean} enableDD
      * True to enable drag and drop in the calendar view (the default), false to disable it
      */
-    //enableDD: true,
+    enableDD: true,
     /**
      * @cfg {Boolean} monitorResize
      * True to monitor the browser's resize event (the default), false to ignore it. If the calendar view is rendered
