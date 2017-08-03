@@ -550,6 +550,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Get the columns, that need to be presented in a spreadsheet
         $columnA = json_decode(Indi::get()->columns, true);
 
+        // Get grouping info
+        $group = json_decode(Indi::get()->group, true);
+        if (!array_key_exists($group['property'], $data[0])) $group = false;
+
         // Setup a row index, which data rows are starting from
         $currentRowIndex = 1;
 
@@ -561,7 +565,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 (bool) (Indi::get()->keyword || (is_array($this->_excelA) && count($this->_excelA) > 1)) +
                 1 /* data header row */+
                 count($data) + /* data rows*/
-                (Indi::get()->summary ? 1 : 0);
+                (Indi::get()->summary ? 1 : 0) + /* summary row*/
+                count($this->rowset->column($group['property'], false, true));
 
         // Set default row height
         $objPHPExcel->getActiveSheet()->getDefaultRowDimension()->setRowHeight(15.75);
@@ -849,7 +854,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                         }
                     }
 
-                    // If filter type if also combo, but keys are from 'enumset' table
+                // If filter type if also combo, but keys are from 'enumset' table
                 } else if ($excelI['fieldId']) {
 
                     // Prepare the array of keys
@@ -879,6 +884,54 @@ class Indi_Controller_Admin extends Indi_Controller {
                                 // Capture color, for being available to setup as a font color
                                 $color = ltrim($hex, '#');
                             }
+
+                        // Else if filter value contains an .i-color-box item, we replace it with same-looking GD image box
+                        } else if (preg_match('/<span class="i-color-box" style="[^"]*background:\s*([^;]+);">/', $rs[$i]['title'], $c)) {
+
+                            // If color was detected
+                            if ($h = trim(Indi::hexColor($c[1]), '#')) {
+
+                                // Create the GD image
+                                $gdImage = @imagecreatetruecolor(14, 11) or iexit('Cannot Initialize new GD image stream');
+                                imagefill($gdImage, 0, 0, imagecolorallocate(
+                                    $gdImage, hexdec(substr($h, 0, 2)), hexdec(substr($h, 2, 2)), hexdec(substr($h, 4, 2)))
+                                );
+
+                                // Setup additional x-offset for color-box, for it to be centered within the cell
+                                $additionalOffsetX = mb_strlen($objSelfStyled->getText(), 'utf-8') * 5.5;
+
+                                //  Add the image to a worksheet
+                                $objDrawing = new PHPExcel_Worksheet_MemoryDrawing();
+                                $objDrawing->setCoordinates('A' . $currentRowIndex);
+                                $objDrawing->setImageResource($gdImage);
+                                $objDrawing->setRenderingFunction(PHPExcel_Worksheet_MemoryDrawing::RENDERING_JPEG);
+                                $objDrawing->setMimeType(PHPExcel_Worksheet_MemoryDrawing::MIMETYPE_DEFAULT);
+                                $objDrawing->setHeight(11);
+                                $objDrawing->setWidth(14);
+                                $objDrawing->setOffsetY(5)->setOffsetX($additionalOffsetX);
+                                $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+                            // Else if cell value contains a .i-color-box item, that uses an image by background:url(...)
+                            } else if (preg_match('/^ ?url\(([^)]+)\)/', $c[1], $src)) {
+
+                                // If detected image exists
+                                if ($abs = Indi::abs(trim($src[1], '.'))) {
+
+                                    // Setup additional x-offset for color-box, for it to be centered within the cell
+                                    //$additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+
+                                    //  Add the image to a worksheet
+                                    $objDrawing = new PHPExcel_Worksheet_Drawing();
+                                    $objDrawing->setPath($abs);
+                                    $objDrawing->setCoordinates('A' . $currentRowIndex);
+                                    //$objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                                    $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+                                }
+                            }
+
+                            // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                            // because gd image will override cell value otherwise
+                            $rs[$i]['title'] = str_pad('', 6, ' ') . strip_tags($rs[$i]['title']);
                         }
 
                         // Write row title
@@ -894,7 +947,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                         }
                     }
 
-                    // Else if filter type is 'text' or 'html' (simple text search)
+                // Else if filter type is 'text' or 'html' (simple text search)
                 } else {
 
                     // Write the filter value
@@ -1144,7 +1197,42 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Foreach item in $data array
         for ($i = 0; $i < count($data); $i++) {
 
-            // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+            // If grouing is turned on, and current row is within a new group
+            if ($group && $prevGroup != $data[$i][$group['property']]) {
+
+                // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously setted default height
+                $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(20.75);
+
+                // Convert the column index to excel column letter
+                $columnL = PHPExcel_Cell::stringFromColumnIndex(0);
+
+                // Merge cells
+                $objPHPExcel->getActiveSheet()->mergeCells('A' . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex);
+
+                // Set cell value
+                $objPHPExcel->getActiveSheet()->SetCellValue($columnL . $currentRowIndex, $data[$i][$group['property']]);
+
+                // Set style
+                $objPHPExcel->getActiveSheet()
+                    ->getStyle($columnL . $currentRowIndex . ':' . $lastColumnLetter . $currentRowIndex)
+                    ->applyFromArray(array(
+                        'borders' => array(
+                            'bottom' => array(
+                                'style' => PHPExcel_Style_Border::BORDER_MEDIUM,
+                                'color' => array('rgb' => '7EAAE2')
+                            ),
+                        ),
+                        'alignment' => array('vertical' => 'bottom')
+                    ));
+
+                // Increment current row index;
+                $currentRowIndex++;
+
+                // Set previous group
+                $prevGroup = $data[$i][$group['property']];
+            }
+
+            // Here we set row height, because OpenOffice Writer (unlike Excel) ignores previously sett default height
             $objPHPExcel->getActiveSheet()->getRowDimension($currentRowIndex)->setRowHeight(15.75);
 
             // Foreach column
