@@ -215,4 +215,24 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     public function adjustColorsCss($option, $color, &$css) {
 
     }
+
+    /**
+     * Exclude `spaceSince` and `spaceUntil` fields from the list of disabled fields,
+     * as those fields wil be got from $_POST as a result of event move or resize
+     *
+     * @param bool $redirect
+     * @param bool $return
+     * @return array|mixed
+     */
+    public function saveAction($redirect = true, $return = false) {
+
+        // Get array of space fields ids
+        $space = Indi::trail()->fields->select('spaceSince,spaceUntil', 'alias')->column('id');
+
+        // Exclude those fields from the list of disabled fields
+        Indi::trail()->disabledFields->exclude($space, 'fieldId');
+
+        // Call parent
+        return $this->callParent();
+    }
 }

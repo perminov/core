@@ -2308,11 +2308,21 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->row = $this->rowset->at(0);
 
         // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
-        $data = array($this->row->toGridData($this->row->affected()));
+        $data = array($this->row->toGridData($this->affected4grid()));
         $this->adjustGridData($data);
 
         // Return affected data, prepared for being displayed
         return array_shift($data);
+    }
+
+    /**
+     * Override this method in child classes if you need custom props to be included
+     * in the process of converting their values to be displayed in the view
+     *
+     * @return mixed
+     */
+    public function affected4grid() {
+        return $this->row->affected();
     }
 
     /**

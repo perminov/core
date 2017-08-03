@@ -684,7 +684,7 @@ td.ext-cal-dtitle-today div {
 }
 .x-gecko .ext-evt-rsz,
 .x-webkit .ext-evt-rsz {
-    cursor: default;
+    cursor: ns-resize;
 }
 .ext-evt-rsz-h {
     display: none;
@@ -702,7 +702,7 @@ td.ext-cal-dtitle-today div {
     /* no opacity for ie by default */
 }
 .ext-evt-over .ext-evt-rsz-h {
-    display: none;
+    display: block;
 }
 .x-ie .ext-evt-rsz-h {
     border-color: #ccc;
@@ -731,7 +731,7 @@ td.ext-cal-dtitle-today div {
 
 /* Shim for drag/drop operations on calendar views */
 .ext-dd-shim {
-    z-index:1000;
+    z-index:10000000;
     overflow:hidden;
     position:absolute;
     left:0;top:0;

@@ -2024,12 +2024,18 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Show loader
         Indi.app.loader();
 
+        // Get part of query string, related to filters
+        var search = me.storeLastRequest().split('?');
+        search.shift();
+        search = search.join('?').split('&')[0];
+        search = search.match(/^search=/) ? '?' + search : '';
+
         // Try to save via Ajax-request
         Ext.Ajax.request({
 
             // Params
             url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
-                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/',
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/' + search,
             method: 'POST',
             params: params,
 

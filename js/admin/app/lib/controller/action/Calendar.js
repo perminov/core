@@ -139,6 +139,12 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             weekViewCfg: {store: me.getStore(), colorField: colorField},
             monthViewCfg: {store: me.getStore(), colorField: colorField},
             listeners: {
+                eventmove: function(view, rec, eOpts) {
+                    me.recordRemoteSave(rec, view.store.indexOfTotal(rec) + 1);
+                },
+                eventresize: function(view, rec, eOpts) {
+                    me.recordRemoteSave(rec, view.store.indexOfTotal(rec) + 1);
+                },
                 eventclick: function(view, rec, el, eOpts) {
                     var action = me.ti().actions.r('form', 'alias'), aix = view.store.indexOfTotal(rec);
                     if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec, aix + 1);
@@ -174,7 +180,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     '{scope} .ext-color-{option}-x .ext-cal-evb, ' +
                     '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
                     '{scope} .ext-color-{option}-ad, ' +
-                    '{scope} .ext-color-{option}-x dl { ' +
+                    '{scope} .ext-color-{option}-x dl, ' +
+                    '{scope} .ext-color-{option} .ext-evt-rsz-h {' +
                         'border-color: {border-color}; ' +
                     '}';
 
