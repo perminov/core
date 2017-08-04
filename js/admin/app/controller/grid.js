@@ -2,6 +2,7 @@ Ext.define('Indi.controller.grid', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
+            rowset: {multiSelect: true},
             gridColumn$Editor: {
                 icon: '/i/admin/btn-icon-editor.png'
             }
