@@ -355,6 +355,21 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             // 2. insterted into `enumset` table
             if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
 
+            // Else
+            else if ($curTypeR->id && $columnTypeR->type == 'ENUM') {
+
+                // Get values
+                $valueA = Indi::db()->query('
+                    SELECT DISTINCT `' . $this->_original['alias'] . '` FROM `' . $table . '`
+                ')->fetchAll(PDO::FETCH_COLUMN);
+
+                // Set default value
+                if (!$this->defaultValue) $this->defaultValue = $valueA[0];
+
+                // Build key-value pairs
+                $enumsetAppendA = array_combine($valueA, $valueA);
+            }
+
             // Get the final list of possible values
             $enumsetA = array_merge($enumsetA, $enumsetAppendA);
 
