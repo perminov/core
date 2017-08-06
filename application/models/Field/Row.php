@@ -355,6 +355,21 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             // 2. insterted into `enumset` table
             if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
 
+            // Else
+            else if ($curTypeR->id && $columnTypeR->type == 'ENUM') {
+
+                // Get values
+                $valueA = Indi::db()->query('
+                    SELECT DISTINCT `' . $this->_original['alias'] . '` FROM `' . $table . '`
+                ')->fetchAll(PDO::FETCH_COLUMN);
+
+                // Set default value
+                if (!$this->defaultValue) $this->defaultValue = $valueA[0];
+
+                // Build key-value pairs
+                $enumsetAppendA = array_combine($valueA, $valueA);
+            }
+
             // Get the final list of possible values
             $enumsetA = array_merge($enumsetA, $enumsetAppendA);
 
@@ -800,10 +815,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Prepare regular expression for usage in WHERE clause in
         // UPDATE query, for detecting and fixing incompatible values
-        $regexp = preg_replace('/\$$/', ')$', preg_replace('/^\^/', '^(', trim(Indi::rex($rex[$newType]), '/')));
+        if ($rex[$newType] == 'enum') {
+            $regexp = ',(' . im($enumsetA, '|') . '),';
+        } else {
+            $regexp = preg_replace('/\$$/', ')$', preg_replace('/^\^/', '^(', trim(Indi::rex($rex[$newType]), '/')));
+        }
 
         // Setup double-quote variable, and WHERE usage flag
-        $q = '"'; $w = true; $incompatibleValuesReplacement = false;
+        $q = '"'; $w = true; $incompatibleValuesReplacement = false; $wcol = '`' . $col . '`';
 
         if ($newType == 'VARCHAR(255)') {
             if (preg_match('/TEXT/', $curTypeR->type)) {
@@ -1016,7 +1035,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 $incompatibleValuesReplacement = $defaultValue; $w = false;
             } else if (preg_match('/VARCHAR\(255\)/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
-                $incompatibleValuesReplacement = $defaultValue; $w = false;
+                $incompatibleValuesReplacement = $defaultValue; $w = true; $wcol = 'CONCAT(",", `' . $col . '`, ",")';
             } else if (preg_match('/SET/', $curTypeR->type)) {
                 Indi::db()->query('ALTER TABLE `' . $tbl . '` MODIFY `' . $col . '` TEXT NOT NULL');
                 $incompatibleValuesReplacement = $defaultValue; $regexp = '^' . im($enumsetA, '|') . '$';
@@ -1087,7 +1106,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             Indi::db()->query('
                 UPDATE `' . $tbl . '`
                 SET `' . $col . '` = ' . $q . $incompatibleValuesReplacement . $q .
-                ($w ? ' WHERE `' . $col . '` NOT REGEXP "' . $regexp . '"' : '')
+                    ($w ? ' WHERE ' . $wcol . ' NOT REGEXP "' . $regexp . '"' : '')
             );
     }
 
