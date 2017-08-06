@@ -317,13 +317,13 @@ class Indi_Schedule {
      * @param $until
      * @return Indi_Schedule
      */
-    public function daily($since, $until) {
+    public function daily($since = false, $until = false) {
 
         // Ensure $since arg to be in 'hh:mm:ss' format
-        if (!Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
+        if ($since && !Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
 
         // Ensure $until arg to be in 'hh:mm:ss' format
-        if (!Indi::rexm('time', $until)) jflush(false, 'Argument $until should be a time in format hh:mm:ss');
+        if ($until && !Indi::rexm('time', $until)) jflush(false, 'Argument $until should be a time in format hh:mm:ss');
 
         // Set initial mark to be the beginning of space left bound's date
         $mark = strtotime(date('Y-m-d', $this->_since));
@@ -332,17 +332,17 @@ class Indi_Schedule {
         $daily = $this->_2sec('1d');
 
         // Convert $since and $until args to number of seconds
-        $since = $this->_2sec($since);
-        $until = $this->_2sec($until);
+        if ($since) $since = $this->_2sec($since);
+        if ($until) $until = $this->_2sec($until);
 
         // While $mark does not exceed space's right bound
-        while ($mark < $this->_until) {
+        if ($since || $until) while ($mark < $this->_until) {
 
             // Try to set space between 00:00:00 and $since of each day - as not available
-            if ($this->busy($mark, $since)) jflush(false, 'Can\'t set opening hours');
+            if ($since && $this->busy($mark, $since)) jflush(false, 'Can\'t set opening hours');
 
             // Try to set space between $until and 00:00:00 of next day - as not available
-            if ($this->busy($mark + $until, $daily - $until)) jflush(false, 'Can\'t set closing hours');
+            if ($until && $this->busy($mark + $until, $daily - $until)) jflush(false, 'Can\'t set closing hours');
 
             // Jump to next date
             $mark += $daily;
