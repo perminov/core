@@ -421,7 +421,7 @@ td.ext-cal-dtitle-today div {
 /* Event cells */
 .ext-cal-ev {
     font-family:Verdana,sans-serif;
-    padding:1px 1px 0 2px;
+    padding:1px 1px 0 1px;
     vertical-align:top;
 }
 /* Event overflow more link */

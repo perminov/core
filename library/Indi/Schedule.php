@@ -264,10 +264,7 @@ class Indi_Schedule {
 
         // Append WHERE clause part, responsible for fetching entries
         // that are within schedule bounds (fully or partially)
-        $where[] = '(' . im(array(
-            '(`' . $srf['since'] . '` <= "' . $since . '" AND `' . $srf['until'] . '` >  "' . $since . '")',
-            '(`' . $srf['since'] . '` <  "' . $until . '" AND `' . $srf['until'] . '` >= "' . $until . '")',
-            '(`' . $srf['since'] . '` >= "' . $since . '" AND `' . $srf['until'] . '` <= "' . $until . '")'), ' OR ') . ')';
+        $where[] = self::where($since, $until);
 
         // Get schedule's busy spaces
         $rs = $model->fetchAll($where);
@@ -285,6 +282,22 @@ class Indi_Schedule {
 
         // Return schedule itself
         return $this;
+    }
+
+    /**
+     * Method for building WHERE clause, needed for fetching events that
+     * are fully/partially within a schedule bounds
+     *
+     * @static
+     * @param $since
+     * @param $until
+     * @return string
+     */
+    public static function where($since, $until) {
+        return '(' . im(array(
+            '(`spaceSince` <= "' . $since . '" AND `spaceUntil` >  "' . $since . '")',
+            '(`spaceSince` <  "' . $until . '" AND `spaceUntil` >= "' . $until . '")',
+            '(`spaceSince` >= "' . $since . '" AND `spaceUntil` <= "' . $until . '")'), ' OR ') . ')';
     }
 
     /**
