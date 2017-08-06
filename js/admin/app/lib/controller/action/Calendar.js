@@ -130,6 +130,16 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         // Setup id
         me.id = me.bid();
 
+        // Set from hours
+        if (me.ti().model.daily.since)
+            me.rowset.dayViewCfg.fromHour = me.rowset.weekViewCfg.fromHour
+                = parseInt(me.ti().model.daily.since.split(':')[0]);
+
+        // Set till hours
+        if (me.ti().model.daily.until)
+            me.rowset.dayViewCfg.tillHour = me.rowset.weekViewCfg.tillHour
+                = parseInt(me.ti().model.daily.until.split(':')[0]);
+
         // Setup rowset panel config
         me.rowset = Ext.merge({
             id: me.id + '-rowset-calendar',
@@ -181,9 +191,11 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
                     '{scope} .ext-color-{option}-ad, ' +
                     '{scope} .ext-color-{option}-x dl, ' +
-                    '{scope} .ext-color-{option}.ext-cal-evt.ext-cal-evr, ' +
-                    '{scope} .ext-color-{option} .ext-evt-rsz-h {' +
+                    '{scope} .ext-color-{option}.ext-cal-evt.ext-cal-evr {' +
                         'border: 1px dotted {border-color}; ' +
+                    '}' +
+                    '{scope} .ext-color-{option} .ext-evt-rsz-h {' +
+                        'border-color: {border-color}; ' +
                     '}';
 
                     var cssA = [], css = '';
