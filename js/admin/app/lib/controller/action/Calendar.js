@@ -181,8 +181,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
                     '{scope} .ext-color-{option}-ad, ' +
                     '{scope} .ext-color-{option}-x dl, ' +
+                    '{scope} .ext-color-{option}.ext-cal-evt.ext-cal-evr, ' +
                     '{scope} .ext-color-{option} .ext-evt-rsz-h {' +
-                        'border-color: {border-color}; ' +
+                        'border: 1px dotted {border-color}; ' +
                     '}';
 
                     var cssA = [], css = '';
