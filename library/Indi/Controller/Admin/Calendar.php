@@ -23,21 +23,18 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     }
 
     /**
-     * Append special filter, linked to date-column
+     * Append special filter, linked to `spaceSince` column
      */
     public function adjustTrail() {
 
-        // If no date column - return
-        if (!$dateColumn = Indi::trail()->model->dateColumn()) return;
-
-        // If date column is not a field - return
-        if (!$dateFieldR = Indi::trail()->model->fields($dateColumn)) return;
+        // If `spaceSince` field does not exists - return
+        if (!$fieldR_spaceSince = Indi::trail()->model->fields('spaceSince')) return;
 
         // Append filter
         Indi::trail()->filters->append(array(
             'sectionId' => Indi::trail()->section->id,
-            'fieldId' => $dateFieldR->id,
-            'title' => $dateFieldR->title
+            'fieldId' => $fieldR_spaceSince->id,
+            'title' => $fieldR_spaceSince->title
         ));
 
         // Define colors
@@ -61,7 +58,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         if ($this->_excelA) {
 
             // Pick bounds
-            list ($since, $until) = ar(im($this->_excelA['date']['value']));
+            list ($since, $until) = ar(im($this->_excelA['spaceSince']['value']));
 
             // Detect type of calendar
             if (strtotime($until) - strtotime($since) == 3600 * 24 * 6) $this->type = 'week';

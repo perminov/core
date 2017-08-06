@@ -54,8 +54,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                 todayTime: 'H:i',
                 time: 'H:i'
             },
-            fromHour: 4,
-            tillHour: 20,
+            fromHour: 0,
+            tillHour: 24,
             todayText: 'Сегодня',
             startDay: 1
         },
@@ -64,8 +64,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
          * Day-view config
          */
         dayViewCfg: {
-            fromHour: 4,
-            tillHour: 20,
+            fromHour: 0,
+            tillHour: 24,
             format: {
                 time: 'H:i'
             }
@@ -111,7 +111,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         var me = this, fA = me.callParent(arguments);
 
         // If current filter is not a special filter added for calendar panel system purposes - return as is
-        if (me.ti().model.dateColumn != filter.foreign('fieldId').alias) return fA;
+        if (filter.foreign('fieldId').alias != 'spaceSince') return fA;
 
         // If gte/lte filters are special filters added for calendar panel system purposes
         // - set up both `hidden` and `isImportantDespiteHidden` props to `true`
