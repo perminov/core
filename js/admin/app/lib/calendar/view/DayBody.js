@@ -290,6 +290,7 @@ Ext.define('Ext.calendar.view.DayBody', {
             d,
             ct,
             item,
+            raw,
             i,
             j,
             l,
@@ -313,13 +314,14 @@ Ext.define('Ext.calendar.view.DayBody', {
                     continue;
                 }
                 item = evt.data || evt.event.data;
+                raw = evt.raw || evt.event.raw;
                 if (item._renderAsAllDay) {
                     continue;
                 }
                 Ext.apply(item, {
                     cls: 'ext-cal-ev',
                     _positioned: true,
-                    _color: evt.raw._system.color
+                    _color: raw._system.color
                 });
                 evts.push({
                     data: this.getTemplateEventData(item),
