@@ -20,7 +20,8 @@ class Indi_Schedule {
      */
     protected $_shift = array(
         'system' => 86400,
-        'inject' => 0
+        'inject' => 0,
+        'gap' => 0
     );
 
     /**
@@ -48,8 +49,9 @@ class Indi_Schedule {
      *
      * @param $since
      * @param $until
+     * @param $gap
      */
-    public function __construct($since = 'month', $until = null) {
+    public function __construct($since = 'month', $until = null, $gap = false) {
 
         // If $since arg is either 'week' or 'month'
         if (in($since, 'week,month')) extract($this->bounds($since, $until));
@@ -67,6 +69,9 @@ class Indi_Schedule {
 
         // Create free space, that match whole schedule, initially
         $this->_spaces[] = new Indi_Schedule_Space($this->_since, $this->_until, 'free');
+
+        // Set gap
+        if ($gap) $this->_shift['gap'] = _2sec($gap);
     }
 
     /**
@@ -75,15 +80,19 @@ class Indi_Schedule {
      * @param int $since Unix-timestamp or a string representation, recognizable by strtotime()
      * @param int $duration
      * @param bool $checkOnly
+     * @param bool $includeGap
      * @return bool
      */
-    public function busy($since, $duration, $checkOnly = false) {
+    public function busy($since, $duration, $checkOnly = false, $includeGap = false) {
 
         // Default value for $isBusy flag
         $isBusy = true;
 
         // Convert $since arg into timestamp
         $since = is_numeric($since) ? $since : strtotime($since);
+
+        // Include gap
+        if ($includeGap) $duration += $this->_shift['gap'];
 
         // If part, that we want to mark as busy - is starting earlier schedule's left bound
         if ($since < $this->_since) {
@@ -255,13 +264,6 @@ class Indi_Schedule {
         $since = date('Y-m-d H:i:s', $this->_since);
         $until = date('Y-m-d H:i:s', $this->_until);
 
-        // Schedule-related field names
-        $srf = array(
-            'since' => $model->sinceField(),
-            'until' => $model->untilField(),
-            'frame' => $model->frameField()
-        );
-
         // Append WHERE clause part, responsible for fetching entries
         // that are within schedule bounds (fully or partially)
         $where[] = self::where($since, $until);
@@ -273,10 +275,10 @@ class Indi_Schedule {
         foreach ($rs as $r) {
 
             // If $pre arg is callable - call it, passing row, and schedule-related fields
-            if (is_callable($pre)) $pre($r, $srf);
+            if (is_callable($pre)) $pre($r);
 
             // Use row for creating busy space
-            if ($this->busy($r->{$srf['since']}, $r->{$srf['frame']}))
+            if ($this->busy($r->spaceSince, $r->spaceFrame + $this->_shift['gap']))
                 jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $rs->id . ' в раcписание');
         }
 
@@ -313,8 +315,8 @@ class Indi_Schedule {
      * Set daily spaces that are not between $since and $until - as not available.
      * This can be useful when there is a need to setup working hours
      *
-     * @param $since
-     * @param $until
+     * @param bool|string $since
+     * @param bool|string $until
      * @return Indi_Schedule
      */
     public function daily($since = false, $until = false) {
@@ -333,7 +335,7 @@ class Indi_Schedule {
 
         // Convert $since and $until args to number of seconds
         if ($since) $since = _2sec($since);
-        if ($until) $until = _2sec($until);
+        if ($until) $until = _2sec($until) + $this->_shift['gap'];
 
         // While $mark does not exceed space's right bound
         if ($since || $until) while ($mark < $this->_until) {
