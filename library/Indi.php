@@ -2372,14 +2372,16 @@ class Indi {
     }
 
     /**
-     * Create and return a new instance of Indi_Space class,
+     * Create and return a new instance of Indi_Schedule class
+     *
      * @static
      * @param $since
      * @param null $until
+     * @param string $gap
      * @return Indi_Schedule
      */
-    public static function schedule($since, $until = null) {
-        return new Indi_Schedule($since, $until);
+    public static function schedule($since, $until = null, $gap = '') {
+        return new Indi_Schedule($since, $until, $gap);
     }
     
     /**
