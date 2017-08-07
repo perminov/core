@@ -30,6 +30,10 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         // If `spaceSince` field does not exists - return
         if (!$fieldR_spaceSince = Indi::trail()->model->fields('spaceSince')) return;
 
+        // Set format of time to include seconds
+        foreach (ar('spaceSince,spaceUntil') as $field)
+            Indi::trail()->model->fields($field)->param('displayTimeFormat', 'H:i:s');
+
         // Append filter
         Indi::trail()->filters->append(array(
             'sectionId' => Indi::trail()->section->id,
