@@ -318,6 +318,10 @@ Ext.define('Indi.lib.controller.action.Action', {
         // Get all filter components
         var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
 
+        // If filters toolbar was undocked from main panel into a window - try search within that window
+        if (!filterCmpA.length && Ext.getCmp(me.panel.id).filterWin)
+            filterCmpA = Ext.getCmp(me.panel.id).filterWin.query('[isFilter][name]');
+
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
 
