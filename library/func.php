@@ -1306,3 +1306,49 @@ function jcheck($ruleA, $data) {
     // Return *_Row objects, collected for props, that have 'key' rule
     return $rowA;
 }
+
+/**
+ * Convert duration, given as string in format 'xy', to number of seconds
+ * where 'x' - is the number, and 'y' - is the measure. 'y' can be:
+ * s - second
+ * m - minute
+ * h - hour
+ * d - day
+ * w - week
+ *
+ * Example usage:
+ * $seconds = $this->_2sec('2m'); // $seconds will be = 120
+ *
+ * @param $expr
+ * @return int
+ */
+function _2sec($expr) {
+
+    // If $expr is given in 'hh:mm:ss' format
+    if (Indi::rexm('time', $expr)) {
+
+        // Prepare type mapping
+        $type = array('h', 'm', 's'); $s = 0;
+
+        // Foreach type append it's value converted to seconds
+        foreach (explode(':', $expr) as $index => $value) $s += _2sec($value . $type[$index]);
+
+        // Return
+        return $s;
+    }
+
+    // Check format for $for argument
+    if (!preg_match('~^([0-9]+)(s|m|h|d|w)$~', $expr, $m)) jflush(false, 'Incorrect $expr arg format');
+
+    // Multipliers for $expr conversion
+    $frame2sec = array(
+        's' => 1,
+        'm' => 60,
+        'h' => 60 * 60,
+        'd' => 60 * 60 * 24,
+        'w' => 60 * 60 * 24 * 7
+    );
+
+    // Return number of seconds
+    return $m[1] * $frame2sec[$m[2]];
+}

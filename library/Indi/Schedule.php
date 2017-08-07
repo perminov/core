@@ -329,11 +329,11 @@ class Indi_Schedule {
         $mark = strtotime(date('Y-m-d', $this->_since));
 
         // Get daily number of seconds
-        $daily = $this->_2sec('1d');
+        $daily = _2sec('1d');
 
         // Convert $since and $until args to number of seconds
-        if ($since) $since = $this->_2sec($since);
-        if ($until) $until = $this->_2sec($until);
+        if ($since) $since = _2sec($since);
+        if ($until) $until = _2sec($until);
 
         // While $mark does not exceed space's right bound
         if ($since || $until) while ($mark < $this->_until) {
@@ -361,7 +361,7 @@ class Indi_Schedule {
     public function busyDates($frame) {
 
         // Convert to seconds
-        $frame = $this->_2sec($frame);
+        $frame = _2sec($frame);
 
         // Array of busy dates
         $busy = array();
@@ -395,7 +395,7 @@ class Indi_Schedule {
             if (!$free) $busy[] = date('Y-m-d', $mark);
 
             // Jump to next date
-            $mark += $this->_2sec('1d');
+            $mark += _2sec('1d');
         }
 
         // Return busy dates
@@ -413,7 +413,7 @@ class Indi_Schedule {
     public function busyHours($frame, $date, $step = '1h') {
 
         // Convert $frame arg to seconds
-        $frame = $this->_2sec($frame);
+        $frame = _2sec($frame);
 
         // Array of busy hours
         $busy = array();
@@ -422,7 +422,7 @@ class Indi_Schedule {
         $mark = strtotime($date);
 
         // Convert $step arg to seconds
-        $step = $this->_2sec($step);
+        $step = _2sec($step);
 
         // While $mark is within $date
         while ($date == date('Y-m-d', $mark)) {
@@ -436,52 +436,6 @@ class Indi_Schedule {
 
         // Return busy time-steps
         return $busy;
-    }
-
-    /**
-     * Convert duration, given as string in format 'xy', to number of seconds
-     * where 'x' - is the number, and 'y' - is the measure. 'y' can be:
-     * s - second
-     * m - minute
-     * h - hour
-     * d - day
-     * w - week
-     *
-     * Example usage:
-     * $seconds = $this->_2sec('2m'); // $seconds will be = 120
-     *
-     * @param $expr
-     * @return int
-     */
-    protected function _2sec($expr) {
-
-        // If $expr is given in 'hh:mm:ss' format
-        if (Indi::rexm('time', $expr)) {
-
-            // Prepare type mapping
-            $type = array('h', 'm', 's'); $s = 0;
-
-            // Foreach type append it's value converted to seconds
-            foreach (explode(':', $expr) as $index => $value) $s += $this->_2sec($value . $type[$index]);
-
-            // Return
-            return $s;
-        }
-
-        // Check format for $for argument
-        if (!preg_match('~^([0-9]+)(s|m|h|d|w)$~', $expr, $m)) jflush(false, 'Incorrect $expr arg format');
-
-        // Multipliers for $expr conversion
-        $frame2sec = array(
-            's' => 1,
-            'm' => 60,
-            'h' => 60 * 60,
-            'd' => 60 * 60 * 24,
-            'w' => 60 * 60 * 24 * 7
-        );
-
-        // Return number of seconds
-        return $m[1] * $frame2sec[$m[2]];
     }
 
     /**
