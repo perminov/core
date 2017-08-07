@@ -32,7 +32,8 @@ Ext.define('Ext.calendar.util.WeekEventRenderer', {
                 max = o.maxEventsPerDay != undefined ? o.maxEventsPerDay: 999,
                 weekCount = o.weekCount < 1 ? 6: o.weekCount,
                 dayCount = o.weekCount == 1 ? o.dayCount: 7,
-                cellCfg;
+                cellCfg,
+                M = Ext.calendar.data.EventMappings;
 
             for (; w < weekCount; w++) {
                 if (!grid[w] || grid[w].length == 0) {
@@ -98,9 +99,9 @@ Ext.define('Ext.calendar.util.WeekEventRenderer', {
                                     var raw = evt.raw || evt.event.raw;
                                     item._color = raw._system.color;
                                     item._weekIndex = w;
-                                    item._renderAsAllDay = item[Ext.calendar.data.EventMappings.IsAllDay.name] || evt.isSpanStart;
-                                    item.spanLeft = item[Ext.calendar.data.EventMappings.StartDate.name].getTime() < startOfWeek.getTime();
-                                    item.spanRight = item[Ext.calendar.data.EventMappings.EndDate.name].getTime() > endOfWeek.getTime();
+                                    item._renderAsAllDay = item[M.IsAllDay.name] || evt.isSpanStart;
+                                    item.spanLeft = item[M.StartDate.name].getTime() < startOfWeek.getTime();
+                                    item.spanRight = item[M.EndDate.name].getTime() > endOfWeek.getTime();
                                     item.spanCls = (item.spanLeft ? (item.spanRight ? 'ext-cal-ev-spanboth':
                                     'ext-cal-ev-spanleft') : (item.spanRight ? 'ext-cal-ev-spanright': ''));
 
@@ -110,7 +111,9 @@ Ext.define('Ext.calendar.util.WeekEventRenderer', {
                                         cls: 'ext-cal-ev',
                                         cn: eventTpl.apply(o.templateDataFn(item))
                                     };
-                                    var diff = Ext.calendar.util.Date.diffDays(dt, item[Ext.calendar.data.EventMappings.EndDate.name]) + 1,
+                                    var dec = Ext.Date.format(item[M.EndDate.name], 'H:i:s') == '00:00:00';
+                                    var diff = Ext.calendar.util.Date.diffDays(dt,
+                                            Ext.Date.add(item[M.EndDate.name], Ext.Date.SECOND, dec ? -1 : 0)) + 1,
                                         cspan = Math.min(diff, dayCount - d);
 
                                     if (cspan > 1) {

@@ -82,11 +82,12 @@ Ext.define('Ext.calendar.view.MonthDayDetail', {
         this.view.sortEventRecordsForDay(evts);
         var me = this;
         evts.each(function(evt) {
-            var item = evt.data, M = Ext.calendar.data.EventMappings;
+            var item = evt.data, M = Ext.calendar.data.EventMappings,
+                dec = Ext.Date.format(item[M.EndDate.name], 'H:i:s') == '00:00:00';
             item._color = evt.raw._system.color;
-            item._renderAsAllDay = item[M.IsAllDay.name] || Ext.calendar.util.Date.diffDays(item[M.StartDate.name], item[M.EndDate.name]) > 0;
+            item._renderAsAllDay = item[M.IsAllDay.name] || Ext.calendar.util.Date.diffDays(item[M.StartDate.name], Ext.Date.add(item[M.EndDate.name], Ext.Date.SECOND, dec ? -1 : 0)) > 0;
             item.spanLeft = Ext.calendar.util.Date.diffDays(item[M.StartDate.name], this.date) > 0;
-            item.spanRight = Ext.calendar.util.Date.diffDays(this.date, item[M.EndDate.name]) > 0;
+            item.spanRight = Ext.calendar.util.Date.diffDays(this.date, Ext.Date.add(item[M.EndDate.name], Ext.Date.SECOND, dec ? -1 : 0)) > 0;
             item.spanCls = (item.spanLeft ? (item.spanRight ? 'ext-cal-ev-spanboth':
             'ext-cal-ev-spanleft') : (item.spanRight ? 'ext-cal-ev-spanright': ''));
 

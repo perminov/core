@@ -269,8 +269,10 @@ Ext.define('Ext.calendar.view.DayBody', {
     // private
     getTemplateEventBox: function(evt) {
         var heightFactor = 0.7,
-            start = evt[Ext.calendar.data.EventMappings.StartDate.name],
-            end = evt[Ext.calendar.data.EventMappings.EndDate.name],
+            M = Ext.calendar.data.EventMappings,
+            dec = Ext.Date.format(evt[M.EndDate.name], 'H:i:s') == '00:00:00',
+            start = evt[M.StartDate.name],
+            end = Ext.Date.add(evt[M.EndDate.name], Ext.Date.SECOND, dec ? -1 : 0),
             startMins = start.getHours() * 60 + start.getMinutes(),
             endMins = end.getHours() * 60 + end.getMinutes(),
             diffMins = endMins - startMins,
@@ -279,7 +281,7 @@ Ext.define('Ext.calendar.view.DayBody', {
         evt._left = 0;
         evt._width = 100;
         evt._top = Math.round((startMins - startHoursShift) * heightFactor);
-        evt._height = Math.max((diffMins * heightFactor), 15);
+        evt._height = Math.max((diffMins * heightFactor) + (dec ? 1: 0), 15);
     },
 
     // private

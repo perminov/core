@@ -389,7 +389,7 @@ class Indi_Schedule {
                 else $space = $this->_spaces[++$i];
 
             // While $free flag is not true and $space's date is same as $mark's date
-            } while (!$free && (date('Y-m-d', $space->until) == date('Y-m-d', $mark)));
+            } while (!$free && (date('Y-m-d', $space->until - (int)(date('H:i:s', $space->until) == '00:00:00')) == date('Y-m-d', $mark)));
 
             // If $free flag is still false - append $mark's date to busy dates array
             if (!$free) $busy[] = date('Y-m-d', $mark);
