@@ -83,7 +83,7 @@ class Indi_Schedule {
      * @param bool $includeGap
      * @return bool
      */
-    public function busy($since, $duration, $checkOnly = false, $includeGap = false) {
+    public function busy($since, $duration, $checkOnly = false, $includeGap = true) {
 
         // Default value for $isBusy flag
         $isBusy = true;
@@ -278,7 +278,7 @@ class Indi_Schedule {
             if (is_callable($pre)) $pre($r);
 
             // Use row for creating busy space
-            if ($this->busy($r->spaceSince, $r->spaceFrame + $this->_shift['gap']))
+            if ($this->busy($r->spaceSince, $r->spaceFrame))
                 jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $rs->id . ' в раcписание');
         }
 
@@ -341,10 +341,11 @@ class Indi_Schedule {
         if ($since || $until) while ($mark < $this->_until) {
 
             // Try to set space between 00:00:00 and $since of each day - as not available
-            if ($since && $this->busy($mark, $since)) jflush(false, 'Can\'t set opening hours');
+            if ($since && $this->busy($mark, $since, false, false)) jflush(false, 'Can\'t set opening hours');
 
             // Try to set space between $until and 00:00:00 of next day - as not available
-            if ($until && $this->busy($mark + $until, $daily - $until)) jflush(false, 'Can\'t set closing hours');
+            if ($until && $this->busy($mark + $until, $daily - $until, false, false))
+                jflush(false, 'Can\'t set closing hours');
 
             // Jump to next date
             $mark += $daily;
