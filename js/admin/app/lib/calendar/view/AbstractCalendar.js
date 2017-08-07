@@ -336,9 +336,10 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
 
         evts.each(function(evt) {
             var M = Ext.calendar.data.EventMappings,
+            dec = Ext.Date.format(evt.data[M.EndDate.name], 'H:i:s') == '00:00:00',
             days = Ext.calendar.util.Date.diffDays(
             Ext.calendar.util.Date.max(this.viewStart, evt.data[M.StartDate.name]),
-            Ext.calendar.util.Date.min(this.viewEnd, evt.data[M.EndDate.name])) + 1;
+            Ext.calendar.util.Date.min(this.viewEnd, Ext.Date.add(evt.data[M.EndDate.name], Ext.Date.SECOND, dec ? -1 : 0))) + 1;
 
             if (days > 1 || Ext.calendar.util.Date.diffDays(evt.data[M.StartDate.name], evt.data[M.EndDate.name]) > 1) {
                 this.prepareEventGridSpans(evt, this.eventGrid, w, d, days);

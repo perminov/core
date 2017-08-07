@@ -87,6 +87,8 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                 this.shim(this.resizeDt, box);
 
                 curr = Ext.calendar.util.Date.copyTime(n.date, this.resizeDt);
+                var inc = Ext.Date.format(n.date, 'H:i:s') == '00:00:00';
+                if (n.date > this.resizeDt && inc) curr = Ext.Date.add(curr, Ext.Date.DAY, 1);
                 start = Ext.calendar.util.Date.min(data.eventStart, curr);
                 end = Ext.calendar.util.Date.max(data.eventStart, curr);
 
