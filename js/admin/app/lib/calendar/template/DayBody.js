@@ -25,7 +25,7 @@ Ext.define('Ext.calendar.template.DayBody', {
                             '<div class="ext-cal-bg-rows">',
                                 '<div class="ext-cal-bg-rows-inner">',
                                     '<tpl for="times">',
-                                        '<div class="ext-cal-bg-row">',
+                                        '<div class="ext-cal-bg-row {out}">',
                                             '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
                                         '</div>',
                                     '</tpl>',
@@ -37,7 +37,7 @@ Ext.define('Ext.calendar.template.DayBody', {
                         '<td class="ext-cal-day-times">',
                             '<tpl for="times">',
                                 '<div class="ext-cal-bg-row">',
-                                    '<div class="ext-cal-day-time-inner">{.}</div>',
+                                    '<div class="ext-cal-day-time-inner">{time}</div>',
                                 '</div>',
                             '</tpl>',
                         '</td>',
@@ -73,7 +73,10 @@ Ext.define('Ext.calendar.template.DayBody', {
         dt = Ext.calendar.util.Date.add(dt, {hours: this.fromHour || 0});
 
         for(i=this.fromHour || 0; i< this.tillHour; i++){
-            times.push(Ext.Date.format(dt, this.format.time));
+            times.push({
+                time: Ext.Date.format(dt, this.format.time),
+                out: i < this.fromHourMain || i >= this.tillHourMain ? '' : 'ext-cal-bg-row-in'
+            });
             dt = Ext.calendar.util.Date.add(dt, {hours: 1});
         }
         return this.applyOut({
