@@ -127,7 +127,9 @@ Ext.define('Ext.calendar.view.DayBody', {
                 todayText: this.todayText,
                 showTime: this.showTime,
                 format: this.format,
+                fromHourMain: this.fromHour,
                 fromHour: this.fromHour,
+                tillHourMain: this.tillHour,
                 tillHour: this.tillHour
             });
         }

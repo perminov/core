@@ -86,6 +86,53 @@ Ext.define('Indi.lib.controller.action.Calendar', {
     },
 
     /**
+     * Expand time range
+     *
+     * @param store
+     * @param rs
+     */
+    storeLoadCallback: function(store, rs) {
+        var me = this, card = Ext.getCmp(me.rowset.id).getActiveView(),
+            from = parseInt(me.ti().model.daily.since.split(':')[0]), fromHour, minHour = null,
+            till = parseInt(me.ti().model.daily.until.split(':')[0]), tillHour, maxHour = null;
+
+        // If card's fromHour setting is 0, or is not set - return
+        if (card.xtype == 'monthview') return;
+
+        // Get minimum spaceSince's hour, and maximum spaceUntil's hour among events
+        rs.forEach(function(r){
+
+            // Get minimum spaceSince's hour
+            if (minHour === null) minHour = r.get('spaceSince').getHours();
+            else if (r.get('spaceSince').getHours() < minHour) minHour = r.get('spaceSince').getHours();
+
+            // Get maximum spaceUntil's hour, incremented by 1 in case of non-zero minutes/seconds
+            if (maxHour === null) maxHour = r.get('spaceUntil').getHours()
+                + (r.get('spaceUntil').getMinutes() || r.get('spaceUntil').getSeconds() ? 1 : 0);
+            else if (r.get('spaceUntil').getHours() > maxHour) maxHour = r.get('spaceUntil').getHours()
+                + (r.get('spaceUntil').getMinutes() || r.get('spaceUntil').getSeconds() ? 1 : 0);
+        });
+
+        // Set hour, that card should start from, and hour, that card should end till
+        fromHour = Math.min(minHour === null ? from : minHour, from);
+        tillHour = Math.max(maxHour === null ? till : maxHour, till);
+
+        // If card bounds should be adjusted
+        if (card.fromHour != fromHour || card.tillHour != tillHour) {
+
+            // If hour, that card start from is not equal to hour, that card SHOULD start from - fix it
+            if (card.fromHour != fromHour) card.fromHour = card.body.fromHour = card.body.tpl.fromHour = fromHour;
+
+            // If hour, that card start from is not equal to hour, that card SHOULD start from - fix it
+            if (card.tillHour != tillHour) card.tillHour = card.body.tillHour = card.body.tpl.tillHour = tillHour;
+
+            // Re-run layout
+            card.body.renderTemplate();
+            card.refresh();
+        }
+    },
+
+    /**
      * Here we force date-filter value to be picked from calendar panel active view's bounds
      */
     filterChange: function() {
