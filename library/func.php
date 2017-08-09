@@ -1294,27 +1294,27 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         $value = $data[$prop];
 
         // Flush fn
-        $fn = $fn == 'mflush' ? 'mflush' : 'jflush';
+        $flushFn = $fn == 'mflush' ? 'mflush' : 'jflush';
 
         // First arg for flush fn
-        $arg1 = $fn == 'mflush' ? $prop : false;
+        $arg1 = $flushFn == 'mflush' ? $prop : false;
 
         // Constant name
-        $c = 'I_' . ($fn == 'mflush' ? 'M' : 'J') . 'CHECK_';
+        $c = 'I_' . ($flushFn == 'mflush' ? 'M' : 'J') . 'CHECK_';
 
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && !strlen($value)) $mode($arg1, sprintf(constant($c . 'REQ'), $prop));
+        if ($rule['req'] && !strlen($value)) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
 
         // If prop's value should match certain regular expression, but it does not - flush error
-        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $mode($arg1, sprintf(constant($c . 'REG'), $value, $prop));
+        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
         if ($rule['key'] && strlen($value) && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
-            $mode($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+            $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
 
         // If prop's value should be equal to some certain value, but it's not equal - flush error
         if (array_key_exists('eql', $rule) && $value != $rule['eql'])
-            $mode($arg1, sprintf(constant($c . 'EQL'), $rule['eql'], $value));
+            $flushFn($arg1, sprintf(constant($c . 'EQL'), $rule['eql'], $value));
     }
 
     // Return *_Row objects, collected for props, that have 'key' rule
