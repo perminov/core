@@ -81,9 +81,10 @@ class Indi_Schedule {
      * @param int $duration
      * @param bool $checkOnly
      * @param bool $includeGap
+     * @param string $avail
      * @return bool
      */
-    public function busy($since, $duration, $checkOnly = false, $includeGap = true) {
+    public function busy($since, $duration, $checkOnly = false, $includeGap = true, $avail = 'busy') {
 
         // Default value for $isBusy flag
         $isBusy = true;
@@ -127,7 +128,7 @@ class Indi_Schedule {
                 if ($space->since < $since) {
 
                     // Prepare array for busy-space injection into $this->_spaces
-                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, 'busy'));
+                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, $avail));
 
                     // If free schedule will remain after busy-part injection
                     if ($space->until > $since + $duration)
@@ -148,7 +149,7 @@ class Indi_Schedule {
                     if ($space->until > $since + $duration) {
 
                         // Create busy space starting at the exact same moment as current free space
-                        $busy = new Indi_Schedule_Space($since, $since + $duration, 'busy');
+                        $busy = new Indi_Schedule_Space($since, $since + $duration, $avail);
 
                         // Move current free space's starting mark to the ending of busy space
                         $space->since = $since + $duration;
@@ -159,8 +160,8 @@ class Indi_Schedule {
                     // Else if current free space is going to became busy in it's whole bounds
                     } else if ($space->until == $since + $duration)
 
-                        // Change it's 'avail' prop to 'busy'
-                        $space->avail = 'busy';
+                        // Change it's 'avail' prop to $avail
+                        $space->avail = $avail;
                 }
             }
         }
@@ -311,21 +312,44 @@ class Indi_Schedule {
         return $this->_spaces;
     }
 
-    /**
-     * Set daily spaces that are not between $since and $until - as not available.
-     * This can be useful when there is a need to setup working hours
-     *
-     * @param bool|string $since
-     * @param bool|string $until
-     * @return Indi_Schedule
-     */
-    public function daily($since = false, $until = false) {
+    public function opened($since = false) {
+
+        // If no $since arg given, or it is `false` - return
+        if (!$since) return $this;
 
         // Ensure $since arg to be in 'hh:mm:ss' format
-        if ($since && !Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
+        if (!Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
 
-        // Ensure $until arg to be in 'hh:mm:ss' format
-        if ($until && !Indi::rexm('time', $until)) jflush(false, 'Argument $until should be a time in format hh:mm:ss');
+        // Set initial mark to be the beginning of space left bound's date
+        $mark = strtotime(date('Y-m-d', $this->_since));
+
+        // Get daily number of seconds
+        $daily = _2sec('1d');
+
+        // Convert $since arg to number of seconds
+        $since = _2sec($since); //  + $this->_shift['gap']; for ->closed()
+
+        // While $mark does not exceed space's right bound
+        while ($mark < $this->_until) {
+
+            // Fill schedule with 'early' spaces, where possible
+            $this->fillwp($mark, $mark + $since, $mark, 'early');
+
+            // Jump to next date
+            $mark += $daily;
+        }
+
+        // Return itself
+        return $this;
+    }
+
+    public function closed($since = false) {
+
+        // If no $since arg given, or it is `false` - return
+        if (!$since) return $this;
+
+        // Ensure $since arg to be in 'hh:mm:ss' format
+        if (!Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
 
         // Set initial mark to be the beginning of space left bound's date
         $mark = strtotime(date('Y-m-d', $this->_since));
@@ -334,25 +358,61 @@ class Indi_Schedule {
         $daily = _2sec('1d');
 
         // Convert $since and $until args to number of seconds
-        if ($since) $since = _2sec($since);
-        if ($until) $until = _2sec($until) + $this->_shift['gap'];
+        $since = _2sec($since) + $this->_shift['gap'];
 
-        // While $mark does not exceed space's right bound
-        if ($since || $until) while ($mark < $this->_until) {
+        // While $mark does not exceed schedule's right bound
+        while ($mark < $this->_until) {
 
-            // Try to set space between 00:00:00 and $since of each day - as not available
-            if ($since && $this->busy($mark, $since, false, false)) jflush(false, 'Can\'t set opening hours');
+            // Fill schedule with 'late' spaces, where possible
+            $this->fillwp($mark + $since, $mark + $daily, $mark, 'late');
 
-            // Try to set space between $until and 00:00:00 of next day - as not available
-            if ($until && $this->busy($mark + $until, $daily - $until, false, false))
-                jflush(false, 'Can\'t set closing hours');
-
-            // Jump to next date
+            // Jump to next day
             $mark += $daily;
         }
 
         // Return itself
         return $this;
+    }
+
+    public function fillwp($_since, $_until, $mark, $avail) {
+
+        // Get date for
+        $date = date('Y-m-d', $mark);
+
+        // Foreach space within schedule
+        foreach ($this->_spaces as $space) {
+
+            // If current space's start date is one of the next days to $_since - break;
+            if (date('Y-m-d', $space->since) > $date) break;
+
+            // If current space ends earlier than $_since - skip
+            if ($space->until <= $_since) continue;
+
+            // If current space is not 'free'
+            if ($space->avail != 'free') continue;
+
+            // Calc part of current space's frame, available within current day
+            $frame = min($space->until, $_until) - max($space->since, $_since);
+
+            // If no current space's part, suitable for marking as 'late' found - break
+            if ($frame <= 0) break;
+
+            // Mark found part as 'late'
+            if ($this->busy(max($space->since, $_since), $frame, false, false, $avail))
+                jflush(false, 'Can\'t set ' . $avail . ' space');
+        }
+    }
+
+    /**
+     * Set daily spaces that are not between $since and $until - as not available.
+     * This can be useful when there is a need to setup working hours
+     *
+     * @param bool|string $opened
+     * @param bool|string $closed
+     * @return Indi_Schedule
+     */
+    public function daily($opened = false, $closed = false) {
+        return $this->opened($opened)->closed($closed);
     }
 
     /**
