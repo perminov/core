@@ -93,8 +93,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
      */
     storeLoadCallback: function(store, rs) {
         var me = this, card = Ext.getCmp(me.rowset.id).getActiveView(),
-            from = parseInt(me.ti().model.daily.since.split(':')[0]), fromHour, minHour = null,
-            till = parseInt(me.ti().model.daily.until.split(':')[0]), tillHour, maxHour = null;
+            s = me.ti().model.daily.since, u = me.ti().model.daily.until,
+            from = s ? parseInt(s.split(':')[0]) :  0, fromHour, minHour = null, f,
+            till = u ? parseInt(u.split(':')[0]) : 24, tillHour, maxHour = null, t;
 
         // If card's fromHour setting is 0, or is not set - return
         if (card.xtype == 'monthview') return;
@@ -106,11 +107,11 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             if (minHour === null) minHour = r.get('spaceSince').getHours();
             else if (r.get('spaceSince').getHours() < minHour) minHour = r.get('spaceSince').getHours();
 
+            // Get hour
+            t = r.get('spaceUntil').getHours() + (r.get('spaceUntil').getMinutes() || r.get('spaceUntil').getSeconds() ? 1 : 0) || 24;
+
             // Get maximum spaceUntil's hour, incremented by 1 in case of non-zero minutes/seconds
-            if (maxHour === null) maxHour = r.get('spaceUntil').getHours()
-                + (r.get('spaceUntil').getMinutes() || r.get('spaceUntil').getSeconds() ? 1 : 0);
-            else if (r.get('spaceUntil').getHours() > maxHour) maxHour = r.get('spaceUntil').getHours()
-                + (r.get('spaceUntil').getMinutes() || r.get('spaceUntil').getSeconds() ? 1 : 0);
+            if (maxHour === null || t > maxHour) maxHour = t;
         });
 
         // Set hour, that card should start from, and hour, that card should end till
