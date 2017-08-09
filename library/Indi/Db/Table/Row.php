@@ -4690,7 +4690,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title));
 
                 // If prop's value should match certain regular expression, but it does not - flush error
-                if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
+                if ($rule['rex'] && !$this->zero($prop) && !Indi::rexm($rule['rex'], $this->$prop))
                     mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title));
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
@@ -4704,7 +4704,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($rule['req'] && !$this->$prop) jflush(false, sprintf(I_JCHECK_REQ, $prop));
 
                 // If prop's value should match certain regular expression, but it does not - flush error
-                if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
+                if ($rule['rex'] && $this->$prop && !Indi::rexm($rule['rex'], $this->$prop))
                     jflush(false, sprintf(I_JCHECK_REG, $this->$prop, $prop));
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
