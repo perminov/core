@@ -260,7 +260,7 @@ class Entity_Row extends Indi_Db_Table_Row {
             if ($this->spaceUsing == 'date') {
 
                 // Get date field's alias
-                $date = $this->foreign('spaceFieldIds')->select($columnTypeIdA['DATE'])->alias;
+                $date = $this->foreign('spaceFieldIds')->select($columnTypeIdA['DATE'], 'columnTypeId')->at(0)->alias;
 
                 // Run SQL-query
                 Indi::db()->query('
