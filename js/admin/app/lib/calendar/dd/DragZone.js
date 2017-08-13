@@ -14,10 +14,7 @@ Ext.define('Ext.calendar.dd.DragZone', {
     eventSelector: '.ext-cal-evt',
 
     constructor: function(el, config) {
-        if (!Ext.calendar._statusProxyInstance) {
-            Ext.calendar._statusProxyInstance = new Ext.calendar.dd.StatusProxy();
-        }
-        this.proxy = Ext.calendar._statusProxyInstance;
+        this.proxy = new Ext.calendar.dd.StatusProxy();
         this.callParent(arguments);
     },
 
