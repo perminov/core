@@ -99,6 +99,9 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Adjust action mode and view config.
             $this->adjustActionCfg();
 
+            // Setup view. This call will create an action-view object instance, especially for current trail item
+            Indi::trail()->view();
+
             // If action is 'index'
             if (Indi::trail()->action->rowRequired == 'n') {
 

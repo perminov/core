@@ -21,7 +21,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      *
      * @var bool
      */
-    public $spaceFields = true;
+    public $spaceFields = false;
 
     /**
      * Here we provide calendar panel to be used
@@ -40,8 +40,11 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function adjustTrail() {
 
-        // If `spaceSince` field does not exists - set `spaceField` flag to `false` and return
-        if (!$fieldR_spaceSince = Indi::trail()->model->fields('spaceSince') && $this->spaceFields = false) return;
+        // If `spaceSince` field does not exists - return
+        if (!$fieldR_spaceSince = Indi::trail()->model->fields('spaceSince')) return;
+
+        // Set `spaceField` flag to `true`
+        $this->spaceFields = true;
 
         // For each of the below space-fields
         foreach (ar('spaceSince,spaceUntil') as $field) {
