@@ -92,8 +92,13 @@ Ext.define('Indi.lib.controller.action.Calendar', {
      * @param rs
      */
     storeLoadCallback: function(store, rs) {
-        var me = this, card = Ext.getCmp(me.rowset.id).getActiveView(),
-            s = me.ti().model.daily.since, u = me.ti().model.daily.until,
+        var me = this, card = Ext.getCmp(me.rowset.id).getActiveView(), daily = me.ti().model.daily;
+
+        // If no daily hours set - return
+        if (!daily) return;
+
+        // More aux variables
+        var s = daily.since, u = daily.until,
             from = s ? parseInt(s.split(':')[0]) :  0, fromHour, minHour = null, f,
             till = u ? parseInt(u.split(':')[0]) : 24, tillHour, maxHour = null, t;
 
@@ -183,15 +188,19 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         // Setup id
         me.id = me.bid();
 
-        // Set from hours
-        if (me.ti().model.daily.since)
-            me.rowset.dayViewCfg.fromHour = me.rowset.weekViewCfg.fromHour
-                = parseInt(me.ti().model.daily.since.split(':')[0]);
+        // If daily hours were set
+        if (me.ti().model.daily) {
 
-        // Set till hours
-        if (me.ti().model.daily.until)
-            me.rowset.dayViewCfg.tillHour = me.rowset.weekViewCfg.tillHour
-                = parseInt(me.ti().model.daily.until.split(':')[0]);
+            // Set from hours
+            if (me.ti().model.daily.since)
+                me.rowset.dayViewCfg.fromHour = me.rowset.weekViewCfg.fromHour
+                    = parseInt(me.ti().model.daily.since.split(':')[0]);
+
+            // Set till hours
+            if (me.ti().model.daily.until)
+                me.rowset.dayViewCfg.tillHour = me.rowset.weekViewCfg.tillHour
+                    = parseInt(me.ti().model.daily.until.split(':')[0]);
+        }
 
         // Setup rowset panel config
         me.rowset = Ext.merge({
@@ -221,49 +230,56 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     if (dateInfo && m) m.setText(Ext.Date.format(dateInfo.activeDate, 'F'));
                 },
                 boxready: function(c) {
-                    if (!c.colors) return;
 
-                    // Template styles
-                    var tpl = '' +
-                    '{scope}-month-details-panel-body .ext-color-{option}.ext-cal-evt.ext-cal-evr, ' +
-                    '{scope} .ext-color-{option}, ' +
-                    '{scope} .x-ie .ext-color-{option}-ad, ' +
-                    '{scope} .x-opera .ext-color-{option}-ad { ' +
-                        'color: {color};' +
-                    '} ' +
-                    '{scope} .ext-cal-day-col .ext-color-{option}, ' +
-                    '{scope} .ext-dd-drag-proxy .ext-color-{option}, ' +
-                    '{scope} .ext-color-{option}-ad, ' +
-                    '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
-                    '{scope} .ext-color-{option} .ext-cal-picker-icon, ' +
-                    '{scope} .ext-color-{option}-x dl, ' +
-                    '{scope} .ext-color-{option}-x .ext-cal-evb { ' +
-                        'background: {background-color}; ' +
-                    '} ' +
-                    '{scope} .ext-color-{option}-x .ext-cal-evb, ' +
-                    '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
-                    '{scope} .ext-color-{option}-ad, ' +
-                    '{scope} .ext-color-{option}-x dl, ' +
-                    '{scope} .ext-color-{option}.ext-cal-evt.ext-cal-evr {' +
-                        'border: 1px dotted {border-color}; ' +
-                    '}' +
-                    '{scope} .ext-color-{option} .ext-evt-rsz-h {' +
-                        'border-color: {border-color}; ' +
-                    '}';
+                    // Apply colors
+                    if (c.colors) {
 
-                    var cssA = [], css = '';
-                    for (var value in c.colors.colors) {
-                        css = tpl.replace(/\{scope\}/g, '#' + c.id);
-                        css = css.replace(/\{option\}/g, value);
-                        css = css.replace(/\{color\}/g, c.colors.colors[value]['color']);
-                        css = css.replace(/\{border-color\}/g, c.colors.colors[value]['border-color']);
-                        css = css.replace(/\{background-color\}/g, c.colors.colors[value]['background-color']);
-                        cssA.push(css);
+                        // Template styles
+                        var tpl = '' +
+                            '{scope}-month-details-panel-body .ext-color-{option}.ext-cal-evt.ext-cal-evr, ' +
+                            '{scope} .ext-color-{option}, ' +
+                            '{scope} .x-ie .ext-color-{option}-ad, ' +
+                            '{scope} .x-opera .ext-color-{option}-ad { ' +
+                            'color: {color};' +
+                            '} ' +
+                            '{scope} .ext-cal-day-col .ext-color-{option}, ' +
+                            '{scope} .ext-dd-drag-proxy .ext-color-{option}, ' +
+                            '{scope} .ext-color-{option}-ad, ' +
+                            '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
+                            '{scope} .ext-color-{option} .ext-cal-picker-icon, ' +
+                            '{scope} .ext-color-{option}-x dl, ' +
+                            '{scope} .ext-color-{option}-x .ext-cal-evb { ' +
+                            'background: {background-color}; ' +
+                            '} ' +
+                            '{scope} .ext-color-{option}-x .ext-cal-evb, ' +
+                            '{scope} .ext-color-{option}-ad .ext-cal-evm, ' +
+                            '{scope} .ext-color-{option}-ad, ' +
+                            '{scope} .ext-color-{option}-x dl, ' +
+                            '{scope} .ext-color-{option}.ext-cal-evt.ext-cal-evr {' +
+                            'border: 1px dotted {border-color}; ' +
+                            '}' +
+                            '{scope} .ext-color-{option} .ext-evt-rsz-h {' +
+                            'border-color: {border-color}; ' +
+                            '}';
+
+                        var cssA = [], css = '';
+                        for (var value in c.colors.colors) {
+                            css = tpl.replace(/\{scope\}/g, '#' + c.id);
+                            css = css.replace(/\{option\}/g, value);
+                            css = css.replace(/\{color\}/g, c.colors.colors[value]['color']);
+                            css = css.replace(/\{border-color\}/g, c.colors.colors[value]['border-color']);
+                            css = css.replace(/\{background-color\}/g, c.colors.colors[value]['background-color']);
+                            cssA.push(css);
+                        }
+
+                        // Insert style node
+                        Ext.DomHelper.insertFirst(c.el, '<style>' + cssA.join("\n") + '</style>');
                     }
 
-                    // Insert style node
-                    Ext.DomHelper.insertFirst(c.el, '<style>' + cssA.join("\n") + '</style>');
+                    // Get master toolbar
                     var master = Ext.getCmp(me.panel.id.replace(/wrapper$/, '') + 'toolbar-master');
+
+                    // Prepend navigation items
                     if (this.tbarItems && this.tbarItems.length) {
                         this.tbarItems.pop();
                         master.insert(0, this.tbarItems);

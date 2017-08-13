@@ -253,9 +253,10 @@ Ext.define('Ext.calendar.view.Month', {
     // private
     getTemplateEventData: function(evt) {
         var M = Ext.calendar.data.EventMappings,
-        selector = this.getEventSelectorCls(evt[M.EventId.name]),
+        selector = this.getEventSelectorCls(evt[M.EventId.name]), title;
+        if (!this.titleField) this.titleField  = this.store.model.getFields().r(M.Title.name, 'name') || {};
         title = evt[M.Title.name];
-
+        if (this.titleField.dateFormat) title = Ext.Date.format(title, this.titleField.dateFormat);
         return Ext.applyIf({
             _selectorCls: selector,
             _colorCls: 'ext-color-' + (evt._color || 'default') + (evt._renderAsAllDay ? '-ad': ''),

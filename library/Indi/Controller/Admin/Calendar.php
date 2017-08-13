@@ -16,9 +16,22 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     public $colors = false;
 
     /**
+     * Flag, indicating whether or not current trail item's model has space-fields,
+     * e.g. whether or not it is possible to apply all calendar-related things
+     *
+     * @var bool
+     */
+    public $spaceFields = true;
+
+    /**
      * Here we provide calendar panel to be used
      */
     public function adjustActionCfg() {
+
+        // If calendar can't be used - return
+        if (!$this->spaceFields) return;
+
+        // Apply calendar view
         $this->actionCfg['view']['index'] = 'calendar';
     }
 
@@ -27,12 +40,18 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function adjustTrail() {
 
-        // If `spaceSince` field does not exists - return
-        if (!$fieldR_spaceSince = Indi::trail()->model->fields('spaceSince')) return;
+        // If `spaceSince` field does not exists - set `spaceField` flag to `false` and return
+        if (!$fieldR_spaceSince = Indi::trail()->model->fields('spaceSince') && $this->spaceFields = false) return;
 
-        // Set format of time to include seconds
-        foreach (ar('spaceSince,spaceUntil') as $field)
+        // For each of the below space-fields
+        foreach (ar('spaceSince,spaceUntil') as $field) {
+
+            // Set format of time to include seconds
             Indi::trail()->model->fields($field)->param('displayTimeFormat', 'H:i:s');
+
+            // Append to gridFields
+            if (Indi::trail()->gridFields) Indi::trail()->gridFields->append(Indi::trail()->model->fields($field));
+        }
 
         // Append filter
         Indi::trail()->filters->append(array(
@@ -50,13 +69,16 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      * @return string
      */
     public function finalORDER() {
-        return 'spaceSince';
+        return $this->spaceFields ? 'spaceSince' : $this->callParent();
     }
 
     /**
      * Adjust events depending on calendar type, and apply colors to events
      */
     public function adjustGridDataRowset() {
+
+        // If calendar can't be used - return
+        if (!$this->spaceFields) return;
 
         // Adjust events only if possible to detect current calendar type
         if ($this->_excelA) {
@@ -74,9 +96,6 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
 
         // Apply colors
         $this->applyColors();
-
-        // Call parent
-        $this->callParent();
     }
 
     /**
@@ -204,6 +223,11 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function adjustColors(&$info) {
 
+        // Set empty info
+        if (!$info) $info = array('field' => '', 'colors' => array());
+
+        // Append one more color definition
+        $info['colors']['default'] = 'lime';
     }
 
     /**
@@ -227,11 +251,15 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function saveAction($redirect = true, $return = false) {
 
-        // Get array of space fields ids
-        $space = Indi::trail()->fields->select('spaceSince,spaceUntil', 'alias')->column('id');
+        // If calendar can be used
+        if ($this->spaceFields) {
 
-        // Exclude those fields from the list of disabled fields
-        Indi::trail()->disabledFields->exclude($space, 'fieldId');
+            // Get array of space fields ids
+            $space = Indi::trail()->fields->select('spaceSince,spaceUntil', 'alias')->column('id');
+
+            // Exclude those fields from the list of disabled fields
+            Indi::trail()->disabledFields->exclude($space, 'fieldId');
+        }
 
         // Call parent
         return $this->callParent();
