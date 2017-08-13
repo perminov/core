@@ -81,9 +81,6 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::ini()->lang->admin == 'ru')
             setlocale(LC_TIME, 'ru_RU.UTF-8', 'ru_utf8', 'Russian_Russia.UTF8', 'ru_RU', 'Russian');
 
-        // Adjust action mode and view config.
-        $this->adjustActionCfg();
-
         // Perform authentication
         $this->auth();
 
@@ -98,6 +95,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Adjust trail
             $this->adjustTrail();
+
+            // Adjust action mode and view config.
+            $this->adjustActionCfg();
 
             // If action is 'index'
             if (Indi::trail()->action->rowRequired == 'n') {

@@ -341,6 +341,9 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             Ext.calendar.util.Date.max(this.viewStart, evt.data[M.StartDate.name]),
             Ext.calendar.util.Date.min(this.viewEnd, Ext.Date.add(evt.data[M.EndDate.name], Ext.Date.SECOND, dec ? -1 : 0))) + 1;
 
+            if (!Ext.calendar.util.Date.compare(evt.data[M.EndDate.name], evt.data[M.StartDate.name]))
+                evt.data[M.IsAllDay.name] = true;
+
             if (days > 1 || Ext.calendar.util.Date.diffDays(evt.data[M.StartDate.name], evt.data[M.EndDate.name]) > 1
                 || evt.data[M.EndDate.name] > this.viewEnd || evt.data[M.StartDate.name] < this.viewStart) {
 

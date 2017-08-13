@@ -204,4 +204,78 @@ class Entity_Row extends Indi_Db_Table_Row {
 
         return $return;
     }
+
+    /**
+     *
+     */
+    public function onUpdate() {
+
+        // If neither `spaceUsage` nor `spaceFieldIds` fields were changed - return
+        if (!$this->affected('spaceUsing,spaceFieldIds')) return;
+
+        // If `spaceUsing` became non-'none' - create space fields within an entity, that current entry is representing
+        if ($this->affected('spaceUsing', true) == 'none') {
+
+            // Get key-value pairs of `element` and `columnType` entries
+            $elementIdA = Indi::db()->query('SELECT `alias`, `id` FROM `element`')->fetchAll(PDO::FETCH_KEY_PAIR);
+            $columnTypeIdA = Indi::db()->query('SELECT `type`, `id` FROM `columnType`')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+            // Prepare fields configs
+            $fieldA = array(
+                'space' => array(
+                    'title' => 'Расписание',
+                    'elementId' => $elementIdA['span'],
+                    'mode' => 'hidden'
+                ),
+                'spaceSince' => array(
+                    'title' => 'Начало',
+                    'elementId' => $elementIdA['datetime'],
+                    'columnTypeId' => $columnTypeIdA['DATETIME'],
+                    'mode' => 'hidden'
+                ),
+                'spaceUntil' => array(
+                    'title' => 'Конец',
+                    'elementId' => $elementIdA['datetime'],
+                    'columnTypeId' => $columnTypeIdA['DATETIME'],
+                    'mode' => 'hidden'
+                ),
+                'spaceFrame' => array(
+                    'title' => 'Длительность',
+                    'elementId' => $elementIdA['number'],
+                    'columnTypeId' => $columnTypeIdA['INT(11)'],
+                    'mode' => 'hidden'
+                )
+            );
+
+            // Create fields
+            foreach ($fieldA as $alias => $fieldI) {
+                $fieldRA[$alias] = Indi::model('Field')->createRow();
+                $fieldRA[$alias]->entityId = $this->id;
+                $fieldRA[$alias]->alias = $alias;
+                $fieldRA[$alias]->assign($fieldI);
+                $fieldRA[$alias]->save();
+            }
+
+            // If `spaceUsing` is 'date'
+            if ($this->spaceUsing == 'date') {
+
+                // Get date field's alias
+                $date = $this->foreign('spaceFieldIds')->select($columnTypeIdA['DATE'])->alias;
+
+                // Run SQL-query
+                Indi::db()->query('
+                    UPDATE `' . $this->table . '` SET
+                      `spaceSince` = CONCAT(`'. $date . '`, " 00:00:00"),
+                      `spaceUntil` = CONCAT(`'. $date . '`, " 00:00:00"),
+                      `spaceFrame` = 0
+                ');
+            }
+
+        // Else if `spaceUsing` wa changed to 'none'
+        } else if ($this->affected('spaceUsing') && $this->spaceUsing == 'none') {
+
+            // Remove space* fields
+            Indi::model($this->id)->fields('space,spaceSince,spaceUntil,spaceFrame')->delete();
+        }
+    }
 }
