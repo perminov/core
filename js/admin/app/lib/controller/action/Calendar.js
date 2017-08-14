@@ -146,11 +146,6 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             query = '[isFilter][isImportantDespiteHidden]', from = Ext.getCmp(me.panel.id).down(query + '[isFrom]'),
             till = Ext.getCmp(me.panel.id).down(query + '[isTill]');
 
-        if (!from && !till && Ext.getCmp(me.panel.id).filterWin) {
-            from = Ext.getCmp(me.panel.id).filterWin.down(query + '[isFrom]');
-            till = Ext.getCmp(me.panel.id).filterWin.down(query + '[isTill]');
-        }
-
         // Pick values from calendar's active view's bounds
         from.noReload = true; from.setValue(bounds.start); from.noReload = false;
         till.noReload = true; till.setValue(bounds.end); till.noReload = false;
