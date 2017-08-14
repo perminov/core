@@ -60,7 +60,8 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         Indi::trail()->filters->append(array(
             'sectionId' => Indi::trail()->section->id,
             'fieldId' => $fieldR_spaceSince->id,
-            'title' => $fieldR_spaceSince->title
+            'title' => $fieldR_spaceSince->title,
+            'toolbar' => 'master'
         ));
 
         // Define colors

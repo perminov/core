@@ -624,15 +624,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     panelDocked$Filter: function() {
-        var me = this, hidden = !me.ti().filters.length &&
+        var me = this, hidden = !(me.ti().filters.length - me.ti().filters.select('master', 'toolbar').length) &&
             (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length);
 
         // 'Filter' toolbar config
         return {
             xtype: 'filtertoolbar',
             ctx: me,
-            hidden: !me.ti().filters.length &&
-                (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
+            hidden: hidden,
             id: me.bid() + '-toolbar$filter',
             cls: 'x-poppable',
             items: [{
@@ -663,19 +662,20 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Array}
      */
-    panelDocked$FilterItemA: function() {
+    panelDocked$FilterItemA: function(filters) {
 
         // Declare toolbar filter panel items array, and some additional variables
-        var me = this, itemA = [], itemI, item$, itemICustom, moreItemA = [], eItem$;
+        var me = this, itemA = [], itemI, item$, moreItemA = [], eItem$,
+            filters = filters || me.ti().filters.select(undefined, 'toolbar');
 
         // Fulfil items array
-        for (var i = 0; i < me.ti().filters.length; i++) {
+        for (var i = 0; i < filters.length; i++) {
 
             // Get default filter config
-            itemI = me.panelDocked$Filter_Default(me.ti().filters[i]);
+            itemI = me.panelDocked$Filter_Default(filters[i]);
 
             // Own element/prop, related to current filter
-            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
+            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(filters[i].foreign('fieldId').alias);
 
             // Apply filter custom config
             if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
@@ -687,7 +687,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             if (itemI) {
 
                 // If it has no `name` prop yet - setit up
-                if (!itemI.name) itemI.name = me.ti().filters[i].foreign('fieldId').alias;
+                if (!itemI.name) itemI.name = filters[i].foreign('fieldId').alias;
 
                 // Refresh label width
                 if (itemI.fieldLabel) itemI.labelWidth = Indi.metrics.getWidth(itemI.fieldLabel);
@@ -876,8 +876,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             isFilter: true,
             isFrom: true,
             fieldLabel: fieldLabel,
-            labelWidth: Indi.metrics.getWidth(fieldLabel),
-            width: 85 + Indi.metrics.getWidth(fieldLabel),
+            labelWidth: Indi.metrics.getWidth(fieldLabel) + 5,
+            width: 90 + Indi.metrics.getWidth(fieldLabel),
             startDay: 1,
             validateOnChange: false,
             listeners: {
