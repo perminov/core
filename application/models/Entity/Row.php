@@ -2,6 +2,27 @@
 class Entity_Row extends Indi_Db_Table_Row {
 
     /**
+     * @return array|void
+     */
+    public function validate() {
+
+        // Check
+        $this->vcheck(array(
+            'title' => array(
+                'req' => true
+            ),
+            'table' => array(
+                'req' => true,
+                'rex' => '/^[a-zA-Z0-9]+$/',
+                'unq' => true
+            )
+        ));
+
+        // Return
+        return $this->callParent();
+    }
+
+    /**
      * Delete current entity
      *
      * @return int|void
@@ -85,6 +106,9 @@ class Entity_Row extends Indi_Db_Table_Row {
      * @return int
      */
     public function save() {
+
+        // Run checks
+        $this->mflush(true);
 
         // If this is a new entity
         if (!$this->id) {

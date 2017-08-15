@@ -4913,8 +4913,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param array $ruleA
      * @param array $data
+     * @param bool $flush
      */
-    public function mcheck($ruleA, $data = array()) {
+    public function mcheck($ruleA, $data = array(), $flush = true) {
 
         // Foreach prop having mismatch rules
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
@@ -4926,18 +4927,28 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->field($prop)) {
 
                 // If prop is required, but has empty/null/zero value - flush error
-                if ($rule['req'] && ($this->zero($prop) || !$this->$prop))
-                    mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title));
+                if ($rule['req'] && ($this->zero($prop) || !$this->$prop)) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_REQ, $fieldR->title);
 
                 // If prop's value should match certain regular expression, but it does not - flush error
-                if ($rule['rex'] && !$this->zero($prop) && !Indi::rexm($rule['rex'], $this->$prop))
-                    mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title));
+                else if ($rule['rex'] && !$this->zero($prop) && !Indi::rexm($rule['rex'], $this->$prop)) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title);
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
-                if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop))
-                    mflush($prop, sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop));
+                else if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop)) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop);
 
-            // Else if $prop is a just some prop, assigned as temporary prop
+                // If prop's value should be unique within the whole database table, but it's not - flush error
+                else if ($rule['unq'] && !$this->zero($prop) && $this->model()->fetchRow(array(
+                    '`' . $prop . '` = "' . $this->$prop . '"', '`id` != "' . $this->id . '"'
+                ))) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_UNQ, $this->$prop, $fieldR->title))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_UNQ, $this->$prop, $fieldR->title);
+
+                // Else if $prop is a just some prop, assigned as temporary prop
             } else {
 
                 // If prop is required, but has empty/null/zero value - flush error
@@ -4985,5 +4996,14 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return
         return $daily;
+    }
+
+    /**
+     * Alias for mcheck, but without immediate flush
+     *
+     * @param $ruleA
+     */
+    public function vcheck($ruleA) {
+        $this->mcheck($ruleA, array(), false);
     }
 }
