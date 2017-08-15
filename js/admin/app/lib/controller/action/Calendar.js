@@ -197,11 +197,16 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     = parseInt(me.ti().model.daily.until.split(':')[0]);
         }
 
+        // Set flag, indicating whether or not only month view should be available within calendar panel
+        var onlyMonthView = Indi.in(me.ti().model.space.scheme, 'date,datetime,date-time,date-timeId,date-dayQty');
+
         // Setup rowset panel config
         me.rowset = Ext.merge({
             id: me.id + '-rowset-calendar',
             store: me.getStore(),
             colors: me.ti().section.colors,
+            showWeekView: !onlyMonthView,
+            showDayView: !onlyMonthView,
             dayViewCfg: {store: me.getStore(), colorField: colorField},
             weekViewCfg: {store: me.getStore(), colorField: colorField},
             monthViewCfg: {store: me.getStore(), colorField: colorField},

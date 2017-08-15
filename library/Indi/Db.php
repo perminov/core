@@ -248,7 +248,7 @@ class Indi_Db {
 
                 // Append current field data to $eFieldA array
                 $eFieldA[$fieldI['original']['entityId']]['rows'][] = new Field_Row($fieldI);
-                $eFieldA[$fieldI['original']['entityId']]['aliases'][] = $fieldI['original']['alias'];
+                $eFieldA[$fieldI['original']['entityId']]['aliases'][$fieldI['original']['id']] = $fieldI['original']['alias'];
             }
 
             // Release memory
@@ -291,9 +291,22 @@ class Indi_Db {
                     'fields' => new Field_Rowset_Base(array(
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],
-                        'aliases' => $eFieldA[$entityI['id']]['aliases'],
+                        'aliases' => array_values($eFieldA[$entityI['id']]['aliases']),
                         'rowClass' => 'Field_Row'
                     ))
+                );
+
+                // Set space scheme settings
+                self::$_entityA[$modelNameA[$entityI['id']]]['space'] = array(
+                    'scheme' => $entityI['spaceScheme'],
+                    'fields' => $entityI['spaceScheme'] != 'none'
+                        ? array_combine(
+                            explode('-', $entityI['spaceScheme']),
+                            array_flip(array_intersect(
+                                array_flip($eFieldA[$entityI['id']]['aliases']),
+                                ar($entityI['spaceFields'])
+                            ))
+                        ) : array()
                 );
 
                 // Free memory, used by fields array for current entity

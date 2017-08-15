@@ -73,6 +73,13 @@ class Indi_Db_Table
     protected $_fileFields = null;
 
     /**
+     * Scheme of how any instance of current model/entity can be used as a 'space' within the calendar/schedule
+     *
+     * @var array
+     */
+    protected $_space = null;
+
+    /**
      *
      * @var Indi_Db_Table_Rowset|array
      */
@@ -137,6 +144,9 @@ class Indi_Db_Table
 
         // Setup 'hasRole' flag
         $this->_hasRole = $config['hasRole'];
+
+        // Setup 'spaceScheme' prop
+        $this->_space = $config['space'];
     }
 
     /**
@@ -773,6 +783,7 @@ class Indi_Db_Table
         $array['table'] = $this->_table;
         $array['title'] = $this->_title;
         $array['titleFieldId'] = $this->_titleFieldId;
+        $array['space'] = $this->_space;
         return $array;
     }
 
@@ -1283,5 +1294,14 @@ class Indi_Db_Table
      */
     public function notices() {
         return $this->_notices;
+    }
+
+    /**
+     * Get space scheme settings
+     *
+     * @return string
+     */
+    public function space() {
+        return $this->_space;
     }
 }
