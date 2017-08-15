@@ -207,9 +207,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             colors: me.ti().section.colors,
             showWeekView: !onlyMonthView,
             showDayView: !onlyMonthView,
-            dayViewCfg: {store: me.getStore(), colorField: colorField},
-            weekViewCfg: {store: me.getStore(), colorField: colorField},
-            monthViewCfg: {store: me.getStore(), colorField: colorField},
+            dayViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
+            weekViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
+            monthViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
             listeners: {
                 eventmove: function(view, rec, eOpts) {
                     me.recordRemoteSave(rec, view.store.indexOfTotal(rec) + 1);
