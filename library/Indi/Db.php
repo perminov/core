@@ -163,7 +163,7 @@ class Indi_Db {
             // in fetch from `enumset`
             if ($entityId) {
 
-                // Declare array ofor collecting fields ids
+                // Declare array for collecting fields ids
                 $fieldIdA = array();
 
                 // Fulfil that array
@@ -265,10 +265,8 @@ class Indi_Db {
                     }
 
                 // If $entityId was found, so it mean that we are reloading existing model
-                if ($class)
-
-                    // Unset metadata storage under that key from self::$_entityA and self::$_modelA
-                    unset(self::$_entityA[$class], self::$_modelA[$class]);
+                // Unset metadata storage under that key from self::$_entityA and self::$_modelA
+                if ($class) unset(self::$_entityA[$class], self::$_modelA[$class]);
             }
 
             // Array for collecting "entityId => modelName" pairs
@@ -320,7 +318,9 @@ class Indi_Db {
             if (self::$_entityA['Notice']) {
 
                 // Get info about notices, attached to entities
-                $noticeA = self::$_instance->query('SELECT * FROM `notice` WHERE `toggle` = "y"')->fetchAll();
+                $noticeA = self::$_instance->query('
+                    SELECT * FROM `notice` WHERE `toggle` = "y"' . ($entityId ? ' AND `entityId` = "' . $entityId . '"' : '') . '
+                ')->fetchAll();
 
                 // Group notices by their entity ids, preliminary converting
                 // each notice into an instance of Indi_Db_Table_Row
