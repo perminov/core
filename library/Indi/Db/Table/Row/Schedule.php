@@ -2,45 +2,6 @@
 class Indi_Db_Table_Row_Schedule extends Indi_Db_Table_Row {
 
     /**
-     * Ensure that fields, related to current entry's space within the schedule - will be set up
-     *
-     * @return int|mixed
-     */
-    public function save() {
-
-        // Set value for schedule-space fields
-        $this->setSpaceSince();
-        $this->setSpaceUntil();
-        $this->setSpaceFrame();
-
-        // Call parent
-        return $this->callParent();
-    }
-
-    /**
-     * Empty method, to be redeclared in child classes
-     */
-    public function setSpaceSince() {
-
-    }
-
-    /**
-     * Empty method, to be redeclared in child classes
-     */
-    public function setSpaceUntil() {
-
-    }
-
-    /**
-     * Calculate current entry's space size within the schedule, in seconds
-     */
-    public function setSpaceFrame() {
-
-        // Set frame field value
-        $this->spaceFrame = strtotime($this->spaceUntil) - strtotime($this->spaceSince);
-    }
-
-    /**
      * Get daily working hours to be involved in certain entry validation.
      * This function was implemented as a workaround for cases when we have
      * some events, that are not fully/partially fit within the daily working hours.

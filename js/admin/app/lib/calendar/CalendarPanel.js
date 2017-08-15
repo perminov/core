@@ -118,7 +118,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
                 text: this.dayText,
                 handler: this.onDayClick,
                 scope: this,
-                toggleGroup: 'tb-views'
+                toggleGroup: this.id + '-tb-views'
             });
             this.viewCount++;
         }
@@ -128,7 +128,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
                 text: this.weekText,
                 handler: this.onWeekClick,
                 scope: this,
-                toggleGroup: 'tb-views'
+                toggleGroup: this.id + '-tb-views'
             });
             this.viewCount++;
         }
@@ -138,7 +138,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
                 text: this.monthText,
                 handler: this.onMonthClick,
                 scope: this,
-                toggleGroup: 'tb-views'
+                toggleGroup: this.id + '-tb-views'
             });
             this.viewCount++;
             this.showMonthView = true;
