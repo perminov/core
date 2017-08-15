@@ -200,7 +200,7 @@ Ext.define('Indi.lib.controller.action.Action', {
         var me = this, merged = [],
             pushed = me.push(me.panel.docked.inner['master'], 'panelDockedInner', true),
             filter = me.ti().filters.select('master', 'toolbar');
-        
+
         for (var i = 0; i < pushed.length; i++) merged = merged.concat(pushed[i]);
         merged = merged.concat(me.panelDocked$FilterItemA(filter));
 

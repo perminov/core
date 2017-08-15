@@ -210,11 +210,11 @@ class Entity_Row extends Indi_Db_Table_Row {
      */
     public function onUpdate() {
 
-        // If neither `spaceUsage` nor `spaceFieldIds` fields were changed - return
-        if (!$this->affected('spaceUsing,spaceFieldIds')) return;
+        // If neither `spaceScheme` nor `spaceFields` fields were changed - return
+        if (!$this->affected('spaceScheme,spaceFields')) return;
 
-        // If `spaceUsing` became non-'none' - create space fields within an entity, that current entry is representing
-        if ($this->affected('spaceUsing', true) == 'none') {
+        // If `spaceScheme` became non-'none' - create space fields within an entity, that current entry is representing
+        if ($this->affected('spaceScheme', true) == 'none') {
 
             // Get key-value pairs of `element` and `columnType` entries
             $elementIdA = Indi::db()->query('SELECT `alias`, `id` FROM `element`')->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -256,11 +256,11 @@ class Entity_Row extends Indi_Db_Table_Row {
                 $fieldRA[$alias]->save();
             }
 
-            // If `spaceUsing` is 'date'
-            if ($this->spaceUsing == 'date') {
+            // If `spaceScheme` is 'date'
+            if ($this->spaceScheme == 'date') {
 
                 // Get date field's alias
-                $date = $this->foreign('spaceFieldIds')->select($columnTypeIdA['DATE'], 'columnTypeId')->at(0)->alias;
+                $date = $this->foreign('spaceFields')->select($columnTypeIdA['DATE'], 'columnTypeId')->at(0)->alias;
 
                 // Run SQL-query
                 Indi::db()->query('
@@ -271,8 +271,8 @@ class Entity_Row extends Indi_Db_Table_Row {
                 ');
             }
 
-        // Else if `spaceUsing` wa changed to 'none'
-        } else if ($this->affected('spaceUsing') && $this->spaceUsing == 'none') {
+        // Else if `spaceScheme` wa changed to 'none'
+        } else if ($this->affected('spaceScheme') && $this->spaceScheme == 'none') {
 
             // Remove space* fields
             Indi::model($this->id)->fields('space,spaceSince,spaceUntil,spaceFrame')->delete();
