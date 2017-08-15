@@ -1279,9 +1279,10 @@ function xml2ar($xml, $options = array()) {
  *
  * @param $ruleA
  * @param $data
+ * @param $fn
  * @return array
  */
-function jcheck($ruleA, $data) {
+function jcheck($ruleA, $data, $fn = 'jflush') {
 
     // Declare $rowA array
     $rowA = array();
@@ -1292,15 +1293,28 @@ function jcheck($ruleA, $data) {
         // Shortcut to $data[$prop]
         $value = $data[$prop];
 
+        // Flush fn
+        $flushFn = $fn == 'mflush' ? 'mflush' : 'jflush';
+
+        // First arg for flush fn
+        $arg1 = $flushFn == 'mflush' ? $prop : false;
+
+        // Constant name
+        $c = 'I_' . ($flushFn == 'mflush' ? 'M' : 'J') . 'CHECK_';
+
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && !$value) jflush(false, sprintf(I_JCHECK_REQ, $prop));
+        if ($rule['req'] && !strlen($value)) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
 
         // If prop's value should match certain regular expression, but it does not - flush error
-        if ($rule['rex'] && !Indi::rexm($rule['rex'], $value)) jflush(false, sprintf(I_JCHECK_REG, $value, $prop));
+        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
-        if ($value && $rule['key'] && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
-            jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $value));
+        if ($rule['key'] && strlen($value) && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
+            $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+
+        // If prop's value should be equal to some certain value, but it's not equal - flush error
+        if (array_key_exists('eql', $rule) && $value != $rule['eql'])
+            $flushFn($arg1, sprintf(constant($c . 'EQL'), $rule['eql'], $value));
     }
 
     // Return *_Row objects, collected for props, that have 'key' rule
