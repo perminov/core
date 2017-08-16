@@ -72,15 +72,8 @@ Ext.define('Indi.lib.controller.action.Form', {
                 // If response text is not json-convertable, or does not have `redirect` property - return
                 if (!Ext.isObject(json) || !(uri = json.redirect || '').length) return;
 
-                // Check if there is a rowset containing affected record,
-                // and if so - make that record affected within rowset's store
-                rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index';
-                if (me.ctx().ti(1) && me.ctx().ti(1).row) rowsetActId += '-parentrow-' + me.ctx().ti(1).row.id;
-                // todo: check why second cond needed
-                if ((rowsetActCmp = Ext.getCmp(rowsetActId)) && Ext.getCmp(rowsetActId + '-wrapper')) {
-                    if (record = rowsetActCmp.getStore().getById(json.affected.id)) rowsetActCmp.affectRecord(record, json);
-                    else rowsetActCmp.getStore().reload();
-                }
+                // Affect record
+                me.ctx().affectRecord(action.response);
 
                 // Parse request url
                 gotoO = Indi.parseUri(uri);

@@ -1151,5 +1151,31 @@ Ext.define('Indi.lib.controller.action.Row', {
                 Ext.getCmp(me.panelDockedInnerBid() + 'reload').press();
             }});
         }
+    },
+
+    /**
+     * Check if there is a rowset containing affected record,
+     * and if so - make that record affected within rowset's store
+     *
+     * @param json
+     */
+    affectRecord: function(response) {
+        var me = this, rowsetCtxId = 'i-section-' + me.ti().section.alias + '-action-index', rowsetCtx, record,
+            json = response.responseText.json();
+
+        // If json has no `affected` prop - return
+        if (!json || !json.affected) return;
+
+        // Continue building rowset context/action component's id
+        if (me.ti(1) && me.ti(1).row) rowsetCtxId += '-parentrow-' + me.ti(1).row.id;
+
+        // If component or it's wrapper-panel does not exist - return
+        if (!(rowsetCtx = Ext.getCmp(rowsetCtxId)) || !Ext.getCmp(rowsetCtxId + '-wrapper')) return;
+
+        // If record found - affect it
+        if (record = rowsetCtx.getStore().getById(json.affected.id)) rowsetCtx.affectRecord(record, json);
+
+        // Else reload store
+        else rowsetCtx.getStore().reload();
     }
 });
