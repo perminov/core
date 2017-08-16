@@ -2075,6 +2075,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Walk through affected fields
             Object.keys(json.affected).forEach(function(i){
 
+                // Apply _system modifications
+                if (i.match(/^_system/)) record.raw._system = json.affected[i];
+
                 // If affected field's name starts with '_' - skip
                 if (i.match(/^_/)) return;
 
@@ -2086,7 +2089,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         record.key(j, json.affected[i][j]);
                     });
 
-                    // Update field's rendered values
+                // Update field's rendered values
                 } else {
 
                     // Shortcuts
