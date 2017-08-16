@@ -118,7 +118,7 @@ Ext.define('Ext.calendar.view.Month', {
         Ext.destroy(this.ddSelector);
         Ext.destroy(this.dragZone);
         Ext.destroy(this.dropZone);
-        
+        if (this.detailPanel) Ext.destroy(this.detailPanel);
         this.callParent(arguments);
     },
 
