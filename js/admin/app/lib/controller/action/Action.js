@@ -515,7 +515,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @return {*}
      */
     prepareWindow: function() {
-        var me = this, app = Indi.app, window, active = app.getActiveWindow(), create = false, a = {}, n = {}, i, cfg;
+        var me = this, app = Indi.app, window, active = app.getActiveWindow(me.cfg.trail), create = false, a = {}, n = {}, i, cfg;
 
         // If we have no windows yet - set `create` as `true`, else
         if (!active) create = true; else {
