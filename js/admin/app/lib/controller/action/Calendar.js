@@ -94,6 +94,11 @@ Ext.define('Indi.lib.controller.action.Calendar', {
     storeLoadCallback: function(store, rs) {
         var me = this, card = Ext.getCmp(me.rowset.id).getActiveView(), daily = me.ti().model.daily;
 
+        // Add results count
+        Ext.getCmp(me.panel.id).query('button[toggleGroup]').forEach(function(btn){
+            btn.setText(btn.getText().split(':')[0] + (btn.pressed ? ': ' + store.getTotalCount() : ''));
+        });
+
         // If no daily hours set - return
         if (!daily) return;
 
