@@ -82,7 +82,7 @@ Ext.define('Indi.lib.controller.action.Row', {
     },
 
     panelDockedInner$Actions_Default: function(action) {
-        var me = this, cfg = me.callParent(arguments); if (!cfg) return;
+        var me = this, cfg = me.callParent(arguments); if (!cfg || action.alias.match(/^(up|down)$/)) return;
 
         // Set handler
         cfg.handler = function(btn) {
