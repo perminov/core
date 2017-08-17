@@ -699,9 +699,11 @@ Ext.define('Indi.lib.controller.action.Action', {
                 // Close active window
                 if (app.windows.getAt(i).id != active.id) active.close();
 
+                // Error catcher
+                if (!app.windows.getAt(i)) console.log('create == true', i, app.windows.getCount(), me.panel.id);
+
                 // Apply new contents to existing window
                 window = app.windows.getAt(i).apply(cfg).toFront();
-                //window = app.windows.getAt(i).toFront();
             }
 
         // Else set up active window usage as a place for new panel
@@ -712,6 +714,9 @@ Ext.define('Indi.lib.controller.action.Action', {
 
             // If contains - close that existing window
             if (i != -1 && app.windows.getAt(i).id != active.id) app.windows.getAt(i).close();
+
+            // Error catcher
+            if (!active) console.log('create == false', app.windows.getCount(), me.panel.id);
 
             // Apply new contents to active window
             window = active.apply(cfg);
