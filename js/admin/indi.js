@@ -1164,12 +1164,12 @@ Ext.define('Indi', {
      *
      * @return {*}
      */
-    getActiveWindow: function () {
+    getActiveWindow: function (maximized) {
         var win = null, zmgr = Indi.app.getDesktopZIndexManager();
 
         // Walk through z-indexed windows and find the top one
         if (zmgr) zmgr.eachTopDown(function (comp) {
-            if (comp.isWindow && !comp.hidden) {
+            if (comp.isWindow && !comp.hidden && (!maximized || comp.maximized)) {
                 win = comp;
                 return false;
             }
