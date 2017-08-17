@@ -103,7 +103,7 @@ Ext.define('Indi.lib.controller.Controller', {
         Ext.define(actionCmpName, Ext.merge(
             {extend: actionExtendCmpName},
             me.actionsSharedConfig,
-            me['actionSharedConfig$' + Indi.ucfirst(scope.route.last().action.mode)],
+            me['actionsSharedConfig$' + Indi.ucfirst(scope.route.last().action.mode)],
             me.actionsConfig[action]
         ));
 
