@@ -1043,43 +1043,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Build and return array of configs of master toolbar items, that represent action-buttons
-     *
-     * @return {Array}
-     */
-    panelDockedInner$Actions: function() {
-
-        // Setup auxillirary variables
-        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
-
-        // Append 'Create' action button
-        if (itemICreate) itemA.push(itemICreate);
-
-        // Append other action buttons
-        for (var i = 0; i < me.ti().actions.length; i++) {
-
-            // Get default column config
-            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
-
-            // Apply custom config
-            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
-                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
-                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
-            } else if (me[eItem$] === false) itemI = me[eItem$];
-
-            // Add
-            if (itemI) itemA.push(itemI);
-        }
-
-        // Push a separator
-        if (itemA.length) itemA.push('-');
-
-        // Return
-        return itemA;
-    },
-
-    /**
      * Builds and returns config for master toolbar 'Create' action-button item
      *
      * @return {Object}
@@ -1129,70 +1092,39 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Builds and returns default/initial config for all action-button master panel items
      *
-     * @return {Object}
+     * @param action
+     * @return {*}
      */
     panelDockedInner$Actions_Default: function(action) {
-        var me = this;
+        var me = this, cfg = me.callParent(arguments), sel, rs; if (!cfg) return;
 
-        // If action is visible
-        if (action.display == 1) {
+        // Set handler
+        cfg.handler = function(btn) {
 
-            // Basic action object
-            var actionItem = {
-                id: this.bid() + '-docked-inner$' + action.alias,
-                text: action.title,
-                action: action,
-                actionAlias: action.alias,
-                rowRequired: action.rowRequired,
-                javascript: action.javascript,
-                handler: function(btn){
+            // Get rowset panel
+            rs = Ext.getCmp(me.rowset.id);
 
-                    // Get selection
-                    var selection = Ext.getCmp(me.rowset.id)
-                        .getSelectionModel()
-                        .getSelection();
-
-                    // Get first selected row and it's index, if selected
-                    if (selection.length) {
-                        var row = me.getStore().getById(selection[0].data.id);
-                        var aix = selection[0].index + 1;
+            // If there is no rows selected, but at least one should - display a message box with appropriate warning
+            if (!(sel = rs.getSelectionModel().getSelection()).length && btn.rowRequired == 'y')
+                return Ext.MessageBox.show({
+                    title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
+                    msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
+                    buttons: Ext.MessageBox.OK,
+                    icon: Ext.MessageBox.WARNING,
+                    fn: function() {
+                        Ext.defer(function(){
+                            rs.getView().focus ? rs.getView().focus() : rs.getView().normalView.focus();
+                        }, 100);
                     }
+                });
 
-                    // If there is no rows selected, but at elast one should
-                    if (this.rowRequired == 'y' && !selection.length) {
-
-                        // Display a message box with approriate warning
-                        Ext.MessageBox.show({
-                            title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
-                            msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.WARNING,
-                            fn: function() {
-                                Ext.defer(function(){Ext.getCmp(me.rowset.id).getView().focus();}, 100);
-                            }
-                        });
-
-                    // Run the handler
-                    } else {
-                        if (typeof this.javascript == 'function') this.javascript(); else {
-                            me.panelDockedInner$Actions_InnerHandler(action, row, aix, btn);
-                        }
-                    }
-                }
-            }
-
-            // Setup iconCls property, if need
-            if (this.panel.toolbarMasterItemActionIconA.indexOf(action.alias) != -1) {
-                actionItem.iconCls = 'i-btn-icon-' + action.alias;
-                actionItem.text = '';
-                actionItem.tooltip = action.title;
-            }
-
-            // Put to the actions stack
-            return actionItem;
+            // Run the inner handler
+            me.panelDockedInner$Actions_InnerHandler(btn.action, sel.length ? sel[0] : 0, sel.length ? sel[0].index + 1 : 0, btn);
         }
+
+        // Return
+        return cfg;
     },
 
     panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn) {

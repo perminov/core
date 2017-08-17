@@ -81,88 +81,22 @@ Ext.define('Indi.lib.controller.action.Row', {
         }
     },
 
-    /**
-     * Build and return array of configs of master toolbar items, that represent action-buttons
-     *
-     * @return {Array}
-     */
-    panelDockedInner$Actions: function() {
+    panelDockedInner$Actions_Default: function(action) {
+        var me = this, cfg = me.callParent(arguments); if (!cfg) return;
 
-        // Setup auxillirary variables
-        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
-
-        // Append 'Create' action button
-        if (itemICreate) itemA.push(itemICreate);
-
-        // Append other action buttons
-        for (var i = 0; i < me.ti().actions.length; i++) {
-
-            // Skip current section
-            if (me.ti().actions[i].alias == me.ti().action.alias) continue;
-
-            // Get default column config
-            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
-
-            // Apply custom config
-            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
-                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
-                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
-            } else if (me[eItem$] === false) itemI = me[eItem$];
-
-            // Add
-            if (itemI) itemA.push(itemI);
+        // Set handler
+        cfg.handler = function(btn) {
+            me.goto(
+                '/' + me.ti().section.alias +
+                '/' + btn.actionAlias +
+                '/id/' + me.ti().row.id +
+                '/ph/' + me.ti().scope.hash +
+                '/aix/'+ me.ti().scope.aix + '/'
+            );
         }
-
-        // Push a separator
-        if (itemA.length) itemA.push('-');
 
         // Return
-        return itemA;
-    },
-
-    /**
-     * Builds and returns default/initial config for all action-button master panel items
-     *
-     * @return {Object}
-     */
-    panelDockedInner$Actions_Default: function(action) {
-        var me = this, bid = me.panelDockedInnerBid(), btnSave;
-
-        // If action is visible - return
-        if (action.display != 1) return null;
-
-        // If this is not a certain-row action - return
-        if (action.rowRequired != 'y') return null;
-
-        // Basic action object
-        var actionItem = {
-            id: bid + action.alias,
-            text: action.title,
-            action: action,
-            actionAlias: action.alias,
-            rowRequired: action.rowRequired,
-            javascript: action.javascript,
-            handler: function(btn) {
-                me.goto('/' + me.ti().section.alias + '/' + btn.actionAlias + '/id/'+ me.ti().row.id
-                    +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
-            },
-            listeners: {
-                boxready: function(cmp) {
-                    cmp.setDisabled((!me.ti().row.id && (btnSave = Ext.getCmp(bid + 'save')) && !btnSave.pressed));
-                }
-            }
-        }
-
-        // Setup iconCls property, if need
-        if (me.panel.toolbarMasterItemActionIconA.indexOf(action.alias) != -1) {
-            actionItem.iconCls = 'i-btn-icon-' + action.alias;
-            actionItem.text = '';
-            actionItem.tooltip = action.title;
-        }
-
-        // Put to the actions stack
-        return actionItem;
+        return cfg;
     },
 
     /**
@@ -246,15 +180,6 @@ Ext.define('Indi.lib.controller.action.Row', {
                 });
             }
         }
-    },
-
-    /**
-     * Panel master toolbar id constructor
-     *
-     * @return {String}
-     */
-    panelDockedInnerBid: function() {
-        return this.bid() + '-docked-inner$';
     },
 
     /**
