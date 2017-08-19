@@ -860,3 +860,6 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 .x-grid-inner-locked + .x-grid .x-grid-group-hd .x-grid-cell-inner .x-grid-group-title {
     visibility: hidden;
 }
+.x-field-label-cell .x-toolbar .x-btn-inner {
+    padding: 0 1px;
+}
