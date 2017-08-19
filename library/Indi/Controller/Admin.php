@@ -2526,7 +2526,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $to = preg_replace(':/(id|aix)//:', '/', array_pop($nav));
 
                 // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
-                $this->redirect($to);
+                jflush(true, array('redirect' => $to));
 
             // Simulate as if rowset panel was loaded
             } else Indi::uri()->dispatch($nav[$i]);
@@ -2562,7 +2562,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         Indi::get('jump', null);
 
         // Now we have proper (containing `ph` and `aix` params) uri, so we dispatch it
-        $this->redirect(array_pop($nav));
+        jflush(true, array('redirect' => array_pop($nav)));
     }
 
     /**

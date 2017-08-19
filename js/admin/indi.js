@@ -700,11 +700,14 @@ Ext.define('Indi', {
             // If responseText conversion to json-object was successful
             if (json) {
 
+                // If `json` has `redirect` property - do redirection
+                if (json.redirect) return Indi.load(json.redirect, cfg);
+
                 // If `json` has `trail` property, apply/dispatch it
                 if (json.route) return Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
 
                 // Else if
-                else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+                if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
 
             // Run response
             } else Ext.get('i-center-center-body').update(responseText, true);

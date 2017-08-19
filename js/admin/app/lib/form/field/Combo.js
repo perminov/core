@@ -649,6 +649,37 @@ Ext.define('Indi.lib.form.field.Combo', {
             }
         });
 
+        // Else if combo is not a enumset-combo, and `make` prop is not an empty string
+        if (me.make && Ext.isString(me.make) && !me.store.enumset) {
+
+            // Add button to leftbar
+            me.lbarItems.push({
+                iconCls: 'i-btn-icon-create',
+                name: 'make',
+                enabler: function(c, eventName) {
+                    return c.target.hasZeroValue();
+                },
+                handler: function(c) {
+                    Indi.load(me.make + 'jump/1/', {
+                        onLoad: function(me){
+                            Ext.getCmp(me.row.id).on('actioncomplete', function(form, action){
+                                var json = action.response.responseText.json();
+                                c.target.store.ids.push(parseInt(json.affected.id));
+                                c.target.store.data.push({
+                                    title: json.affected[c.target.field.params.titleColumn || 'title'],
+                                    system: [],
+                                    raw: json.affected[c.target.field.params.titleColumn || 'title'],
+                                    option: ''
+                                });
+                                c.target.store.found = (parseInt(c.target.store.found) + 1) + '';
+                                c.target.val(json.affected.id);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
         // Call parent
         me.callParent(arguments);
 
