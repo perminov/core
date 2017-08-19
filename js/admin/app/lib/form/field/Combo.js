@@ -2334,8 +2334,42 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param name
      */
-    prop: function(name, parse) {
-        var me = this, r = me.r(me.val()), propS;
+    prop: function(name, parse, type) {
+        var me = this, r, p, pA = [], pO = {};
+
+        // If `multiSelect` is `true`
+        if (me.multiSelect) {
+
+            // If empty value - return empty array/object
+            if (!me.val().toString().length) return type == '[]' ? pA : pO;
+
+            // Else find prop per each key within value
+            me.val().toString().split(',').forEach(function(i){
+
+                // Get prop
+                p = me._prop(name, parse, me.r(i));
+
+                // Append to prop array/object
+                if (type == '[]') pA.push(p); else pO[i] = p;
+            });
+
+            // Return
+            return type == '[]' ? pA : pO;
+
+        // Else return singe value prop
+        } else return me._prop(name, parse, me.r(me.val()));
+    },
+
+    /**
+     *
+     * @param name
+     * @param parse
+     * @param r
+     * @return {*}
+     * @private
+     */
+    _prop: function(name, parse, r) {
+        var propS;
 
         // If `parse` arg is not given, set up it as `true`, by default
         if (arguments.length < 2) parse = true;
