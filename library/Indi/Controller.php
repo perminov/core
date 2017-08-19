@@ -338,8 +338,26 @@ class Indi_Controller {
                         // Pick the current filter value to $excelA
                         $excelA[$found->alias]['value'] = $filterSearchFieldValue;
 
+                    // Else if $found field's alias is 'spaceSince'
+                    } else if ($found->alias == 'spaceSince' && preg_match('/^spaceSince-(lte|gte)$/', $filterSearchFieldAlias, $m)) {
+
+                        // Remember current bound. We need both bounds.
+                        if (Indi::rex('date', $filterSearchFieldValue)) {
+                            if ($m[1] == 'gte') $filterSearchFieldValue .=' 00:00:00';
+                            else $filterSearchFieldValue = date('Y-m-d H:i:s', strtotime($filterSearchFieldValue) + 86400);
+                            $where['spaceSince'][$m[1]] = $filterSearchFieldValue;
+                        }
+
+                        // If we now have both bounds - setup WHERE clause using special Indi_Schedule::where($since, $until) method
+                        if (count($where['spaceSince']) == 2) $where['spaceSince']
+                            = Indi_Schedule::where($where['spaceSince']['gte'], $where['spaceSince']['lte']);
+
+                        // Pick the current filter value and field type to $excelA
+                        $excelA[$found->alias]['type'] = 'date';
+                        $excelA[$found->alias]['value'][$m[1]] = $filterSearchFieldValue;
+
                     // Else if $found field's control element are 'Number', 'Date', 'Datetime', 'Price' or 'Decimal143'
-                    } else if (preg_match('/^18|12|19|24|25$/', $found->elementId)) {
+                    } else if (preg_match('/^(18|12|19|24|25)$/', $found->elementId)) {
 
                         // Detect the type of filter value - bottom or top, in 'range' terms mean
                         // greater-or-equal or less-or-equal
@@ -445,9 +463,8 @@ class Indi_Controller {
             }
         }
 
-        // If the purpose of current request is to build an excel spreadsheet -
-        // setup filters usage information in $this->_excelA property
-        if (in(Indi::uri()->format, 'excel,pdf')) $this->_excelA = $excelA;
+        // Setup filters usage information in $this->_excelA property
+        $this->_excelA = $excelA;
 
         // Force $where array to be single-dimension
         foreach ($where as $filter => $clause) if (is_array($clause)) $where[$filter] = '(' . im($clause, ' AND ') . ')';

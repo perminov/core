@@ -97,4 +97,20 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         readfile($abs);
         die();
     }
+
+    /**
+     * Generate link to http://colorzilla.com
+     */
+    public function shadegradAction() {
+        $colors = ar('dddddd,ffffff');
+        $step = 2;
+        for ($i = 0; $i <= 100;) {
+            foreach ($colors as $color) {
+                $str[] = $color . '+' . $i;
+                $str[] = $color . '+' . ($i + $step);
+                $i += $step;
+            }
+        }
+        die('<a target="_blank" href="http://colorzilla.com/gradient-editor/#' . im($str) . '">color</a>');
+    }
 }

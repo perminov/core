@@ -320,4 +320,14 @@
             collapsibleSplitTip : "Тяните для изменения размера. Двойной щелчок спрячет панель."
         });
     }
+
+    if(Ext.calendar.CalendarPanel){
+        Ext.apply(Ext.calendar.CalendarPanel.prototype, {
+            todayText: 'Сегодня',
+            dayText: 'День',
+            weekText: 'Неделя',
+            monthText: 'Месяц'
+        });
+    }
+
 // });

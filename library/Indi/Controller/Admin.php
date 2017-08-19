@@ -81,9 +81,6 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::ini()->lang->admin == 'ru')
             setlocale(LC_TIME, 'ru_RU.UTF-8', 'ru_utf8', 'Russian_Russia.UTF8', 'ru_RU', 'Russian');
 
-        // Adjust action mode and view config.
-        $this->adjustActionCfg();
-
         // Perform authentication
         $this->auth();
 
@@ -98,6 +95,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Adjust trail
             $this->adjustTrail();
+
+            // Adjust action mode and view config.
+            $this->adjustActionCfg();
+
+            // Setup view. This call will create an action-view object instance, especially for current trail item
+            Indi::trail()->view();
 
             // If action is 'index'
             if (Indi::trail()->action->rowRequired == 'n') {
@@ -2308,11 +2311,21 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->row = $this->rowset->at(0);
 
         // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
-        $data = array($this->row->toGridData($this->row->affected()));
+        $data = array($this->row->toGridData($this->affected4grid()));
         $this->adjustGridData($data);
 
         // Return affected data, prepared for being displayed
         return array_shift($data);
+    }
+
+    /**
+     * Override this method in child classes if you need custom props to be included
+     * in the process of converting their values to be displayed in the view
+     *
+     * @return mixed
+     */
+    public function affected4grid() {
+        return $this->row->affected();
     }
 
     /**
@@ -2446,6 +2459,14 @@ class Indi_Controller_Admin extends Indi_Controller {
      * access mode consider to certain circumstances
      */
     public function adjustAccess() {
+
+    }
+
+    /**
+     * Empty function. To be overridden in child classes, if there is a need to adjust
+     * trail object's properties before any operation to be performed
+     */
+    public function adjustTrail() {
 
     }
 

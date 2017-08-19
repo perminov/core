@@ -23,7 +23,7 @@ Ext.define('Indi.lib.controller.action.Print', {
                     {alias: 'print'}, '-',
                     {alias: 'reset'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
-                    {alias: 'form'}, '-',
+                    {alias: 'actions'},
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
                 ]
