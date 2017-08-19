@@ -294,6 +294,9 @@ class Indi_Db {
                     ))
                 );
 
+                // Default value
+                if (!$entityI['spaceScheme']) $entityI['spaceScheme'] = 'none';
+
                 // Set space scheme settings
                 self::$_entityA[$modelNameA[$entityI['id']]]['space'] = array(
                     'scheme' => $entityI['spaceScheme'],
