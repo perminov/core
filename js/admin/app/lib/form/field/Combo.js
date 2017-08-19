@@ -676,6 +676,14 @@ Ext.define('Indi.lib.form.field.Combo', {
                             });
                         }
                     });
+                },
+                listeners: {
+                    enable: function (c) {
+                        if (me.jump) c.show().sbl('jump').hide();
+                    },
+                    disable: function (c) {
+                        if (me.jump) c.hide().sbl('jump').show();
+                    }
                 }
             });
         }
