@@ -311,14 +311,13 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
 
         // If left bar not yet exists - create it
-        if (!me.lbar) me.lbar = Ext.create('Ext.toolbar.Toolbar', {
+        if (!me.lbar) me.lbar = Ext.create('Ext.toolbar.Toolbar', Ext.merge({
             autoShow: true,
             margin: '1 1 0 0',
             padding: 0,
             height: (me.triggerWrap || me.inputEl).getHeight() - 1,
             style: {
-                background: 'none',
-                float: 'right'
+                background: 'none'
             },
             defaults: {
                 xtype: 'button',
@@ -350,8 +349,13 @@ Ext.override(Ext.form.field.Base, {
                 }
             },
             renderTo: me.labelCell,
-            border: 0
-        });
+            border: 0,
+            listeners: {
+                boxready: function(c){
+                    c.el.setStyle('float', 'right');
+                }
+            }
+        }, me.lbarCfg || {}));
 
         // Return left-bar
         return me.lbar;
