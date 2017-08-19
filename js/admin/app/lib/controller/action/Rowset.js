@@ -19,12 +19,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         xtype: 'actionrowset',
 
         /**
-         * Array of action-button aliases, that have special icons
-         */
-        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
-            'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm', 'goto'],
-
-        /**
          * Tools special config
          */
         tools: [{alias: 'fundock'}, {alias: 'reset'}],
@@ -152,7 +146,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         for (var i = 0; i < filterCmpA.length; i++) {
 
             // We do not involve values of hidden or disabled filter components in request query building
-            if (filterCmpA[i].hidden || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field.satellite)) continue;
+            if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field.satellite)) continue;
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpA[i].name;
@@ -380,6 +374,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // We define an array of functions, first within which will check if at least one filter is used
         // and if so, second will do a store reload
         loopA = [function(cmp, control){
+            //if (cmp.isImportantDespiteHidden) return;
             if (control == 'color') {
                 if (cmp.getValue().join() != '0,360') atLeastOneFilterIsUsed = true;
             } else {
@@ -629,15 +624,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     panelDocked$Filter: function() {
-        var me = this, hidden = !me.ti().filters.length &&
+        var me = this, hidden = !(me.ti().filters.length - me.ti().filters.select('master', 'toolbar').length) &&
             (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length);
 
         // 'Filter' toolbar config
         return {
             xtype: 'filtertoolbar',
             ctx: me,
-            hidden: !me.ti().filters.length &&
-                (!me.panel.docked.inner || !me.panel.docked.inner.filter || !me.panel.docked.inner.filter.length),
+            hidden: hidden,
             id: me.bid() + '-toolbar$filter',
             cls: 'x-poppable',
             items: [{
@@ -668,19 +662,20 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @return {Array}
      */
-    panelDocked$FilterItemA: function() {
+    panelDocked$FilterItemA: function(filters) {
 
         // Declare toolbar filter panel items array, and some additional variables
-        var me = this, itemA = [], itemI, item$, itemICustom, moreItemA = [], eItem$;
+        var me = this, itemA = [], itemI, item$, moreItemA = [], eItem$,
+            filters = filters || me.ti().filters.select(undefined, 'toolbar');
 
         // Fulfil items array
-        for (var i = 0; i < me.ti().filters.length; i++) {
+        for (var i = 0; i < filters.length; i++) {
 
             // Get default filter config
-            itemI = me.panelDocked$Filter_Default(me.ti().filters[i]);
+            itemI = me.panelDocked$Filter_Default(filters[i]);
 
             // Own element/prop, related to current filter
-            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(me.ti().filters[i].foreign('fieldId').alias);
+            eItem$ = 'panelDocked$Filter$' + Indi.ucfirst(filters[i].foreign('fieldId').alias);
 
             // Apply filter custom config
             if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
@@ -692,7 +687,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             if (itemI) {
 
                 // If it has no `name` prop yet - setit up
-                if (!itemI.name) itemI.name = me.ti().filters[i].foreign('fieldId').alias;
+                if (!itemI.name) itemI.name = filters[i].foreign('fieldId').alias;
 
                 // Refresh label width
                 if (itemI.fieldLabel) itemI.labelWidth = Indi.metrics.getWidth(itemI.fieldLabel);
@@ -879,9 +874,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: filterCmpId + '-gte',
             name: alias + '-gte',
             isFilter: true,
+            isFrom: true,
             fieldLabel: fieldLabel,
-            labelWidth: Indi.metrics.getWidth(fieldLabel),
-            width: 85 + Indi.metrics.getWidth(fieldLabel),
+            labelWidth: Indi.metrics.getWidth(fieldLabel) + 5,
+            width: 90 + Indi.metrics.getWidth(fieldLabel),
             startDay: 1,
             validateOnChange: false,
             listeners: {
@@ -897,6 +893,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             id: filterCmpId + '-lte',
             name: alias + '-lte',
             isFilter: true,
+            isTill: true,
             fieldLabel: Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO,
             labelWidth: Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
             width: 85 + Indi.metrics.getWidth(Indi.lang.I_ACTION_INDEX_FILTER_TOOLBAR_DATE_TO),
@@ -1046,43 +1043,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Build and return array of configs of master toolbar items, that represent action-buttons
-     *
-     * @return {Array}
-     */
-    panelDockedInner$Actions: function() {
-
-        // Setup auxillirary variables
-        var me = this, itemA = [], itemI, eItem$, item$, itemICustom, itemICreate = me.panelDockedInner$Actions$Create();
-
-        // Append 'Create' action button
-        if (itemICreate) itemA.push(itemICreate);
-
-        // Append other action buttons
-        for (var i = 0; i < me.ti().actions.length; i++) {
-
-            // Get default column config
-            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
-
-            // Apply custom config
-            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
-            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
-                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
-                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
-            } else if (me[eItem$] === false) itemI = me[eItem$];
-
-            // Add
-            if (itemI) itemA.push(itemI);
-        }
-
-        // Push a separator
-        if (itemA.length) itemA.push('-');
-
-        // Return
-        return itemA;
-    },
-
-    /**
      * Builds and returns config for master toolbar 'Create' action-button item
      *
      * @return {Object}
@@ -1132,70 +1092,39 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
-     * Builds and returns default/initial config for all action-button master panel items
      *
-     * @return {Object}
+     * @param action
+     * @return {*}
      */
     panelDockedInner$Actions_Default: function(action) {
-        var me = this;
+        var me = this, cfg = me.callParent(arguments), sel, rs; if (!cfg) return;
 
-        // If action is visible
-        if (action.display == 1) {
+        // Set handler
+        cfg.handler = function(btn) {
 
-            // Basic action object
-            var actionItem = {
-                id: this.bid() + '-docked-inner$' + action.alias,
-                text: action.title,
-                action: action,
-                actionAlias: action.alias,
-                rowRequired: action.rowRequired,
-                javascript: action.javascript,
-                handler: function(btn){
+            // Get rowset panel
+            rs = Ext.getCmp(me.rowset.id);
 
-                    // Get selection
-                    var selection = Ext.getCmp(me.rowset.id)
-                        .getSelectionModel()
-                        .getSelection();
-
-                    // Get first selected row and it's index, if selected
-                    if (selection.length) {
-                        var row = me.getStore().getById(selection[0].data.id);
-                        var aix = selection[0].index + 1;
+            // If there is no rows selected, but at least one should - display a message box with appropriate warning
+            if (!(sel = rs.getSelectionModel().getSelection()).length && btn.rowRequired == 'y')
+                return Ext.MessageBox.show({
+                    title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
+                    msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
+                    buttons: Ext.MessageBox.OK,
+                    icon: Ext.MessageBox.WARNING,
+                    fn: function() {
+                        Ext.defer(function(){
+                            rs.getView().focus ? rs.getView().focus() : rs.getView().normalView.focus();
+                        }, 100);
                     }
+                });
 
-                    // If there is no rows selected, but at elast one should
-                    if (this.rowRequired == 'y' && !selection.length) {
-
-                        // Display a message box with approriate warning
-                        Ext.MessageBox.show({
-                            title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
-                            msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.WARNING,
-                            fn: function() {
-                                Ext.defer(function(){Ext.getCmp(me.rowset.id).getView().focus();}, 100);
-                            }
-                        });
-
-                    // Run the handler
-                    } else {
-                        if (typeof this.javascript == 'function') this.javascript(); else {
-                            me.panelDockedInner$Actions_InnerHandler(action, row, aix, btn);
-                        }
-                    }
-                }
-            }
-
-            // Setup iconCls property, if need
-            if (this.panel.toolbarMasterItemActionIconA.indexOf(action.alias) != -1) {
-                actionItem.iconCls = 'i-btn-icon-' + action.alias;
-                actionItem.text = '';
-                actionItem.tooltip = action.title;
-            }
-
-            // Put to the actions stack
-            return actionItem;
+            // Run the inner handler
+            me.panelDockedInner$Actions_InnerHandler(btn.action, sel.length ? sel[0] : 0, sel.length ? sel[0].index + 1 : 0, btn);
         }
+
+        // Return
+        return cfg;
     },
 
     panelDockedInner$Actions_DefaultInnerHandler: function(action, row, aix, btn) {
@@ -1270,7 +1199,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         if (typeof me[fn] == 'function') me[fn](action, row, aix, btn);
         else me.panelDockedInner$Actions_DefaultInnerHandler(action, row, aix, btn);
     },
-
 
     /**
      * Inner handler function for form-action button
@@ -2028,12 +1956,18 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // Show loader
         Indi.app.loader();
 
+        // Get part of query string, related to filters
+        var search = me.storeLastRequest().split('?');
+        search.shift();
+        search = search.join('?').split('&')[0];
+        search = search.match(/^search=/) ? '?' + search : '';
+
         // Try to save via Ajax-request
         Ext.Ajax.request({
 
             // Params
             url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
-                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/',
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/' + search,
             method: 'POST',
             params: params,
 
@@ -2073,6 +2007,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             // Walk through affected fields
             Object.keys(json.affected).forEach(function(i){
 
+                // Apply _system modifications
+                if (i.match(/^_system/)) record.raw._system = json.affected[i];
+
                 // If affected field's name starts with '_' - skip
                 if (i.match(/^_/)) return;
 
@@ -2084,7 +2021,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                         record.key(j, json.affected[i][j]);
                     });
 
-                    // Update field's rendered values
+                // Update field's rendered values
                 } else {
 
                     // Shortcuts

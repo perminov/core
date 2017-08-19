@@ -20,7 +20,7 @@ Ext.define('Indi.lib.controller.Controller', {
     /**
      * See docs at same Ext.Component class property
      */
-    mcopwso: ['actionsConfig', 'actionsSharedConfig'],
+    mcopwso: ['actionsConfig', 'actionsSharedConfig', 'actionsSharedConfig$Row', 'actionsSharedConfig$Rowset'],
 
     /**
      * Actions configuration. This config is for use in subclasses of current class
@@ -31,6 +31,16 @@ Ext.define('Indi.lib.controller.Controller', {
      * Actions shared configuration. This config will be applied to any action, rather than to certain action
      */
     actionsSharedConfig: {},
+
+    /**
+     * Row-actions shared configuration. This config will be applied to any row-action
+     */
+    actionsSharedConfig$Row: {},
+
+    /**
+     * Rowset-actions shared configuration. This config will be applied to any rowset-action
+     */
+    actionsSharedConfig$Rowset: {},
 
     /**
      * Empty function, for `scope` arg adjustments
@@ -90,7 +100,12 @@ Ext.define('Indi.lib.controller.Controller', {
         }*/
 
         // Define the action component
-        Ext.define(actionCmpName, Ext.merge({extend: actionExtendCmpName}, me.actionsSharedConfig, me.actionsConfig[action]));
+        Ext.define(actionCmpName, Ext.merge(
+            {extend: actionExtendCmpName},
+            me.actionsSharedConfig,
+            me['actionsSharedConfig$' + Indi.ucfirst(scope.route.last().action.mode)],
+            me.actionsConfig[action]
+        ));
 
         // Build the id for action object
         scope.id = 'i-section-' + scope.route.last().section.alias + '-action-' + scope.route.last().action.alias;

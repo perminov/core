@@ -73,6 +73,13 @@ class Indi_Db_Table
     protected $_fileFields = null;
 
     /**
+     * Scheme of how any instance of current model/entity can be used as a 'space' within the calendar/schedule
+     *
+     * @var array
+     */
+    protected $_space = null;
+
+    /**
      *
      * @var Indi_Db_Table_Rowset|array
      */
@@ -103,6 +110,19 @@ class Indi_Db_Table
      * @var array
      */
     protected $_changeLog = array();
+
+    /**
+     * Daily time. This can be used to setup working hours, for example since '10:00:00 until '20:00:00'.
+     * If daily times are set, schedule will auto-create busy spaces within each separate 24h-hour period,
+     * so, if take the above example, periods from 00:00:00 till 10:00:00 and from 20:00:00 till 00:00:00
+     * will be set as busy spaces
+     *
+     * @var array
+     */
+    protected $_daily = array(
+        'since' => false,
+        'until' => false
+    );
 
     /**
      * Construct the instance - setup table name, fields, and tree column if exists
@@ -137,6 +157,9 @@ class Indi_Db_Table
 
         // Setup 'hasRole' flag
         $this->_hasRole = $config['hasRole'];
+
+        // Setup 'spaceScheme' prop
+        $this->_space = $config['space'];
     }
 
     /**
@@ -770,9 +793,11 @@ class Indi_Db_Table
      * @return array
      */
     public function toArray() {
-        $array['tableName'] = $this->_table;
+        $array['table'] = $this->_table;
         $array['title'] = $this->_title;
         $array['titleFieldId'] = $this->_titleFieldId;
+        $array['space'] = $this->_space;
+        $array['daily'] = $this->_daily;
         return $array;
     }
 
@@ -1283,5 +1308,46 @@ class Indi_Db_Table
      */
     public function notices() {
         return $this->_notices;
+    }
+
+    /**
+     * Get space scheme settings
+     *
+     * @return string
+     */
+    public function space() {
+        return $this->_space;
+    }
+
+    /**
+     * Set/get for $this->_daily
+     */
+    public function daily($arg1 = false, $arg2 = false) {
+
+        // If $arg1 is either 'since' or 'until'
+        if (in($arg1, 'since,until')) {
+
+            // If $arg2 is also given
+            if (func_get_args() == 2) {
+
+                // Set daily bound
+                $this->_daily[$arg1] = $arg2;
+
+                // Return model itself
+                return $this;
+
+                // Else return current value of a daily bound, specified by $arg1
+            } else return $this->_daily[$arg1];
+
+            // Else
+        } else {
+
+            // Set 'since' and 'until' either as time or false
+            if (func_num_args() > 0) $this->_daily['since'] = Indi::rexm('time', $arg1) ? $arg1 : false;
+            if (func_num_args() > 1) $this->_daily['until'] = Indi::rexm('time', $arg2) ? $arg2 : false;
+
+            // Return $this->_daily
+            return $this->_daily;
+        }
     }
 }

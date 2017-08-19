@@ -657,8 +657,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // If field column type is datetime, we adjust it's format if need. If datetime is '0000-00-00 00:00:00'
                 // we set it to empty string
-                if (isset($typeA['datetime'][$columnI]) && ($typeA['datetime'][$columnI]['displayDateFormat'] ||
-                    $typeA['datetime'][$columnI]['displayTimeFormat'])) {
+                if (isset($typeA['datetime'][$columnI])
+                    && ($typeA['datetime'][$columnI]['displayDateFormat'] || $typeA['datetime'][$columnI]['displayTimeFormat'])) {
 
                     if (!$typeA['datetime'][$columnI]['displayDateFormat'])
                         $typeA['datetime'][$columnI]['displayDateFormat'] = 'Y-m-d';
@@ -1369,10 +1369,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @param array $original
      * @return Indi_Db_Table_Rowset
      */
-    public function append(array $original) {
+    public function append($original) {
         
         // Append
-        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
+        $this->_rows[] = $original instanceof Indi_Db_Table_Row
+            ? $original
+            : new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
         $this->_count++;
         $this->_found++;
         

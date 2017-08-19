@@ -42,7 +42,7 @@ Ext.override(Ext.dom.CompositeElementLite, {
     },
 
     removeCls: function(cls) {
-        cls = cls.split(' ');
+        cls = (cls || '').split(' ');
         for (var i = 0; i < cls.length; i++) {
             this.each(function(el){
                 el.removeCls(cls[i]);

@@ -24,7 +24,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     {alias: 'save'}, {alias: 'autosave'}, '-',
                     {alias: 'reset'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
-                    {alias: 'create'}, '-',
+                    {alias: 'actions'},
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
                 ]
@@ -72,15 +72,8 @@ Ext.define('Indi.lib.controller.action.Form', {
                 // If response text is not json-convertable, or does not have `redirect` property - return
                 if (!Ext.isObject(json) || !(uri = json.redirect || '').length) return;
 
-                // Check if there is a rowset containing affected record,
-                // and if so - make that record affected within rowset's store
-                rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index';
-                if (me.ctx().ti(1) && me.ctx().ti(1).row) rowsetActId += '-parentrow-' + me.ctx().ti(1).row.id;
-                // todo: check why second cond needed
-                if ((rowsetActCmp = Ext.getCmp(rowsetActId)) && Ext.getCmp(rowsetActId + '-wrapper')) {
-                    if (record = rowsetActCmp.getStore().getById(json.affected.id)) rowsetActCmp.affectRecord(record, json);
-                    else rowsetActCmp.getStore().reload();
-                }
+                // Affect record
+                me.ctx().affectRecord(action.response);
 
                 // Parse request url
                 gotoO = Indi.parseUri(uri);
@@ -744,11 +737,11 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @return {Object}
      */
     panelDockedInner$Autosave: function() {
-        var me = this;
+        var me = this, bid = me.panelDockedInnerBid();
 
         // 'Autosave' item config
         return {
-            id: me.panelDockedInnerBid() + 'autosave',
+            id: bid + 'autosave',
             xtype: 'checkbox',
             tooltip: {html: Indi.lang.I_AUTOSAVE, staticOffset: [0, 4]},
             disabled: me.row.readOnly,
@@ -758,8 +751,13 @@ Ext.define('Indi.lib.controller.action.Form', {
             handler: function(cb){
 
                 // Create shortcuts for involved components
-                var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save'),
-                    sqNested = Ext.getCmp(me.panelDockedInnerBid() + 'nested');
+                var btnSave = Ext.getCmp(bid + 'save'), sqNested = Ext.getCmp(bid + 'nested'), btn;
+
+                // Toggle action-buttons
+                if (!me.ti().row.id)
+                    for (var i = 0; i < me.ti().actions.length; i++)
+                        if (btn = Ext.getCmp(bid + me.ti().actions[i].alias))
+                            btn.setDisabled(!cb.checked);
 
                 // Other items adjustments
                 if (btnSave) btnSave.toggle();
@@ -799,49 +797,6 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                 // If save ability was turned On before reset, but now it is turned Off - turn it On back
                 me.toggleSaveAbility(true);
-            }
-        }
-    },
-
-    /**
-     * Master toolbar 'Autosave' item, for ability to toggle autosave mode while navigating
-     * within the currently available rows scope
-     *
-     * @return {Object}
-     */
-    panelDockedInner$Create: function() {
-        var me = this;
-
-        // 'Create' item config
-        return {
-            id: me.panelDockedInnerBid() + 'create',
-            iconCls: 'i-btn-icon-create',
-            disabled: parseInt(me.ti().section.disableAdd) == 1 || (me.row.readOnly && !me.row.createOnly && parseInt(me.ti().section.disableAdd) != 2) ? true : false,
-            tooltip: Indi.lang.I_NAVTO_CREATE,
-            handler: function(){
-
-                // Create shortcuts for involved components
-                var url = '/' + me.ti().section.alias + '/' + me.ti().action.alias + '/ph/' + me.ti().section.primaryHash+'/',
-                    tfID = Ext.getCmp(me.panelDockedInnerBid() + 'id'),
-                    btnPrev = Ext.getCmp(me.panelDockedInnerBid() + 'prev'),
-                    btnNext = Ext.getCmp(me.panelDockedInnerBid() + 'next'),
-                    cmbSibling = Ext.getCmp(me.panelDockedInnerBid() + 'sibling'),
-                    spnOffset = Ext.getCmp(me.panelDockedInnerBid() + 'offset');
-
-                // Show mask
-                me.getMask().show();
-
-                // Other items adjustments
-                if (tfID) tfID.setValue('');
-                if (btnPrev) btnPrev.disable();
-                if (cmbSibling && typeof me.ti().row.title != 'undefined') cmbSibling.keywordEl.val('');
-                if (btnNext && parseInt(me.ti().scope.found)) btnNext.enable();
-                if (spnOffset) spnOffset.setValue('');
-
-                // Goto the url
-                me.goto(url, undefined, {
-                    title: Indi.lang.I_CREATE
-                });
             }
         }
     },

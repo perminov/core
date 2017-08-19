@@ -3,6 +3,28 @@
 $js = array(
     '/js/jquery-1.9.1.min.js',
     '/library/extjs4/ext-all.js',
+
+    '/js/admin/app/lib/calendar/view/AbstractCalendar.js',
+    '/js/admin/app/lib/calendar/template/BoxLayout.js',
+    '/js/admin/app/lib/calendar/template/DayHeader.js',
+    '/js/admin/app/lib/calendar/view/MonthDayDetail.js',
+    '/js/admin/app/lib/calendar/util/Date.js',
+    '/js/admin/app/lib/calendar/util/WeekEventRenderer.js',
+    '/js/admin/app/lib/calendar/template/Month.js',
+    '/js/admin/app/lib/calendar/view/Month.js',
+    '/js/admin/app/lib/calendar/view/DayHeader.js',
+    '/js/admin/app/lib/calendar/template/DayBody.js',
+    '/js/admin/app/lib/calendar/data/EventMappings.js',
+    '/js/admin/app/lib/calendar/dd/StatusProxy.js',
+    '/js/admin/app/lib/calendar/dd/DragZone.js',
+    '/js/admin/app/lib/calendar/dd/DayDragZone.js',
+    '/js/admin/app/lib/calendar/dd/DropZone.js',
+    '/js/admin/app/lib/calendar/dd/DayDropZone.js',
+    '/js/admin/app/lib/calendar/view/DayBody.js',
+    '/js/admin/app/lib/calendar/view/Day.js',
+    '/js/admin/app/lib/calendar/view/Week.js',
+    '/js/admin/app/lib/calendar/CalendarPanel.js',
+
     '/library/extjs4/ext-lang-' . Indi::ini()->lang->admin . '.js',
     '/library/extjs4/examples/ux/BoxReorderer.js',
     '/library/extjs4/examples/ux/TabReorderer.js',
@@ -94,6 +116,7 @@ $js = array(
     '/js/admin/app/lib/controller/action/Grid.js',
     '/js/admin/app/lib/controller/action/Chart.js',
     '/js/admin/app/lib/controller/action/ChangeLog.js',
+    '/js/admin/app/lib/controller/action/Calendar.js',
     '/js/admin/app/lib/controller/action/Row.js',
     '/js/admin/app/lib/controller/action/Form.js',
     '/js/admin/app/lib/controller/action/Print.js'
@@ -114,7 +137,8 @@ $css = array(
     '/css/admin/indi.action.form.css',
     '/css/admin/indi.trail.css',
     '/css/admin/indi.combo.css',
-    '/css/admin/indi.combo.default.css'
+    '/css/admin/indi.combo.default.css',
+    '/css/admin/indi.calendar.css'
 );
 // Implode js files
 Indi::implode($js);
