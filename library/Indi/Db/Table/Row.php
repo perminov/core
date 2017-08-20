@@ -5006,4 +5006,14 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function vcheck($ruleA) {
         $this->mcheck($ruleA, array(), false);
     }
+
+    /**
+     * Return formatted price
+     *
+     * @param $prop
+     * @return float|string
+     */
+    public function price($prop) {
+        return price($this->$prop, true);
+    }
 }
