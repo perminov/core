@@ -4152,8 +4152,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             $storageR->datetime = date('Y-m-d H:i:s');
             if ($storageM->fields('monthId')) $storageR->monthId = Month::o()->id;
             $storageR->changerType = Indi::model(Indi::admin()->alternate ? Indi::admin()->alternate : 'Admin')->id();
-            $storageR->profileId = Indi::admin()->profileId;
-            $storageR->changerId = Indi::admin()->id;
+            $storageR->profileId = Indi::admin()->profileId ?: 0;
+            $storageR->changerId = Indi::admin()->id ?: 0;
             $storageR->save();
         }
     }
