@@ -4063,7 +4063,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $was = clone $this; $was->original($original);
 
         // Setup foreign data for $was object
-        $was->foreign(implode(',', $affectedForeignA));
+        $was->foreign(implode(',', $affectedForeignA), true);
 
         // Setup $now object as a clone of $this object, at it's current state
         $now = clone $this; $now->foreign(implode(',', $affectedForeignA));
