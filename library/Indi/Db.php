@@ -289,7 +289,7 @@ class Indi_Db {
                     'fields' => new Field_Rowset_Base(array(
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],
-                        'aliases' => array_values($eFieldA[$entityI['id']]['aliases']),
+                        'aliases' => array_values($eFieldA[$entityI['id']]['aliases'] ?: array()),
                         'rowClass' => 'Field_Row'
                     ))
                 );
