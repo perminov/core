@@ -1308,6 +1308,9 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // If prop's value should match certain regular expression, but it does not - flush error
         if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
 
+        // If value should be a json-encoded expression, and it is - decode
+        if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
+
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
         if ($rule['key'] && strlen($value) && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
             $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
