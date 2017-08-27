@@ -349,6 +349,7 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-confirm{background-image: url('/i/admin/btn-icon-confirm.png');}
 .i-btn-icon-wand-plus{background-image: url('/i/admin/btn-icon-wand-plus.png');}
 .i-btn-icon-chart{background-image: url('/i/admin/btn-icon-chart.png');}
+.i-btn-icon-calendar{background-image: url('/i/admin/btn-icon-calendar.png');}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
@@ -365,6 +366,9 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 }
 .x-gecko #i-menu .i-menu-leaf-item .x-grid-cell-inner{
     padding-left: 3px;
+}
+.x-gecko .x-form-cb-label-after {
+    top: 0;
 }
 .x-ie9 #i-center-north-trail,
 .x-ie8 #i-center-north-trail,
@@ -855,4 +859,7 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 
 .x-grid-inner-locked + .x-grid .x-grid-group-hd .x-grid-cell-inner .x-grid-group-title {
     visibility: hidden;
+}
+.x-field-label-cell .x-toolbar .x-btn-inner {
+    padding: 0 1px;
 }

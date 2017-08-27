@@ -649,6 +649,45 @@ Ext.define('Indi.lib.form.field.Combo', {
             }
         });
 
+        // Else if combo is not a enumset-combo, and `make` prop is not an empty string
+        if (me.make && Ext.isString(me.make) && !me.store.enumset) {
+
+            // Add button to leftbar
+            me.lbarItems.push({
+                iconCls: 'i-btn-icon-create',
+                name: 'make',
+                enabler: function(c, eventName) {
+                    return c.target.hasZeroValue();
+                },
+                handler: function(c) {
+                    Indi.load(me.make + 'jump/1/', {
+                        onLoad: function(me){
+                            Ext.getCmp(me.row.id).on('actioncomplete', function(form, action){
+                                var json = action.response.responseText.json();
+                                c.target.store.ids.push(parseInt(json.affected.id));
+                                c.target.store.data.push({
+                                    title: json.affected[c.target.field.params.titleColumn || 'title'],
+                                    system: [],
+                                    raw: json.affected[c.target.field.params.titleColumn || 'title'],
+                                    option: ''
+                                });
+                                c.target.store.found = (parseInt(c.target.store.found) + 1) + '';
+                                c.target.val(json.affected.id);
+                            });
+                        }
+                    });
+                },
+                listeners: {
+                    enable: function (c) {
+                        if (me.jump) c.show().sbl('jump').hide();
+                    },
+                    disable: function (c) {
+                        if (me.jump) c.hide().sbl('jump').show();
+                    }
+                }
+            });
+        }
+
         // Call parent
         me.callParent(arguments);
 
@@ -2303,8 +2342,42 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param name
      */
-    prop: function(name, parse) {
-        var me = this, r = me.r(me.val()), propS;
+    prop: function(name, parse, type) {
+        var me = this, r, p, pA = [], pO = {};
+
+        // If `multiSelect` is `true`
+        if (me.multiSelect) {
+
+            // If empty value - return empty array/object
+            if (!me.val().toString().length) return type == '[]' ? pA : pO;
+
+            // Else find prop per each key within value
+            me.val().toString().split(',').forEach(function(i){
+
+                // Get prop
+                p = me._prop(name, parse, me.r(i));
+
+                // Append to prop array/object
+                if (type == '[]') pA.push(p); else pO[i] = p;
+            });
+
+            // Return
+            return type == '[]' ? pA : pO;
+
+        // Else return singe value prop
+        } else return me._prop(name, parse, me.r(me.val()));
+    },
+
+    /**
+     *
+     * @param name
+     * @param parse
+     * @param r
+     * @return {*}
+     * @private
+     */
+    _prop: function(name, parse, r) {
+        var propS;
 
         // If `parse` arg is not given, set up it as `true`, by default
         if (arguments.length < 2) parse = true;

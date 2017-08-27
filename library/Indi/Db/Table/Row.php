@@ -287,6 +287,223 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Set values for external space-fields, in case if internal space
+     * fields - `spaceSince` and/or `spaceUntil` - were modified
+     *
+     * @param $scheme
+     * @param $fields
+     */
+    protected function _spaceStep1($scheme, $fields) {
+
+        // If space's start point is going to be moved
+        if ($this->delta('spaceSince')) {
+
+            // [+] date
+            // [+] datetime
+            // [+] date-time
+            // [+] date-timeId
+            // [+] date-dayQty
+            // [+] datetime-minuteQty
+            // [+] date-time-minuteQty
+            // [+] date-timeId-minuteQty
+            // [+] date-timespan
+
+            // If scheme is 'date' or 'date-dayQty'
+            if (in($scheme, 'date,date-dayQty')) $this->{$fields['date']} = $this->date('spaceSince');
+
+            // If scheme is 'datetime' or 'datetime-minuteQty
+            if (in($scheme, 'datetime,datetime-minuteQty')) $this->{$fields['datetime']} = $this->spaceSince;
+
+            // If scheme is 'date-time' or 'date-time-minuteQty'
+            if (in($scheme, 'date-time,date-time-minuteQty')) {
+
+                // Set 'date' field
+                $this->{$fields['date']} = $this->date('spaceSince');
+
+                // Set 'time' field
+                $this->{$fields['time']} = array_pop(explode(' ', $this->spaceSince));
+            }
+
+            // If scheme is 'date-timeId'
+            if (in($scheme, 'date-timeId,date-timeId-minuteQty')) {
+
+                // Set 'date' field
+                $this->{$fields['date']} = $this->date('spaceSince');
+
+                // Set 'timeId' field
+                $this->{$fields['timeId']} = Indi::model('Time')->fetchRow(
+                    '`title` = "' . $this->date('spaceSince', 'H:i') . '"'
+                )->id;
+            }
+
+            // If scheme is 'date-timespan'
+            if ($scheme == 'date-timespan') {
+
+                // Set 'date' field
+                $this->{$fields['date']} = $this->date('spaceSince');
+
+                // Set 'timespan' field
+                $this->{$fields['timespan']} = $this->date('spaceSince', 'H:i') . '-' . $this->date('spaceUntil', 'H:i');
+            }
+
+        // Else if event duration is going to be changed
+        } else if ($this->delta('spaceUntil')) {
+
+            // [+] date
+            // [+] datetime
+            // [+] date-time
+            // [+] date-timeId
+            // [+] date-dayQty
+            // [+] datetime-minuteQty
+            // [+] date-time-minuteQty
+            // [+] date-timeId-minuteQty
+            // [+] date-timespan
+
+            // If space scheme is a non-duration scheme - revert modification of `spaceUntil`
+            if (in($scheme, 'date,datetime,date-time,date-timeId')) unset($this->_modified['spaceUntil']);
+
+            // If scheme is 'date-dayQty'
+            if ($scheme == 'date-dayQty') {
+
+                // Get days difference
+                $diff = $this->delta('spaceUntil') / _2sec('1d');
+
+                // Update 'dayQty', else revert modification of `spaceUntil`
+                if (Indi::rexm('int11', $diff)) $this->{$fields['dayQty']} += $diff;
+                else unset($this->_modified['spaceUntil']);
+            }
+
+            // If scheme's space duration is measured in minutes
+            if (in($scheme, 'datetime-minuteQty,date-time-minuteQty,date-timeId-minuteQty')) {
+
+                // Get minutes difference
+                $diff = $this->delta('spaceUntil') / _2sec('1m');
+
+                // Update 'minuteQty', else revert modification of `spaceUntil`
+                if (Indi::rexm('int11', $diff)) $this->{$fields['minuteQty']} += $diff;
+                else unset($this->_modified['spaceUntil']);
+            }
+
+            // If scheme is 'date-timespan' - set 'timespan' field
+            if ($scheme == 'date-timespan')
+                $this->{$fields['timespan']} = $this->date('spaceSince', 'H:i') . '-' . $this->date('spaceUntil', 'H:i');
+        }
+    }
+
+    /**
+     * Set values for internal space fields (`spaceSince`, `spaceUntil` and `spaceFrame`)
+     * for them to comply the values of external space-fields
+     *
+     * @param $scheme
+     * @param $fields
+     */
+    protected function _spaceStep2($scheme, $fields) {
+        $this->setSpaceSince($scheme, $fields);
+        $this->setSpaceUntil($scheme, $fields);
+        $this->setSpaceFrame($scheme, $fields);
+    }
+
+    /**
+     * Set value for `spaceSince` prop, depend on $scheme and using names of involved fields
+     *
+     * @param $scheme
+     * @param $fields
+     */
+    public function setSpaceSince($scheme, $fields) {
+
+        // [+] date
+        // [+] datetime
+        // [+] date-time
+        // [+] date-timeId
+        // [+] date-dayQty
+        // [+] datetime-minuteQty
+        // [+] date-time-minuteQty
+        // [+] date-timeId-minuteQty
+        // [+] date-timespan
+
+        // If scheme assumes that `spaceSince` depends on a single field, and that field is a date-field
+        if (in($scheme, 'date,date-dayQty'))
+            $this->spaceSince = $this->date($fields['date'], 'Y-m-d H:i:s');
+
+        // If scheme assumes that `spaceSince` depends on a single field, and that field is a datetime-field
+        if (in($scheme, 'datetime,datetime-minuteQty'))
+            $this->spaceSince = $this->date($fields['datetime'], 'Y-m-d H:i:s');
+
+        // If scheme assumes that `spaceSince` depends both on date-field and time-field,
+        if (in($scheme, 'date-time,date-time-minuteQty'))
+            $this->spaceSince = $this->{$fields['date']} . ' ' . $this->{$fields['time']};
+
+        // If scheme assumes that `spaceSince` depends both on date-field and time-field,
+        // and time field is a foreign-key field
+        if (in($scheme, 'date-timeId,date-timeId-minuteQty'))
+            $this->spaceSince = $this->{$fields['date']} . ' ' . $this->foreign($fields['timeId'])->title . ':00';
+
+        // If scheme assumes that `spaceSince` depends on date-field, and on start time within timespan-field
+        if ($scheme == 'date-timespan')
+            $this->spaceSince = $this->{$fields['date']}
+                . ' ' . array_shift(explode('-', $this->{$fields['timespan']})) . ':00';
+    }
+
+    /**
+     * Set value for `spaceUntil` prop, depend on $scheme and using names of involved fields
+     *
+     * @param $scheme
+     * @param $fields
+     */
+    public function setSpaceUntil($scheme, $fields) {
+
+        // [+] date
+        // [+] datetime
+        // [+] date-time
+        // [+] date-timeId
+        // [+] date-dayQty
+        // [+] datetime-minuteQty
+        // [+] date-time-minuteQty
+        // [+] date-timeId-minuteQty
+        // [+] date-timespan
+
+        // If current scheme is a no-duration scheme
+        if (in($scheme, 'date,datetime,date-time,date-timeId')) $this->spaceUntil = $this->spaceSince;
+
+        // If current scheme assumes that duration is represented by a field, containing hours quantity
+        if (in($scheme, 'date-dayQty'))
+            $this->spaceUntil = date('Y-m-d H:i:s',
+                strtotime($this->spaceSince) + _2sec($this->{$fields['dayQty']} . 'd'));
+
+        // If current scheme assumes that duration is specified by a number-field, containing minutes quantity
+        if (in($scheme, 'datetime-minuteQty,date-time-minuteQty,date-timeId-minuteQty'))
+            $this->spaceUntil = date('Y-m-d H:i:s',
+                strtotime($this->spaceSince) + _2sec($this->{$fields['minuteQty']} . 'm'));
+
+        // If scheme assumes duration is the difference between from-time
+        // and till-time, both specified by the value of timespan-field
+        if ($scheme == 'date-timespan') {
+
+            // Convert date to timestamp
+            $_ = strtotime($this->{$fields['date']});
+
+            // Get 'from' and 'till' times
+            list($from, $till) = explode('-', $this->{$fields['timespan']});
+
+            // Append number of seconds according to 'till' time
+            $_ += _2sec($till . ':00');
+
+            // If 'till' time is less than 'from' time, assume that it's the next day
+            if ($till < $from) $_ += _2sec('1d');
+
+            // Set `spaceSince`
+            $this->spaceUntil = date('Y-m-d H:i:s', $_);
+        }
+    }
+
+    /**
+     * Calculate current entry's space size within the schedule, in seconds
+     */
+    public function setSpaceFrame($scheme, $fields) {
+        $this->spaceFrame = strtotime($this->spaceUntil) - strtotime($this->spaceSince);
+    }
+
+    /**
      * Saves row into database table. But.
      * Preliminary checks if row has a `move` field in it's structure and if row is not an existing row yet
      * (but is going to be inserted), and if so - autoset value for `move` column after row save
@@ -297,6 +514,17 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Data types check, and if smth is not ok - flush mismatches
         $this->scratchy(true);
+
+        // If entity, that current entry is an instance of - has non-'none' value of `spaceScheme` prop
+        if (($space = $this->model()->space()) && $space['scheme'] != 'none') {
+
+            // Set values for external space-fields, in case if internal space
+            // fields - `spaceSince` and/or `spaceUntil` - was modified
+            $this->_spaceStep1($space['scheme'], $space['fields']);
+
+            // Set space fields
+            $this->_spaceStep2($space['scheme'], $space['fields']);
+        }
 
         // Backup original data
         $original = $this->_original;
@@ -311,7 +539,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $forceL10n = $this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y';
 
             // Do some needed operations that are required to be done right before row update
-            $this->onBeforeUpdate();
+            $this->onBeforeUpdate(); $this->onBeforeSave();
 
             // Do both data types check and custom validation, and if smth is not ok - flush mismatches
             // At first sight, we could just perform custom validation, without preliminary data types check,
@@ -337,7 +565,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $new = true;
 
             // Do some needed operations that are required to be done right before row insertion into a database table
-            $this->onBeforeInsert();
+            $this->onBeforeInsert(); $this->onBeforeSave();
 
             // Check mismatches again, because some additional changes might have been done within $this->onBeforeInsert() call
             $this->mflush(true);
@@ -502,6 +730,14 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Unset results
             unset($this->_notices[$noticeR->id]);
         }
+    }
+
+    /**
+     * This method will be called after onBeforeInsert/onBeforeUpdate methods calls,
+     * but before insert/update sql-queries actual execution
+     */
+    public function onBeforeSave() {
+
     }
 
     /**
@@ -3853,7 +4089,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $was = clone $this; $was->original($original);
 
         // Setup foreign data for $was object
-        $was->foreign(implode(',', $affectedForeignA));
+        $was->foreign(implode(',', $affectedForeignA), true);
 
         // Setup $now object as a clone of $this object, at it's current state
         $now = clone $this; $now->foreign(implode(',', $affectedForeignA));
@@ -3942,8 +4178,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             $storageR->datetime = date('Y-m-d H:i:s');
             if ($storageM->fields('monthId')) $storageR->monthId = Month::o()->id;
             $storageR->changerType = Indi::model(Indi::admin()->alternate ? Indi::admin()->alternate : 'Admin')->id();
-            $storageR->profileId = Indi::admin()->profileId;
-            $storageR->changerId = Indi::admin()->id;
+            $storageR->profileId = Indi::admin()->profileId ?: 0;
+            $storageR->changerId = Indi::admin()->id ?: 0;
             $storageR->save();
         }
     }
@@ -4080,6 +4316,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($csl) return array_diff(
                 ar($this->{$diff == 'ins' ? '_modified' : '_original'}[$prop]),
                 ar($this->{$diff == 'del' ? '_modified' : '_original'}[$prop]));
+
+            // Else if we deal with dates - return difference in seconds
+            else if (Indi::rexm('datetime', $this->_original[$prop]))
+                return strtotime($this->_modified[$prop]) - strtotime($this->_original[$prop]);
 
             // Else return result of deduction of previous value from modified value
             else return $this->_modified[$prop] - $this->_original[$prop];
@@ -4704,8 +4944,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @param array $ruleA
      * @param array $data
+     * @param bool $flush
      */
-    public function mcheck($ruleA, $data = array()) {
+    public function mcheck($ruleA, $data = array(), $flush = true) {
 
         // Foreach prop having mismatch rules
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
@@ -4717,25 +4958,35 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->field($prop)) {
 
                 // If prop is required, but has empty/null/zero value - flush error
-                if ($rule['req'] && ($this->zero($prop) || !$this->$prop))
-                    mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title));
+                if ($rule['req'] && ($this->zero($prop) || !$this->$prop)) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_REQ, $fieldR->title))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_REQ, $fieldR->title);
 
                 // If prop's value should match certain regular expression, but it does not - flush error
-                if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
-                    mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title));
+                else if ($rule['rex'] && !$this->zero($prop) && !Indi::rexm($rule['rex'], $this->$prop)) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_REG, $this->$prop, $fieldR->title);
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
-                if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop))
-                    mflush($prop, sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop));
+                else if ($rule['key'] && !$this->zero($prop) && !$this->foreign($prop)) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_KEY, ucfirst(Indi::model($fieldR->relation)->table()), $this->$prop);
 
-            // Else if $prop is a just some prop, assigned as temporary prop
+                // If prop's value should be unique within the whole database table, but it's not - flush error
+                else if ($rule['unq'] && !$this->zero($prop) && $this->model()->fetchRow(array(
+                    '`' . $prop . '` = "' . $this->$prop . '"', '`id` != "' . $this->id . '"'
+                ))) $flush
+                    ? mflush($prop, sprintf(I_MCHECK_UNQ, $this->$prop, $fieldR->title))
+                    : $this->_mismatch[$prop] = sprintf(I_MCHECK_UNQ, $this->$prop, $fieldR->title);
+
+                // Else if $prop is a just some prop, assigned as temporary prop
             } else {
 
                 // If prop is required, but has empty/null/zero value - flush error
                 if ($rule['req'] && !$this->$prop) jflush(false, sprintf(I_JCHECK_REQ, $prop));
 
                 // If prop's value should match certain regular expression, but it does not - flush error
-                if ($rule['rex'] && !Indi::rexm($rule['rex'], $this->$prop))
+                if ($rule['rex'] && $this->$prop && !Indi::rexm($rule['rex'], $this->$prop))
                     jflush(false, sprintf(I_JCHECK_REG, $this->$prop, $prop));
 
                 // If prop's value should be an identifier of an existing object, but such object not found - flush error
@@ -4745,5 +4996,55 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
             }
         }
+    }
+
+    /**
+     * Get daily working hours to be involved in certain entry validation.
+     * This function was implemented as a workaround for cases when we have
+     * some events, that are not fully/partially fit within the daily working hours.
+     * This may happen for example, then there was old settings for daily working hours,
+     * and certian entry was in those hours, but then those hours were changed, so now
+     * that entry is already NOT within new daily working hours, and this will prevent
+     * any modifications, that user/system will be trying to apply, as validation will flush
+     * failure. That is why this function will disable daily working hours settings for events
+     * that are not match that settings
+     *
+     * @return array
+     */
+    public function daily() {
+
+        // Get daily working hours
+        $daily = $this->model()->daily();
+
+        // If this is a not-yet-existing entry - return daily working hours, declared for the model
+        if (!$this->id) return $daily;
+
+        // Disable any daily bound in case if current event is overlapping that bound
+        foreach ($daily as $type => $time)
+            if ($time && $_ = Indi::schedule($this->_original['spaceSince'], $this->_original['spaceUntil']))
+                if ($_ = $_->{$type == 'since' ? 'early' : 'late'}($time)->spaces())
+                    if (count($_) > 1 || $_[0]->avail != 'free') $daily[$type] = false;
+
+        // Return
+        return $daily;
+    }
+
+    /**
+     * Alias for mcheck, but without immediate flush
+     *
+     * @param $ruleA
+     */
+    public function vcheck($ruleA) {
+        $this->mcheck($ruleA, array(), false);
+    }
+
+    /**
+     * Return formatted price
+     *
+     * @param $prop
+     * @return float|string
+     */
+    public function price($prop) {
+        return price($this->$prop, true);
     }
 }

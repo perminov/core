@@ -38,6 +38,7 @@ Ext.define('Indi.lib.controller.action.Row', {
                     {alias: 'ID'},
                     {alias: 'reload'}, '-',
                     {alias: 'prev'}, {alias: 'sibling'}, {alias: 'next'}, '-',
+                    {alias: 'actions'},
                     {alias: 'nested'}, '->',
                     {alias: 'offset'}, {alias: 'found'}
                 ]
@@ -80,13 +81,105 @@ Ext.define('Indi.lib.controller.action.Row', {
         }
     },
 
+    panelDockedInner$Actions_Default: function(action) {
+        var me = this, cfg = me.callParent(arguments); if (!cfg || action.alias.match(/^(up|down)$/)) return;
+
+        // Set handler
+        cfg.handler = function(btn) {
+            me.goto(
+                '/' + me.ti().section.alias +
+                '/' + btn.actionAlias +
+                '/id/' + me.ti().row.id +
+                '/ph/' + me.ti().scope.hash +
+                '/aix/'+ me.ti().scope.aix + '/'
+            );
+        }
+
+        // Return
+        return cfg;
+    },
+
     /**
-     * Panel master toolbar id constructor
+     * Master toolbar 'Autosave' item, for ability to toggle autosave mode while navigating
+     * within the currently available rows scope
      *
-     * @return {String}
+     * @return {Object}
      */
-    panelDockedInnerBid: function() {
-        return this.bid() + '-docked-inner$';
+    panelDockedInner$Actions$Create: function() {
+        var me = this, bid = me.panelDockedInnerBid();
+
+        // 'Create' item config
+        return {
+            id: bid + 'create',
+            iconCls: 'i-btn-icon-create',
+            disabled: parseInt(me.ti().section.disableAdd) == 1 || (me.row.readOnly && !me.row.createOnly && parseInt(me.ti().section.disableAdd) != 2) ? true : false,
+            tooltip: Indi.lang.I_NAVTO_CREATE,
+            handler: function(){
+
+                // Create shortcuts for involved components
+                var url = '/' + me.ti().section.alias + '/form/ph/' + me.ti().section.primaryHash+'/',
+                    tfID = Ext.getCmp(bid + 'id'), btnPrev = Ext.getCmp(bid + 'prev'), btnNext = Ext.getCmp(bid + 'next'),
+                    cmbSibling = Ext.getCmp(bid + 'sibling'), spnOffset = Ext.getCmp(bid + 'offset');
+
+                // Show mask
+                me.getMask().show();
+
+                // Other items adjustments
+                if (tfID) tfID.setValue('');
+                if (btnPrev) btnPrev.disable();
+                if (cmbSibling && typeof me.ti().row.title != 'undefined') cmbSibling.keywordEl.val('');
+                if (btnNext && parseInt(me.ti().scope.found)) btnNext.enable();
+                if (spnOffset) spnOffset.setValue('');
+
+                // Goto the url
+                me.goto(url, undefined, {
+                    title: Indi.lang.I_CREATE
+                });
+            }
+        }
+    },
+
+    /**
+     * Constructor function for Delete action button
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Actions$Delete: function() {
+        var me = this, bid = me.panelDockedInnerBid(), sibling, next, prev;
+        return {
+            handler: function() {
+
+                // Show the deletion confirmation message box
+                Ext.MessageBox.show({
+                    title: Indi.lang.I_ACTION_DELETE_CONFIRM_TITLE,
+                    msg: Indi.lang.I_ACTION_DELETE_CONFIRM_MSG + ' "' + me.ti().row._system.title + '"?',
+                    buttons: Ext.MessageBox.YESNO,
+                    icon: Ext.MessageBox.QUESTION,
+                    fn: function(answer) {
+                        if (answer == 'yes') {
+
+                            // Delete
+                            me.goto('/' + me.ti().section.alias + '/delete/id/'+ me.ti().row.id
+                                +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/', false, {
+                                success: function(){
+                                    var rowsetActId = 'i-section-' + me.ti().section.alias + '-action-index', rowsetActCmp, record;
+                                    if (me.ti(1) && me.ti(1).row) rowsetActId += '-parentrow-' + me.ti(1).row.id;
+
+                                    // Close window
+                                    Ext.getCmp(me.panel.id).getWindow().close();
+
+                                    // Remove record from store
+                                    if ((rowsetActCmp = Ext.getCmp(rowsetActId)) && Ext.getCmp(rowsetActId + '-wrapper')) {
+                                        record = rowsetActCmp.getStore().getById(me.ti().row.id);
+                                        rowsetActCmp.getStore().remove(record);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
     },
 
     /**
@@ -973,5 +1066,41 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    //
+    panelDockedInner$Actions$Toggle: {
+        handler: function(btn) {
+            var me = btn.ctx();
+            me.goto(me.other('toggle'), false, {success: function(){
+                Ext.getCmp(me.panelDockedInnerBid() + 'reload').press();
+            }});
+        }
+    },
+
+    /**
+     * Check if there is a rowset containing affected record,
+     * and if so - make that record affected within rowset's store
+     *
+     * @param json
+     */
+    affectRecord: function(response) {
+        var me = this, rowsetCtxId = 'i-section-' + me.ti().section.alias + '-action-index', rowsetCtx, record,
+            json = response.responseText.json();
+
+        // If json has no `affected` prop - return
+        if (!json || !json.affected) return;
+
+        // Continue building rowset context/action component's id
+        if (me.ti(1) && me.ti(1).row) rowsetCtxId += '-parentrow-' + me.ti(1).row.id;
+
+        // If component or it's wrapper-panel does not exist - return
+        if (!(rowsetCtx = Ext.getCmp(rowsetCtxId)) || !Ext.getCmp(rowsetCtxId + '-wrapper')) return;
+
+        // If record found - affect it
+        if (record = rowsetCtx.getStore().getById(json.affected.id)) rowsetCtx.affectRecord(record, json);
+
+        // Else reload store
+        else rowsetCtx.getStore().reload();
     }
 });

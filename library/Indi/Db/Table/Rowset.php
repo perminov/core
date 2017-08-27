@@ -554,7 +554,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'date' => array(),
             'datetime' => array(),
             'upload' => array(),
-            'other' => array('id' => true)
+            'other' => array('id' => true),
+            'shade' => array()
         );
 
         // Get fields
@@ -594,6 +595,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             else if ($gridFieldR->foreign('elementId')->alias == 'upload')
                 $typeA['upload'][$gridFieldR->alias] = true;
 
+            // Shaded fields
+            else if (Indi::demo(false) && $gridFieldR->param('shade'))
+                $typeA['shade'][$gridFieldR->alias] = $gridFieldR->param();
+
             // All other types
             else $typeA['other'][$gridFieldR->alias] = true;
 
@@ -618,6 +623,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
+
+                // If field should be shaded - prevent actual value from being assigned
+                if (isset($typeA['shade'][$columnI])) if ($r->$columnI) $data[$pointer][$columnI] = I_PRIVATE_DATA;
 
                 // If field column type is regular, e.g no foreign keys, no prices, no dates, etc. - we do no changes
                 if (isset($typeA['other'][$columnI]))
@@ -657,8 +665,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // If field column type is datetime, we adjust it's format if need. If datetime is '0000-00-00 00:00:00'
                 // we set it to empty string
-                if (isset($typeA['datetime'][$columnI]) && ($typeA['datetime'][$columnI]['displayDateFormat'] ||
-                    $typeA['datetime'][$columnI]['displayTimeFormat'])) {
+                if (isset($typeA['datetime'][$columnI])
+                    && ($typeA['datetime'][$columnI]['displayDateFormat'] || $typeA['datetime'][$columnI]['displayTimeFormat'])) {
 
                     if (!$typeA['datetime'][$columnI]['displayDateFormat'])
                         $typeA['datetime'][$columnI]['displayDateFormat'] = 'Y-m-d';
@@ -1369,10 +1377,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * @param array $original
      * @return Indi_Db_Table_Rowset
      */
-    public function append(array $original) {
+    public function append($original) {
         
         // Append
-        $this->_rows[] = new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
+        $this->_rows[] = $original instanceof Indi_Db_Table_Row
+            ? $original
+            : new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
         $this->_count++;
         $this->_found++;
         

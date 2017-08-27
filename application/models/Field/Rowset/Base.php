@@ -255,13 +255,13 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      * Append row to current rowset, using $original argument as the base data for
      * construction of a row, that will be appended
      *
-     * @param array $original
+     * @param array|Field_Row $original
      * @return Field_Rowset_Base|Indi_Db_Table_Rowset|Field_Rowset
      */
-    public function append(array $original) {
+    public function append($original) {
 
         // Push alias into indexes
-        $this->_indexes[$original['alias']] = $this->_count;
+        $this->_indexes[$original instanceof Field_Row ? $original->alias : $original['alias']] = $this->_count;
 
         // Call parent
         $this->callParent();

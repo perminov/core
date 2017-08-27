@@ -86,12 +86,24 @@ class Indi {
         'datetime' => '/^[0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/',
         'url' => '/^(ht|f)tp(s?)\:\/\/(([a-zA-Z0-9\-\._]+(\.[a-zA-Z0-9\-\._]+)+)|localhost)(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?([\d\w\.\/\%\+\-\=\&amp;\?\:\\\&quot;\'\,\|\~\;]*)$/',
         'urichunk' => '',
-        'varchar255' => '/^[.\s]{0,255}$/',
+        'varchar255' => '/^([[:print:]]{0,255})$/',
         'dir' => ':^([A-Z][\:])?/.*/$:',
         'grs' => '/^[a-zA-Z0-9]{15}$/',
         'phone' => '/^\+7 \([0-9]{3}\) [0-9]{3}-[0-9]{2}-[0-9]{2}$/',
         'vk' => '~^https://vk.com/([a-zA-Z0-9_\.]{3,})~',
-        'coords' => '/^([0-9]{1,3}+\.[0-9]{1,12})\s*,\s*([0-9]{1,3}+\.[0-9]{1,12}+)$/'
+        'coords' => '/^([0-9]{1,3}+\.[0-9]{1,12})\s*,\s*([0-9]{1,3}+\.[0-9]{1,12}+)$/',
+        'json' => '/
+          (?(DEFINE)
+             (?<number>   -? (?= [1-9]|0(?!\d) ) \d+ (\.\d+)? ([eE] [+-]? \d+)? )
+             (?<boolean>   true | false | null )
+             (?<string>    " ([^"\n\r\t\\\\]* | \\\\ ["\\\\bfnrt\/] | \\\\ u [0-9a-f]{4} )* " )
+             (?<array>     \[  (?:  (?&json)  (?: , (?&json)  )*  )?  \s* \] )
+             (?<pair>      \s* (?&string) \s* : (?&json)  )
+             (?<object>    \{  (?:  (?&pair)  (?: , (?&pair)  )*  )?  \s* \} )
+             (?<json>   \s* (?: (?&number) | (?&boolean) | (?&string) | (?&array) | (?&object) ) \s* )
+          )
+          \A (?&json) \Z
+          /six'
     );
 
     /**
@@ -2372,20 +2384,23 @@ class Indi {
     }
 
     /**
-     * Create and return a new instance of Indi_Space class,
+     * Create and return a new instance of Indi_Schedule class
+     *
      * @static
      * @param $since
      * @param null $until
+     * @param string $gap
      * @return Indi_Schedule
      */
-    public static function schedule($since, $until = null) {
-        return new Indi_Schedule($since, $until);
+    public static function schedule($since, $until = null, $gap = '') {
+        return new Indi_Schedule($since, $until, $gap);
     }
     
     /**
      * Prevent user from doing something when demo-mode is turned On
      */
-    public static function demo() {
-        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1) jflush(false, I_DEMO_ACTION_OFF);
+    public static function demo($flush = true) {
+        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1)
+            return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
 }

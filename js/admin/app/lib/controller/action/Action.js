@@ -29,7 +29,14 @@ Ext.define('Indi.lib.controller.action.Action', {
             },
             items: [],
             inner: {}
-        }
+        },
+
+        /**
+         * Array of action-button aliases, that have special icons
+         */
+        toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
+            'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm', 'goto']
+
     },
 
     /**
@@ -190,8 +197,14 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @return {Array}
      */
     panelDocked$MasterItemA: function() {
-        var merged = [], pushed = this.push(this.panel.docked.inner['master'], 'panelDockedInner', true);
+        var me = this, merged = [],
+            pushed = me.push(me.panel.docked.inner['master'], 'panelDockedInner', true),
+            filter = me.ti().filters.select('master', 'toolbar');
+
         for (var i = 0; i < pushed.length; i++) merged = merged.concat(pushed[i]);
+        merged = merged.concat(me.panelDocked$FilterItemA(filter));
+
+        // Return
         return merged;
     },
 
@@ -303,13 +316,17 @@ Ext.define('Indi.lib.controller.action.Action', {
     filterChange: function(cmp){
 
         // Setup auxilliary variables/shortcuts
-        var me = this, fieldsetCmpId = me.bid() + '-toolbar$filter-fieldset';
+        var me = this;
 
         // Declare an array for params, which will be fulfiled with filters's values
         var paramA = [];
 
         // Get all filter components
-        var filterCmpA = Ext.getCmp(fieldsetCmpId).query('[name]');
+        var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
+
+        // If filters toolbar was undocked from main panel into a window - try search within that window
+        if (!filterCmpA.length && Ext.getCmp(me.panel.id).filterWin)
+            filterCmpA = Ext.getCmp(me.panel.id).filterWin.query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
@@ -515,7 +532,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @return {*}
      */
     prepareWindow: function() {
-        var me = this, app = Indi.app, window, active = app.getActiveWindow(), create = false, a = {}, n = {}, i, cfg;
+        var me = this, app = Indi.app, window, active = app.getActiveWindow(me.cfg.trail), create = false, a = {}, n = {}, i, cfg;
 
         // If we have no windows yet - set `create` as `true`, else
         if (!active) create = true; else {
@@ -679,12 +696,19 @@ Ext.define('Indi.lib.controller.action.Action', {
             // Else use existing window
             else {
 
+                // Remember target window at this time to avoid accessing it by app.windows.getAt(i)
+                // because after call of active.close() target window's index within app.windows may shift
+                var target = app.windows.getAt(i);
+
                 // Close active window
-                if (app.windows.getAt(i).id != active.id) active.close();
+                if (target.id != active.id) active.close();
+
+                // Error catcher. Problem, that cause this line to be added - seem to be fixed,
+                // but it's still remain here to check if there are other reasons of problem
+                if (!target) console.log('create == true', i, app.windows.getCount(), me.panel.id);
 
                 // Apply new contents to existing window
-                window = app.windows.getAt(i).apply(cfg).toFront();
-                //window = app.windows.getAt(i).toFront();
+                window = target.apply(cfg).toFront();
             }
 
         // Else set up active window usage as a place for new panel
@@ -695,6 +719,9 @@ Ext.define('Indi.lib.controller.action.Action', {
 
             // If contains - close that existing window
             if (i != -1 && app.windows.getAt(i).id != active.id) app.windows.getAt(i).close();
+
+            // Error catcher
+            if (!active) console.log('create == false', app.windows.getCount(), me.panel.id);
 
             // Apply new contents to active window
             window = active.apply(cfg);
@@ -724,5 +751,96 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Return
         return false;
+    },
+
+    /**
+     * Build and return array of configs of master toolbar items, that represent action-buttons
+     *
+     * @return {Array}
+     */
+    panelDockedInner$Actions: function() {
+
+        // Setup auxillirary variables
+        var me = this, itemA = [], itemI, eItem$, item$, itemICreate = me.panelDockedInner$Actions$Create();
+
+        // Append 'Create' action button
+        if (itemICreate) itemA.push(itemICreate);
+
+        // Append other action buttons
+        for (var i = 0; i < me.ti().actions.length; i++) {
+
+            // Skip current section
+            if (me.ti().actions[i].alias == me.ti().action.alias) continue;
+
+            // Get default column config
+            itemI = me.panelDockedInner$Actions_Default(me.ti().actions[i]);
+
+            // Apply custom config
+            eItem$ = 'panelDockedInner$Actions$'+Indi.ucfirst(me.ti().actions[i].alias);
+            if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
+                item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](itemI) : me[eItem$];
+                itemI = Ext.isObject(item$) ? Ext.merge(itemI, item$) : item$;
+            } else if (me[eItem$] === false) itemI = me[eItem$];
+
+            // Add
+            if (itemI) itemA.push(itemI);
+        }
+
+        // Push a separator
+        if (itemA.length) itemA.push('-');
+
+        // Return
+        return itemA;
+    },
+
+    /**
+     * Panel master toolbar id constructor
+     *
+     * @return {String}
+     */
+    panelDockedInnerBid: function() {
+        return this.bid() + '-docked-inner$';
+    },
+
+    /**
+     * Builds and returns default/initial config for all action-button master panel items
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Actions_Default: function(action) {
+        var me = this, bid = me.panelDockedInnerBid(), btnSave;
+
+        // If action is visible - return
+        if (action.display != 1) return null;
+
+        // If current context's action is a certain-row-action,
+        // but `action` arg - is not a certain-row action - return
+        if (me.ti().action.rowRequired == 'y' && action.rowRequired != 'y') return null;
+
+        // Basic action object
+        var actionItem = {
+            id: bid + action.alias,
+            text: action.title,
+            action: action,
+            actionAlias: action.alias,
+            rowRequired: action.rowRequired,
+            listeners: {
+                boxready: function(btn) {
+                    if (me.ti().action.rowRequired == 'y') btn.setDisabled(
+                        (!me.ti().row.id && (btnSave = Ext.getCmp(bid + 'save')) && !btnSave.pressed)
+                    );
+                }
+            }
+        }
+
+        // Setup iconCls property, if need
+        if (me.panel.toolbarMasterItemActionIconA.indexOf(action.alias) != -1) {
+            actionItem.iconCls = 'i-btn-icon-' + action.alias;
+            actionItem.text = '';
+            actionItem.tooltip = action.title;
+        }
+
+        // Return
+        return actionItem;
     }
 });

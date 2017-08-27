@@ -78,9 +78,6 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 if ($actionR->alias == Indi::uri('action'))
                     $this->action = $actionR;
 
-            // Setup view. This call will create an action-view object instance, especially for current trail item
-            $this->view();
-
             // Set fields, that will be used as grid columns in case if current action is 'index'
             if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
 
@@ -443,6 +440,10 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 // Else, get the plain result of the rendered script, assignt it to `plain` property of
                 // already existing action-view object instance, and return that `plain` property value individually
                 else {
+
+                    // If demo-mode is turned On - unset value for each shaded field
+                    if (Indi::demo(false)) foreach($this->fields as $fieldR)
+                        if ($fieldR->param('shade')) $this->row->{$fieldR->alias} = ' ' . I_PRIVATE_DATA;
 
                     // Setup view's `plain` property
                     $this->view->plain = Indi::view()->render($script);
