@@ -700,11 +700,14 @@ Ext.define('Indi', {
             // If responseText conversion to json-object was successful
             if (json) {
 
+                // If `json` has `redirect` property - do redirection
+                if (json.redirect) return Indi.load(json.redirect, cfg);
+
                 // If `json` has `trail` property, apply/dispatch it
                 if (json.route) return Indi.trail(true).apply(Ext.merge(json, {uri: uri, cfg: cfg}));
 
                 // Else if
-                else if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
+                if (json.plain !== null) Ext.get('i-center-center-body').update(json.plain, true);
 
             // Run response
             } else Ext.get('i-center-center-body').update(responseText, true);
@@ -1168,12 +1171,12 @@ Ext.define('Indi', {
      *
      * @return {*}
      */
-    getActiveWindow: function () {
+    getActiveWindow: function (maximized) {
         var win = null, zmgr = Indi.app.getDesktopZIndexManager();
 
         // Walk through z-indexed windows and find the top one
         if (zmgr) zmgr.eachTopDown(function (comp) {
-            if (comp.isWindow && !comp.hidden) {
+            if (comp.isWindow && !comp.hidden && comp.xtype == 'desktopwindow' && (!maximized || comp.maximized)) {
                 win = comp;
                 return false;
             }
@@ -1185,25 +1188,12 @@ Ext.define('Indi', {
     },
 
     /**
-     * Get active window
+     * Get active maximized window
      *
      * @return {*}
      */
     getTopMaximizedWindow: function () {
-        var win = null, zmgr = Indi.app.getDesktopZIndexManager();
-
-        // Walk through z-indexed windows and find the top one that is maximized
-        if (zmgr)
-            zmgr.eachTopDown(function (comp) {
-                if (comp.isWindow && !comp.hidden && comp.maximized) {
-                    win = comp;
-                    return false;
-                }
-                return true;
-            });
-
-        // Return
-        return win;
+        return this.getActiveWindow(true);
     },
 
     /**

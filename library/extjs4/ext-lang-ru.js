@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Russian translation
  * By ZooKeeper (utf-8 encoding)
  * 6 November 2007
@@ -320,4 +320,14 @@
             collapsibleSplitTip : "Тяните для изменения размера. Двойной щелчок спрячет панель."
         });
     }
+
+    if(Ext.calendar.CalendarPanel){
+        Ext.apply(Ext.calendar.CalendarPanel.prototype, {
+            todayText: 'Сегодня',
+            dayText: 'День',
+            weekText: 'Неделя',
+            monthText: 'Месяц'
+        });
+    }
+
 // });

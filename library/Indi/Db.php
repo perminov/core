@@ -181,7 +181,7 @@ class Indi_Db {
             // in fetch from `enumset`
             if ($entityId) {
 
-                // Declare array ofor collecting fields ids
+                // Declare array for collecting fields ids
                 $fieldIdA = array();
 
                 // Fulfil that array
@@ -266,7 +266,7 @@ class Indi_Db {
 
                 // Append current field data to $eFieldA array
                 $eFieldA[$fieldI['original']['entityId']]['rows'][] = new Field_Row($fieldI);
-                $eFieldA[$fieldI['original']['entityId']]['aliases'][] = $fieldI['original']['alias'];
+                $eFieldA[$fieldI['original']['entityId']]['aliases'][$fieldI['original']['id']] = $fieldI['original']['alias'];
             }
 
             // Release memory
@@ -283,10 +283,8 @@ class Indi_Db {
                     }
 
                 // If $entityId was found, so it mean that we are reloading existing model
-                if ($class)
-
-                    // Unset metadata storage under that key from self::$_entityA and self::$_modelA
-                    unset(self::$_entityA[$class], self::$_modelA[$class]);
+                // Unset metadata storage under that key from self::$_entityA and self::$_modelA
+                if ($class) unset(self::$_entityA[$class], self::$_modelA[$class]);
             }
 
             // Array for collecting "entityId => modelName" pairs
@@ -309,9 +307,25 @@ class Indi_Db {
                     'fields' => new Field_Rowset_Base(array(
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],
-                        'aliases' => $eFieldA[$entityI['id']]['aliases'],
+                        'aliases' => array_values($eFieldA[$entityI['id']]['aliases'] ?: array()),
                         'rowClass' => 'Field_Row'
                     ))
+                );
+
+                // Default value
+                if (!$entityI['spaceScheme']) $entityI['spaceScheme'] = 'none';
+
+                // Set space scheme settings
+                self::$_entityA[$modelNameA[$entityI['id']]]['space'] = array(
+                    'scheme' => $entityI['spaceScheme'],
+                    'fields' => $entityI['spaceScheme'] != 'none'
+                        ? array_combine(
+                            explode('-', $entityI['spaceScheme']),
+                            array_flip(array_intersect(
+                                array_flip($eFieldA[$entityI['id']]['aliases']),
+                                ar($entityI['spaceFields'])
+                            ))
+                        ) : array()
                 );
 
                 // Free memory, used by fields array for current entity
@@ -325,7 +339,9 @@ class Indi_Db {
             if (self::$_entityA['Notice']) {
 
                 // Get info about notices, attached to entities
-                $noticeA = self::$_instance->query('SELECT * FROM `notice` WHERE `toggle` = "y"')->fetchAll();
+                $noticeA = self::$_instance->query('
+                    SELECT * FROM `notice` WHERE `toggle` = "y"' . ($entityId ? ' AND `entityId` = "' . $entityId . '"' : '') . '
+                ')->fetchAll();
 
                 // Group notices by their entity ids, preliminary converting
                 // each notice into an instance of Indi_Db_Table_Row

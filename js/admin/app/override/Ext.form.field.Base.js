@@ -311,11 +311,14 @@ Ext.override(Ext.form.field.Base, {
         var me = this;
 
         // If left bar not yet exists - create it
-        if (!me.lbar) me.lbar = Ext.create('Ext.toolbar.Toolbar', {
+        if (!me.lbar) me.lbar = Ext.create('Ext.toolbar.Toolbar', Ext.merge({
             autoShow: true,
-            margin: '1 1 0 0',
+            margin: 0,
             padding: 0,
             height: (me.triggerWrap || me.inputEl).getHeight() - 1,
+            width: 60,
+            border: 0,
+            items: ['->'],
             style: {
                 background: 'none',
                 float: 'right'
@@ -323,13 +326,14 @@ Ext.override(Ext.form.field.Base, {
             defaults: {
                 xtype: 'button',
                 padding: 0,
+                height: 17,
                 target: me,
                 enablerEvents: 'change',
                 enabler: function(c, eventName, args) {
                     return !c.target.hasZeroValue();
                 },
-                listeners: {
-                    boxready: function(c) {
+                initComponent: function() {
+                    this.on('boxready', function(c) {
                         c.setDisabled(c.enabler(c, 'boxready', arguments) ? false : true);
                         if (c.target.hidden) {
                             c.target.on('boxready', function(){
@@ -346,12 +350,11 @@ Ext.override(Ext.form.field.Base, {
                                 c.setDisabled(c.enabler(c, eventName, arguments) ? false : true);
                             }, me);
                         })
-                    }
+                    });
                 }
             },
-            renderTo: me.labelCell,
-            border: 0
-        });
+            renderTo: me.labelCell
+        }, me.lbarCfg || {}));
 
         // Return left-bar
         return me.lbar;
@@ -363,6 +366,7 @@ Ext.override(Ext.form.field.Base, {
      * @param cfg
      */
     addBtn: function(cfg) {
+        if (Ext.isString(cfg.tooltip)) cfg.tooltip = {html: cfg.tooltip, constrainParent: false};
         this.getLbar().add(cfg);
     },
 

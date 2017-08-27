@@ -2,6 +2,27 @@
 class Entity_Row extends Indi_Db_Table_Row {
 
     /**
+     * @return array|void
+     */
+    public function validate() {
+
+        // Check
+        $this->vcheck(array(
+            'title' => array(
+                'req' => true
+            ),
+            'table' => array(
+                'req' => true,
+                'rex' => '/^[a-zA-Z0-9]+$/',
+                'unq' => true
+            )
+        ));
+
+        // Return
+        return $this->callParent();
+    }
+
+    /**
      * Delete current entity
      *
      * @return int|void
@@ -85,6 +106,9 @@ class Entity_Row extends Indi_Db_Table_Row {
      * @return int
      */
     public function save() {
+
+        // Run checks
+        $this->mflush(true);
 
         // If this is a new entity
         if (!$this->id) {
@@ -203,5 +227,174 @@ class Entity_Row extends Indi_Db_Table_Row {
         }
 
         return $return;
+    }
+
+    /**
+     *
+     */
+    public function onUpdate() {
+
+        // Reload model
+        Indi::model($this->id)->reload();
+
+        // If neither `spaceScheme` nor `spaceFields` fields were changed - return
+        if (!$this->affected('spaceScheme,spaceFields')) return;
+
+        // If `spaceScheme` became non-'none' - create space fields within an entity, that current entry is representing
+        if ($this->affected('spaceScheme', true) == 'none') {
+
+            // Get key-value pairs of `element` and `columnType` entries
+            $elementIdA = Indi::db()->query('SELECT `alias`, `id` FROM `element`')->fetchAll(PDO::FETCH_KEY_PAIR);
+            $columnTypeIdA = Indi::db()->query('SELECT `type`, `id` FROM `columnType`')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+            // Prepare fields configs
+            $fieldA = array(
+                'space' => array(
+                    'title' => 'Расписание',
+                    'elementId' => $elementIdA['span'],
+                    'mode' => 'hidden'
+                ),
+                'spaceSince' => array(
+                    'title' => 'Начало',
+                    'elementId' => $elementIdA['datetime'],
+                    'columnTypeId' => $columnTypeIdA['DATETIME'],
+                    'mode' => 'hidden'
+                ),
+                'spaceUntil' => array(
+                    'title' => 'Конец',
+                    'elementId' => $elementIdA['datetime'],
+                    'columnTypeId' => $columnTypeIdA['DATETIME'],
+                    'mode' => 'hidden'
+                ),
+                'spaceFrame' => array(
+                    'title' => 'Длительность',
+                    'elementId' => $elementIdA['number'],
+                    'columnTypeId' => $columnTypeIdA['INT(11)'],
+                    'mode' => 'hidden'
+                )
+            );
+
+            // Foreach fields configs
+            foreach ($fieldA as $alias => $fieldI) {
+
+                // If field already exists - skip
+                if (Indi::model($this->id)->fields($alias)) continue;
+
+                // Create field
+                $fieldRA[$alias] = Indi::model('Field')->createRow();
+                $fieldRA[$alias]->entityId = $this->id;
+                $fieldRA[$alias]->alias = $alias;
+                $fieldRA[$alias]->assign($fieldI);
+                $fieldRA[$alias]->save();
+            }
+
+        // Else if `spaceScheme` wa changed to 'none'
+        } else if ($this->affected('spaceScheme') && $this->spaceScheme == 'none') {
+
+            // Remove space* fields
+            Indi::model($this->id)->fields('space,spaceSince,spaceUntil,spaceFrame')->delete();
+        }
+
+        // Get space settings
+        $space = Indi::model($this->id)->space();
+
+        // Space's scheme and fields shortcuts
+        $scheme = $space['scheme']; $fields = $space['fields'];
+
+        // If space's scheme is 'none' - return
+        if ($scheme == 'none') return;
+
+        // [+] date
+        // [+] datetime
+        // [+] date-time
+        // [+] date-timeId
+        // [+] date-dayQty
+        // [+] datetime-minuteQty
+        // [+] date-time-minuteQty
+        // [+] date-timeId-minuteQty
+        // [+] date-timespan
+
+        // If scheme is 'date'
+        if ($scheme == 'date') Indi::db()->query('
+            UPDATE `:p` SET
+              `spaceSince` = CONCAT(`:p`, " 00:00:00"),
+              `spaceUntil` = CONCAT(`:p`, " 00:00:00"),
+              `spaceFrame` = 0
+        ', $this->table, $fields['date'], $fields['date']);
+
+        // If scheme is 'datetime'
+        if ($scheme == 'datetime') Indi::db()->query('
+            UPDATE `:p` SET `spaceSince` = `:p`, `spaceUntil` = `:p`, `spaceFrame` = 0
+        ', $this->table, $fields['datetime'], $fields['datetime']);
+
+        // If scheme is 'date-time'
+        if ($scheme == 'date-time') Indi::db()->query('
+            UPDATE `:p` SET
+              `spaceSince` = CONCAT(`:p`, " ", `:p`),
+              `spaceUntil` = CONCAT(`:p`, " ", `:p`),
+              `spaceFrame` = 0
+        ', $this->table, $fields['date'], $fields['time'], $fields['date'], $fields['time']);
+
+        // If scheme is 'date-timeId'
+        if ($scheme == 'date-timeId') Indi::db()->query('
+            UPDATE `:p` `e`, `time` `t` SET
+              `e`.`spaceSince` = CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"),
+              `e`.`spaceUntil` = CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"),
+              `e`.`spaceFrame` = 0
+            WHERE `e`.`:p` = `t`.`id`
+        ', $this->table, $fields['date'], $fields['date'], $fields['timeId']);
+
+        // If scheme is 'date-dayQty'
+        if ($scheme == 'date-dayQty') Indi::db()->query('
+             UPDATE `:p` SET
+              `spaceSince` = CONCAT(`:p`, " 00:00:00"),
+              `spaceUntil` = CONCAT(DATE_ADD(`:p`, INTERVAL `' . $fields['dayQty'] . '` DAY), " 00:00:00"),
+              `spaceFrame` = `' . $fields['dayQty'] . '` * ' . _2sec('1d') . '
+       ', $this->table, $fields['date'], $fields['date']);
+
+        // If scheme is 'datetime-minuteQty'
+        if ($scheme == 'datetime-minuteQty') Indi::db()->query('
+            UPDATE `:p` SET
+              `spaceSince` = `:p`,
+              `spaceUntil` = DATE_ADD(`:p`, INTERVAL `' . $fields['minuteQty'] . '` MINUTE),
+              `spaceFrame` = `' . $fields['minuteQty'] . '` * ' . _2sec('1m') . '
+        ', $this->table, $fields['datetime'], $fields['datetime']);
+
+        // If scheme is 'date-time-minuteQty'
+        if ($scheme == 'date-time-minuteQty') Indi::db()->query('
+            UPDATE `:p` SET
+              `spaceSince` = CONCAT(`:p`, " ", `:p`),
+              `spaceUntil` = DATE_ADD(CONCAT(`:p`, " ", `:p`), INTERVAL `' . $fields['minuteQty'] . '` MINUTE),
+              `spaceFrame` = `' . $fields['minuteQty'] . '` * ' . _2sec('1m') . '
+        ', $this->table, $fields['date'], $fields['time'], $fields['date'], $fields['time']);
+
+        // If scheme is 'date-timeId-minuteQty'
+        if ($scheme == 'date-timeId-minuteQty') Indi::db()->query('
+            UPDATE `:p` `e`, `time` `t` SET
+              `e`.`spaceSince` = CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"),
+              `e`.`spaceUntil` = DATE_ADD(CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"), INTERVAL `' . $fields['minuteQty'] . '` MINUTE),
+              `spaceFrame` = `' . $fields['minuteQty'] . '` * ' . _2sec('1m') . '
+            WHERE `e`.`:p` = `t`.`id`
+        ', $this->table, $fields['date'], $fields['date'], $fields['timeId']);
+
+        // If scheme is 'date-timespan'
+        if ($scheme == 'date-timespan') {
+
+            // Update `spaceSince` and `spaceUntil`
+            Indi::db()->query('
+                UPDATE `' . $this->table . '` SET
+                  `spaceSince` = CONCAT(`' . $fields['date'] . '`, " ", SUBSTRING(`' . $fields['timespan'] . '`, 1, 5), ":00"),
+                  `spaceUntil` = DATE_ADD(
+                    CONCAT(`' . $fields['date'] . '`, " ", SUBSTRING(`' . $fields['timespan'] . '`, -5), ":00"),
+                    INTERVAL IF(SUBSTRING(`' . $fields['timespan'] . '`, 1, 5) < SUBSTRING(`' . $fields['timespan'] . '`, -5), 0, 1) DAY
+                  )
+            ');
+
+            // Update `spaceFrame`
+            Indi::db()->query('
+                UPDATE `' . $this->table . '`
+                SET `spaceFrame` = UNIX_TIMESTAMP(`spaceUntil`) - UNIX_TIMESTAMP(`spaceSince`)
+            ');
+        }
     }
 }

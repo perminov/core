@@ -20,7 +20,8 @@ class Indi_Schedule {
      */
     protected $_shift = array(
         'system' => 86400,
-        'inject' => 0
+        'inject' => 0,
+        'gap' => 0
     );
 
     /**
@@ -48,8 +49,9 @@ class Indi_Schedule {
      *
      * @param $since
      * @param $until
+     * @param $gap
      */
-    public function __construct($since = 'month', $until = null) {
+    public function __construct($since = 'month', $until = null, $gap = false) {
 
         // If $since arg is either 'week' or 'month'
         if (in($since, 'week,month')) extract($this->bounds($since, $until));
@@ -67,6 +69,9 @@ class Indi_Schedule {
 
         // Create free space, that match whole schedule, initially
         $this->_spaces[] = new Indi_Schedule_Space($this->_since, $this->_until, 'free');
+
+        // Set gap
+        if ($gap) $this->_shift['gap'] = _2sec($gap);
     }
 
     /**
@@ -75,15 +80,20 @@ class Indi_Schedule {
      * @param int $since Unix-timestamp or a string representation, recognizable by strtotime()
      * @param int $duration
      * @param bool $checkOnly
+     * @param bool $includeGap
+     * @param string $avail
      * @return bool
      */
-    public function busy($since, $duration, $checkOnly = false) {
+    public function busy($since, $duration, $checkOnly = false, $includeGap = true, $avail = 'busy') {
 
         // Default value for $isBusy flag
         $isBusy = true;
 
         // Convert $since arg into timestamp
         $since = is_numeric($since) ? $since : strtotime($since);
+
+        // Include gap
+        if ($includeGap) $duration += $this->_shift['gap'];
 
         // If part, that we want to mark as busy - is starting earlier schedule's left bound
         if ($since < $this->_since) {
@@ -118,7 +128,7 @@ class Indi_Schedule {
                 if ($space->since < $since) {
 
                     // Prepare array for busy-space injection into $this->_spaces
-                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, 'busy'));
+                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, $avail));
 
                     // If free schedule will remain after busy-part injection
                     if ($space->until > $since + $duration)
@@ -139,7 +149,7 @@ class Indi_Schedule {
                     if ($space->until > $since + $duration) {
 
                         // Create busy space starting at the exact same moment as current free space
-                        $busy = new Indi_Schedule_Space($since, $since + $duration, 'busy');
+                        $busy = new Indi_Schedule_Space($since, $since + $duration, $avail);
 
                         // Move current free space's starting mark to the ending of busy space
                         $space->since = $since + $duration;
@@ -150,8 +160,8 @@ class Indi_Schedule {
                     // Else if current free space is going to became busy in it's whole bounds
                     } else if ($space->until == $since + $duration)
 
-                        // Change it's 'avail' prop to 'busy'
-                        $space->avail = 'busy';
+                        // Change it's 'avail' prop to $avail
+                        $space->avail = $avail;
                 }
             }
         }
@@ -255,19 +265,9 @@ class Indi_Schedule {
         $since = date('Y-m-d H:i:s', $this->_since);
         $until = date('Y-m-d H:i:s', $this->_until);
 
-        // Schedule-related field names
-        $srf = array(
-            'since' => $model->sinceField(),
-            'until' => $model->untilField(),
-            'frame' => $model->frameField()
-        );
-
         // Append WHERE clause part, responsible for fetching entries
         // that are within schedule bounds (fully or partially)
-        $where[] = '(' . im(array(
-            '(`' . $srf['since'] . '` <= "' . $since . '" AND `' . $srf['until'] . '` >  "' . $since . '")',
-            '(`' . $srf['since'] . '` <  "' . $until . '" AND `' . $srf['until'] . '` >= "' . $until . '")',
-            '(`' . $srf['since'] . '` >= "' . $since . '" AND `' . $srf['until'] . '` <= "' . $until . '")'), ' OR ') . ')';
+        $where[] = self::where($since, $until);
 
         // Get schedule's busy spaces
         $rs = $model->fetchAll($where);
@@ -276,15 +276,31 @@ class Indi_Schedule {
         foreach ($rs as $r) {
 
             // If $pre arg is callable - call it, passing row, and schedule-related fields
-            if (is_callable($pre)) $pre($r, $srf);
+            if (is_callable($pre)) $pre($r);
 
             // Use row for creating busy space
-            if ($this->busy($r->{$srf['since']}, $r->{$srf['frame']}))
+            if ($this->busy($r->spaceSince, $r->spaceFrame))
                 jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $rs->id . ' в раcписание');
         }
 
         // Return schedule itself
         return $this;
+    }
+
+    /**
+     * Method for building WHERE clause, needed for fetching events that
+     * are fully/partially within a schedule bounds
+     *
+     * @static
+     * @param $since
+     * @param $until
+     * @return string
+     */
+    public static function where($since, $until) {
+        return '(' . im(array(
+            '(`spaceSince` <= "' . $since . '" AND `spaceUntil` >  "' . $since . '")',
+            '(`spaceSince` <  "' . $until . '" AND `spaceUntil` >= "' . $until . '")',
+            '(`spaceSince` >= "' . $since . '" AND `spaceUntil` <= "' . $until . '")'), ' OR ') . ')';
     }
 
     /**
@@ -297,46 +313,120 @@ class Indi_Schedule {
     }
 
     /**
-     * Set daily spaces that are not between $since and $until - as not available.
-     * This can be useful when there is a need to setup working hours
+     * For EACH day within schedule, create spaces starting at midnight and ending at time,
+     * specified by $until arg, and set availability of those spaces as 'early', or, if such
+     * exact spaces is not possible to create because of already existing non-free spaces, that
+     * would intersect with the desired spaces - create spaces among existing non-free spaces,
+     * so the result is that the given period of time (within ech day) will be anyway be non-free,
+     * as some parts of that period will be used for already existing non-free spaces, and remaining
+     * parts will be filled with 'early' spaces
      *
-     * @param $since
-     * @param $until
+     * @param bool $until
      * @return Indi_Schedule
      */
-    public function daily($since, $until) {
+    public function early($until = false) {
+
+        // If no $since arg given, or it is `false` - return
+        if (!$until) return $this;
+
+        // Ensure $since arg to be in 'hh:mm:ss' format
+        if (!Indi::rexm('time', $until)) jflush(false, 'Argument $until should be a time in format hh:mm:ss');
+
+        // Fill schedule with 'early' spaces, where possible
+        $this->fillwp(0, _2sec($until), 'early');
+
+        // Return itself
+        return $this;
+    }
+
+    /**
+     * For EACH day within schedule, create spaces starting at time, according to given $since arg
+     * and ending at midnight, and set availability of those spaces as 'late', or, if such
+     * exact spaces is not possible to create because of already existing non-free spaces, that
+     * would intersect with the desired spaces - create spaces among existing non-free spaces,
+     * so the result is that the given period of time (within ech day) will be anyway be non-free,
+     * as some parts of that period will be used for already existing non-free spaces, and remaining
+     * parts will be filled with 'late' spaces
+     *
+     * @param bool $since
+     * @return Indi_Schedule
+     */
+    public function late($since = false) {
+
+        // If no $since arg given, or it is `false` - return
+        if (!$since) return $this;
 
         // Ensure $since arg to be in 'hh:mm:ss' format
         if (!Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
 
-        // Ensure $until arg to be in 'hh:mm:ss' format
-        if (!Indi::rexm('time', $until)) jflush(false, 'Argument $until should be a time in format hh:mm:ss');
-
-        // Set initial mark to be the beginning of space left bound's date
-        $mark = strtotime(date('Y-m-d', $this->_since));
-
-        // Get daily number of seconds
-        $daily = $this->_2sec('1d');
-
-        // Convert $since and $until args to number of seconds
-        $since = $this->_2sec($since);
-        $until = $this->_2sec($until);
-
-        // While $mark does not exceed space's right bound
-        while ($mark < $this->_until) {
-
-            // Try to set space between 00:00:00 and $since of each day - as not available
-            if ($this->busy($mark, $since)) jflush(false, 'Can\'t set opening hours');
-
-            // Try to set space between $until and 00:00:00 of next day - as not available
-            if ($this->busy($mark + $until, $daily - $until)) jflush(false, 'Can\'t set closing hours');
-
-            // Jump to next date
-            $mark += $daily;
-        }
+        // Fill schedule with 'late' spaces, where possible
+        $this->fillwp(_2sec($since) + $this->_shift['gap'], _2sec('1d'), 'late');
 
         // Return itself
         return $this;
+    }
+
+    /**
+     * For EACH day within schedule, fill (where possible) the period
+     * between $since and $until with spaces marked as $avail
+     *
+     * @param $since
+     * @param $until
+     * @param $avail
+     */
+    public function fillwp($since, $until, $avail) {
+
+        // Set initial day-timestamp to be the date of the schedule left bound
+        $daystamp = strtotime(date('Y-m-d', $this->_since));
+
+        // While $mark does not exceed schedule's right bound
+        while ($daystamp < $this->_until) {
+
+            // Get date for
+            $date = date('Y-m-d', $daystamp);
+
+            // Set absolute timestamps
+            $_since = $daystamp + $since;
+            $_until = $daystamp + $until;
+
+            // Foreach space within schedule
+            foreach ($this->_spaces as $space) {
+
+                // If current space's start date is one of the next days to $_since - break;
+                if (date('Y-m-d', $space->since) > $date) break;
+
+                // If current space ends earlier than $_since - skip
+                if ($space->until <= $_since) continue;
+
+                // If current space is not 'free'
+                if ($space->avail != 'free') continue;
+
+                // Calculate the intersection of what we have and what we need
+                $frame = min($space->until, $_until) - max($space->since, $_since);
+
+                // If no current space's part, suitable for marking as 'late' found - break
+                if ($frame <= 0) break;
+
+                // Mark found part as 'late'
+                if ($this->busy(max($space->since, $_since), $frame, false, false, $avail))
+                    jflush(false, 'Can\'t set ' . $avail . ' space');
+            }
+
+            // Jump to next day
+            $daystamp += _2sec('1d');
+        }
+    }
+
+    /**
+     * Set daily spaces that are not between $since and $until - as not available.
+     * This can be useful when there is a need to setup working hours
+     *
+     * @param bool|string $opened
+     * @param bool|string $closed
+     * @return Indi_Schedule
+     */
+    public function daily($opened = false, $closed = false) {
+        return $this->early($opened)->late($closed);
     }
 
     /**
@@ -348,7 +438,7 @@ class Indi_Schedule {
     public function busyDates($frame) {
 
         // Convert to seconds
-        $frame = $this->_2sec($frame);
+        $frame = _2sec($frame);
 
         // Array of busy dates
         $busy = array();
@@ -376,13 +466,13 @@ class Indi_Schedule {
                 else $space = $this->_spaces[++$i];
 
             // While $free flag is not true and $space's date is same as $mark's date
-            } while (!$free && (date('Y-m-d', $space->until) == date('Y-m-d', $mark)));
+            } while (!$free && (date('Y-m-d', $space->until - (int)(date('H:i:s', $space->until) == '00:00:00')) == date('Y-m-d', $mark)));
 
             // If $free flag is still false - append $mark's date to busy dates array
             if (!$free) $busy[] = date('Y-m-d', $mark);
 
             // Jump to next date
-            $mark += $this->_2sec('1d');
+            $mark += _2sec('1d');
         }
 
         // Return busy dates
@@ -400,7 +490,7 @@ class Indi_Schedule {
     public function busyHours($frame, $date, $step = '1h') {
 
         // Convert $frame arg to seconds
-        $frame = $this->_2sec($frame);
+        $frame = _2sec($frame);
 
         // Array of busy hours
         $busy = array();
@@ -409,7 +499,7 @@ class Indi_Schedule {
         $mark = strtotime($date);
 
         // Convert $step arg to seconds
-        $step = $this->_2sec($step);
+        $step = _2sec($step);
 
         // While $mark is within $date
         while ($date == date('Y-m-d', $mark)) {
@@ -423,52 +513,6 @@ class Indi_Schedule {
 
         // Return busy time-steps
         return $busy;
-    }
-
-    /**
-     * Convert duration, given as string in format 'xy', to number of seconds
-     * where 'x' - is the number, and 'y' - is the measure. 'y' can be:
-     * s - second
-     * m - minute
-     * h - hour
-     * d - day
-     * w - week
-     *
-     * Example usage:
-     * $seconds = $this->_2sec('2m'); // $seconds will be = 120
-     *
-     * @param $expr
-     * @return int
-     */
-    protected function _2sec($expr) {
-
-        // If $expr is given in 'hh:mm:ss' format
-        if (Indi::rexm('time', $expr)) {
-
-            // Prepare type mapping
-            $type = array('h', 'm', 's'); $s = 0;
-
-            // Foreach type append it's value converted to seconds
-            foreach (explode(':', $expr) as $index => $value) $s += $this->_2sec($value . $type[$index]);
-
-            // Return
-            return $s;
-        }
-
-        // Check format for $for argument
-        if (!preg_match('~^([0-9]+)(s|m|h|d|w)$~', $expr, $m)) jflush(false, 'Incorrect $expr arg format');
-
-        // Multipliers for $expr conversion
-        $frame2sec = array(
-            's' => 1,
-            'm' => 60,
-            'h' => 60 * 60,
-            'd' => 60 * 60 * 24,
-            'w' => 60 * 60 * 24 * 7
-        );
-
-        // Return number of seconds
-        return $m[1] * $frame2sec[$m[2]];
     }
 
     /**
