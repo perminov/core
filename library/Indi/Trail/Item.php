@@ -125,7 +125,10 @@ class Indi_Trail_Item {
         if ($this->row) {
             $array['row'] = $this->row->toArray('current', true, $this->action->alias);
             $array['row']['_system']['title'] = $this->row->title();
-            //$array['row']['title'] = $this->row->title();
+
+            // If demo-mode is turned On - unset value for each shaded field
+            if (Indi::demo(false)) foreach ($this->fields as $fieldR)
+                if ($fieldR->param('shade')) $array['row'][$fieldR->alias] = '';
 
             // Collect aliases of all CKEditor-fields
             $ckeFieldA = array();

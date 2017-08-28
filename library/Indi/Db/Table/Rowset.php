@@ -554,7 +554,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'date' => array(),
             'datetime' => array(),
             'upload' => array(),
-            'other' => array('id' => true)
+            'other' => array('id' => true),
+            'shade' => array()
         );
 
         // Get fields
@@ -594,6 +595,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             else if ($gridFieldR->foreign('elementId')->alias == 'upload')
                 $typeA['upload'][$gridFieldR->alias] = true;
 
+            // Shaded fields
+            else if (Indi::demo(false) && $gridFieldR->param('shade'))
+                $typeA['shade'][$gridFieldR->alias] = $gridFieldR->param();
+
             // All other types
             else $typeA['other'][$gridFieldR->alias] = true;
 
@@ -618,6 +623,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
+
+                // If field should be shaded - prevent actual value from being assigned
+                if (isset($typeA['shade'][$columnI])) if ($r->$columnI) $data[$pointer][$columnI] = I_PRIVATE_DATA;
 
                 // If field column type is regular, e.g no foreign keys, no prices, no dates, etc. - we do no changes
                 if (isset($typeA['other'][$columnI]))

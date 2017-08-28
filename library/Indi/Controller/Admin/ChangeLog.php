@@ -66,9 +66,23 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
      * @param array $data
      */
     public function adjustGridData(&$data) {
+
+        // Collect shaded fields
+        if (($shade = array()) || Indi::demo(false))
+            foreach(Indi::model(Indi::trail(1)->section->entityId)->fields() as $fieldR)
+                if ($fieldR->param('shade'))
+                    $shade[$fieldR->id] = true;
+
+        // Adjust data
         for ($i = 0; $i < count($data); $i++) {
             $data[$i]['changerId'] = $data[$i]['datetime'] . ' - ' . $data[$i]['changerId'];
             $data[$i]['key'] = $data[$i]['entityId'] . ' » ' . $data[$i]['key'];
+
+            // Shade private data
+            if ($shade[$data[$i]['$keys']['fieldId']]) {
+                if ($data[$i]['was']) $data[$i]['was'] = I_PRIVATE_DATA;
+                if ($data[$i]['now']) $data[$i]['now'] = I_PRIVATE_DATA;
+            }
         }
     }
 }

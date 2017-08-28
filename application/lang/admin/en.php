@@ -215,3 +215,5 @@ define('I_JCHECK_REQ', 'Param "%s" - is not given');
 define('I_JCHECK_REG', 'Value "%s" of param "%s" - is in invalid format');
 define('I_JCHECK_KEY', 'No object of type "%s" was found by key "%s"');
 define('I_JCHECK_EQL', 'Wrong value');
+
+define('I_PRIVATE_DATA', '*private data*');

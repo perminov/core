@@ -7,7 +7,7 @@
 .i-trail-item-section.x-btn-default-toolbar-small .x-btn-inner:before,
 .i-trail-item-action.x-btn-default-toolbar-small .x-btn-inner:before,
 .i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner:before {
-    content: '» ';
+    content: '\000BB\00A0';
     font-style: normal;
     padding-left: 4px;
 }
