@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Special version of Indi.form.Combo, created for grid/tile/etc store filtering purposes
  */
 Ext.define('Indi.lib.form.field.AutoCombo', {

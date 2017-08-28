@@ -13,6 +13,10 @@ class Indi_Controller {
      */
     public function __construct() {
 
+        // Set locale
+        if (Indi::ini()->lang->{Indi::uri()->module} == 'ru')
+            setlocale(LC_TIME, 'ru_RU.UTF-8', 'ru_utf8', 'Russian_Russia.UTF8', 'ru_RU', 'Russian');
+
         // Create an Indi_View instance
 		$view = class_exists('Project_View') ? new Project_View : new Indi_View();
 
@@ -831,5 +835,5 @@ class Indi_Controller {
      */
     public function adjustTrail() {
 
-    }    
+    }
 }
