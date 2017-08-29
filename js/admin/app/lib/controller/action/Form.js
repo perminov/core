@@ -481,6 +481,12 @@ Ext.define('Indi.lib.controller.action.Form', {
         // Apply vtype
         if (item.field.params && item.field.params.vtype) cfgO.vtype = item.field.params.vtype;
 
+        // Apply vtype
+        if (Indi.ini.demo && item.field.params && item.field.params.shade) {
+            cfgO.value = '';
+            cfgO.emptyText = Indi.lang.I_PRIVATE_DATA;
+        }
+
         // Return config
         return cfgO
     },

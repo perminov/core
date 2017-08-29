@@ -2399,7 +2399,8 @@ class Indi {
     /**
      * Prevent user from doing something when demo-mode is turned On
      */
-    public static function demo() {
-        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1) jflush(false, I_DEMO_ACTION_OFF);
+    public static function demo($flush = true) {
+        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1)
+            return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
 }
