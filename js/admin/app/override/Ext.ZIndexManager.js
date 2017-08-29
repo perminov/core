@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Here we override `_activateLast` method.
  * It's source code is almost the same, and the only one difference is in line 32:
  *

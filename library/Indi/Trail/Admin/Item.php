@@ -441,6 +441,10 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 // already existing action-view object instance, and return that `plain` property value individually
                 else {
 
+                    // If demo-mode is turned On - unset value for each shaded field
+                    if (Indi::demo(false)) foreach($this->fields as $fieldR)
+                        if ($fieldR->param('shade')) $this->row->{$fieldR->alias} = ' ' . I_PRIVATE_DATA;
+
                     // Setup view's `plain` property
                     $this->view->plain = Indi::view()->render($script);
 

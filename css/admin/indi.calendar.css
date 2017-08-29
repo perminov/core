@@ -559,7 +559,7 @@ td.ext-cal-dtitle-today div {
 }
 
 .ext-cal-ev-spanright:after, .ext-cal-ev-spanboth:after {
-    content: '»';
+    content: '\000BB';
     float: right;
     font-size: 14px;
     margin-right: 3px;
