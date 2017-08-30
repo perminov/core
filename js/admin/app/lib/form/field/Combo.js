@@ -2345,6 +2345,9 @@ Ext.define('Indi.lib.form.field.Combo', {
     prop: function(name, parse, type) {
         var me = this, r, p, pA = [], pO = {};
 
+        // If `parse` arg is not given, set up it as `true`, by default
+        if (arguments.length < 2) parse = true;
+
         // If `multiSelect` is `true`
         if (me.multiSelect) {
 
