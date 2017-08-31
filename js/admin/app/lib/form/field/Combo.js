@@ -3135,7 +3135,8 @@ Ext.define('Indi.lib.form.field.Combo', {
         for (var i = 0; i < me.store.data.length; i++) {
 
             // Get current option indent width
-            pseudoTitle = me.store.data[i].system.indent ? me.store.data[i].system.indent.replace('&nbsp;', ' ') : '';
+            pseudoTitle = me.store.data[i].system && me.store.data[i].system.indent
+                ? me.store.data[i].system.indent.replace('&nbsp;', ' ') : '';
 
             // Detect color box and non-html title for current option,
             color = me.color(me.store.data[i], me.store.ids[i]);
