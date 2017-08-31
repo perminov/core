@@ -501,7 +501,7 @@ class Indi_Controller {
         if (strlen($filter->filter)) $where[] = $filter->filter;
 
         // Append special part to WHERE clause, responsible for filter combo to do not contain inconsistent options
-        if ($relation = $field->relation) {
+        if ($filter->consistence && $relation = $field->relation) {
 
             // Get table name
             $tbl = Indi::trail()->model->table();
@@ -577,12 +577,16 @@ class Indi_Controller {
         // If field was not found neither within existing field, nor within pseudo fields
         if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
+        // Set $noSatellite flag
+        $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
+
         // Get combo data rowset
         $comboDataRs = $post->keyword
             ? $this->row->getComboData(
-                $for, $post->page, $post->keyword, true, $post->satellite, $where, false, $field, $order, $dir)
+                $for, $post->page, $post->keyword, true, $post->satellite, $where, $noSatellite, $field, $order, $dir)
             : $this->row->getComboData(
-                $for, $post->page, $this->row->$for, false, $post->satellite, $where, false, $field, $order, $dir, $offset);
+                $for, $post->page, $this->row->$for, false, $post->satellite, $where, $noSatellite, $field, $order, $dir, $offset);
+
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($field->params);
@@ -670,7 +674,7 @@ class Indi_Controller {
 
                 // Provide combo filters consistence
                 foreach (Indi::trail()->filters ?: array() as $filter)
-                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
+                    if ($filter->consistence && ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12)) {
                         $alias = $filter->foreign('fieldId')->alias;
                         Indi::view()->filterCombo($filter, 'extjs');
                         $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));

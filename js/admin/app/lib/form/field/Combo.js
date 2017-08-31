@@ -583,7 +583,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (sv == 0) {
 
                 // Disable combo
-                me.callParent([true]);
+                if (!me.field.params.allowZeroSatellite) me.callParent([true]);
 
                 // If 'clear' argument is boolean true
                 if (clear) me.clearSatellitedCombo();

@@ -82,7 +82,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         (me.el.up('fieldset') || me.el.up('form') || me.el.up('.x-toolbar')).select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
             sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
             sCombo = Ext.getCmp(me.bid() + sComboName);
-            if (!sCombo.disabled) {
+            if (!sCombo.disabled || sCombo.field.params.allowZeroSatellite) {
                 sCombo.remoteFetch({
                     satellite: me.hiddenEl.val(),
                     mode: 'refresh-children'

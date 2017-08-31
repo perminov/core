@@ -124,7 +124,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
             $availableFilterA = $filters->toArray();
             foreach ($availableFilterA as $availableFilterI)
                 if ($availableFilterI['fieldId'] == $satelliteFieldId)
-                    return false;
+                    return $this->getField()->param('allowZeroSatellite');
 
             // Lookup satellite within the filterSharedRow's props, that might hav been set up by
             // trail items connections logic. If found - use it
