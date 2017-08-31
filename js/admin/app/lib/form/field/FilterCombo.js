@@ -70,7 +70,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
 
         // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
-        me.el.up('fieldset').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
+        (me.el.up('fieldset') || me.el.up('form') || me.el.up('.x-toolbar')).select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
             sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
             sCombo = Ext.getCmp(me.bid() + sComboName);
             sCombo.hiddenEl.attr('change-by-refresh-children', 'true');
@@ -79,7 +79,7 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         });
 
         // Separate children refresh for satellited combos (mean separate from satellited combos clearance)
-        me.el.up('fieldset').select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
+        (me.el.up('fieldset') || me.el.up('form') || me.el.up('.x-toolbar')).select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
             sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
             sCombo = Ext.getCmp(me.bid() + sComboName);
             if (!sCombo.disabled) {
