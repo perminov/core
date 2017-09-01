@@ -2757,4 +2757,46 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Set trail section's `rowsetSeparate` prop` and _isRowsetSeparate` flag
         $this->_isRowsetSeparate = ((Indi::trail()->section->rowsetSeparate = $mode) == 'yes');
     }
+
+    /**
+     * Include additional model's properties into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     * @param array $ctor
+     * @return mixed
+     */
+    public function inclGridProp($propS, $ctor = array()) {
+
+        // Get fields
+        $fieldRs = $this->callParent();
+
+        // Call patent
+        if (Indi::trail()->grid)
+            foreach ($fieldRs as $fieldR)
+                Indi::trail()->grid->append(array_merge(array(
+                    'fieldId' => $fieldR->id,
+                    'gridId' => 0
+                ), $ctor));
+
+        // Return
+        return $fieldRs;
+    }
+
+    /**
+     * Include additional model's properties into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     * @return string
+     */
+    public function exclGridProp($propS) {
+
+        // Call parent
+        $fieldIds = $this->callParent();
+
+        // Exclude grid columns
+        if (Indi::trail()->grid) Indi::trail()->grid->exclude($fieldIds, 'fieldId');
+
+        // Return
+        return $fieldIds;
+    }
 }

@@ -51,6 +51,7 @@ class Field_Base extends Indi_Db_Table {
 
         // Provide special 'aliases' construction property to be set up
         if ($input['aliases'] && is_array($input['aliases'])) $data['aliases'] = $input['aliases'];
+        else foreach($input[$index] as $item) $data['aliases'][$index == 'rows' ? $item->alias : $item['alias']] = count($data['aliases']);
 
         // Construct and return Indi_Db_Table_Rowset object
         return new $this->_rowsetClass($data);

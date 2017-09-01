@@ -621,6 +621,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Append system data
             $data[$pointer]['_system'] = $r->system();
 
+            // Merge with temporary props
+            $data[$pointer] = array_merge($data[$pointer], $r->toArray('temporary'));
+
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
 
@@ -714,9 +717,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     $data[$pointer]['$keys'][$columnI] = $r->$columnI;
             }
 
-            // Append temporary data
-            $data[$pointer] = array_merge($data[$pointer], $r->temporary());
-
             // Setup special 'title' property within '_system' property. This is for having proper title
             // for each grid data row, event if grid does not have `title` property at all, or have, but
             // affected by indents or some other manipulations
@@ -724,9 +724,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Implement indents if need
             if ($data[$pointer]['title']) $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];
-
-            // Merge with temporary props
-            $data[$pointer] = array_merge($data[$pointer], $r->toArray('temporary'));
         }
 
         // Return grid data
@@ -919,6 +916,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function foreign($key, $subs = null) {
 
+        // If no rows within this rowset - return
+        if (!$this->count()) return $this;
+
         // If $key argument is string
         if (is_string($key)) {
 
@@ -1049,40 +1049,53 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // their entity ids, so values in $distinctA array will now be truly distinct
             foreach ($distinctA as $entityId => $keys) $distinctA[$entityId] = array_unique($distinctA[$entityId]);
 
+            // Check whether or not current field has a column within databasу table
+            $imitated = !array_key_exists($fieldR->alias, $this->at(0)->original());
+
             // For each $entityId => $key pair within $distinctA array we fetch rowsets, that contain all rows that
             // are 'mentioned' in all rows within current rowset
             foreach ($distinctA as $entityId => $keys) {
 
-                // Declare array for WHERE clause
-                $where = array();
+                // If current field is an imitated-field, and is a enumset-filed
+                if ($imitated && Indi::model($entityId)->table() == 'enumset') {
 
-                // If current $entityId is id of enumset entity, we should append an additional WHERE clause,
-                // that will outline the `fieldId` value, because in this case rows in current rowset store
-                // aliases of rows from `enumset` table instead of ids, and aliases are not unique within that table.
-                if (Indi::model($entityId)->table() == 'enumset') {
+                    // Fetch foreign data with no db-request
+                    $foreignRs[$entityId] = $fieldR->nested('enumset')->select($keys, 'alias');
 
-                    // Set the first part of WHERE clause
-                    $where[] = '`fieldId` = "' . $fieldR->id . '"';
-
-                    // Set the name of column, that will be involved in sql ' IN() ' statement
-                    $col = 'alias';
-
-                    // Set the quotation, as enumset keys are strings in most cases
-                    $q = '"';
-
+                // Else
                 } else {
 
-                    // Set the name of column, that will be involved in sql ' IN() ' statement
-                    $col = 'id';
+                    // Declare array for WHERE clause
+                    $where = array();
+
+                    // If current $entityId is id of enumset entity, we should append an additional WHERE clause,
+                    // that will outline the `fieldId` value, because in this case rows in current rowset store
+                    // aliases of rows from `enumset` table instead of ids, and aliases are not unique within that table.
+                    if (Indi::model($entityId)->table() == 'enumset') {
+
+                        // Set the first part of WHERE clause
+                        $where[] = '`fieldId` = "' . $fieldR->id . '"';
+
+                        // Set the name of column, that will be involved in sql ' IN() ' statement
+                        $col = 'alias';
+
+                        // Set the quotation, as enumset keys are strings in most cases
+                        $q = '"';
+
+                    } else {
+
+                        // Set the name of column, that will be involved in sql ' IN() ' statement
+                        $col = 'id';
+                    }
+
+                    // Finish building WHERE clause
+                    $where[] = count($distinctA[$entityId])
+                        ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
+                        : 'FALSE';
+
+                    // Fetch foreign data
+                    $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
                 }
-
-                // Finish building WHERE clause
-                $where[] = count($distinctA[$entityId])
-                    ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
-                    : 'FALSE';
-
-                // Fetch foreign data
-                $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
 
                 // Call a user-defined method for foreign data rowset, if need
                 if ($call) eval('$foreignRs[$entityId]->' . $call . ';');

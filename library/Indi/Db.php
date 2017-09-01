@@ -290,7 +290,8 @@ class Indi_Db {
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],
                         'aliases' => array_values($eFieldA[$entityI['id']]['aliases'] ?: array()),
-                        'rowClass' => 'Field_Row'
+                        'rowClass' => 'Field_Row',
+                        'found' => count($eFieldA[$entityI['id']]['rows'])
                     ))
                 );
 

@@ -840,4 +840,42 @@ class Indi_Controller {
     public function adjustTrail() {
 
     }
+
+    /**
+     * Include additional model's properties into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     */
+    public function inclGridProp($propS) {
+
+        // Get `field` instances rowset with value of `alias` prop, mentioned in $propS arg
+        $fieldRs = Indi::trail()->model->fields(im(ar($propS)), 'rowset');
+
+        // Merge existing grid fields with additional
+        if (Indi::trail()->gridFields) Indi::trail()->gridFields->merge($fieldRs);
+
+        // Return
+        return $fieldRs;
+    }
+
+    /**
+     * Prevent certain model's props from being included into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     * @return string Comma-separated list containing ids of excluded fields
+     */
+    public function exclGridProp($propS) {
+
+        // If no gridFields object - return
+        if (!Indi::trail()->gridFields) return '';
+
+        // If ids of fields to be excluded
+        $fieldIds = Indi::trail()->gridFields->select($propS, 'alias')->column('id', true);
+
+        // Merge existing grid fields with additional
+        Indi::trail()->gridFields->exclude($fieldIds);
+
+        // Return ids of excluded fields
+        return $fieldIds;
+    }
 }
