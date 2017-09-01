@@ -204,7 +204,7 @@ Ext.override(Ext.grid.plugin.CellEditing, {
                 if (indiField) {
                     if (String(record.key(activeColumn.dataIndex)) != value) {
                         if (indiField.storeRelationAbility == 'one') {
-                            cellVal = parseInt(value) || indiField.relation == '6' ? editorCmp.r(value).raw : '';
+                            cellVal = parseInt(value) || indiField.relation == '6' ? editorCmp.r(value).raw + '' : '';
                             cellVal = cellVal.replace(/(class="i-color-box" style="background:\s*[^u][^>]+><\/span>).*$/, '$1');
                             record.set(activeColumn.dataIndex, cellVal);
                             record.key(activeColumn.dataIndex, value);
