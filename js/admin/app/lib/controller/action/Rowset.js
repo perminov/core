@@ -116,7 +116,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     filterChange: function(cmp){
         var me = this, extraParams = {};
 
-        me.onFilterChange(cmp);
+        // Get all filter components
+        var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
+
+        // If filters toolbar was undocked from main panel into a window - try search within that window
+        if (!filterCmpA.length && Ext.getCmp(me.panel.id).filterWin)
+            filterCmpA = Ext.getCmp(me.panel.id).filterWin.query('[isFilter][name]');
+
+        me.onFilterChange(cmp, filterCmpA);
 
         // Declare and fulfil an array with properties, available for each row in the rowset
         var columnA = []; if (me.ti().gridFields) for (i = 0; i < me.ti().gridFields.length; i++) columnA.push(me.ti().gridFields[i].alias);
@@ -134,13 +141,6 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         // almost the same as available grid columns, if Ext.panel.Grid is used to represent a rowset) - the
         // value, inputted in keyword search field - will not be searched in that details field.
         var usedFilterAliasesThatHasGridColumnRepresentedByA = [];
-
-        // Get all filter components
-        var filterCmpA = Ext.getCmp(me.panel.id).query('[isFilter][name]');
-
-        // If filters toolbar was undocked from main panel into a window - try search within that window
-        if (!filterCmpA.length && Ext.getCmp(me.panel.id).filterWin)
-            filterCmpA = Ext.getCmp(me.panel.id).filterWin.query('[isFilter][name]');
 
         // Foreach filter component id in filterCmpIdA array
         for (var i = 0; i < filterCmpA.length; i++) {
