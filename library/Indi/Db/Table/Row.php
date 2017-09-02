@@ -1028,6 +1028,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
             }
 
+            // Spoof satellite value, if need
+            $satellite = $this->_spoofSatellite($fieldR->alias, $satelliteR->alias, $satellite);
+
             // If dependency type is not 'Variable entity'
             if ($fieldR->dependency != 'e') {
 
@@ -5028,5 +5031,18 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function price($prop) {
         return price($this->$prop, true);
+    }
+
+    /**
+     * Spoof satelite value, before it will be involved in combo data fetch sql query.
+     * No actual spoof by default, but another logic my be implemented in child classes
+     *
+     * @param $for
+     * @param $sField
+     * @param $sValue
+     * @return mixed
+     */
+    protected function _spoofSatellite($for, $sField, $sValue) {
+        return $sValue;
     }
 }
