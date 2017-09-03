@@ -2085,7 +2085,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (!id) id = me.val().split(',')[0];
 
         // Get the index of selected option id in me.store.ids
-        index = me.store.ids.indexOf(me.store.enumset && !id.toString().match(/^[1-9][0-9]{0,9}$/) ? id : parseInt(id));
+        index = me.store.ids.indexOf(me.store.enumset && !id.toString().match(/^[0-9]{0,10}$/) ? id : parseInt(id));
 
         // Build the data-row object and return it
         return Ext.merge({id: id}, me.store.data[index]);
