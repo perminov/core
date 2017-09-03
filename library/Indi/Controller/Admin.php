@@ -1032,7 +1032,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
             // Setup column width
-            $m = Indi::uri()->format == 'excel' ? 8.43 : 6.4;
+            $m = Indi::uri()->format == 'excel' ? 7.43 : 6.4;
             $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/$m));
 
             // Replace &nbsp;
@@ -1045,7 +1045,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if ($abs = Indi::abs($src[1])) {
 
                     // Setup additional x-offset for color-box, for it to be centered within the cell
-                    $additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+                    $additionalOffsetX = ceil(($columnI['width']-16)/2);
 
                     //  Add the image to a worksheet
                     $objDrawing = new PHPExcel_Worksheet_Drawing();
@@ -1221,8 +1221,16 @@ class Indi_Controller_Admin extends Indi_Controller {
                                 'color' => array('rgb' => '7EAAE2')
                             ),
                         ),
-                        'alignment' => array('vertical' => 'bottom')
+                        'alignment' => array('vertical' => 'bottom', 'horizontal' => 'left', 'indent' => 2),
+                        'fill' => array('type' => PHPExcel_Style_Fill::FILL_NONE)
                     ));
+
+                //  Add the image to a worksheet
+                $objDrawing = new PHPExcel_Worksheet_Drawing();
+                $objDrawing->setPath(DOC . STD . '/core/library/extjs4/resources/themes/images/default/grid/group-collapse.gif');
+                $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                $objDrawing->setOffsetY(10)->setOffsetX($additionalOffsetX);
+                $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
                 // Increment current row index;
                 $currentRowIndex++;
