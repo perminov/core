@@ -342,6 +342,15 @@ Ext.define('Indi.lib.form.field.Combo', {
     setValue: function(value) {
         var me = this, data;
 
+        // Workaround for cases when value is not found within the store
+        // Supported currently only for single-value non-enumset combos
+        if (!me.store.enumset && !me.multiSelect && parseInt(value) && me.store.ids.indexOf(parseInt(value)) == -1) {
+            me.remoteFetch({selected: value}, function() {
+                me.setValue(value);
+            });
+            return me;
+        }
+
         // If combo is already rendered
         if (me.el) {
 
@@ -371,7 +380,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Append items that should be appended
                 for (i = 0; i < append.length; i++) me.insertSelectedItem(append[i]);
 
-                // Else if combo is running in single-value mode
+            // Else if combo is running in single-value mode
             } else {
 
                 // Get the whole option data object by option value
@@ -384,11 +393,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                 me.color(data, value).apply();
 
                 // Set up 'selectedIndex' attribute for keywordEl
-                if (value !== null)me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)')
-                    .each(function(el, c, index){
+                if (value !== null) {
+                    me.getPicker().el.select('.x-boundlist-item:not(.x-boundlist-item-disabled)').each(function(el, c, index){
                         if (el.attr(me.name) == value.toString()) me.keywordEl.attr('selectedIndex', index+1);
                     });
-                else me.keywordEl.attr('selectedIndex', '0');
+                } else me.keywordEl.attr('selectedIndex', '0');
             }
 
             // Setup value for hiddenEl element
@@ -2475,7 +2484,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 me.alignPicker();
 
                 // Show results
-            } else if (requestData.mode != 'refresh-children') {
+            } else if (requestData.mode != 'refresh-children' && !requestData.selected) {
                 me.keywordEl.dom.click();
             }
 
@@ -2756,7 +2765,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param data
      */
-    remoteFetch: function(data) {
+    remoteFetch: function(data, callback) {
         var me = this, url;
 
         // If `fetchUrl` prop was set - use it, or build own othwerwise
@@ -2854,6 +2863,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Build html for options, and do all other things
                 me.afterFetchAdjustments(data, json);
+
+                // Call callback
+                if (callback) callback.call(me);
             },
             failure: function() {
 

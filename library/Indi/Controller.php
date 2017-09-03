@@ -580,6 +580,24 @@ class Indi_Controller {
         // Set $noSatellite flag
         $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
 
+        // If $_POST['selected'] is given, assume combo-UI is trying to retrieve data for an entry,
+        // not yet represented in the combo's store, because of, for example, store contains only first
+        // 100 entries, and does not contain 101st. So, in this case, we fetch combo data as if $_POST['selected']
+        // would be a currently selected value of $this->row->$for
+        if ($post->selected && $field->relation && $field->relation != 6 && $field->storeRelationAbility == 'one') {
+
+            // Check $_POST['selected']
+            jcheck(array(
+                'selected' => array(
+                    'rex' => 'int11',
+                    'key' => $field->relation
+                )
+            ), $post);
+
+            // Assign
+            $this->row->$for = $post->selected;
+        }
+
         // Get combo data rowset
         $comboDataRs = $post->keyword
             ? $this->row->getComboData(
