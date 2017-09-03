@@ -1324,7 +1324,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     exportColumnI.height = gridColumnA[i].getHeight();
 
                 // If current grid column - is a number (int, float) column, get it's `displayZeroes` prop
-                if (gridColumnA[i].align == 'right')
+                if (gridColumnA[i].align == 'right' || gridColumnA[i].displayZeroes === true)
                     Ext.merge(exportColumnI, {
                         displayZeroes: gridColumnA[i].displayZeroes
                     });
