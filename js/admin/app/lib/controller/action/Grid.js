@@ -1356,7 +1356,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     rowsetExportQuery: function(format) {
         var me = this, i, request = me.storeLastRequest().replace('format/json/', 'format/' + format + '/'),
             columns = '&columns=' + encodeURIComponent(JSON.stringify(me['_rowsetExport$' + Indi.ucfirst(format) + 'ColumnA']())),
-            group = '';
+            grouping, group = '', view = Ext.getCmp(me.rowset.id).getView();
 
         // Check if there is color-filters within used filters, and if so, we append a _xlsLabelWidth
         // property for each object, that is representing a color-filter in request
@@ -1368,10 +1368,12 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
 
         // Add groupers info
-        if (me.getStore().groupField) group = '&group=' +encodeURIComponent(JSON.stringify({
-            property: me.getStore().groupField,
-            direction: me.getStore().groupDir
-        }));
+        if (me.getStore().groupField && !(view.lockedView || view).getFeature('grouping').disabled) {
+            group = '&group=' +encodeURIComponent(JSON.stringify({
+                property: me.getStore().groupField,
+                direction: me.getStore().groupDir
+            }));
+        }
 
         // Return request string
         return request + group + columns;
