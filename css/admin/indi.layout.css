@@ -863,3 +863,7 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 .x-field-label-cell .x-toolbar .x-btn-inner {
     padding: 0 1px;
 }
+[id^="messagebox-"] .i-color-box {
+    vertical-align: text-top;
+    margin-right: 3px;
+}
