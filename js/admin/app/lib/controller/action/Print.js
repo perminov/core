@@ -55,7 +55,7 @@ Ext.define('Indi.lib.controller.action.Print', {
 
         // 'Save' item config
         return {
-            id: me.panelDockedInnerBid() + 'print',
+            id: me.panelDockedInnerBid() + 'doprint',
             xtype: 'button',
             text: 'Распечатать',
             handler: function() {
