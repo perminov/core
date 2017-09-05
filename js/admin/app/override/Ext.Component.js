@@ -18,6 +18,7 @@ Ext.override(Ext.Component, {
      */
     ctx: function() {
         var me = this, hasCtx, wrapper = me.isWrapper ? me : me.up('[isWrapper]');
+        if (me.$ctx) return me.$ctx;
         if (wrapper) return wrapper.ctx(); else if (hasCtx = me.up('[hasCtx]')) return hasCtx.$ctx;
     },
 
