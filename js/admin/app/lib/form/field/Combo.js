@@ -344,7 +344,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Workaround for cases when value is not found within the store
         // Supported currently only for single-value non-enumset combos
-        if (!me.store.enumset && !me.multiSelect && parseInt(value) && me.store.ids.indexOf(parseInt(value)) == -1) {
+        if (!me.store.enumset && !me.multiSelect && parseInt(value)
+            && me.xtype == 'combo.form' && me.store.ids.indexOf(parseInt(value)) == -1) {
+
             me.remoteFetch({selected: value}, function() {
                 me.setValue(value);
             });
