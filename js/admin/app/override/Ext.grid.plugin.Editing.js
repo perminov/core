@@ -14,6 +14,10 @@ Ext.override(Ext.grid.plugin.Editing, {
             });
             if (Ext.fly(lastCell)) Ext.fly(lastCell).removeCls('i-grid-cell-editor-focus');
         }
+
+        // Prevent editor from being opened within disabled cells
+        if (Ext.fly(cell).hasCls('i-grid-cell-disabled')) return;
+
         if (Ext.fly(view.getHeaderAtIndex(colIdx).getEl()).hasCls('i-grid-column-editable'))
             Ext.fly(cell).addCls('i-grid-cell-editor-focus');
         if (thisClick != view.lastClickCell) {

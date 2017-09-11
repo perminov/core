@@ -1418,6 +1418,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                         ->setFillType(PHPExcel_Style_Fill::FILL_SOLID)
                         ->getStartColor()->setRGB('FAFAFA');
                 }
+
+                // Cell style custom adjustments
+                $this->adjustExcelExportCellStyle($objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex), $columnI, $value, $i);
             }
 
             // Increment current row index;
@@ -1570,6 +1573,18 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Exit
         iexit();
+    }
+
+    /**
+     * Adjust style of an excel-spreadsheet's cell
+     *
+     * @param $cellStyleObj
+     * @param $columnI
+     * @param $value
+     * @param $i
+     */
+    public function adjustExcelExportCellStyle($cellStyleObj, $columnI, $value, $i) {
+
     }
 
     /**
