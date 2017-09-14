@@ -282,7 +282,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
         // Append
         $this->append(array(
-            'alias' => 'contactId',
+            'alias' => $name,
             'columnTypeId' => $multiple ? 1 : 3,
             'storeRelationAbility' => $multiple ? 'many' : 'one',
             'elementId' => 23,

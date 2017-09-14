@@ -1054,6 +1054,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
             }
 
+            // Spoof satellite value, if need
+            $satellite = $this->_spoofSatellite($fieldR->alias, $satelliteR->alias, $satellite);
+
             // If dependency type is not 'Variable entity'
             if ($fieldR->dependency != 'e') {
 
@@ -1675,32 +1678,45 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // Determine a fetch method
                     $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
 
-                    // Declare array for WHERE clause
-                    $where = array();
+                    // If current field is an imitated-field, and is an enumset-field
+                    if (!array_key_exists($fieldR->alias, $this->_original) && $model == 6) {
 
-                    // If field is related to enumset entity, we should append an additional WHERE clause,
-                    // that will outline the `fieldId` value, because in this case current row store aliases
-                    // of rows from `enumset` table instead of ids, and aliases are not unique within that table.
-                    if (Indi::model($model)->table() == 'enumset') {
-                        $where[] = '`fieldId` = "' . $fieldR->id . '"';
-                        $col = 'alias';
+                        // Get foreign data rowset, even iа such rowset contains only one row
+                        $foreign = $fieldR->nested('enumset')->select($this->$key, 'alias');
+
+                        // If field's storeRelationAbility is 'one' - pick first
+                        if ($methodType == 'Row') $foreign = $foreign->at(0);
+
+                    // Else
                     } else {
-                        $col = 'id';
+
+                        // Declare array for WHERE clause
+                        $where = array();
+
+                        // If field is related to enumset entity, we should append an additional WHERE clause,
+                        // that will outline the `fieldId` value, because in this case current row store aliases
+                        // of rows from `enumset` table instead of ids, and aliases are not unique within that table.
+                        if (Indi::model($model)->table() == 'enumset') {
+                            $where[] = '`fieldId` = "' . $fieldR->id . '"';
+                            $col = 'alias';
+                        } else {
+                            $col = 'id';
+                        }
+
+                        // Finish building WHERE clause
+                        $where[] = '`' . $col . '` ' .
+                            ($fieldR->storeRelationAbility == 'many'
+                                ? 'IN(' . $this->$key . ')'
+                                : '= "' . $this->$key . '"');
+
+                        // Fetch foreign row/rows
+                        $foreign = Indi::model($model)->{'fetch' . $methodType}(
+                            $where,
+                            $fieldR->storeRelationAbility == 'many'
+                                ? 'FIND_IN_SET(`' . $col . '`, "' . $this->$key . '")'
+                                : null
+                        );
                     }
-
-                    // Finish building WHERE clause
-                    $where[] = '`' . $col . '` ' .
-                        ($fieldR->storeRelationAbility == 'many'
-                            ? 'IN(' . $this->$key . ')'
-                            : '= "' . $this->$key . '"');
-
-                    // Fetch foreign row/rows
-                    $foreign = Indi::model($model)->{'fetch' . $methodType}(
-                        $where,
-                        $fieldR->storeRelationAbility == 'many'
-                            ? 'FIND_IN_SET(`' . $col . '`, "' . $this->$key . '")'
-                            : null
-                    );
                 }
 
             // Else there is no such a field within current entity - throw an exception
@@ -2182,7 +2198,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // once value was found
         if (array_key_exists($columnName, $this->_modified)) return $this->_modified[$columnName];
         else if (array_key_exists($columnName, $this->_original)) return $this->_original[$columnName];
-        else if ($this->_temporary[$columnName]) return $this->_temporary[$columnName];
+        else if (array_key_exists($columnName, $this->_temporary)) return $this->_temporary[$columnName];
         else if ($fieldR = $this->model()->fields($columnName)) if ($fieldR->foreign('elementId')->alias == 'upload')
             return $this->src($columnName);
     }
@@ -5046,5 +5062,18 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function price($prop) {
         return price($this->$prop, true);
+    }
+
+    /**
+     * Spoof satelite value, before it will be involved in combo data fetch sql query.
+     * No actual spoof by default, but another logic my be implemented in child classes
+     *
+     * @param $for
+     * @param $sField
+     * @param $sValue
+     * @return mixed
+     */
+    protected function _spoofSatellite($for, $sField, $sValue) {
+        return $sValue;
     }
 }

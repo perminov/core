@@ -1339,7 +1339,7 @@ Ext.define('Indi', {
         crumbA = Indi.trail(true).breadCrumbA(topMaximized.ctx.route);
 
         // Add trail toolbar
-        me.tb = Ext.getCmp('i-center-north-trail').add({
+        me.tb = Ext.getCmp('i-center-north-trail').insert(0, {
             xtype: 'toolbar',
             cls: 'i-trail',
             padding: '0 0 0 2',

@@ -863,3 +863,22 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 .x-field-label-cell .x-toolbar .x-btn-inner {
     padding: 0 1px;
 }
+[id^="messagebox-"] .i-color-box {
+    vertical-align: text-top;
+    margin-right: 3px;
+}
+.i-field-filepanel .x-form-cb-wrap {
+    padding-top: 0px;
+    top: -1px;
+}
+.i-field-filepanel [id^="textfield-"] {
+    top: 1px !important;
+}
+.x-grid-cell.i-grid-cell-disabled,
+.x-grid-row-alt .x-grid-cell.i-grid-cell-disabled,
+.x-grid-with-row-lines .x-grid-row-over td.x-grid-cell.i-grid-cell-disabled,
+.x-grid-row-over .x-grid-rowwrap-div .i-grid-cell-disabled,
+.x-grid-with-row-lines .x-grid-row-selected td.x-grid-cell.i-grid-cell-disabled,
+.x-grid-row-selected .x-grid-rowwrap-div .i-grid-cell-disabled {
+    background: #f0f0f0 !important;
+}

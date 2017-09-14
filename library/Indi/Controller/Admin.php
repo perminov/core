@@ -547,7 +547,16 @@ class Indi_Controller_Admin extends Indi_Controller {
         $objPHPExcel->setActiveSheetIndex(0);
 
         // Get the columns, that need to be presented in a spreadsheet
-        $columnA = json_decode(Indi::get()->columns, true);
+        $_columnA = json_decode(Indi::get()->columns, true);
+
+        // Build columns array, indexed by 'dataIndex' prop
+        foreach ($_columnA as $_columnI) $columnA[$_columnI['dataIndex']] = $_columnI;
+
+        // Adjust exported columns
+        $this->adjustExportColumns($columnA);
+
+        // Switch back to numeric indexes
+        $columnA = array_values($columnA);
 
         // Get grouping info
         $group = json_decode(Indi::get()->group, true);
@@ -555,6 +564,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup a row index, which data rows are starting from
         $currentRowIndex = 1;
+
+        // Setup groups quantity
+        $groupQty = $group ? count($this->rowset->column($group['property'], false, true)) : 0;
 
         // Calculate last row index
         $lastRowIndex =
@@ -565,7 +577,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 1 /* data header row */+
                 count($data) + /* data rows*/
                 (Indi::get()->summary ? 1 : 0) + /* summary row*/
-                count($this->rowset->column($group['property'], false, true));
+                $groupQty;
 
         // Set default row height
         $objPHPExcel->getActiveSheet()->getDefaultRowDimension()->setRowHeight(15.75);
@@ -1032,7 +1044,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
             // Setup column width
-            $m = Indi::uri()->format == 'excel' ? 8.43 : 6.4;
+            $m = Indi::uri()->format == 'excel' ? 7.43 : 6.4;
             $objPHPExcel->getActiveSheet()->getColumnDimension($columnL)->setWidth(ceil($columnI['width']/$m));
 
             // Replace &nbsp;
@@ -1045,7 +1057,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if ($abs = Indi::abs($src[1])) {
 
                     // Setup additional x-offset for color-box, for it to be centered within the cell
-                    $additionalOffsetX = ceil(($columnI['width']-16)/2) - 3;
+                    $additionalOffsetX = ceil(($columnI['width']-16)/2);
 
                     //  Add the image to a worksheet
                     $objDrawing = new PHPExcel_Worksheet_Drawing();
@@ -1157,8 +1169,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 )
             );
 
-            // Apply background color for all cells within current column, in caseif current column is
-            // a rownumberer-column
+            // Apply background color for all cells within current column,
+            // in case if current column is a rownumberer-column
             if ($columnA[$n]['type'] == 'rownumberer') $objPHPExcel->getActiveSheet()
                 ->getStyle($columnL . ($currentRowIndex + 1) . ':' . $columnL . $lastRowIndex)
                 ->applyFromArray(
@@ -1221,8 +1233,16 @@ class Indi_Controller_Admin extends Indi_Controller {
                                 'color' => array('rgb' => '7EAAE2')
                             ),
                         ),
-                        'alignment' => array('vertical' => 'bottom')
+                        'alignment' => array('vertical' => 'bottom', 'horizontal' => 'left', 'indent' => 2),
+                        'fill' => array('type' => PHPExcel_Style_Fill::FILL_NONE)
                     ));
+
+                //  Add the image to a worksheet
+                $objDrawing = new PHPExcel_Worksheet_Drawing();
+                $objDrawing->setPath(DOC . STD . '/core/library/extjs4/resources/themes/images/default/grid/group-collapse.gif');
+                $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                $objDrawing->setOffsetY(10)->setOffsetX(6);
+                $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
                 // Increment current row index;
                 $currentRowIndex++;
@@ -1398,6 +1418,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                         ->setFillType(PHPExcel_Style_Fill::FILL_SOLID)
                         ->getStartColor()->setRGB('FAFAFA');
                 }
+
+                // Cell style custom adjustments
+                $this->adjustExcelExportCellStyle($objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex), $columnI, $value, $i);
             }
 
             // Increment current row index;
@@ -1421,7 +1444,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Apply last row style (bottom border)
         $objPHPExcel->getActiveSheet()
-            ->getStyle('A' . (count($data) + $dataStartAtRowIndex - 1) . ':' . $columnL . (count($data) + $dataStartAtRowIndex - 1))
+            ->getStyle('A' . (count($data) + $dataStartAtRowIndex - 1) . ':' . $columnL . (count($data) + $groupQty + $dataStartAtRowIndex - 1))
             ->applyFromArray(
             array(
                 'borders' => array(
@@ -1550,6 +1573,18 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Exit
         iexit();
+    }
+
+    /**
+     * Adjust style of an excel-spreadsheet's cell
+     *
+     * @param $cellStyleObj
+     * @param $columnI
+     * @param $value
+     * @param $i
+     */
+    public function adjustExcelExportCellStyle($cellStyleObj, $columnI, $value, $i) {
+
     }
 
     /**
@@ -2756,5 +2791,58 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Set trail section's `rowsetSeparate` prop` and _isRowsetSeparate` flag
         $this->_isRowsetSeparate = ((Indi::trail()->section->rowsetSeparate = $mode) == 'yes');
+    }
+
+    /**
+     * Include additional model's properties into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     * @param array $ctor
+     * @return mixed
+     */
+    public function inclGridProp($propS, $ctor = array()) {
+
+        // Get fields
+        $fieldRs = $this->callParent();
+
+        // Call patent
+        if (Indi::trail()->grid)
+            foreach ($fieldRs as $fieldR)
+                Indi::trail()->grid->append(array_merge(array(
+                    'fieldId' => $fieldR->id,
+                    'gridId' => 0
+                ), $ctor));
+
+        // Return
+        return $fieldRs;
+    }
+
+    /**
+     * Include additional model's properties into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     * @return string
+     */
+    public function exclGridProp($propS) {
+
+        // Call parent
+        $fieldIds = $this->callParent();
+
+        // Exclude grid columns
+        if (Indi::trail()->grid) Indi::trail()->grid->exclude($fieldIds, 'fieldId');
+
+        // Return
+        return $fieldIds;
+    }
+
+    /**
+     * Adjust columns, before they will be exported.
+     * Function has empty body here, but it can be overridden in child classes,
+     * in cases when, for example, there will be a need to prevent certain columns from being exported
+     *
+     * @param array $columnA
+     */
+    public function adjustExportColumns(&$columnA = array()) {
+
     }
 }
