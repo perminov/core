@@ -501,7 +501,7 @@ class Indi_Controller {
         if (strlen($filter->filter)) $where[] = $filter->filter;
 
         // Append special part to WHERE clause, responsible for filter combo to do not contain inconsistent options
-        if ($relation = $field->relation) {
+        if ($filter->consistence && $relation = $field->relation) {
 
             // Get table name
             $tbl = Indi::trail()->model->table();
@@ -577,12 +577,34 @@ class Indi_Controller {
         // If field was not found neither within existing field, nor within pseudo fields
         if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
+        // Set $noSatellite flag
+        $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
+
+        // If $_POST['selected'] is given, assume combo-UI is trying to retrieve data for an entry,
+        // not yet represented in the combo's store, because of, for example, store contains only first
+        // 100 entries, and does not contain 101st. So, in this case, we fetch combo data as if $_POST['selected']
+        // would be a currently selected value of $this->row->$for
+        if ($post->selected && $field->relation && $field->relation != 6 && $field->storeRelationAbility == 'one') {
+
+            // Check $_POST['selected']
+            jcheck(array(
+                'selected' => array(
+                    'rex' => 'int11',
+                    'key' => $field->relation
+                )
+            ), $post);
+
+            // Assign
+            $this->row->$for = $post->selected;
+        }
+
         // Get combo data rowset
         $comboDataRs = $post->keyword
             ? $this->row->getComboData(
-                $for, $post->page, $post->keyword, true, $post->satellite, $where, false, $field, $order, $dir)
+                $for, $post->page, $post->keyword, true, $post->satellite, $where, $noSatellite, $field, $order, $dir)
             : $this->row->getComboData(
-                $for, $post->page, $this->row->$for, false, $post->satellite, $where, false, $field, $order, $dir, $offset);
+                $for, $post->page, $this->row->$for, false, $post->satellite, $where, $noSatellite, $field, $order, $dir, $offset);
+
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($field->params);
@@ -670,7 +692,7 @@ class Indi_Controller {
 
                 // Provide combo filters consistence
                 foreach (Indi::trail()->filters ?: array() as $filter)
-                    if ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12) {
+                    if ($filter->consistence && ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12)) {
                         $alias = $filter->foreign('fieldId')->alias;
                         Indi::view()->filterCombo($filter, 'extjs');
                         $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
@@ -835,5 +857,43 @@ class Indi_Controller {
      */
     public function adjustTrail() {
 
+    }
+
+    /**
+     * Include additional model's properties into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     */
+    public function inclGridProp($propS) {
+
+        // Get `field` instances rowset with value of `alias` prop, mentioned in $propS arg
+        $fieldRs = Indi::trail()->model->fields(im(ar($propS)), 'rowset');
+
+        // Merge existing grid fields with additional
+        if (Indi::trail()->gridFields) Indi::trail()->gridFields->merge($fieldRs);
+
+        // Return
+        return $fieldRs;
+    }
+
+    /**
+     * Prevent certain model's props from being included into response json, representing rowset data
+     *
+     * @param $propS string|array Comma-separated prop names (e.g. field aliases)
+     * @return string Comma-separated list containing ids of excluded fields
+     */
+    public function exclGridProp($propS) {
+
+        // If no gridFields object - return
+        if (!Indi::trail()->gridFields) return '';
+
+        // If ids of fields to be excluded
+        $fieldIds = Indi::trail()->gridFields->select($propS, 'alias')->column('id', true);
+
+        // Merge existing grid fields with additional
+        Indi::trail()->gridFields->exclude($fieldIds);
+
+        // Return ids of excluded fields
+        return $fieldIds;
     }
 }

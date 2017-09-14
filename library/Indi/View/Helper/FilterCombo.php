@@ -114,32 +114,35 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
      */
     public function noSatellite() {
 
-        // If current field has a satellite, we'll try to find satellite's value in several places
-        if ($satelliteFieldId = $this->getField()->satellite) {
+        // If current field has no satellite - return true
+        if (!$sFieldId = $this->getField()->satellite) return true;
 
-            // Clone filters rowset, as iterating through same rowset will give an error
-            $filters = clone Indi::trail()->filters;
+        // Clone filters rowset, as iterating through same rowset will give an error
+        $filters = clone Indi::trail()->filters;
 
-            // Lookup satellite within the available filters. If found - use it
-            $availableFilterA = $filters->toArray();
-            foreach ($availableFilterA as $availableFilterI)
-                if ($availableFilterI['fieldId'] == $satelliteFieldId)
-                    return false;
+        // Shortcut to satellite-field's alias
+        $sFieldAlias = $this->getField()->foreign('satellite')->alias;
 
-            // Lookup satellite within the filterSharedRow's props, that might hav been set up by
-            // trail items connections logic. If found - use it
-            $satelliteFieldAlias = $this->getField()->foreign('satellite')->alias;
-            if (array_key_exists($satelliteFieldAlias, $this->getRow()->modified())) return false;
+        // Lookup satellite within the available filters. If found - use it
+        $availableFilterA = $filters->toArray();
+        foreach ($availableFilterA as $availableFilterI)
+            if ($availableFilterI['fieldId'] == $sFieldId)
+                return !$this->getRow()->$sFieldAlias
+                    ? $this->getField()->param('allowZeroSatellite')
+                    : false;
 
-            // If current cms user is an alternate, and if there is corresponding column-field within current entity structure. If found - use it
-            if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', Indi::trail()->model->fields(null, 'columns')))
-                return false;
+        // Lookup satellite within the filterSharedRow's props, that might hav been set up by
+        // trail items connections logic. If found - use it
+        if (array_key_exists($sFieldAlias, $this->getRow()->modified())) return false;
 
-            // No satellite should be used
-            return true;
+        // If current cms user is an alternate, and if there is corresponding
+        // column-field within current entity structure - use it
+        if (Indi::admin()->alternate
+            && in($aid = Indi::admin()->alternate . 'Id', Indi::trail()->model->fields(null, 'columns')))
+            return false;
 
-            // No satellite should be used
-        } else return true;
+        // No satellite should be used
+        return true;
     }
 
     /**
