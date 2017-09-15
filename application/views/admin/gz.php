@@ -60,7 +60,6 @@ $js = array(
     '/js/admin/app/ux/Ext.ux.form.field.plugin.InputMask.js',
 
     '/js/admin/indi.js',
-    '/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi.lang',
 
     '/js/admin/app/util/Shrinkable.js',
 
@@ -141,6 +140,7 @@ $css = array(
     '/css/admin/indi.calendar.css'
 );
 // Implode js files
+Indi::implode(array('/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi$lang'), Indi::ini()->lang->admin);
 Indi::implode($js);
 
 // Implode css files

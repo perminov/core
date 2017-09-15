@@ -12,6 +12,7 @@ define('I_LOGIN_BOX_RESET', 'Reset');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');
 define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Enter your username');
 define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Enter your password');
+define('I_LOGIN_BOX_LANGUAGE', 'Language');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Such account does not exist');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Wrong password');

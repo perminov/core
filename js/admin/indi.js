@@ -31,6 +31,11 @@ Ext.define('Indi', {
     statics: {
 
         /**
+         * Set l10n
+         */
+        lang: window.Indi$lang,
+
+        /**
          * A list of function names, that are declared within Indi object, but should be accessible within global scope
          * @type {Array}
          */

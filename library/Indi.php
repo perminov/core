@@ -1032,7 +1032,7 @@ class Indi {
     public static function implode($files = array(), $alias = '') {
 
         // Get the type of files, here we assume that all files in $files argument have same type
-        preg_match('/\.(css|js)$/', $files[0], $ext); $ext = $ext[1];
+        preg_match('/\.(css|js)$/', $files[0], $ext); $ext = $ext[1] ?: 'js';
 
         // Get the subdir name, relative to webroot
         $rel = '/' . $ext;
@@ -1043,6 +1043,13 @@ class Indi {
         // Get filename of file, containing modification times for all files that are compiled
         $mtime = DOC . STD . '/core' . (Indi::uri()->module == 'front' ? 'f' : '') . '/' . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . '.mtime';
 
+        // Append mirror files
+        $mirrorA = array();
+        for($i = 0; $i < count($files); $i++)
+            foreach (ar('core,coref,www') as $place)
+                if (is_file(DOC . STD . '/' . $place . preg_replace('/:[a-zA-Z\.$]+$/', '', $files[$i])))
+                    $mirrorA[] = '/' . $place . $files[$i];
+
         // If this file does not exists, we set $refresh as true
         if (!file_exists($mtime)) {
             $refresh = true;
@@ -1050,20 +1057,12 @@ class Indi {
         // Else
         } else {
 
-            // Get 'mtime' file contents and convert is to json
+            // Get 'mtime' file contents and convert is to json, trimming namespaces
             $json = json_decode(file_get_contents($mtime), true);
-
-            // Append mirror files
-            $mirrorA = array();
-            for($i = 0; $i < count($files); $i++)
-                foreach (ar('core,coref,www') as $place)
-                    if (is_file(DOC . STD . '/' . $place . preg_replace('/:[a-zA-Z\.]+$/', '', $files[$i])))
-                        $mirrorA[] = '/' . $place . $files[$i];
+            if (is_array($json)) foreach ($json as $file => $time) $noNsJson[preg_replace('/:[a-zA-Z\.$]+$/', '', $file)] = $time;
 
             // Prepare array containing file names with trimmed namespace definitions, for proper comparing
-            for ($i = 0; $i < count($mirrorA); $i++) $noNsFiles[$i] = preg_replace('/:[a-zA-Z\.]+$/', '', $mirrorA[$i]);
-
-            if (is_array($json)) foreach ($json as $file => $time) $noNsJson[preg_replace('/:[a-zA-Z\.]+$/', '', $file)] = $time;
+            for ($i = 0; $i < count($mirrorA); $i++) $noNsFiles[$i] = preg_replace('/:[a-zA-Z\.$]+$/', '', $mirrorA[$i]);
 
             // If $json is not an array, or is empty array, of files, mentioned in it do not match files in $files arg
             if (!is_array($json) || !count($json) || count(array_diff($noNsFiles, array_keys($noNsJson))) || count(array_diff(array_keys($noNsJson), $noNsFiles)))
@@ -1096,14 +1095,14 @@ class Indi {
             for ($i = 0; $i < count($mirrorA); $i++) {
 
                 // Get full file name
-                $file = DOC . STD . preg_replace('/:[a-zA-Z\.]+$/', '', $mirrorA[$i]);
+                $file = DOC . STD . preg_replace('/:[a-zA-Z\.$]+$/', '', $mirrorA[$i]);
 
                 // Collect info about that file's modification time
                 $json[$mirrorA[$i]] = filemtime($file);
 
                 // If current file extension is 'php', we assume it's a file containing php constants definitions
                 // We we need to parse such file contents and make it javascript-compatible by converting to JSON
-                if (preg_match('/\.php(:[a-zA-Z\.]+|)$/', $mirrorA[$i], $ns)) {
+                if (preg_match('/\.php(:[a-zA-Z\.$]+|)$/', $mirrorA[$i], $ns)) {
 
                     // Get the namespace. If no namespace defined - use 'window' by default
                     $ns = $ns[1] ? ltrim($ns[1], ':') : 'window';
@@ -1123,12 +1122,11 @@ class Indi {
                     // Provide namespace initialization
                     echo preg_match('/\./', $ns) ? "Ext.ns('$ns');" : ($ns != 'window' ? "var $ns = $ns || {};" : '');
 
-                    // Setup key-value pairs, converted to JSON, under defined javascript namespace
-                    echo "$ns = Ext.Object.merge($ns, " . json_encode($kvp) . ");";
-
-                    // If namespace is given, and is 'Indi.lang' - setup an additional
-                    // `name` property, that will store current language identifier
-                    if ($ns == 'Indi.lang') echo 'Ext.Object.merge(Indi.lang, {name: "' . Indi::ini('lang')->admin . '"});';
+                    // If namespace is given, and is 'Indi$lang'
+                    if ($ns == 'Indi$lang') {
+                        echo "$ns = " . json_encode($kvp) . ";";
+                        echo "$ns." . 'name = "' . Indi::ini('lang')->admin . '";';
+                    }
 
                 // Echo that file contents
                 } else readfile($file);

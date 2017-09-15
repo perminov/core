@@ -6,9 +6,22 @@ Ext.define('Indi.view.LoginBox', {
     id: 'i-login-panel',
     renderTo: 'i-login-box',
     titleAlign: 'center',
-    height: 125,
     width: 300,
     bodyPadding: 10,
+    initComponent: function() {
+        var me = this;
+
+        // Setup currently selected and all available translations
+        Ext.merge(me.items[3], {
+            value: Indi.lang.value,
+            store: {
+                data: Indi.lang.odata
+            }
+        });
+
+        // Call parent
+        me.callParent();
+    },
     items: [
         {
             xtype: 'textfield',
@@ -39,6 +52,17 @@ Ext.define('Indi.view.LoginBox', {
                 anchor: 'left',
                 staticOffset: [0, -3]
             }
+        }, {
+            xtype: 'combo',
+            labelWidth: 90,
+            id: 'i-login-box-language',
+            valueField: 'alias',
+            fieldLabel: Indi.lang.I_LOGIN_BOX_LANGUAGE,
+            displayField: 'title',
+            editable: false,
+            store: {
+                fields: ['title', 'alias']
+            }
         },{
             xtype: 'button',
             id: 'i-login-box-submit',
@@ -52,6 +76,7 @@ Ext.define('Indi.view.LoginBox', {
                     username: Ext.getCmp('i-login-box-username').getValue(),
                     password: Ext.getCmp('i-login-box-password').getValue(),
                     remember: Ext.getCmp('i-login-box-remember').getValue(),
+                    language: Ext.getCmp('i-login-box-language').getValue(),
                     enter: true
                 }
 
@@ -105,6 +130,7 @@ Ext.define('Indi.view.LoginBox', {
                 Ext.getCmp('i-login-box-username').setValue();
                 Ext.getCmp('i-login-box-password').setValue();
                 Ext.getCmp('i-login-box-remember').setValue(false);
+                Ext.getCmp('i-login-box-language').setValue(Indi.lang.value);
             }
         }
     ],

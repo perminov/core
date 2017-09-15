@@ -6,6 +6,7 @@
     <title><?=Indi::ini('general')->title ?: 'Indi Engine'?></title>
     <!-- Imploded and gzipped scripts and styles -->
     <?$this->other('gz')?>
+    <script type="text/javascript" src="/js/admin/indi.all.<?=Indi::ini('lang')->admin?>.gz.js"></script>
     <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
     <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
     <script>
@@ -15,8 +16,9 @@
             com: '<?=COM ? '' : '/admin'?>',
             pre: '<?=PRE?>',
             uri: <?=json_encode(Indi::uri()->toArray())?>,
-            title: '<?=Indi::ini('general')->title ? Indi::ini('general')->title : 'Indi Engine'?>',
-            throwOutMsg: '<?=$this->throwOutMsg?>'
+            title: '<?=Indi::ini('general')->title ?: 'Indi Engine'?>',
+            throwOutMsg: '<?=$this->throwOutMsg?>',
+            lang: <?=json_encode($this->lang)?>
         }
     });
     </script>
