@@ -1891,7 +1891,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // Setup list of possible translations and current/last chosen one
                 Indi::view()->lang = array(
-                    'odata' => $_ = Indi::db()->query('SELECT `alias`, `title` FROM `lang`')->fetchAll(),
+                    'odata' => $_ = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang`')->fetchAll(),
                     'value' => in($_COOKIE['lang'], array_column($_, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin
                 );
 

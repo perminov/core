@@ -144,6 +144,9 @@ Ext.define('Indi', {
 
                 // Append to `getO` object as a value under certain property
                 getO[pairI[0]] = pairI[1];
+
+                // If `param` arg starting with '!', we return flag that indicates param existence rather than param's value
+                if (param.match(/^!/) && pairI[0] == param.replace(/^!/, '')) return true;
             }
 
             // Return whole object or a certain param

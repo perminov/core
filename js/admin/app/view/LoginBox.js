@@ -9,11 +9,12 @@ Ext.define('Indi.view.LoginBox', {
     width: 300,
     bodyPadding: 10,
     initComponent: function() {
-        var me = this;
+        var me = this, hidden = Indi.lang.odata.select('y', 'toggle').length == 1 && !Indi.get('!lang');
 
         // Setup currently selected and all available translations
         Ext.merge(me.items[3], {
             value: Indi.lang.value,
+            hidden: hidden,
             store: {
                 data: Indi.lang.odata
             }
