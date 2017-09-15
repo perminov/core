@@ -102,7 +102,7 @@ Ext.define('Indi.view.LoginBox', {
                             for (var i in data)
 
                                 // If 'remember' checkbox was checked, we create cookie
-                                if (data.remember)
+                                if (data.remember || i == 'language')
                                     Ext.util.Cookies.set(
                                         'i-' + i,
                                         data[i],

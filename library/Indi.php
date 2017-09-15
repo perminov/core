@@ -1120,12 +1120,12 @@ class Indi {
                     for ($j = 0; $j < count($const[1]); $j++) $kvp[$const[1][$j]] = str_replace("\'", "'", $const[2][$j]);
 
                     // Provide namespace initialization
-                    echo preg_match('/\./', $ns) ? "Ext.ns('$ns');" : ($ns != 'window' ? "var $ns = $ns || {};" : '');
+                    echo preg_match('/\./', $ns) ? "Ext.ns('$ns');" : ($ns != 'window' ? "var $ns = $ns || [];" : '');
 
                     // If namespace is given, and is 'Indi$lang'
                     if ($ns == 'Indi$lang') {
-                        echo "$ns = " . json_encode($kvp) . ";";
-                        echo "$ns." . 'name = "' . Indi::ini('lang')->admin . '";';
+                        echo "$ns.push(" . json_encode($kvp) . ");";
+                        echo "$ns.push({name: '" . Indi::ini('lang')->admin . "'});";
                     }
 
                 // Echo that file contents
