@@ -12,6 +12,7 @@ define('I_LOGIN_BOX_RESET', 'Сброс');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');
 define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Укажите имя пользователя');
 define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Укажите пароль');
+define('I_LOGIN_BOX_LANGUAGE', 'Язык');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Нет такого аккаунта');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Вы ввели неправильный пароль');

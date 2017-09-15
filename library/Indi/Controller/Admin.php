@@ -1889,6 +1889,12 @@ class Indi_Controller_Admin extends Indi_Controller {
                     unset($_SESSION['indi']['throwOutMsg']);
                 }
 
+                // Setup list of possible translations and current/last chosen one
+                Indi::view()->lang = array(
+                    'odata' => $_ = Indi::db()->query('SELECT `alias`, `title` FROM `lang`')->fetchAll(),
+                    'value' => in($_COOKIE['lang'], array_column($_, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin
+                );
+
                 // Render login page
                 $out = Indi::view()->render('login.php');
 

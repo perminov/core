@@ -20,6 +20,9 @@
     padding: 0 2px 0 2px;
     font-size: 11px;
 }
+.x-boundlist-item.x-boundlist-selected {
+    background: #dfffdf;
+}
 .x-boundlist-item-over{
     background-color: #ecffeb;
 }
