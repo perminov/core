@@ -33,7 +33,7 @@ Ext.define('Indi', {
         /**
          * Set l10n
          */
-        lang: window.Indi$lang,
+        lang: {},
 
         /**
          * A list of function names, that are declared within Indi object, but should be accessible within global scope
@@ -1406,6 +1406,11 @@ Ext.define('Indi', {
     }
 }, function() {
     var me = this;
+
+    // Merge all objects within Indi$lang array into single Indi.lang object
+    Indi$lang.forEach(function(o){
+        Indi.lang = Ext.merge(Indi.lang, o);
+    })
 
     // Apply system object's additional prototype functions, because some browsers do not have it as built-in
     for (var i in me.modernizer) me.modernizer[i]();
