@@ -141,12 +141,6 @@ class Indi_Uri_Base {
         // Start session
         session_start();
 
-        // Overwrite Indi::ini('lang')->admin for it to be same as $_COOKIE['i-language'], if possible
-        if (Indi::model('Lang', true) && $_COOKIE['i-language']
-            && Indi::ini('lang')->admin != $_COOKIE['i-language']
-            && in($_COOKIE['i-language'], Indi::db()->query('SELECT `alias` FROM `lang`')->fetchAll(PDO::FETCH_COLUMN)))
-            Indi::ini('lang')->admin = $_COOKIE['i-language'];
-
         // Set current language
         @include_once(DOC . STD . '/core/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
         @include_once(DOC . STD . '/www/application/lang/admin/' . Indi::ini('lang')->admin . '.php');
