@@ -701,14 +701,14 @@ Ext.define('Indi.lib.controller.action.Action', {
                 var target = app.windows.getAt(i);
 
                 // Close active window
-                if (target.id != active.id) active.close();
+                //if (target.id != active.id) active.close();
 
                 // Error catcher. Problem, that cause this line to be added - seem to be fixed,
                 // but it's still remain here to check if there are other reasons of problem
-                if (!target) console.log('create == true', i, app.windows.getCount(), me.panel.id);
+                //if (!target) console.log('create == true', i, app.windows.getCount(), me.panel.id);
 
                 // Apply new contents to existing window
-                window = target.apply(cfg).toFront();
+                window = target.apply(cfg).show();
             }
 
         // Else set up active window usage as a place for new panel
