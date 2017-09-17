@@ -219,7 +219,7 @@ class Indi_Db {
             $ePossibleElementParamA = array(); $possibleElementParamAliasA = array();
 
             // 3. Fulfil these two arrays
-            foreach ($possibleElementParamA as $possibleElementParamI) {
+            foreach (l10n($possibleElementParamA, 'defaultValue') as $possibleElementParamI) {
                 $ePossibleElementParamA[$possibleElementParamI['elementId']]
                     [$possibleElementParamI['alias']] = $possibleElementParamI['defaultValue'];
                 $possibleElementParamAliasA[$possibleElementParamI['id']] = $possibleElementParamI['alias'];
@@ -229,7 +229,7 @@ class Indi_Db {
             // 4. Get info about existing field parameters
             $paramA = self::$_instance->query('SELECT * FROM `param`' . (is_array($fieldIdA)
                 ? ' WHERE FIND_IN_SET(`fieldId`, "' . implode(',', $fieldIdA) . '") ' : ''))->fetchAll();
-            $fParamA = array(); foreach ($paramA as $paramI) $fParamA[$paramI['fieldId']]
+            $fParamA = array(); foreach (l10n($paramA, 'value') as $paramI) $fParamA[$paramI['fieldId']]
             [$possibleElementParamAliasA[$paramI['possibleParamId']]] = $paramI['value']; unset($paramA);
             unset($paramA);
 
