@@ -2018,7 +2018,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
                     // If affected field's name is '$keys' - update field's key values
                     if (i == '$keys') Object.keys(json.affected[i]).forEach(function(j){
-                        record.key(j, json.affected[i][j]);
+                        record.key(j, json.affected[i][j], true);
                     });
 
                 // Update field's rendered values
