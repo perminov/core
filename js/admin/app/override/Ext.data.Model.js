@@ -3,7 +3,16 @@
  * creating Ext.tip.ToolTip objects instead of standart Ext.tip.QuickTip objects
  */
 Ext.override(Ext.data.Model, {
-    key: function(key, val) {
+
+    /**
+     * Deal with keys
+     *
+     * @param key
+     * @param val
+     * @param affected
+     * @return {*}
+     */
+    key: function(key, val, affected) {
         var me = this;
 
         // If model has no `$keys` property within it's `raw` object, or it's not an object - return
@@ -12,7 +21,57 @@ Ext.override(Ext.data.Model, {
         // If `$keys` object within model's `raw` property has no own property, named as `key` argument - return
         if (!me.raw.$keys.hasOwnProperty(key)) return null;
 
-        // Return original value for a given key name
-        return arguments.length > 1 ? (me.raw.$keys[key] = val) : me.raw.$keys[key];
+        if (arguments.length > 1) {
+
+            if (!affected) {
+                me.modifiedKeys = me.modifiedKeys || {};
+                if (val != me.modifiedKeys[key]) me.modifiedKeys[key] = me.raw.$keys[key];
+                else delete me.modifiedKeys[key];
+            }
+
+            return me.raw.$keys[key] = val;
+
+        } else {
+
+            // Return original value for a given key name
+            return me.raw.$keys[key];
+        }
+    },
+
+    /**
+     * Deal with keys
+     *
+     * @param silent
+     */
+    reject : function(silent) {
+        var me = this,
+            modified = me.modified,
+            modifiedKeys = me.modifiedKeys,
+            field;
+
+        for (field in modified) {
+            if (modified.hasOwnProperty(field)) {
+                if (typeof modified[field] != "function") {
+                    me[me.persistenceProperty][field] = modified[field];
+                }
+            }
+        }
+
+        if (me.modifiedKeys) for (field in modifiedKeys) {
+            if (modifiedKeys.hasOwnProperty(field)) {
+                if (typeof modifiedKeys[field] != "function") {
+                    me.raw.$keys[field] = modifiedKeys[field];
+                }
+            }
+        }
+
+        me.dirty = false;
+        me.editing = false;
+        me.modified = {};
+        me.modifiedKeys = {};
+
+        if (silent !== true) {
+            me.afterReject();
+        }
     }
 });
