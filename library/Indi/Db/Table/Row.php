@@ -636,8 +636,36 @@ class Indi_Db_Table_Row implements ArrayAccess
         // and compare results with the results of previous check, that was made before any modifications
         $this->_noticesStep2($original);
 
+        // Update usages
+        if (!$new) $this->_updateUsages();
+
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
+    }
+
+    /**
+     * Update usages, according to mappings defined in `consider` table
+     *
+     * @return mixed
+     */
+    private function _updateUsages() {
+
+        // If 'Consider'-model exists, then for each dependent field
+        if (!Indi::model('Consider', true)) return;
+
+        // If no affected fields - return
+        if (!$affected = $this->model()->fields(array_keys($this->_affected))->column('id', '|')) return;
+
+        // Fetch usage map entries ids, and if ono found - return
+        if (!$considerIdA = Indi::db()->query('
+            SELECT `id` FROM `consider` WHERE CONCAT(",", `foreign`, ",") REGEXP ",(' . $affected . '),"
+        ')->fetchAll(PDO::FETCH_COLUMN)) return;
+
+        // Run cmd
+        Indi::cmd('updateUsages', array(
+            'id' => $this->id,
+            'considerIdA' => $considerIdA
+        ));
     }
 
     /**

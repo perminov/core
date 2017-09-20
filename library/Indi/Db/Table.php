@@ -771,7 +771,7 @@ class Indi_Db_Table
             }
 
         // Else if $name argument is presented, and it contains only one field name
-        } else if (!preg_match('/,/', $names) && func_num_args() == 1) {
+        } else if (is_string($names) && !preg_match('/,/', $names) && func_num_args() == 1) {
 
             // Return certain field as Indi_Db_Table_Row object, if found
             return $this->_fields->field($names);
