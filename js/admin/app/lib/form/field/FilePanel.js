@@ -495,6 +495,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             padding: '0 3 0 ' + (me.hasPreview ? '5' : '0'),
             style: {background: 'rgba(255, 255, 255, 0.7)'},
             defaults: {style: {padding: 0}},
+            cls: 'i-field-filepanel',
             items: [
                 me.value ? me.toolbar$Master$Type() : null,
                 me.value ? {xtype: 'displayfield', value: '&nbsp;&raquo;&nbsp;'} : null,
