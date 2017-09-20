@@ -57,6 +57,24 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             $fieldR_rename->save();
         }
 
+        // If 'Consider'-model exists, then for each dependent field
+        if ($considerM = Indi::model('Consider', true))
+            foreach($considerM->fetchAll('`foreign` = "' . $this->id . '"') as $considerR) {
+
+                // If $toggle arg is `true` - toggle localization On for dependent field
+                if ($toggle) {
+                    $considerR->foreign('fieldId')->l10n = 'y';
+                    $considerR->foreign('fieldId')->save();
+
+                // Else $toggle arg is `false`, and current dependent field
+                // has no other dependencies on localized fields
+                // - toggle localization Off for dependent field
+                } else if (!$considerR->foreign('fieldId')->hasLocalizedDependency()) {
+                    $considerR->foreign('fieldId')->l10n = 'n';
+                    $considerR->foreign('fieldId')->save();
+                }
+            }
+
         // Get usages
         if (!$enumset && $this->id == Indi::model($this->entityId)->titleField()->id) {
 
@@ -134,6 +152,25 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             $this->_onUpdate = false;
             $this->save();
         }
+    }
+
+    /**
+     * Check if current field depends on fields having localization turned On
+     */
+    public function hasLocalizedDependency() {
+
+        // If 'Consider'-model does not exists - return false
+        if (!Indi::model('Consider', true)) return false;
+
+        // Foreach nested `consider` entry
+        foreach ($this->nested('consider') as $considerR) {
+            $prop = $considerR->foreign ? 'foreign' : 'consider';
+            if ($considerR->foreign($prop)->hasLocalizedDependency()) return true;
+            if ($considerR->foreign($prop)->l10n == 'y') return true;
+        }
+
+        // Return false
+        return false;
     }
 
     /**

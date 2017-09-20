@@ -75,7 +75,7 @@ class Indi_Controller {
     /**
      * Dispatch the request
      */
-    public function dispatch() {
+    public function dispatch($args = array()) {
 
         // Setup the Content-Type header
         header('Content-Type: text/html; charset=' . $this->encoding);
@@ -110,7 +110,7 @@ class Indi_Controller {
         if (Indi::get('jump')) return;
 
         // Call the desired action method
-        $this->call(Indi::uri()->action);
+        $this->call(Indi::uri()->action, $args);
 
         // Do the post-dispatch maintenance
         $this->postDispatch();
@@ -119,8 +119,8 @@ class Indi_Controller {
     /**
      * Call the desired action method
      */
-    public function call($action) {
-        $this->{$action . 'Action'}();
+    public function call($action, $args = array()) {
+        call_user_func_array(array($this, $action . 'Action'), $args);
     }
 
     /**

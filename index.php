@@ -24,6 +24,11 @@ define('DOC', rtrim($_SERVER['DOCUMENT_ROOT'], '/'));
 // Setup URI constant, representing $_SERVER['REQUEST_URI'] environment variable, for short-hand accessibility
 define('URI', $_SERVER['REQUEST_URI'] == '/' ? '/' : rtrim($_SERVER['REQUEST_URI'], '/'));
 
+// Setup CMD constant, indicating that this execution was not started via Indi::cmd()
+// In case if execution WAS started via Indi::cmd(), this constant will be already defined,
+// so constant's value won't be overwritten by below-line definition
+define('CMD', false);
+
 // Set up error reporting
 error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^ E_STRICT : E_ALL ^ E_NOTICE);
 ini_set('display_errors', 'On');
@@ -66,4 +71,4 @@ Indi::files($_FILES);
 unset($_POST, $_GET, $_FILES);
 
 // Dispatch uri request
-Indi::uri()->dispatch();
+if (!CMD) Indi::uri()->dispatch();
