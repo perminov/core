@@ -1391,7 +1391,7 @@ Ext.define('Indi', {
             Indi.viewport = Ext.create('Indi.view.Viewport');
 
             // Create loadmask
-            Indi.loadmask = new Ext.LoadMask(Indi.viewport);
+            Indi.loadmask = new Ext.LoadMask(Indi.viewport, {preventBringToFront: false});
 
             // If websockets enabled
             if (Indi.ini.ws && parseInt(Indi.ini.ws.enabled))
