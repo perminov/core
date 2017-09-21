@@ -115,7 +115,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             if ($toggle) {
 
                 // Apply current value as a translation for ALL languages (initially)
-                $json = $jtpl; foreach ($json as &$holder) $holder = $value;
+                $json = $jtpl; foreach ($json as $lang => &$holder) $holder = Indi::l10n($value, $lang);
 
                 // Get value
                 $value = json_encode($json);

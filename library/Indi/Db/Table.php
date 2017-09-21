@@ -1122,7 +1122,7 @@ class Indi_Db_Table
                     if ($fieldR->l10n == 'y' && $jtpl) {
 
                         // Initially, we set current value as a value of all existing translations
-                        $json = $jtpl; foreach ($json as &$holder) $holder = $data[$fieldR->alias];
+                        $json = $jtpl; foreach ($json as $lang => &$holder) $holder = Indi::l10n($data[$fieldR->alias], $lang);
 
                         // Get JSON
                         $data[$fieldR->alias] = json_encode($json);
