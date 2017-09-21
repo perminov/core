@@ -11,7 +11,10 @@ class Admin_CmdController extends Indi_Controller {
     }
 
     public function updateUsagesAction($id, array $considerIdA) {
-
+        
+        // Turn on logging for mflush events
+        Indi::logging('mflush', true);
+    
         // Fetch usage map entries
         $considerRs = Indi::model('Consider')->fetchAll('`id` IN (' . im($considerIdA) . ')');
 
