@@ -553,9 +553,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If current row is an existing row
         if ($this->_original['id']) {
 
-            // Set $forceL10n flag if current row is a enumset row, linked to a field that having localization turned On
-            $forceL10n = $this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y';
-
             // Do some needed operations that are required to be done right before row update
             $this->onBeforeUpdate(); $this->onBeforeSave();
 
@@ -568,10 +565,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->mflush(true);
 
             // Backup modified data
-            $modified = $this->_modified;
+            $modified = $update = $this->_modified;
+
+            // Setup other-language versions
+            $this->_localize($update);
 
             // Update it
-            $affected = $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"', $original, $forceL10n);
+            $affected = $this->model()->update($update, '`id` = "' . $this->_original['id'] . '"');
 
             // Setup $return variable as a number of affected rows, e.g 1 or 0
             $return = $affected;
@@ -671,13 +671,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Setup language-versions for values of localized fields
      *
-     * @param array $insert
+     * @param array $data
      * @return mixed
      */
-    protected function _localize(array &$insert) {
+    protected function _localize(array &$data) {
 
         // If current entity has no localized fields - return
-        if (!$lfA = Indi_Db::l10n($this->_table)) return;
+        if (!$lfA = $this->_table == 'enumset' && $this->foreign('fieldId')->l10n == 'y'
+            ? array('title')
+            : Indi_Db::l10n($this->_table)) return;
 
         // If there are localized fields, but none of them were modified - return
         if (!$mlfA = array_intersect($lfA, array_keys($this->_modified))) return;
@@ -688,6 +690,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // For each of localized modified fields
         foreach ($mlfA as $mlfI) {
 
+            // If field contain keys - skip (this may happen for enumset-fields)
+            if ($this->field($mlfI)->storeRelationAbility != 'none') continue;
+
             // Setup flag, indicating whether or not $mlfI-field has localized dependency
             $hasLD = $this->field($mlfI)->hasLocalizedDependency();
 
@@ -697,8 +702,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Build loсalized values
             foreach ($json as $lang => &$holder) {
 
-                // If $mlfI-field has no localized dependencies - use transliteration
-                if (!$hasLD) $holder = Indi::l10n($this->_modified[$mlfI], $lang); else {
+                // If $mlfI-field has localized dependencies - use transliteration
+                if ($hasLD) {
 
                     // Backup current language
                     $_lang = Indi::ini('lang')->admin;
@@ -711,11 +716,28 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                     // Restore current language back
                     Indi::ini('lang')->admin = $_lang;
+
+                // Else if $mlfI-field has no localized dependencies
+                } else {
+
+                    // If this is a new entry, or existing entry but field having 'refreshL10nsOnUpdate'
+                    // flag turned On - use transliteration, where possible
+                    if (!$this->id || $this->field($mlfI)->param('refreshL10nsOnUpdate'))
+                        $holder = Indi::l10n($this->_modified[$mlfI], $lang);
+
+                    // Else if $lang is same as current system lang - use as is
+                    else if ($lang == Indi::ini('lang')->admin) $holder = $data[$mlfI];
+
+                    // Else use existing language version
+                    else $holder = $this->_language[$mlfI][$lang];
                 }
             }
 
+            // Revert value back to current language
+            if ($hasLD) $this->$mlfI = $json[Indi::ini('lang')->admin];
+
             // Get JSON
-            $insert[$mlfI] = json_encode($json);
+            $data[$mlfI] = json_encode($json);
         }
     }
 

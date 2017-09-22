@@ -11,7 +11,8 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
         // Pick localized value of `title` prop, if detected that raw value contain localized values
         if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $data['title']))
-            $data['title'] = json_decode($data['title'])->{Indi::ini('lang')->admin};
+            if ($this->_language['title'] = json_decode($data['title'], true))
+                $data['title'] = $this->_language['title'][Indi::ini('lang')->admin];
 
         // Return data
         return $data;
