@@ -46,25 +46,19 @@ class Admin_CmdController extends Indi_Controller {
             
             // Set limit per once
             $limit = 500;
-            i('total count: ' . $qty, 'a');
 
             // Fetch usages by 500 at a time
             for ($p = 1; $p <= ceil($qty/$limit); $p++) {
 
-                i('page: ' . $p, 'a');
                 // Fetch usages
                 $rs = Indi::model($entityId)->fetchAll($where, null, $limit, $p);
-                i('local count: ' . $rs->count(), 'a');
                 
                 // Update usages
                 foreach ($rs as $i => $r) {
                     $r->noValidate = true;
                     $r->save();
-                    i($i . '->' . $r->id, 'a');
                 }
             }
         }
-        
-        i('end', 'a');
     }
 }
