@@ -3526,9 +3526,37 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return mixed
      */
     public function original() {
+
+        // If no args given - return $this->_original;
         if (func_num_args() == 0) return $this->_original;
-        else if (func_num_args() == 1) return is_array(func_get_arg(0)) ? $this->_original = func_get_arg(0) : $this->_original[func_get_arg(0)];
-        else return $this->_original[func_get_arg(0)] = func_get_arg(1);
+
+        // Else if single arg given
+        else if (func_num_args() == 1) {
+
+            // If it's and array
+            if (is_array(func_get_arg(0))) {
+
+                // Apply faced keys to $this->_language where possible
+                foreach (func_get_arg(0) as $prop => $value)
+                    if ($this->_language[$prop])
+                        $this->_language[$prop][Indi::ini('lang')->admin] = $value;
+
+                // Assign original data and return it
+                return $this->_original = func_get_arg(0);
+
+            // Else return original data stored under a given key
+            } else return $this->_original[func_get_arg(0)];
+
+        // Else two args re given
+        } else {
+
+            // Apply language version, if key is an alias of a localized fields
+            if ($this->_language[func_get_arg(0)])
+                $this->_language[func_get_arg(0)][Indi::ini('lang')->admin] = func_get_arg(1);
+
+            // Assign original value for a given key and return it
+            return $this->_original[func_get_arg(0)] = func_get_arg(1);
+        }
     }
 
     /**
