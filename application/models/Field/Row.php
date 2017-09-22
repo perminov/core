@@ -26,12 +26,6 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // If no 'Lang' model found - return
         if (!Indi::model('Lang', true)) return;
 
-        // If no languages set yet - return
-        if (!$jtpl = Indi::db()->query('
-            SELECT `alias`, "" AS `holder`
-            FROM `lang`
-        ')->fetchAll(PDO::FETCH_KEY_PAIR)) return;
-
         // If current field is a non-key field
         if ($this->storeRelationAbility == 'none') {
 
@@ -106,43 +100,13 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Append special part of WHERE clause, for enumset-data
         $where = array($enumset ? '`fieldId` = "' . $this->id . '"' : 1);
 
-        // Get all values, that should be converted to JSON or back to simple string/text
-        foreach (Indi::db()->query('
-            SELECT `id`, `' . $prop . '` FROM `' . $table . '` WHERE ' . im($where, ' AND ')
-        )->fetchAll(PDO::FETCH_KEY_PAIR) as $id => $value) {
-
-            // If $toggle arg is `true`
-            if ($toggle) {
-
-                // Apply current value as a translation for ALL languages (initially)
-                $json = $jtpl; foreach ($json as $lang => &$holder) $holder = Indi::l10n($value, $lang);
-
-                // Get value
-                $value = json_encode($json);
-
-            // Else if we need to convert data back to non-localized format
-            } else {
-
-                // Pick current translation from JSON
-                $value = json_decode($value)->{Indi::ini('lang')->admin};
-            }
-
-            // WHERE clause
-            array_unshift($where, '`id` = "' . $id . '"');
-
-            // Build sql-query to convert plain text values to stringified JSON values
-            $sql = Indi::db()->sql('
-                UPDATE `' . $table . '`
-                SET `' . $prop . '` = :s
-                WHERE ' . im($where, ' AND ')
-            , $value);
-
-            // Run sql-query
-            Indi::db()->query($sql);
-
-            // Remove id-clause
-            array_shift($where);
-        }
+        // Start conversion as a background process
+        Indi::cmd('fieldToggleL10n', array(
+            'toggle' => $toggle,
+            'field' => $prop,
+            'table' => $table,
+            'where' => $where,
+        ));
 
         // If $toggle arg is `false`, and current field is not a enumset-field
         if (!$toggle && !$enumset) {
