@@ -608,6 +608,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Merge $this->_original and $this->_modified arrays into $this->_original array
         $this->_original = (array) array_merge($this->_original, $this->_modified);
 
+        // Update $this->_language
+        foreach ($this->_modified as $prop => $value)
+            if ($this->_language[$prop]) $this->_language[$prop][Indi::ini('lang')->admin] = $value;
+
         // Empty $this->_modified, $this->_mismatch and $this->_affected arrays
         $this->_modified = $this->_mismatch = $this->_affected = array();
 
