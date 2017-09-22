@@ -1128,61 +1128,46 @@ class Indi_Db_Table
      * @return int
      * @throws Exception
      */
-    public function update(array $data, $where = '', $original = array(), $forceL10n = false) {
+    public function update(array $data, $where = '') {
 
         // Check if $data array is not empty
-        if (count($data)) {
+        if (!count($data)) return;
 
-            // Get existing fields
-            $fieldRs = $this->fields();
+        // Get existing fields
+        $fieldRs = $this->fields();
 
-            // Build the first part of sql expression
-            $sql = 'UPDATE `' . $this->_table . '` SET ';
+        // Build the first part of sql expression
+        $sql = 'UPDATE `' . $this->_table . '` SET ';
 
-            // Declare array for sql SET statements
-            $setA = array();
+        // Declare array for sql SET statements
+        $setA = array();
 
-            // Foreach field within existing fields
-            foreach ($fieldRs as $fieldR) {
+        // Foreach field within existing fields
+        foreach ($fieldRs as $fieldR) {
 
-                // We will update values for fields, that are actually exist in database table structure
-                if ($fieldR->columnTypeId) {
+            // We will update values for fields, that are actually exist in database table structure
+            if (!$fieldR->columnTypeId) continue;
 
-                    // If current field alias is one of keys within data to be updated,
-                    if (array_key_exists($fieldR->alias, $data))
+            // If current field alias is not one of keys within data to be updated - skip
+            if (!array_key_exists($fieldR->alias, $data)) continue;
 
-                        // If localization is enabled for this field
-                        if (($fieldR->storeRelationAbility == 'none' && $fieldR->l10n == 'y') || ($this->_table == 'enumset' && $forceL10n)) {
-
-                            // Build part of a query, that will update the value under certain key within JSON-string
-                            $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = REPLACE(`' . $fieldR->alias . '`, :s, :s)',
-                                '"' . Indi::ini('lang')->admin . '":' . json_encode($original[$fieldR->alias]) . '',
-                                '"' . Indi::ini('lang')->admin . '":' . json_encode($data[$fieldR->alias]) . ''
-                            );
-
-                        // Else
-                        } else {
-
-                            // We append value with related field alias to $set array
-                            $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
-                        }
-                }
-            }
-
-            // Append comma-imploded items of $setA array to sql query
-            $sql .= implode(', ', $setA);
-
-            // If $where argument was specified
-            if ($where) {
-
-                // Append it to sql query
-                if (is_array($where) && count($where)) $where = implode(' AND ', $where);
-                $sql .= ' WHERE ' . $where;
-            }
-
-            // Execute query and return number of affected rows
-            return Indi::db()->query($sql);
+            // We append value with related field alias to $set array
+            $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
         }
+
+        // Append comma-imploded items of $setA array to sql query
+        $sql .= implode(', ', $setA);
+
+        // If $where argument was specified
+        if ($where) {
+
+            // Append it to sql query
+            if (is_array($where) && count($where)) $where = implode(' AND ', $where);
+            $sql .= ' WHERE ' . $where;
+        }
+
+        // Execute query and return number of affected rows
+        return Indi::db()->query($sql);
     }
 
     /**
