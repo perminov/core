@@ -9,7 +9,8 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected $_table = '';
 
     /**
-     * Original data
+     * Original data. If entity has localized fields,
+     * their values will be only for current language
      *
      * @var array
      */
@@ -21,6 +22,22 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @var array
      */
     protected $_modified = array();
+
+    /**
+     * Full original data for localized fields. Looks like: array(
+     *     'title' => array(
+     *         'ru' => 'Здравствуйте',
+     *         'en' => 'Hello'
+     *     ),
+     *     'description' => array(
+     *         'ru' => 'Меня зовут Павел',
+     *         'en' => 'My name is Pavel'
+     *     )
+     * )
+     *
+     * @var array
+     */
+    protected $_language = array();
 
     /**
      * Associative array of names of the fields (as keys),
@@ -161,9 +178,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Get localized
         foreach (Indi_Db::l10n($this->_table) ?: array() as $field)
-            if (/*$fieldR->relation != 6 && */array_key_exists($field, $data))
+            if (array_key_exists($field, $data))
                 if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $data[$field]))
-                    $data[$field] = json_decode($data[$field])->{Indi::ini('lang')->admin};
+                    if ($this->_language[$field] = json_decode($data[$field], true))
+                        $data[$field] = $this->_language[$field][Indi::ini('lang')->admin];
 
         // Return data
         return $data;
@@ -571,10 +589,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->mflush(true);
 
             // Backup modified data
-            $modified = $this->_modified;
+            $modified = $insert = $this->_modified;
+
+            // Setup other-language versions
+            $this->_localize($insert);
 
             // Execute the INSERT sql query, get LAST_INSERT_ID and assign it as current row id
-            $this->_modified['id'] = $this->model()->insert($this->_modified);
+            $this->_modified['id'] = $this->model()->insert($insert);
 
             // Setup $return variable as id of current (a moment ago inserted) row
             $return = $this->_modified['id'];
@@ -641,6 +662,57 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return current row id (in case if it was a new row) or number of affected rows (1 or 0)
         return $return;
+    }
+
+    /**
+     * Setup language-versions for values of localized fields
+     *
+     * @param array $insert
+     * @return mixed
+     */
+    protected function _localize(array &$insert) {
+
+        // If current entity has no localized fields - return
+        if (!$lfA = Indi_Db::l10n($this->_table)) return;
+
+        // If there are localized fields, but none of them were modified - return
+        if (!$mlfA = array_intersect($lfA, array_keys($this->_modified))) return;
+
+        // If there are no languages
+        if (!$jtpl = Indi::db()->query('SELECT `alias`, "" AS `holder` FROM `lang`')->fetchAll(PDO::FETCH_KEY_PAIR)) return;
+
+        // For each of localized modified fields
+        foreach ($mlfA as $mlfI) {
+
+            // Setup flag, indicating whether or not $mlfI-field has localized dependency
+            $hasLD = $this->field($mlfI)->hasLocalizedDependency();
+
+            // Copy/Reset $json from/to $jtpl
+            $json = $jtpl;
+
+            // Build loсalized values
+            foreach ($json as $lang => &$holder) {
+
+                // If $mlfI-field has no localized dependencies - use transliteration
+                if (!$hasLD) $holder = Indi::l10n($this->_modified[$mlfI], $lang); else {
+
+                    // Backup current language
+                    $_lang = Indi::ini('lang')->admin;
+
+                    // Set current language to $lang
+                    Indi::ini('lang')->admin = $lang;
+
+                    // Get value according to required language
+                    $this->{'set' . ucfirst($mlfI)}(); $holder =  $this->$mlfI;
+
+                    // Restore current language back
+                    Indi::ini('lang')->admin = $_lang;
+                }
+            }
+
+            // Get JSON
+            $insert[$mlfI] = json_encode($json);
+        }
     }
 
     /**
@@ -2225,6 +2297,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // then in $this->_original array, and then in $this->_temporary array, and return
         // once value was found
         if (array_key_exists($columnName, $this->_modified)) return $this->_modified[$columnName];
+        else if (array_key_exists($columnName, $this->_language)) return $this->_language[$columnName][Indi::ini('lang')->admin];
         else if (array_key_exists($columnName, $this->_original)) return $this->_original[$columnName];
         else if (array_key_exists($columnName, $this->_temporary)) return $this->_temporary[$columnName];
         else if ($fieldR = $this->model()->fields($columnName)) if ($fieldR->foreign('elementId')->alias == 'upload')
