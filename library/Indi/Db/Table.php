@@ -1085,11 +1085,6 @@ class Indi_Db_Table
         // Build the first part of sql expression
         $sql = 'INSERT INTO `' . $this->_table . '` SET ';
 
-        // Get languages
-        if (Indi::model('Lang', true)) $jtpl = Indi::db()->query('
-            SELECT `alias`, "" AS `holder` FROM `lang`
-        ')->fetchAll(PDO::FETCH_KEY_PAIR);
-
         // Declare array for sql SET statements
         $setA = array();
 
@@ -1102,35 +1097,16 @@ class Indi_Db_Table
                 // Declare/reset $set flag
                 $set = false;
 
-                // If current field alias is one of keys within data to be inserted,
-                if (array_key_exists($fieldR->alias, $data)) {
+                // If current field alias is one of keys within data to be inserted - set $set flag to `true`
+                if (array_key_exists($fieldR->alias, $data)) $set = true;
 
-                    // Set $set flag to `true`
-                    $set = true;
-
-                // Else if column type is TEXT
-                } else if ($set = $fieldR->foreign('columnTypeId')->type == 'TEXT')
-
-                    // Use field's default value as value for insertion,
-                    // as MySQL does not support native default values for TEXT-columns
+                // Else if column type is TEXT - use field's default value as value for insertion,
+                // as MySQL does not support native default values for TEXT-columns
+                else if ($set = $fieldR->foreign('columnTypeId')->type == 'TEXT')
                     $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
 
-                // If $set flag is `true`
-                if ($set) {
-
-                    // If localization is enabled for this field
-                    if ($fieldR->l10n == 'y' && $jtpl) {
-
-                        // Initially, we set current value as a value of all existing translations
-                        $json = $jtpl; foreach ($json as $lang => &$holder) $holder = Indi::l10n($data[$fieldR->alias], $lang);
-
-                        // Get JSON
-                        $data[$fieldR->alias] = json_encode($json);
-                    }
-
-                    // We append value with related field alias to $set array
-                    $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
-                }
+                // If $set flag is `true` - append value with related field alias to $set array
+                if ($set) $setA[] = Indi::db()->sql('`' . $fieldR->alias . '` = :s', $data[$fieldR->alias]);
             }
         }
 
