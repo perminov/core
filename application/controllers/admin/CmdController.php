@@ -12,8 +12,14 @@ class Admin_CmdController extends Indi_Controller {
 
     public function updateUsagesAction($id, array $considerIdA) {
         
+        // Turn off limitations
+        ignore_user_abort(1); set_time_limit(0);
+        
         // Turn on logging for mflush events
         Indi::logging('mflush', true);
+
+        // Turn on logging for mflush events
+        Indi::logging('jflush', true);
     
         // Fetch usage map entries
         $considerRs = Indi::model('Consider')->fetchAll('`id` IN (' . im($considerIdA) . ')');
@@ -35,14 +41,30 @@ class Admin_CmdController extends Indi_Controller {
             }
             $where = im($where, ' OR ');
 
-            // Fetch usages
-            $rs = Indi::model($entityId)->fetchAll($where);
+            // Get total qty of entries to be processed
+            $qty = Indi::db()->query('SELECT COUNT(*) FROM `' . Indi::model($entityId)->table() . '` WHERE ' . $where)->fetchColumn();
+            
+            // Set limit per once
+            $limit = 500;
+            i('total count: ' . $qty, 'a');
 
-            // Update usages
-            foreach ($rs as $r) {
-                $r->noValidate = true;
-                $r->save();
+            // Fetch usages by 500 at a time
+            for ($p = 1; $p <= ceil($qty/$limit); $p++) {
+
+                i('page: ' . $p, 'a');
+                // Fetch usages
+                $rs = Indi::model($entityId)->fetchAll($where, null, $limit, $p);
+                i('local count: ' . $rs->count(), 'a');
+                
+                // Update usages
+                foreach ($rs as $i => $r) {
+                    $r->noValidate = true;
+                    $r->save();
+                    i($i . '->' . $r->id, 'a');
+                }
             }
         }
+        
+        i('end', 'a');
     }
 }
