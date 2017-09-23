@@ -891,3 +891,10 @@ td.ext-cal-dtitle-today div {
 .ext-cal-bg-row-in {
     background: white;
 }
+.i-calendar-total {
+    padding: 1px 2px;
+    border: 1px solid #7a9ac4;
+    line-height: 12px;
+    display: inline-block;
+    background: #d7ecff;
+}
