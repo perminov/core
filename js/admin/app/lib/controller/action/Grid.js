@@ -264,6 +264,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
 
+        // If field have input mask, it mean that column won't need width
+        // greater or less than actual cells width usag within such column
+        if (field.params.inputMask) cfg.resizable = false;
+
         // If current column's field is a grouping field - hide it
         if (me.ti().section.groupBy == field.id) cfg.hidden = true;
 
