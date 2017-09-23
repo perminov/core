@@ -96,7 +96,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
 
         // Add results count
         Ext.getCmp(me.panel.id).query('button[toggleGroup]').forEach(function(btn){
-            btn.setText(btn.getText().split(':')[0] + (btn.pressed ? ': ' + store.getTotalCount() : ''));
+            btn.setText(btn.getText().split(':')[0]
+                + (btn.pressed ? ': <span class="i-calendar-total">' + store.getTotalCount() + '</span>' : ''));
         });
 
         // If no daily hours set - return
