@@ -1194,7 +1194,9 @@ class Indi_Db_Table
      * @return string
      */
     public function title() {
-        return $this->_title;
+        return Indi::model('Entity')->fields('title')->l10n == 'y'
+            ? json_decode($this->_title)->{Indi::ini('lang')->admin}
+            : $this->_title;
     }
 
     /**
