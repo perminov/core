@@ -108,7 +108,7 @@ define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Current row cannot be set as parent for itself in field "%s"');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Row with id "%s", specified in field "%s", - is not exists, so can not be set up as parent row');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Row "%s", specified in field "%s", - is a child/descendant row for a current row "%s", so it can not be set up as parent row');
-define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'While processing your request, one of an auto-processed operations, in particular on the entry of type "');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'While processing your request, one of an auto-processed operations, in particular - <br>on the entry of type "');
 define('I_ROWSAVE_ERROR_MFLUSH_MSG2', 'returned the following errors');
 
 define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Field "%s" is required');
