@@ -40,7 +40,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             showWeekLinks: true,
             showHeader: true,
             showWeekNumbers: true,
-            todayText: 'Сегодня',
+            todayText: Ext.calendar.CalendarPanel.prototype.todayText,
             startDay: 1
         },
 
@@ -56,7 +56,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             },
             fromHour: 0,
             tillHour: 24,
-            todayText: 'Сегодня',
+            todayText: Ext.calendar.CalendarPanel.prototype.todayText,
             startDay: 1
         },
 
@@ -66,7 +66,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
         dayViewCfg: {
             fromHour: 0,
             tillHour: 24,
+            todayText: Ext.calendar.CalendarPanel.prototype.todayText,
             format: {
+                todayTime: 'H:i',
                 time: 'H:i'
             }
         },
