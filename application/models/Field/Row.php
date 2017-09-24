@@ -356,7 +356,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             if ($curTypeR->type == 'BOOLEAN') $enumsetAppendA = array(I_NO => 0, I_YES => 1);
 
             // Else
-            else if ($curTypeR->id && $columnTypeR->type == 'ENUM') {
+            else if ($curTypeR->id && !in($curTypeR->type, 'ENUM,SET') && $columnTypeR->type == 'ENUM') {
 
                 // Get values
                 $valueA = Indi::db()->query('
