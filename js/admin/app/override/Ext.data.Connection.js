@@ -129,6 +129,7 @@ Ext.override(Ext.Msg, {
         m.select('[jump]').each(function(el){
             el.on('click', function(e, dom){
                 Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
+                Ext.get(dom).up('.i-notice').fadeOut({remove: true});
             });
         });
     }
