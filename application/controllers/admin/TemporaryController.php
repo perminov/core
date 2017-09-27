@@ -326,7 +326,7 @@ class Admin_TemporaryController extends Indi_Controller {
 
         $sectionR_notices = Indi::model('Section')->createRow(array(
             'title' => 'Уведомления',
-            'sectionId' => Indi::model('Section')->fetchRow('`title` = "Конфигурация"')->id,
+            'sectionId' => Indi::model('Section')->fetchRow('`alias` = "sections"')->sectionId,
             'alias' => 'notices',
             'type' => 's',
             'entityId' => $entityR_notice->id,
