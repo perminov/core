@@ -319,7 +319,9 @@ class Indi_Db {
             }
 
             // Setup notices
-            if (self::$_entityA['Notice']) {
+            if (self::$_entityA['Notice']
+                && self::$_entityA['Notice']['fields'] instanceof Field_Rowset_Base
+                && self::$_entityA['Notice']['fields']->count() >= 13) {
 
                 // Get info about notices, attached to entities
                 $noticeA = self::$_instance->query('
