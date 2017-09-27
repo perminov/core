@@ -2442,7 +2442,7 @@ class Indi {
         if (!Indi::ini('ws')->enabled) return;
 
         // If websockets server is not running - return
-        ob_start(); file_get_contents(Indi::ini('ws')->socket); if (ob_get_clean()) return;
+        //ob_start(); file_get_contents(Indi::ini('ws')->socket); if (ob_get_clean()) return;
 
         // Build path
         $path = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT) .'/' . grs(8) . '/websocket';
