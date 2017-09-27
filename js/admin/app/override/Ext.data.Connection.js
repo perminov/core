@@ -117,10 +117,19 @@ Ext.override(Ext.Msg, {
         var m = Ext.DomHelper.append(this.msgCt, '<div class="x-window-default i-notice">' +
             '<img src="'+Indi.std+'/i/admin/btn-icon-close-side.png" class="i-notice-close">' +
             (Ext.isObject(cfg) && cfg.header ? '<h1>' + cfg.header + '</h1>' : '') +
-            '<p>' + (Ext.isString(cfg) ? cfg : (cfg.body || cfg.msg)) + '</p>' +
+            '<p>' + (Ext.isString(cfg) ? cfg : (cfg.body || cfg.msg)).replace(/\[/g, '<').replace(/\]/g, '>') + '</p>' +
         '</div>', true);
+
+        // Add handler for close-icon
         m.down('.i-notice-close').on('click', function(e, dom){
             Ext.get(dom).up('.i-notice').fadeOut({remove: true});
+        });
+
+        // Add handler for jump-links
+        m.select('[jump]').each(function(el){
+            el.on('click', function(e, dom){
+                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
+            });
         });
     }
 });
