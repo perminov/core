@@ -71,6 +71,29 @@ Ext.define('Indi.view.Menu', {
             }
         });
 
+        // Setup tooltips
+        me.on('boxready', function(){
+            me.el.select('[data-qtip]').each(function(el){
+
+                // If no tooltip was set - return
+                if (!el.attr('data-qtip')) return;
+
+                // Set id
+                el.id = el.attr('id');
+
+                // Setup tooltip cfg
+                el.tooltip = {
+                    anchor: 'left',
+                    html: el.attr('data-qtip'),
+                    constrainParent: false,
+                    staticOffset: [0, -5]
+                }
+
+                // Create tooltip
+                Ext.tip.ToolTip.create(el);
+            });
+        });
+
         // Call parent
         me.callParent();
     },
