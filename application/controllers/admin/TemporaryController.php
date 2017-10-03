@@ -5,6 +5,16 @@
  * on all projects, that run on Indi Engine
  */
 class Admin_TemporaryController extends Indi_Controller {
+    public function problemAction() {
+        Indi::iflush(true);
+        Indi::model('Event')->batch(function($r){
+            $r->problem();
+            $r->basicUpdate();
+            echo '1';
+        });
+        die('ok');
+    }
+
     public function titlesAction($project, $die = true) {
 
         // Add `titleFieldId` field within 'entity' entity, if there is no such a field yet
@@ -326,7 +336,7 @@ class Admin_TemporaryController extends Indi_Controller {
 
         $sectionR_notices = Indi::model('Section')->createRow(array(
             'title' => 'Уведомления',
-            'sectionId' => Indi::model('Section')->fetchRow('`title` = "Конфигурация"')->id,
+            'sectionId' => Indi::model('Section')->fetchRow('`alias` = "sections"')->sectionId,
             'alias' => 'notices',
             'type' => 's',
             'entityId' => $entityR_notice->id,
