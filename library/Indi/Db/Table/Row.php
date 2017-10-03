@@ -615,6 +615,47 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Basic update. Used for cases when, for example, there is a need to setup a value for some new prop
+     * for all/many entries, but doing it by calling save() method - is not good, as it involves a lot of things
+     * that make the whole process run slow. So, this method runs quicker as it omit the following things:
+     *
+     * 1. Custom validation
+     * 2. onBefore(Insert|Update)()
+     * 3. onBeforeSave()
+     * 4. Change-logging
+     * 5. Usages checking
+     * 6. Notices
+     * 7. Space-things
+     *
+     * Note: Use it carefully, and for cases when you're sure the things you want to do are separated
+     *
+     * @return int
+     */
+    public function basicUpdate() {
+
+        // Data types check, and if smth is not ok - flush mismatches
+        $this->scratchy(true);
+
+        // Backup modified data
+        $update = $this->_modified;
+
+        // Update it
+        $affected = $this->model()->update($update, '`id` = "' . $this->_original['id'] . '"');
+
+        // Merge $this->_original and $this->_modified arrays into $this->_original array
+        $this->_original = (array) array_merge($this->_original, $this->_modified);
+
+        // Empty $this->_modified, $this->_mismatch and $this->_affected arrays
+        $this->_modified = $this->_mismatch = $this->_affected = array();
+
+        // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
+        $this->files(true);
+
+        // Return number of affected rows (1 or 0)
+        return $affected;
+    }
+
+    /**
      * Check if row (in it's original state) matches each separate notification's criteria,
      * and remember the results separately for each notification, attached to current row's entity
      *

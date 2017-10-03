@@ -1350,4 +1350,39 @@ class Indi_Db_Table
             return $this->_daily;
         }
     }
+
+    /**
+     * Fetch entries by $limit per once, and pass each entry into $operation function as an arguments.
+     * This is a workaround to avoid problems, caused by PHP ini's `memory_limit` configuration option
+     *
+     * @param callable $operation
+     * @param null $where
+     * @param null $order
+     * @param int $limit
+     */
+    public function batch($operation, $where = null, $order = null, $limit = 500) {
+
+        // Check that $operation arg is callable
+        if (!is_callable($operation)) throw new Exception('$operation arg is not callable');
+
+        // Turn off limitations
+        ignore_user_abort(1); set_time_limit(0);
+
+        // Build WHERE and ORDER clauses
+        if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
+        if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
+
+        // Get total qty of entries to be processed
+        $qty = Indi::db()->query('SELECT COUNT(*) FROM `' . $this->table() . '`' . ($where ? ' WHERE ' . $where : ''))->fetchColumn();
+
+        // Fetch usages by $limit at a time
+        for ($p = 1; $p <= ceil($qty/$limit); $p++) {
+
+            // Fetch usages
+            $rs = $this->fetchAll($where, $order, $limit, $p);
+
+            // Update usages
+            foreach ($rs as $r) $operation($r);
+        }
+    }
 }
