@@ -2755,7 +2755,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $qtyA[$sectionId][] = array(
                     'qty' => $_noticeR->qty ?: 0,
                     'id' => $_noticeR->id,
-                    'bg' => $_noticeR->colorHex('bg')
+                    'bg' => $_noticeR->colorHex('bg'),
+                    'tip' => $_noticeR->tooltip
                 );
         }
 
@@ -2770,7 +2771,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $item['title'] .= '<span id="menu-qty-' . $qtyI['id']
                     . '" style="background: ' . $qtyI['bg'] . ';'
                     . ($qtyI['qty'] ? '' : 'display: none')
-                    . '" class="menu-qty">' . $qtyI['qty'] . '</span>';
+                    . '" class="menu-qty" data-qtip="' . $qtyI['tip'] . '">' . $qtyI['qty'] . '</span>';
         }
     }
 
