@@ -321,7 +321,7 @@
         });
     }
 
-    if(Ext.calendar.CalendarPanel){
+    if(Ext.calendar && Ext.calendar.CalendarPanel){
         Ext.apply(Ext.calendar.CalendarPanel.prototype, {
             todayText: 'Сегодня',
             dayText: 'День',
