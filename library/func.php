@@ -8,7 +8,7 @@
 function autoloader($class) {
 
     // If $class - is a controller name, convert the first letter to lowercase
-    if (preg_match('/Admin_([a-zA-z]*Controller)$/', $class, $c)) $class = lcfirst($class);
+    if (preg_match('/Admin_([a-zA-z][a-zA-Z0-9]*Controller)$/', $class, $c)) $class = lcfirst($class);
 
     // Get the filename, by replacing '_' to '/' in $class, and appending '.php'
     $cf = str_replace('_', '/', $class) . '.php';
