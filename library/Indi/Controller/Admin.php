@@ -2756,6 +2756,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     'qty' => $_noticeR->qty ?: 0,
                     'id' => $_noticeR->id,
                     'bg' => $_noticeR->colorHex('bg'),
+                    'fg' => $_noticeR->colorHex('fg'),
                     'tip' => $_noticeR->tooltip
                 );
         }
@@ -2769,7 +2770,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Append each qty to menu item's title
             foreach ($qtyA[$item['id']] as $qtyI)
                 $item['title'] .= '<span id="menu-qty-' . $qtyI['id']
-                    . '" style="background: ' . $qtyI['bg'] . ';'
+                    . '" style="' . ($qtyI['bg'] ? 'background: ' . $qtyI['bg'] : '') . '; color: ' . ($qtyI['fg'] ?: 'initial') . ';'
                     . ($qtyI['qty'] ? '' : 'display: none')
                     . '" class="menu-qty" data-qtip="' . $qtyI['tip'] . '">' . $qtyI['qty'] . '</span>';
         }

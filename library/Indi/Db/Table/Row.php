@@ -2727,6 +2727,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If element is 'color'
             } else if ($elementR->alias == 'color') {
 
+                // If value is an empty string - skip
+                if (!strlen($value)) continue;
+
                 // If $value is not a color in format #rrggbb or in format hue#rrggbb
                 if (!preg_match(Indi::rex('rgb'), $value) && !preg_match(Indi::rex('hrgb'), $value)) {
 
