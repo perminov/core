@@ -1,4 +1,5 @@
 <?php
+if (!preg_match('/^cli/', php_sapi_name())) exit;
 
 // Create socket server
 $server = stream_socket_server("tcp://0.0.0.0:8888/events/", $errno, $errstr);
