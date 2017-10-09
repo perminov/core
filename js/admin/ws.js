@@ -30,10 +30,13 @@ var ws = function() {
         // it somewhy dies once some client connects to it, unlike when using exec()
         setTimeout(function(){
             Indi.load('/auxiliary/websocket/', {
-                timeout: 2,
+                timeout: 2000,
                 success: ws,
                 failure: function(xhrObject, request) {
-                    if (xhrObject.timedout) Indi.app.loader(false) && ws();
+                    if (xhrObject.timedout) {
+                        Indi.app.loader(false);
+                        ws();
+                    }
                 }
             });
         }, 5000);
