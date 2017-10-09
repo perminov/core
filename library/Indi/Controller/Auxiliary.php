@@ -113,4 +113,36 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         }
         die('<a target="_blank" href="http://colorzilla.com/gradient-editor/#' . im($str) . '">color</a>');
     }
+
+    /**
+     * Check whether websocket server is already running, and start it if not
+     */
+    public function websocketAction() {
+
+        // Close session
+        session_write_close();
+
+        // Websocket server process existence check command
+        $wsCheck = preg_match('/^WIN/i', PHP_OS)
+            ? 'WMIC PROCESS get Commandline,Processid | find "ws.php ' . STD . '" | find /V "wmic" | find /V "find"'
+            : 'ps | grep "ws.php ' . STD . '"';
+
+        // If OS is Windows - start new process using 'start' command
+        if (!$ps = shell_exec($wsCheck)) {
+
+            // Websocket server process start command
+            $wsStart = 'php ../core/application/ws.php ' . STD;
+
+            // Start websocket server
+            preg_match('/^WIN/i', PHP_OS)
+                ? exec('start /B ' . $wsStart)
+                : exec($wsStart . ' > /dev/null &');
+
+            // Flush msg
+            jflush(true, 'Websocket-server had been successfully started');
+        }
+
+        // Flush msg
+        jflush(true, 'Websocket-server is already running');
+    }
 }
