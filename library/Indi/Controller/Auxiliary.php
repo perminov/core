@@ -139,7 +139,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
                 : exec($wsStart . ' > /dev/null &');
 
             // Flush msg
-            jflush(true, 'Websocket-server had been successfully started');
+            jflush(true);
         }
 
         // Flush msg
