@@ -7,21 +7,21 @@ set_time_limit(0);
 ignore_user_abort(1);
 
 // Open pid-file
-$pid = fopen(rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/core/application/ws.pid', 'c');
+$pid = fopen(__DIR__ . DIRECTORY_SEPARATOR . 'ws.pid', 'c');
 
 // Try to lock pid-file
-$flock = flock($pid, LOCK_EX | LOCK_NB, $wouldblock);
+$flock = flock($pid, LOCK_SH | LOCK_EX | LOCK_NB, $wouldblock);
 
 // If opening of pid-file failed, or locking failed and locking wouldn't be blocking - thow exception
 if ($pid === false || (!$flock && !$wouldblock)) 
-    throw new Exception('Error opening or locking lock file, may be caused by pid-file permission restrictions'); 
+    throw new Exception('Error opening or locking lock file, may be caused by pid-file permission restrictions');
 
 // Else if pid-file was already locked - exit
 else if (!$flock && $wouldblock) 
     exit('Another instance is already running; terminating.');
 
 // Erase pid-file and write current pid into it
-ftruncate($pid, 0); fwrite($pid, getmypid() . "\n");
+ftruncate($pid, 0); fwrite($pid, getmypid());
 
 /**
  * Shutdown function, for use as a shutdown handler
