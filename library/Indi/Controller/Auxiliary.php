@@ -113,7 +113,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         }
         die('<a target="_blank" href="http://colorzilla.com/gradient-editor/#' . im($str) . '">color</a>');
     }
-
+    
     /**
      * Check whether websocket server is already running, and start it if not
      */
@@ -122,27 +122,30 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // Close session
         session_write_close();
 
-        // Websocket server process existence check command
-        $wsCheck = preg_match('/^WIN/i', PHP_OS)
-            ? 'WMIC PROCESS get Commandline,Processid | find "ws.php ' . STD . '" | find /V "wmic" | find /V "find"'
-            : 'ps | grep "ws.php ' . STD . '"';
+        // Get lock file
+        $wsLock = DOC . STD . '/core/application/ws.pid';
+        
+        // If websocket-server lock-file exists, and contains websocket-server's process ID, and it's an integer
+        if (is_file($wsLock) && $wsPid = (int) trim(file_get_contents($wsLock))) {
 
-        // If OS is Windows - start new process using 'start' command
-        if (!$ps = shell_exec($wsCheck)) {
-
-            // Websocket server process start command
-            $wsStart = 'php ../core/application/ws.php ' . STD;
-
-            // Start websocket server
-            preg_match('/^WIN/i', PHP_OS)
-                ? exec('start /B ' . $wsStart)
-                : exec($wsStart . ' > /dev/null &');
-
-            // Flush msg
-            jflush(true);
+            // Prepare command, that will check whether process is still running
+            $wsCheck = preg_match('/^WIN/i', PHP_OS)
+                ? 'tasklist /FI "PID eq ' . $wsPid . '" | find "' . $wsPid . '"'
+                : 'ps -p ' . $wsPid . ' -o comm=';
+        
+            // If such process is found - flush msg and exit
+            if (shell_exec($wsCheck)) jflush(false);
         }
 
+        // Path to websocket-server php script
+        $wsServer = '/core/application/ws.php';
+        
+        // Start websocket server
+        preg_match('/^WIN/i', PHP_OS)
+            ? exec('start /B php ..' . $wsServer . '')
+            : exec('nohup wget -qO- "'. $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . STD . $wsServer . '" > /dev/null &');
+
         // Flush msg
-        jflush(true, 'Websocket-server is already running');
+        jflush(true);
     }
 }
