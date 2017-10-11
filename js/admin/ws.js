@@ -33,10 +33,10 @@ var ws = function() {
                 timeout: 2000,
                 success: ws,
                 failure: function(xhrObject, request) {
-                    if (xhrObject.timedout) {
+                    //if (xhrObject.timedout) {
                         Indi.app.loader(false);
                         ws();
-                    }
+                    //}
                 }
             });
         }, 5000);

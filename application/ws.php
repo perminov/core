@@ -1,10 +1,51 @@
 <?php
-if (!preg_match('/^cli/', php_sapi_name())) exit;
+
+// Set no time limit
+set_time_limit(0);
+
+// Ignore user about
+ignore_user_abort(1);
+
+// Open pid-file
+$pid = fopen(rtrim($_SERVER['DOCUMENT_ROOT'], '\\/') . $_SERVER['STD'] . '/core/application/ws.pid', 'c');
+
+// Try to lock pid-file
+$flock = flock($pid, LOCK_EX | LOCK_NB, $wouldblock);
+
+// If opening of pid-file failed, or locking failed and locking wouldn't be blocking - thow exception
+if ($pid === false || (!$flock && !$wouldblock)) 
+    throw new Exception('Error opening or locking lock file, may be caused by pid-file permission restrictions'); 
+
+// Else if pid-file was already locked - exit
+else if (!$flock && $wouldblock) 
+    exit('Another instance is already running; terminating.');
+
+// Erase pid-file and write current pid into it
+ftruncate($pid, 0); fwrite($pid, getmypid() . "\n");
+
+/**
+ * Shutdown function, for use as a shutdown handler
+ */
+function shutdown() {
+
+    // Erase pid-file
+    ftruncate($pid, 0);
+    
+    // Release the lock
+    flock($pid, LOCK_UN);
+    
+    // Close server stream
+    fclose($server);
+}
+
+// Register shutdown handler function
+register_shutdown_function('shutdown');
 
 // Create socket server
-$server = stream_socket_server("tcp://0.0.0.0:8888/events/", $errno, $errstr);
+$server = stream_socket_server('tcp://0.0.0.0:8888/', $errno, $errstr);
 
-if (!$server) die("$errstr ($errno)\n");
+// If socket server creation failed - exit
+if (!$server) die('Can\'t start socket server: $errstr ($errno)');
 
 // Clients' streams array
 $clientA = array();
@@ -111,9 +152,6 @@ while (true) {
         }
     }
 }
-
-// Close server stream
-fclose($server);
 
 /**
  * @param $clientI
@@ -305,3 +343,6 @@ function decode($data) {
     // Return decoded data
     return $decoded;
 }
+
+// Shutdown
+shutdown();
