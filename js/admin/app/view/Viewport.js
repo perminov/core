@@ -107,7 +107,7 @@ Ext.define('Indi.view.Viewport', {
                             }
                         },
                         listeners: {
-                            boxready: function() {
+                            boxready: function(btn) {
                                 this.btnInnerEl.css('padding', '0');
                                 var div = this.btnInnerEl;
                                 var tpl = new Ext.Template(div.dom.innerHTML);
@@ -115,6 +115,9 @@ Ext.define('Indi.view.Viewport', {
                                     role: Indi.user.role
                                 }));
                                 this.setWidth();
+                                Ext.defer(function(){
+                                    if (!btn.disabled) btn.showMenu();
+                                }, 100);
                             }
                         }
                     }, {
