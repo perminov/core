@@ -78,6 +78,9 @@ Ext.define('Indi.view.Menu', {
                 // If no tooltip was set - return
                 if (!el.attr('data-qtip')) return;
 
+                // Set 'id' attr
+                el.attr('id', me.id + '-' + el.attr('class').split(' ')[1]);
+
                 // Set id
                 el.id = el.attr('id');
 
