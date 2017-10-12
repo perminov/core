@@ -204,5 +204,81 @@ Ext.override(Ext.dom.Element, {
             }
         }
         return [x,y];
+    },
+
+    /**
+     * Animate qty
+     *
+     * @param {Number} qty
+     */
+    qty: function(qty) {
+        var el = this.dom, newCount = Math.max(parseInt(qty) || 0, 0);
+
+        // Get counts
+        var curCount = Math.max(parseInt(el.innerHTML) || 0, 0), nextCount = el.getAttribute('data-nextCount');
+
+        // If same - return
+        if (curCount == newCount) return;
+
+        // Set data-curCount
+        el.setAttribute('data-curCount', newCount);
+
+        var incr = curCount < newCount, large = (incr ? newCount : curCount).toString(), small = (incr ? curCount : newCount).toString(),
+            constPart = [], constEndPart = [], largePart, smallPart, i, l, j;
+
+        small = ((new Array(large.length - small.length + 1)).join('0')) + small;
+
+        for (i = 0, l = large.length; i < l; i++) {
+            if ((j = large.charAt(i)) !== small.charAt(i)) break;
+            constPart.push(j);
+        }
+
+        largePart = large.substr(i); smallPart = small.substr(i);
+        constPart = constPart.join('').replace(/\s$/, '&nbsp;');
+        constEndPart = constEndPart.join('').replace(/^\s/, '&nbsp;');
+
+        if (!Ext.String.trim(el.innerHTML)) el.innerHTML = '&nbsp;';
+
+        var h = el.clientHeight || el.offsetHeight; el.innerHTML = '<div class="menu-qty-wrap menu-qty-inbl"></div>';
+        var wrapEl = el.firstChild, constEl1, constEl2, animwrapEl, animEl, vert = true;
+
+        if (!constPart.length) smallPart = smallPart.replace(/^0+/, '');
+        else wrapEl.appendChild(constEl1 = Ext.DomHelper.createDom({tag: 'div', cls: 'menu-qty-inbl', html: constPart}));
+
+        if (!smallPart || smallPart == '0' && !constPart.length) {
+            smallPart = '&nbsp;';
+            vert = !!constPart.length;
+        }
+
+        wrapEl.appendChild(animwrapEl = Ext.DomHelper.createDom({tag: 'div', cls: 'menu-qty-anim-wrap menu-qty-inbl'}));
+        animwrapEl.appendChild(animEl = Ext.DomHelper.createDom({
+            tag: 'div',
+            cls: 'menu-qty-anim ' + (incr ? 'menu-qty-anim_inc' : 'menu-qty-anim_dec'),
+            html:       '<div class="menu-qty-anim_large"><span class="menu-qty-anim_large_c">' + largePart + '</span></div>' +
+                (vert ? '<div class="menu-qty-anim_small"><span class="menu-qty-anim_small_c">' + smallPart + '</span></div>' : ''),
+            style: vert ? {marginTop: incr ? -h +'px' : 0} : {right: 0}
+        }));
+
+        var largeW = Ext.get(animEl).down('span.menu-qty-anim_large_c').getWidth(),
+            smallW = vert ? (smallPart == '&nbsp;' ? largeW : Ext.get(animEl).down('span.menu-qty-anim_small_c').getWidth()) : 0;
+
+        if (constEndPart.length) wrapEl.appendChild(constEl2 = Ext.DomHelper.createDom({tag: 'div', cls: 'menu-qty-inbl', innerHTML: constEndPart}));
+
+        Ext.get(wrapEl).setStyle({
+            width: (constEl1 && Ext.get(constEl1).getWidth() || 0) + (constEl2 && Ext.get(constEl2).getWidth() || 0) + largeW + 0
+        });
+
+        Ext.get(animwrapEl).setStyle({width: incr ? smallW : largeW});
+
+        var onDone = function () {
+            el.innerHTML = newCount || ' '; el.removeAttribute('data-curCount'); el.removeAttribute('data-nextCount');
+        }, margin = vert ? {marginTop: incr ? 0 : -h + 'px'} : {marginRight: incr ? -smallW : 0};
+
+        if (!Ext.supports.Transitions) onDone(); else {
+            Ext.get(animwrapEl).addCls('menu-qty-anim-wrap-css3');
+            if (largeW != smallW) Ext.get(animwrapEl).setStyle({width: incr ? largeW : smallW});
+            if (vert) Ext.get(animEl).setStyle(margin);
+            setTimeout(onDone, 300);
+        }
     }
 });

@@ -2769,10 +2769,10 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Append each qty to menu item's title
             foreach ($qtyA[$item['id']] as $qtyI)
-                $item['title'] .= '<span id="menu-qty-' . $qtyI['id']
+                $item['title'] .= '<span class="menu-qty menu-qty-' . $qtyI['id'] . '"'
                     . '" style="' . ($qtyI['bg'] ? 'background: ' . $qtyI['bg'] : '') . '; color: ' . ($qtyI['fg'] ?: 'initial') . ';'
                     . ($qtyI['qty'] ? '' : 'display: none')
-                    . '" class="menu-qty" data-qtip="' . $qtyI['tip'] . '">' . $qtyI['qty'] . '</span>';
+                    . '" data-qtip="' . $qtyI['tip'] . '">' . $qtyI['qty'] . '</span>';
         }
     }
 
