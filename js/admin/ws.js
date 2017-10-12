@@ -58,23 +58,20 @@ var ws = function() {
             if (data.msg) Ext.Msg.side(data.msg);
 
             // If notice mode is 'menu-qty'
-            if (data.mode == 'menu-qty') {
-
-                // Get certain menu-qty dom element. If not found - return
-                var qtyEl = Ext.get('menu-qty-' + data.noticeId), qtyVal; if (!qtyEl) return;
+            if (data.mode == 'menu-qty') Ext.DomQuery.select('.menu-qty-' + data.noticeId).forEach(function(qtyDom) {
 
                 // Get current qty
-                qtyVal = parseInt(qtyEl.getHTML());
+                var qtyEl = Ext.get(qtyDom), qtyVal = parseInt(qtyEl.getHTML());
 
                 // Increase/decrease qty by data.diff
                 qtyVal += data.diff;
 
                 // Update dom node
-                qtyEl.setHTML(qtyVal);
+                qtyEl.qty(qtyVal);
 
                 // Hide/show qtyEl if qtyVal is zero/non-zero
                 qtyEl.setStyle('display', qtyVal ? '' : 'none');
-            }
+            });
         }
 
         // If message type is 'reload'
