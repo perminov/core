@@ -86,7 +86,7 @@ Ext.define('Indi.view.Menu', {
 
                 // Setup tooltip cfg
                 el.tooltip = {
-                    anchor: 'left',
+                    anchor: me.id == 'i-mobile-menu' ? 'top' : 'left',
                     html: el.attr('data-qtip'),
                     constrainParent: false,
                     staticOffset: [0, -5]
