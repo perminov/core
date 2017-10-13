@@ -173,7 +173,7 @@ class Admin_TemporaryController extends Indi_Controller {
     }
 
     public function noticesAction() {
-        die('disabled');
+        //die('disabled');
         Indi::db()->query('DROP TABLE IF EXISTS `notice`');
         Indi::db()->query('DROP TABLE IF EXISTS `noticeGetter`');
 
@@ -295,6 +295,16 @@ class Admin_TemporaryController extends Indi_Controller {
             'elementId' => $elementRs->gb('color', 'alias')->id,
             'columnTypeId' => $columnTypeRs->gb('VARCHAR(10)', 'type')->id,
             'defaultValue' => '#d9e5f3'
+        ), true);
+        $fieldR_bg->save();
+
+        $fieldR_bg = Indi::model('Field')->createRow(array(
+            'entityId' => $entityR_notice->id,
+            'title' => 'Цвет текста',
+            'alias' => 'fg',
+            'elementId' => $elementRs->gb('color', 'alias')->id,
+            'columnTypeId' => $columnTypeRs->gb('VARCHAR(10)', 'type')->id,
+            'defaultValue' => '#044099'
         ), true);
         $fieldR_bg->save();
 
