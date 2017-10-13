@@ -184,7 +184,7 @@ CREATE TABLE `entity` (
   PRIMARY KEY (`id`),
   KEY `system` (`system`),
   KEY `titleFieldId` (`titleFieldId`)
-) ENGINE=MyISAM AUTO_INCREMENT=305 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=307 DEFAULT CHARSET=utf8;
 
 /*Data for the table `entity` */
 
@@ -216,6 +216,8 @@ insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleF
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`) values (204,'Статический элемент','staticblock','Indi_Db_Table','o',0,1485);
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`) values (205,'Пункт меню','menu','Indi_Db_Table','o',0,1490);
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`) values (301,'Компонент содержимого meta-тега','metatag','Indi_Db_Table','y',0,0);
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`) values (305,'Уведомление','notice','Indi_Db_Table','y',0,2216);
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`) values (306,'Получатель уведомлений','noticeGetter','Indi_Db_Table','y',0,2230);
 
 /*Table structure for table `enumset` */
 
@@ -229,7 +231,7 @@ CREATE TABLE `enumset` (
   `move` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `fieldId` (`fieldId`)
-) ENGINE=MyISAM AUTO_INCREMENT=1004 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1010 DEFAULT CHARSET=utf8;
 
 /*Data for the table `enumset` */
 
@@ -353,6 +355,12 @@ insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1000,2213,
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1001,2213,'<span class=\"i-color-box\" style=\"background: lime;\"></span>В том же запросе','no',1001);
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1002,2214,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Включено','auto',1002);
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1003,2214,'<span class=\"i-color-box\" style=\"background: lightgray;\"></span>Выключено','n',1003);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1004,2219,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Включено','y',1004);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1005,2219,'<span class=\"i-color-box\" style=\"background: red;\"></span>Выключено','n',1005);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1006,2233,'<span class=\"i-color-box\" style=\"background: lightgray;\"></span>Нет','n',1006);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1007,2233,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Да','y',1007);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1008,2234,'<span class=\"i-color-box\" style=\"background: lightgray;\"></span>Нет','n',1008);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1009,2234,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Да','y',1009);
 
 /*Table structure for table `faction` */
 
@@ -427,7 +435,7 @@ CREATE TABLE `field` (
   KEY `storeRelationAbility` (`storeRelationAbility`),
   KEY `mode` (`mode`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2216 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2236 DEFAULT CHARSET=utf8;
 
 /*Data for the table `field` */
 
@@ -659,6 +667,26 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2213,3,'Режим подгрузки данных','rowsetSeparate',10,23,'auto',2213,6,0,'u','one','','','','regular','');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2214,8,'Автосайз окна','fitWindow',10,23,'auto',2214,6,0,'u','one','','','','regular','');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2215,10,'Максимальное количество окон','maxWindows',3,18,'15',2215,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2216,305,'Наименование','title',1,1,'',2216,0,0,'u','none','','','','required','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2217,305,'Сущность','entityId',3,23,'0',2217,2,0,'u','one','','','','required','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2218,305,'Получатели','profileId',1,23,'',2218,10,0,'u','many','','','','required','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2219,305,'Статус','toggle',10,23,'y',2219,6,0,'u','one','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2220,305,'Счетчик','match',0,16,'',2220,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2221,305,'Отображение / SQL','matchSql',1,1,'',2221,0,0,'u','none','','','','required','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2222,305,'Изменение / PHP','matchPhp',1,1,'',2222,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2223,305,'Пункты меню','sectionId',1,23,'',2223,3,2217,'с','many','','FIND_IN_SET(`sectionId`, \"<?=Indi::model(\'Section\')->fetchAll(\'`sectionId` = \"0\"\')->column(\'id\', true)?>\")','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2224,305,'Цвет фона','bg',13,11,'212#d9e5f3',2224,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2225,305,'Сообщение при увеличении счетчика','tplUp',0,16,'',2226,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2226,305,'Заголовок','tplUpHeader',1,1,'',2227,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2227,305,'Текст','tplUpBody',4,6,'',2228,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2228,305,'При уменьшении счетчика','tplDown',4,6,'',2235,0,0,'u','none','','','','hidden','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2229,306,'Уведомление','noticeId',3,23,'0',2229,305,0,'u','one','','','','readonly','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2230,306,'Роль','profileId',3,23,'0',2230,10,0,'u','one','','','','readonly','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2231,306,'Критерий','criteria',1,1,'',2231,0,0,'u','none','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2232,306,'Auto title','title',1,1,'',2232,0,0,'u','none','','','','hidden','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2233,306,'Дублирование на почту','mail',10,23,'n',2233,6,0,'u','one','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2234,306,'Дублирование в ВК','vk',10,23,'n',2234,6,0,'u','one','','','','regular','');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`) values (2235,305,'Цвет текста','fg',13,11,'216#044099',2225,0,0,'u','none','','','','regular','');
 
 /*Table structure for table `fsection` */
 
@@ -760,7 +788,7 @@ CREATE TABLE `grid` (
   KEY `profileIds` (`profileIds`),
   KEY `editor` (`editor`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2330 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2349 DEFAULT CHARSET=utf8;
 
 /*Data for the table `grid` */
 
@@ -787,8 +815,8 @@ insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`tit
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (25,8,30,2324,'','y','Положение в списке',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (26,10,31,26,'','y','Наименование',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (27,10,32,27,'','y','Псевдоним',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (29,11,2165,29,'Столбец','y','Auto title',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (30,11,35,1156,'','y','Очередность отображения столбца в гриде',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (29,11,2165,29,'Столбец','n','Столбец',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (30,11,35,2320,'','y','Очередность отображения столбца в гриде',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (32,13,36,32,'','y','Наименование',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (33,13,37,33,'','y','Статус',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (34,12,16,34,'','y','Наименование',0,'','all','','0');
@@ -880,20 +908,38 @@ insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`tit
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1449,113,1533,989,'','y','Статус',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1448,201,1532,988,'','y','Значение по умолчанию',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1515,113,585,1036,'','y','Порядок отображения соответствующего пункта в меню',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1656,11,1886,30,'','y','Изменить название столбца на',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1656,11,1886,1156,'','y','Изменить название столбца на',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1767,146,691,1222,'','y','Дата регистрации',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (1954,224,1658,1945,'','y','Альтернативное наименование',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2280,201,2161,1946,'','y','Отображать в форме',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2320,11,2159,2320,'','y','Статус',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2320,11,2159,2322,'','y','Статус',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2321,6,2197,10,'','y','Режим',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2322,11,34,2325,'','y','Поле',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2322,11,34,30,'','y','Поле',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2323,10,2202,2323,'','y','Статус',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2324,8,2209,2328,'','y','Переименовать',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2325,11,2210,2322,'','y','Редактор',0,'','all','','0');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2326,8,2212,25,'','y','South-панель',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2325,11,2210,2325,'','y','Редактор',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2326,8,2212,25,'РSП','y','РSП',0,'Режим отображения south-панели','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2327,7,2213,18,'РПД','y','РПД',0,'Режим подгрузки данных','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2328,8,2214,297,'','y','Автосайз окна',0,'','all','','0');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2329,13,2215,2329,'МКО','y','МКО',0,'Максимальное количество окон','all','','1');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2330,385,2216,2329,'','y','Наименование',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2331,385,2217,2330,'','y','Сущность',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2332,385,2218,2331,'','y','Получатели',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2333,385,2219,2332,'','y','Статус',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2334,385,2220,2333,'','y','Счетчик',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2335,385,2221,2334,'','y','Отображение / SQL',2334,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2336,385,2222,2335,'','y','Изменение / PHP',2334,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2337,385,2223,2336,'','y','Пункты меню',2334,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2338,385,2224,2337,'','y','Цвет фона',2334,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2339,385,2225,2338,'','n','Сообщение при увеличении счетчика',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2340,385,2226,2339,'','y','Заголовок',2339,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2341,385,2227,2340,'','y','Текст',2339,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2342,385,2228,2341,'','y','При уменьшении счетчика',2339,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2343,386,2230,2341,'','y','Роль',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2344,386,2231,2342,'','y','Критерий',0,'','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2346,386,2233,2344,'Email','y','Email',0,'Дублирование на почту','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2347,386,2234,2345,'VK','y','VK',0,'Дублирование во ВКонтакте','all','','0');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`) values (2348,385,2235,2348,'','y','Цвет текста',2334,'','all','','0');
 
 /*Table structure for table `menu` */
 
@@ -953,6 +999,56 @@ CREATE TABLE `metatag` (
 /*Data for the table `metatag` */
 
 insert  into `metatag`(`id`,`fsectionId`,`fsection2factionId`,`tag`,`type`,`content`,`up`,`source`,`entityId`,`fieldId`,`prefix`,`postfix`,`move`) values (2,37,127,'title','dynamic','',0,'row',25,131,'','',2);
+
+/*Table structure for table `notice` */
+
+DROP TABLE IF EXISTS `notice`;
+
+CREATE TABLE `notice` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `entityId` int(11) NOT NULL DEFAULT '0',
+  `profileId` varchar(255) NOT NULL DEFAULT '',
+  `toggle` enum('y','n') NOT NULL DEFAULT 'y',
+  `matchSql` varchar(255) NOT NULL DEFAULT '',
+  `matchPhp` varchar(255) NOT NULL DEFAULT '',
+  `sectionId` varchar(255) NOT NULL DEFAULT '',
+  `bg` varchar(10) NOT NULL DEFAULT '212#d9e5f3',
+  `tplUpHeader` varchar(255) NOT NULL DEFAULT '',
+  `tplUpBody` text NOT NULL,
+  `tplDown` text NOT NULL,
+  `fg` varchar(10) NOT NULL DEFAULT '216#044099',
+  PRIMARY KEY (`id`),
+  KEY `entityId` (`entityId`),
+  KEY `profileId` (`profileId`),
+  KEY `toggle` (`toggle`),
+  KEY `sectionId` (`sectionId`),
+  FULLTEXT KEY `tplUpBody` (`tplUpBody`),
+  FULLTEXT KEY `tplDown` (`tplDown`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `notice` */
+
+/*Table structure for table `noticegetter` */
+
+DROP TABLE IF EXISTS `noticegetter`;
+
+CREATE TABLE `noticegetter` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `noticeId` int(11) NOT NULL DEFAULT '0',
+  `profileId` int(11) NOT NULL DEFAULT '0',
+  `criteria` varchar(255) NOT NULL DEFAULT '',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `mail` enum('n','y') NOT NULL DEFAULT 'n',
+  `vk` enum('n','y') NOT NULL DEFAULT 'n',
+  PRIMARY KEY (`id`),
+  KEY `noticeId` (`noticeId`),
+  KEY `profileId` (`profileId`),
+  KEY `mail` (`mail`),
+  KEY `vk` (`vk`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `noticegetter` */
 
 /*Table structure for table `param` */
 
@@ -1150,7 +1246,7 @@ CREATE TABLE `section` (
   KEY `parentSectionConnector` (`parentSectionConnector`),
   KEY `groupBy` (`groupBy`),
   KEY `rowsetSeparate` (`rowsetSeparate`)
-) ENGINE=MyISAM AUTO_INCREMENT=385 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=387 DEFAULT CHARSET=utf8;
 
 /*Data for the table `section` */
 
@@ -1189,6 +1285,8 @@ insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`mov
 insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (232,378,204,'Элементы','staticblocks','n',232,25,'Indi_Controller_Admin',1485,'ASC','',0,'o',0,0,'auto');
 insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (379,173,301,'Компоненты title','metatitles','y',379,25,'Indi_Controller_Admin_Meta',2181,'ASC','`tag`= \"title\"',0,'o',0,0,'auto');
 insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (378,0,0,'Статика','','n',144,30,'Indi_Controller_Admin',0,'ASC','',0,'p',0,0,'auto');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (385,1,305,'Уведомления','notices','y',385,25,'Indi_Controller_Admin',2216,'ASC','',0,'s',0,0,'auto');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (386,385,306,'Получатели','noticeGetters','y',386,25,'Indi_Controller_Admin',2230,'ASC','',0,'s',0,0,'auto');
 
 /*Table structure for table `section2action` */
 
@@ -1213,7 +1311,7 @@ CREATE TABLE `section2action` (
   KEY `toggle` (`toggle`),
   KEY `south` (`south`),
   KEY `fitWindow` (`fitWindow`)
-) ENGINE=MyISAM AUTO_INCREMENT=1550 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1559 DEFAULT CHARSET=utf8;
 
 /*Data for the table `section2action` */
 
@@ -1381,6 +1479,15 @@ insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profi
 insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1525,379,3,'y',1525,'1,12','Сохранить','','auto','auto');
 insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1524,379,2,'y',1524,'1,12','Детали','','auto','auto');
 insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1523,379,1,'y',1523,'1,12','Список','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1550,385,1,'y',1550,'1','Список','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1551,385,2,'y',1551,'1','Детали','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1552,385,3,'y',1552,'1','Сохранить','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1553,385,4,'y',1553,'1','Удалить','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1554,385,7,'y',1554,'1','Статус','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1555,386,1,'y',1555,'1','Список','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1556,386,2,'y',1556,'1','Детали','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1557,386,3,'y',1557,'1','Сохранить','','auto','auto');
+insert  into `section2action`(`id`,`sectionId`,`actionId`,`toggle`,`move`,`profileIds`,`title`,`rename`,`south`,`fitWindow`) values (1558,386,4,'y',1558,'1','Удалить','','auto','auto');
 
 /*Table structure for table `staticblock` */
 
