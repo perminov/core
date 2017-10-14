@@ -61,7 +61,7 @@ var ws = function() {
             if (data.mode == 'menu-qty') Ext.DomQuery.select('.menu-qty-' + data.noticeId).forEach(function(qtyDom) {
 
                 // Get current qty
-                var qtyEl = Ext.get(qtyDom), qtyVal = parseInt(qtyEl.getHTML());
+                var qtyEl = Ext.get(qtyDom), qtyVal = parseInt(qtyEl.getHTML()) || 0;
 
                 // Increase/decrease qty by data.diff
                 qtyVal += data.diff;
