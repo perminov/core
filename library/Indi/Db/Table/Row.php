@@ -4784,7 +4784,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function keys2nested($field, $nested, $ctor = array()) {
 
         // If $field field's value was not modified
-        if (!$this->affected($field)) return;
+        if (!$this->affected($field)) return array('del' => array(), 'kpt' => ar($this->$field), 'new' => array());
 
         // Get previous and current values of $field prop
         $was = strlen($was = $this->affected($field, true)) ? ar($was) : array();
