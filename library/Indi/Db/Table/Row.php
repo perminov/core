@@ -4971,15 +4971,20 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * @param $field
      * @param $nested
+     * @param array $ctor
+     * @return array
      */
     public function keys2nested($field, $nested, $ctor = array()) {
 
         // If $field field's value was not modified
-        if (!$this->affected($field)) return;
+        if (!$this->affected($field)) return array('del' => array(), 'kpt' => ar($this->$field), 'new' => array());
 
         // Get previous and current values of $field prop
         $was = strlen($was = $this->affected($field, true)) ? ar($was) : array();
         $now = strlen($now = $this->$field) ? ar($now) : array();
+
+        // Get values that were kept
+        $kpt = array_intersect($was, $now);
 
         // Compare previous and current values and get arrays of deleted and inserted keys
         $del = array_diff($was, $now);
@@ -5003,6 +5008,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->table() . 'Id' => $this->id,
             $connector => $id
         ), $ctor), true)->save();
+
+        // Return info about values that were kept, deleted and added
+        return array('del' => $del, 'kpt' => $kpt, 'new' => $new);
     }
 
     /**

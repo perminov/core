@@ -13,6 +13,9 @@ Options FollowSymLinks
 <Files .git>
   Deny from all 
 </Files>
+<Files ws.pem>
+  Deny from all 
+</Files>
 
 #################
 ## Compression ##
