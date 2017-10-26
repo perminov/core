@@ -64,7 +64,7 @@ class Client extends Base {
       );
     }
 
-    $host_uri = ('tcp' ?: ($scheme === 'wss' ? 'ssl' : 'tcp')) . '://' . $host;
+    $host_uri = ($scheme === 'wss' ? 'ssl' : 'tcp') . '://' . $host;
 
     // Set the stream context options if they're already set in the config
     if (isset($this->options['context'])) {
@@ -80,6 +80,7 @@ class Client extends Base {
     }
     else {
       $context = stream_context_create();
+      if ($scheme == 'wss') stream_context_set_option($context, 'ssl', 'verify_peer', false);
     }
 
     // Open the socket.  @ is there to supress warning that we will catch in check below instead.
@@ -146,7 +147,7 @@ class Client extends Base {
 
     // Validate response.
     if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
-      $address = $scheme . '://' . $host . $path_with_query;
+      $address = $scheme . '://' . $host . ':' . $port . $path_with_query;
       throw new ConnectionException(
         "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
         . $response

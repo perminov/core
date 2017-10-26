@@ -2451,8 +2451,11 @@ class Indi {
         include_once('WebSocket/Base.php');
         include_once('WebSocket/Client.php');
 
+        // Protocol
+        $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
+
         // Create client
-        $client = new WebSocket\Client('ws://' . array_pop(explode('://', Indi::ini('ws')->socket)) . '/' . $path);
+        $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
 
         // Send message
         $client->send(json_encode($data));
