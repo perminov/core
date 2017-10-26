@@ -1,24 +1,63 @@
 <?php
+// Set error reporting
+error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^ E_STRICT : E_ALL ^ E_NOTICE);
+
+// Change dir
+chdir(__DIR__);
+
+/**
+ * Error logging
+ *
+ * @param null $msg
+ * @param bool $exit
+ * @return mixed
+ */
+function err($msg = null, $exit = false) {
+
+    // Skip E_NOTICE
+    if ($msg === 8) return true;
+
+    // Log errors
+    if (func_num_args() >= 4) err(func_get_arg(1) . '[' . func_get_arg(0) . '] at ' . func_get_arg(2) . ' on line ' . func_get_arg(3));
+    else file_put_contents('ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+
+    // Exit
+    if ($exit === true) exit;
+}
+
+// Register shutdown handler functions
+register_shutdown_function('shutdown');
+register_shutdown_function('err', error_reporting());
+
+// Set error handler
+set_error_handler('err');
+
+// Do some checks for ini-file
+if (!is_file($ini = '../../www/application/config.ini')) err('No ini-file found', true);
+if (!$ini = parse_ini_file($ini, true)) err('Ini-file found but parsing failed', true);
+if (!array_key_exists('ws', $ini)) err('No [ws] section found in ini-file', true);
+if (!$ini = $ini['ws']) err('[ws] section found, but it is empty', true);
+if (!array_key_exists('port', $ini)) err('No socket port specified in ini-file', true);
+if (!$port = (int) $ini['port']) err('Invalid socket port specified in ini-file', true);
+
+// Open pid-file
+$pid = fopen('ws.pid', 'c');
+
+// Try to lock pid-file
+$flock = flock($pid, LOCK_SH | LOCK_EX | LOCK_NB, $wouldblock);
+
+// If opening of pid-file failed, or locking failed and locking wouldn't be blocking - thow exception
+if ($pid === false || (!$flock && !$wouldblock))
+    err('Error opening or locking lock file, may be caused by pid-file permission restrictions', true);
+
+// Else if pid-file was already locked - exit
+else if (!$flock && $wouldblock) err('Another instance is already running; terminating.', true);
 
 // Set no time limit
 set_time_limit(0);
 
 // Ignore user about
 ignore_user_abort(1);
-
-// Open pid-file
-$pid = fopen(__DIR__ . DIRECTORY_SEPARATOR . 'ws.pid', 'c');
-
-// Try to lock pid-file
-$flock = flock($pid, LOCK_SH | LOCK_EX | LOCK_NB, $wouldblock);
-
-// If opening of pid-file failed, or locking failed and locking wouldn't be blocking - thow exception
-if ($pid === false || (!$flock && !$wouldblock)) 
-    throw new Exception('Error opening or locking lock file, may be caused by pid-file permission restrictions');
-
-// Else if pid-file was already locked - exit
-else if (!$flock && $wouldblock) 
-    exit('Another instance is already running; terminating.');
 
 // Erase pid-file and write current pid into it
 ftruncate($pid, 0); fwrite($pid, getmypid());
@@ -28,24 +67,31 @@ ftruncate($pid, 0); fwrite($pid, getmypid());
  */
 function shutdown() {
 
-    // Erase pid-file
-    ftruncate($pid, 0);
-    
-    // Release the lock
-    flock($pid, LOCK_UN);
-    
+    // Erase pid-file and release the lock
+    if ($GLOBALS['pid']) {
+        ftruncate($GLOBALS['pid'], 0);
+        flock($GLOBALS['pid'], LOCK_UN);
+    }
+
     // Close server stream
-    fclose($server);
+    if ($GLOBALS['server']) fclose($GLOBALS['server']);
 }
 
-// Register shutdown handler function
-register_shutdown_function('shutdown');
+// Create context
+$context = stream_context_create();
+
+// If certificate file exists - make context to be secure
+if (!is_file('ws.pem')) $prot = 'tcp'; else {
+    stream_context_set_option($context, 'ssl', 'local_cert', 'ws.pem');
+    stream_context_set_option($context, 'ssl', 'verify_peer', false);
+    $prot = 'ssl';
+}
 
 // Create socket server
-$server = stream_socket_server('tcp://0.0.0.0:8888/', $errno, $errstr);
+$server = stream_socket_server($prot . '://0.0.0.0:' . $port . '/', $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
 
 // If socket server creation failed - exit
-if (!$server) die('Can\'t start socket server: $errstr ($errno)');
+if (!$server) err('Can\'t start socket server: $errstr ($errno)', true);
 
 // Clients' streams array
 $clientA = array();
@@ -62,8 +108,11 @@ while (true) {
     // Temporarily add server-stream sockets
     $listenA[] = $server;
 
+    // Define/reset stream_select args
+    $write = $except = array();
+
     // Check if something interesting happened
-    if (!stream_select($listenA, $write = array(), $except = array(), null)) break;
+    if (!stream_select($listenA, $write, $except, null)) break;
 
     // If server got new client
     if (in_array($server, $listenA)) {
@@ -153,6 +202,9 @@ while (true) {
     }
 }
 
+// Close server stream
+fclose($server);
+
 /**
  * @param $clientI
  * @return array|bool
@@ -164,6 +216,10 @@ function handshake($clientI) {
 
     // Get request's 1st line
     $line = fgets($clientI);
+
+    // If server is running not in secure mode, but client is trying
+    // to connect via wss:// - return false todo: send TLS ALERT
+    if (bin2hex($line[0]) == 16) return false;
 
     // Get request's method and URI
     $hdr = explode(' ', $line); $info['method'] = $hdr[0]; $info['uri'] = $hdr[1];

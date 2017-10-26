@@ -1,2 +1,4 @@
 config.ini
 ws.pid
+ws.err
+ws.pem
