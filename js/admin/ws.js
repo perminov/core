@@ -1,6 +1,6 @@
 var ws = function() {
 
-    var url = 'ws://' + Indi.ini.ws.socket.split('//')[1], socket;
+    var url = (Indi.ini.ws.pem ? 'wss' : 'ws') + '://' + Indi.ini.ws.socket + ':' + Indi.ini.ws.port, socket;
 
     // Log
     console.log('Trying to connect to ' +  url);
