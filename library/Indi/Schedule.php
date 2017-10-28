@@ -115,6 +115,9 @@ class Indi_Schedule {
         // Foreach spaces within datetime-schedule
         foreach ($this->_spaces as $i => $space) {
 
+            // Pick `avail` prop
+            if ($isBusy && $space->since <= $since && $space->until >= $since + $duration) $isBusy  = $space->avail;
+
             // Try to find a free space, having enough duration
             if ($space->avail == 'free' && $space->since <= $since && $space->until >= $since + $duration) {
 
@@ -163,6 +166,9 @@ class Indi_Schedule {
                         // Change it's 'avail' prop to $avail
                         $space->avail = $avail;
                 }
+
+                // Break
+                break;
             }
         }
 
