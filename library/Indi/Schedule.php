@@ -253,6 +253,23 @@ class Indi_Schedule {
      */
     public function load($table, $where = array(), $pre = null) {
 
+        // Get rowset
+        $rs = $this->rowset($table, $where, $pre);
+
+        // Load existing busy spaces into schedule
+        foreach ($rs as $r)
+            if ($this->busy($r->spaceSince, $r->spaceFrame))
+                jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $rs->id . ' в раcписание');
+
+        // Return schedule itself
+        return $this;
+    }
+
+    /**
+     * Get rowset of entries, that current schedule is in intersection with
+     */
+    public function rowset($table, $where = array(), $pre = null) {
+
         // Get model
         $model = Indi::model($table);
 
@@ -272,19 +289,11 @@ class Indi_Schedule {
         // Get schedule's busy spaces
         $rs = $model->fetchAll($where);
 
-        // Load existing busy spaces into schedule
-        foreach ($rs as $r) {
+        // If $pre arg is callable - call it, passing row, and schedule-related fields
+        if (is_callable($pre)) foreach ($rs as $r) $pre($r);
 
-            // If $pre arg is callable - call it, passing row, and schedule-related fields
-            if (is_callable($pre)) $pre($r);
-
-            // Use row for creating busy space
-            if ($this->busy($r->spaceSince, $r->spaceFrame))
-                jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $rs->id . ' в раcписание');
-        }
-
-        // Return schedule itself
-        return $this;
+        // Return rowset
+        return $rs;
     }
 
     /**
