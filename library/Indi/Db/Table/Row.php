@@ -843,7 +843,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If this was an existing row - check if it (in it's original state) matched the criteria
             if ($this->_original['id']) {
-                if (strlen($noticeR->matchPhp)) eval('$match = ' . $noticeR->matchPhp . ';');
+                if (strlen($noticeR->event)) eval('$match = ' . $noticeR->event . ' ? true : false;');
                 else $match = false;
             }
 
@@ -884,7 +884,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Note: if $original arg is NOT given, assume that we'd deleted this row from database,
             // so all matches results are false
             if ($original) {
-                if (strlen($noticeR->matchPhp)) eval('$match = ' . $noticeR->matchPhp . ' ? true : false;'); 
+                if (strlen($noticeR->event)) eval('$match = ' . $noticeR->event . ' ? true : false;');
                 else $match = $this->_notices[$noticeR->id]['was'];
             }
 
@@ -894,7 +894,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If match value changed
             if ($this->_notices[$noticeR->id]['now'] != $this->_notices[$noticeR->id]['was']) {
 
-                // Notice's matchMode's 'separate' value - is used for cases when counter itself should not
+                // Notice's qtyDiffRelyOn's 'getter' value - is used for cases when counter itself should not
                 // be changed, or should, but not for all getters/recipients, defined for this notice.
                 // Example: we have tasks, stored in `task` db table. Each task has workers, who are
                 // assigned to do the task, and manager, who is controlling which workers are assigned for which tasks,
@@ -903,7 +903,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // another worker - tasks counter within old worker's UI should decrement, tasks counter within
                 // new worker's UI should increment, and manager should be notified about that change, e.g manager
                 // should not even have tasks counter in this case, because this certain tasks counter is for workers only.
-                if ($noticeR->matchMode == 'separate') $diff = 0;
+                if ($noticeR->qtyDiffRelyOn == 'getter') $diff = 0;
                 else if ($this->_notices[$noticeR->id]['now'] > $this->_notices[$noticeR->id]['was']) $diff = 1;
                 else $diff = -1;
 

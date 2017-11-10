@@ -2,69 +2,69 @@ Ext.define('Indi.controller.notices', {
     extend: 'Indi.lib.controller.Controller',
     actionsConfig: {
         form: {
-            formItem$TplUpHeader: {
+            formItem$TplIncSubj: {
                 considerOn: [{
                     name: 'tplFor',
                     clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.tplFor == 'up');
+                        c.setVisible(d.tplFor == 'inc');
                     }
                 }
             },
-            formItem$TplUpBody: {
+            formItem$TplIncBody: {
                 considerOn: [{
                     name: 'tplFor',
                     clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.tplFor == 'up');
+                        c.setVisible(d.tplFor == 'inc');
                     }
                 }
             },
-            formItem$TplDownHeader: {
+            formItem$TplDecSubj: {
                 considerOn: [{
                     name: 'tplFor',
                     clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.tplFor == 'down');
+                        c.setVisible(d.tplFor == 'dec');
                     }
                 }
             },
-            formItem$TplDownBody: {
+            formItem$TplDecBody: {
                 considerOn: [{
                     name: 'tplFor',
                     clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.tplFor == 'down');
+                        c.setVisible(d.tplFor == 'dec');
                     }
                 }
             },
-            formItem$TplDiffHeader: {
+            formItem$TplEvtSubj: {
                 considerOn: [{
                     name: 'tplFor',
                     clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.tplFor == 'diff');
+                        c.setVisible(d.tplFor == 'evt');
                     }
                 }
             },
-            formItem$TplDiffBody: {
+            formItem$TplEvtBody: {
                 considerOn: [{
                     name: 'tplFor',
                     clear: false
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.tplFor == 'diff');
+                        c.setVisible(d.tplFor == 'evt');
                     }
                 }
             }
