@@ -2,7 +2,10 @@
 class Notice_Row extends Indi_Db_Table_Row_Noeval {
 
     /**
-     * @var null
+     * Entry, that triggered the notice.
+     * Used for building notification message's body, in NoticeGetter_Row::_notify()
+     *
+     * @var Indi_Db_Table_Row
      */
     public $row = null;
 
@@ -20,12 +23,17 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
         parent::__construct($config);
     }
 
+    /**
+     * Sync nested `noticeGetter` entries with keys, mentioned in `profileId` field
+     *
+     * @return int
+     */
     public function save() {
         
         // Call parent
         $return = parent::save();
 
-        // Sync keys, mentioned as comma-sepaarted values in `profileId` prop, with entries, nested in `noticeGetter` table
+        // Sync keys, mentioned as comma-separated values in `profileId` prop, with entries, nested in `noticeGetter` table
         $this->keys2nested('profileId', 'noticeGetter');
 
         // Return
@@ -33,51 +41,26 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
-     * Increase counter
+     * Trigger the notice
      *
-     * @param $dir
-     * @param $row
+     * @param Indi_Db_Table_Row $row
+     * @param int $diff
      */
-    public function counter($dir, $row) {
-
-        // Get recipients
-        $to = array();
-        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
-            $to[$noticeGetterR->profileId] = $noticeGetterR->ar($row);
-            $ws[$noticeGetterR->profileId] = strlen($noticeGetterR->criteria)
-                ? array_column($to[$noticeGetterR->profileId], 'id')
-                : true;
-        }
+    public function trigger(Indi_Db_Table_Row $row, $diff) {
 
         // Assign `row` prop, that will be visible in compiling context
         $this->row = $row;
 
-        // Unset previously compiled criteria
-        unset($this->_compiled['tpl' . ucfirst($dir) . 'Body']);
+        // Foreach getter, defined for current notice
+        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
 
-        // Get header and body
-        $header = $this->{'tpl' . ucfirst($dir) . 'Header'};
-        $body = $this->compiled('tpl' . ucfirst($dir) . 'Body');
+            // Directly setup foreign data for `noticeId` key, to prevent it
+            // from being pulled, as there is no need to do that
+            $noticeGetterR->foreign('noticeId', $this);
 
-        // Do it using websockets
-        Indi::ws($msg = array(
-            'type' => 'notice',
-            'mode' => 'menu-qty',
-            'noticeId' => $this->id,
-            'diff' => $dir == 'up' ? 1 : -1,
-            'row' => $row->id,
-            'to' => $ws,
-            'msg' => array(
-                'header' => $header,
-                'body' => $body
-            )
-        ));
-
-        // Send notices by email
-        $this->_mail($to, $header, $body);
-
-        // Send notices by VK API
-        if (Indi::ini('vk')->enabled) $this->_vk($to, $header, $body);
+            // Notify
+            $noticeGetterR->notify($row, $diff);
+        }
     }
 
     private function _mail($to, $subject, $body) {
