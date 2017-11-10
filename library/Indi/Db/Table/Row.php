@@ -1847,11 +1847,35 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->model()->fields($key)) {
 
                 // If field do not store foreign keys - throw exception
-                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e')) {
+                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e'))
                     throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
-                // Else if field is able to store single key, or able to store multiple, but current key's value isn't empty
-                } else if ($fieldR->storeRelationAbility == 'one' || strlen($this->$key)) {
+                // Get foreign key value
+                $val = $this->$key;
+
+                // If $refresh arg is 'ins' or 'del'
+                if (in($refresh, 'ins,del,was')) {
+
+                    // If foreign key field is a multi-value field and $refresh arg is 'ins' or 'del'
+                    if ($fieldR->storeRelationAbility == 'many' && in($refresh, 'ins,del')) {
+
+                        // We need to fetch foreign data for keys, inserted or deleted from the field's value,
+                        // so we replace existing keys list with list of inserted or removed keys, to be used for fetching
+                        $val = ($diff = $this->adelta($key, $refresh)) ? im($diff) : '';
+
+                    // Else if foreign key field is a single-value field, or $refresh arg is 'was',
+                    // we need to fetch foreign data for previous key,
+                    // so we replace existing keys list with previous keys list
+                    } else if ($refresh == 'was') $val = $this->_affected[$key] ?: '';
+
+                    // Setup $aux flag as `true` to indicate that current call of foreign() method
+                    // - is an auxiliary call, and therefore, fethed foreign data that shouldn't be
+                    // saved within $this->_foreign array
+                    $aux = true;
+                }
+
+                // If field is able to store single key, or able to store multiple, but current key's value isn't empty
+                if ($fieldR->storeRelationAbility == 'one' || strlen($val) || $aux) {
 
                     // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
                     // then model is a value of satellite field. Otherwise model is field's `relation` property
@@ -1866,7 +1890,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if (!array_key_exists($fieldR->alias, $this->_original) && $model == 6) {
 
                         // Get foreign data rowset, even iа such rowset contains only one row
-                        $foreign = $fieldR->nested('enumset')->select($this->$key, 'alias');
+                        $foreign = $fieldR->nested('enumset')->select($val, 'alias');
 
                         // If field's storeRelationAbility is 'one' - pick first
                         if ($methodType == 'Row') $foreign = $foreign->at(0);
@@ -1890,14 +1914,14 @@ class Indi_Db_Table_Row implements ArrayAccess
                         // Finish building WHERE clause
                         $where[] = '`' . $col . '` ' .
                             ($fieldR->storeRelationAbility == 'many'
-                                ? 'IN(' . $this->$key . ')'
-                                : '= "' . $this->$key . '"');
+                                ? 'IN(' . (strlen($val) ? $val : 0) . ')'
+                                : '= "' . $val . '"');
 
                         // Fetch foreign row/rows
                         $foreign = Indi::model($model)->{'fetch' . $methodType}(
                             $where,
                             $fieldR->storeRelationAbility == 'many'
-                                ? 'FIND_IN_SET(`' . $col . '`, "' . $this->$key . '")'
+                                ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
                                 : null
                         );
                     }
@@ -1909,7 +1933,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
 
             // Save foreign row within a current row under key name, and return it
-            return $this->_foreign[$key] = $foreign;
+            return $aux ? $foreign : $this->_foreign[$key] = $foreign;
         }
     }
 
