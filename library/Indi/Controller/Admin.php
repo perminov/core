@@ -2727,10 +2727,20 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If no 'Notice' entity found - return
         if (!Indi::model('Notice', true)) return;
 
+        // Get ids of notices, that should be used to setup menu-qty counters for current user's menu
+        $noticeIdA_relyOnMe = Indi::db()->query('
+            SELECT `noticeId`
+            FROM `noticeGetter`
+            WHERE 1
+              AND `criteriaRelyOn` = "getter"
+              AND `profileId` = "' . Indi::admin()->profileId . '"
+        ')->fetchAll(PDO::FETCH_COLUMN);
+
         // Get notices
         $_noticeRs = Indi::model('Notice')->fetchAll(array(
             'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
             'CONCAT(",", `sectionId`, ",") REGEXP ",(' . im($sectionIdA, '|') . '),"',
+            '(`qtyDiffRelyOn` = "event" OR FIND_IN_SET(`id`, "' . im($noticeIdA_relyOnMe) . '"))',
             '`toggle` = "y"'
         ));
 
