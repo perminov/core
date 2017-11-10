@@ -1304,7 +1304,7 @@ class Indi_Db_Table
     /**
      * Getter function for $this->_notices prop
      *
-     * @return array|Indi_Db_Table_Rowset
+     * @return Indi_Db_Table_Rowset
      */
     public function notices() {
         return $this->_notices;
