@@ -860,7 +860,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Check if row (in it's current/modified state) matches each separate notification's criteria,
      * and compare results with the results of previous check, that was made before any modifications
      *
-     * If results are NOT equal, function calls Notice_Row->counter() method, passing the direction
+     * If results are NOT equal, function calls Notice_Row->trigger() method, passing the direction
      * that counter should be changed (e.g. incremented or decremented)
      *
      * @param $original
@@ -894,11 +894,21 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If match value changed
             if ($this->_notices[$noticeR->id]['now'] != $this->_notices[$noticeR->id]['was']) {
 
-                // Inform the counter
-                $noticeR->counter(
-                    $this->_notices[$noticeR->id]['now'] > $this->_notices[$noticeR->id]['was'] ? 'up' : 'down',
-                    $this
-                );
+                // Notice's matchMode's 'separate' value - is used for cases when counter itself should not
+                // be changed, or should, but not for all getters/recipients, defined for this notice.
+                // Example: we have tasks, stored in `task` db table. Each task has workers, who are
+                // assigned to do the task, and manager, who is controlling which workers are assigned for which tasks,
+                // and both workers and manager are represented by `workerIds` and `managerId` columns within `task` db table.
+                // So, if we have task, and it has worker assigned, but there was a decision to assign this task to
+                // another worker - tasks counter within old worker's UI should decrement, tasks counter within
+                // new worker's UI should increment, and manager should be notified about that change, e.g manager
+                // should not even have tasks counter in this case, because this certain tasks counter is for workers only.
+                if ($noticeR->matchMode == 'separate') $diff = 0;
+                else if ($this->_notices[$noticeR->id]['now'] > $this->_notices[$noticeR->id]['was']) $diff = 1;
+                else $diff = -1;
+
+                // Call the trigger
+                $noticeR->trigger($this, $diff);
             }
 
             // Unset results
@@ -3711,9 +3721,19 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Else return empty string
             } else return '';
 
-        // Else if two arguments passed, we assume they are key and value, and there
-        // should be explicit setup performed, so we do it
-        } else return $this->_compiled[func_get_arg(0)] = func_get_arg(1);
+        // Else if two arguments passed, and second is not null - we assume they
+        // are key and value, and there should be explicit setup performed, so we do it
+        } else if (func_get_arg(1) !== null) return $this->_compiled[func_get_arg(0)] = func_get_arg(1);
+
+        // Else if two args passed, but second is null
+        else {
+
+            // Unset a value in _compiled under key, specified by first arg
+            unset($this->_compiled[func_get_arg(0)]);
+
+            // Return null
+            return null;
+        }
     }
 
     /**
