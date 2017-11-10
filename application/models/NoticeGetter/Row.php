@@ -18,22 +18,22 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
     public function notify(Indi_Db_Table_Row $row, $diff) {
 
         // If $diff arg is not 0, it means that `notice` entry (that current `noticeGetter` entry belongs to)
-        // has `matchMode` == 'shared', and this, in it's turn, means that change-direction-of-counter,
+        // has `qtyDiffRelyOn` == 'event', and this, in it's turn, means that change-direction-of-counter,
         // linked to the above mentioned `notice` entry - is already determined, and this direction
-        // ('up' or 'down' / '+1' or '-1') - will be sole for all getter's recipients, e.g. direction won't
+        // ('inc' or 'dec' / '+1' or '-1') - will be sole for all getter's recipients, e.g. direction won't
         // differ for different recipients having same role (specified within getter's settings).
-        // But, if current getter's settings has 'separate' as the value of `criteriaMode`
+        // But, if current getter's settings has 'getter' as the value of `criteriaRelyOn`
         // field - there should be no notifications sent
-        if ($diff != 0 && $this->criteriaMode == 'separate') return;
+        if ($diff != 0 && $this->criteriaRelyOn == 'getter') return;
 
-        // Else if $diff is 0 (e.g if `notice` entry's `matchMode` prop's value is 'separate'):
+        // Else if $diff is 0 (e.g if `notice` entry's `qtyDiffRelyOn` prop's value is 'getter'):
         // 1. Assign `row` prop, that will be visible in compiling context
         $this->row = $row;
 
-        // 2.1 If current getter's `criteriaMode` is 'shared' - use $diff arg as is
-        if ($this->criteriaMode == 'shared') $this->_notify($diff);
+        // 2.1 If current getter's `criteriaRelyOn` is 'event' - use $diff arg as is
+        if ($this->criteriaRelyOn == 'event') $this->_notify($diff);
 
-        // 2.2 Else separately notify two groups of recipients: ones for 'up' and others for 'down'
+        // 2.2 Else separately notify two groups of recipients: ones for 'dec' and others for 'inc'
         else foreach (array(-1, 1) as $diff) $this->_notify($diff);
     }
 
@@ -48,13 +48,13 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
     protected function _notify($diff) {
 
         // Setup possible directions
-        $dirs = array(-1 => 'down', 0 => 'diff', 1 => 'up');
+        $dirs = array(-1 => 'Dec', 0 => 'Evt', 1 => 'Inc');
 
         // Get direction, for being used as a part of field names
-        $dir = ucfirst($dirs[$diff]);
+        $dir = $dirs[$diff];
 
         // Get header and body
-        $header = $this->foreign('noticeId')->{'tpl' . $dir . 'Header'};
+        $header = $this->foreign('noticeId')->{'tpl' . $dir . 'Subj'};
         $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body', null);
         $body = $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body');
 
@@ -106,7 +106,13 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
             if (strlen($criteria = $this->compiled($criteriaProp))) $where[] = '(' . $criteria . ')';
         }
 
+        // Fetch recipients
+        $rs = Indi::db()->query('SELECT `id` FROM `' . $table . '` WHERE ' . im($where, ' AND '))->fetchAll();
+
+        // Convert type of 'id' to integer
+        foreach ($rs as &$r) $r['id'] = (int) $r['id'];
+
         // Return array of found recipients ids
-        return Indi::db()->query('SELECT `id` FROM `' . $table . '` WHERE ' . im($where, ' AND '))->fetchAll();
+        return $rs;
     }
 }

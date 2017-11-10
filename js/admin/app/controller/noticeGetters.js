@@ -5,33 +5,33 @@ Ext.define('Indi.controller.noticeGetters', {
 
         },
         form: {
-            formItem$Criteria: {
+            formItem$CriteriaEvt: {
                 considerOn: [{
-                    name: 'criteriaMode'
+                    name: 'criteriaRelyOn'
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.criteriaMode == 'shared');
+                        c.setVisible(d.criteriaRelyOn == 'event');
                     }
                 }
             },
-            formItem$CriteriaUp: {
+            formItem$CriteriaInc: {
                 considerOn: [{
-                    name: 'criteriaMode'
+                    name: 'criteriaRelyOn'
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.criteriaMode == 'separate');
+                        c.setVisible(d.criteriaRelyOn == 'getter');
                     }
                 }
             },
-            formItem$CriteriaDown: {
+            formItem$CriteriaDec: {
                 considerOn: [{
-                    name: 'criteriaMode'
+                    name: 'criteriaRelyOn'
                 }],
                 listeners: {
                     enablebysatellite: function(c, d) {
-                        c.setVisible(d.criteriaMode == 'separate');
+                        c.setVisible(d.criteriaRelyOn == 'getter');
                     }
                 }
             }
