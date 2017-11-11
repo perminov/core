@@ -5121,4 +5121,95 @@ class Indi_Db_Table_Row implements ArrayAccess
     protected function _spoofSatellite($for, $sField, $sValue) {
         return $sValue;
     }
+
+    /**
+     * Prepare an array containing props and values.
+     * Note: return values in the below examples are json-encoded for lines usage minimization,
+     * but the actual return values won't be json-encoded
+     *
+     * Example calls:
+     *
+     * 1. Simple example
+     *    $cityR->attr('id,title,countryId')
+     *    will return
+     *    {"id":123,"title":"London","countryId":345}
+     *
+     * 2. Prop (title), fetched by foreign key (countryId)
+     *    $cityR->attr('id,title,countryId.title')
+     *    will return
+     *    {"id":123,"title":"London","countryId.title":"United Kingdom"}
+     *
+     * 3. Both simple props and foreign key props
+     *    $cityR->attr('id,title,countryId,countryId.title')
+     *    will return
+     *    {"id":123,"title":"London","countryId":345,"countryId.title":"United Kingdom"}
+     *
+     * 4. Deeper foreign key usage
+     *    $cityR->attr('id,title,countryId.continentId.title')
+     *    will return
+     *    {"id":123,"title":"London","countryId":345,"countryId.countinentId.title":"Europe"}
+     *
+     * 5. Image field
+     *    $cityR->attr('id,title,image')
+     *    will return
+     *    {"id":123,"title":"London","image":"/data/upload/city/123_image.jpg}
+     *
+     * 6. Certain copy of image, foreign-entry image
+     *    $cityR->attr('id,title,image.small,countryId.flagPic')
+     *    will return
+     *    {"id":123,"title":"London","image.small":"/data/upload/city/123_image,small.jpg","countryId.flagPic":"/data/upload/country/345_flagPic.jpg"}
+     */
+    public function props($list, $pref = '') {
+
+        // Attributes array
+        $dataA = array();
+
+        // Fulfil that array
+        foreach (ar($list) as $prop)
+
+            // If $prop is NOT an multipart path - use value as is, else
+            if (count($path = explode('.', $prop)) == 1) $dataA[($pref ? $pref . '.' : '') . $prop] = $this->$prop; else {
+
+                // If first part of path is a name of a foreign-key field
+                if ($this->field($path[0])->relation) {
+
+                    // If it's a single-value foreign key field
+                    if ($this->field($path[0])->storeRelationAbility == 'one') {
+
+                        // Merge props, related to foreign-key entry into $dataA array
+                        $dataA += $this->foreign($_pref = array_shift($path))
+                            ->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref);
+
+                    // Else if it's a multiple-values foreign key field - skip, as no support yet implemented
+                    } else continue;
+
+                // Else if first part of path is a name of a file-upload field
+                } else if ($this->field($path[0])->foreign('elementId')->alias == 'upload') {
+
+                    //
+                    $dataA[($pref ? $pref . '.' : '') . $prop] = $this->src($path[0], $path[1]);
+                }
+            }
+
+        // Return a json-string, that can be used as a value for an html-attribute
+        return $dataA;
+    }
+
+    /**
+     * Json-encode props, mentioned in $propS arg
+     * If $attr arg is non-false, json-encoded string will processed by htmlentities() fn prior to returning
+     *
+     * @see props()
+     * @param string|array $propS
+     * @param bool $attr
+     * @return string
+     */
+    public function json($propS, $attr = false) {
+
+        // Get json-encoded props
+        $json = json_encode($this->props($propS));
+
+        // Return a json-string, that can be used as a value for an html-attribute
+        return $attr ? htmlspecialchars($json) : $json;
+    }
 }
