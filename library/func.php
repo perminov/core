@@ -1369,3 +1369,12 @@ function _2sec($expr) {
     // Return number of seconds
     return $m[1] * $frame2sec[$m[2]];
 }
+
+/**
+ * Shortcut for accessing Indi::trail()
+ *
+ * @return Indi_Trail_Admin/Indi_Trail_Front
+ */
+function t() {
+    return Indi::trail();
+}
