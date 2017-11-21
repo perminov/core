@@ -1378,3 +1378,17 @@ function _2sec($expr) {
 function t() {
     return Indi::trail();
 }
+
+/**
+ * Shortcut to Project::user(), or Indi::user() in case if class 'Project' is not declared,
+ * or declared but no 'user' method declared in it
+ *
+ * @return mixed|null
+ */
+function u() {
+
+    // Return current user
+    return class_exists('Project', false) && method_exists('Project', 'user')
+        ? Project::user()
+        : Indi::user();
+}
