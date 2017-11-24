@@ -115,8 +115,9 @@ Ext.define('Indi.view.LoginBox', {
                                 // Else we delete cookie
                                 else Ext.util.Cookies.clear('i-' + i, Indi.pre);
 
-                            // Reload window contents
-                            window.location.replace(Indi.pre + '/');
+                            // Set new location, with hash, if given
+                            window.location = Indi.pre + '/' + window.location.hash;
+                            window.location.reload();
                         }
                     }
                 });
