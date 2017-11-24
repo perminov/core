@@ -140,7 +140,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // If a rowset should be fetched
-                if (Indi::uri()->format || Indi::uri('action') != 'index' || !$this->_isRowsetSeparate) {
+                if (Indi::uri()->format || Indi::uri('action') != 'index' || !$this->_isRowsetSeparate || strlen(Indi::uri('single'))) {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
@@ -430,6 +430,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Adjust primary WHERE clauses stack - apply some custom adjustments
         $where = $this->adjustPrimaryWHERE($where);
+
+        // If uri has 'single' param - append it to primary WHERE clause
+        if (strlen(Indi::uri('single'))) $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
 
         if (Indi::uri('action') == 'index') {
 
@@ -2592,7 +2595,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Simulate as if rowset data was loaded into rowset panel. This provide
             // Indi::trail()->scope's fulfilness with `found` and `ORDER` properties
-            if (preg_match('~/index/~', $nav[$i])) Indi::uri()->dispatch($nav[$i]. 'format/json/');
+            //if (preg_match('~/index/~', $nav[$i])) Indi::uri()->dispatch($nav[$i]. 'format/json/');
 
             // Get the id of a row, that we will be simulating navigation
             // to subsection, there that row's nested entries are located
