@@ -298,7 +298,9 @@ class Indi_Trail_Admin {
 
         // Build $nav array
         for ($i = 1; $i < count(self::$items); $i++)
-            $nav[] = '/' . self::$items[$i]->section->alias . '/index/' . ($i == 1 ? '' : 'id/' . self::$items[$i-1]->row->id . '/');
+            $nav[] = '/' . self::$items[$i]->section->alias . '/index/'
+                . ($i == 1 ? '' : 'id/' . self::$items[$i-1]->row->id . '/')
+                . 'single/' . (self::$items[$i]->row->id ?: 0) . '/';
 
         // Append non-index action, as additional navigation step
         if ($this->item()->action->alias != 'index')
