@@ -23,13 +23,21 @@ class Indi_Schedule_Space {
     public $avail;
 
     /**
+     * Instance of Indi_Db_Table_Row, that was used to create the space
+     *
+     * @var Indi_Db_Table_Row
+     */
+    public $entry;
+
+    /**
      * Constructor
      *
      * @param $since
      * @param $until
      * @param $avail
+     * @param $entry Indi_Db_Table_Row
      */
-    public function __construct($since, $until, $avail) {
+    public function __construct($since, $until, $avail, $entry = null) {
 
         // Set space's left bound (e.g. beginning)
         $this->since = $since;
@@ -39,6 +47,9 @@ class Indi_Schedule_Space {
 
         // Set space's availability
         $this->avail = $avail;
+
+        // Set entry
+        if ($entry) $this->entry = $entry;
     }
 
     /**

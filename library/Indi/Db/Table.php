@@ -1362,6 +1362,7 @@ class Indi_Db_Table
      * @param null $where
      * @param null $order
      * @param int $limit
+     * @throws Exception
      */
     public function batch($operation, $where = null, $order = null, $limit = 500) {
 
@@ -1387,5 +1388,15 @@ class Indi_Db_Table
             // Update usages
             foreach ($rs as $r) $operation($r);
         }
+    }
+
+    /**
+     * Shortcut to $this->fields($field)->nested('enumset')
+     *
+     * @param $field
+     * @return Indi_Db_Table_Rowset
+     */
+    public function enumset($field) {
+        return $this->fields($field)->nested('enumset');
     }
 }
