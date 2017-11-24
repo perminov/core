@@ -54,26 +54,88 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         $dir = $dirs[$diff];
 
         // Get header and body
-        $header = $this->foreign('noticeId')->{'tpl' . $dir . 'Subj'};
+        $subj = $this->foreign('noticeId')->{'tpl' . $dir . 'Subj'};
         $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body', null);
         $body = $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body');
 
-        // Get websocket-recipients
-        $ws[$this->profileId] = is_bool($_ = $this->users('criteria' . $dir)) ? $_ : array_column($_, 'id');
+        // Get recipients
+        $notifyA = $this->users('criteria' . $dir);
 
-        // Do it using websockets
-        Indi::ws($msg = array(
+        // If no recipients - return
+        if (!$notifyA['rs']) return;
+
+        // For each applicable way - do notify
+        foreach ($notifyA['wayA'] as $way => $field)
+            if (method_exists($this, $method = '_' . $way))
+                $this->$method($notifyA['rs'], $field, $subj, $body, $diff);
+    }
+
+    /**
+     * Notify recipients via web-sockets
+     *
+     * @param $rs
+     * @param $field
+     * @param $subj
+     * @param $body
+     * @param $diff
+     */
+    private function _ws($rs, $field, $subj, $body, $diff) {
+
+        // Send web-socket messages
+        Indi::ws(array(
             'type' => 'notice',
             'mode' => 'menu-qty',
             'noticeId' => $this->noticeId,
             'diff' => $diff,
             'row' => $this->row->id,
-            'to' => $ws,
+            'to' => array($this->profileId => array_column($rs, $field)),
             'msg' => array(
-                'header' => $header,
+                'header' => $subj,
                 'body' => $body
             )
         ));
+    }
+
+    /**
+     * Notify recipients via email
+     *
+     * @param $rs
+     * @param $field
+     * @param $subj
+     * @param $body
+     * @return mixed
+     */
+    private function _email($rs, $field, $subj, $body) {
+
+        // If message body is empty - return
+        if (!$body) return;
+
+        // Collect unique valid emails
+        $__ = array(); foreach ($rs as $r) if (Indi::rexm('email', $_ = $r[$field])) $__[$_] = true;
+
+        // If no valid emails collected - return
+        if (!$emailA = array_keys($__)) return;
+
+        // Convert square brackets into <>
+        $body = str_replace(ar('[,]'), ar('<,>'), $body);
+
+        // Convert hrefs uri's to absolute
+        $body = preg_replace(
+            '~(\s+jump=")(/[^/][^"]*")~',
+            '$1' . $_SERVER['REQUEST_SCHEME'] . '://'. $_SERVER['HTTP_HOST'] . PRE . '/#$2',
+            $body
+        );
+
+        // Init mailer
+        $mailer = Indi::mailer();
+        $mailer->Subject = $subj;
+        $mailer->Body = $body;
+
+        // Add each valid email address to BCC
+        foreach($emailA as $email) $mailer->addBCC($email);
+
+        // Send email notifications
+        $mailer->send();
     }
 
     /**
@@ -81,20 +143,17 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function users($criteriaProp) {
 
-        // If no criteria specified this means that all users of current getter's role should receive notifications
-        if (!$this->$criteriaProp) return true;
-
         // Start building WHERE clauses array
         $where = array('`toggle` = "y"');
 
         // Find the name of database table, where recipients should be found within
         foreach (Indi_Db::role() as $profileIds => $entityId)
             if (in($this->profileId, $profileIds))
-                if ($table = Indi::model($entityId)->table())
+                if ($model = Indi::model($entityId))
                     break;
 
         // Prevent recipients duplication
-        if ($table == 'admin') $where[] = '`profileId` = "' . $this->profileId . '"';
+        if ($model->table() == 'admin') $where[] = '`profileId` = "' . $this->profileId . '"';
 
         // If criteria specified
         if (strlen($this->$criteriaProp)) {
@@ -106,13 +165,30 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
             if (strlen($criteria = $this->compiled($criteriaProp))) $where[] = '(' . $criteria . ')';
         }
 
+        // Ways of notifications delivery and fields to be used as destination addresses
+        $_wayA = array(
+            'email' => 'email',
+            'vk' => 'vk',
+            'sms' => 'phone'
+        );
+
+        // Foreach way, check if such a way is turned On, and such a field exists, and if so - append field to $fieldA array
+        $wayA = array('ws' => 'id');
+        foreach ($_wayA as $way => $field)
+            if ($this->$way == 'y' && $model->fields($field))
+                $wayA[$way] = $field;
+
         // Fetch recipients
-        $rs = Indi::db()->query('SELECT `id` FROM `' . $table . '` WHERE ' . im($where, ' AND '))->fetchAll();
+        $rs = Indi::db()->query('
+            SELECT `' . im($wayA, '`, `') . '`
+            FROM `' . $model->table() . '`
+            WHERE ' . im($where, ' AND ')
+        )->fetchAll();
 
         // Convert type of 'id' to integer
         foreach ($rs as &$r) $r['id'] = (int) $r['id'];
 
-        // Return array of found recipients ids
-        return $rs;
+        // Return array containing applicable ways and found recipients
+        return array('wayA' => $wayA, 'rs' => $rs);
     }
 }
