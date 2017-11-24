@@ -84,7 +84,17 @@ class Indi_Schedule {
      * @param string $avail
      * @return bool
      */
-    public function busy($since, $duration, $checkOnly = false, $includeGap = true, $avail = 'busy') {
+    public function busy($since, $duration = null, $checkOnly = false, $includeGap = true, $avail = 'busy') {
+
+        // If $since arg in an instance of Indi_Db_Table_Row
+        if ($since instanceof Indi_Db_Table_Row) {
+
+            // Back it up
+            $entry = clone $since;
+
+            // Overwrite $since and $duration args with $row's `spaceSince` and `spaceFrame` props respectively
+            $since = $entry->spaceSince; $duration = $entry->spaceFrame;
+        }
 
         // Default value for $isBusy flag
         $isBusy = true;
@@ -116,7 +126,7 @@ class Indi_Schedule {
         foreach ($this->_spaces as $i => $space) {
 
             // Pick `avail` prop
-            if ($isBusy && $space->since <= $since && $space->until >= $since + $duration) $isBusy  = $space->avail;
+            if ($isBusy && $space->since <= $since && $space->until >= $since + $duration) $isBusy = $space;
 
             // Try to find a free space, having enough duration
             if ($space->avail == 'free' && $space->since <= $since && $space->until >= $since + $duration) {
@@ -131,7 +141,7 @@ class Indi_Schedule {
                 if ($space->since < $since) {
 
                     // Prepare array for busy-space injection into $this->_spaces
-                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, $avail));
+                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null));
 
                     // If free schedule will remain after busy-part injection
                     if ($space->until > $since + $duration)
@@ -152,7 +162,7 @@ class Indi_Schedule {
                     if ($space->until > $since + $duration) {
 
                         // Create busy space starting at the exact same moment as current free space
-                        $busy = new Indi_Schedule_Space($since, $since + $duration, $avail);
+                        $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null);
 
                         // Move current free space's starting mark to the ending of busy space
                         $space->since = $since + $duration;
@@ -161,10 +171,14 @@ class Indi_Schedule {
                         array_splice($this->_spaces, $i, 0, array($busy));
 
                     // Else if current free space is going to became busy in it's whole bounds
-                    } else if ($space->until == $since + $duration)
+                    } else if ($space->until == $since + $duration) {
 
                         // Change it's 'avail' prop to $avail
                         $space->avail = $avail;
+
+                        // Set entry
+                        if ($entry) $space->$entry = $entry;
+                    }
                 }
 
                 // Break
@@ -264,8 +278,8 @@ class Indi_Schedule {
 
         // Load existing busy spaces into schedule
         foreach ($rs as $r)
-            if ($this->busy($r->spaceSince, $r->spaceFrame))
-                jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $rs->id . ' в раcписание');
+            if ($this->busy($r))
+                jflush(false, 'Не удалось загрузить ' . Indi::model($table)->title() . ' ' . $r->id . ' в раcписание');
 
         // Return schedule itself
         return $this;
