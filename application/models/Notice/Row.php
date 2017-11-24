@@ -63,32 +63,6 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
         }
     }
 
-    private function _mail($to, $subject, $body) {
-
-        // If $body arg is empty - return
-        if (!$body) return;
-
-        // Foreach notice getter
-        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
-
-            // If notice getter should not receive emails - skip
-            if ($noticeGetterR->mail == 'n') continue;
-
-            // Init mailer
-            $mailer = Indi::mailer();
-            $mailer->Subject = $subject;
-            $mailer->Body = $body;
-
-            // Add each valid email address to BCC
-            foreach(array_column($to[$noticeGetterR->profileId], 'email') as $email)
-                if (Indi::rexm('email', $email) && $atLeastOne = true)
-                    $mailer->addBCC($email);
-
-            // If at least one valid email found - send notices by email
-            if ($atLeastOne) $mailer->send();
-        }
-    }
-
     private function _vk($to, $subject, $body) {
 
         // If $body arg is empty - return
