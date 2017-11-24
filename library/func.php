@@ -1369,3 +1369,26 @@ function _2sec($expr) {
     // Return number of seconds
     return $m[1] * $frame2sec[$m[2]];
 }
+
+/**
+ * Shortcut for accessing Indi::trail()
+ *
+ * @return Indi_Trail_Admin/Indi_Trail_Front
+ */
+function t() {
+    return Indi::trail();
+}
+
+/**
+ * Shortcut to Project::user(), or Indi::user() in case if class 'Project' is not declared,
+ * or declared but no 'user' method declared in it
+ *
+ * @return mixed|null
+ */
+function u() {
+
+    // Return current user
+    return class_exists('Project', false) && method_exists('Project', 'user')
+        ? Project::user()
+        : Indi::user();
+}
