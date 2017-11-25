@@ -62,38 +62,4 @@ class Notice_Row extends Indi_Db_Table_Row_Noeval {
             $noticeGetterR->notify($row, $diff);
         }
     }
-
-    private function _vk($to, $subject, $body) {
-
-        // If $body arg is empty - return
-        if (!$body) return;
-
-        // VK uid collection
-        $vkA = array();
-
-        // Foreach notice getter
-        foreach ($this->nested('noticeGetter') as $noticeGetterR) {
-
-            // If notice getter should not receive emails - skip
-            if ($noticeGetterR->vk == 'n') continue;
-
-            // Add each valid VK page address to $vkA array as a key (to prevent duplicates)
-            foreach(array_column($to[$noticeGetterR->profileId], 'vk') as $i => $vk)
-                if ($vk = Indi::rexm('vk', $vk))
-                    $vkA[$vk[1]] = $to[$noticeGetterR->profileId][$i]['title'];
-        }
-
-        // If no valid VK pages found - return
-        if (!$vkA) return;
-
-        // Foreach found
-        foreach ($vkA as $vk => $title) {
-
-            // Build msg
-            $msg = $title ? $msg = $title . ', ' . mb_lcfirst($body) : $body;
-
-            // Send
-            Vk::send($vk, $subject . '<br>' . $msg);
-        }
-    }
 }

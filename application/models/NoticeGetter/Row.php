@@ -162,6 +162,42 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
+     * Notify recipients via VK
+     *
+     * @param $rs
+     * @param $field
+     * @param $subj
+     * @param $body
+     */
+    private function _vk($rs, $field, $subj, $body) {
+
+        // Convert body's square brackets into <>
+        $body = str_replace(ar('[,]'), ar('<,>'), $body);
+
+        // Strip tags
+        $body = strip_tags($body);
+
+        // If message body is empty - return
+        if (!$body) return;
+
+        // Collect unique valid emails
+        $vkA = array(); foreach ($rs as $r) if ($vk = Indi::rexm('vk', $_ = $r[$field], 1)) $vkA[$vk] = $r['title'];
+
+        // If no valid VK uids collected - return
+        if (!$vkA) return;
+
+        // Foreach found
+        foreach ($vkA as $vk => $title) {
+
+            // Build msg
+            $msg = $title ? $msg = $title . ', ' . mb_lcfirst($body) : $body;
+
+            // Send
+            Vk::send($vk, $subj . '<br>' . $msg);
+        }
+    }
+
+    /**
      * Get array of recipients ids
      */
     public function users($criteriaProp) {
