@@ -132,10 +132,33 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         $mailer->Body = $body;
 
         // Add each valid email address to BCC
-        foreach($emailA as $email) $mailer->addBCC($email);
+        foreach ($emailA as $email) $mailer->addBCC($email);
 
         // Send email notifications
         $mailer->send();
+    }
+
+    /**
+     * Notify recipients via sms
+     *
+     * @param $rs
+     * @param $field
+     * @param $subj
+     * @param $body
+     */
+    private function _sms($rs, $field, $subj, $body) {
+
+        // Convert body's square brackets into <>
+        $body = str_replace(ar('[,]'), ar('<,>'), $body);
+
+        // Strip tags
+        $body = strip_tags($body);
+
+        // If message body is empty - return
+        if (!$body) return;
+
+        // Send sms. Phone numbers validation will be done within Sms:send() method
+        Sms::send(array_column($rs, $field), $body);
     }
 
     /**
