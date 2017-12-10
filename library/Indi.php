@@ -2406,4 +2406,34 @@ class Indi {
         if (Indi::ini('general')->demo && Indi::admin()->profileId != 1)
             return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
+
+    /**
+     * Dispatch /admin/cmd/<method>/ asynchronously,
+     * e.g. there will be a call of Admin_CmdController->{$method . 'Action'}($args)
+     *
+     * @static
+     * @param $method
+     * @param array $args
+     */
+    public static function cmd($method, $args = array()) {
+
+        // Create temporary file
+        $env = tempnam(sys_get_temp_dir(), 'cmd');
+
+        // Prepare command
+        $cmd = "php ../core/application/cmd.php $method \"$env\"";
+
+        // Fill temporary file with current state
+        file_put_contents($env, json_encode(array(
+            '_SERVER' => $_SERVER,
+            '_COOKIE' => $_COOKIE,
+            'args' => $args
+        )));
+
+        // If OS is Windows - start new process using 'start' command
+        if (Indi::rexm('/^WIN/i', PHP_OS)) pclose(popen('start /B ' . $cmd, 'r'));
+
+        // Else use 'exec' fn
+        else exec($cmd . ' > /dev/null &');
+    }
 }
