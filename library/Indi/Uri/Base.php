@@ -82,8 +82,9 @@ class Indi_Uri_Base {
      * the current uri will be replaced with given, and then dispatched
      *
      * @param string $uri
+     * @param array $args
      */
-    public function dispatch($uri = ''){
+    public function dispatch($uri = '', $args = array()){
 
         // If $uri argument is given - parse it
         if ($uri) $this->parse($uri);
@@ -121,7 +122,7 @@ class Indi_Uri_Base {
         $controller = new $controllerClass();
 
         // Dispatch
-        $controller->dispatch();
+        $controller->dispatch($args);
     }
 
     /**
