@@ -3,6 +3,10 @@
 // Displays phpinfo if needed
 if(isset($_GET['info'])){phpinfo();die();}
 
+// Set up error reporting
+error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^ E_STRICT : E_ALL ^ E_NOTICE);
+ini_set('display_errors', 'On');
+
 // Set up STD server variable in case if multiple IndiEngine projects
 // are running within same document root, and there is one project that
 // is located in DOCUMENT_ROOT and others are in subfolders, so STD server
@@ -28,10 +32,6 @@ define('URI', $_SERVER['REQUEST_URI'] == '/' ? '/' : rtrim($_SERVER['REQUEST_URI
 // In case if execution WAS started via Indi::cmd(), this constant will be already defined,
 // so constant's value won't be overwritten by below-line definition
 define('CMD', false);
-
-// Set up error reporting
-error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^ E_STRICT : E_ALL ^ E_NOTICE);
-ini_set('display_errors', 'On');
 
 // Set include path. Here we add more include paths, in case if some stuff is related to front module only,
 // but required to be available in admin module.
