@@ -140,7 +140,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // If a rowset should be fetched
-                if (Indi::uri()->format || Indi::uri('action') != 'index' || !$this->_isRowsetSeparate) {
+                if (Indi::uri()->format || Indi::uri('action') != 'index' || !$this->_isRowsetSeparate || strlen(Indi::uri('single'))) {
 
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
@@ -430,6 +430,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Adjust primary WHERE clauses stack - apply some custom adjustments
         $where = $this->adjustPrimaryWHERE($where);
+
+        // If uri has 'single' param - append it to primary WHERE clause
+        if (strlen(Indi::uri('single'))) $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
 
         if (Indi::uri('action') == 'index') {
 
@@ -2598,7 +2601,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Simulate as if rowset data was loaded into rowset panel. This provide
             // Indi::trail()->scope's fulfilness with `found` and `ORDER` properties
-            if (preg_match('~/index/~', $nav[$i])) Indi::uri()->dispatch($nav[$i]. 'format/json/');
+            //if (preg_match('~/index/~', $nav[$i])) Indi::uri()->dispatch($nav[$i]. 'format/json/');
 
             // Get the id of a row, that we will be simulating navigation
             // to subsection, there that row's nested entries are located
@@ -2727,10 +2730,20 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If no 'Notice' entity found - return
         if (!Indi::model('Notice', true)) return;
 
+        // Get ids of notices, that should be used to setup menu-qty counters for current user's menu
+        $noticeIdA_relyOnMe = Indi::db()->query('
+            SELECT `noticeId`
+            FROM `noticeGetter`
+            WHERE 1
+              AND `criteriaRelyOn` = "getter"
+              AND `profileId` = "' . Indi::admin()->profileId . '"
+        ')->fetchAll(PDO::FETCH_COLUMN);
+
         // Get notices
         $_noticeRs = Indi::model('Notice')->fetchAll(array(
             'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
             'CONCAT(",", `sectionId`, ",") REGEXP ",(' . im($sectionIdA, '|') . '),"',
+            '(`qtyDiffRelyOn` = "event" OR FIND_IN_SET(`id`, "' . im($noticeIdA_relyOnMe) . '"))',
             '`toggle` = "y"'
         ));
 
@@ -2747,7 +2760,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $_noticeR->qty = Indi::db()->query('
                 SELECT COUNT(`id`)
                 FROM `' . Indi::model($_noticeR->entityId)->table().'`
-                WHERE ' . $_noticeR->compiled('matchSql')
+                WHERE ' . $_noticeR->compiled('qtySql')
             )->fetchColumn();
 
             // Collect qtys for each sections
