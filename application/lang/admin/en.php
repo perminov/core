@@ -220,3 +220,12 @@ define('I_JCHECK_KEY', 'No object of type "%s" was found by key "%s"');
 define('I_JCHECK_EQL', 'Wrong value');
 
 define('I_PRIVATE_DATA', '*private data*');
+
+define('I_WHEN_DBY', 'позавчера');
+define('I_WHEN_YST', 'вчера');
+define('I_WHEN_TOD', 'сегодня');
+define('I_WHEN_TOM', 'завтра');
+define('I_WHEN_DAT', 'послезавтра');
+define('I_WHEN_WD_AT1', 'в');
+define('I_WHEN_WD_AT2', 'во');
+define('I_WHEN_TM_AT', 'в');
