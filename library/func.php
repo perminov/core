@@ -1175,19 +1175,19 @@ function when($date, $time = '') {
     $when = array(); $when_ = '';
 
     // Detect yesterday/today/tomorrow/etc part
-    if ($date == date('Y-m-d', time() - 60 * 60 * 24 * 2)) $when_ = 'позавчера';
-    else if ($date == date('Y-m-d', time() - 60 * 60 * 24)) $when_ = 'вчера';
-    else if ($date == date('Y-m-d')) $when_ = 'сегодня';
-    else if ($date == date('Y-m-d', time() + 60 * 60 * 24)) $when_ = 'завтра';
-    else if ($date == date('Y-m-d', time() + 60 * 60 * 24 * 2)) $when_ = 'послезавтра';
+    if ($date == date('Y-m-d', time() - 60 * 60 * 24 * 2)) $when_ = I_WHEN_DBY;
+    else if ($date == date('Y-m-d', time() - 60 * 60 * 24)) $when_ = I_WHEN_YST;
+    else if ($date == date('Y-m-d')) $when_ = I_WHEN_TOD;
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24)) $when_ = I_WHEN_TOM;
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24 * 2)) $when_ = I_WHEN_DAT;
     if ($when_) $when[] = $when_ . ',';
 
     // Append date
-    $when[] = date('N', strtotime($date)) == 2 ? 'во' : 'в';
+    $when[] = date('N', strtotime($date)) == 2 ? I_WHEN_WD_AT2 : I_WHEN_WD_AT1;
     $when[] = ldate('l d F', $date, 'month,weekday');
 
     // Append time
-    if ($time) $when[] = 'в ' . $time;
+    if ($time) $when[] = I_WHEN_TM_AT . ' ' . $time;
 
     // Return
     return im($when, ' ');
