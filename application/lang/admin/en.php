@@ -226,6 +226,6 @@ define('I_WHEN_YST', 'yesterday');
 define('I_WHEN_TOD', 'today');
 define('I_WHEN_TOM', 'tomorrow');
 define('I_WHEN_DAT', '');
-define('I_WHEN_WD_AT1', 'at');
-define('I_WHEN_WD_AT2', 'at');
+define('I_WHEN_WD_ON1', 'on');
+define('I_WHEN_WD_ON2', 'on');
 define('I_WHEN_TM_AT', 'at');

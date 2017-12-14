@@ -1183,7 +1183,7 @@ function when($date, $time = '') {
     if ($when_) $when[] = $when_ . ',';
 
     // Append date
-    $when[] = date('N', strtotime($date)) == 2 ? I_WHEN_WD_AT2 : I_WHEN_WD_AT1;
+    $when[] = date('N', strtotime($date)) == 2 ? I_WHEN_WD_ON2 : I_WHEN_WD_ON1;
     $when[] = ldate('l d F', $date, 'month,weekday');
 
     // Append time
