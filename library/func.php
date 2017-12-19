@@ -1064,7 +1064,7 @@ function url2a($text) {
     $position = 0;
 
     // Split given $text by urls
-    while (preg_match("{\\b$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$))}u",
+    while (preg_match("~$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$))~u",
         $text, $match, PREG_OFFSET_CAPTURE, $position)) {
 
         // Extract $url and $urlPosition from match
