@@ -1079,7 +1079,7 @@ function url2a($text) {
         $path   = $match[4][0];
 
         // Get top-level domain
-        $tld = mb_strtolower(strrchr($domain, '.'));
+        $tld = mb_strtolower(strrchr($domain, '.'), 'utf-8');
 
         // Check if the TLD is valid - or that $domain is an IP address.
         if (preg_match('{\.[0-9]{1,3}}', $tld) || isset($validTlds[$tld])) {
