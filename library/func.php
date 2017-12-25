@@ -1312,8 +1312,24 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
-        if ($rule['key'] && strlen($value) && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
-            $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+        if ($rule['key'] && strlen($value)) {
+
+            // Get model/table name
+            $m = preg_replace('/\*$/', '', $rule['key']);
+
+            // Setup $s as a flag indicating whether *_Row (single row) or *_Rowset should be fetched
+            $s = $m == $rule['key'];
+
+            // Setup WHERE clause and method name to be used for fetching
+            $w = $s ? '`id` = "' . $value . '"' : '`id` IN (' . $value . ')';
+            $f = $s ? 'fetchRow' : 'fetchAll';
+
+            // Fetch
+            $rowA[$prop] = Indi::model($m)->$f($w);
+
+            // If no *_Row was fetched, or empty *_Rowset was fetched - flush error
+            if (!($s ? $rowA[$prop] : $rowA[$prop]->count())) $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+        }
 
         // If prop's value should be equal to some certain value, but it's not equal - flush error
         if (array_key_exists('eql', $rule) && $value != $rule['eql'])
