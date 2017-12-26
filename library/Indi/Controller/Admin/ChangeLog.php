@@ -78,6 +78,10 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
             $data[$i]['changerId'] = $data[$i]['datetime'] . ' - ' . $data[$i]['changerId'];
             $data[$i]['key'] = $data[$i]['entityId'] . ' » ' . $data[$i]['key'];
 
+            // Encode <iframe> tag descriptors into html entities
+            $data[$i]['was'] = preg_replace('~(<)(/?iframe)([^>]*)>~', '&lt;$2$3&gt;', $data[$i]['was']);
+            $data[$i]['now'] = preg_replace('~(<)(/?iframe)([^>]*)>~', '&lt;$2$3&gt;', $data[$i]['now']);
+
             // Shade private data
             if ($shade[$data[$i]['$keys']['fieldId']]) {
                 if ($data[$i]['was']) $data[$i]['was'] = I_PRIVATE_DATA;
