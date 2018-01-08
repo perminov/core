@@ -1391,9 +1391,15 @@ class Indi_Db_Table
      * Shortcut to $this->fields($field)->nested('enumset')
      *
      * @param $field
+     * @param $option
      * @return Indi_Db_Table_Rowset
      */
-    public function enumset($field) {
-        return $this->fields($field)->nested('enumset');
+    public function enumset($field, $option = null) {
+
+        // Get *_Rowset object containing `enumset` entries, nested under given field
+        $_ = $this->fields($field)->nested('enumset');
+
+        // If $option arg is given - return comma-separated titles, or return an *_Rowset object otherwise
+        return $option ? $_->select($option, 'alias')->column('title', ', ') : $_;
     }
 }
