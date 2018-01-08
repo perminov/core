@@ -5222,4 +5222,15 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function attr($prop) {
         return str_replace('"', '&quot;', $this->$prop);
     }
+
+    /**
+     * Shortcut to $this->model()->enumset($field, $option)
+     *
+     * @param $field
+     * @param $option
+     * @return Indi_Db_Table_Rowset
+     */
+    public function enumset($field, $option = null) {
+        return $this->model()->enumset($field, $option);
+    }
 }
