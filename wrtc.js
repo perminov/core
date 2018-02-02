@@ -641,10 +641,10 @@ var WebRTCClientInterface = function() {
     var _0x18d8x88 = function() {
         ximssSession['onXimssCallProvisioned'] = function() {
             if (WRCall['active']) {
-                var _0x18d8x89 = _0x18d8x54('label[data-token=' + WRCall['token'] + ']'),
+                var _0x18d8x89 = _0x18d8x54('[data-token=' + WRCall['token'] + ']'),
                     _0x18d8x8a = _0x18d8x54('.js-webrtc_call_status');
                 _0x18d8x54(_0x18d8x63)['removeAttr']('disabled')['removeClass']('disabled');
-                _0x18d8x54('label[data-token=' + WRCall['token'] + '] .js-text_call')['text'](WRCall['btnEndText']);
+                _0x18d8x54('[data-token=' + WRCall['token'] + '] .js-text_call')['text'](WRCall['btnEndText']);
                 _0x18d8x54(_0x18d8x65)['html'](_0x18d8x8a['data']('calling'));
                 _0x18d8x8a['find']('.webrtc-calls-text')['html'](WebRTClient['lang']['Calling']);
                 _0x18d8x89['parent']()['addClass']('fw-container__step__form__design-btn__body--dtmf');
@@ -655,9 +655,9 @@ var WebRTCClientInterface = function() {
         ximssSession['onXimssCallConnected'] = function() {
             var _0x18d8x8a = _0x18d8x54('.js-webrtc_call_status');
             if (WRCall['active'] && !_0x18d8x69) {
-                var _0x18d8x89 = _0x18d8x54('label[data-token=' + WRCall['token'] + ']');
+                var _0x18d8x89 = _0x18d8x54('[data-token=' + WRCall['token'] + ']');
                 _0x18d8x54(_0x18d8x63)['removeAttr']('disabled')['removeClass']('disabled');
-                _0x18d8x54('label[data-token=' + WRCall['token'] + '] .js-text_call')['text'](WRCall['btnEndText']);
+                _0x18d8x54('[data-token=' + WRCall['token'] + '] .js-text_call')['text'](WRCall['btnEndText']);
                 _0x18d8x54(_0x18d8x65)['html'](_0x18d8x8a['data']('calling'));
                 _0x18d8x8a['find']('.webrtc-calls-text')['html'](WebRTClient['lang'][WRCall['lang']]['Calling']);
                 _0x18d8x89['parent']()['addClass']('fw-container__step__form__design-btn__body--dtmf');
@@ -800,11 +800,11 @@ var WebRTCClientInterface = function() {
             _0x18d8x95['addClass'](_0x18d8x63['replace']('.', ''))['removeClass'](_0x18d8x62['replace']('.', ''));
             var _0x18d8x96 = _0x18d8x54(_0x18d8x63 + '[data-token=' + _0x18d8x80 + ']')['find']('.js-text_call')['get'](0);
             this['setDefaultText'](_0x18d8x80, _0x18d8x54(_0x18d8x96)['text']());
-            _0x18d8x54('label[data-token=' + _0x18d8x80 + '] .js-text_call')['html'](this['btnConnectingText'])
+            _0x18d8x54('[data-token=' + _0x18d8x80 + '] .js-text_call')['html'](this['btnConnectingText'])
         },
         doTranslate: function() {
             var _0x18d8x6a = WebRTClient['getQueryData']();
-            var _0x18d8x89 = _0x18d8x54('label[data-token=' + this['token'] + ']');
+            var _0x18d8x89 = _0x18d8x54('[data-token=' + this['token'] + ']');
             if (_0x18d8x89['data']('lang')) {
                 this['lang'] = _0x18d8x89['data']('lang')['toLowerCase']()
             } else {
@@ -857,7 +857,7 @@ var WebRTCClientInterface = function() {
             this['active'] = false;
             this['incoming'] = false;
             this['statid'] = null;
-            _0x18d8x54('label[data-token=' + _0x18d8x80 + '] .js-text_call')['html'](WebRTClient['lang'][WRCall['lang']]['Disconnecting']);
+            _0x18d8x54('[data-token=' + _0x18d8x80 + '] .js-text_call')['html'](WebRTClient['lang'][WRCall['lang']]['Disconnecting']);
             this['setStateEndCallButtons'](WRCall.DISABLED);
             this['setStateStartCallButtons'](WRCall.DISABLED);
             _0x18d8x54(_0x18d8x63)['show']()['attr']('disabled', 'disabled')['addClass']('disabled');
@@ -882,7 +882,7 @@ var WebRTCClientInterface = function() {
         reloadAfterClosedSession: function() {
             var _0x18d8x80 = this['token'];
             var _0x18d8x8a = _0x18d8x54('.js-webrtc_call_status'),
-                _0x18d8x95 = _0x18d8x54('label[data-token=' + _0x18d8x80 + ']');
+                _0x18d8x95 = _0x18d8x54('[data-token=' + _0x18d8x80 + ']');
             _0x18d8x95['addClass'](_0x18d8x62['replace']('.', ''))['removeClass'](_0x18d8x63['replace']('.', ''));
             _0x18d8x95['find']('.js-text_call')['text'](this['getDefaultText'](_0x18d8x80));
             _0x18d8x95['parent']()['removeClass']('fw-container__step__form__design-btn__body--dtmf')['find'](_0x18d8x64)['hide']();
@@ -938,7 +938,7 @@ var WebRTCClientInterface = function() {
         kill: function() {
             var _0x18d8x80 = this['token'];
             _0x18d8x54(_0x18d8x63)['addClass'](_0x18d8x62['replace']('.', ''))['removeClass'](_0x18d8x63['replace']('.', ''));
-            _0x18d8x54('label[data-token=' + _0x18d8x80 + '] .js-text_call')['text'](this['getDefaultText'](_0x18d8x80));
+            _0x18d8x54('[data-token=' + _0x18d8x80 + '] .js-text_call')['text'](this['getDefaultText'](_0x18d8x80));
             _0x18d8x54(_0x18d8x66)['text']('');
             _0x18d8x54(_0x18d8x62)['removeAttr']('disabled')['removeClass']('disabled')
         }
