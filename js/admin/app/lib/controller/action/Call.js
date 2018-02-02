@@ -78,7 +78,7 @@ Ext.define('Indi.lib.controller.action.Call', {
         var me = this;
 
         // Setup phone number and SIPNET account balance
-        me.row.phone = me.ti().row.clientPhone;
+        me.row.phone = Indi.ini.demo ? me.ti().data.sipnet.demophone : me.ti().row.clientPhone;
         me.row.balance = me.ti().data.sipnet.balance;
         me.row.pricing = me.ti().data.sipnet.pricing;
 
