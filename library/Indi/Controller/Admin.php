@@ -42,12 +42,14 @@ class Indi_Controller_Admin extends Indi_Controller {
             'up' => 'row',
             'down' => 'row',
             'toggle' => 'row',
-            'print' => 'row'
+            'print' => 'row',
+            'call' => 'row'
         ),
         'view' => array(
             'index' => 'grid',
             'form' => 'form',
-            'print' => 'print'
+            'print' => 'print',
+            'call' => 'call'
         )
     );
 
@@ -2849,5 +2851,82 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function adjustExportColumns(&$columnA = array()) {
 
+    }
+
+    /**
+     *
+     */
+    public function callAction() {
+
+        // Base SIPNET API url
+        $url = Indi::ini('sipnet')->url;
+
+        // Basic params
+        $_paramA = array(
+            'sipuid' => Indi::ini('sipnet')->uid,
+            'password' => Indi::ini('sipnet')->pwd,
+            'format' => '2',
+            'lang' => Indi::ini('lang')->admin,
+            'operation' => 'balance'
+        );
+
+        // Make 'balance' request and decode json
+        $out = file_get_contents($url . '?' . http_build_query($_paramA));
+        $out = json_decode($out, true);
+
+        // If there was something wrong - flush error
+        if (!$out['Result']) jflush($out['Result'], 'SIPNET: ' . $out['ErrorStr']);
+
+        // Pass balance info
+        Indi::trail()->data['sipnet']['balance'] = $out;
+
+        // Get phone
+        $phone = Indi::post('phone') ?: $this->row->clientPhone;
+        $phone = preg_replace('~[^0-9]~', '', $phone);
+
+        // Prepare params for getting price per minute
+        $paramA = array(
+            'operation' => 'getphoneprice',
+            'Phone' => $phone,
+        ) + $_paramA;
+
+        // Get price per minute
+        $pricing = file_get_contents($url . '?' . http_build_query($paramA));
+        $pricing = json_decode($pricing, true);
+
+        // Pass pricing info
+        Indi::trail()->data['sipnet']['pricing'] = $pricing;
+
+        // If no 'make' $_GET key given - return, so if there is pricing error - it will be picked by dialer UI
+        if (!array_key_exists('make', Indi::get())) return;
+
+        // If there was some error with pricing request - flush it
+        if ($pricing['ErrorStr']) jflush(false, $pricing['ErrorStr']);
+
+        /*$paramA = array(
+            'operation' => 'webbuttons',
+            'Phone' => $phone
+        ) + $_paramA;
+
+        $button = file_get_contents($url . '?' . http_build_query($paramA));
+        $button = json_decode($button, true);
+        i($button, 'a');*/
+
+        // Params for new button's request
+        $paramA = array(
+            'operation' => 'addwebbutton',
+            'phone' => $phone
+        ) + $_paramA;
+
+        // Get button json
+        $button = Indi::demo(false) || true
+            ? '{"success":true,"Result":true,"mbaccount":"--","cid":"'. Indi::ini('sipnet')->democid . '"}'
+            : file_get_contents($url . '?' . http_build_query($paramA));
+
+        // Decode button json
+        $button = json_decode($button, true);
+
+        // Flush button details
+        jflush($button['Result'], $button['ErrorStr'] ?: $button);
     }
 }
