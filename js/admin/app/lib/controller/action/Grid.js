@@ -1477,7 +1477,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         column: e.colIdx,
                         row: e.rowIdx
                     });
-                    Ext.fly(cell).addCls('i-grid-cell-editor-focus');
+
+                    // Involve focused style only if trigger event is cellsecondclick
+                    if (ctx.rowsetPlugin$Cellediting.triggerEvent == 'cellsecondclick')
+                        Ext.fly(cell).addCls('i-grid-cell-editor-focus');
 
                     // Call additional callback, defined as one of listeners, and pass json-decoded response
                     if (Ext.isFunction(eOpts.remotesave))
