@@ -102,7 +102,7 @@ Ext.define('Indi.lib.view.dialer.Dialer', {
             border: 0,
             bodyStyle: 'font-size: 20px; color: white;',
             height: 46,
-            html: '00:00'
+            html: ''
         },{
             xtype: 'displayfield',
             fieldLabel: 'Цена минуты',
@@ -164,30 +164,37 @@ Ext.define('Indi.lib.view.dialer.Dialer', {
                     phone.val(phone.val().replace(/.$/, ''));
                 }
             }, {
-                cls: 'i-dialer-call',
+                cls: 'i-dialer-call js-start_client_call',
                 width: 84,
                 height: 49,
+                name: 'call',
                 handler: function(btn) {
-                    if (!btn.btnInnerEl.hasCls('cid')) {
+                    var phone = me.down('[name=phone]').val().toString().replace(/[^0-9]/, '');
+                    console.log(phone);
+                    if (!btn.lastCid4 || btn.lastCid4 != phone) {
+                        btn.el.addCls('js-end_client_call disabled');
                         Indi.load(me.ctx().uri.split('?').shift() + '?make', {
                             params: {phone: me.down('[name=phone]').val()},
                             success: function(response) {
                                 var json = response.responseText.json();
-                                btn.btnInnerEl.setHTML(
-                                    '<label data-token="' + json.cid + '" class="js-start_client_call" data-lang="'+Indi.lang.name+'">' +
-                                        '<span class="js-text_call">Call</span>' +
-                                    '</label>'
-                                );
-                                btn.btnInnerEl.addCls('cid');
-                                btn.btnInnerEl.down('label[data-token]').click();
+                                btn.el.attr({'data-token': json.cid, 'data-lang': Indi.lang.name});
+                                btn.lastCid4 = phone;
+                                btn.el.removeCls('js-end_client_call disabled');
+                                btn.el.click();
+                            },
+                            failure: function() {
+                                btn.el.removeCls('js-end_client_call disabled');
                             }
                         });
-                    }
+                    } else btn.el.click();
                 }
             }, {
                 cls: 'i-dialer-end',
                 width: 50,
-                height: 31
+                height: 31,
+                handler: function(btn) {
+                    if (btn.sbl('call').el.hasCls('js-end_client_call')) btn.sbl('call').el.click();
+                }
             }]
         }];
 
