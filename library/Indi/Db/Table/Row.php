@@ -5425,4 +5425,25 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return a json-string, that can be used as a value for an html-attribute
         return $attr ? htmlspecialchars($json) : $json;
     }
+
+    /**
+     * Replace '"' with '&quot;', for usage as a value of a html-attribute
+     *
+     * @param $prop
+     * @return mixed
+     */
+    public function attr($prop) {
+        return str_replace('"', '&quot;', $this->$prop);
+    }
+
+    /**
+     * Shortcut to $this->model()->enumset($field, $option)
+     *
+     * @param $field
+     * @param $option
+     * @return Indi_Db_Table_Rowset
+     */
+    public function enumset($field, $option = null) {
+        return $this->model()->enumset($field, $option);
+    }
 }

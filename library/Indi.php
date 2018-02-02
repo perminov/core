@@ -2499,7 +2499,7 @@ class Indi {
         $env = tempnam(sys_get_temp_dir(), 'cmd');
 
         // Prepare command
-        $cmd = "php ../core/application/cmd.php $method \"$env\"";
+        $cmd = Indi::ini('general')->phpdir . "php ../core/application/cmd.php $method \"$env\"";
 
         // Fill temporary file with current state
         file_put_contents($env, json_encode(array(
