@@ -684,8 +684,8 @@ if (!function_exists('apache_request_headers')) {
  */
 function in($item, $array) {
 
-    // If $array arg is bool or is null - set $strict flag as true
-    $strict = is_bool($array) || is_null($array);
+    // If $array arg is bool or is null, or $item arg is bool - set $strict flag as true
+    $strict = is_bool($array) || is_null($array) || is_bool($item);
 
     // Normalize $array arg
     $array = ar($array);
@@ -1048,7 +1048,7 @@ function url2a($text) {
 
     // Regexps
     $rexProtocol = '(https?://)?';
-    $rexDomain   = '((?:[-a-zA-Z0-9]{1,63}\.)+[-a-zA-Z0-9]{2,63}|(?:[0-9]{1,3}\.){3}[0-9]{1,3})';
+    $rexDomain   = '((?:[-a-zA-Z0-9а-яА-Я]{1,63}\.)+[-a-zA-Z0-9а-яА-Я]{2,63}|(?:[0-9]{1,3}\.){3}[0-9]{1,3})';
     $rexPort     = '(:[0-9]{1,5})?';
     $rexPath     = '(/[!$-/0-9:;=@_\':;!a-zA-Z\x7f-\xff]*?)?';
     $rexQuery    = '(\?[!$-/0-9:;=@_\':;!a-zA-Z\x7f-\xff]+?)?';
@@ -1067,7 +1067,7 @@ function url2a($text) {
         . '.sj .sk .sl .sm .sn .so .sr .st .su .sv .sy .sz .tc .td .tf .tg .th .tj .tk .tl .tm .tn .to .tp .tr .tt '
         . '.tv .tw .tz .ua .ug .uk .us .uy .uz .va .vc .ve .vg .vi .vn .vu .wf .ws .ye .yt .yu .za .zm .zw '
         . '.xn--0zwm56d .xn--11b5bs3a9aj6g .xn--80akhbyknj4f .xn--9t4b11yi5a .xn--deba0ad .xn--g6w251d '
-        . '.xn--hgbk6aj7f53bba .xn--hlcj6aya9esc7a .xn--jxalpdlp .xn--kgbechtv .xn--zckzah .arpa'), true);
+        . '.xn--hgbk6aj7f53bba .xn--hlcj6aya9esc7a .xn--jxalpdlp .xn--kgbechtv .xn--zckzah .arpa .рф .xn--p1ai'), true);
 
     // Start output buffering
     ob_start();
@@ -1076,7 +1076,7 @@ function url2a($text) {
     $position = 0;
 
     // Split given $text by urls
-    while (preg_match("{\\b$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$))}",
+    while (preg_match("~$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$))~u",
         $text, $match, PREG_OFFSET_CAPTURE, $position)) {
 
         // Extract $url and $urlPosition from match
@@ -1091,7 +1091,7 @@ function url2a($text) {
         $path   = $match[4][0];
 
         // Get top-level domain
-        $tld = strtolower(strrchr($domain, '.'));
+        $tld = mb_strtolower(strrchr($domain, '.'), 'utf-8');
 
         // Check if the TLD is valid - or that $domain is an IP address.
         if (preg_match('{\.[0-9]{1,3}}', $tld) || isset($validTlds[$tld])) {
@@ -1175,19 +1175,19 @@ function when($date, $time = '') {
     $when = array(); $when_ = '';
 
     // Detect yesterday/today/tomorrow/etc part
-    if ($date == date('Y-m-d', time() - 60 * 60 * 24 * 2)) $when_ = 'позавчера';
-    else if ($date == date('Y-m-d', time() - 60 * 60 * 24)) $when_ = 'вчера';
-    else if ($date == date('Y-m-d')) $when_ = 'сегодня';
-    else if ($date == date('Y-m-d', time() + 60 * 60 * 24)) $when_ = 'завтра';
-    else if ($date == date('Y-m-d', time() + 60 * 60 * 24 * 2)) $when_ = 'послезавтра';
+    if ($date == date('Y-m-d', time() - 60 * 60 * 24 * 2)) $when_ = I_WHEN_DBY;
+    else if ($date == date('Y-m-d', time() - 60 * 60 * 24)) $when_ = I_WHEN_YST;
+    else if ($date == date('Y-m-d')) $when_ = I_WHEN_TOD;
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24)) $when_ = I_WHEN_TOM;
+    else if ($date == date('Y-m-d', time() + 60 * 60 * 24 * 2)) $when_ = I_WHEN_DAT;
     if ($when_) $when[] = $when_ . ',';
 
     // Append date
-    $when[] = date('N', strtotime($date)) == 2 ? 'во' : 'в';
+    $when[] = date('N', strtotime($date)) == 2 ? I_WHEN_WD_ON2 : I_WHEN_WD_ON1;
     $when[] = ldate('l d F', $date, 'month,weekday');
 
     // Append time
-    if ($time) $when[] = 'в ' . $time;
+    if ($time) $when[] = I_WHEN_TM_AT . ' ' . $time;
 
     // Return
     return im($when, ' ');
@@ -1344,8 +1344,24 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
-        if ($rule['key'] && strlen($value) && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
-            $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+        if ($rule['key'] && strlen($value)) {
+
+            // Get model/table name
+            $m = preg_replace('/\*$/', '', $rule['key']);
+
+            // Setup $s as a flag indicating whether *_Row (single row) or *_Rowset should be fetched
+            $s = $m == $rule['key'];
+
+            // Setup WHERE clause and method name to be used for fetching
+            $w = $s ? '`id` = "' . $value . '"' : '`id` IN (' . $value . ')';
+            $f = $s ? 'fetchRow' : 'fetchAll';
+
+            // Fetch
+            $rowA[$prop] = Indi::model($m)->$f($w);
+
+            // If no *_Row was fetched, or empty *_Rowset was fetched - flush error
+            if (!($s ? $rowA[$prop] : $rowA[$prop]->count())) $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+        }
 
         // If prop's value should be equal to some certain value, but it's not equal - flush error
         if (array_key_exists('eql', $rule) && $value != $rule['eql'])

@@ -220,3 +220,12 @@ define('I_JCHECK_KEY', 'Объект типа "%s" с идентификатор
 define('I_JCHECK_EQL', 'Неверное значение');
 
 define('I_PRIVATE_DATA', '*данные скрыты*');
+
+define('I_WHEN_DBY', 'позавчера');
+define('I_WHEN_YST', 'вчера');
+define('I_WHEN_TOD', 'сегодня');
+define('I_WHEN_TOM', 'завтра');
+define('I_WHEN_DAT', 'послезавтра');
+define('I_WHEN_WD_ON1', 'в');
+define('I_WHEN_WD_ON2', 'во');
+define('I_WHEN_TM_AT', 'в');

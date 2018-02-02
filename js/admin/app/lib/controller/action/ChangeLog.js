@@ -78,8 +78,7 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     gridColumn$FieldId: {
         groupable: false,
         sortable: false,
-        menuDisabled: true,
-        header: 'Что'
+        menuDisabled: true
     },
 
     /**
