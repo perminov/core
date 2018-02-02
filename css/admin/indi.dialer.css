@@ -1,0 +1,31 @@
+.i-dialer .x-panel-body, .i-dialer-remove, .i-dialer-call, .i-dialer-end {
+    background: url(/i/admin/i-sprite-dialer.png) no-repeat;
+}
+.i-dialer-remove {
+    background-position: -326px -50px;
+    margin-right: 5px;
+}
+.i-dialer-remove:hover {
+    background-position: -326px -100px;
+}
+.i-dialer-end {
+    background-position: -386px -50px;
+    margin-left: 5px;
+}
+.i-dialer-end:hover {
+    background-position: -386px -100px;
+}
+.i-dialer-call {
+    background-position: -236px -50px;
+}
+.i-dialer-call:hover {
+    background-position: -236px -100px;
+}
+.i-dialer input[name="phone"] {
+    height: 30px;
+    font-size: 15px;
+    text-align: center;
+}
+.i-dialer .x-form-display-field {
+    padding-top: 0;
+}

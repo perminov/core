@@ -118,7 +118,7 @@ Ext.override(Ext.grid.Panel, {
             level = 0; longest = [];
 
             // Reset length
-            longest[level] = columnA[i].text || '';
+            longest[level] = columnA[i].icon ? '---' : (columnA[i].text || '');
 
             // If columns does not have a dataIndex - skip this iteration
             if (columnA[i].dataIndex) {
