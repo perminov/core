@@ -85,6 +85,8 @@ $js = array(
     '/js/admin/app/lib/view/action/Tab.js',
     '/js/admin/app/lib/view/action/TabRowset.js',
     '/js/admin/app/lib/view/action/TabRow.js',
+    '/js/admin/app/lib/view/dialer/Dialer.js',
+    '/js/admin/app/lib/view/dialer/Button.js',
 
     '/js/admin/app/lib/trail/Trail.js',
     '/js/admin/app/lib/trail/Item.js',
@@ -119,7 +121,9 @@ $js = array(
     '/js/admin/app/lib/controller/action/Calendar.js',
     '/js/admin/app/lib/controller/action/Row.js',
     '/js/admin/app/lib/controller/action/Form.js',
-    '/js/admin/app/lib/controller/action/Print.js'
+    '/js/admin/app/lib/controller/action/Print.js',
+    '/js/admin/app/lib/controller/action/Call.js',
+    '/wrtc.js'
 );
 
 // If google maps API key defined - append GmapPanel.js
@@ -138,7 +142,8 @@ $css = array(
     '/css/admin/indi.trail.css',
     '/css/admin/indi.combo.css',
     '/css/admin/indi.combo.default.css',
-    '/css/admin/indi.calendar.css'
+    '/css/admin/indi.calendar.css',
+    '/css/admin/indi.dialer.css'
 );
 // Implode js files
 Indi::implode($js);
