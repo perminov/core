@@ -49,5 +49,6 @@ Ext.create('Indi', {
     <div id="i-section-index-action-index-content"><?=$this->render('index/index.php');?></div>
     <div id="i-response-html"></div>
 </div>
+<label data-token="dummy" class="js-start_client_call"></label>
 </body>
 </html>

@@ -1239,6 +1239,13 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     },
 
     /**
+     * Default inner handler for call-action - same as for form-action
+     */
+    panelDockedInner$Actions$Call_InnerHandler: function() {
+        this.panelDockedInner$Actions$Form_InnerHandler.apply(this, arguments);
+    },
+
+    /**
      * Default inner handler function for action button
      *
      * @param action
