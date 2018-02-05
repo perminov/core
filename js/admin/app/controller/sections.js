@@ -12,6 +12,28 @@ Ext.define('Indi.controller.sections', {
             },
             formItem$EntityId: {
                 jump: '/entities/form/id/{id}/'
+            },
+            formItem$Expand: {
+                considerOn: [{
+                    name: 'sectionId'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(!d.sectionId);
+                    }
+                }
+            },
+            formItem$ExpandRoles: {
+                considerOn: [{
+                    name: 'expand'
+                },{
+                    name: 'sectionId'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(!d.sectionId && !d.expand.match(/^(all|none)$/));
+                    }
+                }
             }
         }
     }
