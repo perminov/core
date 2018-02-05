@@ -18,6 +18,9 @@ class Section_Row_Base extends Indi_Db_Table_Row {
      */
     public function save() {
 
+        // Clear value for `expandRoles` prop, if need
+        if (in($this->expand, 'all,none')) $this->expandRoles = '';
+
         // If entity was changed
         if (isset($this->_modified['entityId'])) {
 
