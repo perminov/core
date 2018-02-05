@@ -122,7 +122,7 @@ Ext.define('Indi.view.Menu', {
             }
         },
         beforeitemexpand: function(item) {
-            return item.raw.autoExpand;
+            return item.raw.autoExpand == false ? (item.raw.autoExpand = true) && false : true;
         },
         beforecollapse: function(){
             Ext.getCmp('i-logo').hide();
