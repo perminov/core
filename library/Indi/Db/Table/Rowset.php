@@ -595,12 +595,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             else if ($gridFieldR->foreign('elementId')->alias == 'upload')
                 $typeA['upload'][$gridFieldR->alias] = true;
 
-            // Shaded fields
-            else if (Indi::demo(false) && $gridFieldR->param('shade'))
-                $typeA['shade'][$gridFieldR->alias] = $gridFieldR->param();
-
             // All other types
             else $typeA['other'][$gridFieldR->alias] = true;
+
+            // Shaded fields
+            if (Indi::demo(false) && ($gridFieldR->param('shade')  || (
+                    ($_ = $gridFieldR->relation) && ($_ = Indi::model($_)) && ($_ = $_->titleField()) && $_->param('shade')
+                ))) $typeA['shade'][$gridFieldR->alias] = $gridFieldR->param();                
 
             // Append current grid field alias to $columnA array
             $columnA[] = $gridFieldR->alias;
@@ -626,9 +627,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
-
-                // If field should be shaded - prevent actual value from being assigned
-                if (isset($typeA['shade'][$columnI])) if ($r->$columnI) $data[$pointer][$columnI] = I_PRIVATE_DATA;
 
                 // If field column type is regular, e.g no foreign keys, no prices, no dates, etc. - we do no changes
                 if (isset($typeA['other'][$columnI]))
@@ -709,6 +707,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         }
                     }
                 }
+
+                // If field should be shaded - prevent actual value from being assigned
+                if (isset($typeA['shade'][$columnI])) if ($r->$columnI) $data[$pointer][$columnI] = I_PRIVATE_DATA;
 
                 // Include the original foreign keys data
                 if (isset($typeA['foreign']['single'][$columnI])
