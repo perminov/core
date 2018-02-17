@@ -1391,8 +1391,8 @@ function _2sec($expr) {
  *
  * @return Indi_Trail_Admin/Indi_Trail_Front
  */
-function t() {
-    return Indi::trail();
+function t($arg = null) {
+    return Indi::trail($arg);
 }
 
 /**
