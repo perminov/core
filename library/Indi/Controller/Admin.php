@@ -2361,7 +2361,15 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @return mixed
      */
     public function affected4grid() {
-        return $this->row->affected();
+
+        // Basic affected fields
+        $affected = $this->row->affected();
+
+        // If grouping is used, append grouping field to the list
+        if ($g = Indi::trail()->section->foreign('groupBy')) $affected[] = $g->alias;
+
+        // Return
+        return $affected;
     }
 
     /**
