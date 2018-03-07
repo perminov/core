@@ -21,7 +21,7 @@ Ext.define('Indi.view.Menu', {
     data2items: function(data){
 
         // Menu items array
-        var itemA = [];
+        var itemA = [], autoExpand, role = Indi.user.uid.split('-').shift();
 
         // Walk through raw data
         for (var i = 0; i < data.length; i++) {
@@ -29,10 +29,18 @@ Ext.define('Indi.view.Menu', {
             // If current item is a root item, we add it to items array
             if (!parseInt(data[i].sectionId)) {
 
+                // Set `autoExpand` flag to define whether or not this root item should not be auto-expanded
+                if (data[i].expand == 'none') autoExpand = false;
+                else if (data[i].expand == 'all') autoExpand = true;
+                else if (data[i].expand == 'only' && Indi.in(role, data[i].expandRoles)) autoExpand = true;
+                else if (data[i].expand == 'except' && Indi.in(role, data[i].expandRoles)) autoExpand = false;
+                else autoExpand = true;
+
                 // Prepare item data
                 var itemI = {
                     text: data[i].title,
                     expanded: false,
+                    autoExpand: autoExpand,
                     cls: 'i-menu-root-item',
                     children: []
                 }
@@ -112,6 +120,9 @@ Ext.define('Indi.view.Menu', {
                 if (view.up('#i-mobile-menu')) view.up('menu').hide();
                 Indi.load(rec.raw.value);
             }
+        },
+        beforeitemexpand: function(item) {
+            return item.raw.autoExpand == false ? (item.raw.autoExpand = true) && false : true;
         },
         beforecollapse: function(){
             Ext.getCmp('i-logo').hide();

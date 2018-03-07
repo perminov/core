@@ -21,9 +21,12 @@ class Section extends Indi_Db_Table {
      */
     public static function menu() {
 
+        // Append props, containing info about auto-expanding, if such props exist
+        $_ = Indi::model('Section')->fields('expand') ? ', `expand`, `expandRoles`' : '';
+
         // Fetch temporary data about root menu items
         $tmpA = Indi::db()->query('
-            SELECT `id`, `sectionId`, `title`, `alias`
+            SELECT `id`, `sectionId`, `title`, `alias`' . $_ . '
             FROM `section`
             WHERE `sectionId` = "0" AND `toggle` = "y"
             ORDER BY `move`
