@@ -2888,10 +2888,28 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Pass balance info
         Indi::trail()->data['sipnet']['balance'] = $out;
 
-        // Get phone
-        $phone = Indi::post('phone') ?: $this->row->clientPhone;
-        $phone = preg_replace('~[^0-9]~', '', $phone);
+        // If 'phone' key exists within $_POST
+        if (array_key_exists('phone', Indi::post())) {
 
+            // Check that phone
+            jcheck(array('phone' => array('req' => true)), Indi::post());
+        
+            // Pick that phone
+            $phone = Indi::post('phone');
+        
+        // Else
+        } else {
+        
+            // Check entry's phone
+            jcheck(array('phone' => array('req' => true)), array('phone' => $this->row->clientPhone));
+            
+            // Pick that phone
+            $phone = $this->row->clientPhone;
+        }
+        
+        // Strip non-numeric characters
+        $phone = preg_replace('~[^0-9]~', '', $phone);
+        
         // Prepare params for getting price per minute
         $paramA = array(
             'operation' => 'getphoneprice',
@@ -2904,6 +2922,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Pass pricing info
         Indi::trail()->data['sipnet']['pricing'] = $pricing;
+        
+        // Pass demo phone
+        if (Indi::demo(false)) Indi::trail()->data['sipnet']['demophone'] = Indi::ini('sipnet')->demophone;
 
         // If no 'make' $_GET key given - return, so if there is pricing error - it will be picked by dialer UI
         if (!array_key_exists('make', Indi::get())) return;
