@@ -28,7 +28,15 @@ Ext.define('Indi.lib.view.dialer.Dialer', {
     balance: {},
     limit: {},
     items: [],
-    initComponent: function() {
+
+    /**
+     * Pick pricing info from me.pricing and prepare it to be displayed.
+     * If `update` arg is given as non-false, currently displayed pricing info will be updated with
+     * info according to current values within me.pricing
+     *
+     * @param update
+     */
+    initPricing: function(update) {
         var me = this;
 
         // Setup call limit
@@ -37,43 +45,83 @@ Ext.define('Indi.lib.view.dialer.Dialer', {
             me.limit.decimal = parseFloat(me.balance.balance) / parseFloat(me.pricing.maxprice);
             me.limit.minutes = Math.floor(me.limit.decimal);
             me.limit.seconds = Math.floor((me.limit.decimal - me.limit.minutes) * 60);
-            me.limit.string = Math.floor((me.limit.decimal - me.limit.minutes) * 60);
+            me.limit.string = [me.limit.minutes, me.limit.seconds].join(':');
         } else {
             me.pricing.string = '--.--';
-            me.limit.minutes = me.limit.seconds = '--';
+            me.limit.string = '--:--';
         }
+
+        // If `update` arg is given as `true`
+        if (update) {
+            me.down('[name=pricing]').val(me.pricing.string);
+            me.down('[name=limit]').val(me.limit.string);
+        }
+    },
+
+    // @inheridocs
+    initComponent: function() {
+        var me = this;
+
+        // Init pricing
+        me.initPricing();
 
         // Setup inner items
         me.items = [{
             xtype: 'textfield',
             value: me.phone,
+            allowBlank: false,
             colspan: 3,
             width: 215,
             height: 30,
             name: 'phone',
             margin: '0 0 5 0',
+            inputMask: '+7 (999) 999-99-99',
+            afterSubTpl: '<img class="i-dialer-pricing-loader" src="' + Indi.std + '/i/admin/loader.svg">',
             getErrors: function() {
                 var errorA = [];
                 if (me.pricing.ErrorStr) errorA.push(me.pricing.ErrorStr);
                 return errorA;
             },
             listeners: {
+                change: function(c) {
+                    var field = this;
+                    me.down('[name=pricing]').val('--.--');
+                    me.down('[name=limit]').val('--:--');
+                    clearTimeout(c.checkerTimeout);
+                    if (this.val().toString().match(/\*/) || !this.val()) return;
+                    me.el.down('.i-dialer-pricing-loader').css('display', 'inline-block');
+                    c.checkerTimeout = setTimeout(function(){
+                        Indi.load(me.ctx().uri.split('?').shift() + '?pricing', {
+                            params: {phone: field.val()},
+                            success: function(response) {
+                                var json = response.responseText.json();
+                                delete json.success;
+                                me.pricing = json;
+                                field.validate();
+                                me.initPricing(true);
+                                me.el.down('.i-dialer-pricing-loader').css('display', '');
+                            },
+                            failure: function() {
+                                me.el.down('.i-dialer-pricing-loader').css('display', '');
+                            }
+                        });
+                    }, 100);
+                },
                 validitychange: function(c, valid) {
                     if (valid) {
-                        c.sbl('status').val('готов к звонку');
-                        c.sbl('status').inputEl.css('color', '');
+                        //c.sbl('status').val('готов к звонку');
+                        //c.sbl('status').inputEl.css('color', '');
                         c.sbl('pricing').inputEl.css('color', '');
                         c.sbl('limit').inputEl.css('color', '');
                     } else {
-                        c.sbl('status').val(me.pricing.ErrorStr);
-                        c.sbl('status').inputEl.css('color', '#bd292d');
+                        //c.sbl('status').val(me.pricing.ErrorStr);
+                        //c.sbl('status').inputEl.css('color', '#bd292d');
                         c.sbl('pricing').inputEl.css('color', '#bd292d');
                         c.sbl('limit').inputEl.css('color', '#bd292d');
                     }
                 },
-                boxready: function() {
-                    if (me.pricing.Result) return;
-                    this.validate();
+                boxready: function(c) {
+                    c.fireEvent('change', c);
                 }
             }
         }/*,{
@@ -102,6 +150,7 @@ Ext.define('Indi.lib.view.dialer.Dialer', {
             border: 0,
             bodyStyle: 'font-size: 20px; color: white;',
             height: 46,
+            width: 70,
             html: ''
         },{
             xtype: 'displayfield',
@@ -116,7 +165,7 @@ Ext.define('Indi.lib.view.dialer.Dialer', {
             xtype: 'displayfield',
             fieldLabel: 'Доступно минут',
             labelWidth: Indi.metrics.getWidth('Доступно минут') + 6,
-            value: [me.limit.minutes, me.limit.seconds].join(':'),
+            value: me.limit.string,
             margin: '0 0 8 0',
             colspan: 2,
             width: 143,
