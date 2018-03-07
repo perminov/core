@@ -365,25 +365,28 @@ class Indi_Controller {
 
                         // Detect the type of filter value - bottom or top, in 'range' terms mean
                         // greater-or-equal or less-or-equal
-                        preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches);
+                        if (preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches)) {
 
-                        // Currently both filter for Date and Datetime fields looks exactly the same, despite on Datetime
-                        // fields have time in addition to date. But here, in php-code we need to handle these filter types
-                        // with small differences, that are 1) trim up to 10 characters 2) ' 00:00:00' should be appended
-                        // to filter that is associated with Datetime field to provide a valid WHERE clause
-                        if (preg_match('/^12|19$/', $found->elementId))
-                            $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
+                            // Currently both filter for Date and Datetime fields looks exactly the same, despite on Datetime
+                            // fields have time in addition to date. But here, in php-code we need to handle these filter types
+                            // with small differences, that are 1) trim up to 10 characters 2) ' 00:00:00' should be appended
+                            // to filter that is associated with Datetime field to provide a valid WHERE clause
+                            if (preg_match('/^12|19$/', $found->elementId))
+                                $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
 
-                        // Pick the current filter value and field type to $excelA
-                        $excelA[$found->alias]['type'] = in($found->elementId, '18,24,25') ? 'number' : 'date';
-                        $excelA[$found->alias]['value'][$matches[2]] = $filterSearchFieldValue;
+                            // Pick the current filter value and field type to $excelA
+                            $excelA[$found->alias]['type'] = in($found->elementId, '18,24,25') ? 'number' : 'date';
+                            $excelA[$found->alias]['value'][$matches[2]] = $filterSearchFieldValue;
 
-                        // If we deal with DATETIME column, append a time postfix for a proper comparison
-                        if ($found->elementId == 19)
-                            $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
+                            // If we deal with DATETIME column, append a time postfix for a proper comparison
+                            if ($found->elementId == 19)
+                                $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
-                        // Use a '>=' or '<=' clause, according to specified range border's type
-                        $where[$found->alias][$matches[2]] = Indi::db()->sql('`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= :s', $filterSearchFieldValue);
+                            // Use a '>=' or '<=' clause, according to specified range border's type
+                            $where[$found->alias][$matches[2]] = Indi::db()->sql('`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= :s', $filterSearchFieldValue);
+
+                        // Else
+                        } else $where[$found->alias] = Indi::db()->sql('`' . $found->alias . '` = :s', $filterSearchFieldValue);
 
                     // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
