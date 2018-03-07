@@ -1391,8 +1391,8 @@ function _2sec($expr) {
  *
  * @return Indi_Trail_Admin/Indi_Trail_Front
  */
-function t() {
-    return Indi::trail();
+function t($arg = null) {
+    return Indi::trail($arg);
 }
 
 /**
@@ -1407,4 +1407,21 @@ function u() {
     return class_exists('Project', false) && method_exists('Project', 'user')
         ? Project::user()
         : Indi::user();
+}
+
+/**
+ * Return $value, wrapped with $html, if $cond arg is true, or return just $value otherwise
+ *
+ * @param $val
+ * @param $html
+ * @param $cond
+ * @return string
+ */
+function wrap($val, $html, $cond = null) {
+
+    // Detect html-tagname
+    preg_match('~<([a-zA-Z]+)\s*~', $html, $m);
+
+    // Return $value, wrapped with $html, if $cond arg is true
+    return (func_num_args() > 2 ? $cond : $val) ? $html . $val . '</' . $m[1] . '>' : $val;
 }
