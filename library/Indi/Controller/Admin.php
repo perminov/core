@@ -2882,27 +2882,35 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function callAction() {
 
-        // Base SIPNET API url
-        $url = Indi::ini('sipnet')->url;
+        // Check that 'sipnet' section exists within loaded configuration file
+        if (!$sipnet = Indi::ini('sipnet')) jflush(false, 'No "sipnet" section found in config.ini');
+
+        // Check other required configuration options
+        foreach (ar('url,uid,pwd') as $key) if (!$sipnet->$key)
+            jflush(false, 'No "' . $key . '" key found within "sipnet" section in config.ini');
 
         // Basic params
         $_paramA = array(
-            'sipuid' => Indi::ini('sipnet')->uid,
-            'password' => Indi::ini('sipnet')->pwd,
+            'sipuid' => $sipnet->uid,
+            'password' => $sipnet->pwd,
             'format' => '2',
             'lang' => Indi::ini('lang')->admin,
             'operation' => 'balance'
         );
 
-        // Make 'balance' request and decode json
-        $out = file_get_contents($url . '?' . http_build_query($_paramA));
-        $out = json_decode($out, true);
+        // If we're only going to check given phone number validity - skip balance detection
+        if (!Indi::get()->count()) {
 
-        // If there was something wrong - flush error
-        if (!$out['Result']) jflush($out['Result'], 'SIPNET: ' . $out['ErrorStr']);
+            // Make 'balance' request and decode json
+            $out = file_get_contents($sipnet->url . '?' . http_build_query($_paramA));
+            $out = json_decode($out, true);
 
-        // Pass balance info
-        Indi::trail()->data['sipnet']['balance'] = $out;
+            // If there was something wrong - flush error
+            if (!$out['Result']) jflush($out['Result'], 'SIPNET: ' . $out['ErrorStr']);
+
+            // Pass balance info
+            Indi::trail()->data['sipnet']['balance'] = $out;
+        }
 
         // If 'phone' key exists within $_POST
         if (array_key_exists('phone', Indi::post())) {
@@ -2925,28 +2933,32 @@ class Indi_Controller_Admin extends Indi_Controller {
         
         // Strip non-numeric characters
         $phone = preg_replace('~[^0-9]~', '', $phone);
-        
-        // Prepare params for getting price per minute
-        $paramA = array(
-            'operation' => 'getphoneprice',
-            'Phone' => $phone,
-        ) + $_paramA;
 
-        // Get price per minute
-        $pricing = file_get_contents($url . '?' . http_build_query($paramA));
-        $pricing = json_decode($pricing, true);
+        //
+        if (array_key_exists('pricing', Indi::get())) {
+
+            // Prepare params for getting price per minute
+            $paramA = array(
+                'operation' => 'getphoneprice',
+                'Phone' => $phone,
+            ) + $_paramA;
+
+            // Get price per minute
+            $pricing = file_get_contents($sipnet->url . '?' . http_build_query($paramA));
+            $pricing = json_decode($pricing, true);
+
+            // If we were only going to check given phone number pricing - flush pricing info
+            jflush(true, $pricing);
+        }
 
         // Pass pricing info
-        Indi::trail()->data['sipnet']['pricing'] = $pricing;
-        
+        Indi::trail()->data['sipnet']['pricing'] = $pricing ?: [];
+
         // Pass demo phone
-        if (Indi::demo(false)) Indi::trail()->data['sipnet']['demophone'] = Indi::ini('sipnet')->demophone;
+        if (Indi::demo(false) || true) Indi::trail()->data['sipnet']['demophone'] = $sipnet->demophone;
 
         // If no 'make' $_GET key given - return, so if there is pricing error - it will be picked by dialer UI
         if (!array_key_exists('make', Indi::get())) return;
-
-        // If there was some error with pricing request - flush it
-        if ($pricing['ErrorStr']) jflush(false, $pricing['ErrorStr']);
 
         /*$paramA = array(
             'operation' => 'webbuttons',
@@ -2965,8 +2977,8 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Get button json
         $button = Indi::demo(false) || true
-            ? '{"success":true,"Result":true,"mbaccount":"--","cid":"'. Indi::ini('sipnet')->democid . '"}'
-            : file_get_contents($url . '?' . http_build_query($paramA));
+            ? '{"success":true,"Result":true,"mbaccount":"--","cid":"'. $sipnet->democid . '"}'
+            : file_get_contents($sipnet->url . '?' . http_build_query($paramA));
 
         // Decode button json
         $button = json_decode($button, true);
