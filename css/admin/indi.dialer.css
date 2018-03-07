@@ -30,7 +30,7 @@
     padding-top: 0;
 }
 .i-dialer-call.js-end_client_call {
-    background-position: -236px 150px;
+    background-position: -236px -150px;
 }
 .i-dialer-call.js-end_client_call .x-btn-center,
 .i-dialer-call.i-dialer-call-request .x-btn-center {
