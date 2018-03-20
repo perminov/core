@@ -3640,6 +3640,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Move uploaded file to $dst destination, or copy, if move_uploaded_file() call failed
                 if (!move_uploaded_file($meta['tmp_name'], $dst)) copy($meta['tmp_name'], $dst);
 
+                // Catch the moment after file was uploaded
+                $this->onUpload($field, $dst);
+
                 // If uploaded file is an image in formats gif, jpg or png
                 if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
 
@@ -5232,5 +5235,13 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function enumset($field, $option = null) {
         return $this->model()->enumset($field, $option);
+    }
+
+    /**
+     * This function is called right after 'move_uploaded_file() / copy()' call within Indi_Db_Table_Row::file(true) body.
+     * It can be useful in cases when we need to do something once where was a file uploaded into a field
+     */
+    public function onUpload($field, $dst) {
+
     }
 }
