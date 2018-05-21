@@ -1249,10 +1249,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
-        uri = '/' + section.alias + '/' + action.alias
-            + '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
-            + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
-            + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix) + '/';
+        uri = '/' + section.alias + '/' + action.alias;
+
+        //
+        if (action.rowRequired == 'y' || me.ti(1).row)
+            uri += '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
+                + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
+                + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix)
+
+        // Append slash
+        uri += '/';
 
         // Load it
         Indi.load(uri, ajaxCfg);
