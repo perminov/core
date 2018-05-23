@@ -851,6 +851,15 @@ function isIE() {
 }
 
 /**
+ * Try to detect if request was made using Microsoft Edge
+ *
+ * @return bool
+ */
+function isEdge() {
+    return !!preg_match('/Edge/', $_SERVER['HTTP_USER_AGENT']);
+}
+
+/**
  * Flush mismatch errors messages. This can be useful instead of jflush(false, 'Some error message'),
  * in cases when you want 'Some error message' to appear as a certain field's error message.
  *
