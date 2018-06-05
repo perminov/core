@@ -206,12 +206,24 @@ class Indi_Db_Table
             'table'   => $this->_table,
             'data' => $data,
             'rowClass' => $this->_rowClass,
-            'found'=> $limit ? current(Indi::db()->query('SELECT FOUND_ROWS()')->fetch()) : count($data),
+            'found'=> $limit ? $this->_found($where) : count($data),
             'page' => $page
         );
 
         // Return Indi_Db_Table_Rowset object
         return new $this->_rowsetClass($data);
+    }
+
+    /**
+     * Redeclare this function in child classes if you need custom logic of how total found rows should be detected.
+     * The case that was a reason of why this function was added is that FOUND_ROWS() works (somewhy) not well when
+     * query is executed against VIEW, and WHERE clause refer to column(s) that are JOINed by the VIEW declaration
+     *
+     * @param $where
+     * @return array|int|string
+     */
+    protected function _found($where = '') {
+        return Indi::db()->query('SELECT FOUND_ROWS()')->fetchColumn();
     }
 
     /**
