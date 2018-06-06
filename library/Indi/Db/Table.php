@@ -1155,6 +1155,10 @@ class Indi_Db_Table
             // Declare array for sql SET statements
             $setA = array();
 
+            // If value for `id` is explicitly set - prepend it explicitly,
+            // because there is no such a Field_Row instance within $fieldRs
+            if ($data['id']) $setA[] = Indi::db()->sql('`id` = :s', $data['id']);
+
             // Foreach field within existing fields
             foreach ($fieldRs as $fieldR) {
 
