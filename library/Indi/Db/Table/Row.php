@@ -1214,7 +1214,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // is 1, it will be 2, because actually results of page 1 were already fetched
             // and displayed at the stage of combo first initialization
             if ($page != null) {
-                if(!$selected || $selectedTypeIsKeyword || func_get_arg(4)) $page++;
+                if(!$selected || $selectedTypeIsKeyword || (func_num_args() > 4 && func_get_arg(4))) $page++;
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
@@ -1245,7 +1245,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($groupByFieldOrder = $groupByField->order('ASC', $where))
                         $order = array($groupByFieldOrder, $order);
 
-                if (is_null(func_get_arg(4))) {
+                if (func_num_args() < 5 || is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
                 } else {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
