@@ -129,30 +129,33 @@ CREATE TABLE `disabledfield` (
   `displayInForm` tinyint(1) NOT NULL DEFAULT '0',
   `title` varchar(255) NOT NULL DEFAULT '',
   `impact` enum('all','only','except') NOT NULL DEFAULT 'all',
+  `profileIds` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `sectionId` (`sectionId`),
   KEY `fieldId` (`fieldId`),
-  KEY `impact` (`impact`)
-) ENGINE=MyISAM AUTO_INCREMENT=215 DEFAULT CHARSET=utf8;
+  KEY `impact` (`impact`),
+  KEY `profileIds` (`profileIds`)
+) ENGINE=MyISAM AUTO_INCREMENT=216 DEFAULT CHARSET=utf8;
 
 /*Data for the table `disabledfield` */
 
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (84,146,961,'',0,'Аккаунт активирован','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (85,146,962,'',0,'Код активации','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (43,146,1108,'',0,'Настройки','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (94,146,1577,'',0,'Код','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (93,146,1576,'',0,'Дата последнего запроса','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (92,146,1575,'',0,'Смена пароля','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (91,146,1162,'',0,'ID пользователя в этой соц.сети','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (90,146,1163,'',0,'Какая','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (89,146,1161,'',0,'Социальные сети','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (88,146,698,'',0,'Подписался на рассылку','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (208,379,2181,'',0,'Порядок отображения','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (209,379,2172,'title',0,'Тэг','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (210,380,2181,'',0,'Порядок отображения','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (211,380,2172,'keywords',0,'Тэг','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (212,381,2181,'',0,'Порядок отображения','all');
-insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`) values (213,381,2172,'description',0,'Тэг','all');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (84,146,961,'',0,'Аккаунт активирован','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (85,146,962,'',0,'Код активации','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (43,146,1108,'',0,'Настройки','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (94,146,1577,'',0,'Код','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (93,146,1576,'',0,'Дата последнего запроса','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (92,146,1575,'',0,'Смена пароля','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (91,146,1162,'',0,'ID пользователя в этой соц.сети','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (90,146,1163,'',0,'Какая','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (89,146,1161,'',0,'Социальные сети','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (88,146,698,'',0,'Подписался на рассылку','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (208,379,2181,'',0,'Порядок отображения','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (209,379,2172,'title',0,'Тэг','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (210,380,2181,'',0,'Порядок отображения','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (211,380,2172,'keywords',0,'Тэг','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (212,381,2181,'',0,'Порядок отображения','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (213,381,2172,'description',0,'Тэг','all','');
+insert  into `disabledfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`displayInForm`,`title`,`impact`,`profileIds`) values (215,232,1515,'',1,'Тип','except','1');
 
 /*Table structure for table `element` */
 
@@ -481,7 +484,7 @@ CREATE TABLE `field` (
   KEY `mode` (`mode`),
   KEY `l10n` (`l10n`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2250 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2251 DEFAULT CHARSET=utf8;
 
 /*Data for the table `field` */
 
@@ -747,6 +750,7 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2247,308,'От какого поля зависит','consider',3,23,'0',2247,5,2246,'с','one','entityId','`id` != \"<?=$this->fieldId?>\" AND `columnTypeId` != \"0\"','entityId','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2248,308,'Поле по ключу','foreign',3,23,'0',2248,5,2247,'с','one','relation','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2249,308,'Auto title','title',1,1,'',2249,0,0,'u','none','','','','hidden','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2250,171,'Выбранные','profileIds',1,7,'',2250,10,0,'u','many','','','','regular','','n');
 
 /*Table structure for table `fsection` */
 
