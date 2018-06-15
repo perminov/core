@@ -186,7 +186,7 @@ class Indi_Trail_Admin_Item_Scope {
         if ($this->hash)Indi::trail($this->_level)->section->primaryHash = $this->hash;
         if ($this->aix) Indi::trail($this->_level)->section->rowIndex = $this->aix;
 
-        if ($this->upperHash && $this->upperAix)
+        if ($this->upperHash && $this->upperAix && Indi::trail($this->_level+1)->scope)
             Indi::trail($this->_level+1)->scope->apply(array('hash' => $this->upperHash, 'aix' => $this->upperAix));
     }
 }

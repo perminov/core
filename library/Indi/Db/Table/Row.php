@@ -1214,7 +1214,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // is 1, it will be 2, because actually results of page 1 were already fetched
             // and displayed at the stage of combo first initialization
             if ($page != null) {
-                if(!$selected || $selectedTypeIsKeyword || func_get_arg(4)) $page++;
+                if(!$selected || $selectedTypeIsKeyword || (func_num_args() > 4 && func_get_arg(4))) $page++;
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
@@ -1245,7 +1245,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($groupByFieldOrder = $groupByField->order('ASC', $where))
                         $order = array($groupByFieldOrder, $order);
 
-                if (is_null(func_get_arg(4))) {
+                if (func_num_args() < 5 || is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
                 } else {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
@@ -2386,6 +2386,17 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // For each $modified field
         foreach ($this->_modified as $column => $value) {
+
+            // If $column is 'id', so no Field_Row instance can be found
+            if ($column == 'id') {
+
+                // If $value is not a decimal - push a error to errors stack
+                if (!preg_match(Indi::rex('int11'), $value))
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, 'ID');
+
+                // Jump to checking the next column's value
+                continue;
+            }
 
             // Get the field
             $fieldR = $this->model()->fields($column);
