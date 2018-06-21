@@ -87,10 +87,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             // Setup additional disabled fields, depend on the value of `mode` prop of entity's fields
             foreach ($this->fields as $fieldR)
                 if (in($fieldR->mode, 'readonly,hidden'))
-                    $this->disabledFields->append(array(
-                        'fieldId' => $fieldR->id,
-                        'displayInForm' => (int) ($fieldR->mode == 'readonly')
-                    ));
+                    if (!$this->disabledFields->gb($fieldR->id, 'fieldId'))
+                        $this->disabledFields->append(array(
+                            'fieldId' => $fieldR->id,
+                            'displayInForm' => (int) ($fieldR->mode == 'readonly')
+                        ));
 
         } else {
 
