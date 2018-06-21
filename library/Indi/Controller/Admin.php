@@ -337,7 +337,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function formAction() {
 
         // If no `disabledField` entries defined for current section - return
-        if (t()->disabledFields->count()) return;
+        if (!t()->disabledFields->count()) return;
 
         // If current entry is an existing entry - return
         if ($this->row->id) return;

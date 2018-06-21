@@ -828,14 +828,30 @@ class Indi_Controller {
      */
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
-        // Append
-        foreach(ar($alias) as $a) Indi::trail()->disabledFields->append(array(
-            'id' => 0,
-            'sectionId' => Indi::trail()->section->id,
-            'fieldId' => Indi::trail()->model->fields($a)->id,
-            'defaultValue' => $defaultValue,
-            'displayInForm' => $displayInForm ? 1 : 0,
-        ));
+        // Foreach field alias within $alias
+        foreach(ar($alias) as $a) {
+
+            // Check if such field exists, an if no - skip
+            if (!$fieldId = Indi::trail()->model->fields($a)->id) continue;
+
+            // If such field already exists within the list of disabled fields
+            if ($df = t()->disabledFields->gb($fieldId, 'fieldId')) {
+
+                // Force re-assign value for `displayInForm` prop
+                $df->displayInForm = $displayInForm ? 1 : 0;
+
+                // If $defaultValue arg is given - assign it
+                if (func_num_args() > 2) $df->original('defaultValue', $defaultValue);
+
+            // Else append new disabled field into the list
+            } else t()->disabledFields->append(array(
+                'id' => 0,
+                'sectionId' => t()->section->id,
+                'fieldId' => t()->model->fields($a)->id,
+                'defaultValue' => $defaultValue,
+                'displayInForm' => $displayInForm ? 1 : 0,
+            ));
+        }
     }
 
     /**
