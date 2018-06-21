@@ -335,14 +335,21 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Provide form action
      */
     public function formAction() {
-        if (Indi::trail()->disabledFields->count()) {
-            Indi::trail()->disabledFields->foreign('fieldId');
-            if (!$this->row->id) foreach (Indi::trail()->disabledFields as $disabledFieldR) {
-                if (strlen($disabledFieldR->defaultValue)) {
-                    $this->row->{$disabledFieldR->foreign('fieldId')->alias} = $disabledFieldR->compiled('defaultValue');
-                }
-            }
-        }
+
+        // If no `disabledField` entries defined for current section - return
+        if (t()->disabledFields->count()) return;
+
+        // If current entry is an existing entry - return
+        if ($this->row->id) return;
+
+        // Setup foreign data for `fieldId` key for each `disabledField` entry
+        t()->disabledFields->foreign('fieldId');
+
+        // Foreach `disabledField` entry use it's `defaultValue` for setting up current row's props
+        foreach (t()->disabledFields as $disabledFieldR)
+            if (strlen($disabledFieldR->defaultValue))
+                $this->row->{$disabledFieldR->foreign('fieldId')->alias}
+                    = $disabledFieldR->compiled('defaultValue');
     }
 
     /**
