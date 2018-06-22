@@ -336,14 +336,6 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function formAction() {
 
-        // If current entry is an existing entry - return
-        if ($this->row->id) return;
-
-        // Foreach `disabledField` entry use it's `defaultValue` for setting up current row's props
-        /*foreach (t()->fields as $fieldR)
-            if (strlen($disabledFieldR->defaultValue))
-                $this->row->{$disabledFieldR->foreign('fieldId')->alias}
-                    = $disabledFieldR->compiled('defaultValue');*/
     }
 
     /**
