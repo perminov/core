@@ -1378,7 +1378,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Reverse results if we were getting upper page results
                 if ($upper) $dataRs->reverse();
 
-                // If we don't have neither initially selected options, nor keyword
+            // If we don't have neither initially selected options, nor keyword
             } else {
 
                 // If user try to get results of upper page, empty result set should be returned
@@ -3466,6 +3466,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function temporary() {
         if (func_num_args() == 0) return $this->_temporary;
         else if (func_num_args() == 1) return $this->_temporary[func_get_arg(0)];
+        else if (func_get_arg(1) === null) unset($this->_temporary[func_get_arg(0)]);
         else return $this->_temporary[func_get_arg(0)] = func_get_arg(1);
     }
 
@@ -3490,14 +3491,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return mixed
      */
     public function system() {
-        if (func_num_args() == 1) {
-            return $this->_system[func_get_arg(0)];
-        } else if (func_num_args() == 2) {
-            $this->_system[func_get_arg(0)] = func_get_arg(1);
-            return $this;
-        } else {
-            return $this->_system;
-        }
+        if (func_num_args() == 0) return $this->_system;
+        else if (func_num_args() == 1) return $this->_system[func_get_arg(0)];
+        else if (func_get_arg(1) === null) unset($this->_system[func_get_arg(0)]);
+        else return $this->_system[func_get_arg(0)] = func_get_arg(1);
     }
 
     /**
