@@ -336,20 +336,14 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function formAction() {
 
-        // If no `disabledField` entries defined for current section - return
-        if (!t()->disabledFields->count()) return;
-
         // If current entry is an existing entry - return
         if ($this->row->id) return;
 
-        // Setup foreign data for `fieldId` key for each `disabledField` entry
-        t()->disabledFields->foreign('fieldId');
-
         // Foreach `disabledField` entry use it's `defaultValue` for setting up current row's props
-        foreach (t()->disabledFields as $disabledFieldR)
+        /*foreach (t()->fields as $fieldR)
             if (strlen($disabledFieldR->defaultValue))
                 $this->row->{$disabledFieldR->foreign('fieldId')->alias}
-                    = $disabledFieldR->compiled('defaultValue');
+                    = $disabledFieldR->compiled('defaultValue');*/
     }
 
     /**
@@ -2230,11 +2224,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If there was disabled fields defined for current section, we check if default value was additionally set up
         // and if so - assign that default value under that disabled field alias in $data array, or, if default value
         // was not set - drop corresponding key from $data array
-        foreach (Indi::trail()->disabledFields as $disabledFieldR)
-            foreach (Indi::trail()->fields as $fieldR)
-                if ($fieldR->id == $disabledFieldR->fieldId)
-                    if (!strlen($disabledFieldR->defaultValue)) unset($data[$fieldR->alias]);
-                    else $data[$fieldR->alias] = $disabledFieldR->compiled('defaultValue');
+        foreach (Indi::trail()->fields as $fieldR)
+            if (in($fieldR->mode, 'hidden,readonly'))
+                if (!strlen($fieldR->defaultValue)) unset($data[$fieldR->alias]);
+                else $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
 
         // If current cms user is an alternate, and if there is corresponding field within current entity structure
         if ($this->alternateWHERE() && Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $possibleA))
@@ -2251,16 +2244,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // it, for avoid problems while possible move from STD to non-STD, or other-STD directories
         $this->row->trimSTDfromCKEvalues();
 
-        // Get the list of ids of fields, that are disabled
-        $disabledA = Indi::trail()->disabledFields->column('fieldId');
-
         // Get the aliases of fields, that are file upload fields, and that are not disabled,
         // and are to be some changes applied on
         $filefields = array();
         foreach (Indi::trail()->fields as $fieldR)
-            if ($fieldR->foreign('elementId')->alias == 'upload' && !in_array($fieldR->id, $disabledA))
-                if (preg_match('/^m|d$/', Indi::post($fieldR->alias)) || preg_match(Indi::rex('url'), Indi::post($fieldR->alias)))
-                    $filefields[] = $fieldR->alias;
+            if (!in($fieldR->mode, 'hidden,readonly'))
+                if ($fieldR->foreign('elementId')->alias == 'upload')
+                    if (preg_match('/^m|d$/', Indi::post($fieldR->alias)) ||
+                        preg_match(Indi::rex('url'), Indi::post($fieldR->alias)))
+                        $filefields[] = $fieldR->alias;
 
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
