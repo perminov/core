@@ -84,18 +84,14 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             // Setup disabled fields
             $this->disabledFields = $sectionR->nested('disabledField');
 
-            // Rename fields
-            foreach ($this->disabledFields->select(': != ""', 'rename') as $_)
-                $this->fields->gb($_->fieldId)->title = $_->rename;
-
-            // Setup additional disabled fields, depend on the value of `mode` prop of entity's fields
-            foreach ($this->fields as $fieldR)
-                if (in($fieldR->mode, 'readonly,hidden'))
-                    if (!$this->disabledFields->gb($fieldR->id, 'fieldId'))
-                        $this->disabledFields->append(array(
-                            'fieldId' => $fieldR->id,
-                            'displayInForm' => (int) ($fieldR->mode == 'readonly')
-                        ));
+            // Alter fields
+            foreach ($this->disabledFields as $_) {
+                $alter = array();
+                if (strlen($_->rename)) $alter['title'] = $_->rename;
+                if (strlen($_->defaultValue)) $alter['defaultValue'] = $_->defaultValue;
+                $alter['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
+                $this->fields->gb($_->fieldId)->assign($alter);
+            }
 
         } else {
 

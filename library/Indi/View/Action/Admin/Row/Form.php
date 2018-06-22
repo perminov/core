@@ -1,20 +1,30 @@
 <?php
 class Indi_View_Action_Admin_Row_Form extends Indi_View_Action_Admin_Row {
+
+    /**
+     * @return string
+     */
     public function render() {
 
-        // Declare arrays that will store info about what fields will be excluded from form
-        $excluded = array();
-        foreach (Indi::trail()->disabledFields as $disabledField)
-            if (!$disabledField->displayInForm)
-                $excluded[$disabledField->fieldId] = true;
+        // Prepare file-data and combo-data only for visible fields
+        foreach (Indi::trail()->fields as $fieldR) {
 
-        // Echo a <tr> for each form's field, but only if field's control element's 'hidden' checkbox is not checked
-        foreach (Indi::trail()->fields as $fieldR)
-            if (!$excluded[$fieldR->id] && $fieldR->foreign('elementId')->hidden != 1)
-                if (preg_match('/combo|radio|multicheck/', $fieldR->foreign('elementId')->alias))
-                    Indi::view()->formCombo($fieldR->alias);
-                else if ($fieldR->foreign('elementId')->alias == 'upload' && t()->row->abs($fieldR->alias))
-                    t()->row->view($fieldR->alias, t()->row->file($fieldR->alias));
+            // Skip hidden fields
+            if ($fieldR->mode == 'hidden') continue;
+
+            // Skip fields, that are using hidden elements
+            if ($fieldR->foreign('elementId')->hidden) continue;
+
+            // Element's alias shortcut
+            $element = $fieldR->foreign('elementId')->alias;
+
+            // Prepare combo-data for 'combo', 'radio' and 'multicheck' elements
+            if (in($element, 'combo,radio,multicheck')) Indi::view()->formCombo($fieldR->alias);
+
+            // Prepare file-data for 'upload' element
+            else if ($element == 'upload' && t()->row->abs($fieldR->alias))
+                t()->row->view($fieldR->alias, t()->row->file($fieldR->alias));
+        }
 
         // Return parent's return-value
         return parent::render();

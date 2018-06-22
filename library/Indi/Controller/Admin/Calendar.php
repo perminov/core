@@ -255,15 +255,8 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function saveAction($redirect = true, $return = false) {
 
-        // If calendar can be used
-        if ($this->spaceFields) {
-
-            // Get array of space fields ids
-            $space = Indi::trail()->fields->select('spaceSince,spaceUntil', 'alias')->column('id');
-
-            // Exclude those fields from the list of disabled fields
-            Indi::trail()->disabledFields->exclude($space, 'fieldId');
-        }
+        // If calendar can be used - exclude calendar-fields fields from the list of disabled fields
+        if ($this->spaceFields) $this->excludeDisabledFields('spaceSince,spaceUntil');
 
         // Call parent
         return $this->callParent();
