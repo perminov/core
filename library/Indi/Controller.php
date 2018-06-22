@@ -829,24 +829,33 @@ class Indi_Controller {
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
         // Foreach field alias within $alias
-        foreach(ar($alias) as $a) {
+        foreach (ar($alias) as $a) {
 
             // Check if such field exists, an if no - skip
-            if (!$_ = Indi::trail()->model->fields($a)) continue;
+            if (!$_ = t()->model->fields($a)) continue;
 
             // Alter field's `mode` prop
             $_->mode = $displayInForm ? 'readonly' : 'hidden';
 
-            // If $defaultValue arg is given - assign it
-            if (func_num_args() > 2) {
+            // If $defaultValue arg is not given - skip
+            if (func_num_args() <= 2) continue;
 
-                // Backup original value of `defaultValue` prop
-                if (!array_key_exists('defaultValue_backup', $_->temporary()))
-                    $_->defaultValue_backup = $_->original('defaultValue');
+            // Backup original value of `defaultValue` prop
+            if (!array_key_exists('defaultValue_backup', $_->system()))
+                $_->system('defaultValue_backup', $_->original('defaultValue'));
 
-                // Setup $defaultValue arg as original value of `defaultValue` prop
-                $_->original('defaultValue', $defaultValue);
-            }
+            // Setup $defaultValue arg as original value of `defaultValue` prop
+            $_->original('defaultValue', $defaultValue);
+
+            // If we do not deal with certain row, or do, but with already existing row - skip
+            if (!t()->row || t()->row->id) continue;
+
+            // Backup original value of $a prop
+            if (!array_key_exists($bn = $a . '_backup', t()->row->system()))
+                t()->row->system($bn, t()->row->original($a));
+
+            // Setup $default
+            t()->row->original($a, $defaultValue);
         }
     }
 
@@ -871,9 +880,28 @@ class Indi_Controller {
             // - revert `mode` back to it's original value
             $_->mode = func_num_args() > 1 || !$_->isModified('mode') ? $mode : $_->original('mode');
 
-            // If `defaultValue` prop was backed up - apply it
-            if (array_key_exists('defaultValue_backup', $_->temporary()))
-                $_->original('defaultValue', $_->temporary('defaultValue_backup'));
+            // If `defaultValue` prop was backed up
+            if (array_key_exists('defaultValue_backup', $_->system())) {
+
+                // Apply backup
+                $_->original('defaultValue', $_->system('defaultValue_backup'));
+
+                // Unset backup
+                $_->system('defaultValue_backup', null);
+            }
+
+            // If we do not deal with certain row, or do, but with already existing row - skip
+            if (!t()->row || t()->row->id) continue;
+
+            // If $a prop was backed up
+            if (array_key_exists($bn = $a . '_backup', t()->row->system())) {
+
+                // Apply backup
+                t()->row->original($a,  t()->row->system($bn));
+
+                // Unset backup
+                t()->row->system($bn, null);
+            }
         }
     }
     
