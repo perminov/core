@@ -46,6 +46,8 @@ class Admin_TemporaryController extends Indi_Controller {
             grid('alteredFields', 'profileIds', array('editor' => 1));
         }
 
+        // If entity, having table 'disabledField' exists - rename it
+        if (entity('disabledField')) entity('disabledField', array('table' => 'alteredField'));
 
         //
         die('ok');
