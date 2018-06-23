@@ -5,171 +5,50 @@
  * on all projects, that run on Indi Engine
  */
 class Admin_TemporaryController extends Indi_Controller {
-    public function problemAction() {
-        Indi::iflush(true);
-        Indi::model('Event')->batch(function($r){
-            $r->problem();
-            $r->basicUpdate();
-            echo '1';
-        });
+
+    /**
+     * Convert disabledFields-feature to alteredFields-feature
+     */
+    public function alteredFieldsAction() {
+
+        // If 'disabledFields' entity exists, and 'displayInForm' field exists in it
+        if (field('disabledField', 'displayInForm')) {
+
+            // Update `showInForm` field's inner props
+            field('disabledField', 'displayInForm', array(
+                'title' => 'Режим', 'alias' => 'mode', 'storeRelationAbility' => 'one',
+                'elementId' => 'combo', 'columnTypeId' => 'ENUM',
+            ));
+
+            // Update existing possible values
+            enumset('disabledField', 'mode', '0', array('alias' => 'hidden', 'title' => 'Скрытое', 'color' => 'url(/i/admin/field/hidden.png)'));
+            enumset('disabledField', 'mode', '1', array('alias' => 'readonly', 'title' => 'Только чтение', 'color' => 'url(/i/admin/field/readonly.png)'));
+
+            // Append new possible values
+            foreach (array('inherit' => 'Без изменений', 'regular' => 'Обычное', 'required' => 'Обязательное') as $alias => $title)
+                enumset('disabledField', 'mode', $alias, array('title' => $title, 'color' => 'url(/i/admin/field/' . $alias . '.png)'))
+                    ->move(2);
+
+            // Other things
+            enumset('disabledField', 'mode', 'hidden')->move(-1);
+            field('disabledField', 'mode', array('defaultValue' => 'inherit'));
+            field('disabledField', 'fieldId', array('title' => 'Поле'));
+            field('disabledField', 'mode')->move(1);
+            entity('disabledField')->assign(array('title' => 'Поле, измененное в рамках раздела'))->save();
+            section('disabledFields', array('title' => 'Измененные поля', 'alias' => 'alteredFields'));
+            field('disabledField', 'alter', array('title' => 'Изменить свойства поля', 'elementId' => 'span'));
+            field('disabledField', 'rename', array('title' => 'Наименование', 'elementId' => 'string', 'columnTypeId' => 'VARCHAR(255)'));
+            field('disabledField', 'defaultValue')->move(-5);
+            field('disabledField', 'mode')->move(-5);
+            grid('alteredFields', 'rename', array('editor' => 1))->move(2);
+            grid('alteredFields', 'mode')->move(1);
+            grid('alteredFields', 'impact', array('editor' => 1));
+            grid('alteredFields', 'profileIds', array('editor' => 1));
+        }
+
+
+        //
         die('ok');
-    }
-
-    public function titlesAction($project, $die = true) {
-
-        // Add `titleFieldId` field within 'entity' entity, if there is no such a field yet
-        if (!Indi::model('Entity')->fields('titleFieldId')) {
-
-            $fieldR = Indi::model('Field')->createRow();
-            $fieldR->entityId = Indi::model('Entity')->id();
-            $fieldR->title = 'Заголовочное поле';
-            $fieldR->alias = 'titleFieldId';
-            $fieldR->storeRelationAbility = 'one';
-            $fieldR->elementId = Indi::model('Element')->fetchRow('`alias` = "combo"')->id;
-            $fieldR->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "INT(11)"')->id;
-            $fieldR->relation = Indi::model('Field')->id();
-            $fieldR->filter = '`entityId` = "<?=$this->id?>" AND `columnTypeId` != "0"';
-            $fieldR->save();
-        }
-
-        $titleFieldAliasA = array(
-            'section2action' => 'actionId',
-            'fsection2faction' => 'factionId',
-            'disabledField' => 'fieldId',
-            'param' => 'possibleParamId',
-            'grid' => 'fieldId',
-            'search' => 'fieldId'
-        );
-
-        $projectTitleFieldAliasA = array(
-            'picneon' => array(
-                'studiedCourse' => 'courseId',
-                'indexCourse' => 'courseId',
-                'lessonPractice' => 'taskId',
-                'recommended' => 'recommended',
-                'courseLesson' => 'lessonId'
-            ),
-            'ota' => array(
-                'bannerShow' => 'datetime',
-                'courseClick' => 'datetime',
-                'courseUser' => 'userId',
-                'pollAnswerVote' => 'datetime'
-            ),
-            'vkenguru' => array(
-                'eventAnimator' => 'animatorId',
-                'adjustment' => 'datetime'
-            ),
-            'profpole' => array(
-                'rating' => 'datetime',
-                'lpProduct' => 'productId'
-            )
-        );
-
-        $entityRs = Indi::model('Entity')->fetchAll();
-        foreach ($entityRs as $entityR) {
-
-            // Если сущность системная или типовая
-            if ($entityR->system == 'y' || $entityR->system == 'o') {
-
-                // Если для нее есть hardcoded заголовочное поле - назначаем его
-                if ($titleFieldAliasA[$entityR->table]) {
-                    $entityR->titleFieldId = Indi::model($entityR->id)->fields($titleFieldAliasA[$entityR->table])->id;
-                    $entityR->save();
-
-                // Если его нет, но есть поле title - то назначаем его
-                } else if ($titleFieldId = Indi::model($entityR->id)->fields('title')->id) {
-                    $entityR->titleFieldId = $titleFieldId;
-                    $entityR->save();
-                }
-
-            // Если сущность проектная
-            } else if ($entityR->system == 'n') {
-
-                // Если для нее есть hardcoded заголовочное поле - назначаем его
-                if ($projectTitleFieldAliasA[$project][$entityR->table]) {
-                    $entityR->titleFieldId = Indi::model($entityR->id)->fields($projectTitleFieldAliasA[$project][$entityR->table])->id;
-                    $entityR->save();
-
-                // Если его нет, но есть поле title - то назначаем его
-                } else if ($titleFieldId = Indi::model($entityR->id)->fields('title')->id) {
-                    $entityR->titleFieldId = $titleFieldId;
-                    $entityR->save();
-                }
-            }
-
-            // Удаляем старые _title
-            if (Indi::model($entityR->id)->fields('_title')) Indi::model($entityR->id)->fields('_title')->delete();
-        }
-
-        if ($die) die('ok');
-    }
-
-    public function deprecatedAction($die = true){
-
-        if ($rppIdFieldR = Indi::model('Fsection')->fields('rppId')) $rppIdFieldR->delete();
-        $tableA = array(
-            'joinFk', 'joinFkForDependentRowset', 'joinFkForIndependentRowset', 'dependentCount',
-            'dependentCountForDependentRowset', 'dependentRowset', 'metaExclusion', 'rpp', 'seoDescription', 'seoTitle',
-            'seoKeyword', 'fconfig', 'independentRowset', 'config', 'orderBy', 'subdomain', 'filter');
-        $entityRs = Indi::model('Entity')->fetchAll('FIND_IN_SET(`table`, "' . implode(',', $tableA) . '")');
-        foreach ($entityRs as $entityR) $entityR->delete();
-
-        if ($die) die('ok');
-    }
-
-	public function emptyAction(){
-		die('empty');
-	}
-
-    public function trimckestdAction() {
-        $ckeElementId = Indi::model('Element')->fetchRow('`alias` = "html"')->id;
-        $ckeEntityIdA = array_unique(Indi::model('Field')->fetchAll('`elementId` = "' . $ckeElementId . '"')->column('entityId'));
-        foreach ($ckeEntityIdA as $ckeEntityIdI) {
-            foreach (Indi::model($ckeEntityIdI)->fetchAll() as $r)
-                $r->trimSTDfromCKEvalues()->save();
-        }
-    }
-    
-    public function title2aliasAction() {
-        $materialRs = Indi::model('Material')->fetchAll();
-        foreach ($materialRs as $materialR) {
-            $materialR->alias = alias($materialR->title);
-            $materialR->save();
-            d($materialR->alias);
-        }
-        die('ok');
-    }
-    
-    /*public function accessAction() {
-        Indi::db()->query('
-            UPDATE `section2action`
-            SET `profileIds` = CONCAT(`profileIds`, ",18")
-            WHERE FIND_IN_SET("12", `profileIds`) AND CONCAT(",", `profileIds`, ",") NOT LIKE ",18,"
-        ');
-        die('ok');
-    }*/
-
-    /*public function wrapcssAction() {
-        Indi::wrapCss('/library/extjs4/resources/css/ext-neptune.css');
-        Indi::wrapCss('/css/admin/indi.all.neptune.css');
-        die('ok');
-    }*/
-    public function toggleAction() {
-        $fieldRs = Indi::model('Field')->fetchAll('`alias` = "toggle"');
-        $fieldRs->foreign('entityId');
-        $fieldRs->nested('enumset');
-        foreach ($fieldRs as $fieldR) {
-            foreach ($fieldR->nested('enumset') as $enumsetR) {
-                if (preg_match('/i-color-box/', $enumsetR->title)) continue;
-                echo $fieldR->foreign('entityId')->title . ': ' . strip_tags($enumsetR->title);
-                $color = preg_match('/color:\s*([^"\'; ]+)/', $enumsetR->title, $m) ? $m[1] : 'lime';
-                d($color);
-                $enumsetR->title = '<span class="i-color-box" style="background: ' . $color . ';"></span>' . strip_tags($enumsetR->title);
-                $enumsetR->save();
-                echo "\n";
-            }
-        }
-        die('zxc');
     }
 
     public function noticesAction() {

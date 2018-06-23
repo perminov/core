@@ -1,14 +1,20 @@
-Ext.define('Indi.controller.disabledFields', {
+Ext.define('Indi.controller.alteredFields', {
     extend: 'Indi.Controller',
     actionsConfig: {
         index: {
             rowset: {
                 multiSelect: true
+            },
+            gridColumn$Mode: {
+                icon: '/i/admin/field/readonly.png',
+                allowCycle: true
             }
         },
         form: {
+            formItem$FieldId: {
+                jump: '/fields/form/id/{id}/'
+            },
             formItem$ProfileIds: {
-                allowBlank: true,
                 considerOn: [{
                     name: 'impact'
                 }],
