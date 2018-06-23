@@ -119,7 +119,7 @@ class Indi_Trail_Admin {
         ), ' OR ') . ')';
 
         // Setup disabled fields
-        $sectionRs->nested('disabledField', array(
+        $sectionRs->nested(entity('alteredField') ? 'alteredField' : 'disabledField', array(
             'where' => $alteredFieldsWHERE
         ));
 

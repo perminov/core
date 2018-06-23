@@ -1439,15 +1439,33 @@ function wrap($val, $html, $cond = null) {
  * Get `entity` entry either by table name or by ID
  *
  * @param string|int $table Entity ID or table name
+ * @param array $ctor Props to be involved in insert/update
  * @return Entity_Row|null
  */
-function entity($table) {
+function entity($table, array $ctor = array()) {
 
     // If $table arg is an integer - assume it's an entity ID, or assume it's an entity table otherwise
     $byprop = Indi::rexm('int11', $table) ? 'id' : 'table';
 
     // Return `entity` entry
-    return Indi::model('Entity')->fetchRow('`' . $byprop . '` = "' . $table . '"');
+    $entityR = Indi::model('Entity')->fetchRow('`' . $byprop . '` = "' . $table . '"');
+
+    // If $ctor arg is an empty array - return `entity` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $table - is not enough for `entity` entry to be created
+    if (!$ctor) return $entityR;
+
+    // If `alias` prop is not defined within $ctor arg - use value given by $table arg
+    if (!array_key_exists('table', $ctor)) $ctor['table'] = $table;
+
+    // If `entity` entry was not found - create it
+    if (!$entityR) $entityR = Indi::model('Entity')->createRow();
+
+    // Assign other props and save
+    $entityR->assign($ctor)->save();
+
+    // Return `entity` entry (newly created, or existing but updated)
+    return $entityR;
 }
 
 /**

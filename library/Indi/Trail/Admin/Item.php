@@ -82,7 +82,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
 
             // Alter fields
-            foreach ($sectionR->nested('disabledField') as $_) {
+            foreach ($sectionR->nested(entity('alteredField') ? 'alteredField' : 'disabledField') as $_) {
                 $alter = array();
                 if (strlen($_->rename)) $alter['title'] = $_->rename;
                 if (strlen($_->defaultValue)) $alter['defaultValue'] = $_->defaultValue;
