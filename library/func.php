@@ -1434,3 +1434,219 @@ function wrap($val, $html, $cond = null) {
     // Return $value, wrapped with $html, if $cond arg is true
     return (func_num_args() > 2 ? $cond : $val) ? $html . $val . '</' . $m[1] . '>' : $val;
 }
+
+/**
+ * Get `entity` entry either by table name or by ID
+ *
+ * @param string|int $table Entity ID or table name
+ * @return Entity_Row|null
+ */
+function entity($table) {
+
+    // If $table arg is an integer - assume it's an entity ID, or assume it's an entity table otherwise
+    $byprop = Indi::rexm('int11', $table) ? 'id' : 'table';
+
+    // Return `entity` entry
+    return Indi::model('Entity')->fetchRow('`' . $byprop . '` = "' . $table . '"');
+}
+
+/**
+ * Short-hand function that allows to manipulate `field` entry, identified by $table and $alias args.
+ * If only two args given - function will fetch and return appropriate `field` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `field` entry, or update existing if found
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string $alias Field's alias
+ * @param array $ctor Props to be involved in insert/update
+ * @return Field_Row|null
+ */
+function field($table, $alias, array $ctor = array()) {
+
+    // Get `entityId` according to $table arg
+    $entityId = entity($table)->id;
+
+    // Try to find `field` entry
+    $fieldR = Indi::model('Field')->fetchRow(array(
+        '`entityId` = "' . $entityId . '"',
+        '`alias` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is an empty array - return `field` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $table and $alias args - is not enough for `field` entry to be created
+    if (!$ctor) return $fieldR;
+
+    // If `entityId` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table and $alias args
+    foreach (ar('entityId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$fieldR) $fieldR = Indi::model('Field')->createRow();
+
+    // Assign other props and save
+    $fieldR->assign($ctor)->save();
+
+    // Return `field` entry (newly created, or existing but updated)
+    return $fieldR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `section` entry, identified by $alias arg.
+ * If only $alias arg given - function will fetch and return appropriate `section` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `section` entry, or update existing if found
+ *
+ * @param string $alias Section's alias
+ * @param array $ctor Props to be involved in insert/update
+ * @return Section_Row|null
+ */
+function section($alias, array $ctor = array()) {
+
+    // If $alias arg is an integer - assume it's a section ID, or assume it's a section alias otherwise
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
+    // Try to find `section` entry
+    $sectionR = Indi::model('Section')->fetchRow('`' . $byprop . '` = "' . $alias . '"');
+
+    // If $ctor arg is an empty array - return `section` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $alias arg - is not enough for `section` entry to be created
+    if (!$ctor) return $sectionR;
+
+    // If `alias` prop is not defined within $ctor arg - use value given by $alias arg
+    if (!array_key_exists('alias', $ctor)) $ctor['alias'] = $alias;
+
+    // If `section` entry was not found - create it
+    if (!$sectionR) $sectionR = Indi::model('Section')->createRow();
+
+    // Assign `entityId` prop first
+    if ($ctor['entityId'] && $sectionR->entityId = $ctor['entityId']) unset($ctor['entityId']);
+
+    // Assign other props and save
+    $sectionR->assign($ctor)->save();
+
+    // Return `section` entry (newly created, or existing but updated)
+    return $sectionR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `grid` entry, identified by $section and $field args.
+ * If only those two args given - function will fetch and return appropriate `section` entry (or null, if not found)
+ * If 3rd arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `section`
+ * entry, or update existing if found
+ *
+ * @param string $section Alias of section, that grid column is/should exist within
+ * @param string $field Alias of field, underlying behind grid column
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Grid_Row|null
+ */
+function grid($section, $field, $ctor = false) {
+
+    // Get `sectionId` and `fieldId` according to $section and $field args
+    $sectionR = section($section);
+    $sectionId = $sectionR->id;
+    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id;
+
+    // Try to find `grid` entry
+    $gridR = Indi::model('Grid')->fetchRow(array(
+        '`sectionId` = "' . $sectionId . '"',
+        '`fieldId` = "' . $fieldId . '"'
+    ));
+
+    // If $ctor arg is non-false and is not and empty array - return found `grid` entry, or null otherwise
+    // This part of this function differs from such part if other similar functions, for example field() function,
+    // because presence of $section and $field args - is minimum enough for `grid` entry to be created
+    if (!$ctor && !is_array($ctor)) return $gridR;
+
+    // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
+    // - use values given by $section and $fields args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('sectionId,fieldId') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$gridR) $gridR = Indi::model('Grid')->createRow();
+
+    // Assign `sectionId` prop first
+    if ($ctor['sectionId'] && $gridR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign other props and save
+    $gridR->assign($ctor)->save();
+
+    // Return `grid` entry (newly created, or existing but updated)
+    return $gridR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `entry` entry, identified by $table, $field and $alias args.
+ * If only those two args given - function will fetch and return appropriate `entry` entry (or null, if not found)
+ * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `enumset`
+ * entry, or update existing if found
+ *
+ * If 4th arg is an array containing value under 'color' key - color box will be injected into `enumset` entry's `title`
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string $field Field alias
+ * @param string $alias Enumset alias
+ * @param bool|array $ctor
+ * @return Enumset_Row|null
+ */
+function enumset($table, $field, $alias, $ctor = false) {
+
+    // Get `fieldId` according to $table and $field args
+    $fieldId = field($table, $field)->id;
+
+    // Try to find `grid` entry
+    $enumsetR = Indi::model('Enumset')->fetchRow(array(
+        '`fieldId` = "' . $fieldId . '"',
+        '`alias` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is non-false and is not and empty array - return `grid` entry, else
+    if (!$ctor && !is_array($ctor)) return $enumsetR;
+
+    // If `fieldId` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table+$field and $alias args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('fieldId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `enumset` entry already exists - do not allow re-linking it from one field to another
+    if ($enumsetR) unset($ctor['fieldId']);
+
+    // Else - create it
+    else $enumsetR = Indi::model('Enumset')->createRow();
+
+    // If $ctor['color'] is given - apply color-box
+    if ($ctor['color']) $ctor['title'] = '<span class="i-color-box" style="background: '
+        . $ctor['color'] . ';"></span>' . strip_tags($ctor['title']);
+
+    // Assign other props and save
+    $enumsetR->assign($ctor)->save();
+
+    // Return `enumset` entry (newly created, or existing but updated)
+    return $enumsetR;
+}
+
+/**
+ * Short-hand function for getting `element` entry by it's `alias`
+ *
+ * @param string $alias
+ * @return Indi_Db_Table_Row|null
+ */
+function element($alias) {
+    return Indi::model('Element')->fetchRow('`alias` = "' . $alias . '"');
+}
+
+/**
+ * Short-hand function for getting `columnType` entry by it's `type`
+ *
+ * @param string $type
+ * @return ColumnType_Row|null
+ */
+function coltype($type) {
+    return Indi::model('ColumnType')->fetchRow('`type` = "' . $type . '"');
+}

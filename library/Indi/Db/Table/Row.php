@@ -843,6 +843,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
     /**
      * Provide Move up/Move down actions for row within the needed area of rows
+     * If $direction arg is given as integer value - function can move current entry multiple times,
+     * until it's possible. In this case, movement direction will be detected as 'up' for positive
+     * values of $direction arg, and as 'down' for negative
      *
      * @param string $direction (up|down)
      * @param string $within
@@ -850,7 +853,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function move($direction = 'up', $within = '') {
 
-        // Check direction validity
+        // If $direction arg is either 'up' or 'down'
         if (in_array($direction, array('up', 'down'))) {
 
             // Setup initial WHERE clause, for being able to detect the scope of rows, that order should be changed within
@@ -883,6 +886,17 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // return boolean true as an indicator of success
                 if (!$this->mismatch() && !$changeRow->mismatch()) return true;
             }
+
+        // Else if $direction arg is an integer
+        } else if ($direction && Indi::rexm('int11', $direction)) {
+
+            // Do move as many times as specified by $direction arg's integer value
+            for ($i = 0; $i < abs($direction); $i++)
+                if (!$this->move($direction > 0 ? 'up' : 'down', $within))
+                    break;
+
+            // Return
+            return $this;
         }
     }
 
