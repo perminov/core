@@ -16,8 +16,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
-     * Set row field value, by creating an item of $this->_modified array, in case if
-     * value is different from value of $this->_original at same key ($columnName)
+     * This method was redefined to provide ability for some field
+     * props to be set using aliases rather than ids
      *
      * @param  string $columnName The column key.
      * @param  mixed  $value      The value for the property.
@@ -27,6 +27,13 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Check if value is a color in #RRGGBB format and prepend it with hue number
         if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) $value = hrgb($value);
+
+        // Provide ability for some field props to be set using aliases rather than ids
+        if (!Indi::rexm('int11', $value)) {
+            if ($columnName == 'elementId') $value = element($value)->id;
+            if ($columnName == 'columnTypeId') $value = coltype($value)->id;
+            if (in($columnName, 'entityId,relation')) $value = entity($value)->id;
+        }
 
         // Standard __set()
         parent::__set($columnName, $value);
@@ -1412,5 +1419,22 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Else just return it
         else return $this->_temporary['params'][$name];
+    }
+
+    /**
+     * This method is redefined to setup default value for $within arg,
+     * for current `field` entry to be moved within the `entity` it belongs to
+     *
+     * @param string $direction
+     * @param string $within
+     * @return bool
+     */
+    public function move($direction = 'up', $within = '') {
+
+        // If $within arg is not given - move field within the entity it belongs to
+        if (func_num_args() < 2) $within = '`entityId` = "' . $this->entityId . '"';
+
+        // Call parent
+        return parent::move($direction, $within);
     }
 }
