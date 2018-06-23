@@ -86,7 +86,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 $alter = array();
                 if (strlen($_->rename)) $alter['title'] = $_->rename;
                 if (strlen($_->defaultValue)) $alter['defaultValue'] = $_->defaultValue;
-                if ($_->mode != 'inherit') $alter['mode'] = $_->mode;
+                if (!$_->mode) $alter['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
+                else if ($_->mode != 'inherit') $alter['mode'] = $_->mode;
                 $this->fields->gb($_->fieldId)->assign($alter);
             }
 
