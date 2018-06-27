@@ -1503,6 +1503,9 @@ function field($table, $alias, array $ctor = array()) {
     // If `grid` entry was not found - create it
     if (!$fieldR) $fieldR = Indi::model('Field')->createRow();
 
+    // Assign `entityId` prop first
+    if ($ctor['entityId'] && $fieldR->entityId = $ctor['entityId']) unset($ctor['entityId']);
+
     // Assign other props and save
     $fieldR->assign($ctor)->save();
 
