@@ -409,7 +409,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if ($parentWHERE = $this->parentWHERE()) $where['parent'] = $parentWHERE;
 
         // If a special section's primary filter was defined, add it to primary WHERE clauses stack
-        if (strlen(Indi::trail()->section->compiled('filter'))) $where['static'] = Indi::trail()->section->compiled('filter');
+        if (strlen(Indi::trail()->section->compiled('filter'))) $where['static'] = '(' . Indi::trail()->section->compiled('filter') . ')';
 
         // Owner control. There can be a situation when some cms users are not stored in 'admin' db table - these users
         // called 'alternates'. Example: we have 'Experts' cms section (rows are fetched from 'expert' db table) and
@@ -2419,12 +2419,19 @@ class Indi_Controller_Admin extends Indi_Controller {
                 : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
         // Return clause
-        /*return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
-            ? 'FIND_IN_SET("' . $connectorValue . '", `' . $connectorAlias . '`)'
-            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';*/
-        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+        $return = Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
             ? 'CONCAT(",", `' . $connectorAlias . '`, ",") REGEXP ",(' . im(ar($connectorValue), '|') . '),"'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
+
+        // If connector field - is a field having Variable Entity satellite dependency
+        if (t()->model->fields($connectorAlias)->dependency == 'e') {
+            $sField = t()->model->fields($connectorAlias)->foreign('satellite')->alias;
+            $prepend = '`' . $sField . '` = "' . t(1)->section->entityId . '"';
+            $return = '(' . $prepend . ' AND ' . $return . ')';
+        }
+
+        // Return clause
+        return $return;
     }
 
     /**

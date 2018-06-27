@@ -994,7 +994,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $where = $where ? (is_array($where) ? $where : array($where)): array();
 
         // Setup filter, as one of possible parts of WHERE clause
-        if ($fieldR->filter) $where[] = $fieldR->filter;
+        if ($fieldR->filter) $where[] = '(' . $fieldR->filter . ')';
 
         // Compile filters if they contain php-expressions
         for($i = 0; $i < count($where); $i++) {
