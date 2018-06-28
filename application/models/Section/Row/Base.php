@@ -22,7 +22,7 @@ class Section_Row_Base extends Indi_Db_Table_Row {
     public function __set($columnName, $value) {
 
         // Provide ability for some field props to be set using aliases rather than ids
-        if (!Indi::rexm('int11', $value)) {
+        if (is_string($value) && !Indi::rexm('int11', $value)) {
             if (in($columnName, 'parentSectionConnector,groupBy,defaultSortField')) $value = field($this->entityId, $value)->id;
             else if ($columnName == 'entityId') $value = entity($value)->id;
         }
