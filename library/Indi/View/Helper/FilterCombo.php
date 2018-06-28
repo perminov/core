@@ -87,7 +87,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
 
             // Get the distinct list of possibilities
             $in = Indi::db()->query('
-                SELECT DISTINCT `'. $alias . '` FROM `' . $tbl .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
+                SELECT DISTINCT `'. $alias . '` FROM `' . $this->distinctFrom($alias, $tbl) .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
             )->fetchAll(PDO::FETCH_COLUMN);
 
             // Unset zero-length values
@@ -96,6 +96,21 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
             // Return
             return in($relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : '0') . ')';
         }
+    }
+
+    /**
+     * This function may be useful in cases when $defaultTable - is a name
+     * of the MySQL VIEW rather than MySQL TABLE, but using VIEW takes much
+     * time for getting distinct values from it. So, you may override this
+     * function in child classes for it to return custom table names depending
+     * on column, what we need to fetch distinct value from
+     *
+     * @param $column
+     * @param $defaultTable
+     * @return mixed
+     */
+    public function distinctFrom($column, $defaultTable) {
+        return $defaultTable;
     }
 
     public function getSelected() {

@@ -337,14 +337,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Provide form action
      */
     public function formAction() {
-        if (Indi::trail()->disabledFields->count()) {
-            Indi::trail()->disabledFields->foreign('fieldId');
-            if (!$this->row->id) foreach (Indi::trail()->disabledFields as $disabledFieldR) {
-                if (strlen($disabledFieldR->defaultValue)) {
-                    $this->row->{$disabledFieldR->foreign('fieldId')->alias} = $disabledFieldR->compiled('defaultValue');
-                }
-            }
-        }
+
     }
 
     /**
@@ -418,7 +411,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if ($parentWHERE = $this->parentWHERE()) $where['parent'] = $parentWHERE;
 
         // If a special section's primary filter was defined, add it to primary WHERE clauses stack
-        if (strlen(Indi::trail()->section->compiled('filter'))) $where['static'] = Indi::trail()->section->compiled('filter');
+        if (strlen(Indi::trail()->section->compiled('filter'))) $where['static'] = '(' . Indi::trail()->section->compiled('filter') . ')';
 
         // Owner control. There can be a situation when some cms users are not stored in 'admin' db table - these users
         // called 'alternates'. Example: we have 'Experts' cms section (rows are fetched from 'expert' db table) and
@@ -2225,11 +2218,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If there was disabled fields defined for current section, we check if default value was additionally set up
         // and if so - assign that default value under that disabled field alias in $data array, or, if default value
         // was not set - drop corresponding key from $data array
-        foreach (Indi::trail()->disabledFields as $disabledFieldR)
-            foreach (Indi::trail()->fields as $fieldR)
-                if ($fieldR->id == $disabledFieldR->fieldId)
-                    if (!strlen($disabledFieldR->defaultValue)) unset($data[$fieldR->alias]);
-                    else $data[$fieldR->alias] = $disabledFieldR->compiled('defaultValue');
+        foreach (Indi::trail()->fields as $fieldR)
+            if (in($fieldR->mode, 'hidden,readonly'))
+                if (!strlen($fieldR->defaultValue) || $this->row->id) unset($data[$fieldR->alias]);
+                else $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
 
         // If current cms user is an alternate, and if there is corresponding field within current entity structure
         if ($this->alternateWHERE() && Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $possibleA))
@@ -2246,16 +2238,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // it, for avoid problems while possible move from STD to non-STD, or other-STD directories
         $this->row->trimSTDfromCKEvalues();
 
-        // Get the list of ids of fields, that are disabled
-        $disabledA = Indi::trail()->disabledFields->column('fieldId');
-
         // Get the aliases of fields, that are file upload fields, and that are not disabled,
         // and are to be some changes applied on
         $filefields = array();
         foreach (Indi::trail()->fields as $fieldR)
-            if ($fieldR->foreign('elementId')->alias == 'upload' && !in_array($fieldR->id, $disabledA))
-                if (preg_match('/^m|d$/', Indi::post($fieldR->alias)) || preg_match(Indi::rex('url'), Indi::post($fieldR->alias)))
-                    $filefields[] = $fieldR->alias;
+            if (!in($fieldR->mode, 'hidden,readonly'))
+                if ($fieldR->foreign('elementId')->alias == 'upload')
+                    if (preg_match('/^m|d$/', Indi::post($fieldR->alias)) ||
+                        preg_match(Indi::rex('url'), Indi::post($fieldR->alias)))
+                        $filefields[] = $fieldR->alias;
 
         // If we're going to save new row - setup $updateAix flag
         if (!$this->row->id) $updateAix = true;
@@ -2430,12 +2421,19 @@ class Indi_Controller_Admin extends Indi_Controller {
                 : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
         // Return clause
-        /*return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
-            ? 'FIND_IN_SET("' . $connectorValue . '", `' . $connectorAlias . '`)'
-            : '`' . $connectorAlias . '` = "' . $connectorValue . '"';*/
-        return Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+        $return = Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
             ? 'CONCAT(",", `' . $connectorAlias . '`, ",") REGEXP ",(' . im(ar($connectorValue), '|') . '),"'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
+
+        // If connector field - is a field having Variable Entity satellite dependency
+        if (t()->model->fields($connectorAlias)->dependency == 'e') {
+            $sField = t()->model->fields($connectorAlias)->foreign('satellite')->alias;
+            $prepend = '`' . $sField . '` = "' . t(1)->section->entityId . '"';
+            $return = '(' . $prepend . ' AND ' . $return . ')';
+        }
+
+        // Return clause
+        return $return;
     }
 
     /**
