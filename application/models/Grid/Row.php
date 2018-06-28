@@ -12,7 +12,7 @@ class Grid_Row extends Indi_Db_Table_Row {
     public function __set($columnName, $value) {
 
         // Provide ability for some grid col props to be set using aliases rather than ids
-        if (!Indi::rexm('int11', $value)) {
+        if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
         }
