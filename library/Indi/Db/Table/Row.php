@@ -1012,6 +1012,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
     /**
      * Provide Move up/Move down actions for row within the needed area of rows
+     * If $direction arg is given as integer value - function can move current entry multiple times,
+     * until it's possible. In this case, movement direction will be detected as 'up' for positive
+     * values of $direction arg, and as 'down' for negative
      *
      * @param string $direction (up|down)
      * @param string $within
@@ -1019,7 +1022,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function move($direction = 'up', $within = '') {
 
-        // Check direction validity
+        // If $direction arg is either 'up' or 'down'
         if (in_array($direction, array('up', 'down'))) {
 
             // Setup initial WHERE clause, for being able to detect the scope of rows, that order should be changed within
@@ -1052,6 +1055,17 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // return boolean true as an indicator of success
                 if (!$this->mismatch() && !$changeRow->mismatch()) return true;
             }
+
+        // Else if $direction arg is an integer
+        } else if ($direction && Indi::rexm('int11', $direction)) {
+
+            // Do move as many times as specified by $direction arg's integer value
+            for ($i = 0; $i < abs($direction); $i++)
+                if (!$this->move($direction > 0 ? 'up' : 'down', $within))
+                    break;
+
+            // Return
+            return $this;
         }
     }
 
@@ -1149,7 +1163,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $where = $where ? (is_array($where) ? $where : array($where)): array();
 
         // Setup filter, as one of possible parts of WHERE clause
-        if ($fieldR->filter) $where[] = $fieldR->filter;
+        if ($fieldR->filter) $where[] = '(' . $fieldR->filter . ')';
 
         // Compile filters if they contain php-expressions
         for($i = 0; $i < count($where); $i++) {
@@ -1383,7 +1397,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // is 1, it will be 2, because actually results of page 1 were already fetched
             // and displayed at the stage of combo first initialization
             if ($page != null) {
-                if(!$selected || $selectedTypeIsKeyword || func_get_arg(4)) $page++;
+                if(!$selected || $selectedTypeIsKeyword || (func_num_args() > 4 && func_get_arg(4))) $page++;
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
@@ -1414,7 +1428,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($groupByFieldOrder = $groupByField->order('ASC', $where))
                         $order = array($groupByFieldOrder, $order);
 
-                if (is_null(func_get_arg(4))) {
+                if (func_num_args() < 5 || is_null(func_get_arg(4))) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
                 } else {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
@@ -1547,7 +1561,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Reverse results if we were getting upper page results
                 if ($upper) $dataRs->reverse();
 
-                // If we don't have neither initially selected options, nor keyword
+            // If we don't have neither initially selected options, nor keyword
             } else {
 
                 // If user try to get results of upper page, empty result set should be returned
@@ -2556,6 +2570,17 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // For each $modified field
         foreach ($this->_modified as $column => $value) {
+
+            // If $column is 'id', so no Field_Row instance can be found
+            if ($column == 'id') {
+
+                // If $value is not a decimal - push a error to errors stack
+                if (!preg_match(Indi::rex('int11'), $value))
+                    $this->_mismatch[$column] = sprintf(I_ROWSAVE_ERROR_VALUE_SHOULD_BE_INT11, $value, 'ID');
+
+                // Jump to checking the next column's value
+                continue;
+            }
 
             // Get the field
             $fieldR = $this->model()->fields($column);
@@ -3653,6 +3678,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function temporary() {
         if (func_num_args() == 0) return $this->_temporary;
         else if (func_num_args() == 1) return $this->_temporary[func_get_arg(0)];
+        else if (func_get_arg(1) === null) unset($this->_temporary[func_get_arg(0)]);
         else return $this->_temporary[func_get_arg(0)] = func_get_arg(1);
     }
 
@@ -3677,14 +3703,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return mixed
      */
     public function system() {
-        if (func_num_args() == 1) {
-            return $this->_system[func_get_arg(0)];
-        } else if (func_num_args() == 2) {
-            $this->_system[func_get_arg(0)] = func_get_arg(1);
-            return $this;
-        } else {
-            return $this->_system;
-        }
+        if (func_num_args() == 0) return $this->_system;
+        else if (func_num_args() == 1) return $this->_system[func_get_arg(0)];
+        else if (func_get_arg(1) === null) unset($this->_system[func_get_arg(0)]);
+        else return $this->_system[func_get_arg(0)] = func_get_arg(1);
     }
 
     /**
@@ -3847,6 +3869,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Move uploaded file to $dst destination, or copy, if move_uploaded_file() call failed
                 if (!move_uploaded_file($meta['tmp_name'], $dst)) copy($meta['tmp_name'], $dst);
+
+                // Catch the moment after file was uploaded
+                $this->onUpload($field, $dst);
 
                 // If uploaded file is an image in formats gif, jpg or png
                 if (preg_match('/^gif|jpe?g|png$/i', $ext)) {
@@ -5445,5 +5470,13 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function enumset($field, $option = null) {
         return $this->model()->enumset($field, $option);
+    }
+
+    /**
+     * This function is called right after 'move_uploaded_file() / copy()' call within Indi_Db_Table_Row::file(true) body.
+     * It can be useful in cases when we need to do something once where was a file uploaded into a field
+     */
+    public function onUpload($field, $dst) {
+
     }
 }

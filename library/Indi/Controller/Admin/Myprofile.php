@@ -26,4 +26,19 @@ class Indi_Controller_Admin_Myprofile extends Indi_Controller_Admin {
 
         parent::preDispatch();
     }
+
+    /**
+     * Hardcode WHERE clause, to prevent user from accessing someone else's details
+     *
+     * @param $where
+     * @return array|mixed
+     */
+    public function adjustPrimaryWHERE($where) {
+
+        // Prevent user from accessing someone else's details
+        $where['static'] = '`id` = "' . Indi::admin()->id . '"';
+
+        // Return
+        return $where;
+    }
 }

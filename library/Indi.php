@@ -1462,6 +1462,7 @@ class Indi {
 	 * @return array
 	 */
 	public static function blocks($key = null, $default = null){
+
 		// If self::$_blockA is null at the moment, we fetch it from `staticblock` table
 		if (self::$_blockA === null) {
 
@@ -1478,6 +1479,30 @@ class Indi {
                 if ($staticBlockR->type == 'textarea') self::$_blockA[$staticBlockR->alias] = nl2br(self::$_blockA[$staticBlockR->alias]);
             }
 		}
+
+        // Check if $key is a regexp, and if yes
+        if (is_string($key) && Indi::rexm('/^(\/|#|\+|%|~|!)[^\1]*\1[imsxeu]*$/', $rex = $key)) {
+
+            // Collect values under keys that match a regular expression
+            foreach (self::$_blockA as $alias => $value)
+                if (preg_match($rex, $alias))
+                    $blockA[$alias] = Indi::blocks($alias);
+
+            // Return array of values
+            return $blockA ?: array();
+        }
+
+        // Check whether current block's content contains other blocks placeholders, and if found
+        if (preg_match_all('/{[a-zA-Z0-9\-]+}/', self::$_blockA[$key], $m))
+
+            // Foreach found placeholder
+            foreach ($m[0] as $placeholder)
+
+                // Trim '{}' chars from placeholder, for usage as an other block's key, and prevent recursion
+                if (($bkey = trim($placeholder, '{}')) != $key)
+
+                    // Do replacement
+                    self::$_blockA[$key] = str_replace($placeholder, Indi::blocks($bkey) ?: '', self::$_blockA[$key]);
 
 		// If $key argument was specified, we return a certain value, or all array otherwise
 		return $key == null ? self::$_blockA : (array_key_exists($key, self::$_blockA) ? self::$_blockA[$key] : $default);

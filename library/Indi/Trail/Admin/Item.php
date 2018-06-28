@@ -81,16 +81,15 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             // Set fields, that will be used as grid columns in case if current action is 'index'
             if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
 
-            // Setup disabled fields
-            $this->disabledFields = $sectionR->nested('disabledField');
-
-            // Setup additional disabled fields, depend on the value of `mode` prop of entity's fields
-            foreach ($this->fields as $fieldR)
-                if (in($fieldR->mode, 'readonly,hidden'))
-                    $this->disabledFields->append(array(
-                        'fieldId' => $fieldR->id,
-                        'displayInForm' => (int) ($fieldR->mode == 'readonly')
-                    ));
+            // Alter fields
+            foreach ($sectionR->nested(entity('alteredField') ? 'alteredField' : 'disabledField') as $_) {
+                $alter = array();
+                if (strlen($_->rename)) $alter['title'] = $_->rename;
+                if (strlen($_->defaultValue)) $alter['defaultValue'] = $_->defaultValue;
+                if (!$_->mode) $alter['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
+                else if ($_->mode != 'inherit') $alter['mode'] = $_->mode;
+                $this->fields->gb($_->fieldId)->assign($alter);
+            }
 
         } else {
 
