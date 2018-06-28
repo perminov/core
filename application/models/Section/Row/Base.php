@@ -12,6 +12,26 @@ class Section_Row_Base extends Indi_Db_Table_Row {
     }
 
     /**
+     * This method was redefined to provide ability for some field
+     * props to be set using aliases rather than ids
+     *
+     * @param  string $columnName The column key.
+     * @param  mixed  $value      The value for the property.
+     * @return void
+     */
+    public function __set($columnName, $value) {
+
+        // Provide ability for some field props to be set using aliases rather than ids
+        if (!Indi::rexm('int11', $value)) {
+            if (in($columnName, 'parentSectionConnector,groupBy,defaultSortField')) $value = field($this->entityId, $value)->id;
+            else if ($columnName == 'entityId') $value = entity($value)->id;
+        }
+
+        // Standard __set()
+        parent::__set($columnName, $value);
+    }
+
+    /**
      * Setup grid
      *
      * @return int

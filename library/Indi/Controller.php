@@ -828,31 +828,81 @@ class Indi_Controller {
      */
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
-        // Append
-        foreach(ar($alias) as $a) Indi::trail()->disabledFields->append(array(
-            'id' => 0,
-            'sectionId' => Indi::trail()->section->id,
-            'fieldId' => Indi::trail()->model->fields($a)->id,
-            'defaultValue' => $defaultValue,
-            'displayInForm' => $displayInForm ? 1 : 0,
-        ));
+        // Foreach field alias within $alias
+        foreach (ar($alias) as $a) {
+
+            // Check if such field exists, an if no - skip
+            if (!$_ = t()->model->fields($a)) continue;
+
+            // Alter field's `mode` prop
+            $_->mode = $displayInForm ? 'readonly' : 'hidden';
+
+            // If $defaultValue arg is not given - skip
+            if (func_num_args() <= 2) continue;
+
+            // Backup original value of `defaultValue` prop
+            if (!array_key_exists('defaultValue_backup', $_->system()))
+                $_->system('defaultValue_backup', $_->original('defaultValue'));
+
+            // Setup $defaultValue arg as original value of `defaultValue` prop
+            $_->original('defaultValue', $defaultValue);
+
+            // If we do not deal with certain row, or do, but with already existing row - skip
+            if (!t()->row || t()->row->id) continue;
+
+            // Backup original value of $a prop
+            if (!array_key_exists($bn = $a . '_backup', t()->row->system()))
+                t()->row->system($bn, t()->row->original($a));
+
+            // Setup $default
+            t()->row->original($a, $defaultValue);
+        }
     }
 
     /**
      * Exclude field/fields from the list of disabled fields by their aliases/names
      *
      * @param string $fields Comma-separated list of fields's aliases to be excluded from the list of disabled fields
+     * @param string $mode
      */
-    public function excludeDisabledFields($fields) {
+    public function excludeDisabledFields($fields, $mode = 'regular') {
 
-        // Convert $fields argument into an array
-        $fieldA_alias = ar($fields);
+        // Foreach field alias within $alias
+        foreach(ar($fields) as $a) {
 
-        // Get the ids
-        $fieldA_id = Indi::trail()->fields->select($fieldA_alias, 'alias')->column('id');
+            // Check if such field exists, and if no - skip
+            if (!$_ = Indi::trail()->model->fields($a)) continue;
 
-        // Exclude
-        Indi::trail()->disabledFields->exclude($fieldA_id, 'fieldId');
+            // If $mode arg is given - set `mode` according to $mode arg,
+            // else if $mode arg is NOT given and `mode` prop is NOT modified
+            // - set `mode` according to $mode arg's default value - 'regular',
+            // else if $mode arg is NOT given and `mode` prop IS modified
+            // - revert `mode` back to it's original value
+            $_->mode = func_num_args() > 1 || !$_->isModified('mode') ? $mode : $_->original('mode');
+
+            // If `defaultValue` prop was backed up
+            if (array_key_exists('defaultValue_backup', $_->system())) {
+
+                // Apply backup
+                $_->original('defaultValue', $_->system('defaultValue_backup'));
+
+                // Unset backup
+                $_->system('defaultValue_backup', null);
+            }
+
+            // If we do not deal with certain row, or do, but with already existing row - skip
+            if (!t()->row || t()->row->id) continue;
+
+            // If $a prop was backed up
+            if (array_key_exists($bn = $a . '_backup', t()->row->system())) {
+
+                // Apply backup
+                t()->row->original($a,  t()->row->system($bn));
+
+                // Unset backup
+                t()->row->system($bn, null);
+            }
+        }
     }
     
     /**

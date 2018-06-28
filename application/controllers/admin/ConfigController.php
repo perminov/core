@@ -30,9 +30,7 @@ class Admin_ConfigController extends Indi_Controller_Admin {
             $this->deny('create');
 
             // Disable but make visible system fields
-            $this->appendDisabledField('title', true);
-            $this->appendDisabledField('alias', true);
-            $this->appendDisabledField('elementId', true);
+            $this->appendDisabledField('title,alias,elementId', true);
         }
 
         // Totally disable `expiryDurationStr` field
