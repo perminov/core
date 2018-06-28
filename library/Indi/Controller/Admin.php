@@ -2950,7 +2950,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Pass pricing info
-        Indi::trail()->data['sipnet']['pricing'] = $pricing ?: [];
+        Indi::trail()->data['sipnet']['pricing'] = $pricing ?: array();
 
         // Pass demo phone
         if (Indi::demo(false) || true) Indi::trail()->data['sipnet']['demophone'] = $sipnet->demophone;
