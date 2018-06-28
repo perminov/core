@@ -160,7 +160,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) $value = hrgb($value);
 
         // Provide ability for some field props to be set using aliases rather than ids
-        if (!Indi::rexm('int11', $value)) {
+        if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'elementId') $value = element($value)->id;
             else if ($columnName == 'columnTypeId') $value = coltype($value)->id;
             else if (in($columnName, 'entityId,relation')) $value = entity($value)->id;
