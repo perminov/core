@@ -148,13 +148,22 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Get final ORDER clause, built regarding column name and sorting direction
                     $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
-                    // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
-                    // constructed with usage of Indi::get('limit') and Indi::get('page') params
-                    $this->rowset = Indi::trail()->model->{
-                    'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
-                    }($finalWHERE, $finalORDER,
-                        Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('limit') : null,
-                        Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('page') : null);
+                    // Try to get rowset
+                    do {
+
+                        // Get the rowset, fetched using WHERE and ORDER clauses, and with built LIMIT clause,
+                        // constructed with usage of Indi::get('limit') and Indi::get('page') params
+                        $this->rowset = Indi::trail()->model->{
+                        'fetch'. (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'] ? 'Tree' : 'All')
+                        }($finalWHERE, $finalORDER,
+                            $limit = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('limit') : null,
+                            $page  = Indi::uri()->format == 'json' || !Indi::uri()->format ? (int) Indi::get('page') : null);
+
+                        // If we're at 2nd or further page, but no results - try to detect new prev page
+                        $shift = $limit && $page > 1 && !$this->rowset->count() && ($found = $this->rowset->found()) ? ceil($found/$limit) : 0;
+
+                    // If we should try another page - do it
+                    } while ($shift && (Indi::get()->page = $shift));
 
                     /**
                      * Remember current rowset properties SQL - WHERE, ORDER, LIMIT clauses - to be able to apply these properties in cases:
@@ -2099,7 +2108,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // Redirect
-        if ($return) return $location; else iexit('<script>window.parent.Indi.load("' . $location . '");</script>');
+        if ($return) return $location; else jflush(true, array('redirect' => $location));
     }
 
     /**
@@ -2124,6 +2133,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // For each row
                 foreach ($otherRs as $otherR) $otherR->toggle();
+
+                // Prepare array of selected rows ids
+                $scopeRowIdA = $otherIdA; array_unshift($scopeRowIdA, t()->row->id);
+
+                // Apply those
+                $this->setScopeRow(false, null, $scopeRowIdA);
             }
         }
 
