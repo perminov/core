@@ -1345,7 +1345,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_null($order)) {
             if ($relatedM->comboDataOrder) {
                 $order = $relatedM->comboDataOrder;
-                if (!func_get_arg(9) && $relatedM->comboDataOrderDirection)
+                if (!@func_get_arg(9) && $relatedM->comboDataOrderDirection)
                     $dir = $relatedM->comboDataOrderDirection;
             } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
