@@ -2233,7 +2233,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // was not set - drop corresponding key from $data array
         foreach (Indi::trail()->fields as $fieldR)
             if (in($fieldR->mode, 'hidden,readonly'))
-                if (!strlen($fieldR->defaultValue) || $this->row->id) unset($data[$fieldR->alias]);
+                if (!strlen($fieldR->defaultValue) || $this->row->id || $this->row->isModified($fieldR->alias)) unset($data[$fieldR->alias]);
                 else $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
 
         // If current cms user is an alternate, and if there is corresponding field within current entity structure
