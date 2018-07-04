@@ -262,8 +262,8 @@ Ext.define('Indi.lib.controller.action.Form', {
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
-        var disabledA = me.ti().disabledFields.select('0', 'displayInForm').column('fieldId');
-        var visibleA = me.ti().disabledFields.select('1', 'displayInForm').column('fieldId');
+        var disabledA = fieldA.select('hidden', 'mode').column('id');
+        var visibleA = fieldA.select('readonly', 'mode').column('id');
 
         // If me.formItemOnlyA is a function - call it
         formItemOnlyA = Ext.isFunction(me.formItemOnlyA) ? me.formItemOnlyA() : me.formItemOnlyA;

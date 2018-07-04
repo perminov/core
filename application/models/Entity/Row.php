@@ -397,4 +397,90 @@ class Entity_Row extends Indi_Db_Table_Row {
             ');
         }
     }
+
+    /**
+     * This method was redefined to provide ability for some entity
+     * props to be set using aliases rather than ids
+     *
+     * @param  string $columnName The column key.
+     * @param  mixed  $value      The value for the property.
+     * @return void
+     */
+    public function __set($columnName, $value) {
+
+        // Provide ability for some entity props to be set using aliases rather than ids
+        if (is_string($value) && !Indi::rexm('int11', $value)) {
+            if ($columnName == 'titleFieldId') $value = field($this->table, $value)->id;
+        }
+
+        // Call parent
+        parent::__set($columnName, $value);
+    }
+
+    /**
+     * Build a string, that will be used in Entity_Row->export()
+     *
+     * @param string $deferred
+     * @param bool $invert
+     * @return string
+     */
+    protected function _ctor($deferred = '', $invert = false) {
+
+        // Use original data as initial ctor
+        $ctor = $this->_original;
+
+        // Exclude `id`, as it will be set automatically by MySQL
+        unset($ctor['id']);
+
+        // Exclude props that are already represented by one of shorthand-fn args
+        foreach (ar('table') as $arg) unset($ctor[$arg]);
+
+        // Exclude props that rely on entity's inner fields as they not exist at the moment of ctor usage
+        if (!$invert) foreach (ar($deferred) as $defer) unset($ctor[$defer]);
+
+        // Foreach $ctor prop
+        foreach ($ctor as $prop => &$value)
+
+            // Exclude prop, if it has value equal to default value
+            if (Indi::model('Entity')->fields($prop)->defaultValue == $value) unset($ctor[$prop]);
+
+            // Exclude prop, if $invert arg is given as `true` and prop is not mentioned in $deferred list
+            else if ($invert && !in($prop, $deferred)) unset($ctor[$prop]);
+
+            // Else if prop contains keys - use aliases instead
+            else {
+                if ($prop == 'titleFieldId') $value = field($this->table, $value)->alias;
+            }
+
+        // Stringify and return $ctor
+        return var_export($ctor, true);
+    }
+
+    /**
+     * Build an expression for creating the current entity in another project, running on Indi Engine
+     *
+     * @return string
+     */
+    public function export() {
+
+        // Declare list of `entity` entry's props, that rely on fields,
+        // that will be created AFTER `entity` entry's itself creation
+        $deferred = 'titleFieldId,spaceScheme,spaceFields';
+
+        // Build `entity` entry creation expression
+        $lineA[] = "entity('" . $this->table . "', " . $this->_ctor($deferred) . ");";
+
+        // Foreach `field` entry, nested within current `entity` entry
+        foreach ($this->nested('field', array('order' => 'move')) as $fieldR)
+
+            // Build `field` entry's creation expression
+            $lineA[] = $fieldR->export();
+
+        // Build expression, that will now apply $deferred props,
+        // because underlying fields creation expressions are already prepared
+        $lineA[] = "entity('" . $this->table . "', " . $this->_ctor($deferred, true) . ");";
+
+        // Return newline-separated list of creation expressions
+        return im($lineA, "\n");
+    }
 }

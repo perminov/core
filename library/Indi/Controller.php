@@ -365,25 +365,28 @@ class Indi_Controller {
 
                         // Detect the type of filter value - bottom or top, in 'range' terms mean
                         // greater-or-equal or less-or-equal
-                        preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches);
+                        if (preg_match('/([a-zA-Z0-9_\-]+)-(lte|gte)$/', $filterSearchFieldAlias, $matches)) {
 
-                        // Currently both filter for Date and Datetime fields looks exactly the same, despite on Datetime
-                        // fields have time in addition to date. But here, in php-code we need to handle these filter types
-                        // with small differences, that are 1) trim up to 10 characters 2) ' 00:00:00' should be appended
-                        // to filter that is associated with Datetime field to provide a valid WHERE clause
-                        if (preg_match('/^12|19$/', $found->elementId))
-                            $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
+                            // Currently both filter for Date and Datetime fields looks exactly the same, despite on Datetime
+                            // fields have time in addition to date. But here, in php-code we need to handle these filter types
+                            // with small differences, that are 1) trim up to 10 characters 2) ' 00:00:00' should be appended
+                            // to filter that is associated with Datetime field to provide a valid WHERE clause
+                            if (preg_match('/^12|19$/', $found->elementId))
+                                $filterSearchFieldValue = substr($filterSearchFieldValue, 0, 10);
 
-                        // Pick the current filter value and field type to $excelA
-                        $excelA[$found->alias]['type'] = in($found->elementId, '18,24,25') ? 'number' : 'date';
-                        $excelA[$found->alias]['value'][$matches[2]] = $filterSearchFieldValue;
+                            // Pick the current filter value and field type to $excelA
+                            $excelA[$found->alias]['type'] = in($found->elementId, '18,24,25') ? 'number' : 'date';
+                            $excelA[$found->alias]['value'][$matches[2]] = $filterSearchFieldValue;
 
-                        // If we deal with DATETIME column, append a time postfix for a proper comparison
-                        if ($found->elementId == 19)
-                            $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
+                            // If we deal with DATETIME column, append a time postfix for a proper comparison
+                            if ($found->elementId == 19)
+                                $filterSearchFieldValue .= preg_match('/gte$/', $filterSearchFieldAlias) ? ' 00:00:00' : ' 23:59:59';
 
-                        // Use a '>=' or '<=' clause, according to specified range border's type
-                        $where[$found->alias][$matches[2]] = Indi::db()->sql('`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= :s', $filterSearchFieldValue);
+                            // Use a '>=' or '<=' clause, according to specified range border's type
+                            $where[$found->alias][$matches[2]] = Indi::db()->sql('`' . $matches[1] . '` ' . ($matches[2] == 'gte' ? '>' : '<') . '= :s', $filterSearchFieldValue);
+
+                        // Else
+                        } else $where[$found->alias] = Indi::db()->sql('`' . $found->alias . '` = :s', $filterSearchFieldValue);
 
                     // If $found field's column type is TEXT ( - control elements 'Text' and 'HTML')
                     } else if ($found->columnTypeId == 4) {
@@ -825,31 +828,81 @@ class Indi_Controller {
      */
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
-        // Append
-        foreach(ar($alias) as $a) Indi::trail()->disabledFields->append(array(
-            'id' => 0,
-            'sectionId' => Indi::trail()->section->id,
-            'fieldId' => Indi::trail()->model->fields($a)->id,
-            'defaultValue' => $defaultValue,
-            'displayInForm' => $displayInForm ? 1 : 0,
-        ));
+        // Foreach field alias within $alias
+        foreach (ar($alias) as $a) {
+
+            // Check if such field exists, an if no - skip
+            if (!$_ = t()->model->fields($a)) continue;
+
+            // Alter field's `mode` prop
+            $_->mode = $displayInForm ? 'readonly' : 'hidden';
+
+            // If $defaultValue arg is not given - skip
+            if (func_num_args() <= 2) continue;
+
+            // Backup original value of `defaultValue` prop
+            if (!array_key_exists('defaultValue_backup', $_->system()))
+                $_->system('defaultValue_backup', $_->original('defaultValue'));
+
+            // Setup $defaultValue arg as original value of `defaultValue` prop
+            $_->original('defaultValue', $defaultValue);
+
+            // If we do not deal with certain row, or do, but with already existing row - skip
+            if (!t()->row || t()->row->id) continue;
+
+            // Backup original value of $a prop
+            if (!array_key_exists($bn = $a . '_backup', t()->row->system()))
+                t()->row->system($bn, t()->row->original($a));
+
+            // Setup $default
+            t()->row->original($a, $defaultValue);
+        }
     }
 
     /**
      * Exclude field/fields from the list of disabled fields by their aliases/names
      *
      * @param string $fields Comma-separated list of fields's aliases to be excluded from the list of disabled fields
+     * @param string $mode
      */
-    public function excludeDisabledFields($fields) {
+    public function excludeDisabledFields($fields, $mode = 'regular') {
 
-        // Convert $fields argument into an array
-        $fieldA_alias = ar($fields);
+        // Foreach field alias within $alias
+        foreach(ar($fields) as $a) {
 
-        // Get the ids
-        $fieldA_id = Indi::trail()->fields->select($fieldA_alias, 'alias')->column('id');
+            // Check if such field exists, and if no - skip
+            if (!$_ = Indi::trail()->model->fields($a)) continue;
 
-        // Exclude
-        Indi::trail()->disabledFields->exclude($fieldA_id, 'fieldId');
+            // If $mode arg is given - set `mode` according to $mode arg,
+            // else if $mode arg is NOT given and `mode` prop is NOT modified
+            // - set `mode` according to $mode arg's default value - 'regular',
+            // else if $mode arg is NOT given and `mode` prop IS modified
+            // - revert `mode` back to it's original value
+            $_->mode = func_num_args() > 1 || !$_->isModified('mode') ? $mode : $_->original('mode');
+
+            // If `defaultValue` prop was backed up
+            if (array_key_exists('defaultValue_backup', $_->system())) {
+
+                // Apply backup
+                $_->original('defaultValue', $_->system('defaultValue_backup'));
+
+                // Unset backup
+                $_->system('defaultValue_backup', null);
+            }
+
+            // If we do not deal with certain row, or do, but with already existing row - skip
+            if (!t()->row || t()->row->id) continue;
+
+            // If $a prop was backed up
+            if (array_key_exists($bn = $a . '_backup', t()->row->system())) {
+
+                // Apply backup
+                t()->row->original($a,  t()->row->system($bn));
+
+                // Unset backup
+                t()->row->system($bn, null);
+            }
+        }
     }
     
     /**
