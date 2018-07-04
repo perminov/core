@@ -148,4 +148,65 @@ class Section_Row_Base extends Indi_Db_Table_Row {
         // Return json-encoded sort params
         return json_encode($json);
     }
+
+    /**
+     * Build a string, that will be used in Section_Row_Base->export()
+     *
+     * @return string
+     */
+    protected function _ctor() {
+
+        // Use original data as initial ctor
+        $ctor = $this->_original;
+
+        // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
+        unset($ctor['id'], $ctor['move']);
+
+        // Exclude props that are already represented by one of shorthand-fn args
+        foreach (ar('alias') as $arg) unset($ctor[$arg]);
+
+        // Foreach $ctor prop
+        foreach ($ctor as $prop => &$value) {
+
+            // Get field
+            $field = Indi::model('Section')->fields($prop);
+
+            // Exclude prop, if it has value equal to default value
+            if ($field->defaultValue == $value) unset($ctor[$prop]);
+
+            // Else if prop contains keys - use aliases instead
+            else if ($field->storeRelationAbility != 'none') {
+                if ($prop == 'sectionId') $value = section($value)->alias;
+                else if ($prop == 'entityId') $value = entity($value)->table;
+                else if (in($prop, 'parentSectionConnector,groupBy,defaultSortField')) $value = field($this->entityId, $value)->alias;
+            }
+        }
+
+        // Stringify and return $ctor
+        return var_export($ctor, true);
+    }
+
+    /**
+     * Build an expression for creating the current `section` entry in another project, running on Indi Engine
+     *
+     * @return string
+     */
+    public function export() {
+
+        // Build `section` entry creation expression
+        $lineA[] = "section('" . $this->alias . "', " . $this->_ctor() . ");";
+
+        // Foreach `section2action` entry, nested within current `section` entry
+        // - build `section2action` entry's creation expression
+        foreach ($this->nested('section2action', array('order' => 'move')) as $section2actionR)
+            $lineA[] = $section2actionR->export();
+
+        // Foreach `grid` entry, nested within current `section` entry
+        // - build `grid` entry's creation expression
+        foreach ($this->nested('grid', array('order' => 'move')) as $gridR)
+            $lineA[] = $gridR->export();
+
+        // Return newline-separated list of creation expressions
+        return im($lineA, "\n");
+    }
 }

@@ -97,4 +97,11 @@ class Admin_SectionsController extends Indi_Controller_Admin {
         // Flush success
         jflush(true);
     }
+
+    /**
+     * Flush section entry's creation expression, to be applied on another project running on Indi Engine
+     */
+    public function exportAction() {
+        jflush(true, '<textarea style="width: 500px; height: 400px;">' . $this->row->export() . '</textarea>');
+    }
 }
