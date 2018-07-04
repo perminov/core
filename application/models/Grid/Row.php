@@ -14,7 +14,8 @@ class Grid_Row extends Indi_Db_Table_Row {
         // Provide ability for some grid col props to be set using aliases rather than ids
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
-            if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
+            else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
+            else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
         }
 
         // Call parent
@@ -47,7 +48,7 @@ class Grid_Row extends Indi_Db_Table_Row {
     public function move($direction = 'up', $within = '') {
 
         // If $within arg is not given - move grid column within the section it belongs to
-        if (func_num_args() < 2) $within = '`sectionId` = "' . $this->sectionId . '"';
+        if (func_num_args() < 2) $within = '`sectionId` = "' . $this->sectionId . '" AND `gridId` = "' . $this->gridId . '"';
 
         // Call parent
         return parent::move($direction, $within);

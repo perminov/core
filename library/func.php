@@ -1567,13 +1567,15 @@ function grid($section, $field, $ctor = false) {
     // Get `sectionId` and `fieldId` according to $section and $field args
     $sectionR = section($section);
     $sectionId = $sectionR->id;
-    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id;
+    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id ?: 0;
+    if (!$fieldId) $alias = $field;
+
+    // Build WHERE clause
+    $w = array('`sectionId` = "' . $sectionId . '"');
+    $w []= $fieldId ? '`fieldId` = "' . $fieldId . '"' : '`alias` = "' . $field . '"';
 
     // Try to find `grid` entry
-    $gridR = Indi::model('Grid')->fetchRow(array(
-        '`sectionId` = "' . $sectionId . '"',
-        '`fieldId` = "' . $fieldId . '"'
-    ));
+    $gridR = Indi::model('Grid')->fetchRow($w);
 
     // If $ctor arg is non-false and is not and empty array - return found `grid` entry, or null otherwise
     // This part of this function differs from such part if other similar functions, for example field() function,
@@ -1583,7 +1585,7 @@ function grid($section, $field, $ctor = false) {
     // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
     // - use values given by $section and $fields args
     if (!is_array($ctor)) $ctor = array();
-    foreach (ar('sectionId,fieldId') as $prop)
+    foreach (ar('sectionId,fieldId,alias') as $prop)
         if (!array_key_exists($prop, $ctor))
             $ctor[$prop] = $$prop;
 
@@ -1670,4 +1672,58 @@ function element($alias) {
  */
 function coltype($type) {
     return Indi::model('ColumnType')->fetchRow('`type` = "' . $type . '"');
+}
+
+/**
+ * Short-hand function that allows to manipulate `section2action` entry, identified by $section and $action args.
+ * If only those two args given - function will fetch and return appropriate `section2action` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `field` entry, or update existing if found
+ *
+ * @param string $section Alias of section, that action is/should exist within
+ * @param string $action Alias of action, underlying behind grid column
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Section2action_Row|null
+ */
+function section2action($section, $action, array $ctor = array()) {
+
+    // Get `sectionId` and `actionId` according to $section and $action args
+    $sectionR = section($section);
+    $sectionId = $sectionR->id;
+    $actionId = action($action)->id;
+
+    // Try to find `section2action` entry
+    $section2actionR = Indi::model('Section2action')->fetchRow(array(
+        '`sectionId` = "' . $sectionId . '"',
+        '`actionId` = "' . $actionId . '"'
+    ));
+
+    // If $ctor arg is an empty array - return `section2action` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $section and $action args - is not enough for `section2action` entry to be created
+    if (!$ctor) return $section2actionR;
+
+    // If `sectionId` and/or `actionId` props are not defined within $ctor arg
+    // - use values given by $section and $action args
+    foreach (ar('sectionId,actionId') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$section2actionR) $section2actionR = Indi::model('Section2action')->createRow();
+
+    // Assign props and save
+    $section2actionR->assign($ctor)->save();
+
+    // Return `section2action` entry (newly created, or existing but updated)
+    return $section2actionR;
+}
+
+/**
+ * Get `action` entry by it's alias
+ *
+ * @param $alias
+ * @return Indi_Db_Table_Row|null
+ */
+function action($alias) {
+    return Indi::model('Action')->fetchRow('`alias` = "' . $alias . '"');
 }
