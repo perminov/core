@@ -39,6 +39,9 @@ class Entity_Row extends Indi_Db_Table_Row {
         if (Indi::db()->query('SHOW TABLES LIKE "' . $this->table . '"')->fetchColumn())
             Indi::db()->query('DROP TABLE `' . $this->table . '`');
 
+        // Destroy model
+        Indi::model($this->table, 'destroy');
+
         // Return
         return $return;
 	}

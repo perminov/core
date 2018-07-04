@@ -412,12 +412,23 @@ class Indi_Db {
 
             // If was not found, throw exception
             if ($identifier != $className)
-                if ($check) return null; else throw new Exception('Entity with id ' . $identifier . ' does not exist');
+                if ($check && $check !== 'destroy') return null;
+                else throw new Exception('Entity with id ' . $identifier . ' does not exist');
         }
 
         // Uppercase the first char, as keys in self::$_modelA and self::$_entityA arrays are capitalized
         if (is_object($identifier)) throw new Exception();
         $identifier = ucfirst($identifier);
+
+        // Else if found, but $check arg is 'destroy' - destroy model
+        if ($check === 'destroy') {
+
+            // Destroy model
+            unset(self::$_modelA[$identifier], self::$_entityA[$identifier]);
+
+            // Return null
+            return null;
+        }
 
         // If model is already loaded, we return it
         if (array_key_exists($identifier, self::$_modelA) == true) {
