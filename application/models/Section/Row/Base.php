@@ -25,6 +25,7 @@ class Section_Row_Base extends Indi_Db_Table_Row {
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if (in($columnName, 'parentSectionConnector,groupBy,defaultSortField')) $value = field($this->entityId, $value)->id;
             else if ($columnName == 'entityId') $value = entity($value)->id;
+            else if ($columnName == 'sectionId') $value = section($value)->id;
         }
 
         // Standard __set()
