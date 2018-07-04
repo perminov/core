@@ -186,4 +186,11 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
         // Flush success
         jflush(true, 'Поле "Статус" было добавлено в структуру сущности "' . $this->row->title . '"');
     }
+
+    /**
+     * Flush entity entry's creation expression, to be applied on another project running on Indi Engine
+     */
+    public function exportAction() {
+        jflush(true, '<textarea style="width: 500px; height: 400px;">' . $this->row->export() . '</textarea>');
+    }
 }
