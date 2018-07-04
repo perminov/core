@@ -1342,7 +1342,7 @@ CREATE TABLE `section` (
 
 /*Data for the table `section` */
 
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (1,0,0,'Конфигурация','','y',367,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (1,0,0,'Конфигурация','configuration','y',367,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
 insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (2,1,1,'Столбцы','columnTypes','y',6,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
 insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (5,1,2,'Сущности','entities','y',4,25,'Indi_Controller_Admin',4,'ASC','',0,'s',0,0,'auto');
 insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (6,5,5,'Поля в структуре','fields','y',7,25,'Indi_Controller_Admin',14,'ASC','',0,'s',0,0,'auto');
