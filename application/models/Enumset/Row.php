@@ -7,7 +7,7 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
      * @return array
      */
     public function validate() {
-    
+
         // Get the field row
         $fieldR = $this->foreign('fieldId');
 
@@ -15,10 +15,10 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         $enumsetA = $fieldR->nested('enumset', array('order' => 'move'))->column('alias');
 
         // If modified version of value (or value that's going to be appended) is already exists within list of possible value - set mismatch
-        if (array_key_exists('alias', $this->_modified)) 
-            if (in_array($this->alias, ar(im($enumsetA)))) 
+        if (array_key_exists('alias', $this->_modified))
+            if (in_array($this->alias, ar(im($enumsetA))))
                 $this->_mismatch['alias'] = sprintf(I_ENUMSET_ERROR_VALUE_ALREADY_EXISTS, $this->alias);
-        
+
         // Return
         return $this->callParent();
     }
@@ -35,7 +35,7 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
 
         // Run validation
         $this->mflush(true);
-        
+
         // Get the field row
         $fieldR = $this->foreign('fieldId');
 
@@ -192,7 +192,62 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         return parent::delete();
     }
 
-    public function deleteForeignKeysUsages(){
-        // Empty method
+    /**
+     * This method is redefined here to prevent parent's method from being called,
+     * because `enumset` entries have their own special usage behaviour
+     */
+    public function deleteForeignKeysUsages() {
+
+    }
+
+    /**
+     * This method is redefined to setup default value for $within arg,
+     * for current `enumset` entry to be moved within the `field` it belongs to
+     *
+     * @param string $direction
+     * @param string $within
+     * @return bool
+     */
+    public function move($direction = 'up', $within = '') {
+
+        // If $within arg is not given - move `enumset` within the `field` it belongs to
+        if (func_num_args() < 2) $within = '`fieldId` = "' . $this->fieldId . '"';
+
+        // Call parent
+        return parent::move($direction, $within);
+    }
+
+    /**
+     * Build a string, that will be used in Enumset_Row->export()
+     *
+     * @return string
+     */
+    protected function _ctor() {
+
+        // Use original data as initial ctor
+        $ctor = $this->_original;
+
+        // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
+        unset($ctor['id'], $ctor['move']);
+
+        // Exclude props that will be already represented by shorthand-fn args
+        foreach (ar('fieldId,alias') as $arg) unset($ctor[$arg]);
+
+        // Stringify and return $ctor
+        return var_export($ctor, true);
+    }
+
+    /**
+     * Build an expression for creating the current `enumset` entry in another project, running on Indi Engine
+     *
+     * @return string
+     */
+    public function export() {
+
+        // Return
+        return "enumset('" .
+            $this->foreign('fieldId')->foreign('entityId')->table . "', '" .
+            $this->foreign('fieldId')->alias . "', '" .
+            $this->alias . "', " . $this->_ctor() . ");";
     }
 }

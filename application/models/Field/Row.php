@@ -16,8 +16,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
-     * Set row field value, by creating an item of $this->_modified array, in case if
-     * value is different from value of $this->_original at same key ($columnName)
+     * This method was redefined to provide ability for some field
+     * props to be set using aliases rather than ids
      *
      * @param  string $columnName The column key.
      * @param  mixed  $value      The value for the property.
@@ -27,6 +27,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Check if value is a color in #RRGGBB format and prepend it with hue number
         if (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) $value = hrgb($value);
+
+        // Provide ability for some field props to be set using aliases rather than ids
+        if (is_string($value) && !Indi::rexm('int11', $value)) {
+            if ($columnName == 'elementId') $value = element($value)->id;
+            else if ($columnName == 'columnTypeId') $value = coltype($value)->id;
+            else if (in($columnName, 'entityId,relation')) $value = entity($value)->id;
+            else if ($columnName == 'satellite') $value = field($this->entityId, $value)->id;
+        }
 
         // Standard __set()
         parent::__set($columnName, $value);
@@ -1412,5 +1420,82 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Else just return it
         else return $this->_temporary['params'][$name];
+    }
+
+    /**
+     * This method is redefined to setup default value for $within arg,
+     * for current `field` entry to be moved within the `entity` it belongs to
+     *
+     * @param string $direction
+     * @param string $within
+     * @return bool
+     */
+    public function move($direction = 'up', $within = '') {
+
+        // If $within arg is not given - move field within the entity it belongs to
+        if (func_num_args() < 2) $within = '`entityId` = "' . $this->entityId . '"';
+
+        // Call parent
+        return parent::move($direction, $within);
+    }
+
+    /**
+     * Build a string, that will be used in Field_Row->export()
+     *
+     * @return string
+     */
+    protected function _ctor() {
+
+        // Use original data as initial ctor
+        $ctor = $this->_original;
+
+        // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
+        unset($ctor['id'], $ctor['move']);
+
+        // Exclude for now `l10n`, as this thing will be sorted out later, once 'l10n' branch will be merged to 'master'
+        unset($ctor['l10n']);
+
+        // Exclude props that will be already represented by shorthand-fn args
+        foreach (ar('entityId,alias') as $arg) unset($ctor[$arg]);
+
+        // Foreach $ctor prop
+        foreach ($ctor as $prop => &$value) {
+
+            // Get field
+            $field = Indi::model('Field')->fields($prop);
+
+            // Exclude prop, if it has value equal to default value
+            if ($field->defaultValue == $value) unset($ctor[$prop]);
+
+            // Else if prop contains keys - use aliases instead
+            else if ($field->storeRelationAbility != 'none') {
+                if ($prop == 'columnTypeId') $value = coltype($value)->type;
+                else if ($prop == 'elementId') $value = element($value)->alias;
+                else if ($prop == 'relation') $value = entity($value)->table;
+            }
+        }
+
+        // Stringify and return $ctor
+        return var_export($ctor, true);
+    }
+
+    /**
+     * Build an expression for creating the current `field` entry in another project, running on Indi Engine
+     *
+     * @return string
+     */
+    public function export() {
+
+        // Build `field` entry creation line
+        $lineA[] = "field('" . $this->foreign('entityId')->table . "', '" . $this->alias . "', " . $this->_ctor() . ");";
+
+        // Foreach `enumset` entry, nested within current `field` entry
+        foreach ($this->nested('enumset', array('order' => 'move')) as $enumsetR)
+
+            // Build `enumset` entry's creation expression
+            $lineA[] = $enumsetR->export();
+
+        // Return newline-separated list of creation expressions
+        return im($lineA, "\n");
     }
 }
