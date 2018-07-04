@@ -2745,7 +2745,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         $sectionIdA = array_column($menu, 'id');
 
         // If no 'Notice' entity found - return
-        if (!Indi::model('Notice', true)) return;
+        if (!Indi::model('NoticeGetter', true) || !Indi::model('NoticeGetter')->fields('criteriaRelyOn')) return;
 
         // Get notices
         $_noticeRs = Indi::model('Notice')->fetchAll(array(
