@@ -216,4 +216,38 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         // Call parent
         return parent::move($direction, $within);
     }
+
+    /**
+     * Build a string, that will be used in Enumset_Row->export()
+     *
+     * @return string
+     */
+    protected function _ctor() {
+
+        // Use original data as initial ctor
+        $ctor = $this->_original;
+
+        // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
+        unset($ctor['id'], $ctor['move']);
+
+        // Exclude props that will be already represented by shorthand-fn args
+        foreach (ar('fieldId,alias') as $arg) unset($ctor[$arg]);
+
+        // Stringify and return $ctor
+        return var_export($ctor, true);
+    }
+
+    /**
+     * Build an expression for creating the current `enumset` entry in another project, running on Indi Engine
+     *
+     * @return string
+     */
+    public function export() {
+
+        // Return
+        return "enumset('" .
+            $this->foreign('fieldId')->foreign('entityId')->table . "', '" .
+            $this->foreign('fieldId')->alias . "', '" .
+            $this->alias . "', " . $this->_ctor() . ");";
+    }
 }
