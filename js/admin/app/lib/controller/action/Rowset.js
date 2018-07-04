@@ -1249,10 +1249,16 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         var me = this, uri, section = me.ti().section;
 
         // Build the uri
-        uri = '/' + section.alias + '/' + action.alias
-            + '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
-            + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
-            + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix) + '/';
+        uri = '/' + section.alias + '/' + action.alias;
+
+        //
+        if (action.rowRequired == 'y' || me.ti(1).row)
+            uri += '/id/' + (action.rowRequired == 'y' ? row.get('id') : me.ti(1).row.id)
+                + '/ph/' + (action.rowRequired == 'y' ? section.primaryHash : me.ti().scope.upperHash)
+                + '/aix/' + (action.rowRequired == 'y' ? aix : me.ti().scope.upperAix)
+
+        // Append slash
+        uri += '/';
 
         // Load it
         Indi.load(uri, ajaxCfg);
@@ -1500,7 +1506,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * Internal callback for store load/reload
      */
     storeLoadCallbackDefault: function() {
-        var me = this, fo = me.getStore().proxy.reader.jsonData.filter, f;
+        var me = this, fo = me.getStore().proxy.reader.jsonData.filter, f, page;
 
         // Setup scope
         Ext.merge(me.ti().scope, me.getStore().proxy.reader.jsonData.scope);
@@ -1516,6 +1522,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         me.getStore().each(function(r, i) {
             r.index = i + (parseInt(me.ti().scope.page) - 1) * parseInt(me.ti().section.rowsOnPage);
         });
+
+        // Apply new currentPage for store
+        if (page = parseInt(me.ti().scope.page)) me.getStore().currentPage = page;
 
         // Adjust each data-row within the store
         me.getStore().each(me.storeLoadCallbackDataRowAdjust);

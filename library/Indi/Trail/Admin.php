@@ -110,19 +110,17 @@ class Indi_Trail_Admin {
             'order' => 'move'
         ));
 
-        // Disabled field WHERE clause
-        $disabledFieldsWHERE = array('`sectionId` = "' . $routeA[0] . '"');
-        if (Indi::model('DisabledField')->fields('impact') && Indi::model('DisabledField')->fields('profileIds')) {
-            $disabledFieldsWHERE[] = '(' . im(array(
-                '`impact` = "all"',
-                '(`impact` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
-                '(`impact` = "except" AND NOT FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
-            ), ' OR ') . ')';
-        }
+        // Altered field WHERE clause
+        $alteredFieldsWHERE = array('`sectionId` = "' . $routeA[0] . '"');
+        $alteredFieldsWHERE[] = '(' . im(array(
+            '`impact` = "all"',
+            '(`impact` = "only" AND FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+            '(`impact` = "except" AND NOT FIND_IN_SET("' . Indi::admin()->profileId . '", `profileIds`))',
+        ), ' OR ') . ')';
 
         // Setup disabled fields
-        $sectionRs->nested('disabledField', array(
-            'where' => $disabledFieldsWHERE
+        $sectionRs->nested(entity('alteredField') ? 'alteredField' : 'disabledField', array(
+            'where' => $alteredFieldsWHERE
         ));
 
         // Setup initial set of properties

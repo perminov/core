@@ -125,7 +125,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     // If 'Save' action is accessible, and column is linked to 'enumset' field
                     // and that field is not in the list of disabled fields - provide some kind
                     // of cell-editor functionality, so enumset values can be switched from one to another
-                    if (!col.initialConfig.editor && canSave && enumset && !me.ti().disabledFields.r(field.id, 'fieldId')
+                    if (!col.initialConfig.editor && canSave && enumset && field.mode != 'hidden' && field.mode != 'readonly'
                         && field.storeRelationAbility == 'one'
                         && (col.allowCycle !== false || enumset.length <= 2)) {
 
@@ -198,7 +198,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         field = me.ti().fields.r(dataIndex, 'alias');
 
                         // If field is not in the list of disabled fields
-                        if (!me.ti().disabledFields.r(field.id, 'fieldId') && col.initialConfig.editor) press = false;
+                        if (field.mode != 'hidden' && field.mode != 'readonly' && col.initialConfig.editor) press = false;
                     }
                 }
 
@@ -756,7 +756,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                 // Apply editor
                 if (Ext.isObject(columnI) && columnI.editor) {
-                    if (!canSave || me.ti().disabledFields.r(field.id, 'fieldId')) {
+                    if (!canSave || field.mode == 'hidden' || field.mode == 'readonly') {
                         columnI.editor = false;
                     } else {
                         eColumnXEditor = 'gridColumnX' + Indi.ucfirst(field.foreign('elementId').alias) + '_Editor';
@@ -1473,7 +1473,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         column: e.colIdx,
                         row: e.rowIdx
                     });
-                    Ext.fly(cell).addCls('i-grid-cell-editor-focus');
+
+                    // Involve focused style only if trigger event is cellsecondclick
+                    if (ctx.rowsetPlugin$Cellediting.triggerEvent == 'cellsecondclick')
+                        Ext.fly(cell).addCls('i-grid-cell-editor-focus');
 
                     // Call additional callback, defined as one of listeners, and pass json-decoded response
                     if (Ext.isFunction(eOpts.remotesave))

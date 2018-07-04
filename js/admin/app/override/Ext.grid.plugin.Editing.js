@@ -31,10 +31,11 @@ Ext.override(Ext.grid.plugin.Editing, {
 
         // cancel editing if the element that was clicked was a tree expander
         if(!view.expanderSelector || !e.getTarget(view.expanderSelector)) {
-            Ext.defer(function(){
+            view.editorTimeout = setTimeout(function(){
                 if (!view.dblclick) {
                     if (Ext.fly(cell)) Ext.fly(cell).removeCls('i-grid-cell-editor-focus');
                     me.startEdit(record, view.getHeaderAtIndex(colIdx));
+                    clearTimeout(view.editorTimeout);
                 }
             }, 506);
         }
