@@ -672,8 +672,8 @@ if (!function_exists('apache_request_headers')) {
  */
 function in($item, $array) {
 
-    // If $array arg is bool or is null - set $strict flag as true
-    $strict = is_bool($array) || is_null($array);
+    // If $array arg is bool or is null, or $item arg is bool - set $strict flag as true
+    $strict = is_bool($array) || is_null($array) || is_bool($item);
 
     // Normalize $array arg
     $array = ar($array);
@@ -848,6 +848,15 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
  */
 function isIE() {
     return !!preg_match('/(MSIE|Trident|rv:)/', $_SERVER['HTTP_USER_AGENT']);
+}
+
+/**
+ * Try to detect if request was made using Microsoft Edge
+ *
+ * @return bool
+ */
+function isEdge() {
+    return !!preg_match('/Edge/', $_SERVER['HTTP_USER_AGENT']);
 }
 
 /**
@@ -1036,7 +1045,7 @@ function url2a($text) {
 
     // Regexps
     $rexProtocol = '(https?://)?';
-    $rexDomain   = '((?:[-a-zA-Z0-9]{1,63}\.)+[-a-zA-Z0-9]{2,63}|(?:[0-9]{1,3}\.){3}[0-9]{1,3})';
+    $rexDomain   = '((?:[-a-zA-Z0-9а-яА-Я]{1,63}\.)+[-a-zA-Z0-9а-яА-Я]{2,63}|(?:[0-9]{1,3}\.){3}[0-9]{1,3})';
     $rexPort     = '(:[0-9]{1,5})?';
     $rexPath     = '(/[!$-/0-9:;=@_\':;!a-zA-Z\x7f-\xff]*?)?';
     $rexQuery    = '(\?[!$-/0-9:;=@_\':;!a-zA-Z\x7f-\xff]+?)?';
@@ -1055,7 +1064,7 @@ function url2a($text) {
         . '.sj .sk .sl .sm .sn .so .sr .st .su .sv .sy .sz .tc .td .tf .tg .th .tj .tk .tl .tm .tn .to .tp .tr .tt '
         . '.tv .tw .tz .ua .ug .uk .us .uy .uz .va .vc .ve .vg .vi .vn .vu .wf .ws .ye .yt .yu .za .zm .zw '
         . '.xn--0zwm56d .xn--11b5bs3a9aj6g .xn--80akhbyknj4f .xn--9t4b11yi5a .xn--deba0ad .xn--g6w251d '
-        . '.xn--hgbk6aj7f53bba .xn--hlcj6aya9esc7a .xn--jxalpdlp .xn--kgbechtv .xn--zckzah .arpa'), true);
+        . '.xn--hgbk6aj7f53bba .xn--hlcj6aya9esc7a .xn--jxalpdlp .xn--kgbechtv .xn--zckzah .arpa .рф .xn--p1ai'), true);
 
     // Start output buffering
     ob_start();
@@ -1064,7 +1073,7 @@ function url2a($text) {
     $position = 0;
 
     // Split given $text by urls
-    while (preg_match("{\\b$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$))}",
+    while (preg_match("~$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$))~u",
         $text, $match, PREG_OFFSET_CAPTURE, $position)) {
 
         // Extract $url and $urlPosition from match
@@ -1079,7 +1088,7 @@ function url2a($text) {
         $path   = $match[4][0];
 
         // Get top-level domain
-        $tld = strtolower(strrchr($domain, '.'));
+        $tld = mb_strtolower(strrchr($domain, '.'), 'utf-8');
 
         // Check if the TLD is valid - or that $domain is an IP address.
         if (preg_match('{\.[0-9]{1,3}}', $tld) || isset($validTlds[$tld])) {
@@ -1312,8 +1321,24 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
-        if ($rule['key'] && strlen($value) && !$rowA[$prop] = Indi::model($rule['key'])->fetchRow('`id` = "' . $value . '"'))
-            $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+        if ($rule['key'] && strlen($value)) {
+
+            // Get model/table name
+            $m = preg_replace('/\*$/', '', $rule['key']);
+
+            // Setup $s as a flag indicating whether *_Row (single row) or *_Rowset should be fetched
+            $s = $m == $rule['key'];
+
+            // Setup WHERE clause and method name to be used for fetching
+            $w = $s ? '`id` = "' . $value . '"' : '`id` IN (' . $value . ')';
+            $f = $s ? 'fetchRow' : 'fetchAll';
+
+            // Fetch
+            $rowA[$prop] = Indi::model($m)->$f($w);
+
+            // If no *_Row was fetched, or empty *_Rowset was fetched - flush error
+            if (!($s ? $rowA[$prop] : $rowA[$prop]->count())) $flushFn($arg1, sprintf(constant($c . 'KEY'), $rule['key'], $value));
+        }
 
         // If prop's value should be equal to some certain value, but it's not equal - flush error
         if (array_key_exists('eql', $rule) && $value != $rule['eql'])
@@ -1375,8 +1400,8 @@ function _2sec($expr) {
  *
  * @return Indi_Trail_Admin/Indi_Trail_Front
  */
-function t() {
-    return Indi::trail();
+function t($arg = null) {
+    return Indi::trail($arg);
 }
 
 /**
@@ -1391,4 +1416,314 @@ function u() {
     return class_exists('Project', false) && method_exists('Project', 'user')
         ? Project::user()
         : Indi::user();
+}
+
+/**
+ * Return $value, wrapped with $html, if $cond arg is true, or return just $value otherwise
+ *
+ * @param $val
+ * @param $html
+ * @param $cond
+ * @return string
+ */
+function wrap($val, $html, $cond = null) {
+
+    // Detect html-tagname
+    preg_match('~<([a-zA-Z]+)\s*~', $html, $m);
+
+    // Return $value, wrapped with $html, if $cond arg is true
+    return (func_num_args() > 2 ? $cond : $val) ? $html . $val . '</' . $m[1] . '>' : $val;
+}
+
+/**
+ * Get `entity` entry either by table name or by ID
+ *
+ * @param string|int $table Entity ID or table name
+ * @param array $ctor Props to be involved in insert/update
+ * @return Entity_Row|null
+ */
+function entity($table, array $ctor = array()) {
+
+    // If $table arg is an integer - assume it's an entity ID, or assume it's an entity table otherwise
+    $byprop = Indi::rexm('int11', $table) ? 'id' : 'table';
+
+    // Return `entity` entry
+    $entityR = Indi::model('Entity')->fetchRow('`' . $byprop . '` = "' . $table . '"');
+
+    // If $ctor arg is an empty array - return `entity` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $table - is not enough for `entity` entry to be created
+    if (!$ctor) return $entityR;
+
+    // If `alias` prop is not defined within $ctor arg - use value given by $table arg
+    if (!array_key_exists('table', $ctor)) $ctor['table'] = $table;
+
+    // If `entity` entry was not found - create it
+    if (!$entityR) $entityR = Indi::model('Entity')->createRow();
+
+    // Assign other props and save
+    $entityR->assign($ctor)->save();
+
+    // Return `entity` entry (newly created, or existing but updated)
+    return $entityR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `field` entry, identified by $table and $alias args.
+ * If only two args given - function will fetch and return appropriate `field` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `field` entry, or update existing if found
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string $alias Field's alias
+ * @param array $ctor Props to be involved in insert/update
+ * @return Field_Row|null
+ */
+function field($table, $alias, array $ctor = array()) {
+
+    // Get `entityId` according to $table arg
+    $entityId = entity($table)->id;
+
+    // Try to find `field` entry
+    $fieldR = Indi::model('Field')->fetchRow(array(
+        '`entityId` = "' . $entityId . '"',
+        '`alias` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is an empty array - return `field` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $table and $alias args - is not enough for `field` entry to be created
+    if (!$ctor) return $fieldR;
+
+    // If `entityId` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table and $alias args
+    foreach (ar('entityId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$fieldR) $fieldR = Indi::model('Field')->createRow();
+
+    // Assign `entityId` prop first
+    if ($ctor['entityId'] && $fieldR->entityId = $ctor['entityId']) unset($ctor['entityId']);
+
+    // Assign other props and save
+    $fieldR->assign($ctor)->save();
+
+    // Return `field` entry (newly created, or existing but updated)
+    return $fieldR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `section` entry, identified by $alias arg.
+ * If only $alias arg given - function will fetch and return appropriate `section` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `section` entry, or update existing if found
+ *
+ * @param string $alias Section's alias
+ * @param array $ctor Props to be involved in insert/update
+ * @return Section_Row|null
+ */
+function section($alias, array $ctor = array()) {
+
+    // If $alias arg is an integer - assume it's a section ID, or assume it's a section alias otherwise
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
+    // Try to find `section` entry
+    $sectionR = Indi::model('Section')->fetchRow('`' . $byprop . '` = "' . $alias . '"');
+
+    // If $ctor arg is an empty array - return `section` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $alias arg - is not enough for `section` entry to be created
+    if (!$ctor) return $sectionR;
+
+    // If `alias` prop is not defined within $ctor arg - use value given by $alias arg
+    if (!array_key_exists('alias', $ctor)) $ctor['alias'] = $alias;
+
+    // If `section` entry was not found - create it
+    if (!$sectionR) $sectionR = Indi::model('Section')->createRow();
+
+    // Assign `entityId` prop first
+    if ($ctor['entityId'] && $sectionR->entityId = $ctor['entityId']) unset($ctor['entityId']);
+
+    // Assign other props and save
+    $sectionR->assign($ctor)->save();
+
+    // Return `section` entry (newly created, or existing but updated)
+    return $sectionR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `grid` entry, identified by $section and $field args.
+ * If only those two args given - function will fetch and return appropriate `section` entry (or null, if not found)
+ * If 3rd arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `section`
+ * entry, or update existing if found
+ *
+ * @param string $section Alias of section, that grid column is/should exist within
+ * @param string $field Alias of field, underlying behind grid column
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Grid_Row|null
+ */
+function grid($section, $field, $ctor = false) {
+
+    // Get `sectionId` and `fieldId` according to $section and $field args
+    $sectionR = section($section);
+    $sectionId = $sectionR->id;
+    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id ?: 0;
+    if (!$fieldId) $alias = $field;
+
+    // Build WHERE clause
+    $w = array('`sectionId` = "' . $sectionId . '"');
+    $w []= $fieldId ? '`fieldId` = "' . $fieldId . '"' : '`alias` = "' . $field . '"';
+
+    // Try to find `grid` entry
+    $gridR = Indi::model('Grid')->fetchRow($w);
+
+    // If $ctor arg is non-false and is not and empty array - return found `grid` entry, or null otherwise
+    // This part of this function differs from such part if other similar functions, for example field() function,
+    // because presence of $section and $field args - is minimum enough for `grid` entry to be created
+    if (!$ctor && !is_array($ctor)) return $gridR;
+
+    // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
+    // - use values given by $section and $fields args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('sectionId,fieldId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$gridR) $gridR = Indi::model('Grid')->createRow();
+
+    // Assign `sectionId` prop first
+    if ($ctor['sectionId'] && $gridR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign other props and save
+    $gridR->assign($ctor)->save();
+
+    // Return `grid` entry (newly created, or existing but updated)
+    return $gridR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `entry` entry, identified by $table, $field and $alias args.
+ * If only those two args given - function will fetch and return appropriate `entry` entry (or null, if not found)
+ * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `enumset`
+ * entry, or update existing if found
+ *
+ * If 4th arg is an array containing value under 'color' key - color box will be injected into `enumset` entry's `title`
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string $field Field alias
+ * @param string $alias Enumset alias
+ * @param bool|array $ctor
+ * @return Enumset_Row|null
+ */
+function enumset($table, $field, $alias, $ctor = false) {
+
+    // Get `fieldId` according to $table and $field args
+    $fieldId = field($table, $field)->id;
+
+    // Try to find `grid` entry
+    $enumsetR = Indi::model('Enumset')->fetchRow(array(
+        '`fieldId` = "' . $fieldId . '"',
+        '`alias` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is non-false and is not and empty array - return `grid` entry, else
+    if (!$ctor && !is_array($ctor)) return $enumsetR;
+
+    // If `fieldId` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table+$field and $alias args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('fieldId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `enumset` entry already exists - do not allow re-linking it from one field to another
+    if ($enumsetR) unset($ctor['fieldId']);
+
+    // Else - create it
+    else $enumsetR = Indi::model('Enumset')->createRow();
+
+    // If $ctor['color'] is given - apply color-box
+    if ($ctor['color']) $ctor['title'] = '<span class="i-color-box" style="background: '
+        . $ctor['color'] . ';"></span>' . strip_tags($ctor['title']);
+
+    // Assign other props and save
+    $enumsetR->assign($ctor)->save();
+
+    // Return `enumset` entry (newly created, or existing but updated)
+    return $enumsetR;
+}
+
+/**
+ * Short-hand function for getting `element` entry by it's `alias`
+ *
+ * @param string $alias
+ * @return Indi_Db_Table_Row|null
+ */
+function element($alias) {
+    return Indi::model('Element')->fetchRow('`alias` = "' . $alias . '"');
+}
+
+/**
+ * Short-hand function for getting `columnType` entry by it's `type`
+ *
+ * @param string $type
+ * @return ColumnType_Row|null
+ */
+function coltype($type) {
+    return Indi::model('ColumnType')->fetchRow('`type` = "' . $type . '"');
+}
+
+/**
+ * Short-hand function that allows to manipulate `section2action` entry, identified by $section and $action args.
+ * If only those two args given - function will fetch and return appropriate `section2action` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `field` entry, or update existing if found
+ *
+ * @param string $section Alias of section, that action is/should exist within
+ * @param string $action Alias of action, underlying behind grid column
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Section2action_Row|null
+ */
+function section2action($section, $action, array $ctor = array()) {
+
+    // Get `sectionId` and `actionId` according to $section and $action args
+    $sectionR = section($section);
+    $sectionId = $sectionR->id;
+    $actionId = action($action)->id;
+
+    // Try to find `section2action` entry
+    $section2actionR = Indi::model('Section2action')->fetchRow(array(
+        '`sectionId` = "' . $sectionId . '"',
+        '`actionId` = "' . $actionId . '"'
+    ));
+
+    // If $ctor arg is an empty array - return `section2action` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $section and $action args - is not enough for `section2action` entry to be created
+    if (!$ctor) return $section2actionR;
+
+    // If `sectionId` and/or `actionId` props are not defined within $ctor arg
+    // - use values given by $section and $action args
+    foreach (ar('sectionId,actionId') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `grid` entry was not found - create it
+    if (!$section2actionR) $section2actionR = Indi::model('Section2action')->createRow();
+
+    // Assign props and save
+    $section2actionR->assign($ctor)->save();
+
+    // Return `section2action` entry (newly created, or existing but updated)
+    return $section2actionR;
+}
+
+/**
+ * Get `action` entry by it's alias
+ *
+ * @param $alias
+ * @return Indi_Db_Table_Row|null
+ */
+function action($alias) {
+    return Indi::model('Action')->fetchRow('`alias` = "' . $alias . '"');
 }

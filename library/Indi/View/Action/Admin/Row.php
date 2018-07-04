@@ -28,18 +28,12 @@ class Indi_View_Action_Admin_Row extends Indi_View_Action_Admin {
         // If `southSeparate` flag is `true` - return
         if (Indi::trail()->section->southSeparate) return;
 
-        // If presence of south panel should be automatically defined
-        if (Indi::trail()->action->south == 'auto') {
-
-            // Get ids of fields, that are hidden at section-level
-            $fieldIdA_hidden = Indi::trail()->disabledFields->select('0', 'displayInForm')->column('fieldId');
-
-            // Get fields, initially visible at entity-level, and then exclude hidden at section-level
-            $fieldRs_visible = Indi::trail()->fields->select(': != "hidden"', 'mode')->exclude($fieldIdA_hidden);
-
-            // If quantity of visible fields is not greater than 10 - set action's `south` prop to be 'yes'
-            if ($fieldRs_visible->count() <= 10) Indi::trail()->action->south = 'yes';
-        }
+        // If presence of south panel should be automatically detected,
+        // Check whether there are 10 or less visible fields,
+        // and if yes - mark that south panel can be shown
+        if (Indi::trail()->action->south == 'auto')
+            if (Indi::trail()->fields->select(': != "hidden"', 'mode')->count() <= 10)
+                Indi::trail()->action->south = 'yes';
 
         // If there should be no south panel - return
         if (Indi::trail()->action->south != 'yes') return;

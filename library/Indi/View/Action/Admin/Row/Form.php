@@ -1,28 +1,32 @@
 <?php
 class Indi_View_Action_Admin_Row_Form extends Indi_View_Action_Admin_Row {
+
+    /**
+     * @return string
+     */
     public function render() {
 
-        // Start output buffering
-        ob_start();
+        // Prepare file-data and combo-data only for visible fields
+        foreach (Indi::trail()->fields as $fieldR) {
 
-        // Declare arrays that will store info about what fields should be excluded
-        // from form, and what included, but disabled in form
-        $disabled = array(); $excluded = array();
-        foreach (Indi::trail()->disabledFields as $disabledField) {
-            if ($disabledField->displayInForm) $disabled[$disabledField->fieldId] = true;
-            else $excluded[$disabledField->fieldId] = true;
+            // Skip hidden fields
+            if ($fieldR->mode == 'hidden') continue;
+
+            // Skip fields, that are using hidden elements
+            if ($fieldR->foreign('elementId')->hidden) continue;
+
+            // Element's alias shortcut
+            $element = $fieldR->foreign('elementId')->alias;
+
+            // Prepare combo-data for 'combo', 'radio' and 'multicheck' elements
+            if (in($element, 'combo,radio,multicheck')) Indi::view()->formCombo($fieldR->alias);
+
+            // Prepare file-data for 'upload' element
+            else if ($element == 'upload' && t()->row->abs($fieldR->alias))
+                t()->row->view($fieldR->alias, t()->row->file($fieldR->alias));
         }
 
-        // Echo a <tr> for each form's field, but only if field's control element's 'hidden' checkbox is not checked
-        foreach (Indi::trail()->fields as $fieldR)
-            if (!$excluded[$fieldR->id] && $fieldR->foreign('elementId')->hidden != 1) {
-                if ($fieldR->foreign('elementId')->alias == 'upload') {
-                    echo Indi::view()->formUpload($fieldR->alias, null, 'extjs');
-                } else if (preg_match('/combo|radio|multicheck/', $fieldR->foreign('elementId')->alias))
-                    Indi::view()->formCombo($fieldR->alias);
-            }
-
-        // Return buffered output with parent's return-value
-        return ob_get_clean() . parent::render();
+        // Return parent's return-value
+        return parent::render();
     }
 }
