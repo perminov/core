@@ -1476,7 +1476,7 @@ function wrap($val, $html, $cond = null) {
  */
 function entity($table, array $ctor = array()) {
 
-    // If $table arg is an integer - assume it's an entity ID, or assume it's an entity table otherwise
+    // If $table arg is an integer - assume it's an `entity` entry's `id`, otherwise assume it's a `table`
     $byprop = Indi::rexm('int11', $table) ? 'id' : 'table';
 
     // Return `entity` entry
@@ -1515,10 +1515,13 @@ function field($table, $alias, array $ctor = array()) {
     // Get `entityId` according to $table arg
     $entityId = entity($table)->id;
 
+    // If $alias arg is an integer - assume it's a `field` entry's `id`, otherwise it's a `alias`
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
     // Try to find `field` entry
     $fieldR = Indi::model('Field')->fetchRow(array(
         '`entityId` = "' . $entityId . '"',
-        '`alias` = "' . $alias . '"'
+        '`' . $byprop . '` = "' . $alias . '"'
     ));
 
     // If $ctor arg is an empty array - return `field` entry, if found, or null otherwise.
@@ -1693,7 +1696,12 @@ function enumset($table, $field, $alias, $ctor = false) {
  * @return Indi_Db_Table_Row|null
  */
 function element($alias) {
-    return Indi::model('Element')->fetchRow('`alias` = "' . $alias . '"');
+
+    // If $alias arg is an integer - assume it's an `element` entry's `id`, otherwise assume it's a `type`
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
+    // Return `element` entry
+    return Indi::model('Element')->fetchRow('`' . $byprop . '` = "' . $alias . '"');
 }
 
 /**
@@ -1703,7 +1711,12 @@ function element($alias) {
  * @return ColumnType_Row|null
  */
 function coltype($type) {
-    return Indi::model('ColumnType')->fetchRow('`type` = "' . $type . '"');
+
+    // If $type arg is an integer - assume it's a `columnType` entry's `id`, otherwise assume it's a `type`
+    $byprop = Indi::rexm('int11', $type) ? 'id' : 'type';
+
+    // Return `columnType` entry
+    return Indi::model('ColumnType')->fetchRow('`' . $byprop . '` = "' . $type . '"');
 }
 
 /**
