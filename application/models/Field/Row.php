@@ -1603,6 +1603,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 if ($prop == 'columnTypeId') $value = coltype($value)->type;
                 else if ($prop == 'elementId') $value = element($value)->alias;
                 else if ($prop == 'relation') $value = entity($value)->table;
+                else if ($prop == 'satellite') $value = field($this->entityId, $value)->alias;
             }
         }
 
