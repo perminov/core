@@ -79,6 +79,10 @@ class Grid_Row extends Indi_Db_Table_Row {
             // Exclude prop, if it has value equal to default value
             if ($field->defaultValue == $value) unset($ctor[$prop]);
 
+            // Exclude `title` prop, if it was auto-created
+            else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none')
+                unset($ctor[$prop]);
+
             // Else if prop contains keys - use aliases instead
             else if ($field->storeRelationAbility != 'none') {
                 if ($prop == 'gridId') {
@@ -87,8 +91,15 @@ class Grid_Row extends Indi_Db_Table_Row {
             }
         }
 
-        // Stringify and return $ctor
-        return var_export($ctor, true);
+        // Stringify
+        $ctorS = var_export($ctor, true);
+
+        // Minify
+        if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
+        else if (count($ctor) == 0) $ctorS = 'true';
+
+        // Return
+        return $ctorS;
     }
 
     /**

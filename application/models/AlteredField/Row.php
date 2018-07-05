@@ -1,8 +1,8 @@
 <?php
-class Search_Row extends Indi_Db_Table_Row {
+class AlteredField_Row extends Indi_Db_Table_Row_Noeval {
 
     /**
-     * This method was redefined to provide ability for some filter
+     * This method was redefined to provide ability for some altered field
      * props to be set using aliases rather than ids
      *
      * @param  string $columnName The column key.
@@ -11,7 +11,7 @@ class Search_Row extends Indi_Db_Table_Row {
      */
     public function __set($columnName, $value) {
 
-        // Provide ability for some filter props to be set using aliases rather than ids
+        // Provide ability for some grid col props to be set using aliases rather than ids
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
@@ -22,16 +22,7 @@ class Search_Row extends Indi_Db_Table_Row {
     }
 
     /**
-     * Detect whether or not combo-filter show have the ability to deal with multiple values
-     *
-     * @return bool
-     */
-    public function any() {
-        return $this->any || $this->foreign('fieldId')->storeRelationAbility == 'many';
-    }
-
-    /**
-     * Build a string, that will be used in Search_Row->export()
+     * Build a string, that will be used in AlteredField_Row->export()
      *
      * @return string
      */
@@ -40,8 +31,8 @@ class Search_Row extends Indi_Db_Table_Row {
         // Use original data as initial ctor
         $ctor = $this->_original;
 
-        // Exclude `id` and `move` as they will be set automatically by MySQL and Indi Engine, respectively
-        unset($ctor['id'], $ctor['move']);
+        // Exclude `id` as it will be set automatically by MySQL
+        unset($ctor['id']);
 
         // Exclude props that are already represented by one of shorthand-fn args
         foreach (ar('sectionId,fieldId') as $arg) unset($ctor[$arg]);
@@ -70,21 +61,20 @@ class Search_Row extends Indi_Db_Table_Row {
 
         // Minify
         if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
-        else if (count($ctor) == 0) $ctorS = 'true';
 
         // Return
         return $ctorS;
     }
 
     /**
-     * Build an expression for creating the current `filter` entry in another project, running on Indi Engine
+     * Build an expression for creating the current `alteredField` entry in another project, running on Indi Engine
      *
      * @return string
      */
     public function export() {
 
-        // Build and return `filter` entry creation expression
-        return "filter('" .
+        // Build and return `alteredField` entry creation expression
+        return "alteredField('" .
             $this->foreign('sectionId')->alias . "', '" .
             $this->foreign('fieldId')->alias . "', " .
             $this->_ctor() . ");";

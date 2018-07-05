@@ -206,6 +206,16 @@ class Section_Row_Base extends Indi_Db_Table_Row {
         foreach ($this->nested('grid', array('order' => 'move')) as $gridR)
             $lineA[] = $gridR->export();
 
+        // Foreach `alteredField` entry, nested within current `section` entry
+        // - build `alteredField` entry's creation expression
+        foreach ($this->nested('alteredField') as $alteredFieldR)
+            $lineA[] = $alteredFieldR->export();
+
+        // Foreach `filter` entry, nested within current `section` entry
+        // - build `filter` entry's creation expression
+        foreach ($this->nested('search', array('order' => 'move')) as $filterR)
+            $lineA[] = $filterR->export();
+
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
     }
