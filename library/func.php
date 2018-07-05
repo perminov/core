@@ -1740,3 +1740,100 @@ function section2action($section, $action, array $ctor = array()) {
 function action($alias) {
     return Indi::model('Action')->fetchRow('`alias` = "' . $alias . '"');
 }
+
+/**
+ * Short-hand function that allows to manipulate `alteredField` entry, identified by $section and $field args.
+ * If only those two args given - function will fetch and return appropriate `alteredField` entry (or null, if not found)
+ * If $ctor arg is given and it's a non-empty array - function will create new `alteredField` entry, or update existing if found
+ *
+ * @param string $section Alias of section, that alteredField is/should exist within
+ * @param string $field Alias of field, underlying behind alteredField
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return AlteredField_Row|null
+ */
+function alteredField($section, $field, array $ctor = array()) {
+
+    // Get `sectionId` and `fieldId` according to $section and $field args
+    $sectionR = section($section);
+    $sectionId = $sectionR->id;
+    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id;
+
+    // Try to find `alteredField` entry
+    $alteredFieldR = Indi::model('AlteredField')->fetchRow(array(
+        '`sectionId` = "' . $sectionId . '"',
+        '`fieldId` = "' . $fieldId . '"'
+    ));
+
+    // If $ctor arg is an empty array - return `alteredField` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $section and $field args - is not enough for `alteredField` entry to be created
+    if (!$ctor) return $alteredFieldR;
+
+    // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
+    // - use values given by $section and $field args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('sectionId,fieldId') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `alteredField` entry was not found - create it
+    if (!$alteredFieldR) $alteredFieldR = Indi::model('AlteredField')->createRow();
+
+    // Assign `sectionId` prop first
+    if ($ctor['sectionId'] && $alteredFieldR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign other props and save
+    $alteredFieldR->assign($ctor)->save();
+
+    // Return `alteredField` entry (newly created, or existing but updated)
+    return $alteredFieldR;
+}
+
+/**
+ * Short-hand function that allows to manipulate `filter` entry, identified by $section and $field args.
+ * If only those two args given - function will fetch and return appropriate `filter` entry (or null, if not found)
+ * If 3rd arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `filter`
+ * entry, or update existing if found
+ *
+ * @param string $section Alias of section, that `filter` entry is/should exist within
+ * @param string $field Alias of field, underlying behind `filter` entry
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Search_Row|null
+ */
+function filter($section, $field, $ctor = false) {
+
+    // Get `sectionId` and `fieldId` according to $section and $field args
+    $sectionR = section($section);
+    $sectionId = $sectionR->id;
+    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id;
+
+    // Try to find `filter` entry
+    $filterR = Indi::model('Search')->fetchRow(array(
+        '`sectionId` = "' . $sectionId . '"',
+        '`fieldId` = "' . $fieldId . '"'
+    ));
+
+    // If $ctor arg is non-false and is not and empty array - return found `filter` entry, or null otherwise
+    // This part of this function differs from such part if other similar functions, for example field() function,
+    // because presence of $section and $field args - is minimum enough for `filter` entry to be created
+    if (!$ctor && !is_array($ctor)) return $gridR;
+
+    // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
+    // - use values given by $section and $fields args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('sectionId,fieldId') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `filter` entry was not found - create it
+    if (!$filterR) $filterR = Indi::model('Search')->createRow();
+
+    // Assign `sectionId` prop first
+    if ($ctor['sectionId'] && $filterR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign other props and save
+    $filterR->assign($ctor)->save();
+
+    // Return `filter` entry (newly created, or existing but updated)
+    return $filterR;
+}
