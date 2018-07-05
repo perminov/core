@@ -58,9 +58,9 @@ class Admin_TemporaryController extends Indi_Controller {
         // If notices system is already is in it's last version - return
         if (!(!Indi::model('NoticeGetter', true) || !Indi::model('NoticeGetter')->fields('criteriaRelyOn'))) die('already ok');
 
-        // Remove previous version of notices
-        entity('noticeGetter')->delete();
-        entity('notice')->delete();
+        // Remove previous version of notices, if exists
+        if (entity('noticeGetter')) entity('noticeGetter')->delete();
+        if (entity('notice')) entity('notice')->delete();
 
         // Create `notice` entity
         if (true) {
