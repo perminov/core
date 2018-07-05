@@ -17,5 +17,5 @@ class AlteredField extends Indi_Db_Table {
      *
      * @var string
      */
-    protected $_rowClass = 'Indi_Db_Table_Row_Noeval';
+    protected $_rowClass = 'AlteredField_Row';
 }
