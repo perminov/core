@@ -250,8 +250,14 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
         // Exclude props that will be already represented by shorthand-fn args
         foreach (ar('fieldId,alias') as $arg) unset($ctor[$arg]);
 
-        // Stringify and return $ctor
-        return var_export($ctor, true);
+        // Stringify
+        $ctorS = var_export($ctor, true);
+
+        // Minify
+        if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
+
+        // Return
+        return $ctorS;
     }
 
     /**
