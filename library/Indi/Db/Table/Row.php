@@ -2163,7 +2163,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             else throw new Exception();
 
             // Fetch nested rowset, assign it under $key key within $this->_nested array
-            $this->_nested[$key] = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
+            $method = Indi::model($table)->treeColumn() ? 'fetchTree' : 'fetchAll';
+            $this->_nested[$key] = Indi::model($table)->$method($where, $order, $count, $page, $offset);
 
             // Setup foreign data for nested rowset, if need
             if ($foreign) $this->_nested[$key]->foreign($foreign);

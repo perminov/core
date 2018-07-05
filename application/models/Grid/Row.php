@@ -68,7 +68,7 @@ class Grid_Row extends Indi_Db_Table_Row {
         unset($ctor['id'], $ctor['move']);
 
         // Exclude props that are already represented by one of shorthand-fn args
-        foreach (ar('sectionId,fieldId') as $arg) unset($ctor[$arg]);
+        foreach (ar('sectionId,fieldId,alias') as $arg) unset($ctor[$arg]);
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -112,7 +112,7 @@ class Grid_Row extends Indi_Db_Table_Row {
         // Return creation expression
         return "grid('" .
             $this->foreign('sectionId')->alias . "','" .
-            $this->foreign('fieldId')->alias . "', " .
+            ($this->foreign('fieldId')->alias ?: $this->alias) . "', " .
             $this->_ctor() . ");";
     }
 }
