@@ -54,291 +54,309 @@ class Admin_TemporaryController extends Indi_Controller {
     }
 
     public function noticesAction() {
-        //die('disabled');
-        Indi::db()->query('DROP TABLE IF EXISTS `notice`');
-        Indi::db()->query('DROP TABLE IF EXISTS `noticeGetter`');
 
-        $entityR_notice = Indi::model('Entity')->createRow(array(
-            'title' => 'Уведомление',
-            'table' => 'notice',
-            'system' => 'y'
-        ), true);
-        $entityR_notice->save();
+        // If notices system is already is in it's last version - return
+        if (!(!Indi::model('NoticeGetter', true) || !Indi::model('NoticeGetter')->fields('criteriaRelyOn'))) die('already ok');
 
-        $elementRs = Indi::model('Element')->fetchAll();
-        $columnTypeRs = Indi::model('ColumnType')->fetchAll();
+        // Remove previous version of notices, if exists
+        if (entity('noticeGetter')) entity('noticeGetter')->delete();
+        if (entity('notice')) entity('notice')->delete();
 
-        $fieldR_title = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Наименование',
-            'alias' => 'title',
-            'mode' => 'required',
-            'elementId' => $elementRs->gb('string', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-        ), true);
-        $fieldR_title->save();
+        // Create `notice` entity
+        if (true) {
+            entity('notice', array (
+                'title' => 'Уведомление',
+                'system' => 'y',
+            ));
+            field('notice', 'title', array (
+                'title' => 'Наименование',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+                'mode' => 'required',
+            ));
+            field('notice', 'entityId', array (
+                'title' => 'Сущность',
+                'columnTypeId' => 'INT(11)',
+                'elementId' => 'combo',
+                'relation' => 'entity',
+                'storeRelationAbility' => 'one',
+                'mode' => 'required',
+            ));
+            field('notice', 'event', array (
+                'title' => 'Событие / PHP',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+            ));
+            field('notice', 'profileId', array (
+                'title' => 'Получатели',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'combo',
+                'relation' => 'profile',
+                'storeRelationAbility' => 'many',
+                'mode' => 'required',
+            ));
+            field('notice', 'toggle', array (
+                'title' => 'Статус',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'y',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('notice', 'toggle', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Включено'));
+            enumset('notice', 'toggle', 'n', array('title' => '<span class="i-color-box" style="background: red;"></span>Выключено'));
+            field('notice', 'qty', array (
+                'title' => 'Счетчик',
+                'elementId' => 'span',
+            ));
+            field('notice', 'qtySql', array (
+                'title' => 'Отображение / SQL',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+                'mode' => 'required',
+            ));
+            field('notice', 'qtyDiffRelyOn', array (
+                'title' => 'Направление изменения',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'event',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('notice', 'qtyDiffRelyOn', 'event', array('title' => 'Одинаковое для всех получателей'));
+            enumset('notice', 'qtyDiffRelyOn', 'getter', array('title' => 'Неодинаковое, зависит от получателя'));
+            field('notice', 'sectionId', array (
+                'title' => 'Пункты меню',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'combo',
+                'relation' => 'section',
+                'satellite' => 'entityId',
+                'dependency' => 'с',
+                'storeRelationAbility' => 'many',
+                'filter' => 'FIND_IN_SET(`sectionId`, "<?=Indi::model(\'Section\')->fetchAll(\'`sectionId` = "0"\')->column(\'id\', true)?>")',
+            ));
+            field('notice', 'bg', array (
+                'title' => 'Цвет фона',
+                'columnTypeId' => 'VARCHAR(10)',
+                'elementId' => 'color',
+                'defaultValue' => '212#d9e5f3',
+            ));
+            field('notice', 'fg', array (
+                'title' => 'Цвет текста',
+                'columnTypeId' => 'VARCHAR(10)',
+                'elementId' => 'color',
+                'defaultValue' => '216#044099',
+            ));
+            field('notice', 'tooltip', array (
+                'title' => 'Подсказка',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'textarea',
+            ));
+            field('notice', 'tpl', array (
+                'title' => 'Сообщение',
+                'elementId' => 'span',
+            ));
+            field('notice', 'tplFor', array (
+                'title' => 'Назначение',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'inc',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('notice', 'tplFor', 'inc', array('title' => 'Увеличение'));
+            enumset('notice', 'tplFor', 'dec', array('title' => 'Уменьшение'));
+            enumset('notice', 'tplFor', 'evt', array('title' => 'Изменение'));
+            field('notice', 'tplIncSubj', array (
+                'title' => 'Заголовок',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'string',
+            ));
+            field('notice', 'tplIncBody', array (
+                'title' => 'Текст',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'textarea',
+            ));
+            field('notice', 'tplDecSubj', array (
+                'title' => 'Заголовок',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'string',
+            ));
+            field('notice', 'tplDecBody', array (
+                'title' => 'Текст',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'textarea',
+            ));
+            field('notice', 'tplEvtSubj', array (
+                'title' => 'Заголовок',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'string',
+            ));
+            field('notice', 'tplEvtBody', array (
+                'title' => 'Сообщение',
+                'columnTypeId' => 'TEXT',
+                'elementId' => 'textarea',
+            ));
+            entity('notice', array('titleFieldId' => 'title'));
+        }
 
-        $fieldR_entityId = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Сущность',
-            'alias' => 'entityId',
-            'mode' => 'required',
-            'storeRelationAbility' => 'one',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('INT(11)', 'type')->id,
-            'relation' => Indi::model('Entity')->id()
-        ), true);
-        $fieldR_entityId->save();
+        // Create `noticeGetter` entity
+        if (true) {
+            entity('noticeGetter', array (
+                'title' => 'Получатель уведомлений',
+                'system' => 'y',
+            ));
+            field('noticeGetter', 'noticeId', array (
+                'title' => 'Уведомление',
+                'columnTypeId' => 'INT(11)',
+                'elementId' => 'combo',
+                'relation' => 'notice',
+                'storeRelationAbility' => 'one',
+                'mode' => 'readonly',
+            ));
+            field('noticeGetter', 'profileId', array (
+                'title' => 'Роль',
+                'columnTypeId' => 'INT(11)',
+                'elementId' => 'combo',
+                'relation' => 'profile',
+                'storeRelationAbility' => 'one',
+                'mode' => 'readonly',
+            ));
+            field('noticeGetter', 'criteriaRelyOn', array (
+                'title' => 'Критерий',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'radio',
+                'defaultValue' => 'event',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('noticeGetter', 'criteriaRelyOn', 'event', array('title' => 'Общий'));
+            enumset('noticeGetter', 'criteriaRelyOn', 'getter', array('title' => 'Раздельный'));
+            field('noticeGetter', 'criteriaEvt', array (
+                'title' => 'Общий',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+            ));
+            field('noticeGetter', 'criteriaInc', array (
+                'title' => 'Для увеличения',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+            ));
+            field('noticeGetter', 'criteriaDec', array (
+                'title' => 'Для уменьшения',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+            ));
+            field('noticeGetter', 'title', array (
+                'title' => 'Ауто титле',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+                'mode' => 'hidden',
+            ));
+            field('noticeGetter', 'email', array (
+                'title' => 'Дублирование на почту',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'n',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('noticeGetter', 'email', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+            enumset('noticeGetter', 'email', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+            field('noticeGetter', 'vk', array (
+                'title' => 'Дублирование в ВК',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'n',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('noticeGetter', 'vk', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+            enumset('noticeGetter', 'vk', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+            field('noticeGetter', 'sms', array (
+                'title' => 'Дублирование по SMS',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'n',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+            ));
+            enumset('noticeGetter', 'sms', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+            enumset('noticeGetter', 'sms', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+            field('noticeGetter', 'criteria', array (
+                'title' => 'Критерий',
+                'columnTypeId' => 'VARCHAR(255)',
+                'elementId' => 'string',
+                'mode' => 'hidden',
+            ));
+            field('noticeGetter', 'mail', array (
+                'title' => 'Дублирование на почту',
+                'columnTypeId' => 'ENUM',
+                'elementId' => 'combo',
+                'defaultValue' => 'n',
+                'relation' => 'enumset',
+                'storeRelationAbility' => 'one',
+                'mode' => 'hidden',
+            ));
+            enumset('noticeGetter', 'mail', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+            enumset('noticeGetter', 'mail', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+            entity('noticeGetter', array('titleFieldId' => 'profileId'));
+        }
 
-        $fieldR_profileId = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Получатели',
-            'alias' => 'profileId',
-            'mode' => 'required',
-            'storeRelationAbility' => 'many',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-            'relation' => Indi::model('Profile')->id()
-        ), true);
-        $fieldR_profileId->save();
+        // Create `notices` section
+        if (true) {
+            section('notices', array (
+                'sectionId' => 'configuration',
+                'entityId' => 'notice',
+                'title' => 'Уведомления',
+                'defaultSortField' => 'title',
+                'type' => 's',
+            ))->nested('grid')->delete();
+            section2action('notices','index', array('profileIds' => 1));
+            section2action('notices','form', array('profileIds' => 1));
+            section2action('notices','save', array('profileIds' => 1));
+            section2action('notices','delete', array('profileIds' => 1));
+            section2action('notices','toggle', array('profileIds' => 1));
+            grid('notices','title', true);
+            grid('notices','entityId', true);
+            grid('notices','profileId', true);
+            grid('notices','toggle', true);
+            grid('notices','qty', true);
+            grid('notices','qtySql', array('gridId' => 'qty'));
+            grid('notices','event', array('gridId' => 'qty'));
+            grid('notices','sectionId', array('gridId' => 'qty'));
+            grid('notices','bg', array('gridId' => 'qty'));
+            grid('notices','fg', array('gridId' => 'qty'));
+        }
 
-        // Create field
-        $fieldR_toggle = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Статус',
-            'alias' => 'toggle',
-            'storeRelationAbility' => 'one',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('ENUM', 'type')->id,
-            'defaultValue' => 'y'
-        ), true);
-
-        // Save field
-        $fieldR_toggle->save();
-
-        // Get first enumset option (that was created automatically)
-        $y = $fieldR_toggle->nested('enumset')->at(0);
-        $y->title = '<span class="i-color-box" style="background: lime;"></span>Включено';
-        $y->save();
-
-        // Create one more enumset option within this field
-        Indi::model('Enumset')->createRow(array(
-            'fieldId' => $y->fieldId,
-            'title' => '<span class="i-color-box" style="background: red;"></span>Выключено',
-            'alias' => 'n'
-        ), true)->save();
-
-        $fieldR_match = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Счетчик',
-            'alias' => 'match',
-            'elementId' => $elementRs->gb('span', 'alias')->id,
-        ), true);
-        $fieldR_match->save();
-
-        $fieldR_matchSql = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Отображение / SQL',
-            'alias' => 'matchSql',
-            'mode' => 'required',
-            'elementId' => $elementRs->gb('string', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-        ), true);
-        $fieldR_matchSql->save();
-
-        $fieldR_matchPhp = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Изменение / PHP',
-            'alias' => 'matchPhp',
-            'elementId' => $elementRs->gb('string', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-        ), true);
-        $fieldR_matchPhp->save();
-
-        $fieldR_sectionId = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Пункты меню',
-            'alias' => 'sectionId',
-            'storeRelationAbility' => 'many',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-            'relation' => Indi::model('Section')->id(),
-            'filter' => 'FIND_IN_SET(`sectionId`, "<?=Indi::model(\'Section\')->fetchAll(\'`sectionId` = "0"\')->column(\'id\', true)?>")',
-            'dependency' => 'с',
-            'satellite' => $fieldR_entityId->id
-        ), true);
-        $fieldR_sectionId->save();
-
-        $fieldR_bg = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Цвет фона',
-            'alias' => 'bg',
-            'elementId' => $elementRs->gb('color', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(10)', 'type')->id,
-            'defaultValue' => '#d9e5f3'
-        ), true);
-        $fieldR_bg->save();
-
-        $fieldR_bg = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Цвет текста',
-            'alias' => 'fg',
-            'elementId' => $elementRs->gb('color', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(10)', 'type')->id,
-            'defaultValue' => '#044099'
-        ), true);
-        $fieldR_bg->save();
-
-        $fieldR_tplUp = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Сообщение при увеличении счетчика',
-            'alias' => 'tplUp',
-            'elementId' => $elementRs->gb('span', 'alias')->id,
-        ), true);
-        $fieldR_tplUp->save();
-
-        $fieldR_tplUpHeader = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Заголовок',
-            'alias' => 'tplUpHeader',
-            'elementId' => $elementRs->gb('string', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-        ), true);
-        $fieldR_tplUpHeader->save();
-
-        $fieldR_tplUpBody = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'Текст',
-            'alias' => 'tplUpBody',
-            'elementId' => $elementRs->gb('textarea', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('TEXT', 'type')->id,
-        ), true);
-        $fieldR_tplUpBody->save();
-
-        $fieldR_tplDown = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_notice->id,
-            'title' => 'При уменьшении счетчика',
-            'alias' => 'tplDown',
-            'mode' => 'hidden',
-            'elementId' => $elementRs->gb('textarea', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('TEXT', 'type')->id,
-        ), true);
-        $fieldR_tplDown->save();
-
-        $sectionR_notices = Indi::model('Section')->createRow(array(
-            'title' => 'Уведомления',
-            'sectionId' => Indi::model('Section')->fetchRow('`alias` = "sections"')->sectionId,
-            'alias' => 'notices',
-            'type' => 's',
-            'entityId' => $entityR_notice->id,
-            'defaultSortField' => $fieldR_title->id
-        ), true);
-        $sectionR_notices->save();
-
-        $entityR_noticeGetter = Indi::model('Entity')->createRow(array(
-            'title' => 'Получатель уведомлений',
-            'table' => 'noticeGetter',
-            'system' => 'y'
-        ), true);
-        $entityR_noticeGetter->save();
-
-        $fieldR_noticeId = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_noticeGetter->id,
-            'title' => 'Уведомление',
-            'alias' => 'noticeId',
-            'mode' => 'readonly',
-            'storeRelationAbility' => 'one',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('INT(11)', 'type')->id,
-            'relation' => $entityR_notice->id
-        ), true);
-        $fieldR_noticeId->save();
-
-        $fieldR_profileId = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_noticeGetter->id,
-            'title' => 'Роль',
-            'alias' => 'profileId',
-            'mode' => 'readonly',
-            'storeRelationAbility' => 'one',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('INT(11)', 'type')->id,
-            'relation' => Indi::model('Profile')->id()
-        ), true);
-        $fieldR_profileId->save();
-
-        $fieldR_criteria = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_noticeGetter->id,
-            'title' => 'Критерий',
-            'alias' => 'criteria',
-            'elementId' => $elementRs->gb('string', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('VARCHAR(255)', 'type')->id,
-        ), true);
-        $fieldR_criteria->save();
-
-        $entityR_noticeGetter->titleFieldId = $fieldR_profileId->id;
-        $entityR_noticeGetter->save();
-
-        // Create field
-        $fieldR_mail = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_noticeGetter->id,
-            'title' => 'Дублирование на почту',
-            'alias' => 'mail',
-            'storeRelationAbility' => 'one',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('ENUM', 'type')->id,
-            'defaultValue' => 'n'
-        ), true);
-
-        // Save field
-        $fieldR_mail->save();
-
-        // Get first enumset option (that was created automatically)
-        $n = $fieldR_mail->nested('enumset')->at(0);
-        $n->title = '<span class="i-color-box" style="background: lightgray;"></span>Нет';
-        $n->save();
-
-        // Create one more enumset option within this field
-        Indi::model('Enumset')->createRow(array(
-            'fieldId' => $n->fieldId,
-            'title' => '<span class="i-color-box" style="background: lime;"></span>Да',
-            'alias' => 'y'
-        ), true)->save();
-
-        // Create field
-        $fieldR_vk = Indi::model('Field')->createRow(array(
-            'entityId' => $entityR_noticeGetter->id,
-            'title' => 'Дублирование в ВК',
-            'alias' => 'vk',
-            'storeRelationAbility' => 'one',
-            'elementId' => $elementRs->gb('combo', 'alias')->id,
-            'columnTypeId' => $columnTypeRs->gb('ENUM', 'type')->id,
-            'defaultValue' => 'n'
-        ), true);
-
-        // Save field
-        $fieldR_vk->save();
-
-        // Get first enumset option (that was created automatically)
-        $n = $fieldR_vk->nested('enumset')->at(0);
-        $n->title = '<span class="i-color-box" style="background: lightgray;"></span>Нет';
-        $n->save();
-
-        // Create one more enumset option within this field
-        Indi::model('Enumset')->createRow(array(
-            'fieldId' => $n->fieldId,
-            'title' => '<span class="i-color-box" style="background: lime;"></span>Да',
-            'alias' => 'y'
-        ), true)->save();
-
-        $sectionR_noticeGetters = Indi::model('Section')->createRow(array(
-            'title' => 'Получатели',
-            'sectionId' => $sectionR_notices->id,
-            'alias' => 'noticeGetters',
-            'type' => 's',
-            'entityId' => $entityR_noticeGetter->id,
-            'defaultSortField' => $fieldR_profileId->id
-        ), true);
-        $sectionR_noticeGetters->save();
+        // Create `noticeGetters` action
+        if (true) {
+            section('noticeGetters', array (
+                'sectionId' => 'notices',
+                'entityId' => 'noticeGetter',
+                'title' => 'Получатели',
+                'defaultSortField' => 'profileId',
+                'type' => 's',
+            ))->nested('grid')->delete();
+            section2action('noticeGetters','index', array('profileIds' => 1));
+            section2action('noticeGetters','form', array('profileIds' => 1));
+            section2action('noticeGetters','save', array('profileIds' => 1));
+            section2action('noticeGetters','delete', array('profileIds' => 1));
+            grid('noticeGetters','profileId', true);
+            grid('noticeGetters','criteriaEvt', true);
+            grid('noticeGetters','email', array (
+                'alterTitle' => 'Email',
+                'tooltip' => 'Дублирование на почту',
+            ));
+            grid('noticeGetters','vk', array (
+                'alterTitle' => 'VK',
+                'tooltip' => 'Дублирование во ВКонтакте',
+            ));
+            grid('noticeGetters','sms', array (
+                'alterTitle' => 'SMS',
+                'tooltip' => 'Дублирование по SMS',
+            ));
+        }
 
         die('ok');
     }

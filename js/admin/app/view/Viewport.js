@@ -203,7 +203,14 @@ Ext.define('Indi.view.Viewport', {
             Indi.metrics = new Ext.util.TextMetrics();
         },
         afterlayout: function(){
+            var jump = window.location.hash.substr(1);
             if (Ext.getCmp(Indi.centerId)) Ext.getCmp(Indi.centerId).doComponentLayout();
+            if (jump.length) Indi.load(jump + 'jump/1/', {
+                onLoad: function() {
+                    if (typeof history.pushState == 'function')
+                        history.pushState('', '', window.location.toString().split('#').shift());
+                }
+            });
         },
         boxready: function(c, w, h) {
             if (w > 600) c.down('#i-mobile-menu-trigger').setDisabled(true);
