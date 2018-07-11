@@ -104,6 +104,36 @@ insert  into `alteredfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`mode`,`ti
 insert  into `alteredfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`mode`,`title`,`impact`,`profileIds`,`rename`) values (88,146,698,'','hidden','Подписался на рассылку','all','','');
 insert  into `alteredfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`mode`,`title`,`impact`,`profileIds`,`rename`) values (215,232,1515,'','readonly','Тип','except','1','');
 
+/*Table structure for table `changelog` */
+
+DROP TABLE IF EXISTS `changelog`;
+
+CREATE TABLE `changelog` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `entityId` int(11) NOT NULL DEFAULT '0',
+  `key` int(11) NOT NULL DEFAULT '0',
+  `fieldId` int(11) NOT NULL DEFAULT '0',
+  `was` text NOT NULL,
+  `now` text NOT NULL,
+  `datetime` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `monthId` int(11) NOT NULL DEFAULT '0',
+  `changerType` int(11) NOT NULL DEFAULT '0',
+  `changerId` int(11) NOT NULL DEFAULT '0',
+  `profileId` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `entityId` (`entityId`),
+  KEY `key` (`key`),
+  KEY `fieldId` (`fieldId`),
+  KEY `monthId` (`monthId`),
+  KEY `changerType` (`changerType`),
+  KEY `changerId` (`changerId`),
+  KEY `profileId` (`profileId`),
+  FULLTEXT KEY `was` (`was`),
+  FULLTEXT KEY `now` (`now`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `changelog` */
+
 /*Table structure for table `columntype` */
 
 DROP TABLE IF EXISTS `columntype`;
@@ -208,7 +238,7 @@ CREATE TABLE `entity` (
   KEY `titleFieldId` (`titleFieldId`),
   KEY `spaceScheme` (`spaceScheme`),
   KEY `spaceFields` (`spaceFields`)
-) ENGINE=MyISAM AUTO_INCREMENT=311 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=314 DEFAULT CHARSET=utf8;
 
 /*Data for the table `entity` */
 
@@ -244,6 +274,9 @@ insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleF
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (309,'Уведомление','notice','Indi_Db_Table','y',0,2254,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (310,'Получатель уведомлений','noticeGetter','Indi_Db_Table','y',0,2275,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (308,'Зависимость','consider','Indi_Db_Table','y',0,2247,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (311,'Год','year','Indi_Db_Table','y',0,2286,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (312,'Месяц','month','Indi_Db_Table','y',0,2289,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (313,'Корректировка','changeLog','Indi_Db_Table','y',0,2296,'none','');
 
 /*Table structure for table `enumset` */
 
@@ -258,7 +291,7 @@ CREATE TABLE `enumset` (
   PRIMARY KEY (`id`),
   KEY `fieldId` (`fieldId`),
   FULLTEXT KEY `title` (`title`)
-) ENGINE=MyISAM AUTO_INCREMENT=1049 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1061 DEFAULT CHARSET=utf8;
 
 /*Data for the table `enumset` */
 
@@ -421,6 +454,18 @@ insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1045,2283,
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1046,2283,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Да','y',1046);
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1047,2285,'<span class=\"i-color-box\" style=\"background: lightgray;\"></span>Нет','n',1047);
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1048,2285,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Да','y',1048);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1049,2288,'Январь','01',1049);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1050,2288,'Февраль','02',1050);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1051,2288,'Март','03',1051);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1052,2288,'Апрель','04',1052);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1053,2288,'Май','05',1053);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1054,2288,'Июнь','06',1054);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1055,2288,'Июль','07',1055);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1056,2288,'Август','08',1056);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1057,2288,'Сентябрь','09',1057);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1058,2288,'Октябрь','10',1058);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1059,2288,'Ноябрь','11',1059);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1060,2288,'Декабрь','12',1060);
 
 /*Table structure for table `faction` */
 
@@ -497,7 +542,7 @@ CREATE TABLE `field` (
   KEY `mode` (`mode`),
   KEY `l10n` (`l10n`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2286 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2301 DEFAULT CHARSET=utf8;
 
 /*Data for the table `field` */
 
@@ -779,6 +824,21 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2283,310,'Дублирование по SMS','sms',10,23,'n',2283,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2284,310,'Критерий','criteria',1,1,'',2284,0,0,'u','none','','','','hidden','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2285,310,'Дублирование на почту','mail',10,23,'n',2285,6,0,'u','one','','','','hidden','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2286,311,'Наименование','title',1,1,'',2286,0,0,'u','none','','','','required','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2287,312,'Год','yearId',3,23,'0',2287,311,0,'u','one','','','','required','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2288,312,'Месяц','month',10,23,'01',2288,6,0,'u','one','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2289,312,'Наименование','title',1,1,'',2289,0,0,'u','none','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2290,312,'Порядок','move',3,4,'0',2290,0,0,'u','none','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2291,313,'Сущность','entityId',3,23,'0',2291,2,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2292,313,'Объект','key',3,23,'0',2292,0,2291,'e','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2293,313,'Что изменено','fieldId',3,23,'0',2293,5,2291,'с','one','','`columnTypeId` != \"0\"','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2294,313,'Было','was',4,13,'',2294,0,0,'u','none','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2295,313,'Стало','now',4,13,'',2295,0,0,'u','none','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2296,313,'Когда','datetime',9,19,'0000-00-00 00:00:00',2296,0,0,'u','none','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2297,313,'Месяц','monthId',3,23,'0',2297,312,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2298,313,'Тип автора','changerType',3,23,'0',2298,2,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2299,313,'Автор','changerId',3,23,'0',2299,0,2298,'e','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2300,313,'Роль','profileId',3,23,'0',2300,10,0,'u','one','','','','readonly','','n');
 
 /*Table structure for table `fsection` */
 
@@ -885,7 +945,7 @@ CREATE TABLE `grid` (
   KEY `profileIds` (`profileIds`),
   KEY `editor` (`editor`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2416 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2417 DEFAULT CHARSET=utf8;
 
 /*Data for the table `grid` */
 
@@ -992,12 +1052,12 @@ insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`tit
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (1767,146,691,1222,'','y','Дата регистрации',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (1954,224,1658,1945,'','y','Альтернативное наименование',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2280,201,2161,1946,'','y','Режим',0,'','all','','0','');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2320,11,2159,2322,'','y','Статус',0,'','all','','0','');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2320,11,2159,2325,'','y','Статус',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2321,6,2197,10,'','y','Режим',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2322,11,34,30,'','y','Поле',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2323,10,2202,2323,'','y','Статус',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2324,8,2209,2328,'','y','Переименовать',0,'','all','','0','');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2325,11,2210,2325,'','y','Редактор',0,'','all','','0','');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2325,11,2210,2416,'','y','Редактор',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2326,8,2212,25,'РSП','y','РSП',0,'Режим отображения south-панели','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2327,7,2213,18,'РПД','y','РПД',0,'Режим подгрузки данных','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2328,8,2214,297,'','y','Автосайз окна',0,'','all','','0','');
@@ -1009,6 +1069,7 @@ insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`tit
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2397,389,2262,2397,'','y','Пункты меню',2394,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2398,389,2263,2398,'','y','Цвет фона',2394,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2399,389,2264,2399,'','y','Цвет текста',2394,'','all','','0','');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2416,11,2253,2322,'','y','Ключ',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2390,389,2254,2390,'','y','Наименование',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2391,389,2255,2391,'','y','Сущность',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2392,389,2257,2392,'','y','Получатели',0,'','all','','0','');
@@ -1107,6 +1168,23 @@ CREATE TABLE `metatag` (
 /*Data for the table `metatag` */
 
 insert  into `metatag`(`id`,`fsectionId`,`fsection2factionId`,`tag`,`type`,`content`,`up`,`source`,`entityId`,`fieldId`,`prefix`,`postfix`,`move`) values (2,37,127,'title','dynamic','',0,'row',25,131,'','',2);
+
+/*Table structure for table `month` */
+
+DROP TABLE IF EXISTS `month`;
+
+CREATE TABLE `month` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `yearId` int(11) NOT NULL DEFAULT '0',
+  `month` enum('01','02','03','04','05','06','07','08','09','10','11','12') NOT NULL DEFAULT '01',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `move` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `yearId` (`yearId`),
+  KEY `month` (`month`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `month` */
 
 /*Table structure for table `notice` */
 
@@ -1773,6 +1851,18 @@ CREATE TABLE `visitor` (
 /*Data for the table `visitor` */
 
 insert  into `visitor`(`id`,`title`,`lastActivity`,`userId`) values (555196,'3v0s0pvgep3itif9nq82eif0h0','2014-02-03 19:15:02',0);
+
+/*Table structure for table `year` */
+
+DROP TABLE IF EXISTS `year`;
+
+CREATE TABLE `year` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `year` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
