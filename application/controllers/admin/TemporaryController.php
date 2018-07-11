@@ -10,7 +10,7 @@ class Admin_TemporaryController extends Indi_Controller {
      * Convert disabledFields-feature to alteredFields-feature
      */
     public function alteredFieldsAction() {
-
+        die('disabled');
         // If 'disabledFields' entity exists, and 'displayInForm' field exists in it
         if (field('disabledField', 'displayInForm')) {
 
@@ -54,7 +54,7 @@ class Admin_TemporaryController extends Indi_Controller {
     }
 
     public function noticesAction() {
-
+        die('disabled');
         // If notices system is already is in it's last version - return
         if (!(!Indi::model('NoticeGetter', true) || !Indi::model('NoticeGetter')->fields('criteriaRelyOn'))) die('already ok');
 
@@ -358,6 +358,83 @@ class Admin_TemporaryController extends Indi_Controller {
             ));
         }
 
+        die('ok');
+    }
+
+    public function changelogAction() {
+
+        // Create/update `year` entity
+        entity('year', array('title' => 'Год', 'system' => 'y'));
+        field('year', 'title', array('title' => 'Наименование', 'columnTypeId' => 'VARCHAR(255)', 'elementId' => 'string', 'mode' => 'required'));
+        entity('year', array('titleFieldId' => 'title'));
+
+        // Create/update `month` entity
+        entity('month', array('title' => 'Месяц', 'system' => 'y'));
+        field('month', 'yearId', array('title' => 'Год', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo', 'relation' => 'year', 'storeRelationAbility' => 'one', 'mode' => 'required'));
+        field('month', 'month', array ('title' => 'Месяц', 'columnTypeId' => 'ENUM', 'elementId' => 'combo', 'defaultValue' => '01', 'relation' => 'enumset', 'storeRelationAbility' => 'one'));
+        enumset('month', 'month', '01', array('title' => 'Январь'));
+        enumset('month', 'month', '02', array('title' => 'Февраль'));
+        enumset('month', 'month', '03', array('title' => 'Март'));
+        enumset('month', 'month', '04', array('title' => 'Апрель'));
+        enumset('month', 'month', '05', array('title' => 'Май'));
+        enumset('month', 'month', '06', array('title' => 'Июнь'));
+        enumset('month', 'month', '07', array('title' => 'Июль'));
+        enumset('month', 'month', '08', array('title' => 'Август'));
+        enumset('month', 'month', '09', array('title' => 'Сентябрь'));
+        enumset('month', 'month', '10', array('title' => 'Октябрь'));
+        enumset('month', 'month', '11', array('title' => 'Ноябрь'));
+        enumset('month', 'month', '12', array('title' => 'Декабрь'));
+        field('month', 'title', array('title' => 'Наименование', 'columnTypeId' => 'VARCHAR(255)', 'elementId' => 'string'));
+        field('month', 'move', array('title' => 'Порядок', 'columnTypeId' => 'INT(11)', 'elementId' => 'move'));
+        entity('month', array('titleFieldId' => 'title'));
+
+        // Create/update `changeLog` entity
+        entity('changeLog', array('title' => 'Корректировка', 'system' => 'y'));
+        field('changeLog', 'entityId', array('title' => 'Сущность', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'entity', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        field('changeLog', 'key', array('title' => 'Объект', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'satellite' => 'entityId', 'dependency' => 'e', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        field('changeLog', 'fieldId', array('title' => 'Что изменено', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'field', 'satellite' => 'entityId', 'dependency' => 'с', 'storeRelationAbility' => 'one',
+            'filter' => '`columnTypeId` != "0"', 'mode' => 'readonly'));
+        field('changeLog', 'was', array('title' => 'Было', 'columnTypeId' => 'TEXT', 'elementId' => 'html', 'mode' => 'readonly'));
+        field('changeLog', 'now', array('title' => 'Стало', 'columnTypeId' => 'TEXT', 'elementId' => 'html', 'mode' => 'readonly'));
+        field('changeLog', 'datetime', array('title' => 'Когда', 'columnTypeId' => 'DATETIME', 'elementId' => 'datetime',
+            'defaultValue' => '0000-00-00 00:00:00', 'mode' => 'readonly'));
+        field('changeLog', 'monthId', array('title' => 'Месяц', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'month', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        field('changeLog', 'changerType', array('title' => 'Тип автора', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'entity', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        field('changeLog', 'changerId', array('title' => 'Автор', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'satellite' => 'changerType', 'dependency' => 'e', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        field('changeLog', 'profileId', array('title' => 'Роль', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'profile', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        entity('changeLog', array('titleFieldId' => 'datetime'));
+
+        /**
+         * Setup `monthId` for existing `changelog` entries (nasled, vkenguru)
+         */
+
+        // Create `year` entries
+        foreach(Indi::db()->query('
+            SELECT DISTINCT YEAR(`datetime`) FROM `changeLog`
+        ')->fetchAll(PDO::FETCH_COLUMN) as $year)
+            Year::o($year);
+
+        // Create `month` entries
+        foreach (Indi::db()->query('
+            SELECT DISTINCT DATE_FORMAT(`datetime`, "%Y-%m") AS `Ym` FROM `changeLog` ORDER BY `Ym`
+        ')->fetchAll(PDO::FETCH_COLUMN) as $Ym)
+            $monthA[$Ym] = Month::o($Ym)->id;
+
+        // Setup `monthId` for `changeLog` entries with zero-value in `monthId` col
+        foreach (Indi::db()->query('
+            SELECT `id`, DATE_FORMAT(`datetime`, "%Y-%m") AS `Ym` FROM `changeLog` WHERE `monthId` = "0"
+        ')->fetchAll() as $_) Indi::db()->query('
+            UPDATE `changeLog` SET `monthId` = "' . $monthA[$_['Ym']] . '" WHERE `id` = "' . $_['id'] . '"
+        ');
+
+        // Exit
         die('ok');
     }
 }
