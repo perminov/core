@@ -124,7 +124,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     public function hasLocalizedDependency() {
 
         // If 'Consider'-model does not exists - return false
-        if (!Indi::model('Consider', true)) return false;
+        if (!Indi::model('Consider', true) || !Indi::model('Consider')->fields('title')) return false;
 
         // Foreach nested `consider` entry
         foreach ($this->nested('consider') as $considerR) {
