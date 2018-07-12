@@ -151,9 +151,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Fix types of data, got from PDO
      *
      * @param array $data
+     * @param bool $stdClass
      * @return array
      */
-    public function fixTypes(array $data) {
+    public function fixTypes(array $data, $stdClass = false) {
 
         // Foreach prop check
         foreach ($data as $k => $v) {
@@ -169,7 +170,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Return
-        return $data;
+        return $stdClass ? (object) $data : $data;
     }
 
     /**
