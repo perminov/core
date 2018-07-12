@@ -437,4 +437,75 @@ class Admin_TemporaryController extends Indi_Controller {
         // Exit
         die('ok');
     }
+
+    public function othersAction() {
+
+        // Add `spaceScheme` and `spaceFields` fields into `entity` entity
+        field('entity', 'spaceScheme', array (
+            'title' => 'Паттерн комплекта календарных полей',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'none',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('entity', 'spaceScheme', 'none', array('title' => 'Нет'));
+        enumset('entity', 'spaceScheme', 'date', array('title' => 'DATE'));
+        enumset('entity', 'spaceScheme', 'datetime', array('title' => 'DATETIME'));
+        enumset('entity', 'spaceScheme', 'date-time', array('title' => 'DATE, TIME'));
+        enumset('entity', 'spaceScheme', 'date-timeId', array('title' => 'DATE, timeId'));
+        enumset('entity', 'spaceScheme', 'date-dayQty', array('title' => 'DATE, dayQty'));
+        enumset('entity', 'spaceScheme', 'datetime-minuteQty', array('title' => 'DATETIME, minuteQty'));
+        enumset('entity', 'spaceScheme', 'date-time-minuteQty', array('title' => 'DATE, TIME, minuteQty'));
+        enumset('entity', 'spaceScheme', 'date-timeId-minuteQty', array('title' => 'DATE, timeId, minuteQty'));
+        enumset('entity', 'spaceScheme', 'date-timespan', array('title' => 'DATE, hh:mm-hh:mm'));
+        field('entity', 'spaceFields', array (
+            'title' => 'Комплект календарных полей',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'combo',
+            'relation' => 'field',
+            'storeRelationAbility' => 'many',
+            'filter' => '`entityId` = "<?=$this->id?>"',
+        ));
+
+        // Add `consider` entity
+        entity('consider', array('title' => 'Зависимость', 'system' => 'y'));
+        field('consider', 'entityId', array('title' => 'Сущность', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'entity', 'storeRelationAbility' => 'one', 'mode' => 'hidden'));
+        field('consider', 'fieldId', array('title' => 'Поле', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'field', 'storeRelationAbility' => 'one', 'mode' => 'readonly'));
+        field('consider', 'consider', array('title' => 'От какого поля зависит', 'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo', 'relation' => 'field', 'satellite' => 'fieldId', 'dependency' => 'с',
+            'storeRelationAbility' => 'one', 'alternative' => 'entityId', 'filter' => '`id` != "<?=$this->fieldId?>" AND `columnTypeId` != "0"',
+            'satellitealias' => 'entityId', 'mode' => 'required'));
+        field('consider', 'foreign', array('title' => 'Поле по ключу', 'columnTypeId' => 'INT(11)', 'elementId' => 'combo',
+            'relation' => 'field', 'satellite' => 'consider', 'dependency' => 'с', 'storeRelationAbility' => 'one', 'alternative' => 'relation'));
+        field('consider', 'title', array('title' => 'Auto title', 'columnTypeId' => 'VARCHAR(255)', 'elementId' => 'string', 'mode' => 'hidden'));
+        entity('consider', array('titleFieldId' => 'consider'));
+
+        // Add 'consider' section
+        $_ = section('consider', array('sectionId' => 'fields', 'entityId' => 'consider', 'title' => 'Зависимости', 'type' => 's'));
+        if ($_->affected('id')) $_->nested('grid')->delete();
+        section2action('consider','index', array('profileIds' => 1));
+        section2action('consider','form', array('profileIds' => 1));
+        section2action('consider','save', array('profileIds' => 1));
+        section2action('consider','delete', array('profileIds' => 1));
+        grid('consider','consider', true);
+        grid('consider','foreign', true);
+
+        // Add menu-expand fields
+        $_ = field('section', 'expand', array('title' => 'Разворачивать пункт меню', 'columnTypeId' => 'ENUM', 'elementId' => 'radio',
+            'defaultValue' => 'all', 'relation' => 'enumset', 'storeRelationAbility' => 'one'));
+        if ($_->affected('id')) $_->move(19)->move(-2);
+        enumset('section', 'expand', 'all', array('title' => 'Всем пользователям'));
+        enumset('section', 'expand', 'only', array('title' => 'Только выбранным'));
+        enumset('section', 'expand', 'except', array('title' => 'Всем кроме выбранных'));
+        enumset('section', 'expand', 'none', array('title' => 'Никому'));
+        $_ = field('section', 'expandRoles', array('title' => 'Выбранные', 'columnTypeId' => 'VARCHAR(255)', 'elementId' => 'combo',
+            'relation' => 'profile', 'storeRelationAbility' => 'many'));
+        if ($_->affected('id')) $_->move(19)->move(-3);
+
+        // Exit
+        die('ok');
+    }
 }
