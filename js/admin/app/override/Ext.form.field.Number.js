@@ -79,3 +79,11 @@ Ext.override(Ext.form.field.Number, {
         if (me.tbq) me.bodyEl.down('.i-field-number-after').update(Indi.tbq(me.value, me.tbq, false));
     }
 });
+
+Ext.override(Ext.form.field.File, {
+    extractFileInput: function() {
+        var fileInput = this.fileInputEl.dom;
+        // this.reset(); 
+        return fileInput;
+    }
+});
