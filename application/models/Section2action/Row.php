@@ -43,8 +43,8 @@ class Section2action_Row extends Indi_Db_Table_Row {
             // Get field
             $fieldR = Indi::model('Section2action')->fields($prop);
 
-            // Exclude prop, if it has value equal to default value
-            if ($fieldR->defaultValue == $value) unset($ctor[$prop]);
+            // Exclude prop, if it has value equal to default value (unless it's `profileIds`)
+            if ($fieldR->defaultValue == $value && $prop != 'profileIds') unset($ctor[$prop]);
 
             // Exclude `title` prop, if it was auto-created
             else if ($prop == 'title' && ($tf = $this->model()->titleField()) && $tf->storeRelationAbility != 'none')

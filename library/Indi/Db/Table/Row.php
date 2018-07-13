@@ -191,9 +191,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Fix types of data, got from PDO
      *
      * @param array $data
+     * @param bool $stdClass
      * @return array
      */
-    public function fixTypes(array $data) {
+    public function fixTypes(array $data, $stdClass = false) {
 
         // Foreach prop check
         foreach ($data as $k => $v) {
@@ -209,7 +210,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Return
-        return $data;
+        return $stdClass ? (object) $data : $data;
     }
 
     /**
@@ -2332,7 +2333,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             else throw new Exception();
 
             // Fetch nested rowset, assign it under $key key within $this->_nested array
-            $this->_nested[$key] = Indi::model($table)->fetchAll($where, $order, $count, $page, $offset);
+            $method = Indi::model($table)->treeColumn() ? 'fetchTree' : 'fetchAll';
+            $this->_nested[$key] = Indi::model($table)->$method($where, $order, $count, $page, $offset);
 
             // Setup foreign data for nested rowset, if need
             if ($foreign) $this->_nested[$key]->foreign($foreign);

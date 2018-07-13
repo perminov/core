@@ -104,6 +104,36 @@ insert  into `alteredfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`mode`,`ti
 insert  into `alteredfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`mode`,`title`,`impact`,`profileIds`,`rename`) values (88,146,698,'','hidden','Подписался на рассылку','all','','');
 insert  into `alteredfield`(`id`,`sectionId`,`fieldId`,`defaultValue`,`mode`,`title`,`impact`,`profileIds`,`rename`) values (215,232,1515,'','readonly','Тип','except','1','');
 
+/*Table structure for table `changelog` */
+
+DROP TABLE IF EXISTS `changelog`;
+
+CREATE TABLE `changelog` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `entityId` int(11) NOT NULL DEFAULT '0',
+  `key` int(11) NOT NULL DEFAULT '0',
+  `fieldId` int(11) NOT NULL DEFAULT '0',
+  `was` text NOT NULL,
+  `now` text NOT NULL,
+  `datetime` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `monthId` int(11) NOT NULL DEFAULT '0',
+  `changerType` int(11) NOT NULL DEFAULT '0',
+  `changerId` int(11) NOT NULL DEFAULT '0',
+  `profileId` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `entityId` (`entityId`),
+  KEY `key` (`key`),
+  KEY `fieldId` (`fieldId`),
+  KEY `monthId` (`monthId`),
+  KEY `changerType` (`changerType`),
+  KEY `changerId` (`changerId`),
+  KEY `profileId` (`profileId`),
+  FULLTEXT KEY `was` (`was`),
+  FULLTEXT KEY `now` (`now`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `changelog` */
+
 /*Table structure for table `columntype` */
 
 DROP TABLE IF EXISTS `columntype`;
@@ -208,7 +238,7 @@ CREATE TABLE `entity` (
   KEY `titleFieldId` (`titleFieldId`),
   KEY `spaceScheme` (`spaceScheme`),
   KEY `spaceFields` (`spaceFields`)
-) ENGINE=MyISAM AUTO_INCREMENT=311 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=314 DEFAULT CHARSET=utf8;
 
 /*Data for the table `entity` */
 
@@ -227,23 +257,26 @@ insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleF
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (25,'Статическая страница','staticpage','Indi_Db_Table','o',0,131,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (90,'Параметр настройки элемента управления','possibleElementParam','Indi_Db_Table','y',0,472,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (91,'Параметр настройки элемента управления, в контексте поля сущности','param','Indi_Db_Table','y',0,477,'none','');
-insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (101,'Раздел фронтенда','fsection','Indi_Db_Table','y',1,559,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (101,'Раздел фронтенда','fsection','Indi_Db_Table','o',1,559,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (195,'Фильтр','search','Indi_Db_Table','y',0,1443,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (128,'Фидбэк','feedback','Indi_Db_Table','o',0,678,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (129,'Подписчик','subscriber','Indi_Db_Table','o',0,682,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (130,'Пользователь','user','Indi_Db_Table','o',0,685,'none','');
-insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (146,'Действие, возможное для использования в разделе фронтенда','faction','Indi_Db_Table','y',1,857,'none','');
-insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (147,'Действие в разделе фронтенда','fsection2faction','Indi_Db_Table','y',1,860,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (146,'Действие, возможное для использования в разделе фронтенда','faction','Indi_Db_Table','o',1,857,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (147,'Действие в разделе фронтенда','fsection2faction','Indi_Db_Table','o',1,860,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (307,'Язык','lang','Indi_Db_Table','y',0,2236,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (160,'Посетитель','visitor','Indi_Db_Table','o',0,1100,'none','');
-insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (162,'Компонент SEO-урла','url','Indi_Db_Table','y',0,0,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (162,'Компонент SEO-урла','url','Indi_Db_Table','o',0,0,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (171,'Поле, измененное в рамках раздела','alteredField','Indi_Db_Table','y',0,1342,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (204,'Статический элемент','staticblock','Indi_Db_Table','o',0,1485,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (205,'Пункт меню','menu','Indi_Db_Table','o',0,1490,'none','');
-insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (301,'Компонент содержимого meta-тега','metatag','Indi_Db_Table','y',0,0,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (301,'Компонент содержимого meta-тега','metatag','Indi_Db_Table','o',0,0,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (309,'Уведомление','notice','Indi_Db_Table','y',0,2254,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (310,'Получатель уведомлений','noticeGetter','Indi_Db_Table','y',0,2275,'none','');
 insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (308,'Зависимость','consider','Indi_Db_Table','y',0,2247,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (311,'Год','year','Indi_Db_Table','y',0,2286,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (312,'Месяц','month','Indi_Db_Table','y',0,2289,'none','');
+insert  into `entity`(`id`,`title`,`table`,`extends`,`system`,`useCache`,`titleFieldId`,`spaceScheme`,`spaceFields`) values (313,'Корректировка','changeLog','Indi_Db_Table','y',0,2296,'none','');
 
 /*Table structure for table `enumset` */
 
@@ -258,7 +291,7 @@ CREATE TABLE `enumset` (
   PRIMARY KEY (`id`),
   KEY `fieldId` (`fieldId`),
   FULLTEXT KEY `title` (`title`)
-) ENGINE=MyISAM AUTO_INCREMENT=1049 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=1065 DEFAULT CHARSET=utf8;
 
 /*Data for the table `enumset` */
 
@@ -421,6 +454,22 @@ insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1045,2283,
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1046,2283,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Да','y',1046);
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1047,2285,'<span class=\"i-color-box\" style=\"background: lightgray;\"></span>Нет','n',1047);
 insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1048,2285,'<span class=\"i-color-box\" style=\"background: lime;\"></span>Да','y',1048);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1049,2288,'Январь','01',1049);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1050,2288,'Февраль','02',1050);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1051,2288,'Март','03',1051);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1052,2288,'Апрель','04',1052);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1053,2288,'Май','05',1053);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1054,2288,'Июнь','06',1054);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1055,2288,'Июль','07',1055);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1056,2288,'Август','08',1056);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1057,2288,'Сентябрь','09',1057);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1058,2288,'Октябрь','10',1058);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1059,2288,'Ноябрь','11',1059);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1060,2288,'Декабрь','12',1060);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1061,2301,'Всем пользователям','all',1061);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1062,2301,'Только выбранным','only',1062);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1063,2301,'Всем кроме выбранных','except',1063);
+insert  into `enumset`(`id`,`fieldId`,`title`,`alias`,`move`) values (1064,2301,'Никому','none',1064);
 
 /*Table structure for table `faction` */
 
@@ -497,7 +546,7 @@ CREATE TABLE `field` (
   KEY `mode` (`mode`),
   KEY `l10n` (`l10n`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2286 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2303 DEFAULT CHARSET=utf8;
 
 /*Data for the table `field` */
 
@@ -518,13 +567,13 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (16,6,'Наименование','title',4,1,'',16,0,0,'u','none','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (17,6,'Псевдоним','alias',1,1,'',17,0,0,'u','none','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (18,3,'Подчинен разделу','sectionId',3,23,'0',19,3,0,'u','one','0','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (19,3,'Cущность, закрепленная за разделом','entityId',3,23,'0',25,2,0,'u','one','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (19,3,'Cущность, закрепленная за разделом','entityId',3,23,'0',443,2,0,'u','one','0','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2198,195,'Содержательность','consistence',12,9,'1',2198,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (20,3,'Наименование','title',1,1,'',18,0,0,'u','none','0','','','required','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (21,3,'Контроллер','alias',1,1,'',21,0,0,'u','none','0','','','required','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (22,3,'Статус','toggle',10,5,'y',20,6,0,'u','one','0','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (23,3,'Положение в списке','move',3,4,'',443,0,0,'u','none','0','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (25,3,'Записей на странице','rowsOnPage',3,1,'25',1278,0,0,'u','none','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (21,3,'Контроллер','alias',1,1,'',23,0,0,'u','none','0','','','required','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (22,3,'Статус','toggle',10,5,'y',22,6,0,'u','one','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (23,3,'Положение в списке','move',3,4,'',462,0,0,'u','none','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (25,3,'Записей на странице','rowsOnPage',3,1,'25',2213,0,0,'u','none','0','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (26,8,'Раздел, за которым закреплено действие','sectionId',3,23,'',1,3,0,'u','one','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (27,8,'Действие','actionId',3,23,'',1,7,0,'u','one','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (28,8,'Профили пользователей, имеющих доступ к этому действию в этом разделе','profileIds',1,7,'14',1,10,0,'u','many','0','','','regular','','n');
@@ -572,11 +621,11 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (476,91,'В контексте какого поля','fieldId',3,23,'0',434,5,0,'u','one','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (477,91,'Параметр настройки','possibleParamId',3,23,'0',435,90,476,'с','one','elementId','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (478,91,'Значение параметра','value',4,6,'',436,0,0,'u','none','0','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (502,3,'От какого класса наследовать класс контроллера','extends',1,1,'Indi_Controller_Admin',23,0,0,'u','none','0','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (503,3,'Сортировка','defaultSortField',3,23,'0',514,5,19,'с','one','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (502,3,'От какого класса наследовать класс контроллера','extends',1,1,'Indi_Controller_Admin',310,0,0,'u','none','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (503,3,'Сортировка','defaultSortField',3,23,'0',1278,5,19,'с','one','0','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2212,8,'South-панель','south',10,23,'auto',2212,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (555,2,'От какого класса наследовать','extends',1,1,'Indi_Db_Table',512,0,0,'u','none','0','','','required','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (557,3,'Направление сортировки','defaultSortDirection',10,5,'ASC',1277,6,0,'u','one','0','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (557,3,'Направление сортировки','defaultSortDirection',10,5,'ASC',2211,6,0,'u','one','0','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (559,101,'Наименование','title',1,1,'',517,0,0,'u','none','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (560,101,'Псевдоним','alias',1,1,'',519,0,0,'u','none','0','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (563,101,'Прикрепленная сущность','entityId',3,23,'0',520,2,0,'u','one','0','','','regular','','n');
@@ -607,7 +656,7 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1443,195,'Поле прикрепленной к разделу сущности','fieldId',3,23,'0',1314,5,1442,'с','one','entityId','`elementId` NOT IN (4,14,16,20,22)','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1441,2,'Включить в кэш','useCache',12,23,'0',1312,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (754,5,'Статическая фильтрация','filter',1,1,'',523,0,0,'u','none','','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (767,3,'Статическая фильтрация','filter',1,1,'',461,0,0,'u','none','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (767,3,'Статическая фильтрация','filter',1,1,'',514,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (828,5,'Псевдоним поля для использования в satellite-функциональности','satellitealias',1,1,'',701,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (857,146,'Наименование','title',1,1,'',803,0,0,'u','none','','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (858,146,'Псевдоним','alias',1,1,'',804,0,0,'u','none','','','','required','','n');
@@ -618,7 +667,7 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (960,101,'Количество строк для отображения по умолчанию','defaultLimit',3,18,'20',951,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (961,130,'Аккаунт активирован','activated',12,9,'0',637,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (962,130,'Код активации','activationCode',1,1,'',639,0,0,'u','none','','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1366,3,'Тип','type',10,5,'p',22,6,0,'u','one','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1366,3,'Тип','type',10,5,'p',25,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1009,101,'По умолчанию сортировка по','orderBy',10,5,'c',952,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1010,101,'Столбец сортировки','orderColumn',3,23,'0',953,5,563,'с','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1011,101,'Направление сортировки','orderDirection',10,5,'ASC',981,6,0,'u','one','','','','regular','','n');
@@ -664,7 +713,7 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1341,171,'Раздел','sectionId',3,23,'0',1275,3,0,'u','one','','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1342,171,'Поле','fieldId',3,23,'0',1276,5,1341,'с','one','entityId','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2251,171,'Изменить свойства поля','alter',0,16,'',2207,0,0,'u','none','','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1345,3,'Отключить кнопку Add','disableAdd',12,9,'0',2211,0,0,'u','none','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1345,3,'Отключить кнопку Add','disableAdd',12,9,'0',2301,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1509,204,'Ширина','detailsHtmlWidth',3,18,'0',1383,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1532,171,'Значение по умолчанию','defaultValue',1,1,'',2252,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1485,204,'Наименование','title',1,1,'',1356,0,0,'u','none','','','','required','','n');
@@ -694,7 +743,7 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2171,301,'Действие','fsection2factionId',3,23,'0',2171,147,2170,'с','one','','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2170,301,'Раздел','fsectionId',3,23,'0',2170,101,0,'u','one','','','','required','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1533,101,'Статус','toggle',10,5,'y',1429,6,0,'u','one','','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1554,3,'Связь с вышестоящим разделом по полю','parentSectionConnector',3,23,'0',310,5,19,'с','one','','`relation`!=\"0\"','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1554,3,'Связь с вышестоящим разделом по полю','parentSectionConnector',3,23,'0',461,5,19,'с','one','','`relation`!=\"0\"','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1560,101,'Связь с вышестоящим разделом по полю','parentSectionConnector',3,23,'0',815,5,868,'с','one','entityId','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1562,101,'От какого класса наследовать класс контроллера','extends',1,1,'',1431,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (1575,130,'Смена пароля','changepasswd',0,16,'',1708,0,0,'u','none','','','','regular','','n');
@@ -726,8 +775,8 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2208,25,'Родительская страница','staticpageId',3,23,'0',1666,25,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2209,8,'Переименовать','rename',1,1,'',2209,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2210,9,'Редактор','editor',10,5,'0',2200,6,0,'u','one','','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2211,3,'Группировка','groupBy',3,23,'0',462,5,19,'с','one','','','','regular','','n');
-insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2213,3,'Режим подгрузки данных','rowsetSeparate',10,23,'auto',2213,6,0,'u','one','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2211,3,'Группировка','groupBy',3,23,'0',1277,5,19,'с','one','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2213,3,'Режим подгрузки данных','rowsetSeparate',10,23,'auto',2302,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2214,8,'Автосайз окна','fitWindow',10,23,'auto',2214,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2215,10,'Максимальное количество окон','maxWindows',3,18,'15',2215,0,0,'u','none','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2270,309,'Заголовок','tplDecSubj',4,1,'',2270,0,0,'u','none','','','','regular','','n');
@@ -779,6 +828,23 @@ insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2283,310,'Дублирование по SMS','sms',10,23,'n',2283,6,0,'u','one','','','','regular','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2284,310,'Критерий','criteria',1,1,'',2284,0,0,'u','none','','','','hidden','','n');
 insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2285,310,'Дублирование на почту','mail',10,23,'n',2285,6,0,'u','one','','','','hidden','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2286,311,'Наименование','title',1,1,'',2286,0,0,'u','none','','','','required','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2287,312,'Год','yearId',3,23,'0',2287,311,0,'u','one','','','','required','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2288,312,'Месяц','month',10,23,'01',2288,6,0,'u','one','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2289,312,'Наименование','title',1,1,'',2289,0,0,'u','none','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2290,312,'Порядок','move',3,4,'0',2290,0,0,'u','none','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2291,313,'Сущность','entityId',3,23,'0',2291,2,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2292,313,'Объект','key',3,23,'0',2292,0,2291,'e','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2293,313,'Что изменено','fieldId',3,23,'0',2293,5,2291,'с','one','','`columnTypeId` != \"0\"','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2294,313,'Было','was',4,13,'',2294,0,0,'u','none','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2295,313,'Стало','now',4,13,'',2295,0,0,'u','none','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2296,313,'Когда','datetime',9,19,'0000-00-00 00:00:00',2296,0,0,'u','none','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2297,313,'Месяц','monthId',3,23,'0',2297,312,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2298,313,'Тип автора','changerType',3,23,'0',2298,2,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2299,313,'Автор','changerId',3,23,'0',2299,0,2298,'e','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2300,313,'Роль','profileId',3,23,'0',2300,10,0,'u','one','','','','readonly','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2301,3,'Разворачивать пункт меню','expand',10,5,'all',20,6,0,'u','one','','','','regular','','n');
+insert  into `field`(`id`,`entityId`,`title`,`alias`,`columnTypeId`,`elementId`,`defaultValue`,`move`,`relation`,`satellite`,`dependency`,`storeRelationAbility`,`alternative`,`filter`,`satellitealias`,`mode`,`tooltip`,`l10n`) values (2302,3,'Выбранные','expandRoles',1,23,'',21,10,0,'u','many','','','','regular','','n');
 
 /*Table structure for table `fsection` */
 
@@ -885,7 +951,7 @@ CREATE TABLE `grid` (
   KEY `profileIds` (`profileIds`),
   KEY `editor` (`editor`),
   FULLTEXT KEY `tooltip` (`tooltip`)
-) ENGINE=MyISAM AUTO_INCREMENT=2416 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2417 DEFAULT CHARSET=utf8;
 
 /*Data for the table `grid` */
 
@@ -992,12 +1058,12 @@ insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`tit
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (1767,146,691,1222,'','y','Дата регистрации',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (1954,224,1658,1945,'','y','Альтернативное наименование',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2280,201,2161,1946,'','y','Режим',0,'','all','','0','');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2320,11,2159,2322,'','y','Статус',0,'','all','','0','');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2320,11,2159,2325,'','y','Статус',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2321,6,2197,10,'','y','Режим',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2322,11,34,30,'','y','Поле',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2323,10,2202,2323,'','y','Статус',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2324,8,2209,2328,'','y','Переименовать',0,'','all','','0','');
-insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2325,11,2210,2325,'','y','Редактор',0,'','all','','0','');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2325,11,2210,2416,'','y','Редактор',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2326,8,2212,25,'РSП','y','РSП',0,'Режим отображения south-панели','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2327,7,2213,18,'РПД','y','РПД',0,'Режим подгрузки данных','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2328,8,2214,297,'','y','Автосайз окна',0,'','all','','0','');
@@ -1009,6 +1075,7 @@ insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`tit
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2397,389,2262,2397,'','y','Пункты меню',2394,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2398,389,2263,2398,'','y','Цвет фона',2394,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2399,389,2264,2399,'','y','Цвет текста',2394,'','all','','0','');
+insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2416,11,2253,2322,'','y','Ключ',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2390,389,2254,2390,'','y','Наименование',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2391,389,2255,2391,'','y','Сущность',0,'','all','','0','');
 insert  into `grid`(`id`,`sectionId`,`fieldId`,`move`,`alterTitle`,`toggle`,`title`,`gridId`,`tooltip`,`access`,`profileIds`,`editor`,`alias`) values (2392,389,2257,2392,'','y','Получатели',0,'','all','','0','');
@@ -1107,6 +1174,23 @@ CREATE TABLE `metatag` (
 /*Data for the table `metatag` */
 
 insert  into `metatag`(`id`,`fsectionId`,`fsection2factionId`,`tag`,`type`,`content`,`up`,`source`,`entityId`,`fieldId`,`prefix`,`postfix`,`move`) values (2,37,127,'title','dynamic','',0,'row',25,131,'','',2);
+
+/*Table structure for table `month` */
+
+DROP TABLE IF EXISTS `month`;
+
+CREATE TABLE `month` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `yearId` int(11) NOT NULL DEFAULT '0',
+  `month` enum('01','02','03','04','05','06','07','08','09','10','11','12') NOT NULL DEFAULT '01',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `move` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `yearId` (`yearId`),
+  KEY `month` (`month`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `month` */
 
 /*Table structure for table `notice` */
 
@@ -1370,6 +1454,8 @@ CREATE TABLE `section` (
   `parentSectionConnector` int(11) NOT NULL DEFAULT '0',
   `groupBy` int(11) NOT NULL DEFAULT '0',
   `rowsetSeparate` enum('auto','yes','no') NOT NULL DEFAULT 'auto',
+  `expand` enum('all','only','except','none') NOT NULL DEFAULT 'all',
+  `expandRoles` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `sectionId` (`sectionId`),
   KEY `entityId` (`entityId`),
@@ -1379,48 +1465,50 @@ CREATE TABLE `section` (
   KEY `type` (`type`),
   KEY `parentSectionConnector` (`parentSectionConnector`),
   KEY `groupBy` (`groupBy`),
-  KEY `rowsetSeparate` (`rowsetSeparate`)
+  KEY `rowsetSeparate` (`rowsetSeparate`),
+  KEY `expand` (`expand`),
+  KEY `expandRoles` (`expandRoles`)
 ) ENGINE=MyISAM AUTO_INCREMENT=391 DEFAULT CHARSET=utf8;
 
 /*Data for the table `section` */
 
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (1,0,0,'Конфигурация','configuration','y',367,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (2,1,1,'Столбцы','columnTypes','y',6,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (5,1,2,'Сущности','entities','y',4,25,'Indi_Controller_Admin',4,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (6,5,5,'Поля в структуре','fields','y',7,25,'Indi_Controller_Admin',14,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (7,1,3,'Разделы','sections','y',2,25,'Indi_Controller_Admin',23,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (8,7,8,'Действия','sectionActions','y',8,25,'Indi_Controller_Admin',30,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (10,1,7,'Действия','actions','n',9,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (11,7,9,'Столбцы грида','grid','y',10,25,'Indi_Controller_Admin',35,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (12,6,6,'Возможные значения','enumset','y',11,25,'Indi_Controller_Admin',377,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (13,1,10,'Роли','profiles','y',5,25,'Indi_Controller_Admin',2132,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (14,13,11,'Пользователи','admins','y',13,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (16,1,4,'Элементы','controlElements','y',14,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (22,6,20,'Копии изображения','resize','y',19,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (29,0,0,'Контент','','n',113,25,'Indi_Controller_Admin',0,'ASC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (30,378,25,'Страницы','staticpages','n',316,25,'Indi_Controller_Admin',131,'ASC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (100,16,90,'Возможные параметры настройки','possibleParams','y',90,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (101,6,91,'Параметры','params','y',91,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (112,0,0,'Фронтенд','','y',371,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (113,112,101,'Разделы','fsections','y',104,25,'Indi_Controller_Admin',585,'ASC','<?=$_SESSION[\'admin\'][\'profileId\']==1?\'1\':\'`toggle`=\"y\"\'?>',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (143,0,0,'Обратная связь','','n',358,25,'Indi_Controller_Admin',0,'ASC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (144,143,128,'Фидбэк','feedback','n',135,25,'Indi_Controller_Admin',681,'DESC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (145,143,129,'Подписчики','subscribers','n',165,25,'Indi_Controller_Admin',682,'ASC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (146,143,130,'Пользователи','users','n',225,25,'Indi_Controller_Admin',685,'DESC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (172,112,146,'Действия','factions','y',185,25,'Indi_Controller_Admin',857,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (173,113,147,'Действия','fsection2factions','y',161,25,'Indi_Controller_Admin',860,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (189,143,160,'Посетители','visitors','n',176,25,'Indi_Controller_Admin',1101,'DESC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (191,173,162,'Компоненты SEO-урла','seoUrl','y',178,25,'Indi_Controller_Admin',1195,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (201,7,171,'Измененные поля','alteredFields','y',188,25,'Indi_Controller_Admin',1342,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (224,7,195,'Фильтры','search','y',192,25,'Indi_Controller_Admin',1444,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (229,29,205,'Меню','menu','n',134,25,'Indi_Controller_Admin',1496,'ASC','',1,'p',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (232,378,204,'Элементы','staticblocks','n',232,25,'Indi_Controller_Admin',1485,'ASC','',0,'o',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (379,173,301,'Компоненты meta-тегов','metatitles','y',379,25,'Indi_Controller_Admin_Meta',2181,'ASC','',0,'o',0,2172,'yes');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (378,0,0,'Статика','','n',144,30,'Indi_Controller_Admin',0,'ASC','',0,'p',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (389,1,309,'Уведомления','notices','y',389,25,'Indi_Controller_Admin',2254,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (390,389,310,'Получатели','noticeGetters','y',390,25,'Indi_Controller_Admin',2275,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (387,1,307,'Языки','lang','y',387,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
-insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`) values (388,6,308,'Зависимости','consider','y',388,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (1,0,0,'Конфигурация','configuration','y',367,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (2,1,1,'Столбцы','columnTypes','y',6,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (5,1,2,'Сущности','entities','y',4,25,'Indi_Controller_Admin',4,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (6,5,5,'Поля в структуре','fields','y',7,25,'Indi_Controller_Admin',14,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (7,1,3,'Разделы','sections','y',2,25,'Indi_Controller_Admin',23,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (8,7,8,'Действия','sectionActions','y',8,25,'Indi_Controller_Admin',30,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (10,1,7,'Действия','actions','n',9,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (11,7,9,'Столбцы грида','grid','y',10,25,'Indi_Controller_Admin',35,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (12,6,6,'Возможные значения','enumset','y',11,25,'Indi_Controller_Admin',377,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (13,1,10,'Роли','profiles','y',5,25,'Indi_Controller_Admin',2132,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (14,13,11,'Пользователи','admins','y',13,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (16,1,4,'Элементы','controlElements','y',14,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (22,6,20,'Копии изображения','resize','y',19,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (29,0,0,'Контент','','n',113,25,'Indi_Controller_Admin',0,'ASC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (30,378,25,'Страницы','staticpages','n',316,25,'Indi_Controller_Admin',131,'ASC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (100,16,90,'Возможные параметры настройки','possibleParams','y',90,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (101,6,91,'Параметры','params','y',91,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (112,0,0,'Фронтенд','','y',371,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (113,112,101,'Разделы','fsections','y',104,25,'Indi_Controller_Admin',585,'ASC','<?=$_SESSION[\'admin\'][\'profileId\']==1?\'1\':\'`toggle`=\"y\"\'?>',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (143,0,0,'Обратная связь','','n',358,25,'Indi_Controller_Admin',0,'ASC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (144,143,128,'Фидбэк','feedback','n',135,25,'Indi_Controller_Admin',681,'DESC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (145,143,129,'Подписчики','subscribers','n',165,25,'Indi_Controller_Admin',682,'ASC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (146,143,130,'Пользователи','users','n',225,25,'Indi_Controller_Admin',685,'DESC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (172,112,146,'Действия','factions','y',185,25,'Indi_Controller_Admin',857,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (173,113,147,'Действия','fsection2factions','y',161,25,'Indi_Controller_Admin',860,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (189,143,160,'Посетители','visitors','n',176,25,'Indi_Controller_Admin',1101,'DESC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (191,173,162,'Компоненты SEO-урла','seoUrl','y',178,25,'Indi_Controller_Admin',1195,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (201,7,171,'Измененные поля','alteredFields','y',188,25,'Indi_Controller_Admin',1342,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (224,7,195,'Фильтры','search','y',192,25,'Indi_Controller_Admin',1444,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (229,29,205,'Меню','menu','n',134,25,'Indi_Controller_Admin',1496,'ASC','',1,'p',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (232,378,204,'Элементы','staticblocks','n',232,25,'Indi_Controller_Admin',1485,'ASC','',0,'o',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (379,173,301,'Компоненты meta-тегов','metatitles','y',379,25,'Indi_Controller_Admin_Meta',2181,'ASC','',0,'o',0,2172,'yes','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (378,0,0,'Статика','','n',144,30,'Indi_Controller_Admin',0,'ASC','',0,'p',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (389,1,309,'Уведомления','notices','y',389,25,'Indi_Controller_Admin',2254,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (390,389,310,'Получатели','noticeGetters','y',390,25,'Indi_Controller_Admin',2275,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (387,1,307,'Языки','lang','y',387,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
+insert  into `section`(`id`,`sectionId`,`entityId`,`title`,`alias`,`toggle`,`move`,`rowsOnPage`,`extends`,`defaultSortField`,`defaultSortDirection`,`filter`,`disableAdd`,`type`,`parentSectionConnector`,`groupBy`,`rowsetSeparate`,`expand`,`expandRoles`) values (388,6,308,'Зависимости','consider','y',388,25,'Indi_Controller_Admin',0,'ASC','',0,'s',0,0,'auto','all','');
 
 /*Table structure for table `section2action` */
 
@@ -1773,6 +1861,18 @@ CREATE TABLE `visitor` (
 /*Data for the table `visitor` */
 
 insert  into `visitor`(`id`,`title`,`lastActivity`,`userId`) values (555196,'3v0s0pvgep3itif9nq82eif0h0','2014-02-03 19:15:02',0);
+
+/*Table structure for table `year` */
+
+DROP TABLE IF EXISTS `year`;
+
+CREATE TABLE `year` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+/*Data for the table `year` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

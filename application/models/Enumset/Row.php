@@ -47,6 +47,10 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function save() {
 
+        // Convert `alias` to proper datatype
+        if (array_key_exists('alias', $this->_modified))
+            $this->alias = $this->fixTypes($this->_modified, true)->alias;
+
         // If `alias` property was not modified - do a standard save
         if (!array_key_exists('alias', $this->_modified)) return parent::save();
 
