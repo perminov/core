@@ -33,7 +33,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
         toolbar: [
             {items: ['Source', 'Print']},
             {items: [ 'Paste', 'PasteText', 'PasteFromWord', 'Table']},
-            {items: [ 'Image', 'Flash', 'oembed','Link', 'Unlink']},
+            {items: [ 'Image', 'Flash', 'oembed','Link', 'Unlink', 'Anchor']},
             {items: [ 'Bold', 'Italic', 'Underline']},
             {items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent']},
             {items: ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock']},
