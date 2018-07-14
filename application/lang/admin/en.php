@@ -232,3 +232,4 @@ define('I_WHEN_TM_AT', 'at');
 
 define('I_LANG_LAST', 'It is not allowed to delete the last remaining "%s" entry');
 define('I_LANG_CURR', 'It is not allowed to delete the translation, that is used as your current translation');
+define('I_LANG_FIELD_L10N_DENY', 'Localization cannot be turned on for field "%s"');
