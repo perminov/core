@@ -2012,7 +2012,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param bool $std Whether or not to prepend returned value with STD
      * @return string|null
      */
-    public function src($alias, $copy = '', $dc = false, $std = false) {
+    public function src($alias, $copy = '', $dc = true, $std = false) {
 
         // Get the filename with absolute path
         if ($abs = preg_match('/^([A-Z]:|\/)/', $alias) ? $alias : $this->abs($alias, $copy)) {
@@ -2265,7 +2265,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         else if (array_key_exists($columnName, $this->_original)) return $this->_original[$columnName];
         else if (array_key_exists($columnName, $this->_temporary)) return $this->_temporary[$columnName];
         else if ($fieldR = $this->model()->fields($columnName)) if ($fieldR->foreign('elementId')->alias == 'upload')
-            return $this->src($columnName);
+            return $this->src($columnName, '', false);
     }
 
     /**
@@ -4095,7 +4095,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $file = array(
             'mtime' => filemtime($abs),
             'size' => $size = filesize($abs),
-            'src' => $this->src($abs),
+            'src' => $this->src($abs, '', false),
             'ext' => $ext,
             'mime' => Indi::mime($abs),
             'text' => $text = strtoupper($ext) . ' » ' . size2str($size),
@@ -5234,7 +5234,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 } else if ($this->field($path[0])->foreign('elementId')->alias == 'upload') {
 
                     //
-                    $dataA[($pref ? $pref . '.' : '') . $prop] = $this->src($path[0], $path[1]);
+                    $dataA[($pref ? $pref . '.' : '') . $prop] = $this->src($path[0], $path[1], false);
                 }
             }
 
