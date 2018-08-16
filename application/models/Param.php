@@ -12,5 +12,5 @@ class Param extends Indi_Db_Table {
      *
      * @var string
      */
-    public $_rowClass = 'Indi_Db_Table_Row_Noeval';
+    public $_rowClass = 'Param_Row';
 }
