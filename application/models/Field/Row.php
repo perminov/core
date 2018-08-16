@@ -45,7 +45,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         $enumset = $table == 'enumset';
 
         // Toggle localization for rename-fields
-        $rename = array('grid' => 'alterTitle', 'search' => 'alt', 'section2action' => 'rename');
+        $rename = array('grid' => 'alterTitle', 'search' => 'alt', 'section2action' => 'rename', 'alteredField' => 'rename');
         if ($this->alias == 'title' && $rename[$table] && $fieldR_rename = Indi::model($table)->fields($rename[$table])) {
             $fieldR_rename->l10n = $toggle ? 'y' : 'n';
             $fieldR_rename->save();
@@ -1641,5 +1641,69 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
+    }
+
+    /**
+     * Prevent some fields from being localized
+     *
+     * @return array|void
+     */
+    public function validate() {
+
+        // If `l10n` prop is not modified - call parent
+        if (!array_key_exists('l10n', $this->_modified)) return $this->callParent();
+
+        // Shortcut to column type
+        $columnType = $this->foreign('columnTypeId')->type;
+
+        // If field is not intended to contain keys
+        if ($this->storeRelationAbility == 'none') {
+
+            // Shortcuts to element
+            $element = $this->foreign('elementId')->alias;
+
+            // Setup $allowed flag, inciating whether or not field has a type that is allowed for localization
+            $allowed = in($element . ':' . $columnType, array(
+                'string:VARCHAR(255)',
+                'string:TEXT',
+                'textarea:TEXT'
+            ));
+
+            // Setup array of fields, that should not be localized
+            $_exclude = array(
+                'year' => 'title',
+                'action' => 'alias',
+                'enumset' => 'title,alias',
+                'resize' => 'alias',
+                'possibleElementParam' => 'alias,defaultValue',
+                'field' => 'alias,defaultValue,filter,satellitealias,alternative',
+                'alteredField' => 'defaultValue',
+                'noticeGetter' => 'criteriaEvt,criteriaInc,criteriaDec',
+                'admin' => 'email,password',
+                'section' => 'alias,extends,filter',
+                'profile' => 'dashboard',
+                'grid' => 'alias',
+                'entity' => 'table,extends',
+                'columnType' => 'type',
+                'notice' => 'event,qtySql',
+                'search' => 'filter,defautValue',
+                'element' => 'alias'
+            );
+
+            // Setup $exclude flag, indicating whether or not field should not be localized despite it's type is ok
+            $exclude = in($this->alias, $_exclude[$this->foreign('entityId')->table]);
+
+            // If element and columnType combination is in the list of allowed combinations,
+            // and field is not in the exclusions list - call parent
+            if ($allowed && !$exclude) return $this->callParent();
+
+        // Else if field contains enumset-keys - call parent
+        } else if ($this->foreign('relation')->table == 'enumset') return $this->callParent();
+
+        // Setup mismatch, saying that current field cannot be localized
+        $this->_mismatch['l10n'] = sprintf(I_LANG_FIELD_L10N_DENY, $this->title);
+
+        // Call parent
+        return $this->callParent();
     }
 }

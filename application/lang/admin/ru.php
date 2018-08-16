@@ -229,3 +229,7 @@ define('I_WHEN_DAT', 'послезавтра');
 define('I_WHEN_WD_ON1', 'в');
 define('I_WHEN_WD_ON2', 'во');
 define('I_WHEN_TM_AT', 'в');
+
+define('I_LANG_LAST', 'Нельзя удалять последнюю запись типа "%s"');
+define('I_LANG_CURR', 'Нельзя удалять язык, являющийся текущим языком системы');
+define('I_LANG_FIELD_L10N_DENY', 'Нельзя включить локализацию для поля "%s"');
