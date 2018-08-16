@@ -560,5 +560,23 @@ Ext.define('Ext.calendar.CalendarPanel', {
      */
     getActiveView: function() {
         return this.layout.activeItem;
+    },
+
+    /**
+     * No solution for now, so fixed value will be used
+     *
+     * @return {Number}
+     */
+    getInnerItemsWidthUsage: function() {
+        return 1200;
+    },
+
+    /**
+     * No solution for now, so fixed value will be used
+     *
+     * @return {Number}
+     */
+    getInnerItemsHeightUsage: function() {
+        return 600;
     }
 });

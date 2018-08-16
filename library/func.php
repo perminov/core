@@ -1869,3 +1869,54 @@ function filter($section, $field, $ctor = false) {
     // Return `filter` entry (newly created, or existing but updated)
     return $filterR;
 }
+
+/**
+ * Short-hand function that allows to manipulate `param` entry, identified by $table, $field and $alias args.
+ * If only those two args given - function will fetch and return appropriate `param` entry (or null, if not found)
+ * If 4th arg - $value - is given and it's a string - it will be used as value - function will create new `enumset`
+ * entry, or update existing if found
+ *
+ * @param string|int $table Entity ID or table name
+ * @param string $field Field alias
+ * @param string $alias Possible element param alias
+ * @param bool|array $value
+ * @return Param_Row|null
+ */
+function param($table, $field, $alias, $value = null) {
+
+    // Get `fieldId` according to $table and $field args
+    $fieldR = field($table, $field); $fieldId = $fieldR->id;
+
+    // Get underlying `possibleElementParam` entry's id
+    $possibleParamId = Indi::model('PossibleElementParam')->fetchRow(array(
+        '`elementId` = "' . $fieldR->elementId . '"',
+        '`alias` = "' . $alias . '"'
+    ))->id;
+
+    // Try to find `param` entry
+    $paramR = Indi::model('Param')->fetchRow(array(
+        '`fieldId` = "' . $fieldId . '"',
+        '`possibleParamId` = "' . $possibleParamId . '"'
+    ));
+
+    // If $ctor arg is non-false and is not and empty array - return `param` entry, else
+    if (func_num_args() < 4) return $paramR;
+
+    // Build $ctor
+    $ctor = is_array($value) ? $value : array('value' => $value);
+    foreach (ar('fieldId,possibleParamId,value') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `param` entry already exists - do not allow re-linking it from one field to another
+    if ($paramR) unset($ctor['fieldId'], $ctor['possibleParamId']);
+
+    // Else - create it
+    else $paramR = Indi::model('Param')->createRow();
+
+    // Assign other props and save
+    $paramR->assign($ctor)->save();
+
+    // Return `param` entry (newly created, or existing but updated)
+    return $paramR;
+}

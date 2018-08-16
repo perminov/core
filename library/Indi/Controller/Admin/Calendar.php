@@ -69,6 +69,32 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     }
 
     /**
+     * This method is redefined to append calendar type detection
+     *
+     * @return array|mixed
+     */
+    public function filtersWHERE() {
+
+        // Call parent
+        $return = $this->callParent();
+
+        // Detect current calendar type
+        if ($this->_excelA) {
+
+            // Pick bounds
+            list ($since, $until) = ar(im($this->_excelA['spaceSince']['value']));
+
+            // Detect type of calendar
+            $diff = strtotime($until) - strtotime($since);
+            if ($diff == 3600 * 24 * 7) $this->type = 'week';
+            else if ($diff == 3600 * 24 * 1) $this->type = 'day';
+        }
+
+        // Return
+        return $return;
+    }
+
+    /**
      * We set ORDER as 'id', as we do not need any other order type
      * @return string
      */
@@ -84,19 +110,10 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         // If calendar can't be used - return
         if (!$this->spaceFields) return;
 
-        // Adjust events only if possible to detect current calendar type
-        if ($this->_excelA) {
-
-            // Pick bounds
-            list ($since, $until) = ar(im($this->_excelA['spaceSince']['value']));
-
-            // Detect type of calendar
-            if (strtotime($until) - strtotime($since) == 3600 * 24 * 6) $this->type = 'week';
-            else if ($since == $until) $this->type = 'day';
-
-            // Adjust event
-            foreach ($this->rowset as $r) $this->{'adjustEventFor' . ucfirst($this->type)}($r);
-        }
+        // Adjust events according to current calendar type
+        if ($this->_excelA)
+            foreach ($this->rowset as $r)
+                $this->{'adjustEventFor' . ucfirst($this->type)}($r);
 
         // Apply colors
         $this->applyColors();

@@ -1633,6 +1633,12 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             // Build `enumset` entry's creation expression
             $lineA[] = $enumsetR->export();
 
+        // Foreach `param` entry, nested within current `field` entry
+        foreach ($this->nested('param') as $paramR)
+
+            // Build `param` entry's creation expression
+            $lineA[] = $paramR->export();
+
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
     }

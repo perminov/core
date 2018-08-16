@@ -59,7 +59,7 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         $body = $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body');
 
         // Get recipients
-        $notifyA = $this->users('criteria' . $dir);
+        $notifyA = $this->users('criteria' . ($this->criteriaRelyOn == 'event' ? 'Evt' : $dir));
 
         // If no recipients - return
         if (!$notifyA['rs']) return;
@@ -122,7 +122,7 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         // Convert hrefs uri's to absolute
         $body = preg_replace(
             '~(\s+jump=")(/[^/][^"]*")~',
-            '$1' . $_SERVER['REQUEST_SCHEME'] . '://'. $_SERVER['HTTP_HOST'] . PRE . '/#$2',
+            ' href="' . $_SERVER['REQUEST_SCHEME'] . '://'. $_SERVER['HTTP_HOST'] . PRE . '/#$2',
             $body
         );
 
