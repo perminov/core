@@ -5481,4 +5481,25 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function onUpload($field, $dst) {
 
     }
+
+    /**
+     * This method should return associative array, having field names as keys and array of their props as values.
+     * Note that here should be only fields that relate to other entities' entries, that have their own schedules
+     * For example, we have `lesson` entity. It's entries - are spaces in schedule. But, we also have `teacherId` field,
+     * and `roomId` field within `lesson` entity's structure. So, those two fields should be used as keys in array
+     * that this method returns, because each teacher has it's own schedule, and each room has it's own schedule.
+     * Example:
+     *  return array(
+     *      'teacherId' => array('param1' => 'value1'),
+     *      'roomId' => array('pre' => function($r){
+     *          // Adjust entry's params here, if need
+     *      })
+     *  )
+     *
+     * Currently, only one param is available - 'pre'. It a function that can be used to adjust an entry prior
+     * inserting it as a new busy space (lesson) within the schedule
+     */
+    public function spaceOwners() {
+        return array();
+    }
 }
