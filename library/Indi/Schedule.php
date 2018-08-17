@@ -69,7 +69,7 @@ class Indi_Schedule {
      *
      * @var array
      */
-    public $_distinct = [];
+    public $_distinct = array();
 
     /**
      * Constructor. Possible usage:
