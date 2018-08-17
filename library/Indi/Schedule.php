@@ -217,7 +217,7 @@ class Indi_Schedule {
                         $space->avail = $avail;
 
                         // Set entry
-                        if ($entry) $space->$entry = $entry;
+                        if ($entry) $space->entry = $entry;
                     }
                 }
 
