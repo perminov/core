@@ -83,16 +83,24 @@ class Indi_Schedule {
     protected $_spaces = array();
 
     /**
-     * Rowset, that will be used for refilling the schedule.
-     * You should use $this->preload() call for initial setup,
-     * and $this->refill() calls for refilling the schedule using
-     * entries that match selection criteria, specified by $this->refill()
-     * call args. This is useful for cases when you do not want execute
-     * MySQL query each time you want to fulfil the schedule
+     * Backed up $this->_spaces and $this->total
      *
-     * @var Indi_Db_Table_Rowset
+     * @var array
      */
-    public $_rs = null;
+    protected $_backup = array(
+        'spaces' => array(),
+        'total' => 0
+    );
+
+    /**
+     * Daily working hours timestamps
+     *
+     * @var array
+     */
+    protected $_daily = array(
+        'since' => 0,
+        'until' => 0
+    );
 
     /**
      * Array of distinct values of props, faced within $this->_rs.
@@ -103,6 +111,18 @@ class Indi_Schedule {
      * @var array
      */
     public $_distinct = array();
+
+    /**
+     * Rowset, that will be used for refilling the schedule.
+     * You should use $this->preload() call for initial setup,
+     * and $this->refill() calls for refilling the schedule using
+     * entries that match selection criteria, specified by $this->refill()
+     * call args. This is useful for cases when you do not want execute
+     * MySQL query each time you want to fulfil the schedule
+     *
+     * @var Indi_Db_Table_Rowset
+     */
+    public $_rs = null;
 
     /**
      * Constructor. Possible usage:
@@ -470,7 +490,7 @@ class Indi_Schedule {
         if (!Indi::rexm('time', $until)) jflush(false, 'Argument $until should be a time in format hh:mm:ss');
 
         // Fill schedule with 'early' spaces, where possible
-        $this->fillwp(0, _2sec($until), 'early');
+        $this->fillwp(0, $this->_daily['since'] = _2sec($until), 'early');
 
         // Return itself
         return $this;
@@ -497,7 +517,7 @@ class Indi_Schedule {
         if (!Indi::rexm('time', $since)) jflush(false, 'Argument $since should be a time in format hh:mm:ss');
 
         // Fill schedule with 'late' spaces, where possible
-        $this->fillwp(_2sec($since) + $this->_shift['gap'], _2sec('1d'), 'late');
+        $this->fillwp($this->_daily['until'] = _2sec($since) + $this->_shift['gap'], _2sec('1d'), 'late');
 
         // Return itself
         return $this;
@@ -523,7 +543,7 @@ class Indi_Schedule {
         while ($daystamp < $this->_until) {
 
             // Get date for
-            $date = date('Y-m-d', $daystamp);
+            $next = $daystamp + $this->_shift['system'];
 
             // Set absolute timestamps
             $_since = $daystamp + $since;
@@ -536,7 +556,7 @@ class Indi_Schedule {
                 $space = $this->_spaces[$idx];
 
                 // If current space's start date is one of the next days to $_since - break;
-                if (date('Y-m-d', $space->since) > $date) break;
+                if ($space->since > $next) break;
 
                 // If current space ends earlier than $_since - skip
                 if ($space->until <= $_since) continue;
@@ -559,7 +579,7 @@ class Indi_Schedule {
             }
 
             // Jump to next day
-            $daystamp += _2sec('1d');
+            $daystamp += $this->_shift['system'];
         }
 
         // Reset indexes
@@ -657,7 +677,7 @@ class Indi_Schedule {
             if (!$stop && $gotFree && $gotBusy) $both[] = $date;
 
             // Jump to next date
-            $mark += _2sec('1d');
+            $mark += $this->_shift['system'];
         }
 
         // Reset indexes
@@ -670,34 +690,36 @@ class Indi_Schedule {
     /**
      * Get array of hours within a given date in current space, where given $frame can't be injected as a NEW busy space
      *
-     * @param $frame
      * @param $date
      * @param string $step
      * @param bool $seekFromLast
      * @return array
      */
-    public function busyHours($frame, $date, $step = '1h', $seekFromLast = false) {
-
-        // Convert $frame arg to seconds
-        $frame = _2sec($frame);
+    public function busyHours($date, $step = '1h', $seekFromLast = false) {
 
         // Array of busy hours
         $busy = array();
 
+        // Get timestamp
+        $time = strtotime($date);
+
         // Set initial mark
-        $mark = strtotime($date);
+        $mark = $time + $this->_daily['since'];
+
+        // Set late point
+        $late = $time + $this->_daily['until'] ?: $this->_shift['system'];
 
         // Convert $step arg to seconds
         $step = _2sec($step);
 
         // While $mark is within $date
-        while ($date == date('Y-m-d', $mark)) {
+        while ($mark < $late) {
 
             // If $seekFromLast flag is given as `true` - setup start index as last index
             if ($seekFromLast) $this->_seek['from'] = $this->_seek['last'];
 
             // If given $frame can't be injected as NEW busy space - append $mark's date in busy time-steps array
-            if ($this->busy($mark, $frame, true)) $busy[] = date('H:i', $mark);
+            if ($this->busy($mark, $this->_shift['frame'], true)) $busy[] = date('H:i', $mark);
 
             // Jump to next time-step
             $mark += $step;
@@ -742,7 +764,10 @@ class Indi_Schedule {
      * based on entries, selected from $this->_rs according to criteria,
      * given by $keys and $type args
      *
-     * Example usage: $schedule->refill('1', 'teacherId', ['since' => '10:00:00', 'until' => '20:00:00']);
+     * Example usages:
+     *   by prop name and value: $schedule->refill('1', 'teacherId', ['since' => '10:00:00', 'until' => '20:00:00']);
+     *   by $this->_rs indexes : $schedule->refill([0,1,2], null, ['since' => '10:00:00', 'until' => '20:00:00']);
+     *   using backup          : $schedule->refill([0,1,2], null, null);
      *
      * @param $keys
      * @param string $type
@@ -752,17 +777,24 @@ class Indi_Schedule {
      */
     public function refill($keys, $type = 'id', $daily = array(), $pre = null) {
 
-        // Drop all existing spaces and insert a new free one, matching schedule bounds
-        $this->_spaces = array(new Indi_Schedule_Space($this->_since, $this->_until, 'free'));
+        // If $type arg is null - restore spaces from backup (if it was previously created), else
+        if ($daily === null && $this->_backup['spaces']) $this->restore(); else {
 
-        // Reset spaces counter
-        $this->_total = 1;
+            // Drop all existing spaces and insert a new free one, matching schedule bounds
+            $this->_spaces = array(new Indi_Schedule_Space($this->_since, $this->_until, 'free'));
+
+            // Reset spaces counter
+            $this->_total = 1;
+        }
 
         // Reset indexes
         $this->_seek['from'] = $this->_seek['last'] = 0;
 
         // Select certain entries from preloaded rowset and add them as busy spaces into schedule
-        foreach ($this->_rs->select($keys, $type) as $r) {
+        foreach ($type === null ? $keys : $this->_rs->select($keys, $type) as $_) {
+
+            // Pick entry from rowset
+            $r = $type === null ? clone $this->_rs[$_] : $_;
 
             // If $pre arg is callable - call it, passing row as a 1st arg
             if (is_callable($pre)) $pre($r);
@@ -786,7 +818,8 @@ class Indi_Schedule {
     }
 
     /**
-     * Collect distinct values per given props within preloaded rowset
+     * Collect distinct values per given props within preloaded rowset,
+     * and collect indexes of entries having those values
      *
      * @param $prop
      * @return array
@@ -797,14 +830,14 @@ class Indi_Schedule {
         if (!func_num_args() || (!is_string($prop) && !is_array($prop))) return $this->_distinct;
 
         // If $prop arg is given and it's a string
-        if (is_string($prop)) return array_keys($this->_distinct[$prop] ?: array());
+        if (is_string($prop)) return $this->_distinct[$prop] ?: array();
 
         // Foreach entry within preloaded rowset, foreach prop that we need to collect distinct values for
-        foreach ($this->_rs as $r) foreach ($prop as $propI)
+        foreach ($this->_rs as $idx => $r) foreach ($prop as $propI)
 
             // If prop is not empty - collect.
             // Here we use ar($r->$propI) as some prop may have comma-separated values
-            if ($r->$propI) foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v] = true;
+            if ($r->$propI) foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v][] = $idx;
     }
 
     /**
@@ -820,5 +853,35 @@ class Indi_Schedule {
 
         // Else return counter's current value
         else return $this->_counter['value'];
+    }
+
+    /**
+     * Restore $this->_spaces and $this->_total from previously made backup.
+     */
+    public function restore() {
+
+        // Reset $this->_spaces to an empty array
+        $this->_spaces = array();
+
+        // Foreach backed up instance of Indi_Schedule_Space - make a clone and add into $this->_spaces
+        foreach ($this->_backup['spaces'] as $space) $this->_spaces[] = clone $space;
+
+        // Restore $this->_total from backed up value
+        $this->_total = $this->_backup['total'];
+    }
+
+    /**
+     * Backup current values of $this->_spaces and $this->_total
+     * This can be used for cases when you need to create separate schedules for many schedule owners,
+     * but you do not want to re-setup, for example, 'early' and/or 'late' spaces created by
+     * daily(), early() and late() methods calls as in most cases daily working hours are same
+     * for each schedule owner. So, usage of this method allows to 'remember' spaces collection,
+     * that is already containing 'early' and/or 'late' spaces, and you'll just need to call
+     * refill() method with null $daily arg, so refilling schedule with 'busy' spaces will be
+     * performed on schedule, that is already containing 'early' and/or 'late' spaces
+     */
+    public function backup() {
+        $this->_backup['spaces'] = $this->_spaces;
+        $this->_backup['total'] = $this->_total;
     }
 }
