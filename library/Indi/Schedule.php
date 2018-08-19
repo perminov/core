@@ -43,6 +43,39 @@ class Indi_Schedule {
     );
 
     /**
+     * Indexes, used for omitting unneeded iterations performed on $this->_spaces array.
+     * Note: both indexes are set to zero at the beginning of $this->refill() call
+     *
+     * @var array
+     */
+    protected $_seek = array(
+
+        // This index is used as a start point for walking through $this->_spaces' items in $this->busy() method
+        'from' => 0,
+
+        // This index is being auto-updated automatically while walking through $this->_spaces' items in $this->busy()
+        // method, and contains the index of the last iterated item
+        'last' => 0
+    );
+
+    /**
+     * Iterations counter
+     *
+     * @var bool
+     */
+    protected $_counter = array(
+        'state' => false,
+        'value' => 0
+    );
+
+    /**
+     * Spaces counter
+     *
+     * @var int
+     */
+    protected $_total = 0;
+
+    /**
      * Spaces, that schedule is consists of
      *
      * @var array
@@ -110,6 +143,9 @@ class Indi_Schedule {
         // Create free space, that match whole schedule, initially
         $this->_spaces[] = new Indi_Schedule_Space($this->_since, $this->_until, 'free');
 
+        // Update spaces counter
+        $this->_total = 1;
+
         // Set gap
         if ($gap) $this->_shift['gap'] = _2sec($gap);
     }
@@ -163,7 +199,16 @@ class Indi_Schedule {
         }
 
         // Foreach spaces within datetime-schedule
-        foreach ($this->_spaces as $i => $space) {
+        for ($i = $this->_seek['from']; $i < $this->_total; $i++) {
+
+            // Get current space
+            $space = &$this->_spaces[$i];
+
+            // If counter is turned On - count iterations
+            if ($this->_counter['state']) $this->_counter['value'] ++;
+
+            // Update index of last iterated space
+            $this->_seek['last'] = $i;
 
             // Pick `avail` prop
             if ($isBusy && $space->since <= $since && $space->until >= $since + $duration) $isBusy = $space;
@@ -195,6 +240,9 @@ class Indi_Schedule {
                     // Inject
                     array_splice($this->_spaces, $i + 1, 0, $inject);
 
+                    // Increase total spaces counter
+                    $this->_total += count($inject);
+
                 // Else if found free space starts at the exact same moment as busy part we want to inject
                 } else if ($space->since == $since) {
 
@@ -209,6 +257,9 @@ class Indi_Schedule {
 
                         // Inject busy part BEFORE current free part
                         array_splice($this->_spaces, $i, 0, array($busy));
+
+                        // Increase total spaces counter
+                        $this->_total ++;
 
                     // Else if current free space is going to became busy in it's whole bounds
                     } else if ($space->until == $since + $duration) {
@@ -364,7 +415,7 @@ class Indi_Schedule {
         $where[] = self::where($since, $until);
 
         // Get schedule's busy spaces
-        $rs = $model->fetchAll($where);
+        $rs = $model->fetchAll($where, '`spaceSince` ASC');
 
         // If $pre arg is callable - call it, passing row, and schedule-related fields
         if (is_callable($pre)) foreach ($rs as $r) $pre($r);
@@ -465,6 +516,9 @@ class Indi_Schedule {
         // Set initial day-timestamp to be the date of the schedule left bound
         $daystamp = strtotime(date('Y-m-d', $this->_since));
 
+        // Space index
+        $idx = 0;
+
         // While $mark does not exceed schedule's right bound
         while ($daystamp < $this->_until) {
 
@@ -475,8 +529,11 @@ class Indi_Schedule {
             $_since = $daystamp + $since;
             $_until = $daystamp + $until;
 
-            // Foreach space within schedule
-            foreach ($this->_spaces as $space) {
+            // Foreach space within schedule, starting with $idx
+            for (; $idx < $this->_total; $idx++) {
+
+                // Get space
+                $space = $this->_spaces[$idx];
 
                 // If current space's start date is one of the next days to $_since - break;
                 if (date('Y-m-d', $space->since) > $date) break;
@@ -493,7 +550,10 @@ class Indi_Schedule {
                 // If no current space's part, suitable for marking as 'late' found - break
                 if ($frame <= 0) break;
 
-                // Mark found part as 'late'
+                // Set start seeking point
+                $this->_seek['from'] = $idx;
+
+                // Mark found part according to $avail arg
                 if ($this->busy(max($space->since, $_since), $frame, false, false, $avail))
                     jflush(false, 'Can\'t set ' . $avail . ' space');
             }
@@ -501,6 +561,9 @@ class Indi_Schedule {
             // Jump to next day
             $daystamp += _2sec('1d');
         }
+
+        // Reset indexes
+        $this->_seek['from'] = $this->_seek['last'] = 0;
     }
 
     /**
@@ -546,7 +609,7 @@ class Indi_Schedule {
         while ($mark < $this->_until - $this->_shift['frame']) {
 
             // Foreach parts within datetime-space - find the space part, that mark is belonging to
-            for ($i = $idx; $i < count($this->_spaces); $i++) {
+            for ($i = $idx; $i < $this->_total; $i++) {
                 if ($mark >= $this->_spaces[$i]->since && $mark < $this->_spaces[$i]->until) {
                     $space = $this->_spaces[$idx = $i];
                     break;
@@ -569,15 +632,17 @@ class Indi_Schedule {
                 // at $mark's date, not starting yesterday or at earlier date
                 $since = max($space->since, $mark);
 
-                // If $mark belongs to 'free' space, and given $frame CAN
-                // be injected as NEW busy space - set $free flag as `true`
+                // If $mark belongs to 'free' space
                 if ($space->avail == 'free') {
-                    if (!$this->busy($since, $frame, true)) {
-                        $gotFree = true;
-                    }
-                } else if ($space->avail == 'busy') {
-                    $gotBusy = true;
-                }
+
+                    // Set start seeking point
+                    $this->_seek['from'] = $idx;
+
+                    // If given $frame CAN be injected as NEW busy space - set $gotFree flag as `true`
+                    if (!$this->busy($since, $frame, true)) $gotFree = true;
+
+                // Else if space's `avail` is 'busy' - set $gotBusy flag
+                } else if ($space->avail == 'busy') $gotBusy = true;
 
                 // Jump to next space
                 $space = $this->_spaces[++$i];
@@ -595,6 +660,9 @@ class Indi_Schedule {
             $mark += _2sec('1d');
         }
 
+        // Reset indexes
+        $this->_seek['from'] = $this->_seek['last'] = 0;
+
         // Return busy dates
         return $busy;
     }
@@ -605,9 +673,10 @@ class Indi_Schedule {
      * @param $frame
      * @param $date
      * @param string $step
+     * @param bool $seekFromLast
      * @return array
      */
-    public function busyHours($frame, $date, $step = '1h') {
+    public function busyHours($frame, $date, $step = '1h', $seekFromLast = false) {
 
         // Convert $frame arg to seconds
         $frame = _2sec($frame);
@@ -623,6 +692,9 @@ class Indi_Schedule {
 
         // While $mark is within $date
         while ($date == date('Y-m-d', $mark)) {
+
+            // If $seekFromLast flag is given as `true` - setup start index as last index
+            if ($seekFromLast) $this->_seek['from'] = $this->_seek['last'];
 
             // If given $frame can't be injected as NEW busy space - append $mark's date in busy time-steps array
             if ($this->busy($mark, $frame, true)) $busy[] = date('H:i', $mark);
@@ -683,11 +755,20 @@ class Indi_Schedule {
         // Drop all existing spaces and insert a new free one, matching schedule bounds
         $this->_spaces = array(new Indi_Schedule_Space($this->_since, $this->_until, 'free'));
 
+        // Reset spaces counter
+        $this->_total = 1;
+
+        // Reset indexes
+        $this->_seek['from'] = $this->_seek['last'] = 0;
+
         // Select certain entries from preloaded rowset and add them as busy spaces into schedule
         foreach ($this->_rs->select($keys, $type) as $r) {
 
             // If $pre arg is callable - call it, passing row as a 1st arg
             if (is_callable($pre)) $pre($r);
+
+            // Set start index
+            $this->_seek['from'] = $this->_seek['last'];
 
             // Flush failure
             if ($this->busy($r)) jflush(false, 'Не удалось загрузить '
@@ -696,6 +777,9 @@ class Indi_Schedule {
 
         // Setup daily hours
         if ($daily) $this->daily($daily['since'], $daily['until']);
+
+        // Reset indexes
+        $this->_seek['from'] = $this->_seek['last'] = 0;
 
         // Return schedule instance itself
         return $this;
@@ -721,5 +805,20 @@ class Indi_Schedule {
             // If prop is not empty - collect.
             // Here we use ar($r->$propI) as some prop may have comma-separated values
             if ($r->$propI) foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v] = true;
+    }
+
+    /**
+     * Toggle $this->_space iterations counter and get value
+     *
+     * @param null $toggle
+     * @return mixed
+     */
+    public function counter($toggle = null) {
+
+        // If $toggle arg is given and is bool - update flag indicating whether counter is turned On
+        if (is_bool($toggle)) $this->_counter['state'] = $toggle;
+
+        // Else return counter's current value
+        else return $this->_counter['value'];
     }
 }
