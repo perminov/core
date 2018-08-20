@@ -1888,3 +1888,6 @@ function param($table, $field, $alias, $value = null) {
     // Return `param` entry (newly created, or existing but updated)
     return $paramR;
 }
+function timeId($Hi) {
+    return Indi_Schedule::timeId($Hi);
+}
