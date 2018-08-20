@@ -2,6 +2,14 @@
 class Indi_Schedule {
 
     /**
+     * Array of key-value pairs fetched from `time` table
+     * using `title` as keys and `id` as values
+     *
+     * @var array
+     */
+    protected static $_timeIdA = null;
+
+    /**
      * Schedule's left bound (e.g. beginning)
      *
      * @var int
@@ -883,5 +891,22 @@ class Indi_Schedule {
     public function backup() {
         $this->_backup['spaces'] = $this->_spaces;
         $this->_backup['total'] = $this->_total;
+    }
+
+    /**
+     * Get `id` of `time` entry having `title` same as $HI arg
+     * Example timeId('10:00');
+     *
+     * @static
+     */
+    public static function timeId($Hi = null) {
+
+        // If self::$_timeId is null - fetch key-value pairs
+        if (self::$_timeIdA === null) self::$_timeIdA = Indi::db()->query('
+            SELECT `title`, `id` FROM `time`
+        ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // If t$Hi arg (time in 'H:i' format) is given - return id of corresponding `time` entry
+        if ($Hi) return self::$_timeIdA[func_get_arg(0)];
     }
 }
