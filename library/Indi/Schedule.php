@@ -238,11 +238,20 @@ class Indi_Schedule {
             // Update index of last iterated space
             $this->_seek['last'] = $i;
 
+            // If $since is within current $space - set $found flag as `true`
+            if ($space->since <= $since && $space->until > $since) $found = true;
+
+            // If $found flag is not yet set to `true` - keep searching (try next space)
+            if (!$found) continue;
+
+            // If space's frame size is enough for desired $duration - set $enough flag to `true`
+            if ($space->since <= $since && $space->until >= $since + $duration) $enough = true;
+
             // Pick `avail` prop
-            if ($isBusy && $space->since <= $since && $space->until >= $since + $duration) $isBusy = $space;
+            if ($isBusy && $enough) $isBusy = $space;
 
             // Try to find a free space, having enough duration
-            if ($space->avail == 'free' && $space->since <= $since && $space->until >= $since + $duration) {
+            if ($space->avail == 'free' && $enough) {
 
                 // Setup $found flag
                 $isBusy = false;
@@ -299,10 +308,10 @@ class Indi_Schedule {
                         if ($entry) $space->entry = $entry;
                     }
                 }
-
-                // Break
-                break;
             }
+
+            // If $found flag is `true` - break
+            if ($found) break;
         }
 
         // Return
@@ -715,7 +724,7 @@ class Indi_Schedule {
         $mark = $time + $this->_daily['since'];
 
         // Set late point
-        $late = $time + $this->_daily['until'] ?: $this->_shift['system'];
+        $late = $time + ($this->_daily['until'] ?: $this->_shift['system']);
 
         // Convert $step arg to seconds
         $step = _2sec($step);
@@ -743,7 +752,15 @@ class Indi_Schedule {
      * @return string
      */
     public function __toString() {
-        ob_start(); foreach ($this->_spaces as $space) echo $space . "\n"; return ob_get_clean();
+
+        // Setup pad length
+        $l = strlen('' . ($this->_total - 1)); $o = '';
+
+        // Collect stringified spaces
+        foreach ($this->_spaces as $i => $s) $o .= str_pad($i, $l, '0', STR_PAD_LEFT) . ' - ' . $s . "\n";
+
+        // Return stringified schedule
+        return $o;
     }
 
     /**
