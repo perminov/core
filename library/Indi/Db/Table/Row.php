@@ -139,7 +139,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     protected function _init(array $config = array()) {
         $this->_table = $config['table'];
-        $this->_original = $this->fixTypes($config['original']);
+        $this->_original = $config['original'];
         $this->_modified = is_array($config['modified']) ? $config['modified'] : array();
         $this->_system = is_array($config['system']) ? $config['system'] : array();
         $this->_temporary = is_array($config['temporary']) ? $config['temporary'] : array();
@@ -2205,7 +2205,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($type == 'current') {
 
             // Merge _original, _modified, _compiled and _temporary array of properties
-            $array = (array) array_merge($this->_original, $this->_modified, $purp == 'form' ? array() : $this->_compiled, $this->_temporary);
+            $array = (array) array_merge($this->fixTypes($this->_original), $this->_modified, $purp == 'form' ? array() : $this->_compiled, $this->_temporary);
 
             // Setup filefields values
             foreach ($this->model()->getFileFields() as $fileField) $array[$fileField] = $this->$fileField;
@@ -2217,7 +2217,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (count($this->_view)) $array['_view'] = $this->_view;
 
         } else if ($type == 'original') {
-            $array = (array) $this->_original;
+            $array = (array) $this->fixTypes($this->_original);
         } else if ($type == 'modified') {
             $array = (array) $this->_modified;
         } else if ($type == 'temporary') {
