@@ -924,6 +924,6 @@ class Indi_Schedule {
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If t$Hi arg (time in 'H:i' format) is given - return id of corresponding `time` entry
-        if ($Hi) return self::$_timeIdA[func_get_arg(0)];
+        return $Hi ? self::$_timeIdA[func_get_arg(0)] : self::$_timeIdA;
     }
 }
