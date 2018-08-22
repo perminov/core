@@ -1920,6 +1920,13 @@ function param($table, $field, $alias, $value = null) {
     // Return `param` entry (newly created, or existing but updated)
     return $paramR;
 }
-function timeId($Hi) {
+
+/**
+ * Return timeId for a given 'hh:mm' string, or full array of 'hh:mm' => timeId key-pairs
+ *
+ * @param null $Hi
+ * @return array|null
+ */
+function timeId($Hi = null) {
     return Indi_Schedule::timeId($Hi);
 }
