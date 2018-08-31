@@ -992,7 +992,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return Indi_Db_Table_Rowset_Combo
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
-                                 $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
+                                 $satellite = null, $where = null, $noSatellite = null, $fieldR = null,
                                  $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
 
         // Basic info
@@ -1140,7 +1140,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $v = $rowLinkedToSatellite->{$fieldR->alternative};
                     $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
                     $alternativeR = Indi::model($satelliteR->relation)->fields($fieldR->alternative);
-                    $where[] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
+                    $where['satellite'] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
                         && preg_match('/,/', $v)
                         ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
                         : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
@@ -1158,17 +1158,21 @@ class Indi_Db_Table_Row implements ArrayAccess
                 //    `countryId` so the result will be exactly as we need
                 } else if ($satelliteR->satellitealias) {
 
-                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
                         ? 'CONCAT(",", `' . $satelliteR->satellitealias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
                         : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
 
                 // Standard logic
                 } else {
 
-                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
                         ? 'CONCAT(",", `' . $satelliteR->alias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
                         : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
                 }
+
+                // If satellite-value is zero, and $noSatellite arg is given as null or not explicitly given,
+                // and field's 'allowZeroSatellite' param is 'true' - unset satellite-where
+                if (!$satellite && $noSatellite === null && $fieldR->param('allowZeroSatellite')) unset($where['satellite']);
 
             // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
             } else if ($fieldR->dependency == 'e' && $satellite) {
