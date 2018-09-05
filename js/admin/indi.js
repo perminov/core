@@ -550,7 +550,11 @@ Ext.define('Indi', {
 
                 // Detect are error related to current form fields, or related to fields of some other entry,
                 // that is set up to be automatically updated (as a trigger operation, queuing after the primary one)
-                trigger = form ? mismatch.entity.title != form.owner.ctx().ti().model.title || mismatch.entity.entry != form.owner.ctx().ti().row.id : true;
+                trigger = form
+                    ? (mismatch.direct
+                        ? false
+                        : mismatch.entity.title != form.owner.ctx().ti().model.title || mismatch.entity.entry != form.owner.ctx().ti().row.id)
+                    : true;
 
                 // Collect all messages for them to be bit later displayed within Ext.MessageBox
                 Object.keys(errorByFieldO).forEach(function(i){
