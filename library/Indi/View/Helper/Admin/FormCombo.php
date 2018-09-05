@@ -95,8 +95,10 @@ class Indi_View_Helper_Admin_FormCombo {
      * @return bool
      */
     public function noSatellite() {
-        if ($satelliteFieldId = $this->field->satellite) {
-            return false;
+        if ($sFieldAlias = $this->field->foreign('satellite')->alias) {
+            return !$this->getRow()->$sFieldAlias
+                ? $this->field->param('allowZeroSatellite')
+                : false;
         } else {
             return true;
         }

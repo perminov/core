@@ -66,6 +66,54 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
 
         // Define colors
         Indi::trail()->section->colors = $this->defineColors();
+
+        // Check whether 'since' uri-param is given, and if yes - prefill current entry's
+        // certain space-fields with values according to clicked timestamp ('since' uri-param)
+        // or according to selected datetime-range (both 'since' and 'until' uri-params)
+        $this->applySpace();
+    }
+
+    /**
+     * Check whether 'since' uri-param is given, and if yes - prefill current entry's
+     * certain space-fields with values according to clicked timestamp ('since' uri-param)
+     * or according to selected datetime-range (both 'since' and 'until' uri-params)
+     *
+     * @return mixed
+     */
+    public function applySpace() {
+
+        // If we're not dealing with a row, or we are, but with already existing row - return
+        if (!t()->row || t()->row->id) return;
+
+        // If clicked timestamp is not given as an uri-param - return
+        if (!$since = Indi::uri('since')) return;
+
+        // Get 'until' uri-param, if given
+        $until = Indi::uri('until');
+
+        // Setup `extraUri`, for 'since' and 'until' uri-params being kept even if entry's form will be reloaded
+        t()->action->extraUri = 'since/' . $since . '/' . ($until ? 'until/' . $until . '/' : '');
+
+        // Get space scheme and fields
+        $space = t()->model->space();
+
+        // Prepare array of values, that space-start fields should be prefilled with
+        foreach (explode('-', $space['scheme']) as $coord) switch ($coord) {
+            case 'date': $prefill[$space['fields'][$coord]] = date('Y-m-d', $since); break;
+            case 'datetime': $prefill[$space['fields'][$coord]] = date('Y-m-d H:i:s', $since); break;
+            case 'time': $prefill[$space['fields'][$coord]] = date('H:i:s', $since); break;
+            case 'timeId': $prefill[$space['fields'][$coord]] = timeId(date('H:i', $since)) ?: '0'; break;
+        }
+
+        // Prepare array of values, that space-duration fields should be prefilled with
+        if ($until) foreach (explode('-', $space['scheme']) as $coord) switch ($coord) {
+            case 'dayQty': $prefill[$space['fields'][$coord]] = ($until - $since) / 86400; break;
+            case 'minuteQty': $prefill[$space['fields'][$coord]] = ($until - $since) / 60; break;
+            case 'timespan': $prefill[$space['fields'][$coord]] = date('H:i', $since) . '-' . date('H:i', $since); break;
+        }
+
+        // Assign prepared values
+        $this->row->assign($prefill);
     }
 
     /**
