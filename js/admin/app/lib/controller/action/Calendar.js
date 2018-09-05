@@ -228,6 +228,17 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec, aix + 1);
                 },
                 dayclick: function(view, date) {
+                    me.rowset.space = {since: Ext.Date.format(date, 'U')};
+                    var create = Ext.getCmp(me.id + '-docked-inner$create');
+                    if (create && !create.disabled) create.press();
+                },
+                rangeselect: function(view, range) {
+                    if (view.xtype == 'monthview') range.spaceUntil = Ext.Date.add(range.spaceUntil, Ext.Date.DAY, 1);
+                    me.rowset.space = {
+                        since: Ext.Date.format(range.spaceSince, 'U'),
+                        until: Ext.Date.format(range.spaceUntil, 'U')
+                    }
+                    view.dropZone.clearShims();
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },
@@ -300,5 +311,59 @@ Ext.define('Indi.lib.controller.action.Calendar', {
 
         // Call parent
         me.callParent();
+    },
+
+    /**
+     * Builds and returns config for master toolbar 'Create' action-button item
+     *
+     * @return {Object}
+     */
+    panelDockedInner$Actions$Create: function(){
+        var me = this, section = me.ti().section, canSave = false, canForm = false, canAdd = parseInt(me.ti().section.disableAdd) != 1;
+
+        // Check if 'save' and 'form' actions are allowed
+        for (var i = 0; i < me.ti().actions.length; i++) {
+            if (me.ti().actions[i].alias == 'save') canSave = true;
+            if (me.ti().actions[i].alias == 'form') canForm = true;
+        }
+
+        // 'Create' button will be added only if it was not switched off
+        // in section config and if 'save' and 'form' actions are allowed
+        if (canForm && canSave && canAdd) {
+
+            // Return cfg
+            return {
+                id: me.bid() + '-docked-inner$create',
+                tooltip: Indi.lang.I_CREATE,
+                iconCls: 'i-btn-icon-create',
+                actionAlias: 'form',
+                handler: function(){
+                    var south, already, qs = '';
+
+                    // If we are
+                    if (this.ctx().rowset.space.since) qs = 'since/' + this.ctx().rowset.space.since + '/';
+                    if (this.ctx().rowset.space.until) qs += 'until/' + this.ctx().rowset.space.until + '/';
+
+                    // If Ctrl-key is pressed
+                    if (Ext.EventObject.ctrlKey) {
+
+                        // Get south region panel
+                        south = Ext.getCmp(me.panel.id).down('[isSouth]');
+
+                        // If tab, that we want to add - is already exists within south region panel - set it active
+                        if (already = south.down('[isSouthItem][name="0"]')) south.setActiveTab(already);
+
+                        // Else add new tab within south panel
+                        else south.add(me.southItemIDefault({
+                            id: 0,
+                            title: Indi.lang.I_CREATE,
+                            qs: qs
+                        }));
+
+                        // Else proceed standard behaviour
+                    } else Indi.load('/' + section.alias + '/' + this.actionAlias + '/ph/' + section.primaryHash + '/' + qs);
+                }
+            }
+        }
     }
 });
