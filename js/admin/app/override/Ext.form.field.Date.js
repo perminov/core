@@ -55,13 +55,27 @@ Ext.override(Ext.form.field.Date, {
      * isValid() call added after disabled dates refresh
      */
     setDisabledDates : function(dd){
-        var me = this;
+        var me = this, i;
+
+        // If disabled dates array is not empty - convert format
+        for (i = 0; i < dd.length; i++) dd[i] = Ext.Date.format(new Date(dd[i]), me.format);
 
         // Call parent
-        me.callParent(arguments);
+        me.callParent([dd.length ? dd : ['0001-01-01']]);
 
         // Check if current value is valid
         if (!me.hasZeroValue()) me.isValid();
+    },
+
+    /**
+     * Alias for setDisabledDates()
+     * This method is declared to have the ability to call same-named methods
+     * on {xtype: combo.(form|filter|etc)}, {xtype: date} and {xtype: datetime} components
+     *
+     * @param dd
+     */
+    setDisabledOptions: function(dd) {
+        this.setDisabledDates(dd);
     },
 
     /**
@@ -83,5 +97,17 @@ Ext.override(Ext.form.field.Date, {
 
         // Return either pickerWidth or triggerWrap width, depends on what's greater
         return Math.max(pickerWidth, me.triggerWrap.getWidth());
+    },
+
+    /**
+     * This function is overridden to return zeroValue instead of empty string
+     *
+     * @return {*}
+     */
+    getSubmitValue: function() {
+        var format = this.submitFormat || this.format,
+            value = this.getValue();
+
+        return value ? Ext.Date.format(value, format) : this.zeroValue;
     }
 });
