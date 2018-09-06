@@ -1618,6 +1618,13 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
+     * Get satellite-field
+     */
+    public function satellite() {
+        return Indi::model($this->entityId)->fields($this->satellite);
+    }
+
+    /**
      * Build an expression for creating the current `field` entry in another project, running on Indi Engine
      *
      * @return string

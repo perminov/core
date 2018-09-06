@@ -273,6 +273,7 @@ class Indi_Db {
                 // Append current field data to $eFieldA array
                 $eFieldA[$fieldI['original']['entityId']]['rows'][] = new Field_Row($fieldI);
                 $eFieldA[$fieldI['original']['entityId']]['aliases'][$fieldI['original']['id']] = $fieldI['original']['alias'];
+                $eFieldA[$fieldI['original']['entityId']]['ids'][$fieldI['original']['id']] = $fieldI['original']['id'];
             }
 
             // Release memory
@@ -314,6 +315,7 @@ class Indi_Db {
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],
                         'aliases' => array_values($eFieldA[$entityI['id']]['aliases'] ?: array()),
+                        'ids' => array_values($eFieldA[$entityI['id']]['ids'] ?: array()),
                         'rowClass' => 'Field_Row',
                         'found' => count($eFieldA[$entityI['id']]['rows'])
                     ))

@@ -14,7 +14,15 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      *
      * @var array
      */
-    protected $_indexes = array();
+    protected $_aliases = array();
+
+    /**
+     * Contains an array with fields ids as keys, and their indexes within $this->_rows array as values.
+     * Is need for ability to direct fetch a needed row from rowset, by it's id.
+     *
+     * @var array
+     */
+    protected $_ids = array();
 
     /**
      * Constructor
@@ -26,41 +34,50 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // Call parent constructor
         parent::__construct($config);
 
-        // Setup $this->_indexes array
-        if ($config['aliases']) $this->_indexes = array_flip($config['aliases']);
+        // Setup $this->_aliases array
+        if ($config['aliases']) $this->_aliases = array_flip($config['aliases']);
+
+        // Setup $this->_ids array
+        if ($config['ids']) $this->_ids = array_flip($config['ids']);
     }
 
     /**
-     * Empty the current rowset. Method is redeclared to keep $this->_indexes array matched with
-     * the contents if $this->_rows array
+     * Empty the current rowset. Method is redeclared to keep $this->_aliases and
+     * $this->_ids arrays matched with the contents if $this->_rows array
      *
      * @return Indi_Db_Table_Rowset Fluent interface
      */
     public function truncate() {
 
-        // Reset $this->_indexes property
-        $this->_indexes = array();
+        // Reset $this->_aliases property
+        $this->_aliases = array();
+
+        // Reset $this->_ids property
+        $this->_ids = array();
 
         // Call the truncate() method of a parent class and return it's result - rowset itself
         return parent::truncate();
     }
 
     /**
-     * Reverse the current rowset. Method is redeclared to keep $this->_indexes array matched with
-     * the contents if $this->_rows array
+     * Reverse the current rowset. Method is redeclared to keep $this->_aliases and
+     * $this->_ids arrays matched with the contents if $this->_rows array
      */
     public function reverse() {
 
         // Call the reverse() method of a parent class
         parent::reverse();
 
-        // Reverse $this->_indexes array
-        $this->_indexes = array_reverse($this->_indexes, true);
+        // Reverse $this->_aliases array
+        $this->_aliases = array_reverse($this->_aliases, true);
+
+        // Reverse $this->_ids array
+        $this->_ids = array_reverse($this->_ids, true);
     }
 
     /**
      * Get the values of a single column within rowset. If $column argument is 'alias', function will return keys of
-     * $this->_indexes array, as they are aliases, so wen do not need to iterate through $this->_rows array.
+     * $this->_aliases array, as they are aliases, so wen do not need to iterate through $this->_rows array.
      * Otherwise column() method of a parent class will be called
      *
      * @param $column
@@ -73,7 +90,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         if ($column == 'alias') {
 
             // Get the values array
-            $valueA = array_keys($this->_indexes);
+            $valueA = array_keys($this->_aliases);
 
             // Return column data
             return $imploded ? implode(is_string($imploded) ? $imploded : ',', $valueA) : $valueA;
@@ -83,20 +100,23 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
     }
 
     /**
-     * Provide direct access to a field row, stored within $this->_rows array, not by index, but by it's alias instead.
+     * Provide direct access to a field row, stored within $this->_rows array,
+     * not by index, but by it's alias or id, instead.
      *
      * @param $alias
      * @return mixed
      */
-    public function field($alias) {
-        return $this->_rows[$this->_indexes[$alias]];
+    public function field($aliasOrId) {
+        return $this->_rows[isset($this->_aliases[$aliasOrId])
+            ? $this->_aliases[$aliasOrId]
+            : $this->_ids[$aliasOrId]];
     }
 
     /**
      * Exclude items from current rowset, that have keys, mentioned in $keys argument.
      * If $inverse argument is set to true, then function will return only rows,
-     * which keys are mentioned in $keys argument. This method was redeclared to provide an approriate adjstments for
-     * $this->_indexes array, as we have here bit extented logic.
+     * which keys are mentioned in $keys argument. This method was redeclared to provide
+     * an approriate adjstments for $this->_aliases and $this->_ids arrays, as we have here bit extented logic.
      *
      * @param string|array $keys Can be array or comma-separated list of ids
      * @param string $type Name of key, which value will be tested for existence in keys list
@@ -148,7 +168,8 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
             if ($cond) {
 
                 // Unset row and it's alias
-                unset($this->_indexes[$this->_rows[$index]->alias]);
+                unset($this->_aliases[$this->_rows[$index]->alias]);
+                unset($this->_ids[$this->_rows[$index]->id]);
                 unset($this->_rows[$index]);
 
                 // Decrement count of items in current rowset
@@ -158,7 +179,8 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
         // Force zero-indexing
         $this->_rows = array_values($this->_rows);
-        $this->_indexes = array_flip(array_values(array_flip($this->_indexes)));
+        $this->_aliases = array_flip(array_values(array_flip($this->_aliases)));
+        $this->_ids = array_flip(array_values(array_flip($this->_ids)));
 
         // Force $this->_pointer to be not out from the bounds of current rowset
         if ($this->_pointer > $this->_count) $this->_pointer = $this->_count;
@@ -244,8 +266,11 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // Call parent
         $this->callParent();
 
-        // Merge indexes
-        foreach ($rowset as $r) $this->_indexes[$r->alias] = count($this->_indexes);
+        // Merge aliases, and merge ids
+        foreach ($rowset as $r) {
+            $this->_aliases[$r->alias] = count($this->_aliases);
+            $this->_ids[$r->id] = count($this->_ids);
+        }
 
         // Return itself
         return $this;
@@ -260,8 +285,9 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      */
     public function append($original) {
 
-        // Push alias into indexes
-        $this->_indexes[$original instanceof Field_Row ? $original->alias : $original['alias']] = $this->_count;
+        // Push alias into aliases and id into ids
+        $this->_aliases[$original instanceof Field_Row ? $original->alias : $original['alias']] = $this->_count;
+        $this->_ids[$original instanceof Field_Row ? $original->id : $original['id']] = $this->_count;
 
         // Call parent
         $this->callParent();
