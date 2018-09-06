@@ -392,6 +392,11 @@ Ext.define('Indi.lib.controller.action.Form', {
             field: field,
             row: this.ti().row,
             listeners: {
+                boxready: function(c) {
+                    if (!c.row._original || !(c.name in c.row._original)) return;
+                    c.originalValue = c.row._original[c.name];
+                    c.checkDirty();
+                },
                 validitychange: function(cmp, valid){
                     if (!valid) me.toggleSaveAbility(valid); else {
                         var activeErrors = 0;
@@ -510,7 +515,14 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-date',
             startDay: 1,
             format: item.field.params.displayFormat,
-            submitFormat: 'Y-m-d'
+            submitFormat: 'Y-m-d',
+            listeners: {
+                boxready: function(c) {
+                    if (!c.row._original || !(c.name in c.row._original)) return;
+                    c.originalValue = c.row._original[c.name] == '0000-00-00' ? null : c.row._original[c.name];
+                    c.checkDirty();
+                }
+            }
         };
     },
 
@@ -533,8 +545,15 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-datetime',
             startDay: 1,
             format: item.field.params.displayDateFormat,
-            submitFormat: 'Y-m-d H:i:s'
-        };
+            submitFormat: 'Y-m-d H:i:s',
+            listeners: {
+                boxready: function(c) {
+                    if (!c.row._original || !(c.name in c.row._original)) return;
+                    c.originalValue = c.row._original[c.name] == '0000-00-00 00:00:00' ? null : c.row._original[c.name];
+                    c.checkDirty();
+                }
+            }
+        }
     },
 
     /**

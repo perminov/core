@@ -126,6 +126,14 @@ class Indi_Trail_Item {
             $array['row'] = $this->row->toArray('current', true, $this->action->alias);
             $array['row']['_system']['title'] = $this->row->title();
 
+            // Append original values for fields that are modified by calendar space pre-selection
+            $space = t()->model->space();
+            if ($space['scheme'] != 'none')
+                foreach (explode('-', $space['scheme']) as $coord)
+                    if ($this->row->isModified($space['fields'][$coord]))
+                        $array['row']['_original'][$space['fields'][$coord]]
+                            = $this->row->original($space['fields'][$coord]);
+
             // If demo-mode is turned On - unset value for each shaded field
             if (Indi::demo(false)) foreach ($this->fields as $fieldR)
                 if ($fieldR->param('shade')) $array['row'][$fieldR->alias] = '';

@@ -550,7 +550,11 @@ Ext.define('Indi', {
 
                 // Detect are error related to current form fields, or related to fields of some other entry,
                 // that is set up to be automatically updated (as a trigger operation, queuing after the primary one)
-                trigger = form ? mismatch.entity.title != form.owner.ctx().ti().model.title || mismatch.entity.entry != form.owner.ctx().ti().row.id : true;
+                trigger = form
+                    ? (mismatch.direct
+                        ? false
+                        : mismatch.entity.title != form.owner.ctx().ti().model.title || mismatch.entity.entry != form.owner.ctx().ti().row.id)
+                    : true;
 
                 // Collect all messages for them to be bit later displayed within Ext.MessageBox
                 Object.keys(errorByFieldO).forEach(function(i){
@@ -593,7 +597,7 @@ Ext.define('Indi', {
                     msg = (wholeFormMsg.length > 1 || trigger ? '&raquo; ' : '') + wholeFormMsg.join('<br><br>&raquo; ');
 
                     // If this is a mismatch, caused by background php-triggers
-                    if (trigger) msg = 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "'
+                    if (trigger && mismatch.entity) msg = Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG1
                         + mismatch.entity.title + '"'
                         + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
                         + ' - выдала следующие ошибки: <br><br>' + msg;

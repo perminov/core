@@ -992,7 +992,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return Indi_Db_Table_Rowset_Combo
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
-                                 $satellite = null, $where = null, $noSatellite = false, $fieldR = null,
+                                 $satellite = null, $where = null, $noSatellite = null, $fieldR = null,
                                  $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
 
         // Basic info
@@ -1140,7 +1140,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $v = $rowLinkedToSatellite->{$fieldR->alternative};
                     $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
                     $alternativeR = Indi::model($satelliteR->relation)->fields($fieldR->alternative);
-                    $where[] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
+                    $where['satellite'] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
                         && preg_match('/,/', $v)
                         ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
                         : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
@@ -1158,17 +1158,21 @@ class Indi_Db_Table_Row implements ArrayAccess
                 //    `countryId` so the result will be exactly as we need
                 } else if ($satelliteR->satellitealias) {
 
-                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
                         ? 'CONCAT(",", `' . $satelliteR->satellitealias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
                         : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
 
                 // Standard logic
                 } else {
 
-                    $where[] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
                         ? 'CONCAT(",", `' . $satelliteR->alias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
                         : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
                 }
+
+                // If satellite-value is zero, and $noSatellite arg is given as null or not explicitly given,
+                // and field's 'allowZeroSatellite' param is 'true' - unset satellite-where
+                if (!$satellite && $noSatellite === null && $fieldR->param('allowZeroSatellite')) unset($where['satellite']);
 
             // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
             } else if ($fieldR->dependency == 'e' && $satellite) {
@@ -5306,7 +5310,76 @@ class Indi_Db_Table_Row implements ArrayAccess
      * Currently, only one param is available - 'pre'. It a function that can be used to adjust an entry prior
      * inserting it as a new busy space (lesson) within the schedule
      */
-    public function spaceOwners() {
+    protected function _spaceOwners() {
         return array();
+    }
+
+    /**
+     * Get validation rules for space-coord fields.
+     * If $strict arg is `true` - rules arrays for all fields will consist of 'required' - rule only
+     *
+     * @param $strict
+     * @return array
+     */
+    protected function _spaceCoords($strict) {
+
+        // Get space description info, and if space's scheme is 'none' - return empty array
+        $space = $this->model()->space(); $ruleA = array(); if ($space['scheme'] == 'none') return $ruleA;
+
+        // Shortcut to coord types array
+        $_ = explode('-', $space['scheme']);
+
+        // If $strict arg is given, this means that current call was made within (not directly within)
+        // $this->validate() call, and this, in it's turn, means that all fields had already passed
+        // data-type-validation, performed by $this->scratchy() call, because $this->scratchy() call
+        // is being made prior to $this->validate() call, so we have no need to do data-type validation again
+        if ($strict) {
+
+            // So the only validation rule that we should add - is a 'required' validation rule
+            foreach ($_ as $coord) $ruleA[$space['fields'][$coord]] = array('req' => true);
+
+            // Return space-coord fields and their validation rules
+            return $ruleA;
+        }
+
+        // For each duration-responsible space-field append 'required' validation rule, at first
+        foreach ($_ as $coord) if (in($coord, 'dayQty,minuteQty,timespan'))
+            $ruleA[$space['fields'][$coord]] = array('req' => true);
+
+        // For each space-field (including duration-responsible fields) - set/append data-type validation rules
+        foreach ($_ as $coord) switch ($coord) {
+            case 'date':      $ruleA[$space['fields'][$coord]]  = array('rex' => 'date'); break;
+            case 'datetime':  $ruleA[$space['fields'][$coord]]  = array('rex' => 'datetime'); break;
+            case 'time':      $ruleA[$space['fields'][$coord]]  = array('rex' => 'time'); break;
+            case 'timeId':    $ruleA[$space['fields'][$coord]]  = array('rex' => 'int11'); break;
+            case 'dayQty':    $ruleA[$space['fields'][$coord]] += array('rex' => 'int11'); break;
+            case 'minuteQty': $ruleA[$space['fields'][$coord]] += array('rex' => 'int11'); break;
+            case 'timespan':  $ruleA[$space['fields'][$coord]] += array('rex' => 'timespan'); break;
+        }
+
+        // Return space-coord fields and their validation rules
+        return $ruleA;
+    }
+
+    /**
+     * Get space frame to be used in validation, according to duration-field, specified in space-scheme
+     *
+     * @return int|null|string
+     */
+    protected function _spaceFrame() {
+
+        // Get space description info, and if space's scheme is 'none' - return empty array
+        $space = $this->model()->space(); if ($space['scheme'] == 'none') return null;
+
+        // For each space-field (including duration-responsible fields) - set/append data-type validation rules
+        foreach (explode('-', $space['scheme']) as $coord) switch ($coord) {
+            case 'dayQty':    return $this->{$space['fields'][$coord]} . 'd';
+            case 'minuteQty': return $this->{$space['fields'][$coord]} . 'm';
+            case 'timespan':
+
+                // Calculate frame as the difference between span bounds, in seconds
+                list($span['since'], $span['until']) = explode('-', $this->{$space['fields'][$coord]});
+                return _2sec($span['until'] . ':00') - _2sec($span['since'] . ':00');
+        }
     }
 }
