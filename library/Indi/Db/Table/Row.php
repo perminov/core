@@ -2100,6 +2100,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return false
         return false;
     }
+    
     /**
      * Fetch the rowset, nested to current row, assing that rowset within $this->_nested array under certain key,
      * and return that rowset
@@ -4052,6 +4053,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
             }
 
+            // Fix for cases when $src arg was created using *_Row->src() call, with 
+            // it's $dc (disable cache) arg being explicitly (or by default) set to `true`
+            $src = array_shift(explode('?', $src));
+            
             // If $raw arg is given, we assume that $src arg is an extension, else
             if (func_num_args() == 3) $ext = $src; else {
 
