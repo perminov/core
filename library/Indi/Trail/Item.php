@@ -130,9 +130,9 @@ class Indi_Trail_Item {
             $space = t()->model->space();
             if ($space['scheme'] != 'none')
                 foreach (explode('-', $space['scheme']) as $coord)
-                    if ($this->row->isModified($space['fields'][$coord]))
-                        $array['row']['_original'][$space['fields'][$coord]]
-                            = $this->row->original($space['fields'][$coord]);
+                    if ($this->row->isModified($space['coords'][$coord]))
+                        $array['row']['_original'][$space['coords'][$coord]]
+                            = $this->row->original($space['coords'][$coord]);
 
             // If demo-mode is turned On - unset value for each shaded field
             if (Indi::demo(false)) foreach ($this->fields as $fieldR)
