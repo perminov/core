@@ -92,7 +92,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         $until = Indi::uri('until');
 
         // Setup `extraUri`, for 'since' and 'until' uri-params being kept even if entry's form will be reloaded
-        t()->action->extraUri = 'since/' . $since . '/' . ($until ? 'until/' . $until . '/' : '');
+        t()->action->extraUri = '/since/' . $since . ($until ? '/until/' . $until : '');
 
         // Get space scheme and fields
         $space = t()->model->space();
