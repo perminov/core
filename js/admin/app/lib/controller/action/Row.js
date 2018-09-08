@@ -344,11 +344,11 @@ Ext.define('Indi.lib.controller.action.Row', {
         // Append 'id' param to the uri
         uri += autosave ? '/id/'+ (parseInt(me.ti().row.id) ? me.ti().row.id  : '') : (parseInt(me.ti().row.id) ? '/id/' + me.ti().row.id : '');
 
-        // Append 'ph' and 'aix' params
-        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix || autosave ? 'aix/'+ me.ti().scope.aix +'/' : '');
-
         // If some special part should be added to uri - add
         if (me.ti().action.extraUri) uri += me.ti().action.extraUri;
+
+        // Append 'ph' and 'aix' params
+        uri += '/ph/'+ me.ti().scope.hash + '/' + (me.ti().scope.aix || autosave ? 'aix/'+ me.ti().scope.aix +'/' : '');
 
         // Return
         return uri;

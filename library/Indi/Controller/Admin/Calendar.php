@@ -99,17 +99,17 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
 
         // Prepare array of values, that space-start fields should be prefilled with
         foreach (explode('-', $space['scheme']) as $coord) switch ($coord) {
-            case 'date': $prefill[$space['fields'][$coord]] = date('Y-m-d', $since); break;
-            case 'datetime': $prefill[$space['fields'][$coord]] = date('Y-m-d H:i:s', $since); break;
-            case 'time': $prefill[$space['fields'][$coord]] = date('H:i:s', $since); break;
-            case 'timeId': $prefill[$space['fields'][$coord]] = timeId(date('H:i', $since)) ?: '0'; break;
+            case 'date': $prefill[$space['coords'][$coord]] = date('Y-m-d', $since); break;
+            case 'datetime': $prefill[$space['coords'][$coord]] = date('Y-m-d H:i:s', $since); break;
+            case 'time': $prefill[$space['coords'][$coord]] = date('H:i:s', $since); break;
+            case 'timeId': $prefill[$space['coords'][$coord]] = timeId(date('H:i', $since)) ?: '0'; break;
         }
 
         // Prepare array of values, that space-duration fields should be prefilled with
         if ($until) foreach (explode('-', $space['scheme']) as $coord) switch ($coord) {
-            case 'dayQty': $prefill[$space['fields'][$coord]] = ($until - $since) / 86400; break;
-            case 'minuteQty': $prefill[$space['fields'][$coord]] = ($until - $since) / 60; break;
-            case 'timespan': $prefill[$space['fields'][$coord]] = date('H:i', $since) . '-' . date('H:i', $since); break;
+            case 'dayQty': $prefill[$space['coords'][$coord]] = ($until - $since) / 86400; break;
+            case 'minuteQty': $prefill[$space['coords'][$coord]] = ($until - $since) / 60; break;
+            case 'timespan': $prefill[$space['coords'][$coord]] = date('H:i', $since) . '-' . date('H:i', $since); break;
         }
 
         // Assign prepared values

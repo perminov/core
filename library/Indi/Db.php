@@ -327,7 +327,7 @@ class Indi_Db {
                 // Set space scheme settings
                 self::$_entityA[$modelNameA[$entityI['id']]]['space'] = array(
                     'scheme' => $entityI['spaceScheme'],
-                    'fields' => $entityI['spaceScheme'] != 'none'
+                    'coords' => $entityI['spaceScheme'] != 'none'
                         ? array_combine(
                             explode('-', $entityI['spaceScheme']),
                             array_flip(array_intersect(
