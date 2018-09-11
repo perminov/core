@@ -172,6 +172,28 @@ class Indi_Db_Table
 
             // Setup satellite-fields (and their rules) for all space-owner fields
             $this->_space['fields']['relyOn'] = $this->_spaceOwnersRelyOn();
+
+            // If current space-scheme assumes that there is a duration-field
+            if ($frameCoord = Indi::rexm('~(minuteQty|dayQty|timespan)~', $this->_space['scheme'], 1)) {
+
+                // Get date-picker coord name
+                $dpickCoord = Indi::rexm('~(date|datetime)~', $this->_space['scheme'], 1);
+
+                // Setup event->field pairs. This info will be used in javascript for:
+                // 1.Binding a listener on 'afterrender' event on duration-field, because
+                //   we need to initially setup disabled options for all involved fields, to prevent
+                //   user from selecting values leading to events overlapping. But overlapping
+                //   problem appears only if we have a duration-field within space's scheme, so
+                //   if we do have such field - we need to do a request, and that's why it's
+                //   rationally to do such request on behalf on duration-field
+                // 2.Binding a listener on 'boundchange' event on datepicker-field, because user
+                //   may change datepicker's month to any other month, so the collection of
+                //   disabled dates within datepicker's calendar widget - should also be refreshed
+                $this->_space['fields']['events'] = array(
+                    'afterrender' => $this->_space['coords'][$frameCoord],
+                    'boundchange' => $this->_space['coords'][$dpickCoord],
+                );
+            }
         }
     }
 
@@ -822,6 +844,10 @@ class Indi_Db_Table
         $array['title'] = $this->_title;
         $array['titleFieldId'] = $this->_titleFieldId;
         $array['space'] = $this->_space;
+        if ($this->_space['fields'])
+            foreach (ar('owners,coords,relyOn') as $group)
+                $array['space']['fields'][$group]
+                    = array_keys($array['space']['fields'][$group]);
         $array['daily'] = $this->_daily;
         return $array;
     }
