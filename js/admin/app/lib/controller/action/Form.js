@@ -1065,11 +1065,11 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @param calendarBounds
      */
     refreshSpaceOptions: function(srcField, calendarBounds) {
-        var me = this, data = {}, _ = me.ti().model.space.fields, dd;
+        var me = this, data = {}, _ = me.ti().model.space.fields, dd, sbl;
 
         // Collect data for all space-fields
         _['coords'].concat(_['owners']).concat(_['relyOn']).forEach(function(prop){
-            data[prop] = srcField.sbl(prop).getSubmitValue();
+            if (sbl == srcField.sbl(prop)) data[prop] = sbl.getSubmitValue();
         });
 
         // If calendarBounds arg is given - append to collected data
