@@ -620,9 +620,11 @@ class Indi_Schedule {
      *
      * @param string $frame Amount of time. Possible values: '10:23:50', '1h', '30m', etc
      * @param bool|array $both If is an array - it will be fufilled with dates having at least one busy and one free spaces
+     * @param bool|array $timeA Explicit hours of availability, that certain date should be checked against,
+     *                          to detect whether that certain date is busy
      * @return array
      */
-    public function busyDates($frame, &$both = false) {
+    public function busyDates($frame, &$both = false, $timeA = false) {
 
         // Convert to seconds
         $frame = _2sec($frame);
@@ -675,8 +677,18 @@ class Indi_Schedule {
                     // Set start seeking point
                     $this->_seek['from'] = $idx;
 
+                    // Here we handle situation when date availability should be checked
+                    // using specific hours only. So, certain date will be considered as non-busy
+                    // only in case if it is possible to create a new busy space at, for example
+                    // 10:30 or 15:00 or 18:30 only. This can be useful in situations when some space
+                    // owner, for example - teacher - has it's own set of hours of availability
+                    if ($timeA && !($etime = false)) foreach ($timeA as $time)
+                        if ($since <= ($_etime = $mark + _2sec($time . ':00')))
+                            if ($etime = $since = $_etime)
+                                break;
+
                     // If given $frame CAN be injected as NEW busy space - set $gotFree flag as `true`
-                    if (!$this->busy($since, $frame, true)) $gotFree = true;
+                    if (($timeA === false || $etime) && !$this->busy($since, $frame, true)) $gotFree = true;
 
                 // Else if space's `avail` is 'busy' - set $gotBusy flag
                 } else if ($space->avail == 'busy') $gotBusy = true;

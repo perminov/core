@@ -348,17 +348,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Collect and flush info about inaccessible values, to prevent them from being selected
-     *
-     * @param $data
-     */
-    public function formActionIDuration($data) {
-
-        // Flush info about disabled options (dates and others)
-        jflush(true, array('disabled' => $this->row->disabled($data)));
-    }
-
-    /**
      * Set scope last accessed row
      *
      * @param bool $upper
