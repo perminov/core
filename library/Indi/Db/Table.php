@@ -179,17 +179,26 @@ class Indi_Db_Table
                 // Get date-picker coord name
                 $dpickCoord = Indi::rexm('~(date|datetime)~', $this->_space['scheme'], 1);
 
+                // Collect field->zeroValue pairs for all space-fields
+                foreach (array_keys(
+                     $this->_space['fields']['coords']
+                     + $this->_space['fields']['owners']
+                     + $this->_space['fields']['relyOn']) as $field)
+                    $change[$field] = $this->fields($field)->zeroValue();
+
                 // Setup event->field pairs. This info will be used in javascript for:
-                // 1.Binding a listener on 'afterrender' event on duration-field, because
+                // 1.Binding a listeners on 'change' even on all involved fields
+                // 2.Binding a listener on 'afterrender' event on duration-field, because
                 //   we need to initially setup disabled options for all involved fields, to prevent
                 //   user from selecting values leading to events overlapping. But overlapping
                 //   problem appears only if we have a duration-field within space's scheme, so
                 //   if we do have such field - we need to do a request, and that's why it's
                 //   rationally to do such request on behalf on duration-field
-                // 2.Binding a listener on 'boundchange' event on datepicker-field, because user
+                // 3.Binding a listener on 'boundchange' event on datepicker-field, because user
                 //   may change datepicker's month to any other month, so the collection of
                 //   disabled dates within datepicker's calendar widget - should also be refreshed
                 $this->_space['fields']['events'] = array(
+                    'change' => $change,
                     'afterrender' => $this->_space['coords'][$frameCoord],
                     'boundchange' => $this->_space['coords'][$dpickCoord],
                 );
@@ -837,9 +846,10 @@ class Indi_Db_Table
     /**
      * Return array containing some basic info about model. Currently it is only database table name
      *
+     * @param bool $object Whether or not return value should be an instance of stdClass instead of array
      * @return array
      */
-    public function toArray() {
+    public function toArray($object = false) {
         $array['table'] = $this->_table;
         $array['title'] = $this->_title;
         $array['titleFieldId'] = $this->_titleFieldId;
@@ -849,7 +859,7 @@ class Indi_Db_Table
                 $array['space']['fields'][$group]
                     = array_keys($array['space']['fields'][$group]);
         $array['daily'] = $this->_daily;
-        return l10n_dataI($array, 'title');
+        return $object ? (object) l10n_dataI($array, 'title') : l10n_dataI($array, 'title');
     }
 
     /**
