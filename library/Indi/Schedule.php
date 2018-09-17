@@ -901,8 +901,8 @@ class Indi_Schedule {
             foreach ($this->_rs as $idx => $r) if ($r->$propI)
                 foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v]['idxA'][] = $idx;
 
-            // If time-rule no set - skip, else
-            if (!$ruleA['time']) continue; else $spaceOwnerProp = $propI;
+            // If hours-rule no set - skip, else
+            if (!$ruleA['hours']) continue; else $spaceOwnerProp = $propI;
 
             // If no distinct values collected - skip
             if (!$vA = array_keys($this->_distinct[$spaceOwnerProp] ?: array())) continue;
