@@ -10,6 +10,14 @@ class Indi_Schedule {
     protected static $_timeIdA = null;
 
     /**
+     * Array of key-value pairs fetched from `time` table
+     * using `id` as keys and `title` as values
+     *
+     * @var array
+     */
+    protected static $_timeHiA = null;
+
+    /**
      * Schedule's left bound (e.g. beginning)
      *
      * @var int
@@ -620,11 +628,11 @@ class Indi_Schedule {
      *
      * @param string $frame Amount of time. Possible values: '10:23:50', '1h', '30m', etc
      * @param bool|array $both If is an array - it will be fufilled with dates having at least one busy and one free spaces
-     * @param bool|array $timeA Explicit hours of availability, that certain date should be checked against,
+     * @param bool|array $hours Explicit hours of availability, that certain date should be checked against,
      *                          to detect whether that certain date is busy
      * @return array
      */
-    public function busyDates($frame, &$both = false, $timeA = false) {
+    public function busyDates($frame, &$both = false, $hours = false) {
 
         // Convert to seconds
         $frame = _2sec($frame);
@@ -660,6 +668,23 @@ class Indi_Schedule {
 
             // Shortcut to $mark's date
             $date = date('Y-m-d', $mark);
+
+            // Reset $timeA
+            $timeA = array();
+
+            // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+            if (is_callable($hours['idsFn'])) {
+
+                // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
+                // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
+                $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+
+                // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
+                if ($timeIdA === false) $timeA = false;
+                else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+
+            // Else use as is
+            } else $timeA = $hours;
 
             // Do
             do {
@@ -869,12 +894,26 @@ class Indi_Schedule {
         // If $prop arg is given and it's a string
         if (is_string($prop)) return $this->_distinct[$prop] ?: array();
 
-        // Foreach entry within preloaded rowset, foreach prop that we need to collect distinct values for
-        foreach ($this->_rs as $idx => $r) foreach ($prop as $propI)
+        // Foreach prop that we need to collect distinct values for
+        foreach ($prop as $propI => $ruleA) {
 
-            // If prop is not empty - collect.
-            // Here we use ar($r->$propI) as some prop may have comma-separated values
-            if ($r->$propI) foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v][] = $idx;
+            // Foreach entry within preloaded rowset - collect distinct values
+            foreach ($this->_rs as $idx => $r) if ($r->$propI)
+                foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v]['idxA'][] = $idx;
+
+            // If time-rule no set - skip, else
+            if (!$ruleA['time']) continue; else $spaceOwnerProp = $propI;
+
+            // If no distinct values collected - skip
+            if (!$vA = array_keys($this->_distinct[$spaceOwnerProp] ?: array())) continue;
+
+            // Get model, that space owner prop relates to
+            $spaceOwnerModelId = $this->_rs->model()->fields($spaceOwnerProp)->relation;
+
+            // Collect space owner distict entries and inject them into $this->_distinct array
+            foreach (Indi::model($spaceOwnerModelId)->fetchAll('`id` IN (' . im($vA) . ')') as $spaceOwnerEntry)
+                $this->_distinct[$spaceOwnerProp][$spaceOwnerEntry->id]['entry'] = $spaceOwnerEntry;
+        }
     }
 
     /**
@@ -923,19 +962,42 @@ class Indi_Schedule {
     }
 
     /**
-     * Get `id` of `time` entry having `title` same as $HI arg
+     * Get `id` of `time` entry having `title` same as $Hi arg
      * Example timeId('10:00');
      *
      * @static
      */
     public static function timeId($Hi = null) {
 
-        // If self::$_timeId is null - fetch key-value pairs
+        // If self::$_timeIdA is null - fetch key-value pairs
         if (self::$_timeIdA === null) self::$_timeIdA = Indi::db()->query('
             SELECT `title`, `id` FROM `time`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
+        // If self::$_timeHiA is null - setup it by flipping self::$_timeIdA
+        if (self::$_timeHiA === null) self::$_timeHiA = array_flip(self::$_timeIdA);
+
         // If t$Hi arg (time in 'H:i' format) is given - return id of corresponding `time` entry
         return $Hi ? self::$_timeIdA[func_get_arg(0)] : self::$_timeIdA;
+    }
+
+    /**
+     * Get `title` of `time` entry having `id` same as $timeId arg
+     * Example timeHi(123);
+     *
+     * @static
+     */
+    public static function timeHi($timeId = null) {
+
+        // If self::$_timeHiA is null - fetch key-value pairs
+        if (self::$_timeHiA === null) self::$_timeHiA = Indi::db()->query('
+            SELECT `id`, `title` FROM `time`
+        ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // If self::$_timeIdA is null - setup it by flipping self::$_timeHiA
+        if (self::$_timeIdA === null) self::$_timeIdA = array_flip(self::$_timeHiA);
+
+        // If $timeId arg is given - return `title` of corresponding `time` entry
+        return $timeId ? self::$_timeHiA[func_get_arg(0)] : self::$_timeHiA;
     }
 }

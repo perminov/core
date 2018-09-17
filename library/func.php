@@ -1898,3 +1898,13 @@ function param($table, $field, $alias, $value = null) {
 function timeId($Hi = null) {
     return Indi_Schedule::timeId($Hi);
 }
+
+/**
+ * Return 'hh:mm'-time in according to given $timeId arg, or full array of timeId => 'hh:mm' key-pairs
+ *
+ * @param int $timeId
+ * @return array|null
+ */
+function timeHi($timeId = null) {
+    return Indi_Schedule::timeHi($timeId);
+}
