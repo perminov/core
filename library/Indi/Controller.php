@@ -961,6 +961,6 @@ class Indi_Controller {
     public function formActionIDuration($data) {
 
         // Flush info about disabled options (dates and others)
-        jflush(true, array('disabled' => $this->row->disabled($data)));
+        jflush(true, array('disabled' => $this->row->spaceDisabledValues($data)));
     }
 }
