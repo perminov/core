@@ -161,7 +161,7 @@ define('I_FORM_DATETIME_MINUTES', 'minutes');
 define('I_FORM_DATETIME_SECONDS', 'seconds');
 define('I_COMBO_OF', 'of');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected options is');
-define('I_COMBO_MISMATCH_DISABLED_VALUE', 'The chosen option is not allowed as it is disabled');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'This option is unavailable');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Nothing found using this keyword');
 define('I_COMBO_ODATA_FIELD404', 'Field "%s" is neither real field nor pseudo field');
 define('I_COMBO_GROUPBY_NOGROUP', 'Grouping not set');
