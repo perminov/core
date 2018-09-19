@@ -5346,7 +5346,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         $schedBounds = $strict ? array() : array('since,until' => array('rex' => 'date'));
 
         // Validate all involved fields
-        $this->mcheck($spaceCoords + $schedBounds + $spaceOwners + $ownerRelyOn, $data);
+        $this->mcheck($spaceFields = $spaceCoords + $schedBounds + $spaceOwners + $ownerRelyOn, $data);
+
+        // If $strict flag is `true`, it means that current spaceDisabledValues()
+        // call was made from validate() call, and in that case we won't validate
+        // the schedule if space fields were not modified, and current entry is an existing entry
+        if ($this->id && $strict && !$this->isModified(array_keys($spaceFields))) return array();
 
         // Create schedule
         $schedule = !$strict && array_key_exists('since', $this->_temporary)
