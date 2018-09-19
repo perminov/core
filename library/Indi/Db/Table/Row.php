@@ -5654,7 +5654,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // If there are no possible values remaining after
                         // deduction of busy values - set $d flag to `true`
-                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: [], $busyA))) $d = true;
+                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: array(), $busyA))) $d = true;
 
                         // Else if current value of $prop is given, but it's
                         // in the list of busy values - also set $d flag to `true`
@@ -5664,7 +5664,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         if ($d) $disabled['date'][$date] = true;
 
                         // If iterated date is same as current date - append disabled value for $prop prop
-                        if ($date == $this->date) $disabled[$prop] = array_merge($disabled[$prop] ?: [], $busyA);
+                        if ($date == $this->date) $disabled[$prop] = array_merge($disabled[$prop] ?: array(), $busyA);
                     }
 
                     // If iterated date is same as current date - append disabled value for `timeId` prop
@@ -5675,7 +5675,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // If there are no possible values remaining after
                         // deduction of busy values - set $d flag to `true`
-                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: [], $busyA))) $d = true;
+                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: array(), $busyA))) $d = true;
 
                         // Else if current value of $prop is given, but it's
                         // in the list of busy values - also set $d flag to `true`
