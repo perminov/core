@@ -265,13 +265,13 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Set values for external space-fields, in case if internal space
+     * Set values for external space-coord fields, in case if internal space
      * fields - `spaceSince` and/or `spaceUntil` - were modified
      *
      * @param $scheme
-     * @param $fields
+     * @param $coords
      */
-    protected function _spaceStep1($scheme, $fields) {
+    protected function _spaceStep1($scheme, $coords) {
 
         // If space's start point is going to be moved
         if ($this->delta('spaceSince')) {
@@ -287,29 +287,29 @@ class Indi_Db_Table_Row implements ArrayAccess
             // [+] date-timespan
 
             // If scheme is 'date' or 'date-dayQty'
-            if (in($scheme, 'date,date-dayQty')) $this->{$fields['date']} = $this->date('spaceSince');
+            if (in($scheme, 'date,date-dayQty')) $this->{$coords['date']} = $this->date('spaceSince');
 
             // If scheme is 'datetime' or 'datetime-minuteQty
-            if (in($scheme, 'datetime,datetime-minuteQty')) $this->{$fields['datetime']} = $this->spaceSince;
+            if (in($scheme, 'datetime,datetime-minuteQty')) $this->{$coords['datetime']} = $this->spaceSince;
 
             // If scheme is 'date-time' or 'date-time-minuteQty'
             if (in($scheme, 'date-time,date-time-minuteQty')) {
 
                 // Set 'date' field
-                $this->{$fields['date']} = $this->date('spaceSince');
+                $this->{$coords['date']} = $this->date('spaceSince');
 
                 // Set 'time' field
-                $this->{$fields['time']} = array_pop(explode(' ', $this->spaceSince));
+                $this->{$coords['time']} = array_pop(explode(' ', $this->spaceSince));
             }
 
             // If scheme is 'date-timeId'
             if (in($scheme, 'date-timeId,date-timeId-minuteQty')) {
 
                 // Set 'date' field
-                $this->{$fields['date']} = $this->date('spaceSince');
+                $this->{$coords['date']} = $this->date('spaceSince');
 
                 // Set 'timeId' field
-                $this->{$fields['timeId']} = Indi::model('Time')->fetchRow(
+                $this->{$coords['timeId']} = Indi::model('Time')->fetchRow(
                     '`title` = "' . $this->date('spaceSince', 'H:i') . '"'
                 )->id;
             }
@@ -318,10 +318,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($scheme == 'date-timespan') {
 
                 // Set 'date' field
-                $this->{$fields['date']} = $this->date('spaceSince');
+                $this->{$coords['date']} = $this->date('spaceSince');
 
                 // Set 'timespan' field
-                $this->{$fields['timespan']} = $this->date('spaceSince', 'H:i') . '-' . $this->date('spaceUntil', 'H:i');
+                $this->{$coords['timespan']} = $this->date('spaceSince', 'H:i') . '-' . $this->date('spaceUntil', 'H:i');
             }
 
         // Else if event duration is going to be changed
@@ -347,7 +347,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $diff = $this->delta('spaceUntil') / _2sec('1d');
 
                 // Update 'dayQty', else revert modification of `spaceUntil`
-                if (Indi::rexm('int11', $diff)) $this->{$fields['dayQty']} += $diff;
+                if (Indi::rexm('int11', $diff)) $this->{$coords['dayQty']} += $diff;
                 else unset($this->_modified['spaceUntil']);
             }
 
@@ -358,13 +358,13 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $diff = $this->delta('spaceUntil') / _2sec('1m');
 
                 // Update 'minuteQty', else revert modification of `spaceUntil`
-                if (Indi::rexm('int11', $diff)) $this->{$fields['minuteQty']} += $diff;
+                if (Indi::rexm('int11', $diff)) $this->{$coords['minuteQty']} += $diff;
                 else unset($this->_modified['spaceUntil']);
             }
 
             // If scheme is 'date-timespan' - set 'timespan' field
             if ($scheme == 'date-timespan')
-                $this->{$fields['timespan']} = $this->date('spaceSince', 'H:i') . '-' . $this->date('spaceUntil', 'H:i');
+                $this->{$coords['timespan']} = $this->date('spaceSince', 'H:i') . '-' . $this->date('spaceUntil', 'H:i');
         }
     }
 
@@ -373,21 +373,21 @@ class Indi_Db_Table_Row implements ArrayAccess
      * for them to comply the values of external space-fields
      *
      * @param $scheme
-     * @param $fields
+     * @param $coords
      */
-    protected function _spaceStep2($scheme, $fields) {
-        $this->setSpaceSince($scheme, $fields);
-        $this->setSpaceUntil($scheme, $fields);
-        $this->setSpaceFrame($scheme, $fields);
+    protected function _spaceStep2($scheme, $coords) {
+        $this->setSpaceSince($scheme, $coords);
+        $this->setSpaceUntil($scheme, $coords);
+        $this->setSpaceFrame($scheme, $coords);
     }
 
     /**
      * Set value for `spaceSince` prop, depend on $scheme and using names of involved fields
      *
      * @param $scheme
-     * @param $fields
+     * @param $coords
      */
-    public function setSpaceSince($scheme, $fields) {
+    public function setSpaceSince($scheme, $coords) {
 
         // [+] date
         // [+] datetime
@@ -401,34 +401,34 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If scheme assumes that `spaceSince` depends on a single field, and that field is a date-field
         if (in($scheme, 'date,date-dayQty'))
-            $this->spaceSince = $this->date($fields['date'], 'Y-m-d H:i:s');
+            $this->spaceSince = $this->date($coords['date'], 'Y-m-d H:i:s');
 
         // If scheme assumes that `spaceSince` depends on a single field, and that field is a datetime-field
         if (in($scheme, 'datetime,datetime-minuteQty'))
-            $this->spaceSince = $this->date($fields['datetime'], 'Y-m-d H:i:s');
+            $this->spaceSince = $this->date($coords['datetime'], 'Y-m-d H:i:s');
 
         // If scheme assumes that `spaceSince` depends both on date-field and time-field,
         if (in($scheme, 'date-time,date-time-minuteQty'))
-            $this->spaceSince = $this->{$fields['date']} . ' ' . $this->{$fields['time']};
+            $this->spaceSince = $this->{$coords['date']} . ' ' . $this->{$coords['time']};
 
         // If scheme assumes that `spaceSince` depends both on date-field and time-field,
         // and time field is a foreign-key field
         if (in($scheme, 'date-timeId,date-timeId-minuteQty'))
-            $this->spaceSince = $this->{$fields['date']} . ' ' . $this->foreign($fields['timeId'])->title . ':00';
+            $this->spaceSince = $this->{$coords['date']} . ' ' . $this->foreign($coords['timeId'])->title . ':00';
 
         // If scheme assumes that `spaceSince` depends on date-field, and on start time within timespan-field
         if ($scheme == 'date-timespan')
-            $this->spaceSince = $this->{$fields['date']}
-                . ' ' . array_shift(explode('-', $this->{$fields['timespan']})) . ':00';
+            $this->spaceSince = $this->{$coords['date']}
+                . ' ' . array_shift(explode('-', $this->{$coords['timespan']})) . ':00';
     }
 
     /**
      * Set value for `spaceUntil` prop, depend on $scheme and using names of involved fields
      *
      * @param $scheme
-     * @param $fields
+     * @param $coords
      */
-    public function setSpaceUntil($scheme, $fields) {
+    public function setSpaceUntil($scheme, $coords) {
 
         // [+] date
         // [+] datetime
@@ -446,22 +446,22 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If current scheme assumes that duration is represented by a field, containing hours quantity
         if (in($scheme, 'date-dayQty'))
             $this->spaceUntil = date('Y-m-d H:i:s',
-                strtotime($this->spaceSince) + _2sec($this->{$fields['dayQty']} . 'd'));
+                strtotime($this->spaceSince) + _2sec($this->{$coords['dayQty']} . 'd'));
 
         // If current scheme assumes that duration is specified by a number-field, containing minutes quantity
         if (in($scheme, 'datetime-minuteQty,date-time-minuteQty,date-timeId-minuteQty'))
             $this->spaceUntil = date('Y-m-d H:i:s',
-                strtotime($this->spaceSince) + _2sec($this->{$fields['minuteQty']} . 'm'));
+                strtotime($this->spaceSince) + _2sec($this->{$coords['minuteQty']} . 'm'));
 
         // If scheme assumes duration is the difference between from-time
         // and till-time, both specified by the value of timespan-field
         if ($scheme == 'date-timespan') {
 
             // Convert date to timestamp
-            $_ = strtotime($this->{$fields['date']});
+            $_ = strtotime($this->{$coords['date']});
 
             // Get 'from' and 'till' times
-            list($from, $till) = explode('-', $this->{$fields['timespan']});
+            list($from, $till) = explode('-', $this->{$coords['timespan']});
 
             // Append number of seconds according to 'till' time
             $_ += _2sec($till . ':00');
@@ -477,7 +477,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Calculate current entry's space size within the schedule, in seconds
      */
-    public function setSpaceFrame($scheme, $fields) {
+    public function setSpaceFrame($scheme, $coords) {
         $this->spaceFrame = strtotime($this->spaceUntil) - strtotime($this->spaceSince);
     }
 
@@ -498,10 +498,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Set values for external space-fields, in case if internal space
             // fields - `spaceSince` and/or `spaceUntil` - was modified
-            $this->_spaceStep1($space['scheme'], $space['fields']);
+            $this->_spaceStep1($space['scheme'], $space['coords']);
 
             // Set space fields
-            $this->_spaceStep2($space['scheme'], $space['fields']);
+            $this->_spaceStep2($space['scheme'], $space['coords']);
         }
 
         // Backup original data
@@ -2100,6 +2100,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return false
         return false;
     }
+    
     /**
      * Fetch the rowset, nested to current row, assing that rowset within $this->_nested array under certain key,
      * and return that rowset
@@ -4052,6 +4053,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
             }
 
+            // Fix for cases when $src arg was created using *_Row->src() call, with 
+            // it's $dc (disable cache) arg being explicitly (or by default) set to `true`
+            $src = array_shift(explode('?', $src));
+            
             // If $raw arg is given, we assume that $src arg is an extension, else
             if (func_num_args() == 3) $ext = $src; else {
 
@@ -5294,74 +5299,6 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * This method should return associative array, having field names as keys and array of their props as values.
-     * Note that here should be only fields that relate to other entities' entries, that have their own schedules
-     * For example, we have `lesson` entity. It's entries - are spaces in schedule. But, we also have `teacherId` field,
-     * and `roomId` field within `lesson` entity's structure. So, those two fields should be used as keys in array
-     * that this method returns, because each teacher has it's own schedule, and each room has it's own schedule.
-     * Example:
-     *  return array(
-     *      'teacherId' => array('param1' => 'value1'),
-     *      'roomId' => array('pre' => function($r){
-     *          // Adjust entry's params here, if need
-     *      })
-     *  )
-     *
-     * Currently, only one param is available - 'pre'. It a function that can be used to adjust an entry prior
-     * inserting it as a new busy space (lesson) within the schedule
-     */
-    protected function _spaceOwners() {
-        return array();
-    }
-
-    /**
-     * Get validation rules for space-coord fields.
-     * If $strict arg is `true` - rules arrays for all fields will consist of 'required' - rule only
-     *
-     * @param $strict
-     * @return array
-     */
-    protected function _spaceCoords($strict) {
-
-        // Get space description info, and if space's scheme is 'none' - return empty array
-        $space = $this->model()->space(); $ruleA = array(); if ($space['scheme'] == 'none') return $ruleA;
-
-        // Shortcut to coord types array
-        $_ = explode('-', $space['scheme']);
-
-        // If $strict arg is given, this means that current call was made within (not directly within)
-        // $this->validate() call, and this, in it's turn, means that all fields had already passed
-        // data-type-validation, performed by $this->scratchy() call, because $this->scratchy() call
-        // is being made prior to $this->validate() call, so we have no need to do data-type validation again
-        if ($strict) {
-
-            // So the only validation rule that we should add - is a 'required' validation rule
-            foreach ($_ as $coord) $ruleA[$space['fields'][$coord]] = array('req' => true);
-
-            // Return space-coord fields and their validation rules
-            return $ruleA;
-        }
-
-        // For each duration-responsible space-field append 'required' validation rule, at first
-        foreach ($_ as $coord) if (in($coord, 'dayQty,minuteQty,timespan'))
-            $ruleA[$space['fields'][$coord]] = array('req' => true);
-
-        // For each space-field (including duration-responsible fields) - set/append data-type validation rules
-        foreach ($_ as $coord) switch ($coord) {
-            case 'date':      $ruleA[$space['fields'][$coord]]  = array('rex' => 'date'); break;
-            case 'datetime':  $ruleA[$space['fields'][$coord]]  = array('rex' => 'datetime'); break;
-            case 'time':      $ruleA[$space['fields'][$coord]]  = array('rex' => 'time'); break;
-            case 'timeId':    $ruleA[$space['fields'][$coord]]  = array('rex' => 'int11'); break;
-            case 'dayQty':    $ruleA[$space['fields'][$coord]] += array('rex' => 'int11'); break;
-            case 'minuteQty': $ruleA[$space['fields'][$coord]] += array('rex' => 'int11'); break;
-            case 'timespan':  $ruleA[$space['fields'][$coord]] += array('rex' => 'timespan'); break;
-        }
-
-        // Return space-coord fields and their validation rules
-        return $ruleA;
-    }
-
-    /**
      * Get space frame to be used in validation, according to duration-field, specified in space-scheme
      *
      * @return int|null|string
@@ -5373,13 +5310,218 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // For each space-field (including duration-responsible fields) - set/append data-type validation rules
         foreach (explode('-', $space['scheme']) as $coord) switch ($coord) {
-            case 'dayQty':    return $this->{$space['fields'][$coord]} . 'd';
-            case 'minuteQty': return $this->{$space['fields'][$coord]} . 'm';
+            case 'dayQty':    return $this->{$space['coords'][$coord]} . 'd';
+            case 'minuteQty': return $this->{$space['coords'][$coord]} . 'm';
             case 'timespan':
 
                 // Calculate frame as the difference between span bounds, in seconds
-                list($span['since'], $span['until']) = explode('-', $this->{$space['fields'][$coord]});
+                list($span['since'], $span['until']) = explode('-', $this->{$space['coords'][$coord]});
                 return _2sec($span['until'] . ':00') - _2sec($span['since'] . ':00');
         }
+    }
+
+    /**
+     * Get values (for each space-field), that are not allowed to be chosen,
+     * because they will lead to overlapping events within the schedule
+     *
+     * @param array $data
+     * @return array
+     */
+    public function spaceDisabledValues($data = array()) {
+
+        // Setup $strict flag indicating whether or not 'req'-rule
+        // should be added for each space-coord field's validation rules array.
+        $strict = !(is_array($data) || $data instanceof ArrayObject); if ($strict) $data = array();
+
+        // Get space-coord fields with their validation rules
+        $spaceCoords = $this->model()->spaceCoords(true, $strict);
+
+        // Get space-owners fields  with their validation rules
+        $spaceOwners = $this->model()->spaceOwners(true);
+
+        // Get satellite-fields (e.g. fields that space-owner fields rely on) with their validation rules
+        $ownerRelyOn = $this->model()->spaceOwnersRelyOn(true);
+
+        // Setup validation rules for $data['since'] and $data['until']
+        $schedBounds = $strict ? array() : array('since,until' => array('rex' => 'date'));
+
+        // Validate all involved fields
+        $this->mcheck($spaceFields = $spaceCoords + $schedBounds + $spaceOwners + $ownerRelyOn, $data);
+
+        // If $strict flag is `true`, it means that current spaceDisabledValues()
+        // call was made from validate() call, and in that case we won't validate
+        // the schedule if space fields were not modified, and current entry is an existing entry
+        if ($this->id && $strict && !$this->isModified(array_keys($spaceFields))) return array();
+
+        // Create schedule
+        $schedule = !$strict && array_key_exists('since', $this->_temporary)
+            ? Indi::schedule($this->since, strtotime($this->until . ' +1 day'))
+            : Indi::schedule('month', $this->fieldIsZero('date') ? null : $this->date);
+
+        // Preload existing events, but do not fill schedule with them
+        $schedule->preload($this->_table, array_merge(
+            array('`id` != "' . $this->id . '"'),
+            $this->spacePreloadWHERE()
+        ));
+
+        // Expand schedule's right bound
+        $schedule->frame($frame = $this->_spaceFrame());
+
+        // Collect distinct values for each prop
+        $schedule->distinct($spaceOwners);
+
+        // Get daily working hours
+        $daily = $this->daily(); $disabled = array('date' => array(), 'timeId' => array());
+
+        // Get time in 'H:i' format
+        $time = $this->foreign('timeId')->title;
+
+        // Setup 'early' and 'late' spaces and backup
+        $schedule->daily($daily['since'], $daily['until'])->backup();
+
+        // Foreach prop, representing event-participant
+        foreach ($spaceOwners as $prop => $ruleA) {
+
+            // Declare $prop-key within $disabled array, and initially set it to be an empty array
+            $disabled[$prop] = $busy['date'] = $busy['time'] = $psblA = array();
+
+            // Get distinct values of current $prop from schedule's rowset,
+            // as they are values that do have a probability to be disabled
+            // So, for each $prop's distinct value
+            foreach ($schedule->distinct($prop) as $id => $info) {
+
+                // Reset $both array
+                $both = array();
+
+                // Refill schedule
+                $schedule->refill($info['idxA'], null, null, $ruleA['pre']);
+
+                // Prepare $hours arg for busyDates call
+                if (!$ruleA['hours']) $hours = false; else $hours = array(
+                    'idsFn' => $ruleA['hours'],
+                    'owner' => $info['entry'],
+                    'event' => $this
+                );
+
+                // Collect info about disabled values per each busy date
+                // So for each busy date we will have the exact reasons of why it is busy
+                // Also, fulfil $both array with partially busy dates
+                foreach ($dates = $schedule->busyDates($frame, $both, $hours) as $date)
+                    $busy['date'][$date][] = $id;
+
+                // Get given date's busy hours for current prop's value
+                if ($both) foreach ($both as $date)
+                    foreach ($schedule->busyHours($date, '30m', true) as $Hi)
+                        $busy['time'][$date][$Hi][] = $id;
+            }
+
+            // If we have values, fully busy at at least one day
+            if ($busy['date']) {
+
+                // Get array of possible values
+                $psblA = $this->getComboData($prop)->column('id');
+
+                // For each date, that busy for some values,
+                foreach ($busy['date'] as $date => $busyA) {
+
+                    // Reset $d flag to `false`
+                    $d = false;
+
+                    // If there are no possible values remaining after
+                    // deduction of busy values - set $d flag to `true`
+                    if (!array_diff($psblA, $busyA)) $d = true;
+
+                    // Else if current value of $prop is given, but it's
+                    // in the list of busy values - also set $d flag to `true`
+                    else if (preg_match('~,(' . im($busyA, '|') . '),~', ',' . $this->$prop . ',')) $d = true;
+
+                    // If $d flag is `true` - append disabled date
+                    if ($d) $disabled['date'][$date] = true;
+
+                    // If iterated date is same as current date - append disabled value for $prop prop
+                    if ($date == $this->date) $disabled[$prop] = $busyA;
+                }
+            }
+
+            // If we have values, fully busy at at least one day
+            if ($busy['time']) {
+
+                // Get array of possible values, keeping in mind
+                // that some values might have already been excluded by date
+                if (!$psblA) $psblA = $this->getComboData($prop)->column('id');
+
+                // For each date, that busy for some values,
+                foreach ($busy['time'] as $date => $HiA) {
+
+                    // If there are non-empty array of disabled values for entry's time
+                    if ($busyA = $HiA[$time]) {
+
+                        // Reset $d flag to `false`
+                        $d = false;
+
+                        // If there are no possible values remaining after
+                        // deduction of busy values - set $d flag to `true`
+                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: [], $busyA))) $d = true;
+
+                        // Else if current value of $prop is given, but it's
+                        // in the list of busy values - also set $d flag to `true`
+                        else if (preg_match('~,(' . im($busyA, '|') . '),~', ',' . $this->$prop . ',')) $d = true;
+
+                        // If $d flag is `true` - append disabled date
+                        if ($d) $disabled['date'][$date] = true;
+
+                        // If iterated date is same as current date - append disabled value for $prop prop
+                        if ($date == $this->date) $disabled[$prop] = array_merge($disabled[$prop] ?: [], $busyA);
+                    }
+
+                    // If iterated date is same as current date - append disabled value for `timeId` prop
+                    if ($date == $this->date) foreach ($HiA as $Hi => $busyA) {
+
+                        // Reset $d flag to `false`
+                        $d = false;
+
+                        // If there are no possible values remaining after
+                        // deduction of busy values - set $d flag to `true`
+                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: [], $busyA))) $d = true;
+
+                        // Else if current value of $prop is given, but it's
+                        // in the list of busy values - also set $d flag to `true`
+                        else if (preg_match('~,(' . im($busyA, '|') . '),~', ',' . $this->$prop . ',')) $d = true;
+
+                        // If $d flag is `true` - append disabled `timeId`
+                        if ($d && $timeId = timeId($Hi)) $disabled['timeId'][$timeId] = true;
+                    }
+                }
+            }
+        }
+
+        // Append disabled timeIds, for time that is before opening and after closing
+        if ($daily['since'] || $daily['until']) foreach (timeId() as $Hi => $timeId) {
+            $His = $Hi . ':00';
+            if ($daily['since'] && $His <  $daily['since']) $disabled['timeId'][$timeId] = true;
+            if ($daily['until'] && $His >= $daily['until']) $disabled['timeId'][$timeId] = true;
+        }
+
+        // Use keys as values for date and timeId
+        foreach ($disabled as $prop => $data) {
+            if ($prop == 'date') $disabled[$prop] = array_keys($data);
+            if ($prop == 'timeId') $disabled[$prop] = array_keys($data);
+        }
+
+        // Return info about disabled values
+        return $disabled;
+    }
+
+    /**
+     * Empty function, to be overridden in child classes in cases when there is a need to, for example,
+     * do not preload cancelled events into schedule, to prevent their presence them from being
+     * the reason of why some new/existing event can't be scheduled/re-scheduled at some date/time.
+     *
+     * Example of return value: array('`status` != "canceled"');
+     *
+     * @return null
+     */
+    public function spacePreloadWHERE() {
+        return array();
     }
 }

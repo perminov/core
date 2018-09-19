@@ -301,8 +301,8 @@ class Entity_Row extends Indi_Db_Table_Row {
         // Get space settings
         $space = Indi::model($this->id)->space();
 
-        // Space's scheme and fields shortcuts
-        $scheme = $space['scheme']; $fields = $space['fields'];
+        // Space's scheme and coords shortcuts
+        $scheme = $space['scheme']; $coords = $space['coords'];
 
         // If space's scheme is 'none' - return
         if ($scheme == 'none') return;
@@ -323,12 +323,12 @@ class Entity_Row extends Indi_Db_Table_Row {
               `spaceSince` = CONCAT(`:p`, " 00:00:00"),
               `spaceUntil` = CONCAT(`:p`, " 00:00:00"),
               `spaceFrame` = 0
-        ', $this->table, $fields['date'], $fields['date']);
+        ', $this->table, $coords['date'], $coords['date']);
 
         // If scheme is 'datetime'
         if ($scheme == 'datetime') Indi::db()->query('
             UPDATE `:p` SET `spaceSince` = `:p`, `spaceUntil` = `:p`, `spaceFrame` = 0
-        ', $this->table, $fields['datetime'], $fields['datetime']);
+        ', $this->table, $coords['datetime'], $coords['datetime']);
 
         // If scheme is 'date-time'
         if ($scheme == 'date-time') Indi::db()->query('
@@ -336,7 +336,7 @@ class Entity_Row extends Indi_Db_Table_Row {
               `spaceSince` = CONCAT(`:p`, " ", `:p`),
               `spaceUntil` = CONCAT(`:p`, " ", `:p`),
               `spaceFrame` = 0
-        ', $this->table, $fields['date'], $fields['time'], $fields['date'], $fields['time']);
+        ', $this->table, $coords['date'], $coords['time'], $coords['date'], $coords['time']);
 
         // If scheme is 'date-timeId'
         if ($scheme == 'date-timeId') Indi::db()->query('
@@ -345,40 +345,40 @@ class Entity_Row extends Indi_Db_Table_Row {
               `e`.`spaceUntil` = CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"),
               `e`.`spaceFrame` = 0
             WHERE `e`.`:p` = `t`.`id`
-        ', $this->table, $fields['date'], $fields['date'], $fields['timeId']);
+        ', $this->table, $coords['date'], $coords['date'], $coords['timeId']);
 
         // If scheme is 'date-dayQty'
         if ($scheme == 'date-dayQty') Indi::db()->query('
              UPDATE `:p` SET
               `spaceSince` = CONCAT(`:p`, " 00:00:00"),
-              `spaceUntil` = CONCAT(DATE_ADD(`:p`, INTERVAL `' . $fields['dayQty'] . '` DAY), " 00:00:00"),
-              `spaceFrame` = `' . $fields['dayQty'] . '` * ' . _2sec('1d') . '
-       ', $this->table, $fields['date'], $fields['date']);
+              `spaceUntil` = CONCAT(DATE_ADD(`:p`, INTERVAL `' . $coords['dayQty'] . '` DAY), " 00:00:00"),
+              `spaceFrame` = `' . $coords['dayQty'] . '` * ' . _2sec('1d') . '
+       ', $this->table, $coords['date'], $coords['date']);
 
         // If scheme is 'datetime-minuteQty'
         if ($scheme == 'datetime-minuteQty') Indi::db()->query('
             UPDATE `:p` SET
               `spaceSince` = `:p`,
-              `spaceUntil` = DATE_ADD(`:p`, INTERVAL `' . $fields['minuteQty'] . '` MINUTE),
-              `spaceFrame` = `' . $fields['minuteQty'] . '` * ' . _2sec('1m') . '
-        ', $this->table, $fields['datetime'], $fields['datetime']);
+              `spaceUntil` = DATE_ADD(`:p`, INTERVAL `' . $coords['minuteQty'] . '` MINUTE),
+              `spaceFrame` = `' . $coords['minuteQty'] . '` * ' . _2sec('1m') . '
+        ', $this->table, $coords['datetime'], $coords['datetime']);
 
         // If scheme is 'date-time-minuteQty'
         if ($scheme == 'date-time-minuteQty') Indi::db()->query('
             UPDATE `:p` SET
               `spaceSince` = CONCAT(`:p`, " ", `:p`),
-              `spaceUntil` = DATE_ADD(CONCAT(`:p`, " ", `:p`), INTERVAL `' . $fields['minuteQty'] . '` MINUTE),
-              `spaceFrame` = `' . $fields['minuteQty'] . '` * ' . _2sec('1m') . '
-        ', $this->table, $fields['date'], $fields['time'], $fields['date'], $fields['time']);
+              `spaceUntil` = DATE_ADD(CONCAT(`:p`, " ", `:p`), INTERVAL `' . $coords['minuteQty'] . '` MINUTE),
+              `spaceFrame` = `' . $coords['minuteQty'] . '` * ' . _2sec('1m') . '
+        ', $this->table, $coords['date'], $coords['time'], $coords['date'], $coords['time']);
 
         // If scheme is 'date-timeId-minuteQty'
         if ($scheme == 'date-timeId-minuteQty') Indi::db()->query('
             UPDATE `:p` `e`, `time` `t` SET
               `e`.`spaceSince` = CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"),
-              `e`.`spaceUntil` = DATE_ADD(CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"), INTERVAL `' . $fields['minuteQty'] . '` MINUTE),
-              `spaceFrame` = `' . $fields['minuteQty'] . '` * ' . _2sec('1m') . '
+              `e`.`spaceUntil` = DATE_ADD(CONCAT(`e`.`:p`, " ", `t`.`title`, ":00"), INTERVAL `' . $coords['minuteQty'] . '` MINUTE),
+              `spaceFrame` = `' . $coords['minuteQty'] . '` * ' . _2sec('1m') . '
             WHERE `e`.`:p` = `t`.`id`
-        ', $this->table, $fields['date'], $fields['date'], $fields['timeId']);
+        ', $this->table, $coords['date'], $coords['date'], $coords['timeId']);
 
         // If scheme is 'date-timespan'
         if ($scheme == 'date-timespan') {
@@ -386,10 +386,10 @@ class Entity_Row extends Indi_Db_Table_Row {
             // Update `spaceSince` and `spaceUntil`
             Indi::db()->query('
                 UPDATE `' . $this->table . '` SET
-                  `spaceSince` = CONCAT(`' . $fields['date'] . '`, " ", SUBSTRING(`' . $fields['timespan'] . '`, 1, 5), ":00"),
+                  `spaceSince` = CONCAT(`' . $coords['date'] . '`, " ", SUBSTRING(`' . $coords['timespan'] . '`, 1, 5), ":00"),
                   `spaceUntil` = DATE_ADD(
-                    CONCAT(`' . $fields['date'] . '`, " ", SUBSTRING(`' . $fields['timespan'] . '`, -5), ":00"),
-                    INTERVAL IF(SUBSTRING(`' . $fields['timespan'] . '`, 1, 5) < SUBSTRING(`' . $fields['timespan'] . '`, -5), 0, 1) DAY
+                    CONCAT(`' . $coords['date'] . '`, " ", SUBSTRING(`' . $coords['timespan'] . '`, -5), ":00"),
+                    INTERVAL IF(SUBSTRING(`' . $coords['timespan'] . '`, 1, 5) < SUBSTRING(`' . $coords['timespan'] . '`, -5), 0, 1) DAY
                   )
             ');
 

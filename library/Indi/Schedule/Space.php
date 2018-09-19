@@ -23,6 +23,13 @@ class Indi_Schedule_Space {
     public $avail;
 
     /**
+     * Flag, indicating whether space is a chunk
+     *
+     * @var
+     */
+    public $chunk = false;
+
+    /**
      * Instance of Indi_Db_Table_Row, that was used to create the space
      *
      * @var Indi_Db_Table_Row
@@ -36,8 +43,9 @@ class Indi_Schedule_Space {
      * @param $until
      * @param $avail
      * @param $entry Indi_Db_Table_Row
+     * @param $chunk
      */
-    public function __construct($since, $until, $avail, $entry = null) {
+    public function __construct($since, $until, $avail, $entry = null, $chunk = false) {
 
         // Set space's left bound (e.g. beginning)
         $this->since = $since;
@@ -49,7 +57,10 @@ class Indi_Schedule_Space {
         $this->avail = $avail;
 
         // Set entry
-        if ($entry) $this->entry = $entry;
+        $this->entry = $entry;
+
+        // Set flag indicating whether space is a chunk
+        $this->chunk = $chunk;
     }
 
     /**
@@ -58,6 +69,10 @@ class Indi_Schedule_Space {
      * @return string
      */
     public function __toString() {
-        return date('Y-m-d H:i:s', $this->since) . ', ' . $this->avail . ' for ' .  ago($this->since, $this->until, 'ago', true);
+        return date('Y-m-d H:i:s', $this->since)
+            . ', ' . $this->avail
+            . ' for '
+            .  ago($this->since, $this->until, 'ago', true)
+            . ($this->chunk ? ', chunk' : '');
     }
 }

@@ -158,7 +158,7 @@ define('I_FORM_DATETIME_MINUTES', 'минут');
 define('I_FORM_DATETIME_SECONDS', 'секунд');
 define('I_COMBO_OF', 'из');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количество выбранных опций -');
-define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Выбранное значение отключено и поэтому недоступно для выбора');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Это значение недоступно для выбора');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Ничего не найдено');
 define('I_COMBO_ODATA_FIELD404', 'Поле "%s" не является ни реальным полем, ни псевдо-полем');
 define('I_COMBO_GROUPBY_NOGROUP', 'Принадлежность не указана');

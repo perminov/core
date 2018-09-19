@@ -160,6 +160,50 @@ class Indi_Db_Table
 
         // Setup 'spaceScheme' prop
         $this->_space = $config['space'];
+
+        // If spaceScheme is not 'none'
+        if ($this->_space['scheme'] != 'none') {
+
+            // Setup space-coord fields and their rules
+            $this->_space['fields']['coords'] = $this->_spaceCoords();
+
+            // Setup space-owner fields and their rules
+            $this->_space['fields']['owners'] = $this->_spaceOwners();
+
+            // Setup satellite-fields (and their rules) for all space-owner fields
+            $this->_space['fields']['relyOn'] = $this->_spaceOwnersRelyOn();
+
+            // If current space-scheme assumes that there is a duration-field
+            if ($frameCoord = Indi::rexm('~(minuteQty|dayQty|timespan)~', $this->_space['scheme'], 1)) {
+
+                // Get date-picker coord name
+                $dpickCoord = Indi::rexm('~(date|datetime)~', $this->_space['scheme'], 1);
+
+                // Collect field->zeroValue pairs for all space-fields
+                foreach (array_keys(
+                     $this->_space['fields']['coords']
+                     + $this->_space['fields']['owners']
+                     + $this->_space['fields']['relyOn']) as $field)
+                    $change[$field] = $this->fields($field)->zeroValue();
+
+                // Setup event->field pairs. This info will be used in javascript for:
+                // 1.Binding a listeners on 'change' even on all involved fields
+                // 2.Binding a listener on 'afterrender' event on duration-field, because
+                //   we need to initially setup disabled options for all involved fields, to prevent
+                //   user from selecting values leading to events overlapping. But overlapping
+                //   problem appears only if we have a duration-field within space's scheme, so
+                //   if we do have such field - we need to do a request, and that's why it's
+                //   rationally to do such request on behalf on duration-field
+                // 3.Binding a listener on 'boundchange' event on datepicker-field, because user
+                //   may change datepicker's month to any other month, so the collection of
+                //   disabled dates within datepicker's calendar widget - should also be refreshed
+                $this->_space['fields']['events'] = array(
+                    'change' => $change,
+                    'afterrender' => $this->_space['coords'][$frameCoord],
+                    'boundchange' => $this->_space['coords'][$dpickCoord],
+                );
+            }
+        }
     }
 
     /**
@@ -755,7 +799,7 @@ class Indi_Db_Table
      *
      * @param string $names
      * @param string $format rowset|cols
-     * @return Indi_Db_Table_Row|Indi_Db_Table_Rowset
+     * @return Field_Row|Field_Rowset
      */
     public function fields($names = '', $format = 'rowset') {
 
@@ -802,15 +846,20 @@ class Indi_Db_Table
     /**
      * Return array containing some basic info about model. Currently it is only database table name
      *
+     * @param bool $object Whether or not return value should be an instance of stdClass instead of array
      * @return array
      */
-    public function toArray() {
+    public function toArray($object = false) {
         $array['table'] = $this->_table;
         $array['title'] = $this->_title;
         $array['titleFieldId'] = $this->_titleFieldId;
         $array['space'] = $this->_space;
+        if ($this->_space['fields'])
+            foreach (ar('owners,coords,relyOn') as $group)
+                $array['space']['fields'][$group]
+                    = array_keys($array['space']['fields'][$group]);
         $array['daily'] = $this->_daily;
-        return $array;
+        return $object ? (object) $array : $array;
     }
 
     /**
@@ -1421,5 +1470,141 @@ class Indi_Db_Table
 
         // If $option arg is given - return comma-separated titles, or return an *_Rowset object otherwise
         return $option ? $_->select($option, 'alias')->column('title', ', ') : $_;
+    }
+
+    /**
+     * This method should return associative array, having field names as keys and array of their props as values.
+     * Note that here should be only fields that relate to other entities' entries, that have their own schedules
+     * For example, we have `lesson` entity. It's entries - are spaces in schedule. But, we also have `teacherId` field,
+     * and `roomId` field within `lesson` entity's structure. So, those two fields should be used as keys in array
+     * that this method returns, because each teacher has it's own schedule, and each room has it's own schedule.
+     * Example:
+     *  return array(
+     *      'teacherId' => array('param1' => 'value1'),
+     *      'roomId' => array('pre' => function($r){
+     *          // Adjust entry's params here, if need
+     *      })
+     *  )
+     *
+     * Currently, only one param is available - 'pre'. It a function that can be used to adjust an entry prior
+     * inserting it as a new busy space (lesson) within the schedule
+     */
+    protected function _spaceOwners() {
+        return array();
+    }
+
+    /**
+     * Get space-owner fields either as simple array of field names, or as an associative array,
+     * having field names as keys and array of field rules as values. This is because in some cases
+     * we need just field names only, but in some - we need each field's rules also
+     *
+     * @param bool $rules
+     * @return array
+     */
+    public function spaceOwners($rules = false) {
+        return $rules ? $this->_space['fields']['owners'] : array_keys($this->_space['fields']['owners']);
+    }
+
+    /**
+     * Get validation rules for space-coord fields.
+     *
+     * @return array
+     */
+    protected function _spaceCoords() {
+
+        // Get space description info, and if space's scheme is 'none' - return empty array
+        $space = $this->space(); $ruleA = array(); if ($space['scheme'] == 'none') return $ruleA;
+
+        // Shortcut to coord types array
+        $_ = explode('-', $space['scheme']);
+
+        // For each duration-responsible space-field append 'required' validation rule, at first
+        foreach ($_ as $coord) if (in($coord, 'dayQty,minuteQty,timespan'))
+            $ruleA[$space['coords'][$coord]] = array('req' => true);
+
+        // For each space-field (including duration-responsible fields) - set/append data-type validation rules
+        foreach ($_ as $coord) switch ($coord) {
+            case 'date':      $ruleA[$space['coords'][$coord]]  = array('rex' => 'date'); break;
+            case 'datetime':  $ruleA[$space['coords'][$coord]]  = array('rex' => 'datetime'); break;
+            case 'time':      $ruleA[$space['coords'][$coord]]  = array('rex' => 'time'); break;
+            case 'timeId':    $ruleA[$space['coords'][$coord]]  = array('rex' => 'int11'); break;
+            case 'dayQty':    $ruleA[$space['coords'][$coord]] += array('rex' => 'int11'); break;
+            case 'minuteQty': $ruleA[$space['coords'][$coord]] += array('rex' => 'int11'); break;
+            case 'timespan':  $ruleA[$space['coords'][$coord]] += array('rex' => 'timespan'); break;
+        }
+
+        // Return space-coord fields and their validation rules
+        return $ruleA;
+    }
+
+    /**
+     * Get space-coord fields either as simple array of field names, or as an associative array,
+     * having field names as keys and array of field rules as values. This is because in some cases
+     * we need just field names only, but in some - we need each field's rules also
+     * If $strict arg is `true` - rules arrays for all fields will consist of 'required' - rule only
+     *
+     * @param bool $rules
+     * @param bool $strict
+     * @return array
+     */
+    public function spaceCoords($rules = false, $strict = false) {
+
+        // Shortcut
+        $coords = $this->_space['fields']['coords'];
+
+        // If no rules should be returned - return coord-fields' names only
+        if (!$rules) return array_keys($coords);
+
+        // If $strict arg is given, this means that current call was made within (not directly within)
+        // $this->validate() call, and this, in it's turn, means that all fields had already passed
+        // data-type-validation, performed by $this->scratchy() call, because $this->scratchy() call
+        // is being made prior to $this->validate() call, so we have no need to do data-type validation again
+        // So the only validation rule that we should add - is a 'required' validation rule
+        if ($strict) foreach ($coords as &$ruleA) $ruleA = array('req' => true);
+
+        // Return
+        return $coords;
+    }
+
+    /**
+     * Collect and return satellite-fields for all space-owner fields
+     *
+     * @return array
+     */
+    protected function _spaceOwnersRelyOn() {
+
+        // Declare
+        $ownerRelyOn = array();
+
+        // Collect satellite-fields for all space-owner fields
+        foreach ($this->_space['fields']['owners'] as $owner => $ruleA) {
+
+            // If current space-owner field has no satellite - skip
+            if (!$sFieldId = $this->_fields->field($owner)->satellite) continue;
+
+            // Get satellite-field
+            $sFieldR = $this->_fields->field($sFieldId);
+
+            // Setup shortcut for satellite-field's `storeRelationAbility` prop
+            $sra = $sFieldR->storeRelationAbility;
+
+            // Setup rules for space-owner field's satellite-field
+            $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
+        }
+
+        // Return array of satellite-fields and their rules
+        return $ownerRelyOn;
+    }
+
+    /**
+     * Get satellite-fields (for all space-owner fields) either as simple array of field names,
+     * or as an associative array, having field names as keys and array of field rules as values.
+     * This is because in some cases we need just field names only, but in some - we need each field's rules also
+     *
+     * @param bool $rules
+     * @return array
+     */
+    public function spaceOwnersRelyOn($rules = false) {
+        return $rules ? $this->_space['fields']['relyOn'] : array_keys($this->_space['fields']['relyOn']);
     }
 }

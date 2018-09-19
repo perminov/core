@@ -255,10 +255,13 @@ Ext.define('Indi.lib.controller.action.Form', {
     formItemA: function(fieldA) {
 
         // Declare a number of auxiliary variables
-        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, xtype, build;
+        var me = this, itemA = [], itemI, itemX, eItemX, item$, eItem$, formItemOnlyA, xtype, build, se;
 
         // If `fieldA` argument was given - use it rather than me.ti().fields
         fieldA = fieldA || me.ti().fields;
+
+        // If space fields are defined for current model, and duration-field is exist among them
+        if (me.ti().model.space.fields) se = me.ti().model.space.fields.events;
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
@@ -327,6 +330,39 @@ Ext.define('Indi.lib.controller.action.Form', {
 
                     // Prepend `cls` property with 'i-field' css class name
                     itemI.cls = 'i-field' + (itemI.cls ? ' ' + itemI.cls : '');
+
+                    // If current model does have space fields, and schedule-related event handlers should be added
+                    if (se && itemI.name in se.change) Ext.merge(itemI, {listeners: {
+
+                        // Bind handlers for certain events once form item was rendered
+                        afterrender: function(c) {
+
+                            // Bind 'change' event listener
+                            c.on('change', function(c){ me.refreshSpaceOptions(c); });
+
+                            // If current field is a 'date' or 'datetime' coord-field (e.g is a calendar)
+                            if (c.name == se.boundchange) {
+
+                                // Make sure space options will be refreshed on calendar month change
+                                c.on('boundchange', function(c, bounds) {
+                                    me.refreshSpaceOptions(c, {
+                                        since: Ext.Date.format(bounds[0], 'Y-m-d'),
+                                        until: Ext.Date.format(bounds[1], 'Y-m-d')
+                                    });
+                                });
+
+                                // Make sure space options will be refreshed on calendar blur,
+                                // because user may not select any date despite month change
+                                // so we need to refresh options considering current field's date
+                                c.on('blur', function(c){ me.refreshSpaceOptions(c); });
+                            }
+
+                            // If current field is a duration-field, e.g. is a 'dayQty' or 'minuteQty'
+                            // or 'timespan' coord-field - refresh space options right now for them to
+                            // be already refreshed at the moment of form appeared within the UI
+                            if (c.name == se.afterrender) me.refreshSpaceOptions(c);
+                        }
+                    }});
 
                     // Push item to the `itemA` array
                     itemA.push(itemI);
@@ -1005,6 +1041,39 @@ Ext.define('Indi.lib.controller.action.Form', {
                 },
                 scope: me
             }]
+        });
+    },
+
+    /**
+     *  Refresh options, that are selectable within space-fields.
+     *  This function prevent user from selecting options leading to
+     *  schedule overlapping
+     *
+     *
+     * @param srcField
+     * @param calendarBounds
+     */
+    refreshSpaceOptions: function(srcField, calendarBounds) {
+        var me = this, data = {}, name, dd, sbl;
+
+        // Collect data for all space-fields
+        for (name in me.ti().model.space.fields.events.change)
+            if (sbl = srcField.sbl(name)) data[name] = sbl.getSubmitValue();
+
+        // If calendarBounds arg is given - append to collected data
+        if (calendarBounds) Ext.Object.merge(data, calendarBounds);
+
+        // Make a special request to get the inaccessible values for each field considering their current values
+        Indi.load('/' + me.ti().section.alias + '/form' + (me.ti().row.id ? '/id/' + me.ti().row.id : '') + '/consider/duration/', {
+            params: data,
+            success: function(response) {
+
+                // Get info about disabled values for each field
+                dd = response.responseText.json().disabled;
+
+                // Apply those disabled values, so only non-disabled will remain accessible
+                for (var i in dd) srcField.sbl(i).setDisabledOptions(dd[i]);
+            }
         });
     }
 });

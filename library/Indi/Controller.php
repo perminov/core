@@ -601,6 +601,9 @@ class Indi_Controller {
             $this->row->$for = $post->selected;
         }
 
+        // Check satellite is alphanumeric and/or contains comma
+        jcheck(array('satellite' => array('rex' => '/^[a-zA-Z0-9,]+$/')), $post);
+
         // Get combo data rowset
         $comboDataRs = $post->keyword
             ? $this->row->getComboData(
@@ -948,5 +951,16 @@ class Indi_Controller {
 
         // Return ids of excluded fields
         return $fieldIds;
+    }
+
+    /**
+     * Collect and flush info about inaccessible values, to prevent them from being selected
+     *
+     * @param $data
+     */
+    public function formActionIDuration($data) {
+
+        // Flush info about disabled options (dates and others)
+        jflush(true, array('disabled' => $this->row->spaceDisabledValues($data)));
     }
 }
