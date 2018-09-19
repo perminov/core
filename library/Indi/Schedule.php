@@ -258,64 +258,65 @@ class Indi_Schedule {
             // Pick `avail` prop
             if ($isBusy && $enough) $isBusy = $space;
 
-            // Try to find a free space, having enough duration
-            if ($space->avail == 'free' && $enough) {
+            // Setup $existing flag indicating that we're trying to load existing event into
+            // current schedule, but event's start not within daily working hours
+            $existing = $entry && $space->avail != 'busy'; // != 'busy' mean is 'early' or 'late'
 
-                // Setup $found flag
-                $isBusy = false;
+            // If found $space has enough size for the desired new busy space
+            if ($enough) {
 
-                // If we needed only to check schedule availability - break the loop
-                if ($checkOnly) break;
+                // If found $space is free, or, at least, non-busy
+                if ($space->avail == 'free' || $existing) {
 
-                // If free space starts earlier than busy space we want to inject
-                if ($space->since < $since) {
+                    // Setup $isBusy flag
+                    $isBusy = false;
 
-                    // Prepare array for busy-space injection into $this->_spaces
-                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null));
+                    // If we needed only to check schedule availability - break the loop
+                    if ($checkOnly) break;
 
-                    // If free schedule will remain after busy-part injection
-                    if ($space->until > $since + $duration)
-
-                        // Wrap that free schedule into free-space, and append to 2be-injected parts
-                        array_push($inject, $free = new Indi_Schedule_Space($since + $duration, $space->until, 'free'));
-
-                    // Move current free part's ending mark
-                    $space->until = $since;
-
-                    // Inject
-                    array_splice($this->_spaces, $i + 1, 0, $inject);
-
-                    // Increase total spaces counter
-                    $this->_total += count($inject);
-
-                // Else if found free space starts at the exact same moment as busy part we want to inject
-                } else if ($space->since == $since) {
-
-                    // If free space ends later than busy part
-                    if ($space->until > $since + $duration) {
-
-                        // Create busy space starting at the exact same moment as current free space
-                        $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null);
-
-                        // Move current free space's starting mark to the ending of busy space
-                        $space->since = $since + $duration;
-
-                        // Inject busy part BEFORE current free part
-                        array_splice($this->_spaces, $i, 0, array($busy));
-
-                        // Increase total spaces counter
-                        $this->_total ++;
-
-                    // Else if current free space is going to became busy in it's whole bounds
-                    } else if ($space->until == $since + $duration) {
-
-                        // Change it's 'avail' prop to $avail
-                        $space->avail = $avail;
-
-                        // Set entry
-                        if ($entry) $space->entry = $entry;
-                    }
+                    // Inject new busy space over found $space
+                    $this->_busy($space, $i, $since, $duration, $avail, $entry);
                 }
+
+            // Else if found $space does not have enough size, but we're trying
+            // to create busy space, that will represent an already existing event entry
+            } else if ($existing) {
+
+                // Detect whether there are enough subsequent quantity of non-busy spaces having enough summarily duration
+                $chunk = array(); $chunkSum = 0;
+                for ($j = $i; $j < $this->_total; $j++) {
+                    if ($this->_spaces[$j]->avail == 'busy') break;
+                    $chunk[$j]['since'] = max($this->_spaces[$j]->since, $since);
+                    $chunk[$j]['frame'] = min($since + $duration, $this->_spaces[$j]->until) - $chunk[$j]['since'];
+                    $chunk[$j]['space'] = $this->_spaces[$j];
+                    $chunkSum += $chunk[$j]['frame'];
+                    if ($chunkSum >= $duration) break;
+                }
+                
+                // If summary duration - is less than required duration - break
+                if ($chunkSum < $duration) break;
+
+                // Setup chunk-spaces
+                $offset = 0;
+                foreach ($chunk as $j => $info) $offset += 
+                    $this->_busy($info['space'], $j + $offset, $info['since'], $info['frame'], $avail, $entry, true);
+
+                // Detect chunk-spaces indexes range
+                $range['since'] = $range['until'] = false;
+                for ($m = $i; $m < $this->_total; $m++) {
+                    if ($range['since'] === false &&  $this->_spaces[$m]->chunk) $range['since'] = $m;
+                    if ($range['since'] !== false &&  $this->_spaces[$m]->chunk) $range['until'] = $m;
+                    if ($range['since'] !== false && !$this->_spaces[$m]->chunk) break;
+                }
+
+                // Merge chunk-spaces into one, having `since` as first
+                // chunk-space's `since` and `until` as last chunk-space's `until`
+                $this->_spaces[$range['since']]->until = $this->_spaces[$range['until']]->until;
+                array_splice($this->_spaces, $range['since'] + 1, $range['until'] - $range['since']);
+                $this->_spaces[$range['since']]->chunk = false;
+
+                // Setup $isBusy flag
+                $isBusy = false;
             }
 
             // If $found flag is `true` - break
@@ -324,6 +325,81 @@ class Indi_Schedule {
 
         // Return
         return $isBusy;
+    }
+
+    /**
+     * Internal function for space updating and/or injection
+     *
+     * @param $space
+     * @param $i
+     * @param $since
+     * @param $duration
+     * @param $avail
+     * @param $entry
+     * @param bool $chunk
+     * @return int
+     */
+    protected function _busy(Indi_Schedule_Space $space, $i, $since, $duration, $avail, $entry, $chunk = false) {
+
+        // Array for spaces to be injected $this->_spaces
+        $inject = array();
+
+        // If free space starts earlier than busy space we want to inject
+        if ($space->since < $since) {
+
+            // Prepare busy-space for injection
+            array_push($inject, $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null, $chunk));
+
+            // If free schedule will remain after busy-part injection
+            if ($space->until > $since + $duration)
+
+                // Wrap that free schedule into free-space, and append to 2be-injected parts
+                array_push($inject, $free = new Indi_Schedule_Space($since + $duration, $space->until, $space->avail));
+
+            // Move current free part's ending mark
+            $space->until = $since;
+
+            // Inject
+            array_splice($this->_spaces, $i + 1, 0, $inject);
+
+            // Increase total spaces counter
+            $this->_total += count($inject);
+
+        // Else if found free space starts at the exact same moment as busy part we want to inject
+        } else if ($space->since == $since) {
+
+            // If free space ends later than busy part
+            if ($space->until > $since + $duration) {
+
+                // Prepare array (to be injected into $this->_spaces), containing busy
+                // space starting at the exact same moment as current free space
+                array_push($inject, $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null, $chunk));
+
+                // Move current free space's starting mark to the ending of busy space
+                $space->since = $since + $duration;
+
+                // Inject busy part BEFORE current free part
+                array_splice($this->_spaces, $i, 0, $inject);
+
+                // Increase total spaces counter
+                $this->_total ++;
+
+            // Else if current free space is going to became busy in it's whole bounds
+            } else if ($space->until == $since + $duration) {
+
+                // Change it's 'avail' prop to $avail
+                $space->avail = $avail;
+
+                // Set whether space is a chunk
+                $space->chunk = $chunk;
+
+                // Set entry
+                if ($entry) $space->entry = $entry;
+            }
+        }
+
+        // Return quantity of injected spaces
+        return count($inject);
     }
 
     /**
