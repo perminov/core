@@ -261,18 +261,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         fieldA = fieldA || me.ti().fields;
 
         // If space fields are defined for current model, and duration-field is exist among them
-        if (me.ti().model.space.fields && me.ti().model.space.fields.events) {
-
-            // Get total collection of space-fields.
-            // We need this collection to bind a 'change'-event listeners
-            se = {change: me.ti().model.space.fields['coords']
-                .concat(me.ti().model.space.fields['owners'])
-                .concat(me.ti().model.space.fields['relyOn'])}
-
-            // Get info about fields, that should have additional listeners for
-            // 'afterrender' and 'boundchange' events, in addition to 'change'-event
-            Ext.merge(se, me.ti().model.space.fields.events)
-        }
+        if (me.ti().model.space.fields) se = me.ti().model.space.fields.events;
 
         // Setup ids-array of a fields, that are disabled and shouldn't be shown in form,
         // and ids-array of a fields, that are disabled but should be shown in form
@@ -343,7 +332,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     itemI.cls = 'i-field' + (itemI.cls ? ' ' + itemI.cls : '');
 
                     // If current model does have space fields, and schedule-related event handlers should be added
-                    if (se && ~se.change.indexOf(itemI.name)) Ext.merge(itemI, {listeners: {
+                    if (se && itemI.name in se.change) Ext.merge(itemI, {listeners: {
 
                         // Bind handlers for certain events once form item was rendered
                         afterrender: function(c) {
@@ -1065,12 +1054,11 @@ Ext.define('Indi.lib.controller.action.Form', {
      * @param calendarBounds
      */
     refreshSpaceOptions: function(srcField, calendarBounds) {
-        var me = this, data = {}, _ = me.ti().model.space.fields, dd, sbl;
+        var me = this, data = {}, name, dd, sbl;
 
         // Collect data for all space-fields
-        _['coords'].concat(_['owners']).concat(_['relyOn']).forEach(function(prop){
-            if (sbl == srcField.sbl(prop)) data[prop] = sbl.getSubmitValue();
-        });
+        for (name in me.ti().model.space.fields.events.change)
+            if (sbl = srcField.sbl(name)) data[name] = sbl.getSubmitValue();
 
         // If calendarBounds arg is given - append to collected data
         if (calendarBounds) Ext.Object.merge(data, calendarBounds);

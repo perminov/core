@@ -10,6 +10,14 @@ class Indi_Schedule {
     protected static $_timeIdA = null;
 
     /**
+     * Array of key-value pairs fetched from `time` table
+     * using `id` as keys and `title` as values
+     *
+     * @var array
+     */
+    protected static $_timeHiA = null;
+
+    /**
      * Schedule's left bound (e.g. beginning)
      *
      * @var int
@@ -250,64 +258,65 @@ class Indi_Schedule {
             // Pick `avail` prop
             if ($isBusy && $enough) $isBusy = $space;
 
-            // Try to find a free space, having enough duration
-            if ($space->avail == 'free' && $enough) {
+            // Setup $existing flag indicating that we're trying to load existing event into
+            // current schedule, but event's start not within daily working hours
+            $existing = $entry && $space->avail != 'busy'; // != 'busy' mean is 'early' or 'late'
 
-                // Setup $found flag
-                $isBusy = false;
+            // If found $space has enough size for the desired new busy space
+            if ($enough) {
 
-                // If we needed only to check schedule availability - break the loop
-                if ($checkOnly) break;
+                // If found $space is free, or, at least, non-busy
+                if ($space->avail == 'free' || $existing) {
 
-                // If free space starts earlier than busy space we want to inject
-                if ($space->since < $since) {
+                    // Setup $isBusy flag
+                    $isBusy = false;
 
-                    // Prepare array for busy-space injection into $this->_spaces
-                    $inject = array($busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null));
+                    // If we needed only to check schedule availability - break the loop
+                    if ($checkOnly) break;
 
-                    // If free schedule will remain after busy-part injection
-                    if ($space->until > $since + $duration)
-
-                        // Wrap that free schedule into free-space, and append to 2be-injected parts
-                        array_push($inject, $free = new Indi_Schedule_Space($since + $duration, $space->until, 'free'));
-
-                    // Move current free part's ending mark
-                    $space->until = $since;
-
-                    // Inject
-                    array_splice($this->_spaces, $i + 1, 0, $inject);
-
-                    // Increase total spaces counter
-                    $this->_total += count($inject);
-
-                // Else if found free space starts at the exact same moment as busy part we want to inject
-                } else if ($space->since == $since) {
-
-                    // If free space ends later than busy part
-                    if ($space->until > $since + $duration) {
-
-                        // Create busy space starting at the exact same moment as current free space
-                        $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null);
-
-                        // Move current free space's starting mark to the ending of busy space
-                        $space->since = $since + $duration;
-
-                        // Inject busy part BEFORE current free part
-                        array_splice($this->_spaces, $i, 0, array($busy));
-
-                        // Increase total spaces counter
-                        $this->_total ++;
-
-                    // Else if current free space is going to became busy in it's whole bounds
-                    } else if ($space->until == $since + $duration) {
-
-                        // Change it's 'avail' prop to $avail
-                        $space->avail = $avail;
-
-                        // Set entry
-                        if ($entry) $space->entry = $entry;
-                    }
+                    // Inject new busy space over found $space
+                    $this->_busy($space, $i, $since, $duration, $avail, $entry);
                 }
+
+            // Else if found $space does not have enough size, but we're trying
+            // to create busy space, that will represent an already existing event entry
+            } else if ($existing) {
+
+                // Detect whether there are enough subsequent quantity of non-busy spaces having enough summarily duration
+                $chunk = array(); $chunkSum = 0;
+                for ($j = $i; $j < $this->_total; $j++) {
+                    if ($this->_spaces[$j]->avail == 'busy') break;
+                    $chunk[$j]['since'] = max($this->_spaces[$j]->since, $since);
+                    $chunk[$j]['frame'] = min($since + $duration, $this->_spaces[$j]->until) - $chunk[$j]['since'];
+                    $chunk[$j]['space'] = $this->_spaces[$j];
+                    $chunkSum += $chunk[$j]['frame'];
+                    if ($chunkSum >= $duration) break;
+                }
+                
+                // If summary duration - is less than required duration - break
+                if ($chunkSum < $duration) break;
+
+                // Setup chunk-spaces
+                $offset = 0;
+                foreach ($chunk as $j => $info) $offset += 
+                    $this->_busy($info['space'], $j + $offset, $info['since'], $info['frame'], $avail, $entry, true);
+
+                // Detect chunk-spaces indexes range
+                $range['since'] = $range['until'] = false;
+                for ($m = $i; $m < $this->_total; $m++) {
+                    if ($range['since'] === false &&  $this->_spaces[$m]->chunk) $range['since'] = $m;
+                    if ($range['since'] !== false &&  $this->_spaces[$m]->chunk) $range['until'] = $m;
+                    if ($range['since'] !== false && !$this->_spaces[$m]->chunk) break;
+                }
+
+                // Merge chunk-spaces into one, having `since` as first
+                // chunk-space's `since` and `until` as last chunk-space's `until`
+                $this->_spaces[$range['since']]->until = $this->_spaces[$range['until']]->until;
+                array_splice($this->_spaces, $range['since'] + 1, $range['until'] - $range['since']);
+                $this->_spaces[$range['since']]->chunk = false;
+
+                // Setup $isBusy flag
+                $isBusy = false;
             }
 
             // If $found flag is `true` - break
@@ -316,6 +325,81 @@ class Indi_Schedule {
 
         // Return
         return $isBusy;
+    }
+
+    /**
+     * Internal function for space updating and/or injection
+     *
+     * @param $space
+     * @param $i
+     * @param $since
+     * @param $duration
+     * @param $avail
+     * @param $entry
+     * @param bool $chunk
+     * @return int
+     */
+    protected function _busy(Indi_Schedule_Space $space, $i, $since, $duration, $avail, $entry, $chunk = false) {
+
+        // Array for spaces to be injected $this->_spaces
+        $inject = array();
+
+        // If free space starts earlier than busy space we want to inject
+        if ($space->since < $since) {
+
+            // Prepare busy-space for injection
+            array_push($inject, $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null, $chunk));
+
+            // If free schedule will remain after busy-part injection
+            if ($space->until > $since + $duration)
+
+                // Wrap that free schedule into free-space, and append to 2be-injected parts
+                array_push($inject, $free = new Indi_Schedule_Space($since + $duration, $space->until, $space->avail));
+
+            // Move current free part's ending mark
+            $space->until = $since;
+
+            // Inject
+            array_splice($this->_spaces, $i + 1, 0, $inject);
+
+            // Increase total spaces counter
+            $this->_total += count($inject);
+
+        // Else if found free space starts at the exact same moment as busy part we want to inject
+        } else if ($space->since == $since) {
+
+            // If free space ends later than busy part
+            if ($space->until > $since + $duration) {
+
+                // Prepare array (to be injected into $this->_spaces), containing busy
+                // space starting at the exact same moment as current free space
+                array_push($inject, $busy = new Indi_Schedule_Space($since, $since + $duration, $avail, $entry ?: null, $chunk));
+
+                // Move current free space's starting mark to the ending of busy space
+                $space->since = $since + $duration;
+
+                // Inject busy part BEFORE current free part
+                array_splice($this->_spaces, $i, 0, $inject);
+
+                // Increase total spaces counter
+                $this->_total ++;
+
+            // Else if current free space is going to became busy in it's whole bounds
+            } else if ($space->until == $since + $duration) {
+
+                // Change it's 'avail' prop to $avail
+                $space->avail = $avail;
+
+                // Set whether space is a chunk
+                $space->chunk = $chunk;
+
+                // Set entry
+                if ($entry) $space->entry = $entry;
+            }
+        }
+
+        // Return quantity of injected spaces
+        return count($inject);
     }
 
     /**
@@ -620,9 +704,11 @@ class Indi_Schedule {
      *
      * @param string $frame Amount of time. Possible values: '10:23:50', '1h', '30m', etc
      * @param bool|array $both If is an array - it will be fufilled with dates having at least one busy and one free spaces
+     * @param bool|array $hours Explicit hours of availability, that certain date should be checked against,
+     *                          to detect whether that certain date is busy
      * @return array
      */
-    public function busyDates($frame, &$both = false) {
+    public function busyDates($frame, &$both = false, $hours = false) {
 
         // Convert to seconds
         $frame = _2sec($frame);
@@ -659,6 +745,23 @@ class Indi_Schedule {
             // Shortcut to $mark's date
             $date = date('Y-m-d', $mark);
 
+            // Reset $timeA
+            $timeA = array();
+
+            // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+            if (is_callable($hours['idsFn'])) {
+
+                // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
+                // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
+                $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+
+                // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
+                if ($timeIdA === false) $timeA = false;
+                else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+
+            // Else use as is
+            } else $timeA = $hours;
+
             // Do
             do {
 
@@ -675,8 +778,18 @@ class Indi_Schedule {
                     // Set start seeking point
                     $this->_seek['from'] = $idx;
 
+                    // Here we handle situation when date availability should be checked
+                    // using specific hours only. So, certain date will be considered as non-busy
+                    // only in case if it is possible to create a new busy space at, for example
+                    // 10:30 or 15:00 or 18:30 only. This can be useful in situations when some space
+                    // owner, for example - teacher - has it's own set of hours of availability
+                    if ($timeA && !($etime = false)) foreach ($timeA as $time)
+                        if ($since <= ($_etime = $mark + _2sec($time . ':00')))
+                            if ($etime = $since = $_etime)
+                                break;
+
                     // If given $frame CAN be injected as NEW busy space - set $gotFree flag as `true`
-                    if (!$this->busy($since, $frame, true)) $gotFree = true;
+                    if (($timeA === false || $etime) && !$this->busy($since, $frame, true)) $gotFree = true;
 
                 // Else if space's `avail` is 'busy' - set $gotBusy flag
                 } else if ($space->avail == 'busy') $gotBusy = true;
@@ -857,12 +970,26 @@ class Indi_Schedule {
         // If $prop arg is given and it's a string
         if (is_string($prop)) return $this->_distinct[$prop] ?: array();
 
-        // Foreach entry within preloaded rowset, foreach prop that we need to collect distinct values for
-        foreach ($this->_rs as $idx => $r) foreach ($prop as $propI)
+        // Foreach prop that we need to collect distinct values for
+        foreach ($prop as $propI => $ruleA) {
 
-            // If prop is not empty - collect.
-            // Here we use ar($r->$propI) as some prop may have comma-separated values
-            if ($r->$propI) foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v][] = $idx;
+            // Foreach entry within preloaded rowset - collect distinct values
+            foreach ($this->_rs as $idx => $r) if ($r->$propI)
+                foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v]['idxA'][] = $idx;
+
+            // If hours-rule no set - skip, else
+            if (!$ruleA['hours']) continue; else $spaceOwnerProp = $propI;
+
+            // If no distinct values collected - skip
+            if (!$vA = array_keys($this->_distinct[$spaceOwnerProp] ?: array())) continue;
+
+            // Get model, that space owner prop relates to
+            $spaceOwnerModelId = $this->_rs->model()->fields($spaceOwnerProp)->relation;
+
+            // Collect space owner distict entries and inject them into $this->_distinct array
+            foreach (Indi::model($spaceOwnerModelId)->fetchAll('`id` IN (' . im($vA) . ')') as $spaceOwnerEntry)
+                $this->_distinct[$spaceOwnerProp][$spaceOwnerEntry->id]['entry'] = $spaceOwnerEntry;
+        }
     }
 
     /**
@@ -911,19 +1038,42 @@ class Indi_Schedule {
     }
 
     /**
-     * Get `id` of `time` entry having `title` same as $HI arg
+     * Get `id` of `time` entry having `title` same as $Hi arg
      * Example timeId('10:00');
      *
      * @static
      */
     public static function timeId($Hi = null) {
 
-        // If self::$_timeId is null - fetch key-value pairs
+        // If self::$_timeIdA is null - fetch key-value pairs
         if (self::$_timeIdA === null) self::$_timeIdA = Indi::db()->query('
             SELECT `title`, `id` FROM `time`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
+        // If self::$_timeHiA is null - setup it by flipping self::$_timeIdA
+        if (self::$_timeHiA === null) self::$_timeHiA = array_flip(self::$_timeIdA);
+
         // If t$Hi arg (time in 'H:i' format) is given - return id of corresponding `time` entry
         return $Hi ? self::$_timeIdA[func_get_arg(0)] : self::$_timeIdA;
+    }
+
+    /**
+     * Get `title` of `time` entry having `id` same as $timeId arg
+     * Example timeHi(123);
+     *
+     * @static
+     */
+    public static function timeHi($timeId = null) {
+
+        // If self::$_timeHiA is null - fetch key-value pairs
+        if (self::$_timeHiA === null) self::$_timeHiA = Indi::db()->query('
+            SELECT `id`, `title` FROM `time`
+        ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // If self::$_timeIdA is null - setup it by flipping self::$_timeHiA
+        if (self::$_timeIdA === null) self::$_timeIdA = array_flip(self::$_timeHiA);
+
+        // If $timeId arg is given - return `title` of corresponding `time` entry
+        return $timeId ? self::$_timeHiA[func_get_arg(0)] : self::$_timeHiA;
     }
 }
