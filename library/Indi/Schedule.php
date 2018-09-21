@@ -1047,7 +1047,7 @@ class Indi_Schedule {
 
         // If self::$_timeIdA is null - fetch key-value pairs
         if (self::$_timeIdA === null) self::$_timeIdA = Indi::db()->query('
-            SELECT `title`, `id` FROM `time`
+            SELECT `title`, `id` FROM `time` ORDER BY `title`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If self::$_timeHiA is null - setup it by flipping self::$_timeIdA
@@ -1067,7 +1067,7 @@ class Indi_Schedule {
 
         // If self::$_timeHiA is null - fetch key-value pairs
         if (self::$_timeHiA === null) self::$_timeHiA = Indi::db()->query('
-            SELECT `id`, `title` FROM `time`
+            SELECT `id`, `title` FROM `time` ORDER BY `title`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If self::$_timeIdA is null - setup it by flipping self::$_timeHiA
