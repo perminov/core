@@ -5403,6 +5403,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                     'event' => $this
                 );
 
+                // Setup daily working hours per each date separately
+                if ($hours) $schedule->ownerDaily($hours);
+
                 // Collect info about disabled values per each busy date
                 // So for each busy date we will have the exact reasons of why it is busy
                 // Also, fulfil $both array with partially busy dates
@@ -5411,7 +5414,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Get given date's busy hours for current prop's value
                 if ($both) foreach ($both as $date)
-                    foreach ($schedule->busyHours($date, '30m', true) as $Hi)
+                    foreach ($schedule->busyHours($date, '30m', true, $hours) as $Hi)
                         $busy['time'][$date][$Hi][] = $id;
             }
 
@@ -5461,7 +5464,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // If there are no possible values remaining after
                         // deduction of busy values - set $d flag to `true`
-                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: array(), $busyA))) $d = true;
+                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: array(), $busyA))) {
+                            if ($psblA) $d = true;
+                        }
 
                         // Else if current value of $prop is given, but it's
                         // in the list of busy values - also set $d flag to `true`
@@ -5482,7 +5487,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // If there are no possible values remaining after
                         // deduction of busy values - set $d flag to `true`
-                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: array(), $busyA))) $d = true;
+                        if (!array_diff($psblA, array_merge($busy['date'][$date] ?: array(), $busyA))) {
+                            if ($psblA) $d = true;
+                        }
 
                         // Else if current value of $prop is given, but it's
                         // in the list of busy values - also set $d flag to `true`

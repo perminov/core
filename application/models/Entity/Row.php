@@ -414,6 +414,13 @@ class Entity_Row extends Indi_Db_Table_Row {
         // Provide ability for some entity props to be set using aliases rather than ids
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'titleFieldId') $value = field($this->table, $value)->id;
+            else if ($columnName == 'spaceFields') {
+                if ($value && !Indi::rexm('int11list', $value)) {
+                    $fieldIdA = array();
+                    foreach(ar($value) as $field) $fieldIdA[] = field($this->id, $field)->id;
+                    $value = im($fieldIdA);
+                }
+            }
         }
 
         // Call parent
