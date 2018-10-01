@@ -783,7 +783,7 @@ class Indi_Schedule {
                     // only in case if it is possible to create a new busy space at, for example
                     // 10:30 or 15:00 or 18:30 only. This can be useful in situations when some space
                     // owner, for example - teacher - has it's own set of hours of availability
-                    if ($timeA && !($etime = false)) foreach ($timeA as $time)
+                    if (is_array($timeA) && !($etime = false)) foreach ($timeA as $time)
                         if ($since <= ($_etime = $mark + _2sec($time . ':00')))
                             if ($etime = $since = $_etime)
                                 break;
@@ -823,9 +823,11 @@ class Indi_Schedule {
      * @param $date
      * @param string $step
      * @param bool $seekFromLast
+     * @param bool|array $hours Explicit hours of availability, that certain date should be checked against,
+     *                          to detect whether that certain date is busy
      * @return array
      */
-    public function busyHours($date, $step = '1h', $seekFromLast = false) {
+    public function busyHours($date, $step = '1h', $seekFromLast = false, $hours = false) {
 
         // Array of busy hours
         $busy = array();
@@ -842,14 +844,41 @@ class Indi_Schedule {
         // Convert $step arg to seconds
         $step = _2sec($step);
 
+        // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+        if (is_callable($hours['idsFn'])) {
+
+            // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
+            // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
+            $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+
+            // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
+            if ($timeIdA === false) $timeA = false;
+            else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+
+            // Else use as is
+        } else $timeA = $hours;
+
+        // If $timeA is array
+        if (is_array($timeA)) {
+
+            // Flip it
+            $timeA = array_flip($timeA);
+
+            // Set $_hours flag to `true`
+            $_hours = true;
+        }
+
         // While $mark is within $date
         while ($mark < $late) {
 
             // If $seekFromLast flag is given as `true` - setup start index as last index
             if ($seekFromLast) $this->_seek['from'] = $this->_seek['last'];
 
+            // Get time
+            $Hi = date('H:i', $mark);
+
             // If given $frame can't be injected as NEW busy space - append $mark's date in busy time-steps array
-            if ($this->busy($mark, $this->_shift['frame'], true)) $busy[] = date('H:i', $mark);
+            if (($_hours && !isset($timeA[$Hi])) || $this->busy($mark, $this->_shift['frame'], true)) $busy[] = $Hi;
 
             // Jump to next time-step
             $mark += $step;
@@ -1047,7 +1076,7 @@ class Indi_Schedule {
 
         // If self::$_timeIdA is null - fetch key-value pairs
         if (self::$_timeIdA === null) self::$_timeIdA = Indi::db()->query('
-            SELECT `title`, `id` FROM `time`
+            SELECT `title`, `id` FROM `time` ORDER BY `title`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If self::$_timeHiA is null - setup it by flipping self::$_timeIdA
@@ -1067,7 +1096,7 @@ class Indi_Schedule {
 
         // If self::$_timeHiA is null - fetch key-value pairs
         if (self::$_timeHiA === null) self::$_timeHiA = Indi::db()->query('
-            SELECT `id`, `title` FROM `time`
+            SELECT `id`, `title` FROM `time` ORDER BY `title`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If self::$_timeIdA is null - setup it by flipping self::$_timeHiA
@@ -1075,5 +1104,97 @@ class Indi_Schedule {
 
         // If $timeId arg is given - return `title` of corresponding `time` entry
         return $timeId ? self::$_timeHiA[func_get_arg(0)] : self::$_timeHiA;
+    }
+
+    /**
+     * Setup space-owner daily working hours, per each date, separately
+     *
+     * @param $hours
+     */
+    public function ownerDaily($hours) {
+
+        // If $hours is false - return
+        if ($hours === false) return;
+
+        // Set initial day-timestamp to be the date of the schedule left bound
+        $daystamp = strtotime(date('Y-m-d', $this->_since));
+
+        // Space index
+        $idx = 0;
+
+        // While $mark does not exceed schedule's right bound
+        while ($daystamp < $this->_until - $this->_shift['frame']) {
+
+            // Get next date's timestamp
+            $next = $daystamp + $this->_shift['system'];
+
+            // Get current date
+            $date = date('Y-m-d', $daystamp);
+
+            // Reset $timeA
+            $timeA = array();
+
+            // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+            if (is_callable($hours['idsFn'])) {
+
+                // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
+                // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
+                $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+
+                // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
+                if ($timeIdA === false) $timeA = false;
+                else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+
+            // Else use as is
+            } else $timeA = $hours;
+
+            $daysched = Indi::schedule($daystamp, $daystamp + $this->_shift['system']);
+            foreach ($timeA as $time) $daysched->busy($daystamp + _2sec($time . ':00'), 3600);
+
+            //
+            foreach ($daysched->spaces() as $_space) if ($_space->avail == 'free') {
+
+                // Set absolute timestamps
+                $_since = $_space->since;
+                $_until = $_space->until;
+
+                $backup = $idx;
+
+                // Foreach space within schedule, starting with $idx
+                for ($idx = $backup; $idx < $this->_total; $idx++) {
+
+                    // Get space
+                    $space = $this->_spaces[$idx];
+
+                    // If current space's start date is one of the next days to $_since - break;
+                    if ($space->since > $next) break;
+
+                    // If current space is not 'free'
+                    if ($space->avail != 'free') continue;
+
+                    // If current space ends earlier than $_since - skip
+                    if ($space->until <= $_since) continue;
+
+                    // Calculate the intersection of what we have and what we need
+                    $frame = min($space->until, $_until) - max($space->since, $_since);
+
+                    // If no current space's part, suitable for marking as 'late' found - break
+                    if ($frame <= 0) break;
+
+                    // Set start seeking point
+                    $this->_seek['from'] = $idx;
+
+                    // Mark found part according to $avail arg
+                    if ($this->busy(max($space->since, $_since), $frame, false, false, 'rest'))
+                        jflush(false, 'Can\'t set \'rest\' space');
+                }
+            }
+
+            // Jump to next day
+            $daystamp += $this->_shift['system'];
+        }
+
+        // Reset indexes
+        $this->_seek['from'] = $this->_seek['last'] = 0;
     }
 }

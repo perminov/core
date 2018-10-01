@@ -5,7 +5,15 @@ class Admin_AlteredFieldsController extends Indi_Controller_Admin {
      * Append ability to choose multiple fields for being altered
      */
     public function adjustTrail() {
-        if (!$this->row->id) t()->fields->field('fieldId')->assign(array('storeRelationAbility' => 'many'));
+        
+        // If we're not dealing with row, or we are, but it's an existing row - return
+        if (!$this->row || $this->row->id) return;
+
+        // Change fieldId-field's `storeRelationAbility` prop to 'many'
+        t()->fields->field('fieldId')->storeRelationAbility = 'many';
+        
+        // Change value from '0' to ''
+        t()->row->fieldId = '';
     }
 
     /**
