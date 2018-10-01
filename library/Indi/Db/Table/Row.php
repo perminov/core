@@ -5409,12 +5409,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Collect info about disabled values per each busy date
                 // So for each busy date we will have the exact reasons of why it is busy
                 // Also, fulfil $both array with partially busy dates
-                foreach ($dates = $schedule->busyDates($frame, $both, $hours) as $date)
+                foreach ($dates = $schedule->busyDates($frame, $both) as $date)
                     $busy['date'][$date][] = $id;
 
                 // Get given date's busy hours for current prop's value
                 if ($both) foreach ($both as $date)
-                    foreach ($schedule->busyHours($date, '30m', true, $hours) as $Hi)
+                    foreach ($schedule->busyHours($date, '30m', true) as $Hi)
                         $busy['time'][$date][$Hi][] = $id;
             }
 

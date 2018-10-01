@@ -1141,52 +1141,60 @@ class Indi_Schedule {
                 // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
                 $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
 
-                // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
+                // If idsFn call returned false set $timeA to be false
                 if ($timeIdA === false) $timeA = false;
+
+                // Else set $timeA to be an array of actual hours in 'H:i' format, got by `time` ids
                 else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
 
             // Else use as is
             } else $timeA = $hours;
 
-            $daysched = Indi::schedule($daystamp, $daystamp + $this->_shift['system']);
-            foreach ($timeA as $time) $daysched->busy($daystamp + _2sec($time . ':00'), 3600);
+            // $timeA is array (even empty array)
+            if (is_array($timeA)) {
 
-            //
-            foreach ($daysched->spaces() as $_space) if ($_space->avail == 'free') {
+                // Create separate schedule for current date
+                $inverted = Indi::schedule($daystamp, $daystamp + $this->_shift['system']);
 
-                // Set absolute timestamps
-                $_since = $_space->since;
-                $_until = $_space->until;
+                // Setup space-owner working hours as 'busy' spaces within inverted schedule
+                // We do that because all other spaces will be 'free' after that
+                // and we'll use that 'free' spaces as 'busy' spaces within current schedule
+                foreach ($timeA as $time) $inverted->busy($daystamp + _2sec($time . ':00'), 3600);
 
-                $backup = $idx;
+                // Use 'free' spaces' of inverted day-schedule to create 'busy' spaces within current schedule
+                foreach ($inverted->spaces() as $ispace) if ($ispace->avail == 'free') {
 
-                // Foreach space within schedule, starting with $idx
-                for ($idx = $backup; $idx < $this->_total; $idx++) {
+                    // Backup space index
+                    $backup = $idx;
 
-                    // Get space
-                    $space = $this->_spaces[$idx];
+                    // Foreach space within schedule, starting with $idx
+                    for ($idx = $backup; $idx < $this->_total; $idx++) {
 
-                    // If current space's start date is one of the next days to $_since - break;
-                    if ($space->since > $next) break;
+                        // Get space
+                        $space = $this->_spaces[$idx];
 
-                    // If current space is not 'free'
-                    if ($space->avail != 'free') continue;
+                        // If current space's start date is one of the next days to $_since - break;
+                        if ($space->since > $next) break;
 
-                    // If current space ends earlier than $_since - skip
-                    if ($space->until <= $_since) continue;
+                        // If current space is not 'free'
+                        if ($space->avail != 'free') continue;
 
-                    // Calculate the intersection of what we have and what we need
-                    $frame = min($space->until, $_until) - max($space->since, $_since);
+                        // If current space ends earlier than $_since - skip
+                        if ($space->until <= $ispace->since) continue;
 
-                    // If no current space's part, suitable for marking as 'late' found - break
-                    if ($frame <= 0) break;
+                        // Calculate the intersection of what we have and what we need
+                        $frame = min($space->until, $ispace->until) - max($space->since, $ispace->since);
 
-                    // Set start seeking point
-                    $this->_seek['from'] = $idx;
+                        // If no current space's part, suitable for marking as 'late' found - break
+                        if ($frame <= 0) break;
 
-                    // Mark found part according to $avail arg
-                    if ($this->busy(max($space->since, $_since), $frame, false, false, 'rest'))
-                        jflush(false, 'Can\'t set \'rest\' space');
+                        // Set start seeking point
+                        $this->_seek['from'] = $idx;
+
+                        // Mark found part according to $avail arg
+                        if ($this->busy(max($space->since, $ispace->since), $frame, false, false, 'rest'))
+                            jflush(false, 'Can\'t set \'rest\' space');
+                    }
                 }
             }
 
