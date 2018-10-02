@@ -1000,9 +1000,10 @@ class Indi_Schedule {
      * and collect indexes of entries having those values
      *
      * @param $prop
+     * @param $self
      * @return array
      */
-    public function distinct($prop = null) {
+    public function distinct($prop = null, $self = null) {
 
         // If no args given - return $this->_distinct as is
         if (!func_num_args() || (!is_string($prop) && !is_array($prop))) return $this->_distinct;
@@ -1019,6 +1020,12 @@ class Indi_Schedule {
 
             // If hours-rule no set - skip, else
             if (!$ruleA['hours']) continue; else $spaceOwnerProp = $propI;
+
+            // Also, consider values of event entry's prop
+            if ($self->$propI)
+                foreach (ar($self->$propI) as $v)
+                    if (!$this->_distinct[$propI][$v])
+                        $this->_distinct[$propI][$v]['idxA'] = array();
 
             // If no distinct values collected - skip
             if (!$vA = array_keys($this->_distinct[$spaceOwnerProp] ?: array())) continue;
