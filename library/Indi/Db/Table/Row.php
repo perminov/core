@@ -5379,6 +5379,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup 'early' and 'late' spaces and backup
         $schedule->daily($daily['since'], $daily['until'])->backup();
 
+        // Collect dates
+        $schedule->dates();
+
         // Foreach prop, representing event-participant
         foreach ($spaceOwners as $prop => $ruleA) {
 
@@ -5404,18 +5407,22 @@ class Indi_Db_Table_Row implements ArrayAccess
                 );
 
                 // Setup daily working hours per each date separately
-                if ($hours) $schedule->ownerDaily($hours);
+                // if ($hours) $dateA = $schedule->ownerDaily($hours);
 
                 // Collect info about disabled values per each busy date
                 // So for each busy date we will have the exact reasons of why it is busy
                 // Also, fulfil $both array with partially busy dates
-                foreach ($dates = $schedule->busyDates($frame, $both) as $date)
+                foreach ($dates = $schedule->busyDates($frame, $both, $hours) as $date)
                     $busy['date'][$date][] = $id;
 
                 // Get given date's busy hours for current prop's value
-                if ($both) foreach ($both as $date)
-                    foreach ($schedule->busyHours($date, '30m', true) as $Hi)
-                        $busy['time'][$date][$Hi][] = $id;
+                // If current space-owner has no custom logic of per-day availability hours - use dates,
+                // containing in $both array for walking through and detect busy hours, else - use dates,
+                // containing in $schedule->dates array
+                if ($dates = $hours ? $schedule->dates : $both)
+                    foreach ($dates as $date)
+                        foreach ($schedule->busyHours($date, '30m', true, $hours) as $Hi)
+                            $busy['time'][$date][$Hi][] = $id;
             }
 
             // If we have values, fully busy at at least one day

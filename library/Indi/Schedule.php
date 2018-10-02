@@ -141,6 +141,13 @@ class Indi_Schedule {
     public $_rs = null;
 
     /**
+     * Array of all dates involved in current schedule
+     *
+     * @var null|array
+     */
+    public $dates = null;
+
+    /**
      * Constructor. Possible usage:
      * 1. new Indi_Schedule(int|string $since, int|string $until), both arguments should be unixtimes
      *    or dates in format, recognizable with strtotime()
@@ -748,19 +755,21 @@ class Indi_Schedule {
             // Reset $timeA
             $timeA = array();
 
-            // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+            // If $timeA arg is not `false`, and $timeA['idsFn'] is callable
             if (is_callable($hours['idsFn'])) {
 
-                // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
+                // Get `time` entries ids by calling $timeA['idsFn'], passing $date amonth other
                 // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
-                $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+                $info = $hours['idsFn']($hours['owner'], $hours['event'], $date);
 
-                // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
-                if ($timeIdA === false) $timeA = false;
-                else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+                // If idsFn call returned false set $timeA to be false
+                if ($info === false) $timeA = false;
+
+                // Else set $timeA to be an array of actual hours in 'H:i' format, got by `time` ids
+                else foreach (ar($info['time']) as $timeId) $timeA[] = timeHi($timeId);
 
             // Else use as is
-            } else $timeA = $hours;
+            } else $timeA = isset($hours['idsFn']['time']) ? ar($hours['idsFn']['time']) : false;
 
             // Do
             do {
@@ -844,19 +853,21 @@ class Indi_Schedule {
         // Convert $step arg to seconds
         $step = _2sec($step);
 
-        // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+        // If $timeA arg is not `false`, and $timeA['idsFn'] is callable
         if (is_callable($hours['idsFn'])) {
 
-            // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
+            // Get `time` entries ids by calling $timeA['idsFn'], passing $date amonth other
             // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
-            $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+            $info = $hours['idsFn']($hours['owner'], $hours['event'], $date);
 
-            // If $timeA is still not `false` - collect actual hours in 'H:i' format by `time` ids
-            if ($timeIdA === false) $timeA = false;
-            else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+            // If idsFn call returned false set $timeA to be false
+            if ($info === false) $timeA = false;
 
-            // Else use as is
-        } else $timeA = $hours;
+            // Else set $timeA to be an array of actual hours in 'H:i' format, got by `time` ids
+            else foreach (ar($info['time']) as $timeId) $timeA[] = timeHi($timeId);
+
+        // Else use as is
+        } else $timeA = isset($hours['idsFn']['time']) ? ar($hours['idsFn']['time']) : false;
 
         // If $timeA is array
         if (is_array($timeA)) {
@@ -1134,21 +1145,28 @@ class Indi_Schedule {
             // Reset $timeA
             $timeA = array();
 
-            // If $timeA arg is not `false`, and $timA['idsFn'] is callable
+            // If $timeA arg is not `false`, and $timeA['idsFn'] is callable
             if (is_callable($hours['idsFn'])) {
 
                 // Get `time` entries ids by calling $timA['idsFn'], passing $date amonth other
                 // arguments, so ids-fn can return `time` entries ids depending on certain date, if need
-                $timeIdA = $hours['idsFn']($hours['owner'], $hours['event'], $date);
+                $info = $hours['idsFn']($hours['owner'], $hours['event'], $date);
 
                 // If idsFn call returned false set $timeA to be false
-                if ($timeIdA === false) $timeA = false;
+                if ($info === false) $timeA = false; else {
 
-                // Else set $timeA to be an array of actual hours in 'H:i' format, got by `time` ids
-                else foreach (ar($timeIdA) as $timeId) $timeA[] = timeHi($timeId);
+                    // Else set $timeA to be an array of actual hours in 'H:i' format, got by `time` ids
+                    foreach (ar($info['time']) as $timeId) $timeA[] = timeHi($timeId);
+
+                    // Get duration of how long space-owner is available at those times
+                    $tspan = $info['span'];
+                }
 
             // Else use as is
-            } else $timeA = $hours;
+            } else {
+                $timeA = ar($hours['idsFn']['time']);
+                $tspan = $hours['idsFn']['span'];
+            }
 
             // $timeA is array (even empty array)
             if (is_array($timeA)) {
@@ -1159,7 +1177,7 @@ class Indi_Schedule {
                 // Setup space-owner working hours as 'busy' spaces within inverted schedule
                 // We do that because all other spaces will be 'free' after that
                 // and we'll use that 'free' spaces as 'busy' spaces within current schedule
-                foreach ($timeA as $time) $inverted->busy($daystamp + _2sec($time . ':00'), 3600);
+                foreach ($timeA as $time) $inverted->busy($daystamp + _2sec($time . ':00'), $tspan);
 
                 // Use 'free' spaces' of inverted day-schedule to create 'busy' spaces within current schedule
                 foreach ($inverted->spaces() as $ispace) if ($ispace->avail == 'free') {
@@ -1182,18 +1200,20 @@ class Indi_Schedule {
                         // If current space ends earlier than $_since - skip
                         if ($space->until <= $ispace->since) continue;
 
-                        // Calculate the intersection of what we have and what we need
-                        $frame = min($space->until, $ispace->until) - max($space->since, $ispace->since);
+                        // Shortcut to max value
+                        $max = max($space->since, $ispace->since);
 
-                        // If no current space's part, suitable for marking as 'late' found - break
+                        // Calculate the intersection of what we have and what we need
+                        $frame = min($space->until, $ispace->until) - $max;
+
+                        // If no current space's part (suitable for marking as 'rest') found - break
                         if ($frame <= 0) break;
 
                         // Set start seeking point
                         $this->_seek['from'] = $idx;
 
-                        // Mark found part according to $avail arg
-                        if ($this->busy(max($space->since, $ispace->since), $frame, false, false, 'rest'))
-                            jflush(false, 'Can\'t set \'rest\' space');
+                        // Mark found part as 'rest'
+                        if ($this->busy($max, $frame, false, false, 'rest')) jflush(false, 'Can\'t set \'rest\' space');
                     }
                 }
             }
@@ -1204,5 +1224,24 @@ class Indi_Schedule {
 
         // Reset indexes
         $this->_seek['from'] = $this->_seek['last'] = 0;
+    }
+
+    /**
+     * Get all involved dates and collect within $this->dates
+     */
+    public function dates() {
+
+        // Set initial day-timestamp to be the date of the schedule left bound
+        $daystamp = strtotime(date('Y-m-d', $this->_since));
+
+        // While $mark does not exceed schedule's right bound
+        while ($daystamp < $this->_until - $this->_shift['frame']) {
+
+            // Get current date
+            $this->dates []= date('Y-m-d', $daystamp);
+
+            // Jump to next day
+            $daystamp += $this->_shift['system'];
+        }
     }
 }
