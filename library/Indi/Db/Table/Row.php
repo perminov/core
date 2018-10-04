@@ -630,9 +630,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * Note: Use it carefully, and for cases when you're sure the things you want to do are separated
      *
+     * @param bool $amerge If `true - previous value $this->_affected will be kept, but newly affected will have a priority
      * @return int
      */
-    public function basicUpdate() {
+    public function basicUpdate($amerge = false) {
 
         // Data types check, and if smth is not ok - flush mismatches
         $this->scratchy(true);
@@ -643,14 +644,20 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Update it
         $affected = $this->model()->update($update, '`id` = "' . $this->_original['id'] . '"');
 
+        // Backup original data
+        $original = $this->_original;
+
         // Merge $this->_original and $this->_modified arrays into $this->_original array
         $this->_original = (array) array_merge($this->_original, $this->_modified);
 
         // Empty $this->_modified, $this->_mismatch and $this->_affected arrays
-        $this->_modified = $this->_mismatch = $this->_affected = array();
+        $this->_modified = $this->_mismatch = array();
 
         // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
         $this->files(true);
+
+        // Set up `_affected` prop, so it to contain affected field names as keys, and their previous values
+        $this->_affected = array_diff_assoc($original, $this->_original) + ($amerge ? $this->_affected : array());
 
         // Return number of affected rows (1 or 0)
         return $affected;

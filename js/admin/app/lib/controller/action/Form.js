@@ -1072,7 +1072,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 dd = response.responseText.json().disabled;
 
                 // Apply those disabled values, so only non-disabled will remain accessible
-                for (var i in dd) srcField.sbl(i).setDisabledOptions(dd[i]);
+                for (var i in dd) if (sbl = srcField.sbl(i)) sbl.setDisabledOptions(dd[i]);
             }
         });
     }
