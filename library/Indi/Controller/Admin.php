@@ -2881,4 +2881,21 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function adjustExportColumns(&$columnA = array()) {
 
     }
+
+    /**
+     * Show confirmation prompt
+     *
+     * @param $msg
+     */
+    public function confirm($msg) {
+
+        // Get $_GET['answer']
+        $answer = Indi::get()->answer;
+
+        // If no answer, flush confirmation prompt
+        if (!$answer) jconfirm($msg);
+
+        // If answer is 'cancel' - stop request processing
+        else if ($answer == 'cancel') jflush(false);
+    }
 }
