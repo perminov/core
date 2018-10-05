@@ -351,6 +351,8 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
 .i-btn-icon-chart{background-image: url('/i/admin/btn-icon-chart.png');}
 .i-btn-icon-calendar{background-image: url('/i/admin/btn-icon-calendar.png');}
 .i-btn-icon-call{background-image: url('/i/admin/btn-icon-call.png');}
+.i-btn-icon-pay{background-image: url('/i/admin/btn-icon-pay.png');}
+.i-btn-icon-refund{background-image: url('/i/admin/btn-icon-refund.png');}
 
 /* Browsers fixes */
 .x-ie .x-fieldset .x-fieldset-body {
