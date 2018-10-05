@@ -5375,7 +5375,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $schedule->frame($frame = $this->_spaceFrame());
 
         // Collect distinct values for each prop
-        $schedule->distinct($spaceOwners, $this);
+        $schedule->distinct($spaceOwners, $this, $strict);
 
         // Get daily working hours
         $daily = $this->daily(); $disabled = array('date' => array(), 'timeId' => array());

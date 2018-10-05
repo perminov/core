@@ -1001,9 +1001,10 @@ class Indi_Schedule {
      *
      * @param $prop
      * @param $self
+     * @param $strict
      * @return array
      */
-    public function distinct($prop = null, $self = null) {
+    public function distinct($prop = null, Indi_Db_Table_Row $self = null, $strict = false) {
 
         // If no args given - return $this->_distinct as is
         if (!func_num_args() || (!is_string($prop) && !is_array($prop))) return $this->_distinct;
@@ -1024,6 +1025,21 @@ class Indi_Schedule {
             // Also, consider values of event entry's prop
             if ($self->$propI)
                 foreach (ar($self->$propI) as $v)
+                    if (!$this->_distinct[$propI][$v])
+                        $this->_distinct[$propI][$v]['idxA'] = array();
+
+            // If $strict arg is false, this means that current distinct() call was NOT made within $self->validate() call,
+            // and this, in it's turn, means that we're in the process of detecting disabled values for space fields, so
+            // we need to find disabled values among ALL POSSIBLE values (rather than only values used by existing events):
+            // 1 .Initially, the process of detection of disabled values was based only on those values actual usage, so, for
+            // example, some teacher is unavailable at some date and time because he has a classroom scheduled at that exact
+            // date and time.
+            // 2. But the real life shows that existing classroom, scheduled at certain date/time - is not the only reason
+            // of why teacher can be unavailable at that date/time. The second possible reason is that teacher's own settings,
+            // that he had set up, and those settings assume that teacher is available only at, for example 11:00 at Mondays,
+            // and 18:00 at Wednesdays
+            if (!$strict)
+                foreach ($self->getComboData($propI)->column('id') as $v)
                     if (!$this->_distinct[$propI][$v])
                         $this->_distinct[$propI][$v]['idxA'] = array();
 
