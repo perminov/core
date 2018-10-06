@@ -11,7 +11,6 @@ Ext.define('Indi.controller.fields', {
             rowset: {multiSelect: true}
         },
         form: {
-            formItem$StoreRelationAbility: {nojs: true},
             formItem$Relation: {
                 jump: '/entities/form/id/{id}/',
                 considerOn: [{

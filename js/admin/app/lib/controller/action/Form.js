@@ -454,12 +454,32 @@ Ext.define('Indi.lib.controller.action.Form', {
                 show: function(cmp) {
                     cmp.ownerCt.query('> *').forEach(function(sbl){
                         if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
-                    })
+                    });
+
+                    var w = cmp.up('actionrow').getWindow();
+                    var diff = cmp.getHeight() - cmp._wasHeight;
+                    if (diff && cmp.up('actionrow').heightUsage && !cmp.up('actionrow').down('[isSouth]')) {
+                        if (w.restoreSize) w.restoreSize.height += diff;
+                        if (!w.maximized) w.setHeight(w.height + diff);
+                    }
                 },
                 hide: function(cmp) {
                     cmp.ownerCt.query('> *').forEach(function(sbl){
                         if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
                     })
+
+                    var w = cmp.up('actionrow').getWindow();
+                    var diff = cmp.getHeight() - cmp._wasHeight;
+                    if (diff && cmp.up('actionrow').heightUsage && !cmp.up('actionrow').down('[isSouth]')) {
+                        if (w.restoreSize) w.restoreSize.height += diff;
+                        if (!w.maximized) w.setHeight(w.height + diff);
+                    }
+                },
+                beforeshow: function(c) {
+                    c._wasHeight = c.getHeight();
+                },
+                beforehide: function(c) {
+                    c._wasHeight = c.getHeight();
                 }
             },
             getDirtyIcon: function() {

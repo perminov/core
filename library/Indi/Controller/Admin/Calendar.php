@@ -151,7 +151,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     }
 
     /**
-     * Adjust events depending on calendar type, and apply colors to events
+     * Adjust events' *_Row instances depending on calendar type, and apply colors to events
      */
     public function adjustGridDataRowset() {
 
@@ -165,6 +165,20 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
 
         // Apply colors
         $this->applyColors();
+    }
+
+    /**
+     * Adjust events' props-arrays depending on calendar type
+     */
+    public function adjustGridData(&$data) {
+
+        // If calendar can't be used - return
+        if (!$this->spaceFields) return;
+
+        // Adjust events data according to current calendar type
+        if ($this->_excelA)
+            foreach ($data as &$item)
+                $this->{'adjustEventDataFor' . ucfirst($this->type)}($item);
     }
 
     /**
@@ -199,7 +213,28 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      * @param Indi_Db_Table_Row $r
      */
     public function adjustEventForDay($r) {
-        $this->adjustEventForMonth($r);
+        $this->adjustEventForWeek($r);
+    }
+
+    /**
+     * @param array $data
+     */
+    public function adjustEventDataForMonth(&$data) {
+
+    }
+
+    /**
+     * @param array $data
+     */
+    public function adjustEventDataForWeek(&$data) {
+        $this->adjustEventDataForMonth($data);
+    }
+
+    /**
+     * @param array $data
+     */
+    public function adjustEventDataForDay(&$data) {
+        $this->adjustEventDataForWeek($data);
     }
 
     /**
