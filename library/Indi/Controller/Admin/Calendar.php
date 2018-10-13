@@ -358,6 +358,9 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         // If calendar can be used - exclude calendar-fields fields from the list of disabled fields
         if ($this->spaceFields) $this->excludeDisabledFields('spaceSince,spaceUntil');
 
+        // Detect calendar type
+        $this->filtersWHERE();
+
         // Call parent
         return $this->callParent();
     }

@@ -23,6 +23,9 @@
 .x-boundlist-item:last-child {
     border-bottom: none;
 }
+.x-boundlist-item[timeId] {
+    display: inline-block;
+}
 .x-boundlist-item-group *{
     color: inherit;
 }

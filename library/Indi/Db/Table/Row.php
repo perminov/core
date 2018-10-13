@@ -5408,18 +5408,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Prepare $hours arg for busyDates call
                 if (!$ruleA['hours']) $hours = false; else $hours = array(
-                    'idsFn' => $ruleA['hours'],
+                    'idsFn' => $ruleA['hours']['time'],
+                    'only' => $ruleA['hours']['only'],
                     'owner' => $info['entry'],
                     'event' => $this
                 );
 
                 // Setup daily working hours per each date separately
-                // if ($hours) $dateA = $schedule->ownerDaily($hours);
+                if ($hours && !$hours['only']) $schedule->ownerDaily($hours);
 
                 // Collect info about disabled values per each busy date
                 // So for each busy date we will have the exact reasons of why it is busy
                 // Also, fulfil $both array with partially busy dates
-                foreach ($dates = $schedule->busyDates($frame, $both, $hours) as $date)
+                foreach ($dates = $schedule->busyDates($frame, $both, $hours['only'] ? $hours : false) as $date)
                     $busy['date'][$date][] = $id;
 
                 // Get given date's busy hours for current prop's value
@@ -5428,7 +5429,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // containing in $schedule->dates array
                 if ($dates = $hours ? $schedule->dates : $both)
                     foreach ($dates as $date)
-                        foreach ($schedule->busyHours($date, '30m', true, $hours) as $Hi)
+                        foreach ($schedule->busyHours($date, '15m', true, $hours['only'] ? $hours : false) as $Hi)
                             $busy['time'][$date][$Hi][] = $id;
             }
 
