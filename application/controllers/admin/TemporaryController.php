@@ -508,4 +508,29 @@ class Admin_TemporaryController extends Indi_Controller {
         // Exit
         die('ok');
     }
+
+    public function sectionRolesAction() {
+
+        field('section', 'roleIds', array (
+            'title' => 'Доступ',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'combo',
+            'relation' => 'profile',
+            'storeRelationAbility' => 'many',
+            'mode' => 'hidden',
+        ));
+        field('section', 'entityId', array ('title' => 'Сущность'));
+        filter('sections', 'roleIds', true);
+
+        $sectionRs = Indi::model('Section')->fetchAll();
+        $sectionRs->nested('section2action');
+        foreach ($sectionRs as $sectionR) {
+            $sectionR->roleIds = '';
+            foreach ($sectionR->nested('section2action') as $section2actionR)
+                foreach (ar($section2actionR->profileIds) as $roleId)
+                    $sectionR->push('roleIds', $roleId);
+            $sectionR->save();
+        }
+        die('ok');
+    }
 }
