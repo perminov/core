@@ -531,7 +531,7 @@ class Admin_TemporaryController extends Indi_Controller {
                     $sectionR->push('roleIds', $roleId);
             $sectionR->save();
         }
-        enumset('grid', 'toggle', 'h', ['title' => 'Скрыт', 'color' => 'lightgray']);
+        enumset('grid', 'toggle', 'h', array('title' => 'Скрыт', 'color' => 'lightgray'));
         action('goto', array('title' => 'Перейти', 'type' => 's'));
         die('ok');
     }
