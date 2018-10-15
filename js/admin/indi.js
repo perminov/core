@@ -638,20 +638,22 @@ Ext.define('Indi', {
                 }
 
             // Else if `success` prop is set
-            }); else if ('success' in json && 'msg' in json) {
+            }); else if ('success' in json) {
 
                 // If `msg` prop is set - show it within Ext.MessageBox
-                boxA.push({
+                if ('msg' in json) boxA.push({
                     title: Indi.lang[json.success ? 'I_MSG' : 'I_ERROR'],
                     msg: json.msg,
                     buttons: Ext.Msg.OK,
                     icon: Ext.Msg[json.success ? 'INFO' : 'WARNING'],
                     modal: true
                 });
-            }
+
+                // If `json` has `goto` property - open a new browser window
+                if ('goto' in json) window.open(json.goto);
 
             // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
-            else if (json.throwOutMsg) top.window.location.reload();
+            } else if (json.throwOutMsg) top.window.location.reload();
 
             // Fade out loader
             Indi.app.loader(false);

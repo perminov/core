@@ -95,7 +95,7 @@ class Indi_Trail_Admin {
         ));
 
         // Grid columns WHERE clause
-        $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
+        $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` != "n"');
         if (Indi::model('Grid')->fields('access') && Indi::model('Grid')->fields('profileIds')) {
             $gridWHERE[] = '(' . im(array(
                 '`access` = "all"',

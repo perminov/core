@@ -1732,13 +1732,36 @@ function section2action($section, $action, array $ctor = array()) {
 }
 
 /**
- * Get `action` entry by it's alias
+ * Get `action` entry either by alias or by ID, or create/update it
  *
- * @param $alias
+ * @param string|int $alias Action ID or alias
+ * @param array $ctor Props to be involved in insert/update
  * @return Indi_Db_Table_Row|null
  */
-function action($alias) {
-    return Indi::model('Action')->fetchRow('`alias` = "' . $alias . '"');
+function action($alias, array $ctor = array()) {
+
+    // If $alias arg is an integer - assume it's an `action` entry's `id`, otherwise assume it's a `alias`
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
+    // Return `action` entry
+    $actionR = Indi::model('Action')->fetchRow('`' . $byprop . '` = "' . $alias . '"');
+
+    // If $ctor arg is an empty array - return `action` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $alias - is not enough for `action` entry to be created
+    if (!$ctor) return $actionR;
+
+    // If `alias` prop is not defined within $ctor arg - use value given by $alias arg
+    if (!array_key_exists('alias', $ctor)) $ctor['alias'] = $alias;
+
+    // If `action` entry was not found - create it
+    if (!$actionR) $actionR = Indi::model('Action')->createRow();
+
+    // Assign other props and save
+    $actionR->assign($ctor)->save();
+
+    // Return `action` entry (newly created, or existing but updated)
+    return $actionR;
 }
 
 /**

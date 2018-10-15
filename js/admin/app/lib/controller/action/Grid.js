@@ -265,7 +265,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         };
 
         // If current column's field is a grouping field - hide it
-        if (me.ti().section.groupBy == field.id) cfg.hidden = true;
+        if (me.ti().section.groupBy == field.id || column.toggle == 'h') cfg.hidden = true;
 
         // Return
         return cfg;
