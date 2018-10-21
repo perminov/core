@@ -4898,10 +4898,23 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Create and append nested rows, having keys
-        foreach ($new as $id) Indi::model($nested)->createRow(array_merge(array(
-            $this->table() . 'Id' => $this->id,
-            $connector => $id
-        ), $ctor), true)->save();
+        foreach ($new as $id) {
+
+            // Create row
+            $r = Indi::model($nested)->createRow();
+
+            // Setup main props
+            $r->assign(array($this->table() . 'Id' => $this->id, $connector => $id));
+
+            // Setup prop, presented by $ctor arg.
+            $_ = is_callable($ctor) ? $ctor($r, $id, $connector) : $ctor;
+
+            // If callback return value is boolean false - skip
+            if ($_ === false) continue;
+
+            // Assign additional props and save
+            $r->assign($_)->save();
+        }
 
         // Return info about values that were kept, deleted and added
         return array('del' => $del, 'kpt' => $kpt, 'new' => $new);
