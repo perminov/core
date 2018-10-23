@@ -278,19 +278,46 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
     /**
      * Append row to current rowset, using $original argument as the base data for
-     * construction of a row, that will be appended
+     * construction of a row, that will be appended to the end, or injected before certain row
      *
      * @param array|Field_Row $original
+     * @param string $before
      * @return Field_Rowset_Base|Indi_Db_Table_Rowset|Field_Rowset
      */
-    public function append($original) {
+    public function append($original, $before = null) {
 
-        // Push alias into aliases and id into ids
-        $this->_aliases[$original instanceof Field_Row ? $original->alias : $original['alias']] = $this->_count;
-        $this->_ids[$original instanceof Field_Row ? $original->id : $original['id']] = $this->_count;
+        $id = $original instanceof Field_Row ? $original->id : $original['id'];
+        $alias = $original instanceof Field_Row ? $original->alias : $original['alias'];
 
-        // Call parent
-        $this->callParent();
+        // If $before arg is not given, or is, but ot found among the keys of $this->_aliases
+        if (!$before || !array_key_exists($before, $this->_aliases)) {
+
+            // Push alias into aliases and id into ids
+            $this->_aliases[$alias] = $this->_count;
+            $this->_ids[$id] = $this->_count;
+
+            // Call parent
+            $this->callParent();
+
+        // Else
+        } else {
+
+            // Get index
+            $idx = $this->_aliases[$before];
+
+            // Inject new value in $this->_aliases array
+            $this->_aliases = array_flip($this->_aliases);
+            array_splice($this->_aliases, $idx, 0, array($alias));
+            $this->_aliases = array_flip($this->_aliases);
+
+            // Inject new value in $this->_ids array
+            $this->_ids = array_flip($this->_ids);
+            array_splice($this->_ids, $idx, 0, array($id));
+            $this->_ids = array_flip($this->_ids);
+
+            // Call parent
+            parent::append($original, $idx);
+        }
 
         // Return
         return $this;

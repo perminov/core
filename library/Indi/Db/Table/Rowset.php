@@ -1386,17 +1386,26 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
     /**
      * Append row to current rowset, using $original argument as the base data for
-     * construction of a row, that will be appended
+     * construction of a row, that will be appended to the end, or injected at desired index
      * 
-     * @param array $original
+     * @param array|Indi_Db_Table_Row $original
+     * @param int $index
      * @return Indi_Db_Table_Rowset
      */
-    public function append($original) {
-        
-        // Append
-        $this->_rows[] = $original instanceof Indi_Db_Table_Row
+    public function append($original, $index = null) {
+
+        // Prepare data
+        $append = $original instanceof Indi_Db_Table_Row
             ? $original
             : new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
+
+        // If $before arg is not given - append to th ending
+        if ($index === null) $this->_rows[] = $append;
+
+        // Else inject at desired index
+        else array_splice($this->_rows, $index, 0, [$append]);
+
+        // Increase counters
         $this->_count++;
         $this->_found++;
         
