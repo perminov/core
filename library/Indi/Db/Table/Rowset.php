@@ -1403,7 +1403,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         if ($index === null) $this->_rows[] = $append;
 
         // Else inject at desired index
-        else array_splice($this->_rows, $index, 0, [$append]);
+        else array_splice($this->_rows, $index, 0, array($append));
 
         // Increase counters
         $this->_count++;
