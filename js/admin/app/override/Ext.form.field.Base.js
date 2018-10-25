@@ -137,15 +137,15 @@ Ext.override(Ext.form.field.Base, {
      * @return {Object}
      */
     considerOnData: function() {
-        var me = this, data = {}, v, s;
+        var me = this, data = {}, v, s, sbl;
 
         // Collect satellite values
         if (Ext.isArray(me.considerOn)) {
             me.considerOn.forEach(function(stl){
-                if (me.sbl(stl.name)) {
+                if ((sbl = me.sbl(stl.name)) || me.row) {
 
                     // Get submit value
-                    v = me.sbl(stl.name).getSubmitValue();
+                    v = sbl ? sbl.getSubmitValue() : me.row[stl.name];
 
                     // Get it's string version
                     s = v + '';
