@@ -1,7 +1,15 @@
 Ext.define('Indi.controller.search', {
     extend: 'Indi.Controller',
     actionsConfig: {
+        index: {
+            rowset: {
+                multiSelect: true
+            }
+        },
         form: {
+            formItem$FieldId: {
+                jump: '/fields/form/id/{id}/'
+            },
             formItem$ProfileIds: {
                 allowBlank: true,
                 considerOn: [{
