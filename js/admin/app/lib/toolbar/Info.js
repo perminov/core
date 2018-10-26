@@ -27,5 +27,26 @@ Ext.define('Indi.lib.toolbar.Info', {
 
         // Call parent
         me.callParent();
+    },
+
+    /**
+     * Make inner content scrollable if need
+     */
+    onBoxReady: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent();
+
+        // Add 'mouseenter' handler
+        me.el.down('.i-infotb-inner').on('mouseenter', function(e, dom){
+            var indent = me.innerEl.getTextWidth() - me.getWidth() + 4;
+            if (indent > 0) Ext.get(dom).css('text-indent', '-' + indent + 'px');
+        });
+
+        // Add 'mouseleave' handler
+        me.el.down('.i-infotb-inner').on('mouseleave', function(e, dom){
+            Ext.get(dom).css('text-indent', '0');
+        });
     }
 });
