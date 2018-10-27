@@ -107,6 +107,8 @@ define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Current row cannot be set as parent for itself in field "%s"');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Row with id "%s", specified in field "%s", - is not exists, so can not be set up as parent row');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Row "%s", specified in field "%s", - is a child/descendant row for a current row "%s", so it can not be set up as parent row');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'During your request, one of the operations on the entry of type "');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG2', ' - returned the below errors');
 
 define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Field "%s" is required');
 define('I_ADMIN_ROWSAVE_LOGIN_OCCUPIED', 'Value "%s" of field "%s" is already used as an username for another account');
@@ -158,7 +160,7 @@ define('I_FORM_DATETIME_MINUTES', 'minutes');
 define('I_FORM_DATETIME_SECONDS', 'seconds');
 define('I_COMBO_OF', 'of');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected options is');
-define('I_COMBO_MISMATCH_DISABLED_VALUE', 'This option is unavailable');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Option "%s" is unavailable for selection in field "%s"');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Nothing found using this keyword');
 define('I_COMBO_ODATA_FIELD404', 'Field "%s" is neither real field nor pseudo field');
 define('I_COMBO_GROUPBY_NOGROUP', 'Grouping not set');

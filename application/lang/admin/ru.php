@@ -107,6 +107,8 @@ define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'Вы пока не сделали ник
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Текущая запись не может быть указана как родительская для самой себя в поле "%s"');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Запись с идентификатором "%s", указанным в поле "%s", - не существует, и поэтому не может быть выбрана в качестве родительской');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Запись "%s", указанная в поле "%s", является дочерней/подчиненной по отношению к текущей записи "%s", и поэтому не может быть выбрана в качестве родительской');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG2', ' - выдала следующие ошибки');
 
 define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Поле "%s" обязательно для заполнения');
 define('I_ADMIN_ROWSAVE_LOGIN_OCCUPIED', 'Значение "%s" указанное в поле "%s" уже задействовано в качестве имени пользователя в другой учетной записи');
@@ -158,7 +160,7 @@ define('I_FORM_DATETIME_MINUTES', 'минут');
 define('I_FORM_DATETIME_SECONDS', 'секунд');
 define('I_COMBO_OF', 'из');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количество выбранных опций -');
-define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Это значение недоступно для выбора');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Значение "%s" недоступно для выбора в поле "%s"');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Ничего не найдено');
 define('I_COMBO_ODATA_FIELD404', 'Поле "%s" не является ни реальным полем, ни псевдо-полем');
 define('I_COMBO_GROUPBY_NOGROUP', 'Принадлежность не указана');
