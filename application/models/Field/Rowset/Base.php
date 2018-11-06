@@ -34,11 +34,13 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         // Call parent constructor
         parent::__construct($config);
 
-        // Setup $this->_aliases array
-        if ($config['aliases']) $this->_aliases = array_flip($config['aliases']);
-
-        // Setup $this->_ids array
-        if ($config['ids']) $this->_ids = array_flip($config['ids']);
+        // Foreach indexed prop - setup indexes
+        foreach (array('aliases' => 'alias', 'ids' => 'id') as $index => $prop)
+            $this->{'_' . $index} = array_flip(
+                $config[$index]
+                    ? $config[$index]
+                    : parent::column($prop)
+            );
     }
 
     /**

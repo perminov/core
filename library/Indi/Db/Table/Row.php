@@ -625,15 +625,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      * 3. onBeforeSave()
      * 4. Change-logging
      * 5. Usages checking
-     * 6. Notices
+     * 6. Notices (optional)
      * 7. Space-things
      *
      * Note: Use it carefully, and for cases when you're sure the things you want to do are separated
      *
+     * @param bool $notices If `true - notices will not be omitted
      * @param bool $amerge If `true - previous value $this->_affected will be kept, but newly affected will have a priority
      * @return int
      */
-    public function basicUpdate($amerge = false) {
+    public function basicUpdate($notices = false, $amerge = true) {
 
         // Data types check, and if smth is not ok - flush mismatches
         $this->scratchy(true);
@@ -647,6 +648,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Backup original data
         $original = $this->_original;
 
+        // Check if row (in it's original state) matches each separate notification's criteria,
+        // and remember the results separately for each notification, attached to current row's entity
+        if ($notices) $this->_noticesStep1();
+
         // Merge $this->_original and $this->_modified arrays into $this->_original array
         $this->_original = (array) array_merge($this->_original, $this->_modified);
 
@@ -658,6 +663,10 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Set up `_affected` prop, so it to contain affected field names as keys, and their previous values
         $this->_affected = array_diff_assoc($original, $this->_original) + ($amerge ? $this->_affected : array());
+
+        // Check if row (in it's current/modified state) matches each separate notification's criteria,
+        // and compare results with the results of previous check, that was made before any modifications
+        if ($notices) $this->_noticesStep2($original);
 
         // Return number of affected rows (1 or 0)
         return $affected;
