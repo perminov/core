@@ -5537,6 +5537,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                     }
                 }
             }
+
+            // If current space field is auto-field -  setup list of possible values
+            if ($ruleA['auto']) $this->_system['possible'][$prop] = array_diff($psblA, $disabled[$prop]);
         }
 
         // Append disabled timeIds, for time that is before opening and after closing
@@ -5567,5 +5570,81 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function spacePreloadWHERE() {
         return array();
+    }
+
+    /**
+     * Empty function. TO be redefined in child classes in cases when some some
+     * new value was assigned and it require custom validation to be performed again
+     *
+     * @param $field
+     */
+    public function spaceValidateAutoField($field) {
+
+    }
+
+    /**
+     * Check whether there are some space-fields having values that are in the list of disables values,
+     * and if found - try to find non-disabled values and assign found or build mismatch messages, if
+     * initially/newly assigned values are empty or did not met the requirements of custom validation
+     *
+     * @param $auto
+     */
+    public function spaceMismatches($auto) {
+
+        // Check space-fields, and collect problem-values
+        foreach ($this->spaceDisabledValues(false) as $prop => $disabledA)
+            foreach ($disabledA as $disabledI)
+                if (in($disabledI, $this->$prop))
+                    $this->_mismatch[$prop][] = $disabledI;
+
+        // Foreach space auto-field
+        foreach ($auto as $prop) {
+
+            // Get field shortcut
+            $field = $this->field($prop);
+
+            // While there are possible values remaining
+            // Note: $this->_system['possible'][$prop] is being set up within
+            //       $this->spaceDisabledValues() for field having ['auto' => true] rule
+            while ($this->_system['possible'][$prop]) {
+
+                // If it currently is having zero-value, or non-zero, but it's in the list of disabled values
+                if ($this->zero($prop) || $this->_mismatch[$prop]) {
+
+                    // Pick one of possible values, or zero-value if there are no remaining possible values
+                    // Note: this logic is not ok for multi-value fields
+                    $this->$prop = array_shift($this->_system['possible'][$prop]) ?: $field->zeroValue();
+
+                    // Unset prop's mismatch, as here at this stage mismatch can only be in case if
+                    // current value was in the list of disabled values, but now we assigned a value
+                    // got from $this->_system['possible'][$prop], so now value is surely not in the
+                    // list of disabled values, so we need to unset the mismatch
+                    unset($this->_mismatch[$prop]);
+
+                    // Validate newly-assigned value
+                    if ($this->$prop) $this->spaceValidateAutoField($prop);
+                    else $this->_mismatch[$prop] = sprintf(I_MCHECK_REQ, $field->title);
+                }
+
+                // If still no mismatch - break
+                if (!$this->_mismatch[$prop]) break;
+            }
+        }
+
+        // Walk through fields and their problem-values
+        foreach ($this->_mismatch as $prop => $disabledValueA) if (is_array($disabledValueA)) {
+
+            // Get field shortcut
+            $field = $this->field($prop);
+
+            // Get title of value, that caused the problem
+            if ($field->storeRelationAbility == 'none') $value = $disabledValueA[0];
+            else if ($field->storeRelationAbility == 'one') $value = $this->foreign($prop)->title;
+            else if ($field->storeRelationAbility == 'many') $value =
+                $this->foreign($prop)->select($disabledValueA)->column('title', ', ');
+
+            // Setup mismatch message
+            $this->_mismatch[$prop] = sprintf(I_COMBO_MISMATCH_DISABLED_VALUE, $value, $field->title);
+        }
     }
 }

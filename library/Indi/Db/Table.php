@@ -173,6 +173,9 @@ class Indi_Db_Table
             // Setup satellite-fields (and their rules) for all space-owner fields
             $this->_space['fields']['relyOn'] = $this->_spaceOwnersRelyOn();
 
+            // Setup fields having ['auto' => true] rule
+            $this->_space['fields']['auto'] = $this->_spaceOwnersAuto();
+
             // If current space-scheme assumes that there is a duration-field
             if ($frameCoord = Indi::rexm('~(minuteQty|dayQty|timespan)~', $this->_space['scheme'], 1)) {
 
@@ -1382,10 +1385,19 @@ class Indi_Db_Table
     /**
      * Get space scheme settings
      *
+     * @param string $keyChain Example: 'fields', 'fields.owners'
      * @return string
      */
-    public function space() {
-        return $this->_space;
+    public function space($keyChain = '') {
+
+        // If no $keyChain arg given - return all settings
+        if (!$keyChain) return $this->_space;
+
+        // Foreach key pick value each time going to deeper level
+        foreach(explode('.', $keyChain) as $key) $value = isset($value) ? $value[$key]: $this->_space[$key];
+
+        // Return value
+        return $value;
     }
 
     /**
@@ -1594,6 +1606,25 @@ class Indi_Db_Table
 
         // Return array of satellite-fields and their rules
         return $ownerRelyOn;
+    }
+
+    /**
+     * Collect and return fields that should be auto-filled with one of non-disabled
+     * values in case if it will turn out that it's current value is inaccessible
+     *
+     * @return array
+     */
+    protected function _spaceOwnersAuto() {
+
+        // Declare
+        $ownerAuto = array();
+
+        // Collect auto-fields aliases
+        foreach ($this->_space['fields']['owners'] as $owner => $ruleA)
+            if ($ruleA['auto']) $ownerAuto[] = $owner;
+
+        // Return array of auto-fields aliases
+        return $ownerAuto;
     }
 
     /**
