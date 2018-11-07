@@ -5387,14 +5387,14 @@ class Indi_Db_Table_Row implements ArrayAccess
             ? Indi::schedule($this->since, strtotime($this->until . ' +1 day'))
             : Indi::schedule('month', $this->fieldIsZero('date') ? null : $this->date);
 
+        // Expand schedule's right bound
+        $schedule->frame($frame = $this->_spaceFrame());
+
         // Preload existing events, but do not fill schedule with them
         $schedule->preload($this->_table, array_merge(
             array('`id` != "' . $this->id . '"'),
             $this->spacePreloadWHERE()
         ));
-
-        // Expand schedule's right bound
-        $schedule->frame($frame = $this->_spaceFrame());
 
         // Collect distinct values for each prop
         $schedule->distinct($spaceOwners, $this, $strict);
