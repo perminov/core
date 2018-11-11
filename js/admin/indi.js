@@ -651,9 +651,10 @@ Ext.define('Indi', {
 
                 // If `json` has `goto` property - open a new browser window
                 if ('goto' in json) window.open(json.goto);
+            }
 
-            // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
-            } else if (json.throwOutMsg) top.window.location.reload();
+            // If `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
+            if (json.throwOutMsg) top.window.location.reload();
 
             // Fade out loader
             Indi.app.loader(false);

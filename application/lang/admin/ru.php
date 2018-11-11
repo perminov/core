@@ -10,14 +10,14 @@ define('I_LOGIN_BOX_REMEMBER', 'Запомнить');
 define('I_LOGIN_BOX_ENTER', 'Вход');
 define('I_LOGIN_BOX_RESET', 'Сброс');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');
-define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Укажите имя пользователя');
-define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Укажите пароль');
+define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Имя пользователя не указано');
+define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Пароль не указан');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Нет такого аккаунта');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Вы ввели неправильный пароль');
-define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Ваш аккаунт отключен');
-define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Тип вашего аккаунта отключен');
-define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'В системе пока нет ни одного доступного для вас раздела');
+define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Данный аккаунт отключен');
+define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Тип данного аккаунта отключен');
+define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'В системе пока нет ни одного раздела, доступного этой для учетной записи');
 
 define('I_THROW_OUT_ACCOUNT_DELETED', 'Ваш аккаунт только что был удален');
 define('I_THROW_OUT_PASSWORD_CHANGED', 'Ваш пароль только что был изменен');
