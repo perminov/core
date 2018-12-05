@@ -6,6 +6,24 @@
  */
 class Admin_TemporaryController extends Indi_Controller {
 
+    public function satelliteAction() {
+
+        field('consider', 'required', array (
+            'title' => 'Обязательное',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('consider', 'required', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Да'));
+        enumset('consider', 'required', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+        grid('consider','required', array (
+            'alterTitle' => '[ ! ]',
+            'tooltip' => 'Обязательное',
+        ));
+    }
+
     /**
      * Convert disabledFields-feature to alteredFields-feature
      */

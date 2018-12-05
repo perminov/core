@@ -1098,103 +1098,39 @@ class Indi_Db_Table_Row implements ArrayAccess
         if ($fieldR->satellite && $noSatellite != true) {
 
             // Get satellite field row
-            $satelliteR = $fieldR->foreign('satellite');
+            $sFieldR = $fieldR->foreign('satellite');
 
-            // If we have no satellite value passed as a param, we get it from related row property
-            // or from satellite-field default value
-            if (is_null($satellite)) {
-                if (strlen($this->{$satelliteR->alias})) {
-                    $satellite = $this->{$satelliteR->alias};
-                } else {
-                    $satellite = $satelliteR->compiled('defaultValue');
-                }
-            }
+            // Backup
+            $_ = $this->{$sFieldR->alias};
 
-            // Spoof satellite value, if need
-            $satellite = $this->_spoofSatellite($fieldR->alias, $satelliteR->alias, $satellite);
+            // Get satellite value
+            $this->{$sFieldR->alias} = $sValue = $this->_sValue($fieldR->alias, $sFieldR, $satellite);
 
             // If dependency type is not 'Variable entity'
-            if ($fieldR->dependency != 'e') {
-
-                // Example of situation, that is covered by use of `alternative` logic
-                // 1. Indi Engine have tables `entity`, `field`, `element`, `possibleElementParam`
-                // 2. If somewhere in entity structure i have a field that is using, for example html-editor,
-                //    i want to be able to set some params to this html-editor, such as height, width and etc.
-                // 3. html-editor is a row in `element` table, it has, for example id = 13
-                // 4. All of possible html-editor params - are stored in `possibleElementParam` table, and are linked
-                //    to html-editor by column `elementId` with value = 13
-                // 5. I want to set width=500 for one html-editor, and width=600 to another html-editor
-                // 6. Both 'one' and 'another' html-editor are rows in `field` table, and can be both linked to same
-                //    entity, or to different entities, does not matter
-                // 7. For being able to do action from point 5, i want to go 'Entities > Some test entity >
-                //    Fields > Some html-editor field > Params > Create'
-                // 8. On 'Create' screen there is a form with fieds:
-                //    1. Entity (dropdown list)
-                //    2. Field  (dropdown list)
-                //    3. Param  (dropdown list)
-                //    4. Value  (textarea)
-                // 9. 'Entity' field is a satellite for 'Field' field, and if 'Entity' field value is changed,
-                //    options in 'Field' dropdown list should be refreshed
-                // 10. 'Field' field is a satellite for 'Param' field, and if 'Field' field value is changed,
-                //    options in 'Param' dropdown list should be refreshed
-                // 11. SQL Query for refreshing 'Field' options list, mentioned in point 9 will look like
-                //     SELECT * FROM `field` WHERE `entityId` = "x"
-                // 12. SQL Query for refreshing 'Field' options list, mentioned in point 10 will look like
-                //     SELECT * FROM `possibleElementParam` WHERE `fieldId` = "y"
-                // 13. The problem is that table `possibleElementParam` has no `fieldId` column, and that is why
-                //      here is `alternative` logic is used. Result of `alternative` logic is that:
-                //      1. SQL query will look like
-                //         SELECT * FROM `possibleElementParam` WHERE `elementId` = "z"
-                //      2. "z" - will be a value of `elementId` column of a selected row in 'Field' dropdown
-                if ($fieldR->alternative) {
-
-                    // If we have satellite value passed as a param, we set it as value for $this->{$satelliteR->alias},
-                    // because foreign() menthod use internal row property value, that store a foreign key,
-                    // and do not use any external values
-                    if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
-                    $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
-                    $v = $rowLinkedToSatellite->{$fieldR->alternative};
-                    $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
-                    $alternativeR = Indi::model($satelliteR->relation)->fields($fieldR->alternative);
-                    $where['satellite'] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
-                        && preg_match('/,/', $v)
-                        ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
-                        : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
-
-                // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
-                // we use it's alias instead. Example:
-                // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
-                //    `similarCityId`
-                // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
-                //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
-                //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
-                //    `similarCountryId` column, it has only `countryId` column.
-                // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
-                //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
-                //    `countryId` so the result will be exactly as we need
-                } else if ($satelliteR->satellitealias) {
-
-                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
-                        ? 'CONCAT(",", `' . $satelliteR->satellitealias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
-                        : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
-
-                // Standard logic
-                } else {
-
-                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
-                        ? 'CONCAT(",", `' . $satelliteR->alias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
-                        : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
-                }
-
-                // If satellite-value is zero, and $noSatellite arg is given as null or not explicitly given,
-                // and field's 'allowZeroSatellite' param is 'true' - unset satellite-where
-                if (!$satellite && $noSatellite === null && $fieldR->param('allowZeroSatellite')) unset($where['satellite']);
+            if ($fieldR->dependency != 'e') $this->_comboDataSatelliteWHERE($where, $fieldR, $sFieldR, $sValue, $noSatellite);
 
             // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
-            } else if ($fieldR->dependency == 'e' && $satellite) {
-                $relatedM = Indi::model($satellite);
-            }
+            if ($fieldR->dependency == 'e' && $sValue) $relatedM = Indi::model($sValue);
         }
+
+        // If dependency type is not 'Variable entity'
+        if ($fieldR->dependency != 'e') foreach ($fieldR->nested('consider') as $considerR) {
+
+            // Get consider-field
+            $sField = $considerR->foreign('consider');
+
+            // If it's `storeRelationAbility` prop is 'none' - skip
+            if ($sField->storeRelationAbility == 'none') continue;
+
+            // Get consider-field value
+            $sValue = $this->_sValue($fieldR->alias, $sField);
+
+            // Build part of combo-data WHERE clause related to consider-field
+            $this->_comboDataSatelliteWHERE($where, $fieldR, $sField, $sValue);
+        }
+
+        // Restore
+        if (isset($_)) $this->{$sFieldR->alias} = $_;
 
         // If we have no related model - this happen if we have 'varibale entity' satellite dependency type
         // and current satellite value is not defined - we return empty rowset
@@ -1607,6 +1543,130 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return combo data rowset
         return $dataRs;
+    }
+
+    /**
+     * Get value for satellite/consider field, to be involved in building WHERE clause
+     *
+     * @param $for
+     * @param $satelliteR
+     * @param $sValue
+     * @return mixed
+     */
+    protected function _sValue($for, $satelliteR, $sValue = null) {
+
+        // If we have no satellite value passed as a param, we get it from related row property
+        // or from satellite-field default value
+        if (is_null($sValue)) $sValue = strlen($this->{$satelliteR->alias})
+            ? $this->{$satelliteR->alias}
+            : $sValue = $satelliteR->compiled('defaultValue');
+
+        // Spoof satellite value, if need
+        return $this->_spoofSatellite($for, $satelliteR->alias, $sValue);
+    }
+
+    /**
+     * Build part of combo-data WHERE clause, caused by satellite/consider field
+     *
+     * @param $where
+     * @param $fieldR
+     * @param $satelliteR
+     * @param $satellite
+     * @param null $noSatellite
+     */
+    protected function _comboDataSatelliteWHERE(&$where, $fieldR, $satelliteR, $satellite, $noSatellite = null) {
+
+        // Setup a key, that current satellite's WHERE clause will be set up within $where arg under,
+        // depend on whether current satellite is a basic-satellite, or is a consider-satellite
+        $_wkey = $fieldR->foreign('satellite')->alias == $satelliteR->alias ? 'satellite' : 'consider:' . $satelliteR->alias;
+
+        // Example of situation, that is covered by use of `alternative` logic
+        // 1. Indi Engine have tables `entity`, `field`, `element`, `possibleElementParam`
+        // 2. If somewhere in entity structure i have a field that is using, for example html-editor,
+        //    i want to be able to set some params to this html-editor, such as height, width and etc.
+        // 3. html-editor is a row in `element` table, it has, for example id = 13
+        // 4. All of possible html-editor params - are stored in `possibleElementParam` table, and are linked
+        //    to html-editor by column `elementId` with value = 13
+        // 5. I want to set width=500 for one html-editor, and width=600 to another html-editor
+        // 6. Both 'one' and 'another' html-editor are rows in `field` table, and can be both linked to same
+        //    entity, or to different entities, does not matter
+        // 7. For being able to do action from point 5, i want to go 'Entities > Some test entity >
+        //    Fields > Some html-editor field > Params > Create'
+        // 8. On 'Create' screen there is a form with fieds:
+        //    1. Entity (dropdown list)
+        //    2. Field  (dropdown list)
+        //    3. Param  (dropdown list)
+        //    4. Value  (textarea)
+        // 9. 'Entity' field is a satellite for 'Field' field, and if 'Entity' field value is changed,
+        //    options in 'Field' dropdown list should be refreshed
+        // 10. 'Field' field is a satellite for 'Param' field, and if 'Field' field value is changed,
+        //    options in 'Param' dropdown list should be refreshed
+        // 11. SQL Query for refreshing 'Field' options list, mentioned in point 9 will look like
+        //     SELECT * FROM `field` WHERE `entityId` = "x"
+        // 12. SQL Query for refreshing 'Field' options list, mentioned in point 10 will look like
+        //     SELECT * FROM `possibleElementParam` WHERE `fieldId` = "y"
+        // 13. The problem is that table `possibleElementParam` has no `fieldId` column, and that is why
+        //      here is `alternative` logic is used. Result of `alternative` logic is that:
+        //      1. SQL query will look like
+        //         SELECT * FROM `possibleElementParam` WHERE `elementId` = "z"
+        //      2. "z" - will be a value of `elementId` column of a selected row in 'Field' dropdown
+        if ($fieldR->alternative) {
+
+            // If we have satellite value passed as a param, we set it as value for $this->{$satelliteR->alias},
+            // because foreign() menthod use internal row property value, that store a foreign key,
+            // and do not use any external values
+            if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
+            $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
+            $v = $rowLinkedToSatellite->{$fieldR->alternative};
+            $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
+            $alternativeR = Indi::model($satelliteR->relation)->fields($fieldR->alternative);
+            $where[$_wkey] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
+                && preg_match('/,/', $v)
+                ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
+                : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
+
+        // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
+        // we use it's alias instead. Example:
+        // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
+        //    `similarCityId`
+        // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
+        //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
+        //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
+        //    `similarCountryId` column, it has only `countryId` column.
+        // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
+        //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
+        //    `countryId` so the result will be exactly as we need
+        } else if ($satelliteR->satellitealias) {
+
+            $where[$_wkey] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                ? 'CONCAT(",", `' . $satelliteR->satellitealias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
+                : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
+
+        // Standard logic
+        } else {
+
+            $where[$_wkey] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
+                ? 'CONCAT(",", `' . $satelliteR->alias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
+                : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
+        }
+
+        // If satellite-value is zero
+        if (!$satellite) {
+
+            // If current satellite is a basic-satellite
+            if ($_wkey == 'satellite') {
+
+                // If $noSatellite arg is given as null or not explicitly given,
+                // and field's 'allowZeroSatellite' param is 'true' - unset satellite-where
+                if ($noSatellite === null && $fieldR->param('allowZeroSatellite')) unset($where['satellite']);
+
+            // Else if current satellite is a `consider`-satellite
+            } else {
+
+                // Unset
+                unset($where[$_wkey]);
+            }
+        }
     }
 
     /**
@@ -4953,13 +5013,21 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If $prop prop does not deal with foreign-keys
         if (!$entityId = $this->field($prop)->relation) return;
 
+        // If $ctor arg is 'check' - return true
+        if ($ctor == 'check') return true;
+
         // Create new entry
         $entry = Indi::model($entityId)->createRow(array_merge(array(
             'title' => $this->$prop
         ), $ctor), true);
 
-        // Save entry
-        $entry->save();
+        // Build WHERE clause to detect whether such entry is already exist
+        $where = array();
+        foreach ($entry->modified() as $key => $value)
+            $where[] = Indi::db()->sql('`' . $key . '` = :s', $value);
+
+        // Check whether such entry is already exist, and if yes - use existing, or save new otherwise
+        if ($already = Indi::model($entityId)->fetchRow($where)) $entry = $already; else $entry->save();
 
         // Assign or append new entry's id, depend of field's storeRelationAbility
         if ($field->storeRelationAbility == 'one') $this->$prop = $entry->id;

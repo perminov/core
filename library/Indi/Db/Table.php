@@ -1591,20 +1591,34 @@ class Indi_Db_Table
         // Collect satellite-fields for all space-owner fields
         foreach ($this->_space['fields']['owners'] as $owner => $ruleA) {
 
-            // If current space-owner field has no satellite - skip
-            if (!$sFieldId = $this->_fields->field($owner)->satellite) continue;
+            // If current space-owner field has satellite-field
+            if ($sFieldId = $this->_fields->field($owner)->satellite) {
 
-            // Get satellite-field
-            $sFieldR = $this->_fields->field($sFieldId);
+                // Get satellite-field
+                $sFieldR = $this->_fields->field($sFieldId);
 
-            // Setup shortcut for satellite-field's `storeRelationAbility` prop
-            $sra = $sFieldR->storeRelationAbility;
+                // Setup shortcut for satellite-field's `storeRelationAbility` prop
+                $sra = $sFieldR->storeRelationAbility;
 
-            // Setup rules for space-owner field's satellite-field
-            $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
+                // Setup rules for space-owner field's satellite-field
+                $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
+            }
+
+            // If current space-owner field has consider-fields - for each
+            foreach ($this->_fields->field($owner)->nested('consider') as $considerR) {
+
+                // Get consider-field
+                $sFieldR = $this->_fields->field($considerR->consider);
+
+                // Setup shortcut for consider-field's `storeRelationAbility` prop
+                $sra = $sFieldR->storeRelationAbility;
+
+                // Setup rules for space-owner field's consider-field
+                $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
+            }
         }
 
-        // Return array of satellite-fields and their rules
+        // Return array of satellite/consider-fields and their rules
         return $ownerRelyOn;
     }
 

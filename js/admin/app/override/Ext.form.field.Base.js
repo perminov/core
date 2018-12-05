@@ -41,7 +41,7 @@ Ext.override(Ext.form.field.Base, {
      * Append `zeroValue` property initialisation
      */
     constructor: function() {
-        var me = this;
+        var me = this; me.considerOn = [];
         me.callParent(arguments);
         me._constructor();
     },
@@ -174,7 +174,7 @@ Ext.override(Ext.form.field.Base, {
      * Enable current field and fire 'enablebysatellite' event, passing an object containing all satellites values
      */
     enableBySatellites: function(cfg) {
-        var me = this;
+        var me = this, data;
 
         // Enable field
         if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
@@ -182,8 +182,23 @@ Ext.override(Ext.form.field.Base, {
         // Clear value
         if (!cfg.hasOwnProperty('clear') || cfg.clear) me.clearValue();
 
+        // Get data
+        data = me.considerOnData();
+
         // Fire 'enablebysatellite' event
-        me.fireEvent('enablebysatellite', me, me.considerOnData());
+        me.fireEvent('enablebysatellite', me, data);
+
+        // Call 'onConsiderChange' method
+        me.onConsiderChange(cfg, data);
+    },
+
+    /**
+     *
+     * @param сfg
+     * @param data
+     */
+    onConsiderChange: function(сfg, data) {
+
     },
 
     /**

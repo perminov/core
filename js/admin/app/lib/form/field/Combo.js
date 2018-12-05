@@ -599,8 +599,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // If 'clear' argument is boolean true
                 if (clear) me.clearSatellitedCombo();
 
-
-                // Else if satellite value is non-zero
+            // Else if satellite value is non-zero
             } else {
 
                 // Disable/Enable combo
@@ -644,6 +643,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.wand && !me.store.enumset) me.lbarItems.push({
             iconCls: 'i-btn-icon-wand-plus',
             enableToggle: true,
+            name: 'wand',
             enablerEvents: 'keywordnothingfound,keywordfound,keyworderased',
             tooltip: {
                 html: Ext.isString(me.wand) ? me.wand : Indi.lang.I_COMBO_WAND_TOOLTIP,
@@ -701,6 +701,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Call parent
         me.callParent(arguments);
+
+        // Create a shortcut to wand-button
+        if (me.wand) me.wand = me.lbar.down('[name=wand]');
 
         // Setup keyboard handlers
         me.keywordEl.on({
@@ -2315,6 +2318,59 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
+     * If some consider-field was changed - reload current field's combo data
+     *
+     * @param sbl
+     * @param data
+     */
+    onConsiderChange: function (sbl, data) {
+        var me = this, stl, request = {mode: 'refresh-children'};
+
+        // Do not refresh children if `satellite` flag within consider-config is non-true
+        if (!sbl.satellite) return;
+
+        // Find satellite and append it to request params
+        if (stl = me.satellite ? me.ctx().ti().fields.r(me.satellite) : false)
+            if (stl = me.sbl(stl.alias))
+                request['satellite'] = stl.hiddenEl.val()
+
+        // Refresh options
+        me.remoteFetch(request);
+    },
+
+    /**
+     * Append consider-fields into considerOn array, if not yet in there
+     *
+     * @private
+     */
+    _afterRender: function() {
+        var me = this, consider, idxO = {}, name;
+
+        // If current field is a foreign-key-field, and is have consider-fields
+        if (me.field.storeRelationAbility != 'none' && me.field._nested && (consider = me.field._nested['consider'])) {
+
+            // Collect indexes
+            me.considerOn.forEach(function(cfg, idx){ idxO[cfg.name] = idx; });
+
+            // Foreach consider field
+            consider.forEach(function(consider){
+
+                // Get name
+                name = consider._foreign['consider'].alias;
+
+                // If such field mentioned within considerOn - merge
+                if (name in idxO) Ext.merge(me.considerOn[idxO[name]], {required: consider.required == 'y', satellite: true});
+
+                // Else create new item in me.considerOn array
+                else me.considerOn.push({name: name, required: consider.required == 'y', satellite: true});
+            });
+        }
+
+        // Call parent
+        me.callParent();
+    },
+
+    /**
      * Inject additional possible error check, related to
      * 1. Conformance of current value to `maxSelected` property (only if `multiSelect` is `true`)
      * 2. None of currently selected values are in the `disabledOptions` list
@@ -2555,7 +2611,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (requestData.mode == 'refresh-children') {
 
                 // Disable
-                me.setDisabled(true);
+                if (!me.wand || me.wand.hidden) me.setDisabled(true);
 
                 // Fire 'refreshchildren' event
                 me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
@@ -2827,7 +2883,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     if (me.store.optgroup)
                         me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                    // Else if fetched options should be appended to current options list
+                // Else if fetched options should be appended to current options list
                 } else if (data.more == 'lower') {
 
                     // If we are dealing with tree of results, we should merge existing options tree
@@ -2886,8 +2942,14 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Enable field
         if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
 
+        // Get data
+        data = me.considerOnData();
+
         // Fire 'enablebysatellite' event
-        me.fireEvent('enablebysatellite', me, me.considerOnData());
+        me.fireEvent('enablebysatellite', me, data);
+
+        // Call 'onConsiderChange' method
+        me.onConsiderChange(cfg, data);
     },
 
     /**

@@ -341,8 +341,10 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     var south, already, qs = '';
 
                     // If we are
-                    if (this.ctx().rowset.space.since) qs = 'since/' + this.ctx().rowset.space.since + '/';
-                    if (this.ctx().rowset.space.until) qs += 'until/' + this.ctx().rowset.space.until + '/';
+                    if (this.ctx().rowset.space) {
+                        if (this.ctx().rowset.space.since) qs = 'since/' + this.ctx().rowset.space.since + '/';
+                        if (this.ctx().rowset.space.until) qs += 'until/' + this.ctx().rowset.space.until + '/';
+                    }
 
                     // If Ctrl-key is pressed
                     if (Ext.EventObject.ctrlKey) {
