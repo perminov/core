@@ -104,4 +104,16 @@ class Admin_SectionsController extends Indi_Controller_Admin {
     public function exportAction() {
         jflush(true, '<textarea style="width: 500px; height: 400px;">' . $this->row->export() . '</textarea>');
     }
+
+    /**
+     * todo: make 'Inversion' checkbox-field for filters
+     */
+    public function indexAction() {
+
+        //
+        Indi::trail()->model->fields('roleIds')->storeRelationAbility = 'one';
+
+        // Call parent
+        $this->callParent();
+    }
 }

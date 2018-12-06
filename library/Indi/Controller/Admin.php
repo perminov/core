@@ -460,11 +460,14 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If current admin is not alternate - return
         if (!Indi::admin()->alternate) return;
 
+        // Get alternate-connector
+        $af = Indi::admin()->alternate(Indi::trail($trailStepsUp)->model->table());
+
         // If one of model's fields relates to alternate
-        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields(Indi::admin()->alternate . 'Id'))
-            return $alternateFieldR->storeRelationAbility == 'many'
-                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . Indi::admin()->alternate . 'Id' . '`)'
-                : '`' . Indi::admin()->alternate . 'Id' . '` = "' . Indi::admin()->id . '"';
+        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields($af))
+            return $alternateFieldR->original('storeRelationAbility') == 'many'
+                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $af . '`)'
+                : '`' . $af . '` = "' . Indi::admin()->id . '"';
 
         // Else if model itself is the same as alternate
         else if (Indi::trail($trailStepsUp)->model->table() == Indi::admin()->alternate)
@@ -1653,6 +1656,16 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected function _findSigninUserData($username, $password, $place = 'admin', $profileId = null,
                                            $level1ToggledSectionIdA = array()) {
 
+        // If $username arg is an instance of Indi_Db_Table_Row class, this means that
+        // there are some user already logged in, but wants to switch to another account
+        if ($username instanceof Indi_Db_Table_Row) {
+
+            // Pick username and password
+            $switchTo = $username;
+            $username = $switchTo->email;
+            $password = $switchTo->password;
+        }
+
         $profileId = Indi::model($place)->fields('profileId') ? '`a`.`profileId`' : '"' . $profileId . '"';
         $adminToggle = Indi::model($place)->fields('toggle') ? '`a`.`toggle` = "y"' : '1';
         return Indi::db()->query('
@@ -1689,7 +1702,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param $password
      * @return array|mixed|string
      */
-    private function _authLevel1($username, $password) {
+    private function _authLevel1($username, $password = null) {
 
         // Get array of most top toggled 'On' sections ids
         $level0ToggledOnSectionIdA = Indi::db()->query('
@@ -1748,7 +1761,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // 5. User have no accessbile sections
         else if (!$data['atLeastOneSectionAccessible']) $error = I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS;
 
-        return $error ? $error : $data;
+        // Return error or signin-data
+        return $error ?: $data;
     }
 
     /**
@@ -2472,10 +2486,36 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function loginAction() {
 
         // Force signin for selected user
-        if (Indi::trail()->model->table() == 'user') $_SESSION['user'] = $this->row->toArray();
+        if (Indi::trail()->model->table() == 'user')  {
 
-        // Redirect
-        $this->redirect();
+            $_SESSION['user'] = $this->row->toArray();
+
+            // Redirect
+            $this->redirect();
+        }
+
+        // Check that current model is linked to some role, and if not - flush failure
+        if (!Indi::trail()->model->hasRole())
+            jflush(false, sprintf('Model "%s" is not linked to any role', Indi::trail()->model->title()));
+
+        // If no username given
+        if (!$this->row->email) $data = I_LOGIN_ERROR_ENTER_YOUR_USERNAME;
+
+        // Else if no password given
+        else if (!$this->row->password) $data = I_LOGIN_ERROR_ENTER_YOUR_PASSWORD;
+
+        // Else try to find user's data
+        else $data = $this->_authLevel1($this->row);
+
+        // If $data is not an array, e.g some error there, output it as json with that error
+        if (!is_array($data)) jflush(false, $data);
+
+        // Else start a session for user and report that sing-in was ok
+        foreach (ar('id,title,email,password,profileId,profileTitle,alternate,mid') as $allowedI)
+            $_SESSION['admin'][$allowedI] = $data[$allowedI];
+
+        // Reload main window for new session data to be picked
+        jflush(true, array('throwOutMsg' => true));
     }
 
     /**
@@ -2699,10 +2739,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                     return;
 
             // Else if belonging mode is represented by 'alternate' concept, and current system user is an alternate
-            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate . 'Id')) {
+            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate(t()->model->table()))) {
 
                 // If current entry does not belongto current system user - return
-                if (Indi::admin()->id == $this->row->$af) return;
+                if (in(Indi::admin()->id, $this->row->$af)) return;
             
             // Else if there is no any kind of belonging
             } else return;

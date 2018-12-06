@@ -460,6 +460,9 @@ class Entity_Row extends Indi_Db_Table_Row {
             // Else if prop contains keys - use aliases instead
             else {
                 if ($prop == 'titleFieldId') $value = field($this->table, $value)->alias;
+                else if ($prop == 'spaceFields') {
+                    $value = ''; if ($sf = $this->foreign('spaceFields')) $value = $sf->column('alias', true);
+                }
             }
 
         // Stringify

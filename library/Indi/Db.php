@@ -176,12 +176,27 @@ class Indi_Db {
                 implode(',', $fieldIdA) . '") ' : '') . 'ORDER BY `move`'
             )->fetchAll();
 
+            // Group them by `fieldId`
             $fEnumsetA = array(); foreach ($enumsetA as $enumsetI)
                 $fEnumsetA[$enumsetI['fieldId']][] = new Enumset_Row(array(
                     'table' => 'enumset',
                     'original' => $enumsetI
                 ));
             unset($enumsetA);
+
+            // Get info about existing consider-fields
+            $considerA = self::$_instance->query(
+                'SELECT * FROM `consider`' . (is_array($fieldIdA) ? ' WHERE FIND_IN_SET(`fieldId`, "' .
+                implode(',', $fieldIdA) . '") ' : '')
+            )->fetchAll();
+
+            // Group them by `fieldId`
+            $fConsiderA = array(); foreach ($considerA as $considerI)
+                $fConsiderA[$considerI['fieldId']][] = new Indi_Db_Table_Row_Noeval(array(
+                    'table' => 'consider',
+                    'original' => $considerI
+                ));
+            unset($considerA);
 
             // Get info about existing field params
             // 1. Get info about possible field element params
@@ -232,6 +247,17 @@ class Indi_Db {
                         'found' => count($fEnumsetA[$fieldI['original']['id']])
                     ));
                     unset($fEnumsetA[$fieldI['id']]);
+                }
+
+                // Setup nested rowset with 'consider' rows, if there are consider-fields defined for current field
+                if ($fConsiderA[$fieldI['original']['id']]) {
+                    $fieldI['nested']['consider'] = new Indi_Db_Table_Rowset(array(
+                        'table' => 'consider',
+                        'rows' => $fConsiderA[$fieldI['original']['id']],
+                        'rowClass' => 'Indi_Db_Table_Row_Noeval',
+                        'found' => count($fConsiderA[$fieldI['original']['id']])
+                    ));
+                    unset($fConsiderA[$fieldI['id']]);
                 }
 
                 // Setup params, as array, containing default values, and actual values arrays merged to single array

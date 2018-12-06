@@ -399,7 +399,7 @@ class Indi_Controller {
                     }
 
                 // Else if $found field is able to store only one foreign key, use '=' clause
-                } else if ($found->storeRelationAbility == 'one') {
+                } else if ($found->original('storeRelationAbility') == 'one') {
 
                     // Set $any as `false`
                     $any = false;
@@ -429,7 +429,7 @@ class Indi_Controller {
                     }
 
                 // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
-                } else if ($found->storeRelationAbility == 'many') {
+                } else if ($found->original('storeRelationAbility') == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();
@@ -448,7 +448,7 @@ class Indi_Controller {
                     }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array
-                    if (is_string($filterSearchFieldValue) && strlen($filterSearchFieldValue))
+                    if ((is_string($filterSearchFieldValue) || is_scalar($filterSearchFieldValue)) && strlen($filterSearchFieldValue))
                         $filterSearchFieldValue = explode(',', $filterSearchFieldValue);
 
                     // Fill that array
@@ -582,6 +582,34 @@ class Indi_Controller {
 
         // Set $noSatellite flag
         $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
+
+        // Decode consider-fields values
+        $consider = json_decode($post['consider'], true) ?: array();
+
+        // Array for valid values of consider-fields
+        $picked = [];
+
+        // Foreach consider-field, linked to current field
+        foreach ($field->nested('consider') as $considerR) {
+
+            // Get shortcut for consider-field
+            $sField = $considerR->foreign('consider');
+
+            // If consider-field is not a foreign-key field - skip
+            if ($sField->storeRelationAbility == 'none') continue;
+
+            // If consider-field is not given within request data - skip
+            if (!array_key_exists($sField->alias, $consider)) continue;
+
+            // Check format, and if ok - assign value
+            $this->row->mcheck(array($sField->alias => array('rex' => '~^[a-zA-Z0-9,]+$~')), $consider);
+
+            // Collect info about valid values of consider-fields
+            $picked[$sField->alias] = $this->row->{$sField->alias};
+        }
+
+        // Remember picked values within row's system data
+        $this->row->system('consider', $picked);
 
         // If $_POST['selected'] is given, assume combo-UI is trying to retrieve data for an entry,
         // not yet represented in the combo's store, because of, for example, store contains only first

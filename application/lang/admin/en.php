@@ -10,14 +10,14 @@ define('I_LOGIN_BOX_REMEMBER', 'Remember');
 define('I_LOGIN_BOX_ENTER', 'Enter');
 define('I_LOGIN_BOX_RESET', 'Reset');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');
-define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Enter your username');
-define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Enter your password');
+define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Username not specified');
+define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Password not specified');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Such account does not exist');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Wrong password');
-define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Your account is switched off');
-define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Your account is of type, that is switched off');
-define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'There is no sections accessible for you yet');
+define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'This account is switched off');
+define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'This account is of type, that is switched off');
+define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'There is yet no sections, accessible by this account');
 
 define('I_THROW_OUT_ACCOUNT_DELETED', 'Your account had just been deleted');
 define('I_THROW_OUT_PASSWORD_CHANGED', 'Your password had just been changed');
