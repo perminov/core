@@ -160,7 +160,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
                     // Prepend an additional part to WHERE clause array, so if row would be found,
                     // it will mean that that row match all necessary requirements
-                    array_unshift($where, '`id` = "' . Indi::uri('id') . '"');
+                    array_unshift($where, Indi::db()->sql('`id` = :s', Indi::uri('id')));
                     //i($where, 'a');
 
                     // Try to find a row by given id, that, hovewer, also match all requirements,

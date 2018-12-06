@@ -1183,7 +1183,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Alternate WHERE
         if (Indi::admin()->alternate && !$fieldR->ignoreAlternate && !$fieldR->params['ignoreAlternate']
-            && $alternateField = $relatedM->fields(Indi::admin()->alternate . 'Id'))
+            && ($af = Indi::admin()->alternate($relatedM->table()))
+            && ($alternateField = $relatedM->fields($af))
+            && !array_key_exists('consider:' . $af, $where))
             $where['alternate'] = $alternateField->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
                 : '`' . $alternateField->alias . '` = "' . Indi::admin()->id .'"';
@@ -5717,5 +5719,21 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Setup mismatch message
             $this->_mismatch[$prop] = sprintf(I_COMBO_MISMATCH_DISABLED_VALUE, $value, $field->title);
         }
+    }
+
+    /**
+     * Adjust alternate-connector column name
+     * Function can be overridden in child classes
+     *
+     * @param string $table
+     * @return string
+     */
+    public function alternate($table) {
+
+        // If current instance is not an account having some role - return
+        if (!$this->model()->hasRole()) return;
+
+        // Build connector name
+        return $this->alternate . 'Id';
     }
 }

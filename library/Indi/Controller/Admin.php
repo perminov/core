@@ -460,11 +460,14 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If current admin is not alternate - return
         if (!Indi::admin()->alternate) return;
 
+        // Get alternate-connector
+        $af = Indi::admin()->alternate(Indi::trail($trailStepsUp)->model->table());
+
         // If one of model's fields relates to alternate
-        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields(Indi::admin()->alternate . 'Id'))
-            return $alternateFieldR->storeRelationAbility == 'many'
-                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . Indi::admin()->alternate . 'Id' . '`)'
-                : '`' . Indi::admin()->alternate . 'Id' . '` = "' . Indi::admin()->id . '"';
+        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields($af))
+            return $alternateFieldR->original('storeRelationAbility') == 'many'
+                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $af . '`)'
+                : '`' . $af . '` = "' . Indi::admin()->id . '"';
 
         // Else if model itself is the same as alternate
         else if (Indi::trail($trailStepsUp)->model->table() == Indi::admin()->alternate)
@@ -2736,10 +2739,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                     return;
 
             // Else if belonging mode is represented by 'alternate' concept, and current system user is an alternate
-            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate . 'Id')) {
+            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate(t()->model->table()))) {
 
                 // If current entry does not belongto current system user - return
-                if (Indi::admin()->id == $this->row->$af) return;
+                if (in(Indi::admin()->id, $this->row->$af)) return;
             
             // Else if there is no any kind of belonging
             } else return;
