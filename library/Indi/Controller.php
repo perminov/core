@@ -399,7 +399,7 @@ class Indi_Controller {
                     }
 
                 // Else if $found field is able to store only one foreign key, use '=' clause
-                } else if ($found->storeRelationAbility == 'one') {
+                } else if ($found->original('storeRelationAbility') == 'one') {
 
                     // Set $any as `false`
                     $any = false;
@@ -429,7 +429,7 @@ class Indi_Controller {
                     }
 
                 // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
-                } else if ($found->storeRelationAbility == 'many') {
+                } else if ($found->original('storeRelationAbility') == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();

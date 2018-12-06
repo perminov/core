@@ -116,12 +116,15 @@ Ext.override(Ext.form.field.Base, {
      * @return {Boolean} Result of a check
      */
     disableBySatellites: function() {
-        var me = this, disable = false;
+        var me = this, disable = false, sbl;
 
         // Check if any of required satellites currently has a zero-value,
         // and therefore current field should be disabled and zero-valued
         me.considerOn.forEach(function(item){
-            if (item.required) disable = disable || me.sbl(item.name).hasZeroValue();
+            if (!item.required) return;
+            if (disable) return;
+            if (!(sbl = me.sbl(item.name))) return;
+            disable = sbl.hasZeroValue();
         });
 
         // Disable current field, and assign a zero-value to it
