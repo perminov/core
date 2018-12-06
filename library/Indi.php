@@ -2038,7 +2038,7 @@ class Indi {
     public static function lwget($url) {
 
         // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
-        $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+        $url = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . PRE . $url;
 
         // Get request headers, and declare $hrdS variable for collecting stringified headers list
         $hdrA = apache_request_headers(); $hdrS = '';
@@ -2051,6 +2051,9 @@ class Indi {
 
         // Prepare context options
         $opt = array('http'=> array('method'=> 'GET', 'header'=> $hdrS));
+        
+        // Append ssl settings
+        if ($_SERVER['REQUEST_SCHEME'] == 'https') $opt['ssl'] = array('verify_peer' => false, 'verify_peer_name' => false);
 
         // Create context, for passing as a third argument within file_get_contents() call
         $ctx = stream_context_create($opt);
