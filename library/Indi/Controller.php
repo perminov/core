@@ -584,7 +584,10 @@ class Indi_Controller {
         $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
 
         // Decode consider-fields values
-        $consider = json_decode($post['consider'], true) ?: [];
+        $consider = json_decode($post['consider'], true) ?: array();
+
+        // Array for valid values of consider-fields
+        $picked = [];
 
         // Foreach consider-field, linked to current field
         foreach ($field->nested('consider') as $considerR) {
@@ -600,7 +603,13 @@ class Indi_Controller {
 
             // Check format, and if ok - assign value
             $this->row->mcheck(array($sField->alias => array('rex' => '~^[a-zA-Z0-9,]+$~')), $consider);
+
+            // Collect info about valid values of consider-fields
+            $picked[$sField->alias] = $this->row->{$sField->alias};
         }
+
+        // Remember picked values within row's system data
+        $this->row->system('consider', $picked);
 
         // If $_POST['selected'] is given, assume combo-UI is trying to retrieve data for an entry,
         // not yet represented in the combo's store, because of, for example, store contains only first

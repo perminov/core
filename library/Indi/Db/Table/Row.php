@@ -4822,6 +4822,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If $where arg is an empty string - return
         if (is_string($where) && !strlen($where)) return;
 
+        // If consider data was picked - return
+        if ($this->_system['consider']) return;
+
         // Build alternative WHERE clauses,
         // that will surely provide current value presence within fetched combo data
         $or = array(
