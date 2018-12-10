@@ -581,8 +581,8 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param force
      */
-    setDisabled: function(force, clear, sComboName){
-        var me = this, sComboName = sComboName || me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp(me.bid() + sComboName);
+    setDisabled: function(force, clear, on){
+        var me = this, sComboName = on ? on.name : me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp(me.bid() + sComboName);
 
         // If current combo has a satellite, and satellite combo is an also existing component
         if (sCombo) {
@@ -594,7 +594,7 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (sv == 0) {
 
                 // Disable combo
-                if (!me.field.params.allowZeroSatellite) me.callParent([true]);
+                if (!me.field.params.allowZeroSatellite && (!on || on.required)) me.callParent([true]);
 
                 // If 'clear' argument is boolean true
                 if (clear) me.clearSatellitedCombo();
@@ -2338,7 +2338,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.xtype.match(/^combo\.(form|auto)$/)) {
 
             // Check whether it will be good to disable, and if so - do it
-            me.setDisabled(false, true, sbl.name);
+            me.setDisabled(false, true, sbl);
 
             // If still not disabled - refresh options
             if (!me.disabled) me.remoteFetch(request);
