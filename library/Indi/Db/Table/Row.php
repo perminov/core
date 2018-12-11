@@ -1125,8 +1125,27 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Get consider-field value
             $sValue = $this->_sValue($fieldR->alias, $sField);
 
+            // If consider field's foreign-key field should be used instead of consider field itself
+            if ($considerR->foreign) {
+
+                // Get that foreign-key field
+                $sFieldForeign = $considerR->foreign('foreign');
+
+                // Get it's value
+                $sValueForeign = Indi::model($sField->relation)->fetchRow('`id` = "' . $sValue . '"')->{$sFieldForeign->alias};
+
+                // Spoof variables before passing as __comboDataSatelliteWHERE's arguments
+                $sField = $sFieldForeign; $sValue = $sValueForeign;
+            }
+
+            // Use a custom connector, if defined
+            if ($considerR->connector) $sField->satellitealias = $considerR->foreign('connector')->alias;
+
             // Build part of combo-data WHERE clause related to consider-field
             $this->_comboDataSatelliteWHERE($where, $fieldR, $sField, $sValue);
+
+            // Revert back value of satellite/consider field's `satellitealias` prop
+            if ($considerR->connector) $sField->satellitealias = $sField->original('satellitealias');
         }
 
         // Restore

@@ -22,6 +22,25 @@ class Admin_TemporaryController extends Indi_Controller {
             'alterTitle' => '[ ! ]',
             'tooltip' => 'Обязательное',
         ));
+        $connector = field('consider', 'connector', array (
+            'title' => 'Коннектор',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+        ));
+
+        grid('consider', 'connector', true);
+        if (!Indi::model('Consider')->fetchRow(['`fieldId` = "' . $connector->id . '"']))
+            Indi::model('Consider')->createRow([
+                'entityId' => entity('consider')->id,
+                'fieldId' => $connector->id,
+                'consider' => field('consider', 'fieldId')->id,
+                'foreign' => field('field', 'relation')->id,
+                'required' => 'y'
+            ], true)->save();
+        die('ok');
     }
 
     /**
