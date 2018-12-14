@@ -115,4 +115,40 @@ class Grid_Row extends Indi_Db_Table_Row {
             ($this->foreign('fieldId')->alias ?: $this->alias) . "', " .
             $this->_ctor() . ");";
     }
+
+    /**
+     * If `group` prop was changed, for example, to 'locked' - apply such value to all nested `grid` entries
+     */
+    public function onUpdate() {
+
+        // If `group` prop was not affected - return
+        if (!$this->affected('group')) return;
+
+        // Apply same value of `group` prop to all nested `grid` entries
+        foreach ($this->nested('grid') as $gridR) {
+            $gridR->group = $this->group;
+            $gridR->save();
+        }
+    }
+
+    /**
+     * Prevent `grid` entry's `group` prop from being changed for cases when
+     * current `grid` entry is not a top-level entry, and one of parent
+     * entries has another value of `group` prop
+     *
+     * @return array|mixed
+     */
+    public function validate() {
+
+        // If `group` prop is modified
+        if ($this->isModified('group'))
+
+            // Check parent entries
+            while ($parent = ($parent ? $parent->parent() : $this->parent()))
+                if ($parent->group != $this->group)
+                    $this->_mismatch['group'] = sprintf('One of parent entries has non-same value');
+
+        // Call parent
+        return $this->callParent();
+    }
 }

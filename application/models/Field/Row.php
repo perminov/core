@@ -1360,7 +1360,9 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         if (!$this->columnTypeId) return;
 
         // If this is a enumset field - return it's default value, or return column type default value
-        return $this->relation == 6 ? $this->defaultValue : $this->foreign('columnTypeId')->zeroValue();
+        return $this->relation == 6 && $this->storeRelationAbility == 'one'
+            ? $this->defaultValue
+            : $this->foreign('columnTypeId')->zeroValue();
     }
 
     /**

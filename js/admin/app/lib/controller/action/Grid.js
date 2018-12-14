@@ -267,6 +267,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // If current column's field is a grouping field - hide it
         if (me.ti().section.groupBy == field.id || column.toggle == 'h') cfg.hidden = true;
 
+        // Set `locked` prop
+        if (column.group == 'locked') cfg.locked = true;
+
         // Return
         return cfg;
     },
@@ -683,6 +686,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     hidden: true,
                     columns: me.gridColumnADeep(colI._nested.grid)
                 }
+
+                // Set `locked` prop
+                if (colI.group == 'locked') columnI.locked = true;
 
                 // Check if current column group has at least one non-hidden sub-column
                 // and if so, set `hidden` prop of whole group as `false`

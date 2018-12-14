@@ -18,7 +18,7 @@ class ColumnType extends Indi_Db_Table {
         'TIME' => '00:00:00',
         'DATETIME' => '0000-00-00 00:00:00',
         'ENUM' => '0',
-        'SET' => '0',
+        'SET' => '',
         'BOOLEAN' => '0',
         'VARCHAR(10)' => '000#000000'
     );

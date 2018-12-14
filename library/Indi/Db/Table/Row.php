@@ -5755,4 +5755,18 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Build connector name
         return $this->alternate . 'Id';
     }
+
+    /**
+     * Get parent entry
+     *
+     * @return Indi_Db_Table_Row|Indi_Db_Table_Rowset|null
+     */
+    public function parent() {
+
+        // If current entity has no tree-column - return
+        if (!$tc = $this->model()->treeColumn()) return;
+
+        // Return parent entry
+        return $this->foreign($tc);
+    }
 }
