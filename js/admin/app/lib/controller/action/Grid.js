@@ -1471,7 +1471,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 var grid = editor.grid, ctx = grid.ctx();
 
                 // Make sure pressing ENTER will not cause call of it's ordinary handler
-                grid.preventEnter = true;
+                if (grid.ownerCt.xtype == 'grid') grid.ownerCt.preventEnter = true; else grid.preventEnter = true;
 
                 // Try to save
                 ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(json){

@@ -48,7 +48,11 @@ class Grid_Row extends Indi_Db_Table_Row {
     public function move($direction = 'up', $within = '') {
 
         // If $within arg is not given - move grid column within the section it belongs to
-        if (func_num_args() < 2) $within = '`sectionId` = "' . $this->sectionId . '" AND `gridId` = "' . $this->gridId . '"';
+        $within = im(array(
+            '`sectionId` = "' . $this->sectionId . '"',
+            '`gridId` = "' . $this->gridId . '"',
+            '`group` = "' . $this->group . '"'
+        ), ' AND ');
 
         // Call parent
         return parent::move($direction, $within);
