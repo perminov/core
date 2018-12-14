@@ -344,13 +344,15 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Workaround for cases when value is not found within the store
         // Supported currently only for single-value non-enumset combos
-        if (!me.store.enumset && !me.multiSelect && parseInt(value)
+        if (!me.store.enumset && !me.multiSelect && (value + '').match(/^[0-9]+$/) && parseInt(value)
             && me.xtype == 'combo.form' && me.store.ids.indexOf(parseInt(value)) == -1) {
 
-            me.remoteFetch({selected: value}, function() {
-                me.setValue(value);
-            });
-            return me;
+            if (!(me.wand && me.wand.pressed && !me.wand.hidden)) {
+                me.remoteFetch({selected: value}, function() {
+                    me.setValue(value);
+                });
+                return me;
+            }
         }
 
         // If combo is already rendered
@@ -2342,6 +2344,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
             // If still not disabled - refresh options
             if (!me.disabled) me.remoteFetch(request);
+
+            //
+            if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');
         }
     },
 
@@ -2647,6 +2652,9 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Clear combo, but ensure keyword itself won't be cleared, as here we want validation to be run,
             // so this will indicate that combo is invalid as there was nothing found using given keyword
             me.clearCombo(); me.keywordEl.val(keyword); me.validate();
+
+            //
+            if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');
 
         // Else just validate
         } else me.validate();
