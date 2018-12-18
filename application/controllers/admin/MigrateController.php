@@ -14,6 +14,7 @@ class Admin_MigrateController extends Indi_Controller {
         enumset('grid', 'group', 'locked', array('title' => 'Зафиксированные'));
         section('grid', array('groupBy' => 'group'));
         grid('grid', 'group', true);
+        param('grid', 'gridId', 'groupBy', 'group');
         die('ok');
     }
 }
