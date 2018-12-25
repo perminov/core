@@ -587,7 +587,7 @@ class Indi_Controller {
         $consider = json_decode($post['consider'], true) ?: array();
 
         // Array for valid values of consider-fields
-        $picked = [];
+        $picked = array();
 
         // Foreach consider-field, linked to current field
         foreach ($field->nested('consider') as $considerR) {

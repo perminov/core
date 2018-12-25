@@ -143,7 +143,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // Start websocket server
         preg_match('/^WIN/i', PHP_OS)
             ? exec('start /B php ..' . $wsServer . '')
-            : exec('nohup wget -qO- "'. $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . STD . $wsServer . '" > /dev/null &');
+            : exec('nohup wget -qO- "'. ($_SERVER['REQUEST_SCHEME'] ?: 'http') . '://' . $_SERVER['HTTP_HOST'] . STD . $wsServer . '" > /dev/null &');
 
         // Flush msg
         jflush(true);

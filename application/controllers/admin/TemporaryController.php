@@ -32,14 +32,14 @@ class Admin_TemporaryController extends Indi_Controller {
         ));
 
         grid('consider', 'connector', true);
-        if (!Indi::model('Consider')->fetchRow(['`fieldId` = "' . $connector->id . '"']))
-            Indi::model('Consider')->createRow([
+        if (!Indi::model('Consider')->fetchRow('`fieldId` = "' . $connector->id . '"'))
+            Indi::model('Consider')->createRow(array(
                 'entityId' => entity('consider')->id,
                 'fieldId' => $connector->id,
                 'consider' => field('consider', 'fieldId')->id,
                 'foreign' => field('field', 'relation')->id,
                 'required' => 'y'
-            ], true)->save();
+            ), true)->save();
         die('ok');
     }
 

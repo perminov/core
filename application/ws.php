@@ -161,6 +161,9 @@ while (true) {
         // Decode data
         $data = decode($data);
 
+        // If logging is On - do log
+        if ($ini['log']) file_put_contents('ws.log', print_r($data, true) . "\n", FILE_APPEND);
+        
         // Here we skip messages having 'type' not 'text'
         if ($data['type'] != 'text') continue;
 
