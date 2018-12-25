@@ -1976,7 +1976,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Params
             url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
-                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/' + search,
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/ref/rowset/' + search,
             method: 'POST',
             params: params,
 
