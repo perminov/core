@@ -1931,3 +1931,14 @@ function timeId($Hi = null) {
 function timeHi($timeId = null) {
     return Indi_Schedule::timeHi($timeId);
 }
+
+/**
+ * Echo $then or $else arg depending on whether $if arg is true
+ *
+ * @param bool $if
+ * @param string $then
+ * @param string $else
+ */
+function eif($if, $then, $else = '') {
+    echo $if ? $then : $else;
+}

@@ -1871,7 +1871,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         // Finish building WHERE clause
                         $where[] = '`' . $col . '` ' .
                             ($fieldR->storeRelationAbility == 'many'
-                                ? 'IN(' . (strlen($val) ? $val : 0) . ')'
+                                ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
                                 : '= "' . $val . '"');
 
                         // Fetch foreign row/rows
@@ -2024,15 +2024,15 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($fieldR->foreign('elementId')->alias == 'upload')
                     $alias[] = $fieldR->alias;
 
-            // If no 'upload' fields found - return
-            if (!$alias) return;
-
-            // Use that file upload fields aliases list to build a part of a pattern for use in php glob() function
-            $field = '{' . im($alias) . '}';
+            // Spoof $field arg
+            $field = $alias;
         }
 
         // If value of $field variable is still empty - return
         if (!$field) return;
+
+        // Use file upload fields aliases list to build a part of a pattern for use in php glob() function
+        $field = '{' . im(ar($field)) . '}';
 
         // Get all of the possible files, uploaded using that field, and all their versions
         $fileA = glob($dir . $this->id . '_' . $field . '[.,]*', GLOB_BRACE);
