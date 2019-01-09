@@ -1942,3 +1942,15 @@ function timeHi($timeId = null) {
 function eif($if, $then, $else = '') {
     echo $if ? $then : $else;
 }
+
+/**
+ * Return $then or $else arg depending on whether $if arg is true
+ *
+ * @param bool $if
+ * @param string $then
+ * @param string $else
+ * @return string
+ */
+function rif($if, $then, $else = '') {
+    return $if ? $then : $else;
+}
