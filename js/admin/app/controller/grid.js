@@ -9,7 +9,6 @@ Ext.define('Indi.controller.grid', {
         },
         form: {
             formItem$Alias: {
-                allowBlank: true,
                 considerOn: [{
                     name: 'fieldId'
                 }],
@@ -20,7 +19,6 @@ Ext.define('Indi.controller.grid', {
                 }
             },
             formItem$ProfileIds: {
-                allowBlank: true,
                 considerOn: [{
                     name: 'access'
                 }],
@@ -32,6 +30,16 @@ Ext.define('Indi.controller.grid', {
             },
             formItem$FieldId: {
                 jump: '/fields/form/id/{id}/'
+            },
+            formItem$SummaryText: {
+                considerOn: [{
+                    name: 'summaryType'
+                }],
+                listeners: {
+                    enablebysatellite: function(c, d) {
+                        c.setVisible(d.summaryType == 'text');
+                    }
+                }
             }
         }
     }

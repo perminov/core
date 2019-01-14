@@ -155,4 +155,13 @@ class Grid_Row extends Indi_Db_Table_Row {
         // Call parent
         return $this->callParent();
     }
+
+    /**
+     * Assign zero-value to `summaryText` prop, if need
+     */
+    public function onBeforeSave() {
+
+        // If summaryType is not 'text' - set `summaryText` to be empty
+        if ($this->summaryType != 'text') $this->zero('summaryText', true);
+    }
 }

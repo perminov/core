@@ -241,7 +241,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     gridColumnDefault: function(field, column) {
-        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [], cfg;
+        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [], cfg, sp;
 
         // Setup align
         tdClsA.push('i-grid-column-align-' + ((field.storeRelationAbility == 'none' &&
@@ -269,6 +269,11 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // Set `locked` prop
         if (column.group == 'locked') cfg.locked = true;
+
+        // Set `summaryType` and `summaryText` props
+        if (column.summaryType != 'none')
+            if (sp = column.summaryType == 'text' ? 'summaryText' : 'summaryType')
+                cfg[sp] = column[sp];
 
         // Return
         return cfg;
