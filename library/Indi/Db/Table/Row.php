@@ -2408,6 +2408,11 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public static function safeHtml($html, $allowedTags = '') {
 
+        // If $allowedTags arg is '*' - return as is. This may be useful
+        // in case if there is a need to save raw (for example: parsed) html code
+        // and view it within a textarea rather than some WYSIWYG editor
+        if ($allowedTags == '*') return $html;
+
         // Build list of allowed tags, using tags, passed with $allowedTags arg and default tags
         $allowedS = im(array_unique(array_merge(ar('font,span,br'), ar(strtolower($allowedTags)))));
 

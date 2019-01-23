@@ -93,6 +93,7 @@ class Indi {
         'vk' => '~^https://vk.com/([a-zA-Z0-9_\.]{3,})~',
         'coords' => '/^([0-9]{1,3}+\.[0-9]{1,12})\s*,\s*([0-9]{1,3}+\.[0-9]{1,12}+)$/',
         'timespan' => '/^[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$/',
+        'ipv4' => '~^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$~',
         'json' => '/
           (?(DEFINE)
              (?<number>   -? (?= [1-9]|0(?!\d) ) \d+ (\.\d+)? ([eE] [+-]? \d+)? )
@@ -2432,7 +2433,7 @@ class Indi {
      * Prevent user from doing something when demo-mode is turned On
      */
     public static function demo($flush = true) {
-        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1)
+        if ((Indi::ini('general')->demo && Indi::admin()->profileId != 1) || Indi::admin()->demo == 'y')
             return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
 

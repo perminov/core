@@ -936,9 +936,9 @@ class Indi_Db_Table
         else {
             $data = Indi::db()->query($sql =
                 'SELECT * FROM `' . $this->_table . '`' .
-                    (strlen($where) ? ' WHERE ' . $where : '') .
-                    ($order ? ' ORDER BY ' . $order : '') .
-                    ($offset ? ' LIMIT ' . $offset . ',1' : '')
+                rif(strlen($where), ' WHERE ' . $where) .
+                rif($order, ' ORDER BY ' . $order) .
+                ' LIMIT ' . rif($offset, $offset . ',') . '1'
             )->fetch();
         }
 
