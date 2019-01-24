@@ -1138,14 +1138,24 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $sField = $sFieldForeign; $sValue = $sValueForeign;
             }
 
-            // Use a custom connector, if defined
-            if ($considerR->connector) $sField->satellitealias = $considerR->foreign('connector')->alias;
+            // If current field is linked to some certain entity
+            if ($fieldR->relation) {
 
-            // Build part of combo-data WHERE clause related to consider-field
-            $this->_comboDataSatelliteWHERE($where, $fieldR, $sField, $sValue);
+                // Use a custom connector, if defined
+                if ($considerR->connector) $sField->satellitealias = $considerR->foreign('connector')->alias;
 
-            // Revert back value of satellite/consider field's `satellitealias` prop
-            if ($considerR->connector) $sField->satellitealias = $sField->original('satellitealias');
+                // Build part of combo-data WHERE clause related to consider-field
+                $this->_comboDataSatelliteWHERE($where, $fieldR, $sField, $sValue);
+
+                // Revert back value of satellite/consider field's `satellitealias` prop
+                if ($considerR->connector) $sField->satellitealias = $sField->original('satellitealias');
+
+            // Else it mean that current-field is linked to variable entity, and that entity is identified by $sValue, so
+            } else {
+
+                // Setup model, that combo data will be fetched from
+                $relatedM = Indi::model($sValue);
+            }
         }
 
         // Restore
