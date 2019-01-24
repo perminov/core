@@ -7,7 +7,7 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     alternateClassName: 'Indi.Controller.Action.Rowset.ChangeLog',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action.Rowset.Grid',
+    extend: 'Indi.lib.controller.action.Grid',
 
     // @inheritdoc
     panel: {

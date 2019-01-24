@@ -43,9 +43,19 @@ class Consider_Row extends Indi_Db_Table_Row {
     }
 
     /**
-     * Force `required` prop to be 'y' if dependent field's `relation` prop is zero
+     * @inheritdocs
      */
     public function onBeforeSave() {
-        if ($this->foreign('fieldId')->zero('relation')) $this->required = 'y';
+
+        // If dependent field's `relation` prop is not zero - return
+        if (!$this->foreign('fieldId')->zero('relation')) return;
+
+        // Else:
+        // 1. Set `required` to be 'y',
+        $this->required = 'y';
+
+        // 2. Assign zero-values to `foreign` and `connector` props, as they're applicable
+        // only in cases when dependent field's `relation` prop is not zero
+        $this->zero('foreign,connector', true);
     }
 }

@@ -1814,7 +1814,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->model()->fields($key)) {
 
                 // If field do not store foreign keys - throw exception
-                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e'))
+                if ($fieldR->storeRelationAbility == 'none'
+                    || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
                     throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
                 // Get foreign key value
@@ -1846,9 +1847,11 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                     // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
                     // then model is a value of satellite field. Otherwise model is field's `relation` property
-                    $model = $fieldR->dependency == 'e'
-                        ? $this->{$fieldR->foreign('satellite')->alias}
-                        : $fieldR->relation;
+                    if ($fieldR->relation) $model = $fieldR->relation;
+                    else if ($consider = $fieldR->dependency == 'e'
+                        ? $fieldR->foreign('satellite')->alias
+                        : $fieldR->nested('consider')->at(0)->foreign('consider')->alias)
+                        $model = $this->$consider;
 
                     // Determine a fetch method
                     $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
@@ -5092,7 +5095,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         else {
 
             // Set zero-value for $this->$prop
-            $this->$prop = $this->field($prop)->zeroValue();
+            foreach (ar($prop) as $alias) $this->$alias = $this->field($alias)->zeroValue();
 
             // Return *_Row instance itself
             return $this;

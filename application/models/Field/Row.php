@@ -1205,8 +1205,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             // If column is of type (BIG|SMALL|MEDIUM|)INT
             } else if (preg_match('/INT/', $this->foreign('columnTypeId')->type)) {
 
-                // If column's field have no satellite, or have, but dependency type is not 'Variable entity'
-                if (!$this->satellite || $this->dependency != 'e') {
+                // Do nothing for variable-entity fields. todo: make for variable entity
+                if ($this->relation) {
 
                     // Get the possible foreign keys
                     $setA = Indi::db()->query('
