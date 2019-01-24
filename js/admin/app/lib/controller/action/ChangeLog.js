@@ -20,14 +20,6 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
         }
     },
 
-    // @inheritdoc
-    rowset: {
-        features: [{
-            ftype: 'grouping',
-            groupHeaderTpl: '{name}'
-        }]
-    },
-
     panelDocked$Filter$Keyword: function() {
         return this.panelDockedInner$Keyword();
     },
@@ -56,11 +48,18 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     gridColumn$EntityId: false,
 
     /**
-     * Turn Off Author grid column, as author titles are involved within grouper contents
+     * Turn Off `changerId` grid column, as it's mentioned within group title
      *
      * @param column
      */
     gridColumn$ChangerId: false,
+
+    /**
+     * Turn Off `profileId` grid column, as it's mentioned within group title
+     *
+     * @param column
+     */
+    gridColumn$ProfileId: false,
 
     /**
      * Turn Off Datetime grid column, as datetimes are involved within grouper contents
