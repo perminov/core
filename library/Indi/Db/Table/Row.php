@@ -1154,7 +1154,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             } else {
 
                 // Setup model, that combo data will be fetched from
-                $relatedM = Indi::model($sValue);
+                $relatedM = $sValue ? Indi::model($sValue) : false;
             }
         }
 

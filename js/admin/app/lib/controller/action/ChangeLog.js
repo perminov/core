@@ -62,11 +62,19 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     gridColumn$ProfileId: false,
 
     /**
-     * Turn Off Datetime grid column, as datetimes are involved within grouper contents
+     * Turn Off `datetime` grid column, as datetimes are involved within grouper contents
      *
      * @param column
      */
     gridColumn$Datetime: false,
+
+    /**
+     * Turn Off `key` grid column, as entry title (e.g. "<entity-title> » <entry-title>")
+     * anyway won't be displayed as a separate grid column
+     *
+     * @param column
+     */
+    gridColumn$Key: false,
 
     /**
      * Restrict most of column abilities for 'Field' column

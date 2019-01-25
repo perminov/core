@@ -2337,13 +2337,13 @@ Ext.define('Indi.lib.form.field.Combo', {
                 request['satellite'] = stl.hiddenEl.val()
 
         // If current combo is a form-combo, or auto-combo
-        if (me.xtype.match(/^combo\.(form|auto)$/)) {
+        if (me.xtype.match(/^combo\.(form|auto|filter)$/)) {
 
             // Check whether it will be good to disable, and if so - do it
             me.setDisabled(false, true, sbl);
 
             // If still not disabled - refresh options
-            if (!me.disabled) me.remoteFetch(request);
+            if (!me.disabled && (me.xtype != 'combo.filter' || !me.consistence)) me.remoteFetch(request);
 
             //
             if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');

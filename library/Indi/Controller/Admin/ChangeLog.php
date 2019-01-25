@@ -47,6 +47,9 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
         // If current changeLog-section is for operating on changeLog-entries,
         // nested under some single entry - exclude `key` grid column
         if (Indi::trail(1)->section->entityId) $this->exclGridProp('key');
+
+        // Else force `fieldId`-filter's combo-data to be grouped by `entityId`
+        else Indi::trail()->model->fields('fieldId')->param('groupBy', 'entityId');
     }
 
     /**
@@ -104,6 +107,12 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
 
                 // Unset text value for `entityId` column, as it's already IN $data[$i]['key']
                 unset($data[$i]['entityId']);
+
+                // Append build text value for `key` column to text value for `changerId` column
+                $data[$i]['changerId'] .= ' - ' . $data[$i]['key'];
+
+                // Unset text value for `key` column, as it's already IN $data[$i]['changerId']
+                unset($data[$i]['key']);
             }
 
             // Encode <iframe> tag descriptors into html entities

@@ -763,7 +763,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store,
-            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false
+            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false,
+            consistence: filter.consistence
         }
     },
 

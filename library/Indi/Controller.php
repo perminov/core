@@ -725,12 +725,23 @@ class Indi_Controller {
                 if ($summary = $this->rowsetSummary()) $pageData['summary'] = $summary;
 
                 // Provide combo filters consistence
-                foreach (Indi::trail()->filters ?: array() as $filter)
-                    if ($filter->consistence && ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12)) {
-                        $alias = $filter->foreign('fieldId')->alias;
-                        Indi::view()->filterCombo($filter, 'extjs');
-                        $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
-                    }
+                foreach (Indi::trail()->filters ?: array() as $filter) {
+
+                    // If `consistence` flag is Off - ckip
+                    if (!$filter->consistence) continue;
+
+                    // Filter-field shortcut
+                    $field = $filter->foreign('fieldId');
+
+                    // If filter-field is not a foreign-key field, and is not boolean-field
+                    if ($field->storeRelationAbility == 'none' && $field->columnTypeId != 12)  continue;
+
+                    // Setup combo data
+                    Indi::view()->filterCombo($filter);
+
+                    // Pick combo data
+                    $pageData['filter'][$field->alias] = array_pop(Indi::trail()->filtersSharedRow->view($field->alias));
+                }
 
                 // Adjust json export
                 $this->adjustJsonExport($pageData);

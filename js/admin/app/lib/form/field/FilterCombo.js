@@ -45,22 +45,6 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         // so we prevent it
         if (me.hiddenEl.val() == '0' && me.hiddenEl.attr('boolean') != 'true' && !me.store.enumset) me.hiddenEl.val('');
 
-        // Execute javascript code, if it was assigned to selected option. The additional clause for execution
-        // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
-        // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
-        // know about the fact of new item was added, it also could be removed, because me.onHiddenChange() (if combo is
-        // running in multiple-value mode) if firing in both cases. So, for the aim of selected item assigned javascript
-        // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
-        if (me.store.enumset && !me.multiSelect) {
-            var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
-                Indi.eval(me.store['data'][index].system.js, me);
-            }
-        }
-
-        // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js && !me.nojs) Indi.eval(me.store.js, me);
-
         // Call superclass setValue method to provide 'change' event firing
         me.getNative().setValue.call(me, me.hiddenEl.val());
 
