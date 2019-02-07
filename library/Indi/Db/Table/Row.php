@@ -5223,6 +5223,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function mcheck($ruleA, $data = array(), $flush = true) {
 
+        // If $flush arg is not explicitly given, override it's default value `true` - to `false`,
+        // for cases when immediate flushing is turned off for current *_Row instance
+        if (func_num_args() < 3 && $this->_system['mflush'] === false) $flush = false;
+
         // Foreach prop having mismatch rules
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
 
