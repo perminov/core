@@ -243,6 +243,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Check conformance to all requirements / Ensure that there are no mismatches
         else if (!count($this->mismatch($check))) return;
 
+        // Setup $mflush flag, indicating whether or not system should immediately flush detected mismatches
+        $mflush = !isset($this->_system['mflush']) || $this->_system['mflush'];
+
+        // If immediate mismatch flushing is turned Off - return
+        if (!$mflush) return;
+
         // Rollback changes
         Indi::db()->rollback();
 
@@ -490,8 +496,15 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function save() {
 
+        // Setup $mflush flag, indicating whether or not system should
+        // immediately flush any mismatches detected using scratchy() and/or validate() methods
+        $mflush = !isset($this->_system['mflush']) || $this->_system['mflush'];
+
         // Data types check, and if smth is not ok - flush mismatches
-        $this->scratchy(true);
+        $this->scratchy($mflush);
+
+        // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+        if (!$mflush && $this->_mismatch) return false;
 
         // If entity, that current entry is an instance of - has non-'none' value of `spaceScheme` prop
         if (($space = $this->model()->space()) && $space['scheme'] != 'none') {
@@ -524,6 +537,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // STILL OK, we do $this->mflush(true) call, as it will do (among other things) data types check again
             $this->mflush(true);
 
+            // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+            if (!$mflush && $this->_mismatch) return false;
+
             // Backup modified data
             $modified = $this->_modified;
 
@@ -544,6 +560,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Check mismatches again, because some additional changes might have been done within $this->onBeforeInsert() call
             $this->mflush(true);
+
+            // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+            if (!$mflush && $this->_mismatch) return false;
 
             // Backup modified data
             $modified = $this->_modified;
@@ -5203,6 +5222,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param bool $flush
      */
     public function mcheck($ruleA, $data = array(), $flush = true) {
+
+        // If $flush arg is not explicitly given, override it's default value `true` - to `false`,
+        // for cases when immediate flushing is turned off for current *_Row instance
+        if (func_num_args() < 3 && $this->_system['mflush'] === false) $flush = false;
 
         // Foreach prop having mismatch rules
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
