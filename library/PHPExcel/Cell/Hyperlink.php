@@ -109,6 +109,14 @@ class PHPExcel_Cell_Hyperlink
     }
 
     /**
+     * @return string
+     */
+    public function getTypeHyperlink()
+    {
+        return $this->isInternal() ? '' : 'External';
+    }
+
+    /**
      * Get hash code
      *
      * @return string    Hash code

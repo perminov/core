@@ -321,12 +321,16 @@ class PHPExcel_Writer_Excel2007_Rels extends PHPExcel_Writer_Excel2007_WriterPar
             if ($iterator->current() instanceof PHPExcel_Worksheet_Drawing
                 || $iterator->current() instanceof PHPExcel_Worksheet_MemoryDrawing) {
                 // Write relationship for image drawing
+                /** @var \PhpOffice\PhpSpreadsheet\Worksheet\Drawing $drawing */
+                $drawing = $iterator->current();
                 $this->writeRelationship(
                     $objWriter,
                     $i,
                     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-                    '../media/' . str_replace(' ', '', $iterator->current()->getIndexedFilename())
+                    '../media/' . str_replace(' ', '', $drawing->getIndexedFilename())
                 );
+
+                $i = $this->writeDrawingHyperLink($objWriter, $drawing, $i);
             }
 
             $iterator->next();
@@ -420,5 +424,33 @@ class PHPExcel_Writer_Excel2007_Rels extends PHPExcel_Writer_Excel2007_WriterPar
         } else {
             throw new PHPExcel_Writer_Exception("Invalid parameters passed.");
         }
+    }
+
+    /**
+     * @param $objWriter
+     * @param PHPExcel_Worksheet_Drawing $drawing
+     * @param $i
+     *
+     * @throws WriterException
+     *
+     * @return int
+     */
+    private function writeDrawingHyperLink($objWriter, $drawing, $i)
+    {
+        if ($drawing->getHyperlink() === null) {
+            return $i;
+        }
+
+        ++$i;
+
+        $this->writeRelationship(
+            $objWriter,
+            $i,
+            'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+            $drawing->getHyperlink()->getUrl(),
+            $drawing->getHyperlink()->getTypeHyperlink()
+        );
+
+        return $i;
     }
 }

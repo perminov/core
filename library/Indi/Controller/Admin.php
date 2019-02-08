@@ -1347,9 +1347,34 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Prepend href with protocol and hostname
                     $a[1] = $protocol . $server . $a[1];
 
-                    // Set cell value as hyperlink
-                    $objPHPExcel->getActiveSheet()->getCell($columnL . $currentRowIndex)->getHyperlink()->setUrl($a[1]);
-                    $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getFont()->setUnderline(true);
+                    // Filter
+                    $url = array_shift(explode(' ', trim($a[1])));
+
+                    // Try detect an image
+                    if (preg_match('/<img src="([^"]+)"/', $value, $src) && $abs = Indi::abs($src[1])) {
+
+                        // Setup additional x-offset for color-box, for it to be centered within the cell
+                        $additionalOffsetX = ceil(($columnI['width']-16)/2);
+
+                        //  Add the image to a worksheet
+                        $objDrawing = new PHPExcel_Worksheet_Drawing();
+                        $objDrawing->setPath($abs);
+                        $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                        $objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                        $objDrawing->setHyperlink(new PHPExcel_Cell_Hyperlink($url));
+                        $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+                        // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                        // because gd image will override cell value otherwise
+                        $value = str_pad('', 6, ' ');
+
+                    // Else
+                    } else {
+
+                        // Set cell value as hyperlink
+                        $objPHPExcel->getActiveSheet()->getCell($columnL . $currentRowIndex)->getHyperlink()->setUrl($url);
+                        $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getFont()->setUnderline(true);
+                    }
                 }
 
                 // Strip html content from $value
