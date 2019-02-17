@@ -1954,3 +1954,23 @@ function eif($if, $then, $else = '') {
 function rif($if, $then, $else = '') {
     return $if ? $then : $else;
 }
+
+/**
+ * @param $since
+ * @param $until
+ * @param $html
+ * @return array
+ */
+function between($since, $until, $html) {
+
+    // Detect whether $until arg is a regular expression
+    $split = preg_match('/^(\/|#|\+|%|~)[^\1]*\1[imsxeu]*$/', $until) ? 'preg_split' : 'explode';
+
+    // Collect items
+    $itemA = [];
+    foreach (preg_split($since, $html) as $i => $_)
+        if ($i) $itemA []= array_shift($split($until, $_));
+
+    // Return collected
+    return $itemA;
+}
