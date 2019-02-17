@@ -8,7 +8,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
     alternateClassName: 'Indi.Controller.Action.Rowset.Grid',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action.Rowset',
+    extend: 'Indi.lib.controller.action.Rowset',
 
     /**
      * Config of panel, that will be used for representing the rowset

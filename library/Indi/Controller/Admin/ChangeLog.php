@@ -36,6 +36,20 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
             ->query('SELECT DISTINCT `changerId` FROM `changeLog`')
             ->fetchAll(PDO::FETCH_COLUMN, 0))
             Indi::trail()->model->fields('changerId')->filter = '`id` IN (' . im($changerIdA) . ') ';
+
+        // Append `was` and `now` columns as they weren't added at the stage
+        // of grid columns autocreation after current section entry was created
+        $this->inclGridProp('was,now');
+
+        // Exclude `changerType` and `monthId` grid columns
+        $this->exclGridProp('changerType,monthId');
+
+        // If current changeLog-section is for operating on changeLog-entries,
+        // nested under some single entry - exclude `key` grid column
+        if (Indi::trail(1)->section->entityId) $this->exclGridProp('key');
+
+        // Else force `fieldId`-filter's combo-data to be grouped by `entityId`
+        else Indi::trail()->model->fields('fieldId')->param('groupBy', 'entityId');
     }
 
     /**
@@ -73,10 +87,33 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
                 if ($fieldR->param('shade'))
                     $shade[$fieldR->id] = true;
 
+        // Set $key flag, indicating whether `key` column is used
+        $key = $data && isset($data[0]['key']);
+
         // Adjust data
         for ($i = 0; $i < count($data); $i++) {
-            $data[$i]['changerId'] = $data[$i]['datetime'] . ' - ' . $data[$i]['changerId'];
-            $data[$i]['key'] = $data[$i]['entityId'] . ' » ' . $data[$i]['key'];
+
+            // Build group title
+            $data[$i]['changerId'] = $data[$i]['datetime'] . ' - ' . $data[$i]['changerId'] . ' [' . $data[$i]['profileId'] . ']';
+
+            // Unset separate values for `datetime` and `profileId` columns, as now they're in group title
+            unset($data[$i]['datetime'], $data[$i]['profileId']);
+
+            // If $key flag is true
+            if ($key) {
+
+                // Extend text value for `key` column
+                $data[$i]['key'] = $data[$i]['entityId'] . ' » ' . $data[$i]['key'];
+
+                // Unset text value for `entityId` column, as it's already IN $data[$i]['key']
+                unset($data[$i]['entityId']);
+
+                // Append build text value for `key` column to text value for `changerId` column
+                $data[$i]['changerId'] .= ' - ' . $data[$i]['key'];
+
+                // Unset text value for `key` column, as it's already IN $data[$i]['changerId']
+                unset($data[$i]['key']);
+            }
 
             // Encode <iframe> tag descriptors into html entities
             $data[$i]['was'] = preg_replace('~(<)(/?iframe)([^>]*)>~', '&lt;$2$3&gt;', $data[$i]['was']);

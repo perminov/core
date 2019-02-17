@@ -1913,6 +1913,58 @@ function param($table, $field, $alias, $value = null) {
 }
 
 /**
+ * Short-hand function that allows to manipulate `consider` entry, identified by $entity, $field and $satellite args.
+ * If only those three args given - function will fetch and return appropriate `consider` entry (or null, if not found)
+ * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `section`
+ * entry, or update existing if found
+ *
+ * @param string $entity Table name of the entity, that dependent field is in
+ * @param string $field Alias of dependent field
+ * @param string $consider Alias of field, that dependent field depends on
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Consider_Row|null
+ */
+function consider($entity, $field, $consider, $ctor = false) {
+
+    // Get `entityId`, `fieldId` and `consider`-id according first 3 args
+    $entityId = entity($entity)->id ?: 0;
+    $fieldId = field($entity, $field)->id ?: 0;
+    $consider = field($entity, $consider)->id ?: 0;
+
+    // Try to find such `consider` entry
+    $considerR = Indi::model('Consider')->fetchRow(array(
+        '`entityId` = "' . $entityId . '"',
+        '`fieldId` = "' . $fieldId . '"',
+        '`consider` = "' . $consider . '"'
+    ));
+
+    // If $ctor arg is non-false and is not an empty array - return found `consider` entry, or null otherwise
+    // This part of this function differs from such part if other similar functions, for example field() function,
+    // because presence of first 3 args - is minimum enough for `consider` entry to be created
+    if (!$ctor && !is_array($ctor)) return $considerR;
+
+    // If any of `sectionId`, `fieldId` and `consider` prop are not defined
+    // within $ctor arg - use values given by $entity, $field and $consider args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('entityId,fieldId,consider') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `consider` entry was not found - create it
+    if (!$considerR) $considerR = Indi::model('Consider')->createRow();
+
+    // Assign some props first
+    foreach (ar('entityId,fieldId,consider') as $prop)
+        if ($ctor[$prop] && $considerR->$prop = $ctor[$prop]) unset($ctor[$prop]);
+
+    // Assign other props and save
+    $considerR->assign($ctor)->save();
+
+    // Return `consider` entry (newly created, or existing but updated)
+    return $considerR;
+}
+
+/**
  * Return timeId for a given 'hh:mm' string, or full array of 'hh:mm' => timeId key-pairs
  *
  * @param null $Hi

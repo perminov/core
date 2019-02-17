@@ -243,6 +243,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Check conformance to all requirements / Ensure that there are no mismatches
         else if (!count($this->mismatch($check))) return;
 
+        // Setup $mflush flag, indicating whether or not system should immediately flush detected mismatches
+        $mflush = !isset($this->_system['mflush']) || $this->_system['mflush'];
+
+        // If immediate mismatch flushing is turned Off - return
+        if (!$mflush) return;
+
         // Rollback changes
         Indi::db()->rollback();
 
@@ -490,8 +496,15 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function save() {
 
+        // Setup $mflush flag, indicating whether or not system should
+        // immediately flush any mismatches detected using scratchy() and/or validate() methods
+        $mflush = !isset($this->_system['mflush']) || $this->_system['mflush'];
+
         // Data types check, and if smth is not ok - flush mismatches
-        $this->scratchy(true);
+        $this->scratchy($mflush);
+
+        // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+        if (!$mflush && $this->_mismatch) return false;
 
         // If entity, that current entry is an instance of - has non-'none' value of `spaceScheme` prop
         if (($space = $this->model()->space()) && $space['scheme'] != 'none') {
@@ -524,6 +537,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // STILL OK, we do $this->mflush(true) call, as it will do (among other things) data types check again
             $this->mflush(true);
 
+            // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+            if (!$mflush && $this->_mismatch) return false;
+
             // Backup modified data
             $modified = $this->_modified;
 
@@ -544,6 +560,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Check mismatches again, because some additional changes might have been done within $this->onBeforeInsert() call
             $this->mflush(true);
+
+            // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+            if (!$mflush && $this->_mismatch) return false;
 
             // Backup modified data
             $modified = $this->_modified;
@@ -1138,14 +1157,24 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $sField = $sFieldForeign; $sValue = $sValueForeign;
             }
 
-            // Use a custom connector, if defined
-            if ($considerR->connector) $sField->satellitealias = $considerR->foreign('connector')->alias;
+            // If current field is linked to some certain entity
+            if ($fieldR->relation) {
 
-            // Build part of combo-data WHERE clause related to consider-field
-            $this->_comboDataSatelliteWHERE($where, $fieldR, $sField, $sValue);
+                // Use a custom connector, if defined
+                if ($considerR->connector) $sField->satellitealias = $considerR->foreign('connector')->alias;
 
-            // Revert back value of satellite/consider field's `satellitealias` prop
-            if ($considerR->connector) $sField->satellitealias = $sField->original('satellitealias');
+                // Build part of combo-data WHERE clause related to consider-field
+                $this->_comboDataSatelliteWHERE($where, $fieldR, $sField, $sValue);
+
+                // Revert back value of satellite/consider field's `satellitealias` prop
+                if ($considerR->connector) $sField->satellitealias = $sField->original('satellitealias');
+
+            // Else it mean that current-field is linked to variable entity, and that entity is identified by $sValue, so
+            } else {
+
+                // Setup model, that combo data will be fetched from
+                $relatedM = $sValue ? Indi::model($sValue) : false;
+            }
         }
 
         // Restore
@@ -1804,7 +1833,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->model()->fields($key)) {
 
                 // If field do not store foreign keys - throw exception
-                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e'))
+                if ($fieldR->storeRelationAbility == 'none'
+                    || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
                     throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
                 // Get foreign key value
@@ -1836,9 +1866,11 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                     // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
                     // then model is a value of satellite field. Otherwise model is field's `relation` property
-                    $model = $fieldR->dependency == 'e'
-                        ? $this->{$fieldR->foreign('satellite')->alias}
-                        : $fieldR->relation;
+                    if ($fieldR->relation) $model = $fieldR->relation;
+                    else if ($consider = $fieldR->dependency == 'e'
+                        ? $fieldR->foreign('satellite')->alias
+                        : $fieldR->nested('consider')->at(0)->foreign('consider')->alias)
+                        $model = $this->$consider;
 
                     // Determine a fetch method
                     $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
@@ -5082,7 +5114,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         else {
 
             // Set zero-value for $this->$prop
-            $this->$prop = $this->field($prop)->zeroValue();
+            foreach (ar($prop) as $alias) $this->$alias = $this->field($alias)->zeroValue();
 
             // Return *_Row instance itself
             return $this;
@@ -5190,6 +5222,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param bool $flush
      */
     public function mcheck($ruleA, $data = array(), $flush = true) {
+
+        // If $flush arg is not explicitly given, override it's default value `true` - to `false`,
+        // for cases when immediate flushing is turned off for current *_Row instance
+        if (func_num_args() < 3 && $this->_system['mflush'] === false) $flush = false;
 
         // Foreach prop having mismatch rules
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {

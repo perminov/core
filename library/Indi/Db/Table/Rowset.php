@@ -985,20 +985,26 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         : $this;
 
             // If field do not store foreign keys - throw exception
-            if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e'))
+            if ($fieldR->storeRelationAbility == 'none'
+                || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
                 throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
             // Declare array for distinct values of foreign keys
             $distinctA = array();
 
             // If field dependency is 'Variable entity'
-            if ($fieldR->dependency == 'e')
+            if ($fieldR->dependency == 'e' || ($fieldR->relation == 0 && $fieldR->nested('consider')->count())) {
+
+                // Get consider-field, e.g. field, that current field depends on
+                $consider = $fieldR->dependency == 'e'
+                    ? $fieldR->foreign('satellite')->alias
+                    : $fieldR->nested('consider')->at(0)->foreign('consider')->alias;
 
                 // Foreach row within current rowset
                 foreach ($this as $r) {
 
                     // Get the id of entity, that current foreign key is related to
-                    $entityId = $r->{$fieldR->foreign('satellite')->alias};
+                    $entityId = $r->$consider;
 
                     // Collect foreign key values, grouped by entity id
                     $distinctA[$entityId] = array_merge(
@@ -1022,7 +1028,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Else if foreign field dependency is not 'Variable entity', that mean that we deal with single entity
             // - entity, that current foreign key is related to
-            else
+            } else
 
                 // Foreach row within current rowset
                 foreach ($this as $r)
@@ -1050,7 +1056,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // their entity ids, so values in $distinctA array will now be truly distinct
             foreach ($distinctA as $entityId => $keys) $distinctA[$entityId] = array_unique($distinctA[$entityId]);
 
-            // Check whether or not current field has a column within databasу table
+            // Check whether or not current field has a column within database table
             $imitated = !array_key_exists($fieldR->alias, $this->at(0)->original());
 
             // For each $entityId => $key pair within $distinctA array we fetch rowsets, that contain all rows that
@@ -1144,9 +1150,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // Get the id of entity, that current row's foreign key is related to. If foreign key field
                 // dependency is 'Variable entity' - entity id is dynamic, that mean is may differ for each row
-                $foreignKeyEntityId = $fieldR->dependency == 'e'
-                    ? $r->{$fieldR->foreign('satellite')->alias}
-                    : $fieldR->relation;
+                $foreignKeyEntityId = $fieldR->relation ?: $r->{$fieldR->dependency == 'e'
+                    ? $fieldR->foreign('satellite')->alias
+                    : $fieldR->nested('consider')->at(0)->foreign('consider')->alias
+                };
 
                 // Get the column name, which value will be used for match
                 $col = $foreignKeyEntityId == 6 ? 'alias' : 'id';

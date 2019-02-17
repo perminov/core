@@ -763,7 +763,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store,
-            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false
+            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false,
+            consistence: filter.consistence
         }
     },
 
@@ -1404,10 +1405,17 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     storeField_Default: function(field) {
+        var type;
+
+        // Get type
+        if (field.foreign('elementId').alias == 'price') type = 'float';
+        else if (field.foreign('elementId').alias == 'number') type = 'int';
+        else type = 'string';
+
+        // Return
         return {
             name: field.alias,
-            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 && !parseInt(field.satellite)
-                ? (field.foreign('elementId').alias == 'price' ? 'float' : 'int') : 'string'
+            type: type
         }
     },
 

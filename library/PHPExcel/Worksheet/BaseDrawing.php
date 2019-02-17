@@ -119,6 +119,13 @@ class PHPExcel_Worksheet_BaseDrawing implements PHPExcel_IComparable
     protected $shadow;
 
     /**
+     * Image hyperlink.
+     *
+     * @var null|Hyperlink
+     */
+    private $hyperlink;
+
+    /**
      * Create a new PHPExcel_Worksheet_BaseDrawing
      */
     public function __construct()
@@ -497,11 +504,29 @@ class PHPExcel_Worksheet_BaseDrawing implements PHPExcel_IComparable
     {
         $vars = get_object_vars($this);
         foreach ($vars as $key => $value) {
-            if (is_object($value)) {
+            if ($key == 'worksheet') {
+                $this->worksheet = null;
+            } elseif (is_object($value)) {
                 $this->$key = clone $value;
             } else {
                 $this->$key = $value;
             }
         }
+    }
+
+    /**
+     * @param null|PHPExcel_Cell_Hyperlink $pHyperlink
+     */
+    public function setHyperlink(PHPExcel_Cell_Hyperlink $pHyperlink = null)
+    {
+        $this->hyperlink = $pHyperlink;
+    }
+
+    /**
+     * @return null|PHPExcel_Cell_Hyperlink
+     */
+    public function getHyperlink()
+    {
+        return $this->hyperlink;
     }
 }
