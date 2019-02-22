@@ -1133,7 +1133,29 @@ class Indi {
                     if ($ns == 'Indi.lang') echo 'Ext.Object.merge(Indi.lang, {name: "' . Indi::ini('lang')->admin . '"});';
 
                 // Echo that file contents
-                } else readfile($file);
+                } else if ($ext == 'css') {
+                
+                    // Get file contents
+                    $txt = file_get_contents($file);
+                    
+                    // Get dir, relative to document root
+                    $dir = pathinfo(preg_replace('~^/(www|coref|core)~', '', $mirrorA[$i]), PATHINFO_DIRNAME);
+                    
+                    // Convert relative paths, mentioned in css files to paths, relative to web root
+                    $txt = preg_replace('!url\((\'|"|)/!', 'url($1' . STD . '/', $txt);
+                    $txt = preg_replace('!url\((\'|"|)(\.\./)!', 'url($1' . STD . $dir .  '/$2', $txt);
+
+                    // Remove comments from css
+                    $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
+
+                    // Remove tabs, excessive spaces and newlines
+                    $txt = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   '), '', $txt);
+                    
+                    // Flush
+                    echo $txt;
+                    
+                // Flush file contents into output buffer
+                } else readfile($file); 
 
                 // Echo ';' if we deal with javascript files. Also flush double newline
                 echo ($ext == 'js' ? ';' : '') . "\n\n";
@@ -1145,20 +1167,8 @@ class Indi {
             // Get output
             $txt = ob_get_clean();
 
-            // If we currently deal with 'css' files
-            if ($ext == 'css') {
-
-                // Convert relative paths, mentioned in css files to paths, relative to web root
-                $txt = preg_replace('!url\((\'|)/!', 'url($1' . STD . '/', $txt);
-                $txt = preg_replace('!url\((\'|"|)\.\./\.\./resources!', 'url($1' . STD . '/library/extjs4/resources', $txt);
-
-                // Remove comments from css
-                $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
-
-                // Remove tabs, excessive spaces and newlines
-                $txt = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   '), '', $txt);
-
-            } else if ($ext == 'js') {
+            // If we currently deal with 'js' files
+            if ($ext == 'js') {
 
                 // Remove comments, return-carets, tabs and pseudo tabs (4 spaces) from js
                 $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
