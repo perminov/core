@@ -2008,21 +2008,198 @@ function rif($if, $then, $else = '') {
 }
 
 /**
- * @param $since
- * @param $until
- * @param $html
+ * Parser function. Get array of content between strings, specified by $since arg and strings specified by $until arg
+ * Both $since and until args can be regular expressions
+ *
+ * @param string $since
+ * @param string $until
+ * @param string $html
  * @return array
  */
 function between($since, $until, $html) {
 
-    // Detect whether $until arg is a regular expression
-    $split = preg_match('/^(\/|#|\+|%|~)[^\1]*\1[imsxeu]*$/', $until) ? 'preg_split' : 'explode';
+    // Regular expression to detect regulat expression
+    $rex = '/^(\/|#|\+|%|~)[^\1]*\1[imsxeu]*$/';
+
+    // Detect whether $since and/or $until args are regular expressions
+    $splitFn_since = preg_match($rex, $since) ? 'preg_split' : 'explode';
+    $splitFn_until = preg_match($rex, $until) ? 'preg_split' : 'explode';
 
     // Collect items
     $itemA = [];
-    foreach (preg_split($since, $html) as $i => $_)
-        if ($i) $itemA []= array_shift($split($until, $_));
+    foreach ($splitFn_since($since, $html) as $i => $_)
+        if ($i) $itemA []= array_shift($splitFn_until($until, $_));
 
     // Return collected
     return $itemA;
+}
+
+/**
+ * Parser function. Get inner html for each node that match regular expression given in $node arg.
+ * If aim is to pick inner html of multiple nodes, all those nodes should be located at same level
+ * of nesting within html-tags tree, given by $html arg.
+ *
+ * Note: this function rely on that all pair tags are closed, for example each '<p>' tag should closed, e.g have '</p>'
+ *
+ * @param string $node Regular expression. For example: '~<div id="results">~' or '~<span class="[^"]*item-info[^"]*">~'
+ * @param string $html Raw html to search in
+ * @return array
+ */
+function innerHtml($node, $html) {
+
+    // Split
+    $chunkA = preg_split($node, $html);
+
+    // If nothing found - return
+    if (($chunkQty = count($chunkA)) < 2) return;
+
+    // Ignore non-pair tags while watching on tag nesting levels
+    $ignore = array_flip(array(
+        'img', 'link', 'meta', 'input', 'br', 'hr', 'base', 'basefont', 'source', 'col', 'embed', 'area', 'param', 'track'
+    ));
+
+    // Regular expression for searching tags (opening an closing)
+    $rex = '~(</?[a-zA-Z-0-9-:]+(?(?= ) [^>]*|)>)~';
+
+    // Initial nesting level
+    $level = 0;
+
+    // Find tags before target node
+    if (!preg_match_all($rex, $chunkA[0], $m)) return;
+
+    // Foreach tag, found before target node
+    foreach (array_shift($m) as $idx => $tag) {
+
+        // If it's non-pair tag - skip
+        if (isset($ignore[$m[1][$idx]])) continue;
+
+        // Current level
+        $level += substr($tag, 1, 1) == '/' ? -1 : 1;
+    }
+
+    // Increment current level to respect target node
+    $level ++;
+
+    // Remember target level
+    $targetLevel = $level;
+
+    // Array for inner html of found nodes
+    $innerHtml = array();
+
+    // Foreach chunk since 2nd
+    for ($i = 1; $i < $chunkQty; $i++) {
+
+        // Reset level, and increment it level because we'll be processing inner html
+        $level = $targetLevel + 1; unset($prevDir);
+
+        // Split html, that appear after target node's opening tag, and capture tags and offsets
+        foreach(preg_split($rex, $chunkA[$i], -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_OFFSET_CAPTURE) as $chunk) {
+
+            // If chunk is not a tag - skip
+            if (!preg_match('~^</?([a-zA-Z-0-9-]+)~', $chunk[0], $m)) continue;
+
+            // If it is a tag, but is a non-pair tag - skip
+            if (isset($ignore[$m[1]])) continue;
+
+            // Setup level change direction
+            $dir = substr($chunk[0], 1, 1) == '/' ? -1 : 1;
+
+            // If direction equal to previous one - apply it
+            if (isset($prevDir) && $prevDir == $dir) $level += $dir;
+
+            // If we finally went back to target level
+            if ($level == $targetLevel) {
+
+                // Get offset
+                $pos = $chunk[1];
+
+                // Stop loop
+                break;
+            }
+
+            // Debug
+            // echo str_pad($level, '3', '0', STR_PAD_LEFT) . str_pad('', $level - $targetLevel, ' ', STR_PAD_LEFT) . $chunk[0] . "\n";
+
+            // Set previous direction
+            $prevDir = $dir;
+        }
+
+        // Return target node inner html
+        $innerHtml []= mb_substr($chunkA[$i], 0, $pos, 'utf-8');
+    }
+
+    // Return inner html of all matched nodes
+    return $innerHtml;
+}
+
+/**
+ * Get array, containing outer html of root nodes, found within raw html, given by $innerHtml arg
+ *
+ * @param string $innerHtml
+ * @param bool $debug
+ * @return array
+ */
+function rootNodes($innerHtml, $debug = false) {
+
+    // Ignore non-pair tags while watching on tag nesting levels
+    $ignoreRex = '~^<(' . implode('|', array(
+        'img', 'link', 'meta', 'input', 'br', 'hr', 'base', 'basefont', 'source', 'col', 'embed', 'area', 'param', 'track'
+    )) . ')~';
+
+    // Regular expression for searching tags (opening an closing)
+    $rex = '~(</?[a-zA-Z-0-9-:]+(?(?= ) [^>]*|)>)~u';
+
+    // Remove raw javascript
+    $innerHtml = str_replace(between('~<script[^>]*>~', '</script>', $innerHtml), '', $innerHtml);
+
+    // Remove raw css
+    $innerHtml = str_replace(between('~<style[^>]*>~', '</style>', $innerHtml), '', $innerHtml);
+
+    // Initial nesting level
+    $level = 0;
+
+    // Root nodes array
+    $rootNodes = array();
+
+    // Split html, that appear after target node's opening tag, and capture tags and offsets
+    foreach($s = preg_split($rex, $innerHtml, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_OFFSET_CAPTURE) as $chunk) {
+
+        // If chunk is not a tag, or is a non-pair tag - skip
+        if (!preg_match($rex, $chunk[0], $m) || preg_match($ignoreRex, $chunk[0])) {
+
+            // Remember last chunk's offset
+            $until = $chunk[1];
+
+            // Goto next chunk
+            continue;
+        }
+
+        // Setup level change direction
+        $dir = substr($chunk[0], 1, 1) == '/' ? -1 : 1;
+
+        // If direction equal to previous one - apply it
+        if (isset($prevDir) && $prevDir === $dir) $level += $dir;
+
+        // Debug
+        if ($debug) str_pad($level, '3', '0', STR_PAD_LEFT) . str_pad('', $level, ' ', STR_PAD_LEFT) . $chunk[0] . "\n";
+
+        // If we finally went back to target level
+        if ($level == 0) {
+
+            // If current chunk is a closing tag - get root node outer html
+            if ($dir == -1) $rootNodes []= substr($innerHtml, $since, $until - $since) . $chunk[0];
+
+            // Else if current chunk is an opening tag - remember offset
+            else $since = $chunk[1];
+        }
+
+        // Remember last chunk's offset
+        $until = $chunk[1];
+
+        // Set previous direction
+        $prevDir = $dir;
+    }
+
+    // Return root nodes
+    return $rootNodes;
 }
