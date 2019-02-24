@@ -297,7 +297,7 @@ class Indi_Controller {
                 }
 
                 // If field is not storing foreign keys
-                if ($found->storeRelationAbility == 'none') {
+                if (!$found || $found->storeRelationAbility == 'none') {
 
                     // If $found field's control element is 'Color'
                     if ($found->elementId == 11) {

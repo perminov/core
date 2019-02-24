@@ -264,7 +264,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
 
             // If used filter is a combobox or multislider, we reload store data immideatly
-            if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
+            if (['combobox', 'combo.filter', 'multislider', 'checkbox'].indexOf(cmp.xtype) != -1) {
                 me.preventViewFocus = true;
                 me.getStore().reload();
 
@@ -698,8 +698,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
 
         // Setup non-regular filters
-        if (me.panel.docked && me.panel.docked.inner && me.panel.docked.inner.filter && me.panel.docked.inner.filter.length)
-        moreItemA = me.push(me.panel.docked.inner.filter, 'panelDocked$Filter', false, function(itemI){
+        if (!arguments.length && me.panel.docked
+            && me.panel.docked.inner && me.panel.docked.inner.filter
+            && me.panel.docked.inner.filter.length) moreItemA
+            = me.push(me.panel.docked.inner.filter, 'panelDocked$Filter', false, function(itemI){
             return Ext.merge({
                 listeners: {
                     change: function(cmp) {
