@@ -2026,7 +2026,7 @@ function between($since, $until, $html) {
     $splitFn_until = preg_match($rex, $until) ? 'preg_split' : 'explode';
 
     // Collect items
-    $itemA = [];
+    $itemA = array();
     foreach ($splitFn_since($since, $html) as $i => $_)
         if ($i) $itemA []= array_shift($splitFn_until($until, $_));
 
