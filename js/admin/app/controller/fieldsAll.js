@@ -5,11 +5,14 @@ Ext.define('Indi.controller.fieldsAll', {
             gridColumn$Mode: {
                 icon: '/i/admin/field/readonly.png',
                 allowCycle: true
+            },
+            gridColumn$StoreRelationAbility: {
+                icon: '/i/admin/btn-icon-multikey.png'
             }
         },
         form: {
             formItem$EntityId: {
-                jump: '/entities/form/id/{id}/',
+                jump: '/entities/form/id/{id}/'
             },
             formItem$Relation: {
                 jump: '/entities/form/id/{id}/',

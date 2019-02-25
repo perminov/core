@@ -46,7 +46,11 @@ class Admin_MigrateController extends Indi_Controller {
             foreach (ar('color,testIds,storeRelationAbility,test,entityId') as $prop)
                 if ($_ = field('user', $prop))
                     $_->delete();
-        /*if ($_ = section('fieldsAll')) $_->delete();
+        entity('columnType', array('titleFieldId' => 'type'));
+        enumset('field', 'storeRelationAbility', 'none', array('title' => '<span class="i-color-box" style="background: white;"></span>Нет'));
+        enumset('field', 'storeRelationAbility', 'one', array('title' => '<span class="i-color-box" style="background: url(/i/admin/btn-icon-login.png);"></span>Да, но для только одного значения ключа'));
+        enumset('field', 'storeRelationAbility', 'many', array('title' => '<span class="i-color-box" style="background: url(/i/admin/btn-icon-multikey.png);"></span>Да, для энного количества значений ключей'));
+        if ($_ = section('fieldsAll')) $_->delete();
         section('fieldsAll', array (
             'sectionId' => 'configuration',
             'entityId' => 'field',
@@ -118,7 +122,8 @@ class Admin_MigrateController extends Indi_Controller {
         filter('fieldsAll', 'entityId', array('alt' => 'Сущность'));
         filter('fieldsAll', 'mode', true);
         filter('fieldsAll', 'relation', array('alt' => 'Ключи'));
-        filter('fieldsAll', 'elementId', array('alt' => 'Элемент'));*/
+        filter('fieldsAll', 'elementId', array('alt' => 'Элемент'));
+        filter('fieldsAll', 'dependency', true);
 
         // Convert satellite-cfg into consider-cfg
         foreach (Indi::model('Field')->fetchAll('`dependency` != "u"') as $fieldR) {
