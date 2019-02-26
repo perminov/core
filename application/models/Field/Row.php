@@ -33,7 +33,6 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             if ($columnName == 'elementId') $value = element($value)->id;
             else if ($columnName == 'columnTypeId') $value = coltype($value)->id;
             else if (in($columnName, 'entityId,relation')) $value = entity($value)->id;
-            else if ($columnName == 'satellite') $value = field($this->entityId, $value)->id;
         }
 
         // Standard __set()
@@ -103,22 +102,11 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      */
     public function deleteColumn() {
 
-        // If current field does have a column
-		if ($this->columnTypeId)
+        // If current field does not have a column
+		if (!$this->columnTypeId) return;
 
-            // If that column is still exist within table structure. Here we do this check, because that column might
-            // have already been deleted, for example in case if we were deleting the whole entity, and one field was
-            // a satellite for another field within that entity, so the satellited-field will be deleted in the process
-            // of deleting satellite-field usages, as satellited-field is using satellite-field, so satellited-field
-            // will be deleted BEFORE satellite-field deletion. And here we do this chech because in that case (whole
-            // entity) deletion system will try to delete satellited-field twice - first at the stage of other field's
-            // usage deletion, and second at the stage of ordinary deletion.
-            if (Indi::db()->query(
-                'SHOW COLUMNS FROM `' . $this->foreign('entityId')->table. '` LIKE "' . $this->alias . '"'
-            )->fetchColumn())
-
-            // Drop that column
-			Indi::db()->query('ALTER TABLE `' . $this->foreign('entityId')->table . '` DROP `' . $this->alias . '`');
+        // Drop that column
+        Indi::db()->query('ALTER TABLE `' . $this->foreign('entityId')->table . '` DROP `' . $this->alias . '`');
 	}
 
     /**
@@ -1244,7 +1232,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         if (!$this->columnTypeId) return;
 
         // If column does not store foreign keys
-        if ($this->relation == 0) {
+        if ($this->storeRelationAbility == 'none') {
 
             // If column store boolean values
             if (preg_match('/BOOLEAN/', $this->foreign('columnTypeId')->type)) {
@@ -1299,52 +1287,46 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                     : 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $idA) . '")')
                 : 'FALSE';
 
-            // If column store foreign keys, but not from `enumset` table
+        // If column store foreign keys, but those keys are from certain single table
+        } else if ($this->relation) {
+
+            // Get the related model
+            $relatedM = Indi::model($this->relation);
+
+            // Declare empty $idA array
+            $idA = array();
+
+            // If title column is `id` and
+            if ($relatedM->titleColumn() == 'id') {
+
+                // If keyword consists from only numeric characters
+                if (preg_match('/^[0-9]+$/', $keyword))
+
+                    // Get the ids
+                    $idA = Indi::db()->query('
+                        SELECT `id` FROM `' . $relatedM->table() . '` WHERE `id` LIKE :s
+                    ', '%' . $keyword . '%')->fetchAll(PDO::FETCH_COLUMN);
+
+            // Else if WHERE clause, got for keyword search on related model title field - is not 'FALSE'
+            } else if (($titleColumnWHERE = $relatedM->titleField()->keywordWHERE($keyword)) != 'FALSE') {
+
+                // Find matched foreign rows, collect their ids, and add a clause
+                $idA = Indi::db()->query($sql = '
+                    SELECT `id` FROM `' . $relatedM->table() . '` WHERE ' . $titleColumnWHERE . '
+                ')->fetchAll(PDO::FETCH_COLUMN);
+            }
+
+            // Return clause
+            return count($idA)
+                ? ($this->storeRelationAbility == 'many'
+                    ? 'CONCAT(",", `' . $this->alias . '`, ",") REGEXP ",(' . implode('|', $idA) . '),"'
+                    : 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $idA) . '")')
+                : 'FALSE';
+
+        // Else if column store foreign keys, but those keys are from variable tables
         } else {
 
-            // If column does not have a satellite (dependency='u'), or have but dependency type is set to 'c'
-            // (- mean childs-by-parent logic)
-            if (preg_match('/с|c|u/', $this->dependency)) {
-
-                // Get the related model
-                $relatedM = Indi::model($this->relation);
-
-                // Declare empty $idA array
-                $idA = array();
-
-                // If title column is `id` and
-                if ($relatedM->titleColumn() == 'id') {
-
-                    // If keyword consists from only numeric characters
-                    if (preg_match('/^[0-9]+$/', $keyword))
-
-                        // Get the ids
-                        $idA = Indi::db()->query('
-                            SELECT `id` FROM `' . $relatedM->table() . '`
-                            WHERE `id` LIKE :s
-                        ', '%' . $keyword . '%')->fetchAll(PDO::FETCH_COLUMN);
-
-                // Else if WHERE clause, got for keyword search on related model title field - is not 'FALSE'
-                } else if (($titleColumnWHERE = $relatedM->titleField()->keywordWHERE($keyword)) != 'FALSE') {
-
-                    // Find matched foreign rows, collect their ids, and add a clause
-                    $idA = Indi::db()->query($sql = '
-                        SELECT `id` FROM `' . $relatedM->table() . '`
-                        WHERE ' . $titleColumnWHERE . '
-                    ')->fetchAll(PDO::FETCH_COLUMN);
-                }
-
-                // Return clause
-                return count($idA)
-                    ? ($this->storeRelationAbility == 'many'
-                        ? 'CONCAT(",", `' . $this->alias . '`, ",") REGEXP ",(' . implode('|', $idA) . '),"'
-                        : 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $idA) . '")')
-                    : 'FALSE';
-
-            // Else if dependency=e - mean 'Variable entity'. Will be implemented later
-            } else {
-
-            }
+            // Will be implemented later
         }
     }
 
