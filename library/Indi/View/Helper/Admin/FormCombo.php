@@ -88,23 +88,6 @@ class Indi_View_Helper_Admin_FormCombo {
     }
 
     /**
-     * Function to determime whether current field has a satellite, and if even have - does tha satellite exist in the same
-     * form (it may, for example, be switched off). This function currently returns false, but same function in inherited
-     * class *_FormFilter makes a check
-     *
-     * @return bool
-     */
-    public function noSatellite() {
-        if ($sFieldAlias = $this->field->foreign('satellite')->alias) {
-            return !$this->getRow()->$sFieldAlias
-                ? $this->field->param('allowZeroSatellite')
-                : false;
-        } else {
-            return true;
-        }
-    }
-
-    /**
      * Get selected value
      *
      * @return mixed

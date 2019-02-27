@@ -1687,6 +1687,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // related to current keyword should be fetched
         if (keywordChanged || moreResultsNeeded) {
 
+            // Prepare data for fetch request
+            var data = {};
+
             // If we are paging
             if (moreResultsNeeded) {
 
@@ -2264,24 +2267,6 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (me.keywordEl.val() == '#' || me.keywordEl.val() == '') me.colorDiv.update('');
         }
 
-        // Execute javascript code, if it was assigned to selected option. The additional clause for execution
-        // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
-        // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
-        // know about the fact of new item was added, it also could be removed, because me.onHiddenChange() (if combo is
-        // running in multiple-value mode) if firing in both cases. So, for the aim of selected item assigned javascript
-        // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
-        if (me.store.enumset && !me.multiSelect) {
-            var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
-                Indi.eval(me.store['data'][index].system.js, me);
-            }
-        }
-
-        // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js && !me.nojs) {
-            if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
-        }
-
         // If combo is running in multiple-values mode and is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
 
@@ -2333,7 +2318,9 @@ Ext.define('Indi.lib.form.field.Combo', {
             consider.forEach(function(consider){
 
                 // Get name
-                name = consider._foreign['consider'].alias;
+                name = consider._foreign && consider._foreign['consider']
+                    ? consider._foreign['consider'].alias
+                    : me.$ctx.ti().fields.r(consider.consider).alias;
 
                 // If such field mentioned within considerOn - merge
                 if (name in idxO) Ext.merge(me.considerOn[idxO[name]], {required: consider.required == 'y', satellite: true});
@@ -3222,6 +3209,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Append additonal space
         width += 10;
+
+        // Append optgroup indent
+        if (me.store.optgroup) width += 25;
 
         // Append .i-combo-info width
         if (!(me.keywordEl.attr('no-lookup') == 'true' || me.store.enumset)) width += 30;

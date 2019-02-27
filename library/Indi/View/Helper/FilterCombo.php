@@ -25,10 +25,8 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
      * @return string
      */
     public function filterCombo($filter) {
-        // Here we create a shared *_Row object, that will be used by all filters, that are presented in current grid.
-        // We need it bacause of a satellites. If we define a default value for some combo, and that combo is a satellite
-        // for another combo - another combo's initial data will depend on satellite value, so the shared row is the place
-        // there dependent combo can get that value.
+
+        // Filter entry
         $this->filter = $filter;
 
         // Get field's alias
@@ -41,10 +39,23 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         $this->where = array();
 
         // Append statiс WHERE, defined for filter
-        if (strlen($this->filter->filter)) $this->where[] = $this->filter->filter;
+        if (strlen($this->filter->filter)) $this->where []= $this->filter->filter;
 
         // Setup ignoreTemplate property
         $this->ignoreTemplate = $this->filter->ignoreTemplate;
+
+        // Foreach `consider` entry, nested under filter's underlying `field` entry
+        foreach ($this->getField()->nested('consider') as $considerR) {
+
+            // Get consider-field's alias
+            $cField = $consider = t()->model->fields($considerR->consider)->alias;
+
+            // Pick consider-field's value from scope and if it's not zero-length - assign to filters shared row
+            if (($cValue = t()->scope->filter($cField)) && strlen($cValue)) t()->filtersSharedRow->$cField = $cValue;
+
+            // Else if there is no such filter - set consider field to be not required
+            else if (!t()->filters->gb($considerR->consider, 'fieldId')) $considerR->required = 'n';
+        }
 
         // Do stuff
         return parent::formCombo($filter->foreign('fieldId')->alias);
@@ -118,46 +129,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
     }
 
     public function getField() {
-        return Indi::trail()->fields->select($this->filter->fieldId)->at(0);
-    }
-
-    /**
-     * Detect whether or not WHERE clause part, related especially to current field's satellite value
-     * should be involved in the process of fetching data for current filter-combo
-     *
-     * @return bool
-     */
-    public function noSatellite() {
-
-        // If current field has no satellite - return true
-        if (!$sFieldId = $this->getField()->satellite) return true;
-
-        // Clone filters rowset, as iterating through same rowset will give an error
-        $filters = clone Indi::trail()->filters;
-
-        // Shortcut to satellite-field's alias
-        $sFieldAlias = $this->getField()->foreign('satellite')->alias;
-
-        // Lookup satellite within the available filters. If found - use it
-        $availableFilterA = $filters->toArray();
-        foreach ($availableFilterA as $availableFilterI)
-            if ($availableFilterI['fieldId'] == $sFieldId)
-                return !$this->getRow()->$sFieldAlias
-                    ? $this->getField()->param('allowZeroSatellite')
-                    : false;
-
-        // Lookup satellite within the filterSharedRow's props, that might hav been set up by
-        // trail items connections logic. If found - use it
-        if (array_key_exists($sFieldAlias, $this->getRow()->modified())) return false;
-
-        // If current cms user is an alternate, and if there is corresponding
-        // column-field within current entity structure - use it
-        if (Indi::admin()->alternate
-            && in($aid = Indi::admin()->alternate . 'Id', Indi::trail()->model->fields(null, 'columns')))
-            return false;
-
-        // No satellite should be used
-        return true;
+        return t()->model->fields($this->filter->fieldId);
     }
 
     /**

@@ -79,6 +79,10 @@ class Indi_Trail_Item {
         // Setup filters shared row
         $this->filtersSharedRow = $this->model->createRow();
 
+        // Prevent non-zero values
+        foreach ($this->filtersSharedRow->original() as $prop => $value)
+            if ($prop != 'id') $this->filtersSharedRow->zero($prop, true);
+
         // If current cms user is an alternate, and if there is corresponding column-field within current entity structure
         if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $this->model->fields(null, 'columns')))
 

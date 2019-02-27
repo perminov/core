@@ -4,10 +4,7 @@
 Ext.define('Indi.lib.form.field.FilterCombo', {
 
     // @inheritdoc
-    extend: 'Indi.form.SiblingCombo',
-
-    // @inheritdoc
-    alternateClassName: 'Indi.form.FilterCombo',
+    extend: 'Indi.lib.form.field.SiblingCombo',
 
     // @inheritdoc
     alias: 'widget.combo.filter',
@@ -52,27 +49,6 @@ Ext.define('Indi.lib.form.field.FilterCombo', {
         // because call of native setValue method will assign a value to keywordEl.dom. This is ok
         // for single-value combos, but for multiple-value combos we should prevent it
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
-
-        // If current combo is a satellite for one or more other combos, we should refresh data in that other combos
-        (me.el.up('fieldset') || me.el.up('form') || me.el.up('.x-toolbar')).select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
-            sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
-            sCombo = Ext.getCmp(me.bid() + sComboName);
-            sCombo.hiddenEl.attr('change-by-refresh-children', 'true');
-            sCombo.setDisabled(false, true);
-            sCombo.hiddenEl.removeAttr('change-by-refresh-children');
-        });
-
-        // Separate children refresh for satellited combos (mean separate from satellited combos clearance)
-        (me.el.up('fieldset') || me.el.up('form') || me.el.up('.x-toolbar')).select('.i-combo-info[satellite="'+name+'"]').each(function(el, c){
-            sComboName = el.up('.i-combo').select('[type="hidden"]').first().attr('name');
-            sCombo = Ext.getCmp(me.bid() + sComboName);
-            if (!sCombo.disabled || sCombo.field.params.allowZeroSatellite) {
-                sCombo.remoteFetch({
-                    satellite: me.hiddenEl.val(),
-                    mode: 'refresh-children'
-                });
-            }
-        });
 
         // We should do the check, because if combo has a dependent combos, they are also call their change handlers
         // but here we do not need that

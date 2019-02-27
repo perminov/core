@@ -1144,7 +1144,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($considerR->connector) $cField->system('connector', $considerR->foreign('connector')->alias);
 
                 // Buid WHERE clause
-                $this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue);
+                $this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required);
 
             // Else it mean that current-field is linked to variable entity, and that entity is identified by $cValue, so
             } else {
@@ -1566,13 +1566,20 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
 
-    protected function _comboDataConsiderWHERE(&$where, Field_Row $fieldR, Field_Row $cField, $cValue) {
-
-        // If consider-value is zero - return
-        if (!$cValue) return;
+    protected function _comboDataConsiderWHERE(&$where, Field_Row $fieldR, Field_Row $cField, $cValue, $required) {
 
         // Setup a key, that current consider's WHERE clause will be set up within $where arg under,
         $_wkey = 'consider:' . $cField->alias;
+
+        // If consider-value is zero
+        if (!$cValue) {
+
+            // But it's not required - set WHERE clause to be FALSE
+            if ($required == 'y') $where[$_wkey] = 'FALSE';
+
+            // Return
+            return;
+        }
 
         // Get column name
         $column = $cField->system('connector') ?: $cField->alias;
@@ -1600,8 +1607,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         $prop = $cField->alias;
 
         // If we have no consider field's value passed as a param, we get it
-        // from related row property or from consider-field default value
-        if (is_null($cValue)) $cValue = strlen($this->$prop) ? $this->$prop : $cValue = $cField->compiled('defaultValue');
+        // from related row property or from consider-field zero value
+        if (is_null($cValue)) $cValue = strlen($this->$prop) ? $this->$prop : $cValue = $cField->zeroValue();
 
         // Spoof consider value, if need
         return $this->_spoofConsider($for, $prop, $cValue);

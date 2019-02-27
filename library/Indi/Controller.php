@@ -718,7 +718,7 @@ class Indi_Controller {
                 // Provide combo filters consistence
                 foreach (Indi::trail()->filters ?: array() as $filter) {
 
-                    // If `consistence` flag is Off - ckip
+                    // If `consistence` flag is Off - skip
                     if (!$filter->consistence) continue;
 
                     // Filter-field shortcut

@@ -57,7 +57,7 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
      *
      * @return null|string
      */
-    public function parentWHERE1() {
+    public function parentWHERE() {
 
         // If current section does not have a parent section, or have, but is a root section - return
         if (!Indi::trail(1)->section->sectionId) return;
