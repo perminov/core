@@ -483,11 +483,11 @@ class Indi_Controller {
     /**
      * Prepare arguments for $this->_odata() function call, and call that function for fetching filter-combo options data.
      * This function handles all cases, related to combo options data fetch, such as
-     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * page-by-page appending/prepending, combo-keyword lookup, respect consider-fields (for example fetch cities for second
      * combo when country was selected in first combo), and all this for filter combos
      *
      * @param string $for A name of field, that combo data should be fetched for
-     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, values of consider-fields)
      */
     public function indexActionOdata($for, $post) {
 
@@ -528,11 +528,11 @@ class Indi_Controller {
     /**
      * Prepare arguments for $this->_odata() function call, and call that function for fetching combo options data.
      * This function handles all cases, related to combo options data fetch, such as
-     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * page-by-page appending/prepending, combo-keyword lookup, respect consider-fields (for example fetch cities for second
      * combo when country was selected in first combo), and all this for form and sibling combos
      *
      * @param string $for A name of field, that combo data should be fetched for
-     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, values of consider-fields)
      */
     public function formActionOdata($for, $post) {
 
@@ -564,24 +564,21 @@ class Indi_Controller {
 
     /**
      * Fetch combo options data. This function handles all cases, related to combo options data fetch, such as
-     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * page-by-page appending/prepending, combo-keyword lookup, respect consider-fields (for example fetch cities for second
      * combo when country was selected in first combo), and all this for form, filter and sibling combos
      *
      * @param string $for A name of field, that combo data should be fetched for
-     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, values of consider-fields)
      * @param Field_Row $field
      * @param string $where
      * @param string $order
      * @param string $dir
      * @param string $offset
      */
-    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null, $subTplData = null) {
+    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
 
         // If field was not found neither within existing field, nor within pseudo fields
         if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
-
-        // Set $noSatellite flag
-        $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
 
         // Decode consider-fields values
         $consider = json_decode($post['consider'], true) ?: array();
@@ -593,19 +590,19 @@ class Indi_Controller {
         foreach ($field->nested('consider') as $considerR) {
 
             // Get shortcut for consider-field
-            $sField = $considerR->foreign('consider');
+            $cField = $considerR->foreign('consider');
 
             // If consider-field is not a foreign-key field - skip
-            if ($sField->storeRelationAbility == 'none') continue;
+            if ($cField->storeRelationAbility == 'none') continue;
 
             // If consider-field is not given within request data - skip
-            if (!array_key_exists($sField->alias, $consider)) continue;
+            if (!array_key_exists($cField->alias, $consider)) continue;
 
             // Check format, and if ok - assign value
-            $this->row->mcheck(array($sField->alias => array('rex' => '~^[a-zA-Z0-9,]+$~')), $consider);
+            $this->row->mcheck(array($cField->alias => array('rex' => '~^[a-zA-Z0-9,]*$~')), $consider);
 
             // Collect info about valid values of consider-fields
-            $picked[$sField->alias] = $this->row->{$sField->alias};
+            $picked[$cField->alias] = $this->row->{$cField->alias};
         }
 
         // Remember picked values within row's system data
@@ -629,16 +626,10 @@ class Indi_Controller {
             $this->row->$for = $post->selected;
         }
 
-        // Check satellite is alphanumeric and/or contains comma
-        jcheck(array('satellite' => array('rex' => '/^[a-zA-Z0-9,]+$/')), $post);
-
         // Get combo data rowset
         $comboDataRs = $post->keyword
-            ? $this->row->getComboData(
-                $for, $post->page, $post->keyword, true, $post->satellite, $where, $noSatellite, $field, $order, $dir)
-            : $this->row->getComboData(
-                $for, $post->page, $this->row->$for, false, $post->satellite, $where, $noSatellite, $field, $order, $dir, $offset);
-
+            ? $this->row->getComboData($for, $post->page, $post->keyword,    true, $where, $field, $order, $dir)
+            : $this->row->getComboData($for, $post->page, $this->row->$for, false, $where, $field, $order, $dir, $offset);
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($field->params);

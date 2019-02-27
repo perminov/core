@@ -114,8 +114,6 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
                 'elementId' => $elementRs->gb('combo', 'alias')->id,
                 'columnTypeId' => 3,
                 'defaultValue' => '<?=Indi::me(\'id\')?>',
-                'dependency' => 'e',
-                'satellite' => 0
             ),
             'authorTs' => array(
                 'title' => 'Когда',
@@ -131,9 +129,11 @@ class Admin_EntitiesController extends Indi_Controller_Admin {
             $fieldRA[$alias]->entityId = $this->row->id;
             $fieldRA[$alias]->alias = $alias;
             $fieldRA[$alias]->assign($fieldI);
-            if ($alias == 'authorId') $fieldRA[$alias]->satellite = $fieldRA['authorType']->id;
             $fieldRA[$alias]->save();
         }
+
+        //$fieldRA[$alias]->satellite = $fieldRA['authorType']->id;
+        consider($this->row->id, 'authorId', 'authorType', array('required' => 'y'));
 
         // Flush success
         jflush(true, 'Группа полей "Создание" была добавлена в структуру сущности "' . $this->row->title . '"');

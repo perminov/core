@@ -116,10 +116,10 @@ Ext.define('Indi.lib.form.field.Combo', {
     colorReg: new RegExp('^[0-9]{3}(#[0-9a-fA-F]{6})$', 'i'),
 
     /**
-     * System property. Is used in cases when current combo has a satellite. For example, we changed value of
-     * satellite combo, so options of current combo are fetched with refresh-children mode. After children were
+     * System property. Is used in cases when current combo has consider-fields. For example, we changed value of
+     * consider-combo, so options of current combo are fetched with refresh-children mode. After children were
      * refreshed, we should adjust current combo width for it to take in attention the width of longest child.
-     * But if we change satellite combo value one more time, and current combo data will be refreshed again,
+     * But if we change consider combo value one more time, and current combo data will be refreshed again,
      * the width of longest child may be less than we faced earlier, and when new longest child width will be
      * taken in attention while adjusting current combo width - it (current combo width) will decrease, and
      * i don't like that. So this property - optionContentsMaxWidth - will be used to solve that problem: each time
@@ -168,7 +168,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     '</td>',
                     '<td class="i-combo-infoCell">',
                         '<div class="i-combo-info-div">',
-                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" changed="false"><tr>',
                                 '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
                                 '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
                                 '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
@@ -209,7 +209,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         '</td>',
                         '<td class="i-combo-infoCell">',
                             '<div class="i-combo-info-div">',
-                                '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" changed="false"><tr>',
                                     '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
                                     '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
                                     '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
@@ -519,10 +519,10 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Call parent
         me.callParent(arguments);
 
-        // Setup `forceValidation` property. We should do this, because some combos may be dependent (have satellites)
+        // Setup `forceValidation` property. We should do this, because some combos may be dependent (have consider-fields)
         // and there can be situations then combo is not allowed to be blank, but if it is disabled (due to several
-        // reasons, related to satellite-component's state) - validation won't run. So here we provide it to be forced
-        me.forceValidation = !!(me.satellite != '0' || Ext.JSON.encode(me.considerOn) != '[]');
+        // reasons, related to consider-field's state) - validation won't run. So here we provide it to be forced
+        me.forceValidation = !!(Ext.JSON.encode(me.considerOn) != '[]');
 
         // Setup noLookup property
         me.setupNoLookup();
@@ -557,10 +557,10 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
-     * Clear satellited combo, for example in case if satellite (master) combo value was changed, so satellited combos
+     * Clear dependent combo, for example in case if consider/master combo value was changed, so dependent combos
      * should be cleared before their data will be reloaded
      */
-    clearSatellitedCombo: function() {
+    clearDependentCombo: function() {
         var me = this;
 
         // Restore default values for auxiliary attributes
@@ -584,34 +584,34 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @param force
      */
     setDisabled: function(force, clear, on){
-        var me = this, sComboName = on ? on.name : me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp(me.bid() + sComboName);
+        var me = this, sComboName = on ? on.name : false, sCombo;
 
-        // If current combo has a satellite, and satellite combo is an also existing component
-        if (sCombo) {
+        // If current combo has a consider-combo, and consider-combo is an also existing component
+        if (sComboName && (sCombo = Ext.getCmp(me.bid() + sComboName))) {
 
-            // Get satellite value
+            // Get consider-combo value
             var sv = sCombo.getValue() + ''; sv = sv.length == 0 ? 0 : parseInt(sv);
 
-            // If satellite value is 0, or 'force' argument is boolean 'true'
+            // If consider-combo's value is 0, or 'force' argument is boolean 'true'
             if (sv == 0) {
 
                 // Disable combo
-                if (!me.field.params.allowZeroSatellite && (!on || on.required)) me.callParent([true]);
+                if (!on || on.required) me.callParent([true]);
 
                 // If 'clear' argument is boolean true
-                if (clear) me.clearSatellitedCombo();
+                if (clear) me.clearDependentCombo();
 
-            // Else if satellite value is non-zero
+            // Else if consider value is non-zero
             } else {
 
                 // Disable/Enable combo
                 me.callParent([force]);
 
                 // If 'clear' argument is boolean true
-                if (clear) me.clearSatellitedCombo();
+                if (clear) me.clearDependentCombo();
             }
 
-            // Else if current combo does not have a satellite
+        // Else if current combo does not have a consider-combo
         } else {
 
             // Disable/Enable combo
@@ -1524,7 +1524,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         selected.splice(index, 1);
 
         // Check if me.onHiddenChange() handler for current combo should not be fired. Currently there is a only one
-        // case there this feature is used - in case if current combo is multiple and have a satellite, which
+        // case there this feature is used - in case if current combo is multiple and have a consider-combo, which
         // value has just changed, so current combo data will should be reloaded and currently selected options
         // should be removed. Usually, me.onHiddenChange() fires each time when .i-combo-selected-item-delete was clicked
         // and if we clicked on several items with such class, me.onHiddenChange() handler will be fired several times,
@@ -1687,18 +1687,6 @@ Ext.define('Indi.lib.form.field.Combo', {
         // related to current keyword should be fetched
         if (keywordChanged || moreResultsNeeded) {
 
-            // Get field satellite
-            var satellite = me.infoEl.attr('satellite');
-
-            // Get satellite as Ext combo object
-            var he = Ext.getCmp(me.bid() + satellite);
-
-            // Prepare data for fetch request
-            var data = {};
-
-            // Pass satellite value only if it was at east one time changed. Otherwise default satellite value will be used
-            if (he && he.infoEl.attr('changed') == 'true') data.satellite = he.hiddenEl.val();
-
             // If we are paging
             if (moreResultsNeeded) {
 
@@ -1721,9 +1709,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                         if (me.infoEl.attr('page-top-reached') == 'false') {
                             data.page = pageTop - 1;
 
-                            // Otherwise, if top border of range of displayed pages is already 1
-                            // so it is smallest possible value and therefore we won't do any request,
-                            // and we only should move selection to first option
+                        // Otherwise, if top border of range of displayed pages is already 1
+                        // so it is smallest possible value and therefore we won't do any request,
+                        // and we only should move selection to first option
                         } else {
 
                             me.keywordEl.attr('selectedIndex', 1);
@@ -1732,7 +1720,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         }
                     }
 
-                    // If next page needed
+                // If next page needed
                 } else if (event.keyCode == '34') {
 
                     // If keyword was at least once changed
@@ -1786,7 +1774,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
 
         // If keyword was changed to empty we fire 'change' event. We do that for being sure
-        // that dependent combos (combos that are satellited by current combo) are disabled. Also,
+        // that dependent combos (combos that are considered by current combo) are disabled. Also,
         // after keyword was changed to empty, hidden value was set to 0, so we should call me.onHiddenChange() anyway
         // Note: 'change' event firing is need only if combo is running in non-multiple mode.
         if (keywordChangedToEmpty) {
@@ -2256,7 +2244,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
         // We will need this fact in request data prepare process, because if at the moment of sending
-        // request 'changed' will still be 'false' (initial value), satellite property won't be set in
+        // request 'changed' will still be 'false' (initial value), consider property won't be set in
         // request data object. We need this to get upper and lower page results fetched from currently selected
         // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
         // have start point different to selected value, and based on most top alphabetic order.
@@ -2299,24 +2287,6 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Align picker
         Ext.defer(me.alignPicker, 10, me);
-
-        // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
-        if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
-            if (d.xtype.match(/^combo\.(form|auto)$/)) {
-                d.setDisabled(false, true);
-                if (!d.disabled) {
-                    d.remoteFetch({
-                        satellite: me.hiddenEl.val(),
-                        mode: 'refresh-children'
-                    });
-                }
-            } else if (d.xtype == 'multicheck') {
-                d.remoteFetch({
-                    satellite: me.hiddenEl.val(),
-                    mode: 'refresh-children'
-                });
-            }
-        });
     },
 
     /**
@@ -2330,11 +2300,6 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Do not refresh children if `satellite` flag within consider-config is non-true
         if (!sbl.satellite) return;
-
-        // Find satellite and append it to request params
-        if (stl = me.satellite ? me.ctx().ti().fields.r(me.satellite) : false)
-            if (stl = me.sbl(stl.alias))
-                request['satellite'] = stl.hiddenEl.val()
 
         // If current combo is a form-combo, or auto-combo
         if (me.xtype.match(/^combo\.(form|auto|filter)$/)) {
@@ -2618,8 +2583,8 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Hide options list div
             me.collapse();
 
-            // If just got resuts are result for satellited combo, autofetched after satellite value was changed
-            // and we have no results related to current satellite value, we disable satellited combo
+            // If just got results are results for considered combo, autofetched after consider-field's value was changed
+            // and we have no results related to current consider value, we disable considered combo
             if (requestData.mode == 'refresh-children') {
 
                 // Disable
@@ -2628,7 +2593,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Fire 'refreshchildren' event
                 me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
 
-            // Else if reason of no results was not in satellite but in keyword
+            // Else if reason of no results was not in consider-field's value, but in keyword
             } else {
 
                 // Call special handler fn
@@ -2704,7 +2669,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * They can be collected initially (if their total count <= Indi_Db_Table_Row::$comboOptionsVisibleCount) or
      * can be collected step by step while paging upper/lower. So, since they all are a got, any keyword search will run
      * without requests to database, and will be completely handled by javascript. Such scheme will be used until next
-     * database request - this can happen if current combo field has a satellite, and satellite value was changed
+     * database request - this can happen if current combo field has a consider-field, and it's value was changed
      *
      * @param data Request data object, containing same properties, as per remote-fetch scheme
      */

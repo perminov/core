@@ -419,7 +419,6 @@ Ext.define('Indi.lib.controller.action.Form', {
             readOnly: me.row.readOnly,
             fieldLabel: field.title,
             name: field.alias,
-            satellite: field.satellite,
             value: this.ti().row[field.alias],
             allowBlank: field.mode != 'required' && (parseInt(field.relation) != 6 || field.storeRelationAbility == 'many'),
             disabled: field.mode == 'readonly',

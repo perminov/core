@@ -2472,15 +2472,18 @@ class Indi_Controller_Admin extends Indi_Controller {
                 ? Indi::trail()->model->fetchRow('`id` = "' . Indi::uri('id') . '"')->$connectorAlias
                 : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
+        // Connector field shortcut
+        $connectorField = t()->model->fields($connectorAlias);
+
         // Return clause
-        $return = Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+        $return = $connectorField->storeRelationAbility == 'many'
             ? 'CONCAT(",", `' . $connectorAlias . '`, ",") REGEXP ",(' . im(ar($connectorValue), '|') . '),"'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
 
-        // If connector field - is a field having Variable Entity satellite dependency
-        if (t()->model->fields($connectorAlias)->dependency == 'e') {
-            $sField = t()->model->fields($connectorAlias)->foreign('satellite')->alias;
-            $prepend = '`' . $sField . '` = "' . t(1)->section->entityId . '"';
+        // If connector field - is a field having Variable Entity consider dependency
+        if ($connectorField->storeRelationAbility != 'none' && !$connectorField->relation) {
+            $eField = $connectorField->nested('consider')->at(0)->foreign('consider')->alias;
+            $prepend = '`' . $eField . '` = "' . t(1)->section->entityId . '"';
             $return = '(' . $prepend . ' AND ' . $return . ')';
         }
 

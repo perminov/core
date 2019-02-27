@@ -1913,7 +1913,7 @@ function param($table, $field, $alias, $value = null) {
 }
 
 /**
- * Short-hand function that allows to manipulate `consider` entry, identified by $entity, $field and $satellite args.
+ * Short-hand function that allows to manipulate `consider` entry, identified by $entity, $field and $consider args.
  * If only those three args given - function will fetch and return appropriate `consider` entry (or null, if not found)
  * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `section`
  * entry, or update existing if found

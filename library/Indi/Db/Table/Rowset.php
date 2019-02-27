@@ -993,12 +993,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $distinctA = array();
 
             // If field dependency is 'Variable entity'
-            if ($fieldR->dependency == 'e' || ($fieldR->relation == 0 && $fieldR->nested('consider')->count())) {
+            if ($fieldR->relation == 0 && $fieldR->nested('consider')->count()) {
 
                 // Get consider-field, e.g. field, that current field depends on
-                $consider = $fieldR->dependency == 'e'
-                    ? $fieldR->foreign('satellite')->alias
-                    : $fieldR->nested('consider')->at(0)->foreign('consider')->alias;
+                $consider = $fieldR->nested('consider')->at(0)->foreign('consider')->alias;
 
                 // Foreach row within current rowset
                 foreach ($this as $r) {
@@ -1010,7 +1008,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     $distinctA[$entityId] = array_merge(
 
                         // If there are already items exist within group, representing keys that are related
-                        // to certain entity id (entity id is a satellite as per 'Variable entity' concept),
+                        // to certain entity id (entity id is a consider as per 'Variable entity' concept),
                         // - we use this group as array which will be a first array in list of merged arrays
                         is_array($distinctA[$entityId]) ? $distinctA[$entityId] : array(),
 
@@ -1150,10 +1148,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // Get the id of entity, that current row's foreign key is related to. If foreign key field
                 // dependency is 'Variable entity' - entity id is dynamic, that mean is may differ for each row
-                $foreignKeyEntityId = $fieldR->relation ?: $r->{$fieldR->dependency == 'e'
-                    ? $fieldR->foreign('satellite')->alias
-                    : $fieldR->nested('consider')->at(0)->foreign('consider')->alias
-                };
+                $foreignKeyEntityId = $fieldR->relation ?: $r->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
 
                 // Get the column name, which value will be used for match
                 $col = $foreignKeyEntityId == 6 ? 'alias' : 'id';

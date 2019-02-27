@@ -142,8 +142,8 @@ class Indi_View_Helper_Admin_FormCombo {
         $selected = $this->getSelected();
 
         // Get initial combo options rowset
-        $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null, null,
-            $this->where, $this->noSatellite(), $this->field, $this->comboDataOrderColumn,
+        $comboDataRs = $this->getRow()->getComboData($name, null, $selected, null,
+            $this->where, $this->field, $this->comboDataOrderColumn,
             $this->comboDataOrderDirection, $this->comboDataOffset, $this->getConsistence(), $this->isMultiSelect());
 
         // Prepare combo options data
@@ -154,9 +154,6 @@ class Indi_View_Helper_Admin_FormCombo {
         $this->titleMaxIndent = $comboDataA['titleMaxIndent'];
         $this->hasColorBox = $comboDataA['hasColorBox'];
         $keyProperty = $comboDataA['keyProperty'];
-
-        // Get satellite
-        if ($this->field->satellite) $satellite = $this->field->foreign('satellite');
 
         // If combo is boolean
         if ($this->field->storeRelationAbility == 'none' && $this->field->columnTypeId == 12) {
@@ -271,10 +268,9 @@ class Indi_View_Helper_Admin_FormCombo {
         $this->pageUpDisabled = $this->getRow()->$name ? 'false' : 'true';
 
         // Assign local variables to public class variables
-        $vars = array('name', 'selected', 'params', 'attrs', 'satellite', 'comboDataRs', 'keyProperty');
-        foreach ($vars as $var) $this->$var = $$var;
+        foreach (array('name', 'selected', 'params', 'attrs', 'comboDataRs', 'keyProperty') as $var) $this->$var = $$var;
 
-        // If combo mode is 'extjs', we prepare a data object containing all involved info
+        // Prepare a data object containing all involved info
         $this->extjs($options);
 
         // Return itself
@@ -306,7 +302,6 @@ class Indi_View_Helper_Admin_FormCombo {
         // Prepare view params
         $view = array(
             'subTplData' => array(
-                'satellite' => $this->satellite->alias,
                 'attrs' => $this->attrs,
                 'pageUpDisabled' => $this->pageUpDisabled,
             ),

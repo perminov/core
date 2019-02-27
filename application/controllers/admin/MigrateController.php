@@ -135,6 +135,7 @@ class Admin_MigrateController extends Indi_Controller {
             if (!$ctor) $ctor = true;
             consider($fieldR->foreign('entityId')->table, $fieldR->alias, $fieldR->foreign('satellite')->alias, $ctor);
         }
+        field('section', 'parentSectionConnector', array('filter' => '`storeRelationAbility`!="none"'));
 
         // Erase satellite-cfg and hide fields, responsible for satellite-functionaity
         Indi::db()->query('UPDATE `field` SET `dependency` = "u", `satellitealias` = "", `satellite` = "0", `alternative` = ""');

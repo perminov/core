@@ -22,9 +22,6 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
         // Pick field from context
         config.field = config.$ctx.ti().fields.r(config.name, 'alias') || config.$ctx.ti().pseudoFields.r(config.name, 'alias');
 
-        // Setup satellite
-        config.satellite = config.field.satellite;
-
         // Call parent
         me.callParent(arguments);
     },
@@ -35,7 +32,7 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
 
         // Setup empty `store` and `subTplData` props
         me.store = {data: [], ids: [], found: '0', enumset: parseInt(me.field.relation) == 6, js: '', optionHeight: "14", page: 1};
-        me.subTplData = {satellite: me.satellite, attrs: null, pageUpDisabled: "true", selected: {title: null, value: 0}};
+        me.subTplData = {attrs: null, pageUpDisabled: "true", selected: {title: null, value: 0}};
 
         // Call parent
         me.callParent(arguments);
@@ -48,17 +45,13 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
         var me = this, ctx = me.$ctx, ti = ctx.ti(), section = ti.section, scope = ti.scope,
             url = '/' + section.alias + '/form/ph/' + scope.hash + '/aix/' + 0 + '/', f, he, params = {};
 
-        // Setup satellite value as a param to be sent while making ajax-request
-        if (me.satellite && me.ownerCt && (f = ti.fields.r(me.satellite)) && (he = me.sbl(f.alias)))
-            params.satellite = he.val();
-
         // Show loader
         Indi.app.loader();
 
         // Load
         Ext.Ajax.request({
             url: Indi.pre.replace(/\/$/, '') + url + 'odata/' + me.field.alias + '/',
-            params: params,
+            params: Ext.merge(params, {consider: Ext.JSON.encode(me.considerOnData())}),
             success: function(response) {
 
                 // Convert response.responseText to JSON object
@@ -70,8 +63,7 @@ Ext.define('Indi.lib.form.field.AutoCombo', {
                     me[me.store.ids.length ? 'enable' : 'disable']();
                     me.fetchUrl = url;
 
-                    if (params.satellite && params.satellite.length && params.satellite != '0')
-                        me.fireEvent('refreshchildren', me, parseInt(json.found));
+                    if (params.consider) me.fireEvent('refreshchildren', me, parseInt(json.found));
                 }
             }
         });

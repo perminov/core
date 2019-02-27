@@ -170,7 +170,7 @@ class Indi_Db_Table
             // Setup space-owner fields and their rules
             $this->_space['fields']['owners'] = $this->_spaceOwners();
 
-            // Setup satellite-fields (and their rules) for all space-owner fields
+            // Setup consider-fields (and their rules) for all space-owner fields
             $this->_space['fields']['relyOn'] = $this->_spaceOwnersRelyOn();
 
             // Setup fields having ['auto' => true] rule
@@ -1579,7 +1579,7 @@ class Indi_Db_Table
     }
 
     /**
-     * Collect and return satellite-fields for all space-owner fields
+     * Collect and return consider-fields for all space-owner fields
      *
      * @return array
      */
@@ -1588,37 +1588,24 @@ class Indi_Db_Table
         // Declare
         $ownerRelyOn = array();
 
-        // Collect satellite-fields for all space-owner fields
+        // Collect consider-fields for all space-owner fields
         foreach ($this->_space['fields']['owners'] as $owner => $ruleA) {
-
-            // If current space-owner field has satellite-field
-            if ($sFieldId = $this->_fields->field($owner)->satellite) {
-
-                // Get satellite-field
-                $sFieldR = $this->_fields->field($sFieldId);
-
-                // Setup shortcut for satellite-field's `storeRelationAbility` prop
-                $sra = $sFieldR->storeRelationAbility;
-
-                // Setup rules for space-owner field's satellite-field
-                $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
-            }
 
             // If current space-owner field has consider-fields - for each
             foreach ($this->_fields->field($owner)->nested('consider') as $considerR) {
 
                 // Get consider-field
-                $sFieldR = $this->_fields->field($considerR->consider);
+                $cFieldR = $this->_fields->field($considerR->consider);
 
                 // Setup shortcut for consider-field's `storeRelationAbility` prop
-                $sra = $sFieldR->storeRelationAbility;
+                $cra = $cFieldR->storeRelationAbility;
 
                 // Setup rules for space-owner field's consider-field
-                $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
+                $ownerRelyOn[$cFieldR->alias] = array('rex' => $cra == 'many' ? 'int11list' : 'int11');
             }
         }
 
-        // Return array of satellite/consider-fields and their rules
+        // Return array of consider-fields and their rules
         return $ownerRelyOn;
     }
 
@@ -1642,7 +1629,7 @@ class Indi_Db_Table
     }
 
     /**
-     * Get satellite-fields (for all space-owner fields) either as simple array of field names,
+     * Get consider-fields (for all space-owner fields) either as simple array of field names,
      * or as an associative array, having field names as keys and array of field rules as values.
      * This is because in some cases we need just field names only, but in some - we need each field's rules also
      *

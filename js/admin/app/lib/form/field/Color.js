@@ -82,8 +82,7 @@ Ext.define('Indi.lib.form.field.Color', {
 	},
 
     /**
-     * Function that will be called after combo value change. Provide dependent-combos reloading in case
-     * if current field is a satellite for one or more combos, that are siblings to current field
+     * @inheritdoc
      */
     onChange: function() {
         var me = this;

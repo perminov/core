@@ -342,9 +342,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
             'storeRelationAbility' => $multiple ? 'many' : 'one',
             'elementId' => 23,
             'defaultValue' => $multiple ? '' : 0,
-            'relation' => Indi::model($table)->id(),
-            'dependency' => 'u',
-            'satellite' => 0
+            'relation' => Indi::model($table)->id()
         ));
 
         // Return field itself

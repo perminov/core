@@ -42,7 +42,6 @@ Ext.define('Indi.controller.config', {
                         fieldI = {
                             alias: t + 'Value_' + autoItemXA[i],
                             title: itemA[at].fieldLabel,
-                            satellite: '0',
                             _foreign: {
                                 elementId: {alias: autoItemXA[i]}
                             }

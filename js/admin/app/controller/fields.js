@@ -31,61 +31,6 @@ Ext.define('Indi.controller.fields', {
                         c.setVisible(d.storeRelationAbility != 'none');
                     }
                 }
-            },
-            formItem$SatelliteAlias: {
-                considerOn: [{
-                    name: 'storeRelationAbility'
-                }],
-                listeners: {
-                    enablebysatellite: function(c, d) {
-                        c.setVisible(d.storeRelationAbility != 'none');
-                    }
-                }
-            },
-            formItem$Span: {
-                considerOn: [{
-                    name: 'storeRelationAbility'
-                }],
-                listeners: {
-                    enablebysatellite: function(c, d) {
-                        c.setVisible(d.storeRelationAbility != 'none');
-                    }
-                }
-            },
-            formItem$Satellite: {
-                considerOn: [{
-                    name: 'storeRelationAbility'
-                }, {
-                    name: 'dependency'
-                }],
-                listeners: {
-                    enablebysatellite: function(c, d) {
-                        c.setVisible(d.storeRelationAbility != 'none' && d.dependency != 'u');
-                    }
-                }
-            },
-            formItem$Dependency: {
-                nojs: true,
-                considerOn: [{
-                    name: 'storeRelationAbility'
-                }],
-                listeners: {
-                    enablebysatellite: function(c, d) {
-                        c.setVisible(d.storeRelationAbility != 'none');
-                    }
-                }
-            },
-            formItem$Alternative: {
-                considerOn: [{
-                    name: 'storeRelationAbility'
-                }, {
-                    name: 'dependency'
-                }],
-                listeners: {
-                    enablebysatellite: function(c, d) {
-                        c.setVisible(d.storeRelationAbility != 'none' && d.dependency != 'u' && d.dependency != 'e');
-                    }
-                }
             }
         }
     }
