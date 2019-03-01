@@ -23,12 +23,6 @@ Ext.define('Indi.lib.form.field.Radios', {
     vertical: true,
 
     /**
-     * Temporary config, for switching enumset options javascript execution on/off
-     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
-     */
-    nojs: false,
-
-    /**
      * Array or comma-separated list of values of `inputValue` prop, that should be disabled
      */
     disabledOptions: [],
@@ -51,6 +45,7 @@ Ext.define('Indi.lib.form.field.Radios', {
 
         // Setup disabled options
         if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
+        else if (me.disabledOptions === undefined) me.disabledOptions = [];
 
         // Call parent
         me.callParent();
@@ -65,9 +60,15 @@ Ext.define('Indi.lib.form.field.Radios', {
      * @return {Array}
      */
     itemA: function() {
+        var me = this, itemI, itemA = [], inputValue, disabled = {};
 
-        // Setup auxiliary variables
-        var me = this, itemI, itemA = [], inputValue;
+        // If `disabledOptions` arg is a string - split it by comma
+        if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
+
+        // Store disabled values as keys
+        me.disabledOptions.forEach(function(value){
+            disabled[value] = true;
+        });
 
         // For each store data item
         me.row.view(me.name).store.data.forEach(function(enumset, index){
@@ -82,7 +83,7 @@ Ext.define('Indi.lib.form.field.Radios', {
                 inputValue: inputValue,
                 checked: inputValue == me.row[me.name],
                 enumset: enumset,
-                disabled: me.disabledOptions.indexOf(inputValue) != -1,
+                disabled: inputValue in disabled,
                 onBoxClick: function(e) {
                     var me = this;
                     if (!me.disabled && !me.readOnly) {
@@ -90,17 +91,6 @@ Ext.define('Indi.lib.form.field.Radios', {
                             me.setValue(false);
                         } else {
                             me.setValue(true);
-                        }
-                    }
-                },
-                listeners: {
-                    change: function(rb, now) {
-                        if (now && !me.nojs) {
-                            try {
-                                Indi.eval(rb.enumset.system.js, rb.ownerCt);
-                            } catch (e) {
-                                throw e;
-                            }
                         }
                     }
                 }
@@ -122,9 +112,6 @@ Ext.define('Indi.lib.form.field.Radios', {
         // If checked radio exists - fire 'change' event for it
         if (checked) checked.fireEvent('change', checked, true);
 
-        // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
-
         // Call parent
         me.callParent();
 
@@ -139,14 +126,19 @@ Ext.define('Indi.lib.form.field.Radios', {
      * @return {*}
      */
     setDisabledOptions: function(disabledOptions) {
-        var me = this;
+        var me = this, disabled = {};
 
         // If `disabledOptions` arg is a string - split it by comma
         if (Ext.isString(disabledOptions)) disabledOptions = disabledOptions.split(',');
 
+        // Store disabled values as keys
+        disabledOptions.forEach(function(value){
+            disabled[value] = true;
+        });
+
         // Toggle options
         me.items.each(function(item, i, l){
-            item.setDisabled(disabledOptions.indexOf(item.inputValue) != -1);
+            item.setDisabled(item.inputValue in disabled);
         });
 
         // Update `disabledOptions` prop
@@ -161,28 +153,10 @@ Ext.define('Indi.lib.form.field.Radios', {
      * if current field is a satellite for one or more combos, that are siblings to current field
      */
     onChange: function() {
-
-        // Setup auxilliary variables
-        var me = this, name = me.name, dComboName, dCombo;
-
-        // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
+        var me = this;
 
         // Call parent
         me.callParent(arguments);
-
-        // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
-        if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
-            if (d.xtype == 'combo.form') {
-                d.setDisabled(false, true);
-                if (!d.disabled) {
-                    d.remoteFetch({
-                        satellite: me.getValue(),
-                        mode: 'refresh-children'
-                    });
-                }
-            }
-        });
 
         // Call mixin's _onChange() method
         me.mixins.fieldBase._onChange.call(this, arguments);

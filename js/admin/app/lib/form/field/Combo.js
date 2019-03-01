@@ -750,28 +750,6 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Bind a deletion click handler for .i-combo-selected-item-delete items
         me.el.select('.i-combo-selected-item-delete').on('click', me.onItemDelete, me);
-
-        // Execute javascript code, if it was assigned to default selected option/options
-        if (me.store.enumset) {
-            if (me.multiSelect) {
-                me.el.select('.i-combo-selected-item').each(function(el){
-                    var index = me.store['ids'].indexOf(el.attr('selected-id'));
-                    if (index != -1 && !me.nojs && me.store['data'][index].system.js) {
-                        Indi.eval(me.store['data'][index].system.js, me);
-                    }
-                });
-            } else {
-                var index = me.store['ids'].indexOf(me.hiddenEl.val());
-                if (index != -1 && !me.nojs  && this.store['data'][index].system.js) {
-                    Indi.eval(this.store['data'][index].system.js, me);
-                }
-            }
-        }
-
-        // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js && !me.nojs) {
-            if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
-        }
     },
 
     /**
