@@ -572,7 +572,7 @@ Ext.define('Indi.lib.form.field.FilePanel', {
             me.bodyEl.select('[alias="embed"]').first().setStyle({position: 'absolute', top: '50%'});
         }
 
-        // Fire `enablebysatellite` event
+        // Fire `considerchange` event
         me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 

@@ -143,7 +143,7 @@ Ext.override(Ext.form.field.Base, {
     considerOnData: function() {
         var me = this, data = {}, v, s, sbl;
 
-        // Collect satellite values
+        // Collect consider-fields values
         if (Ext.isArray(me.considerOn)) {
             me.considerOn.forEach(function(stl){
                 if ((sbl = me.sbl(stl.name)) || me.row) {
@@ -175,7 +175,7 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
-     * Enable current field and fire 'enablebysatellite' event, passing an object containing all consider-fields values
+     * Enable current field and fire 'considerchange' event, passing an object containing all consider-fields values
      */
     enableBySatellites: function(cfg) {
         var me = this, data;
@@ -189,7 +189,7 @@ Ext.override(Ext.form.field.Base, {
         // Get data
         data = me.considerOnData();
 
-        // Fire 'enablebysatellite' event
+        // Fire 'enablebysatellite' event (kept temporarily, for backwards compatibility)
         me.fireEvent('enablebysatellite', me, data);
 
         // Fire 'considerchange' event

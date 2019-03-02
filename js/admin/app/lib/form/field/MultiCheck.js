@@ -168,7 +168,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
         // Call _afterRender() method, borrowed from Indi.lib.form.field.Combo, to prepare considerOn config
         me._afterRender();
 
-        // Fire `enablebysatellite` event
+        // Fire `considerchange` event
         me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
@@ -259,7 +259,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
     /**
      * Function that will be called after combo value change. Provide dependent-combos reloading in case
-     * if current field is a satellite for one or more combos, that are siblings to current field
+     * if current field is a consider-field for one or more other fields, that are siblings to current field
      */
     onChange: function() {
         var me = this;
@@ -345,8 +345,8 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 me.add(itemI);
             });
 
-        // If just got results are result for satellited combo, autofetched after satellite value was changed
-        // and we have no results related to current satellite value, we disable satellited combo
+        // If just got results - are result for consider-fields-dependent field, autofetched after one of consider-field's
+        // value was changed and we have no results that conform to consider-fields values, we disable dependent combo
         } else me.setDisabled(true);
 
         // Fire 'refreshchildren' event

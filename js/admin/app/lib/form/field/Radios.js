@@ -115,7 +115,7 @@ Ext.define('Indi.lib.form.field.Radios', {
         // Call parent
         me.callParent();
 
-        // Fire `enablebysatellite` event
+        // Fire `considerchange` event
         me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 

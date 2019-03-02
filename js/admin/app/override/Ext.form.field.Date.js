@@ -47,7 +47,7 @@ Ext.override(Ext.form.field.Date, {
         // Enable field
         if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
 
-        // Fire 'enablebysatellite' event
+        // Fire 'enablebysatellite' event (kept temporarily, for backwards compatibility)
         me.fireEvent('enablebysatellite', me, me.considerOnData());
 
         // Fire 'considerchange' event

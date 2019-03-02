@@ -26,7 +26,7 @@ Ext.define('Indi.lib.form.field.Color', {
         // Force click made on inputEl to be treated as click made on triggerEl
         me.inputEl.on('click', me.onTriggerClick, this);
 
-        // Fire `enablebysatellite` event
+        // Fire `considerchange` event
         me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 

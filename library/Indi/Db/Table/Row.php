@@ -1301,7 +1301,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // mean that:
                     // 1. we have selected value,
                     // 2. selected value is not a keyword,
-                    // 3. $satellite logic is not used,
+                    // 3. none of consider-fields (if they exist) are changed
                     // 4. first option of final results, fetched by current function (getComboData) - wil be option
                     //    related to selected value
                     // So, we remember this fact, because if $found will be not greater than self::$comboOptionsVisibleCount
