@@ -41,7 +41,7 @@ Ext.override(Ext.form.field.Date, {
     /**
      * clearValue() call removed
      */
-    enableBySatellites: function(cfg) {
+    enableByConsiderFields: function(cfg) {
         var me = this, data = {};
 
         // Enable field

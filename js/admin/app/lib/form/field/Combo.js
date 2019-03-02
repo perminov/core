@@ -2881,7 +2881,7 @@ Ext.define('Indi.lib.form.field.Combo', {
     /**
      * clearValue() call removed
      */
-    enableBySatellites: function(cfg) {
+    enableByConsiderFields: function(cfg) {
         var me = this, data = {};
 
         // Enable field

@@ -116,7 +116,7 @@ Ext.override(Ext.form.field.Base, {
      *
      * @return {Boolean} Result of a check
      */
-    disableBySatellites: function() {
+    disableByConsiderFields: function() {
         var me = this, disable = false, sbl;
 
         // Check if any of required consider-fields currently has a zero-value,
@@ -177,7 +177,7 @@ Ext.override(Ext.form.field.Base, {
     /**
      * Enable current field and fire 'considerchange' event, passing an object containing all consider-fields values
      */
-    enableBySatellites: function(cfg) {
+    enableByConsiderFields: function(cfg) {
         var me = this, data;
 
         // Enable field
@@ -211,8 +211,8 @@ Ext.override(Ext.form.field.Base, {
     /**
      * Check whether or not current field's consider-fields are in state, that allows to enable/disable current field
      */
-    toggleBySatellites: function(cfg) {
-        var me = this; if (!me.disableBySatellites(cfg)) me.enableBySatellites(cfg);
+    toggleByConsiderFields: function(cfg) {
+        var me = this; if (!me.disableByConsiderFields(cfg)) me.enableByConsiderFields(cfg);
     },
 
     /**
@@ -247,7 +247,7 @@ Ext.override(Ext.form.field.Base, {
      */
     _afterRender: function() {
         var me = this;
-        if ((!me.disabled || me.readOnly) && !me.disableBySatellites()) {
+        if ((!me.disabled || me.readOnly) && !me.disableByConsiderFields()) {
             me.fireEvent('enablebysatellite', me, me.considerOnData());
             me.fireEvent('considerchange', me, me.considerOnData());
         }
@@ -265,7 +265,7 @@ Ext.override(Ext.form.field.Base, {
         if (me.ownerCt) me.ownerCt.query('> *').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
                 sbl.considerOn.forEach(function(considerOnStlCfg){
-                    if (considerOnStlCfg.name == me.name) sbl.toggleBySatellites(considerOnStlCfg);
+                    if (considerOnStlCfg.name == me.name) sbl.toggleByConsiderFields(considerOnStlCfg);
                 });
             }
         });
