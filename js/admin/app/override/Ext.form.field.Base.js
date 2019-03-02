@@ -33,7 +33,7 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
-     * The list of additonal (non-primary) satellites
+     * The list of consider-fields, e.g. fields that current field rely on
      */
     considerOn: [],
 
@@ -98,19 +98,22 @@ Ext.override(Ext.form.field.Base, {
         return me.getValue() === null || me.getValue() == me.zeroValue;
     },
 
-    /**
-     * Provide current field to be disabled if any of required satellited
-     * have zero value as it's current value
-     */
+    // @inheritdoc
     afterRender: function() {
         var me = this;
+
+        // Call parent
         me.callParent();
+
+        // Do additional things, related to considerOn config
         me._afterRender();
+
+        // Init left toolbar
         me.initLbar();
     },
 
     /**
-     * Check if any of required satellites currently has a zero-value,
+     * Check if any of required consider-fields currently has a zero-value,
      * and if so - disable current field, and assign a zero-value to it
      *
      * @return {Boolean} Result of a check
@@ -118,7 +121,7 @@ Ext.override(Ext.form.field.Base, {
     disableBySatellites: function() {
         var me = this, disable = false, sbl;
 
-        // Check if any of required satellites currently has a zero-value,
+        // Check if any of required consider-fields currently has a zero-value,
         // and therefore current field should be disabled and zero-valued
         me.considerOn.forEach(function(item){
             if (!item.required) return;
@@ -174,7 +177,7 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
-     * Enable current field and fire 'enablebysatellite' event, passing an object containing all satellites values
+     * Enable current field and fire 'enablebysatellite' event, passing an object containing all consider-fields values
      */
     enableBySatellites: function(cfg) {
         var me = this, data;
@@ -205,14 +208,14 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
-     * Check whether or not current field's satellites are in state, that allows to enable/disable current field
+     * Check whether or not current field's consider-fields are in state, that allows to enable/disable current field
      */
     toggleBySatellites: function(cfg) {
         var me = this; if (!me.disableBySatellites(cfg)) me.enableBySatellites(cfg);
     },
 
     /**
-     * Lookup satellites changes
+     * Lookup consider-fields changes
      */
     onChange: function() {
         var me = this; me.callParent(arguments); me._onChange();
@@ -254,7 +257,7 @@ Ext.override(Ext.form.field.Base, {
     _onChange: function() {
         var me = this;
 
-        // Lookup current field's satellites changes, and toggle it, depending on their state
+        // Lookup current field's dependent fields, and toggle them
         if (me.ownerCt) me.ownerCt.query('> *').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
                 sbl.considerOn.forEach(function(considerOnStlCfg){

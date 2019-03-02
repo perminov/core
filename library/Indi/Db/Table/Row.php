@@ -92,7 +92,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      *
      * @var int
      */
-    public static $comboOptionsVisibleCount = 300;
+    public static $comboOptionsVisibleCount = 50;
 
     /**
      * Used to store data, required for rendering the UI for current row's properties.
@@ -1022,7 +1022,8 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $dir
      * @param null $offset
      * @param null $consistence
-     * @return Indi_Db_Table_Rowset_Combo
+     * @param null $multiSelect
+     * @return Indi_Db_Table_Rowset
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
         $where = null, $fieldR = null, $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
@@ -1122,6 +1123,10 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Get consider-field value
             $cValue = $this->_cValue($fieldR->alias, $cField);
 
+            // Remember consider-field alias, because $cField may below start pointing
+            // to consider-field's foreign field rather than on consider-field itself
+            $cField_alias = $cField->alias;
+
             // If consider-field's foreign-key field should be used instead of consider-field itself
             if ($considerR->foreign) {
 
@@ -1143,8 +1148,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Use a custom connector, if defined
                 if ($considerR->connector) $cField->system('connector', $considerR->foreign('connector')->alias);
 
-                // Buid WHERE clause
-                $this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required);
+                // Build WHERE clause
+                if ($this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required)
+                    && array_key_exists($cField_alias, $this->_modified)
+                    && $this->_modified[$cField_alias] != $this->_original[$cField_alias])
+                    $hasModifiedConsiderWHERE = true;
 
             // Else it mean that current-field is linked to variable entity, and that entity is identified by $cValue, so
             } else {
@@ -1165,7 +1173,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_null($order)) {
             if ($relatedM->comboDataOrder) {
                 $order = $relatedM->comboDataOrder;
-                if (!@func_get_arg(9) && $relatedM->comboDataOrderDirection)
+                if (!@func_get_arg(7) && $relatedM->comboDataOrderDirection)
                     $dir = $relatedM->comboDataOrderDirection;
             } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
@@ -1215,7 +1223,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // is 1, it will be 2, because actually results of page 1 were already fetched
             // and displayed at the stage of combo first initialization
             if ($page != null) {
-                if(!$selected || $selectedTypeIsKeyword || (func_num_args() > 4 && func_get_arg(4))) $page++;
+                if (!$selected || $selectedTypeIsKeyword || $hasModifiedConsiderWHERE) $page++;
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
@@ -1246,7 +1254,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($groupByFieldOrder = $groupByField->order('ASC', $where))
                         $order = array($groupByFieldOrder, $order);
 
-                if (func_num_args() < 5 || is_null(func_get_arg(4))) {
+                if (!$hasModifiedConsiderWHERE) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
                 } else {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
@@ -1280,8 +1288,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                         ? '(`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "%' . $keyword2 . '%")'
                         : '`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%"';
 
-                // We should get results started from selected value only if we have no $satellite argument passed
-                } else if (is_null(func_get_arg(4))) {
+                // Else we should get results started from selected value only if consider-fields were not modified
+                } else if (!$hasModifiedConsiderWHERE) {
 
                     // If $order is a name of a column, and not an SQL expression, we setup results start point as
                     // current row's column's value
@@ -1305,7 +1313,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $foundRowsWhere = im($selectedTypeIsKeyword ? $where : $whereBackup, ' AND ');
 
                 // Adjust WHERE clause so it surely match existing value
-                if (is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($foundRowsWhere, $fieldR, $consistence);
+                if (!$hasModifiedConsiderWHERE) $this->comboDataExistingValueWHERE($foundRowsWhere, $fieldR, $consistence);
 
                 //
                 $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . $foundRowsWhere : '';
@@ -1356,7 +1364,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                     // Adjust WHERE clause so it surely match existing value
-                    if (!$selectedTypeIsKeyword && is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
+                    if (!$selectedTypeIsKeyword && !$hasModifiedConsiderWHERE) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
                 }
 
                 // Append additional ORDER clause, for grouping
@@ -1396,7 +1404,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                     // Adjust WHERE clause so it surely match consistence values
-                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_num_args() > 3 ? func_get_arg(4) : null))
+                    if (is_null($page) && !$selectedTypeIsKeyword && !$hasModifiedConsiderWHERE)
                         $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
 
                     // Append additional ORDER clause, for grouping
@@ -1575,10 +1583,10 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (!$cValue) {
 
             // But it's not required - set WHERE clause to be FALSE
-            if ($required == 'y') $where[$_wkey] = 'FALSE';
+            if ($required == 'y') return $where[$_wkey] = 'FALSE';
 
             // Return
-            return;
+            return false;
         }
 
         // Get column name
@@ -1588,7 +1596,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $multi = $cField->storeRelationAbility == 'many' && preg_match('~,~', $cValue);
 
         // Build WHERE clause
-        $where[$_wkey] = $multi
+        return $where[$_wkey] = $multi
             ? 'CONCAT(",", `' . $column . '`, ",") REGEXP ",(' . implode('|', explode(',', $cValue)) . '),"'
             : 'FIND_IN_SET("' . $cValue . '", `' . $column . '`)';
     }
