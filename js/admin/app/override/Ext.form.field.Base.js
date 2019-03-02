@@ -117,12 +117,13 @@ Ext.override(Ext.form.field.Base, {
      * @return {Boolean} Result of a check
      */
     disableByConsiderFields: function() {
-        var me = this, disable = false, sbl;
+        var me = this, disable = false, sbl, fire = false, data;
 
         // Check if any of required consider-fields currently has a zero-value,
         // and therefore current field should be disabled and zero-valued
         me.considerOn.forEach(function(item){
             if (!item.required) return;
+            if (item.fire) fire = true;
             if (disable) return;
             if (!(sbl = me.sbl(item.name))) return;
             disable = sbl.hasZeroValue();
@@ -130,6 +131,19 @@ Ext.override(Ext.form.field.Base, {
 
         // Disable current field, and assign a zero-value to it
         if (disable) me.disable().clearValue();
+
+        // If field should be kept disabled, but 'considerchange' event should be anyway fired
+        if (disable && fire) {
+
+            // Get data
+            data = me.considerOnData();
+
+            // Fire 'enablebysatellite' event (kept temporarily, for backwards compatibility)
+            me.fireEvent('enablebysatellite', me, data);
+
+            // Fire 'considerchange' event
+            me.fireEvent('considerchange', me, data);
+        }
 
         // Return the result of a check
         return disable;
