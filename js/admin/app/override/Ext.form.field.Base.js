@@ -46,9 +46,7 @@ Ext.override(Ext.form.field.Base, {
         me._constructor();
     },
 
-    /**
-     * Append 'enablebysatellite' event
-     */
+    // @inheritdoc
     initComponent: function() {
         var me = this;
         me.callParent();
@@ -194,6 +192,9 @@ Ext.override(Ext.form.field.Base, {
         // Fire 'enablebysatellite' event
         me.fireEvent('enablebysatellite', me, data);
 
+        // Fire 'considerchange' event
+        me.fireEvent('considerchange', me, data);
+
         // Call 'onConsiderChange' method
         me.onConsiderChange(cfg, data);
     },
@@ -236,7 +237,7 @@ Ext.override(Ext.form.field.Base, {
      * @private
      */
     _initComponent: function() {
-        this.addEvents('enablebysatellite');
+        this.addEvents('enablebysatellite', 'considerchange');
     },
 
     /**
@@ -246,7 +247,10 @@ Ext.override(Ext.form.field.Base, {
      */
     _afterRender: function() {
         var me = this;
-        if ((!me.disabled || me.readOnly) && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
+        if ((!me.disabled || me.readOnly) && !me.disableBySatellites()) {
+            me.fireEvent('enablebysatellite', me, me.considerOnData());
+            me.fireEvent('considerchange', me, me.considerOnData());
+        }
     },
 
     /**

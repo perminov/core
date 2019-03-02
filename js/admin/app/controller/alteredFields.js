@@ -19,7 +19,7 @@ Ext.define('Indi.controller.alteredFields', {
                     name: 'impact'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.impact != 'all');
                     }
                 }

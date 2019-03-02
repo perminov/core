@@ -16,7 +16,7 @@ Ext.define('Indi.controller.search', {
                     name: 'access'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.access != 'all');
                     }
                 }

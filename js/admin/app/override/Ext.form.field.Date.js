@@ -49,6 +49,9 @@ Ext.override(Ext.form.field.Date, {
 
         // Fire 'enablebysatellite' event
         me.fireEvent('enablebysatellite', me, me.considerOnData());
+
+        // Fire 'considerchange' event
+        me.fireEvent('considerchange', me, me.considerOnData());
     },
 
     /**

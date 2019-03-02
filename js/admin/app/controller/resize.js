@@ -9,7 +9,7 @@ Ext.define('Indi.controller.resize', {
                     name: 'proportions'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d){
+                    considerchange: function(c, d){
                         c.setVisible(d.proportions == 'p');
                     }
                 }
@@ -26,7 +26,7 @@ Ext.define('Indi.controller.resize', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d){
+                    considerchange: function(c, d){
                         c.setVisible(d.proportions == 'c' || (d.proportions == 'p' && (d.masterDimensionAlias == 'width' || d.slaveDimensionLimitation)));
                     }
                 }
@@ -43,7 +43,7 @@ Ext.define('Indi.controller.resize', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d){
+                    considerchange: function(c, d){
                         c.setVisible(d.proportions == 'c' || (d.proportions == 'p' && (d.masterDimensionAlias == 'height' || d.slaveDimensionLimitation)));
                     }
                 }
@@ -55,7 +55,7 @@ Ext.define('Indi.controller.resize', {
                     name: 'proportions'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.labelEl.update('Ограничить пропорциональную ' + (d.masterDimensionAlias == 'width' ? 'высоту' : 'ширину'));
                         c.setVisible(d.proportions == 'p');
                     }
@@ -68,7 +68,7 @@ Ext.define('Indi.controller.resize', {
                         name: 'changeColor'
                     }],
                     listeners: {
-                        enablebysatellite: function(c, d) {
+                        considerchange: function(c, d) {
                             c.setVisible(d.changeColor == 'y');
                         }
                     }

@@ -17,7 +17,7 @@ Ext.define('Indi.controller.entities', {
                     name: 'system'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.system == 'y');
                     }
                 }

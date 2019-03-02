@@ -17,7 +17,7 @@ Ext.define('Indi.controller.fields', {
                     name: 'storeRelationAbility'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.storeRelationAbility != 'none');
                     }
                 }
@@ -27,8 +27,18 @@ Ext.define('Indi.controller.fields', {
                     name: 'storeRelationAbility'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.storeRelationAbility != 'none');
+                    }
+                }
+            },
+            formItem$L10n: {
+                considerOn: [{
+                    name: 'storeRelationAbility'
+                }],
+                listeners: {
+                    considerchange: function(c, d) {
+                        c.setVisible(d.storeRelationAbility == 'none');
                     }
                 }
             }

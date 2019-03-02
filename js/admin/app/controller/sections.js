@@ -18,7 +18,7 @@ Ext.define('Indi.controller.sections', {
                     name: 'sectionId'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(!d.sectionId);
                     }
                 }
@@ -30,7 +30,7 @@ Ext.define('Indi.controller.sections', {
                     name: 'sectionId'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(!d.sectionId && !d.expand.match(/^(all|none)$/));
                     }
                 }

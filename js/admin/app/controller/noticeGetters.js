@@ -10,7 +10,7 @@ Ext.define('Indi.controller.noticeGetters', {
                     name: 'criteriaRelyOn'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.criteriaRelyOn == 'event');
                     }
                 }
@@ -20,7 +20,7 @@ Ext.define('Indi.controller.noticeGetters', {
                     name: 'criteriaRelyOn'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.criteriaRelyOn == 'getter');
                     }
                 }
@@ -30,7 +30,7 @@ Ext.define('Indi.controller.noticeGetters', {
                     name: 'criteriaRelyOn'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.criteriaRelyOn == 'getter');
                     }
                 }

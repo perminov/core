@@ -13,7 +13,7 @@ Ext.define('Indi.controller.grid', {
                     name: 'fieldId'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(!d.fieldId);
                     }
                 }
@@ -23,7 +23,7 @@ Ext.define('Indi.controller.grid', {
                     name: 'access'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.access != 'all');
                     }
                 }
@@ -36,7 +36,7 @@ Ext.define('Indi.controller.grid', {
                     name: 'summaryType'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.summaryType == 'text');
                     }
                 }

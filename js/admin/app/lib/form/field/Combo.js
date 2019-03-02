@@ -2893,6 +2893,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Fire 'enablebysatellite' event
         me.fireEvent('enablebysatellite', me, data);
 
+        // Fire 'considerchange' event
+        me.fireEvent('considerchange', me, data);
+
         // Call 'onConsiderChange' method
         me.onConsiderChange(cfg, data);
     },

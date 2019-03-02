@@ -20,7 +20,7 @@ Ext.define('Indi.controller.fieldsAll', {
                     name: 'storeRelationAbility'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.storeRelationAbility != 'none');
                     }
                 }
