@@ -6,8 +6,8 @@
     <title><?=Indi::ini('general')->title ?: 'Indi Engine'?></title>
     <!-- Imploded and gzipped scripts and styles -->
     <?$this->other('gz')?>
-    <script type="text/javascript" src="/js/admin/indi.all.gz.js"></script>
-    <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.gz.css"/>
+    <script type="text/javascript" src="/js/admin/indi.all.<?eif(isIE(),'ie','gz')?>.js"></script>
+    <link type="text/css" rel="stylesheet" href="/css/admin/indi.all.<?eif(isIE(),'ie','gz')?>.css"/>
     <script>
     Ext.create('Indi', {
         statics: {

@@ -141,7 +141,7 @@ $css = array(
     '/css/admin/indi.calendar.css'
 );
 // Implode js files
-Indi::implode($js);
+Indi::implode($js, isIE() ? 'ie' : null);
 
 // Implode css files
-Indi::implode($css);
+Indi::implode($css, isIE() ? 'ie' : null);

@@ -126,4 +126,37 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
             }
         }
     }
+
+    /**
+     * Revert back target entry's prop, that current `changeLog` entry is related to
+     */
+    public function revertAction() {
+
+        // Declare array of ids of entries, that should be moved, and push main entry's id as first item
+        $toBeRevertedIdA[] = $this->row->id;
+
+        // If 'others' param exists in $_POST, and it's not empty
+        if ($otherIdA = ar(Indi::post()->others)) {
+
+            // Unset unallowed values
+            foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+            // If $otherIdA array is still not empty append it's item into $toBeRevertedIdA array
+            if ($otherIdA) $toBeRevertedIdA = array_merge($toBeRevertedIdA, $otherIdA);
+        }
+
+        // Fetch rows that should be moved
+        $toBeRevertedRs = Indi::trail()->model->fetchAll(array(
+            '`id` IN (' . im($toBeRevertedIdA) . ')', Indi::trail()->scope->WHERE
+        ));
+
+        // For each row
+        foreach ($toBeRevertedRs as $toBeRevertedR) $toBeRevertedR->revert();
+
+        // Apply new index
+        $this->setScopeRow(false, null, $toBeRevertedRs->column('id'));
+
+        // Flush success
+        jflush(true, 'OK');
+    }
 }

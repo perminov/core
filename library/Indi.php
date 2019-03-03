@@ -1177,11 +1177,11 @@ class Indi {
             }
 
             // Compress compilation
-            $txt = gzencode($txt, 9);
+            if ($alias != 'ie') $txt = gzencode($txt, 9);
 
             // Build the filename
             $gz = DOC . STD . '/core' . (Indi::uri()->module == 'front' ? 'f' : '')
-                . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . '.gz.' . $ext;
+                . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . rif($alias != 'ie', '.gz') .'.' . $ext;
 
             // Refresh compilation file
             $fp = fopen($gz , 'w');
