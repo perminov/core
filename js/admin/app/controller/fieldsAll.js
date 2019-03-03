@@ -7,7 +7,8 @@ Ext.define('Indi.controller.fieldsAll', {
                 allowCycle: true
             },
             gridColumn$StoreRelationAbility: {
-                icon: '/i/admin/btn-icon-multikey.png'
+                icon: '/i/admin/btn-icon-multikey.png',
+                allowCycle: false
             }
         },
         form: {
