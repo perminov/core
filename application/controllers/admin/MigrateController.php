@@ -140,7 +140,7 @@ class Admin_MigrateController extends Indi_Controller {
         // Erase satellite-cfg and hide fields, responsible for satellite-functionaity
         //Indi::db()->query('UPDATE `field` SET `dependency` = "u", `satellitealias` = "", `satellite` = "0", `alternative` = ""');
         foreach (ar('span,dependency,satellitealias,satellite,alternative') as $field)
-            field('field', $field, array('mode' => 'hidden'));
+            field('field', $field, array('mode' => 'readonly'));
         die('ok');
     }
 }
