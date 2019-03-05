@@ -34,7 +34,8 @@ class Consider_Row extends Indi_Db_Table_Row {
             if ($columnName == 'entityId') $value = entity($value)->id;
             else if (in($columnName, 'fieldId,consider')) $value = field($this->entityId, $value)->id;
             else if ($columnName == 'foreign') $value = field($this->foreign('consider')->relation, $value)->id;
-            else if ($columnName == 'connector') $value = field($this->foreign('fieldId')->relation, $value)->id;
+            else if ($columnName == 'connector')
+                $value = $value == 'id' ? -1 : field($this->foreign('fieldId')->relation, $value)->id;
         }
 
         // Call parent
