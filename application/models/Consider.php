@@ -7,4 +7,11 @@ class Consider extends Indi_Db_Table {
      * @var string
      */
     public $_rowClass = 'Consider_Row';
+
+    /**
+     * Classname for rowset
+     *
+     * @var string
+     */
+    public $_rowsetClass = 'Consider_Rowset';
 }

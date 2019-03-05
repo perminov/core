@@ -1102,6 +1102,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
                 }
 
+                // Adjust foreign rowset
+                $this->_adjustForeignRowset($key, $foreignRs[$entityId]);
+
                 // Call a user-defined method for foreign data rowset, if need
                 if ($call) eval('$foreignRs[$entityId]->' . $call . ';');
 
@@ -1500,5 +1503,16 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function sum($prop) {
         return array_sum($this->column($prop));
+    }
+
+    /**
+     * Adjust rowset, fetched to be used as foreign data
+     *
+     * @see Consider_Rowset for usage example
+     * @param $key
+     * @param $rowset
+     */
+    public function _adjustForeignRowset($key, &$rowset) {
+
     }
 }

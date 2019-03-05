@@ -1146,7 +1146,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR->relation) {
 
                 // Use a custom connector, if defined
-                if ($considerR->connector) $cField->system('connector', $considerR->foreign('connector')->alias);
+                if ($considerR->connector) $cField->system('connector',
+                    $considerR->connector == -1 ? 'id' : $considerR->foreign('connector')->alias);
 
                 // Build WHERE clause
                 if ($this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required)
