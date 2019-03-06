@@ -99,13 +99,19 @@ class Month extends Indi_Db_Table {
                   `yearId` = "'. $yearO->id . '"
             ');
 
+            // Get id
+            $id = Indi::db()->getPDO()->lastInsertId();
+
             // Get it's id
             $monthI = array(
-                'id' => Indi::db()->getPDO()->lastInsertId(),
+                'id' => $id,
                 'yearId' => $yearO->id,
                 'month' => $m,
                 'title' => $title
             );
+
+            // Set `move`
+            Indi::db()->query('UPDATE `month` SET `move` = "' . $id . '" WHERE `id` = "' . $id . '"');
         }
 
         // Return month entry as an instance of stdClass object
