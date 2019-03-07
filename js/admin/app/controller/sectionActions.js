@@ -8,7 +8,9 @@ Ext.define('Indi.controller.sectionActions', {
             gridColumn$FitWindow: {icon: '/i/admin/btn-icon-toggle-lime-gray.png'}
         },
         form: {
-
+            formItem$ActionId: {
+                jump: '/actions/form/id/{id}/'
+            }
         }
     }
 });

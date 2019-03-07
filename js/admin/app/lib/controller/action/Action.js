@@ -36,7 +36,7 @@ Ext.define('Indi.lib.controller.action.Action', {
          */
         toolbarMasterItemActionIconA: ['form', 'delete', 'save', 'toggle', 'up', 'down',
             'print', 'm4d', 'cancel', 'php', 'author', 'login', 'confirm', 'goto', 'call',
-            'pay', 'refund'
+            'pay', 'refund', 'activate'
         ]
     },
 

@@ -884,7 +884,8 @@ function mflush($field, $msg = '') {
     // Flush
     jflush(false, array('mismatch' => array(
         'direct' => true,
-        'errors' => $mismatch
+        'errors' => $mismatch,
+        'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
     )));
 }
 /**
