@@ -1026,18 +1026,8 @@ class Indi_Db_Table
         // Create an instance of a row
         $row = new $rowClass($constructData);
 
-        // If $constructData['original'] is an empty array, we setup it according to model structure
-        if (!$row->id) {
-            foreach ($this->fields() as $fieldR) {
-                if ($fieldR->columnTypeId) {
-                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
-                        $row->compileDefaultValue($fieldR->alias);
-                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
-                        $row->compileDefaultValue($fieldR->alias);
-                    }
-                }
-            }
-        }
+        // Compile default values for new entry
+        if (!$row->id) $row->compileDefaults();
 
         // Construct and return Indi_Db_Table_Row object,
         // but, if $assign arg is given - preliminary assign data

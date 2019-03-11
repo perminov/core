@@ -5717,4 +5717,29 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return parent entry
         return $this->foreign($tc);
     }
+
+    /**
+     * @return mixed
+     */
+    public function compileDefaults() {
+
+        // If it's an existing entry - return
+        if ($this->id) return;
+
+        // Foreach field
+        foreach ($this->model()->fields() as $fieldR) {
+
+            // If field does not have underlying db table column - return
+            if (!$fieldR->columnTypeId) continue;
+
+            // If default value should be set up as a result of php-expression's execution - do it
+            if (preg_match(Indi::rex('php'), $fieldR->defaultValue))
+                $this->compileDefaultValue($fieldR->alias);
+
+            // Else if underlying column's datatype is TEXT - set up default value, stored in Indi
+            // Engine field's settings as MySQL does not suppoer native default values for TEXT column
+            else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
+                $this->compileDefaultValue($fieldR->alias);
+        }
+    }
 }
