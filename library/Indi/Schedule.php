@@ -1049,8 +1049,12 @@ class Indi_Schedule {
             // Get model, that space owner prop relates to
             $spaceOwnerModelId = $this->_rs->model()->fields($spaceOwnerProp)->relation;
 
+            // Shortcut for space owner model
+            $m = Indi::model($spaceOwnerModelId);
+
             // Collect space owner distict entries and inject them into $this->_distinct array
-            foreach (Indi::model($spaceOwnerModelId)->fetchAll('`id` IN (' . im($vA) . ')') as $spaceOwnerEntry)
+            $rs = $m->preload() ? $m->preloadedAll($vA) : $m->fetchAll('`id` IN (' . im($vA) . ')');
+            foreach ($rs as $spaceOwnerEntry)
                 $this->_distinct[$spaceOwnerProp][$spaceOwnerEntry->id]['entry'] = $spaceOwnerEntry;
         }
     }

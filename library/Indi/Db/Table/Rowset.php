@@ -1114,13 +1114,24 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         $col = 'id';
                     }
 
-                    // Finish building WHERE clause
-                    $where[] = count($distinctA[$entityId])
-                        ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
-                        : 'FALSE';
+                    // If foreign model's `preload` flag was turned On
+                    if (Indi::model($entityId)->preload()) {
 
-                    // Fetch foreign data
-                    $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
+                        // Use preloaded data as foreign data rather than
+                        // obtaining foreign data by separate sql-query
+                        $foreignRs[$entityId] = Indi::model($entityId)->preloadedAll($distinctA[$entityId]);
+
+                    // Else fetch foreign from db
+                    } else {
+
+                        // Finish building WHERE clause
+                        $where[] = count($distinctA[$entityId])
+                            ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
+                            : 'FALSE';
+
+                        // Fetch foreign data
+                        $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
+                    }
                 }
 
                 // Adjust foreign rowset

@@ -44,6 +44,15 @@ class Indi_Db {
     protected static $_roleA = array();
 
     /**
+     * Array of *_Row instances preloaded by Indi::model('ModelName')->preload(true) call
+     * Those instances are grouped by entity table name and are used as a return value for
+     * $row->foreign('foreignKeyName'), $rowset->foreign('foreignKeyName') and $schedule->distinct() calls
+     *
+     * @var array
+     */
+    protected static $_preloadedA = array();
+
+    /**
      * Store queries count
      *
      * @var Indi_Db
@@ -732,5 +741,55 @@ class Indi_Db {
 
         // Return
         return $sql;
+    }
+
+    /**
+     * Return *_Row instance from $entity's preloaded instances storage by given $key
+     *
+     * @param $entity
+     * @param $key
+     * @return mixed
+     */
+    public function preloadedRow($entity, $key) {
+
+        // Preload if not yet preloaded
+        $this->_preload($entity);
+
+        // Return preloaded *_Row instance
+        return self::$_preloadedA[$entity][$key];
+    }
+
+    /**
+     * Pick *_Row instances from preloaded instances storage by given $keys, wrap into a *_Rowset instance and return
+     *
+     * @param $entity
+     * @param $keys
+     * @return Indi_Db_Table_Rowset
+     */
+    public function preloadedAll($entity, $keys) {
+
+        // Preload if not yet preloaded
+        $this->_preload($entity);
+
+        // Pick *_Row instances from self::$_preloadedA[$entity]
+        $rows = array(); foreach(ar($keys) as $key) array_push($rows, self::$_preloadedA[$entity][$key]);
+
+        // Wrap picked rows into a rowset and return it
+        return Indi::model($entity)->createRowset(array('rows' => $rows));
+    }
+
+    /**
+     * Preload *_Row instances of given $entity, and store them into self::$_preloadedA[$entity] array,
+     * having instances' ids as keys
+     *
+     * @param $entity
+     */
+    protected function _preload($entity) {
+
+        // If already preloaded - return
+        if (array_key_exists($entity, self::$_preloadedA)) return;
+
+        // Else preload
+        foreach (Indi::model($entity)->fetchAll() as $row) self::$_preloadedA[$entity][$row->id] = $row;
     }
 }

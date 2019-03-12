@@ -37,6 +37,13 @@ class Indi_Db_Table
     protected $_hasRole = false;
 
     /**
+     * Flag, indicating that this model instances was preloaded and stored within Indi_Db::$_preloaded[$entity]
+     *
+     * @var boolean
+     */
+    protected $_preload = false;
+
+    /**
      * Id of field, that is used as title-field
      *
      * @var boolean
@@ -157,6 +164,9 @@ class Indi_Db_Table
 
         // Setup 'hasRole' flag
         $this->_hasRole = $config['hasRole'];
+
+        // Setup 'preload' flag to be false by default
+        $this->_preload = false;
 
         // Setup 'spaceScheme' prop
         $this->_space = $config['space'];
@@ -1250,6 +1260,16 @@ class Indi_Db_Table
     }
 
     /**
+     * Return the 'preload' flag value, with preliminary seeing it up if $on arg given
+     *
+     * @param bool $on
+     * @return bool
+     */
+    public function preload($on = false) {
+        return func_num_args() ? $this->_preload = $on : $this->_preload;
+    }
+
+    /**
      * Return title of current model
      *
      * @return string
@@ -1628,5 +1648,25 @@ class Indi_Db_Table
      */
     public function spaceOwnersRelyOn($rules = false) {
         return $rules ? $this->_space['fields']['relyOn'] : array_keys($this->_space['fields']['relyOn']);
+    }
+
+    /**
+     * Get preloaded row by a given $key (entry's ID)
+     *
+     * @param int $key
+     * @return Indi_Db_Table_Row
+     */
+    public function preloadedRow($key) {
+        return Indi::db()->preloadedRow($this->_table, $key);
+    }
+
+    /**
+     * Get rowset of сontaining preloaded rows by a given $keys (entry's ID comma-separated list or array)
+     *
+     * @param int|string|array $keys
+     * @return Indi_Db_Table_Rowset
+     */
+    public function preloadedAll($keys) {
+        return Indi::db()->preloadedAll($this->_table, $keys);
     }
 }

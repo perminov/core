@@ -1800,19 +1800,30 @@ class Indi_Db_Table_Row implements ArrayAccess
                             $col = 'id';
                         }
 
-                        // Finish building WHERE clause
-                        $where[] = '`' . $col . '` ' .
-                            ($fieldR->storeRelationAbility == 'many'
-                                ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
-                                : '= "' . $val . '"');
+                        // If foreign model's `preload` flag was turned On
+                        if (Indi::model($model)->preload()) {
 
-                        // Fetch foreign row/rows
-                        $foreign = Indi::model($model)->{'fetch' . $methodType}(
-                            $where,
-                            $fieldR->storeRelationAbility == 'many'
-                                ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
-                                : null
-                        );
+                            // Use preloaded data as foreign data rather than
+                            // obtaining foreign data by separate sql-query
+                            $foreign = Indi::model($model)->{'preloaded' . $methodType}($val);
+
+                        // Else fetch foreign from db
+                        } else {
+
+                            // Finish building WHERE clause
+                            $where[] = '`' . $col . '` ' .
+                                ($fieldR->storeRelationAbility == 'many'
+                                    ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
+                                    : '= "' . $val . '"');
+
+                            // Fetch foreign row/rows
+                            $foreign = Indi::model($model)->{'fetch' . $methodType}(
+                                $where,
+                                $fieldR->storeRelationAbility == 'many'
+                                    ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
+                                    : null
+                            );
+                        }
                     }
                 }
 
@@ -4942,8 +4953,11 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If callback return value is boolean false - skip
             if ($_ === false) continue;
 
-            // Assign additional props and save
-            $r->assign($_)->save();
+            // Assign additional props
+            if (is_array($_)) $r->assign($_);
+
+            // Save
+            $r->save();
         }
 
         // Return info about values that were kept, deleted and added
