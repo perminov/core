@@ -170,7 +170,7 @@ class Indi_Schedule {
     public function __construct($since = 'month', $until = null, $gap = false) {
 
         // If $since arg is either 'week' or 'month'
-        if (in($since, 'week,month')) extract($this->bounds($since, $until));
+        if (in($since, 'day,week,month')) extract($this->bounds($since, $until));
 
         // Set `_since`
         $this->_since = is_numeric($since) ? $since : strtotime($since);
@@ -425,14 +425,15 @@ class Indi_Schedule {
         // Config for different wrap kinds
         $wrapCfg = array(
             'month' => array('format' => 'Y-m-01', 'days' => 7 * 6),
-            'week'  => array('format' => 'Y-m-d',  'days' => 7 * 1)
+            'week'  => array('format' => 'Y-m-d',  'days' => 7 * 1),
+            'day'   => array('format' => 'Y-m-d',  'days' => 1)
         );
 
         // Get unix-timestamp
         $ts = strtotime(date($wrapCfg[$wrap]['format'], is_numeric($date) ? $date : strtotime($date)));
 
         // Get date, that is a monday in the same week as $ts
-        $since = date('Y-m-d', $ts - (date('N', $ts) - 1) * $this->_shift['system']);
+        $since = date('Y-m-d', $ts - ($wrap == 'day' ? 0 : date('N', $ts) - 1) * $this->_shift['system']);
 
         // Get bottom right date of pseudo-calendar
         $until = date('Y-m-d', strtotime($since . '+' . $wrapCfg[$wrap]['days'] . ' days'));

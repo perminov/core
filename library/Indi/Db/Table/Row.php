@@ -5437,7 +5437,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Create schedule
         $schedule = !$strict && array_key_exists('since', $this->_temporary)
             ? Indi::schedule($this->since, strtotime($this->until . ' +1 day'))
-            : Indi::schedule('month', $this->fieldIsZero('date') ? null : $this->date);
+            : Indi::schedule($this->_system['bounds'] ?: 'month', $this->fieldIsZero('date') ? null : $this->date);
 
         // Expand schedule's right bound
         $schedule->frame($frame = $this->_spaceFrame());
