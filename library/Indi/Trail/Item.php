@@ -185,4 +185,23 @@ class Indi_Trail_Item {
         $array['level'] = $this->level;
         return $array;
     }
+
+    /**
+     * Shorthand function to call current model's fields() method
+     *
+     * @param string $names
+     * @param string $format
+     * @return mixed
+     */
+    public function fields($names = '', $format = 'rowset') {
+
+        // Get call info from backtrace
+        $call = array_pop(array_slice(debug_backtrace(), 0, 1));
+
+        // Make the call
+        return call_user_func_array(
+            array(Indi::model($this->section->entityId), $call['function']),
+            func_num_args() ? func_get_args() : $call['args']
+        );
+    }
 }

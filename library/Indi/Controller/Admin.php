@@ -2564,8 +2564,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Adjust access rights
         $this->adjustAccess();
 
-        // Adjust existing row access rights
-        if (Indi::trail()->row->id) $this->adjustExistingRowAccess(Indi::trail()->row);
+        // If we're operating in single-row mode
+        if ($row = Indi::trail()->row) {
+
+            // Adjust trailing row access with no attention to whether is existing or new
+            $this->adjustTrailingRowAccess($row);
+
+            // Adjust trailing row access with attention to whether is existing or new
+            $this->{$row->id ? 'adjustExistingRowAccess' : 'adjustCreatingRowAccess'}($row);
+        }
 
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
@@ -2780,6 +2787,24 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup special value for section's `disableAdd` prop, indicating that creation is still possible
         Indi::trail()->section->disableAdd = 2;
+    }
+
+    /**
+     * Empty function. To be overridden in child classes
+     *
+     * @param Indi_Db_Table_Row $row
+     */
+    public function adjustTrailingRowAccess(Indi_Db_Table_Row $row) {
+
+    }
+
+    /**
+     * Empty function. To be overridden in child classes
+     *
+     * @param Indi_Db_Table_Row $row
+     */
+    public function adjustCreatingRowAccess(Indi_Db_Table_Row $row) {
+
     }
 
     /**
