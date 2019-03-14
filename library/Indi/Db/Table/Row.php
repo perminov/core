@@ -1152,7 +1152,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Build WHERE clause
                 if ($this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required)
                     && array_key_exists($cField_alias, $this->_modified)
-                    && $this->_modified[$cField_alias] != $this->_original[$cField_alias])
+                    && $this->_modified[$cField_alias] != $this->_original[$cField_alias]
+                    && ($this->id || (!$this->_system['consider'] && $this->_system['consider'][$cField_alias])))
                     $hasModifiedConsiderWHERE = true;
 
             // Else it mean that current-field is linked to variable entity, and that entity is identified by $cValue, so
@@ -4782,17 +4783,14 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     protected function comboDataExistingValueWHERE(&$where, $fieldR, $consistence = null) {
 
-        // If current entry is not yet exist - return
-        if (!$this->id && !$consistence) return;
+        // If current entry is a filters shared row and no consistence is set - return
+        if ($this->{$fieldR->alias} == $fieldR->zeroValue() && !$consistence) return;
 
         // If $where arg is an empty array - return
         if (is_array($where) && !count($where)) return;
 
         // If $where arg is an empty string - return
         if (is_string($where) && !strlen($where)) return;
-
-        // If consider data was picked - return
-        if ($this->_system['consider']) return;
 
         // Build alternative WHERE clauses,
         // that will surely provide current value presence within fetched combo data

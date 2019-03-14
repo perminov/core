@@ -598,11 +598,12 @@ class Indi_Controller {
             // If consider-field is not given within request data - skip
             if (!array_key_exists($cField->alias, $consider)) continue;
 
+            // Collect info about valid values of consider-fields
+            if ($this->row->{$cField->alias} != $picked[$cField->alias])
+                $picked[$cField->alias] = $consider[$cField->alias];
+
             // Check format, and if ok - assign value
             $this->row->mcheck(array($cField->alias => array('rex' => '~^[a-zA-Z0-9,]*$~')), $consider);
-
-            // Collect info about valid values of consider-fields
-            $picked[$cField->alias] = $this->row->{$cField->alias};
         }
 
         // Remember picked values within row's system data
