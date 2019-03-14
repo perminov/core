@@ -112,5 +112,18 @@ Ext.override(Ext.form.field.Date, {
             value = this.getValue();
 
         return value ? Ext.Date.format(value, format) : this.zeroValue;
+    },
+
+    /**
+     * @private
+     * Sets the Date picker's value to match the current field value when expanding.
+     */
+    onExpand: function() {
+        var value = this.getValue();
+        this.picker.setValue(Ext.isDate(value)
+            ? value
+            : (Ext.isDate(this.minValue || this.maxValue)
+                ? (this.minValue || this.maxValue)
+                : new Date()));
     }
 });
