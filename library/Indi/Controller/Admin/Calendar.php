@@ -355,6 +355,9 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function saveAction($redirect = true, $return = false) {
 
+        // Check daily schedule
+        $this->row->system('bounds', 'day');
+
         // If calendar can be used - exclude calendar-fields fields from the list of disabled fields
         if ($this->spaceFields) $this->excludeDisabledFields('spaceSince,spaceUntil');
 
