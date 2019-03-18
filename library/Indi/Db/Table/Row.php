@@ -5607,6 +5607,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($prop == 'timeId') $disabled[$prop] = array_keys($data);
         }
 
+        // Adjust disabled values
+        $this->adjustSpaceDisabledValues($disabled, $schedule);
+
         // Return info about disabled values
         return $disabled;
     }
@@ -5753,5 +5756,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
                 $this->compileDefaultValue($fieldR->alias);
         }
+    }
+
+    /**
+     * Adjust space disabled values. To be overridden in child classed
+     *
+     * @param array $disabled
+     * @param Indi_Schedule $schedule
+     */
+    public function adjustSpaceDisabledValues(array &$disabled, Indi_Schedule $schedule) {
+
     }
 }
