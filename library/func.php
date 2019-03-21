@@ -909,6 +909,40 @@ function jconfirm($msg) {
 }
 
 /**
+ * Flush the json-encoded message, containing `prompt` flag, and $cfg param, containing,
+ * in it's turn, array of configurations for each field to be rendered within prompt window
+ *
+ * @param string $msg
+ * @param array $cfg
+ */
+function jprompt($msg, array $cfg) {
+
+    // Start building data for flushing
+    $flush = array('prompt' => true, 'msg' => $msg, 'cfg' => $cfg);
+
+    // Send content type header
+    if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
+
+    // Here we send HTTP/1.1 400 Bad Request to prevent success handler from being fired
+    if (!headers_sent() && !isIE()) header('HTTP/1.1 400 Bad Request');
+
+    // Flush
+    iexit(json_encode($flush));
+}
+
+/**
+ * Flush text to be shown within <textarea>
+ *
+ * @param bool $success
+ * @param string $text
+ */
+function jtextarea($success, $text) {
+
+    // Flush
+    jflush($success, '<textarea style="width: 500px; height: 400px;">' . $text . '</textarea>');
+}
+
+/**
  * Normalize the price-value
  *
  * @param float|int $price

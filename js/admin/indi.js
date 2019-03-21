@@ -637,6 +637,51 @@ Ext.define('Indi', {
                     }
                 }
 
+            // Else if `prompt` prop is set - build prompt's form and show it within Ext.MessageBox
+            }); else if ('prompt' in json) boxA.push({
+                title: Indi.lang.I_MSG,
+                msg: json.msg,
+                buttons: Ext.Msg.OKCANCEL,
+                icon: Ext.Msg.QUESTION,
+                modal: true,
+                scope: Ext.MessageBox,
+                form: {
+                    items: json.cfg
+                },
+                fn: function(answer) {
+                    var promptData = false;
+
+                    // Append new answer param
+                    urlOwner.url = urlOwner.url.split('?')[0] + '?answer=' + answer
+                        + (urlOwner.url.split('?')[1] ? '&' + urlOwner.url.split('?')[1] : '');
+
+                    // If answer is 'ok'
+                    if (answer == 'ok') {
+
+                        // Show load mask
+                        if (Indi.loadmask) Indi.loadmask.show();
+
+                        // Get prompt data
+                        promptData = this.down('form').getForm().getValues();
+                    }
+
+                    // Make new request
+                    if (form) form.owner.submit({
+                        submitEmptyText: false,
+                        dirtyOnly: true
+                    }); else {
+
+                        // Append prompt datato request
+                        if (promptData) response.request.options.params['_prompt'] = JSON.stringify(promptData);
+
+                        // Show loader
+                        Ext.get('loader').css('opacity', 1).show();
+
+                        // Make request again
+                        Ext.Ajax.request(response.request.options);
+                    }
+                }
+
             // Else if `success` prop is set
             }); else if ('success' in json) {
 

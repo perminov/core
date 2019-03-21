@@ -4,7 +4,10 @@ Ext.define('Indi.controller.sections', {
         index: {
             gridColumn$RowsOnPage: {editor: true},
             gridColumn$Alias: {editor: true},
-            gridColumn$Title: {editor: true}
+            gridColumn$Title: {editor: true},
+            rowset: {
+                multiSelect: true
+            }
         },
         form: {
             formItem$SectionId: {

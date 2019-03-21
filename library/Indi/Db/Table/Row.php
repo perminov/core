@@ -5767,4 +5767,184 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function adjustSpaceDisabledValues(array &$disabled, Indi_Schedule $schedule) {
 
     }
+
+    /**
+     * Build config for combo
+     *
+     * @param $field
+     * @return array
+     */
+    public function combo($field) {
+
+        $name = $field;
+
+        // Get field
+        $fieldR = $this->field($field);
+
+        // Get params
+        $params = $fieldR->params;
+
+        // Get default value
+        $defaultValue = $this->compileDefaultValue($field);
+
+        // If current row is an existing row, or current value is not
+        // empty - use current value as selected value, else use default value
+        $selectedValue = $this->id || strlen($this->$field) ? $this->$field : $defaultValue;
+
+        // Get initial combo options rowset
+        $comboDataRs = $this->getComboData($name, null, $selectedValue);
+
+        // Prepare combo options data
+        $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
+
+
+        $options = $comboDataA['options'];
+        $keyProperty = $comboDataA['keyProperty'];
+
+        // If combo is boolean
+        if ($fieldR->storeRelationAbility == 'none' && $fieldR->columnTypeId == 12) {
+
+            // Setup a key
+            if ($this->$name) {
+                $key = $this->$name;
+            } else if ($comboDataRs->enumset) {
+                $key = key($options);
+            } else {
+                $key = $defaultValue;
+            }
+
+            // Setup an info about selected value
+            if (strlen($key)) {
+                $selected = array(
+                    'title' => $options[$key]['title'],
+                    'value' => $key
+                );
+            } else {
+                $selected = array(
+                    'title' => null,
+                    'value' => null
+                );
+            }
+
+        // Else if current field column type is ENUM or SET, and current row have no selected value, we use first
+        // option to get default info about what title should be displayed in input keyword field and what value
+        // should have hidden field
+        } else if ($fieldR->storeRelationAbility == 'one') {
+
+            // Setup a key
+            if (($this->id && !$comboDataRs->enumset) || !is_null($this->$name)) {
+                $key = $this->$name;
+            } else if ($comboDataRs->enumset) {
+                $key = key($options);
+            } else {
+                $key = $defaultValue;
+            }
+
+            // Setup an info about selected value
+            $selected = array(
+                'title' => $options[$key]['title'],
+                'value' => $key
+            );
+
+            // Add box color
+            if ($options[$key]['system']['boxColor']) $selected['boxColor'] = $options[$key]['system']['boxColor'];
+
+            // Setup css color property for input, if original title of selected value contained a color definition
+            if ($options[$selected['value']]['system']['color'])
+                $selected['style'] =  ' style="color: ' . $options[$selected['value']]['system']['color'] . ';"';
+
+            // Set up html attributes for hidden input, if optionAttrs param was used
+            if ($options[$selected['value']]['attrs']) {
+                $attrs = array();
+                foreach ($options[$selected['value']]['attrs'] as $k => $v) {
+                    $attrs[] = $k . '="' . $v . '"';
+                }
+                $attrs = ' ' . implode(' ', $attrs);
+            }
+
+        // Else if combo is multiple
+        } else if ($fieldR->storeRelationAbility == 'many') {
+
+            // Set value for hidden input
+            $selected = array('value' => $selectedValue);
+
+            // Set up html attributes for hidden input, if optionAttrs param was used
+            $exploded = explode(',', $selected['value']);
+            $attrs = array();
+            for ($i = 0; $i < count($exploded); $i++) {
+                if ($options[$exploded[$i]]['attrs']) {
+                    foreach ($options[$exploded[$i]]['attrs'] as $k => $v) {
+                        $attrs[] = $k . '-' . $exploded[$i] . '="' . $v . '"';
+                    }
+                }
+            }
+            $attrs = ' ' . implode(' ', $attrs);
+        }
+
+        // Prepare options data
+        $options = array(
+            'ids' => array_keys($options),
+            'data' => array_values($options),
+            'found' => $comboDataRs->found(),
+            'page' => $comboDataRs->page(),
+            'enumset' => $comboDataRs->enumset
+        );
+
+        // Setup tree flag in entity has a tree structure
+        if ($comboDataRs->table() && $comboDataRs->model()->treeColumn()) $options['tree'] = true;
+
+        // Setup groups for options
+        if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
+
+        // Setup option height. Current context does not have a $this->ignoreTemplate member,but inherited class *_FilterCombo
+        // does, so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
+        // in *_FilterCombo is set to false
+        $options['optionHeight'] = $params['optionHeight'] && !$fieldR->param('ignoreTemplate') ? $params['optionHeight'] : 14;
+
+        // Setup groups for options
+        if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
+
+        // Prepare view params
+        $view = array(
+            'subTplData' => array(
+                'attrs' => $attrs,
+                'pageUpDisabled' => $this->$name ? 'false' : 'true',
+            ),
+            'store' => $options
+        );
+
+        // Setup view data,related to currenty selected value(s)
+        if ($fieldR->storeRelationAbility == 'many') {
+            $view['subTplData']['selected'] = $selected;
+            foreach($comboDataRs->selected as $selectedR) {
+                $item = Indi_View_Helper_Admin_FormCombo::detectColor(array(
+                    'title' => ($_tc = $fieldR->param('titleColumn'))
+                        ? $selectedR->$_tc
+                        : $selectedR->title()
+                ));
+                $item['id'] = $selectedR->$keyProperty;
+                $view['subTplData']['selected']['items'][] = $item;
+            }
+        } else {
+            $view['subTplData']['selected'] = Indi_View_Helper_Admin_FormCombo::detectColor($selected);
+        }
+
+        $view = [
+            'xtype' =>'combo.form',
+            'fieldLabel' => $fieldR->title,
+            'name' => $fieldR->alias,
+            'value' => $selectedValue,
+            'width' => '100%',
+            'margin' => 5,
+            'field' => [
+                'id' => $fieldR->id,
+                'storeRelationAbility' => $fieldR->storeRelationAbility,
+                'alias' => $fieldR->alias,
+                'relation' => $fieldR->relation
+            ],
+            'allowBlank' => $fieldR->mode == 'regular',
+        ] + $view;
+
+        return $view;
+    }
 }
