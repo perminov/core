@@ -24,6 +24,14 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected $_isNestedSeparate = false;
 
     /**
+     * Rowset, containing Indi_Db_Table_Row instances according to current selection.
+     * Those instances are collected by `ids`, given by Indi::uri()->id and Indi::post()->others
+     *
+     * @var Indi_Db_Table_Rowset|array
+     */
+    public $selected = [];
+
+    /**
      * Array of section ids, starting from current section and up to the top.
      *
      * @var array
@@ -197,24 +205,37 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Else if where is some another action
             } else {
 
-                // If 'others' param exists in $_POST, and it's not empty
-                // Unset unallowed values
-                if ($otherIdA = ar(Indi::post()->others))
-                    foreach ($otherIdA as $i => $otherIdI)
-                        if (!(int) $otherIdI) unset($otherIdA[$i]);
-                $selectedIdA = $otherIdA ?: array();
-                if ((int) Indi::uri('id')) $selectedIdA[] = (int) Indi::uri('id');
+                // Array of selected entries initially contain only $this->row->id
+                $idA[] = $this->row->id;
 
-                // Apply some scope params
-                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix, 'lastIds' => $selectedIdA);
+                // If 'others' param exists in $_POST, and it's not empty
+                if ($otherIdA = ar(Indi::post()->others)) {
+
+                    // Unset invalid values
+                    foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+                    // If $otherIdA array is still not empty append it's item into $idA array
+                    if ($otherIdA) $idA = array_merge($idA, $otherIdA);
+                }
+
+                // Fetch selected rows
+                $this->selected = Indi::trail()->model->fetchAll(array('`id` IN (' . im($idA) . ')', Indi::trail()->scope->WHERE));
+
+                // Prepare scope params
+                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix, 'lastIds' => $this->selected->column('id'));
+
+                // Append 'toggledSave' scope-param
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
+
+                // Apply prepared scope params
                 Indi::trail()->scope->apply($applyA);
 
                 // If we are here for just check of row availability, do it
                 if (Indi::uri()->check) jflush(true, $this->checkRowIsInScope());
 
-                // Set last accessed row
-                $this->setScopeRow();
+                // Set last accessed rows
+                $this->setScopeRow(false, null, $this->selected->column('id'));
+
             }
         }
     }

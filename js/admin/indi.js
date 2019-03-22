@@ -514,10 +514,16 @@ Ext.define('Indi', {
                 // Write php-errors to the console, additionally
                 if (logger) for (var i in sesA) logger(sesA[i]);
 
+                // Build error msg
+                var err = sesA.join('<br><br>');
+
+                // If error msg length is greater than 4kb - wrap it in <textarea>
+                if (err.length > 4096) err = '<textarea style="width: 500px; height:400px;">' + err + '</textarea>';
+
                 // Show errors within a message box
                 boxA.push({
                     title: 'Server error',
-                    msg: sesA.join('<br><br>'),
+                    msg: err,
                     buttons: Ext.Msg.OK,
                     icon: Ext.MessageBox.ERROR
                 });
