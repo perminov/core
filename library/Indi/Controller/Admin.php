@@ -206,7 +206,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             } else {
 
                 // Array of selected entries initially contain only $this->row->id
-                $idA[] = $this->row->id;
+                if ($this->row->id) $idA[] = $this->row->id; else $idA = array();
 
                 // If 'others' param exists in $_POST, and it's not empty
                 if ($otherIdA = ar(Indi::post()->others)) {
@@ -219,7 +219,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // Fetch selected rows
-                $this->selected = Indi::trail()->model->fetchAll(array('`id` IN (' . im($idA) . ')', Indi::trail()->scope->WHERE));
+                $this->selected = $idA
+                    ? Indi::trail()->model->fetchAll(array('`id` IN (' . im($idA) . ')', Indi::trail()->scope->WHERE))
+                    : Indi::trail()->model->createRowset();
 
                 // Prepare scope params
                 $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix, 'lastIds' => $this->selected->column('id'));
