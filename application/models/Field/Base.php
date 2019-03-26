@@ -36,6 +36,9 @@ class Field_Base extends Indi_Db_Table {
      */
     public function createRowset($input = array()) {
 
+        // If no $input arg given - assume empty rowset
+        if (!$input) $input['rows'] = array();
+
         // Get the type of construction
         $index = isset($input['rows']) ? 'rows' : 'data';
 
