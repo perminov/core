@@ -1,5 +1,14 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
+    public function sectionmultiselectAction() {
+        field('section', 'multiSelect', array(
+            'title' => 'Выделение более одной записи',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check'
+        ));
+        die('ok');
+    }
+
     public function filterallowclearAction() {
         field('search', 'allowClear', array (
             'title' => 'Разрешить сброс',

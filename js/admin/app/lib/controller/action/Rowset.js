@@ -1789,7 +1789,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return Ext.merge({
             id: me.id + '-rowset',
             dockedItems: me.rowsetDockedA(),
-            store: me.getStore()
+            store: me.getStore(),
+            multiSelect: me.ti().section.multiSelect
         }, me.rowset);
     },
 

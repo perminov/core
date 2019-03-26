@@ -15,7 +15,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     rowset: {
         xtype: 'grid',
-        multiSelect: false,
         firstColumnWidthFraction: 0.4,
         smallColumnWidth: 100,
         border: 0,
