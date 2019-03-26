@@ -1,6 +1,16 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
 
+    public function rownumbererAction() {
+        field('section', 'rownumberer', array (
+            'title' => 'Включить нумерацию строк',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '0',
+        ));
+        die('ok');
+    }
+
     public function sectionancestorAction() {
         field('section', 'extends', array('title' => 'Родительский класс PHP', 'alias' => 'extendsPhp'));
         field('section', 'extendsJs', array (

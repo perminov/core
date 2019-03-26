@@ -287,6 +287,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnA: function() {
         var me = this, columnA = [], column$Id = Ext.isFunction(me.gridColumn$Id) ? me.gridColumn$Id() : me.gridColumn$Id;
 
+        // Append rownumberer-column
+        if (me.ti().section.rownumberer) columnA.push({xtype: 'rownumberer'});
+
         // Append Id column
         if (column$Id) columnA.push(column$Id);
 
