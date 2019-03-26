@@ -1,5 +1,14 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
+    public function filterallowclearAction() {
+        field('search', 'allowClear', array (
+            'title' => 'Разрешить сброс',
+            'columnTypeId' => 'BOOLEAN',
+            'elementId' => 'check',
+            'defaultValue' => '1',
+        ))->move(6);
+        die('ok');
+    }
 
     public function rownumbererAction() {
         field('section', 'rownumberer', array (
