@@ -1,6 +1,17 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
 
+    public function sectionancestorAction() {
+        field('section', 'extends', array('title' => 'Родительский класс PHP', 'alias' => 'extendsPhp'));
+        field('section', 'extendsJs', array (
+            'title' => 'Родительский класс JS',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'defaultValue' => 'Indi.lib.controller.Controller',
+        ))->move(12);
+        die('ok');
+    }
+
     public function lockedAction() {
         field('grid', 'group', array (
             'title' => 'Группа',

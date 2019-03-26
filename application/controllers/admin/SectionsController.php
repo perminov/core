@@ -86,7 +86,7 @@ class Admin_SectionsController extends Indi_Controller_Admin {
         $ctrlRaw = preg_replace(':\{controller\}:', $ctrl, $tplRaw);
 
         // Replace {extends} keyword with an actual parent class name
-        $ctrlRaw = preg_replace(':\{extends\}:', $this->row->extends, $ctrlRaw);
+        $ctrlRaw = preg_replace(':\{extends\}:', $this->row->extendsPhp ?: $this->row->extends, $ctrlRaw);
 
         // Put the contents to a model file
         file_put_contents($ctrlAbs, $ctrlRaw);
