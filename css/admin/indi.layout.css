@@ -936,3 +936,19 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 .i-infotb-inner:hover {
     transition: text-indent 4s ease 0ms;
 }
+
+.i-grid-cell-badge {
+    padding: 0 2px;
+    text-align: right;
+    line-height: 12px;
+    margin-left: 2px;
+    display: inline-block;
+    color: white;
+    background: blue;
+}
+.i-grid-cell-badge[data-type="exists js"] {
+    background: #e9b921;
+}
+.i-grid-cell-badge[data-state="error"] {
+    background: red;
+}

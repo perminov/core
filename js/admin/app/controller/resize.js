@@ -1,10 +1,8 @@
 Ext.define('Indi.controller.resize', {
-    extend: 'Indi.Controller',
+    extend: 'Indi.lib.controller.Controller',
     actionsConfig: {
         form: {
-            formItem$Proportions: {nojs: true},
             formItem$MasterDimensionAlias: {
-                nojs: true,
                 considerOn: [{
                     name: 'proportions'
                 }],
@@ -61,7 +59,6 @@ Ext.define('Indi.controller.resize', {
                     }
                 }
             },
-            formItem$ChangeColor: {nojs: true},
             formItem$Color: function() {
                 return {
                     considerOn: [{

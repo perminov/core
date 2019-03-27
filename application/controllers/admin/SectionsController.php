@@ -142,4 +142,83 @@ class Admin_SectionsController extends Indi_Controller_Admin {
         // Call parent
         $this->callParent();
     }
+
+    /**
+     * 1.Hide default values for `extendsPhp` and `extendsJs` props, to prevent it from creating a mess in eyes
+     * 2.Check php/js-controller files exist, and if yes, check whether it's actual parent class is
+     *   as per specified in `extendsPhp`/`extendsJs` prop
+     *
+     * @param array $data
+     */
+    public function adjustGridData(&$data) {
+
+        // Get default values
+        foreach (ar('extendsPhp,extendsJs') as $prop) $default[$prop] = t()->fields($prop)->defaultValue;
+
+        // Dirs dict by section type
+        $dir = ['s' => 'core', 'p' => 'www', 'o' => 'coref'];
+
+        // Foreach data item
+        foreach ($data as &$item) {
+
+            // Get php-controller class name
+            $php = 'Admin_' . ucfirst($item['alias']) . 'Controller';
+
+            // If php-controller file exists for this section
+            if (class_exists($php)) {
+
+                // Setup flag
+                $item['_system']['php-class'] = true;
+
+                // Get parent class
+                $parent = get_parent_class($php);
+
+                // If actual parent class is not as per section `extendsPhp` prop - setup error
+                if ($parent != $item['extendsPhp']) $item['_system']['php-error']
+                    = sprintf('Файл php-контроллера существует, но в нем родительский класс указан как %s', $parent);
+            }
+
+            // Get js-controller file name
+            $js = DOC . STD . '/' . $dir[$item['$keys']['type']] . '/js/admin/app/controller/' . $item['alias']. '.js';
+
+            // If js-controller file exists
+            if (file_exists($js)) {
+
+                // Setup flag
+                $item['_system']['js-class'] = true;
+
+                // If js-controller file is empty - setup error
+                if (!$js = file_get_contents($js)) $item['_system']['js-error'] = 'Файл js-контроллера пустой';
+
+                // Else we're unable to find parent class mention - setup error
+                else if (!preg_match('~extend:\s*(\'|")([a-zA-Z0-9\.]+)\1~', $js, $m))
+                    $item['_system']['js-error'] = 'В файле js-контроллера не удалось найти родительский класс';
+
+                // Else if parent class is not as per `extendsJs` prop - setup error
+                else if (($parent = $m[2]) != $item['extendsJs']) $item['_system']['js-error']
+                    = sprintf('Файл js-контроллера существует, но в нем родительский класс указан как %s', $parent);;
+            }
+
+            // Hide default values
+            foreach ($default as $prop => $defaultValue) if ($item[$prop] == $defaultValue) $item[$prop] = '';
+        }
+    }
+
+    /**
+     * Append additional props to the list of to be converted to grid data
+     * for js-controller php-controller files badges to be refreshed
+     *
+     * @return array|mixed
+     */
+    public function affected4grid() {
+
+        // Get parent
+        $affected = $this->callParent();
+
+        // Append props
+        foreach (ar('alias,extendsJs,extendsPhp,type') as $prop) $affected []= $prop;
+
+        // Return
+        return $affected;
+    }
 }

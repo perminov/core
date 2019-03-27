@@ -1,5 +1,5 @@
 Ext.define('Indi.controller.fields', {
-    extend: 'Indi.Controller',
+    extend: 'Indi.lib.controller.Controller',
     actionsConfig: {
         index: {
             gridColumn$Title: {editor: true},

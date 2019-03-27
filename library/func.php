@@ -1355,6 +1355,9 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // If value should be a json-encoded expression, and it is - decode
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
+        // If value should not be in the list of disabled values - flush error
+        if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $prop));
+
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
         if ($rule['key'] && strlen($value)) {
 

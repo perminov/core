@@ -694,6 +694,9 @@ class Indi_Controller {
             // Adjust grid data
             $this->adjustGridData($data);
 
+            // Adjust grid data on a per-item basis
+            foreach ($data as &$item) $this->adjustGridDataItem($item);
+
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
 
@@ -993,5 +996,14 @@ class Indi_Controller {
 
         // Flush info about disabled options (dates and others)
         jflush(true, array('disabled' => $this->row->spaceDisabledValues($data)));
+    }
+
+    /**
+     * Adjusting grid data item. To be redefined in child classes if need
+     *
+     * @param $item
+     */
+    public function adjustGridDataItem(&$item) {
+
     }
 }

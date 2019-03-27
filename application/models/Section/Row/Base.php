@@ -219,4 +219,15 @@ class Section_Row_Base extends Indi_Db_Table_Row {
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
     }
+
+    /**
+     * Prevent `extendsPhp` and `extendsJs` props from being empty
+     */
+    public function onBeforeSave() {
+
+        // Setup default value instead of empty value
+        foreach (ar('extendsPhp,extendsJs') as $prop)
+            if ($this->isModified($prop) && !$this->$prop)
+                $this->$prop = $this->field($prop)->defaultValue;
+    }
 }

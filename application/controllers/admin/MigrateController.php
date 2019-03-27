@@ -37,6 +37,12 @@ class Admin_MigrateController extends Indi_Controller {
             'elementId' => 'string',
             'defaultValue' => 'Indi.lib.controller.Controller',
         ))->move(12);
+        grid('sections','rowsOnPage', array (
+            'alterTitle' => 'СНС',
+            'tooltip' => 'Строк на странице',
+        ));
+        grid('sections','extendsPhp', array('editor' => 1));
+        grid('sections','extendsJs', array('editor' => 1));
         die('ok');
     }
 

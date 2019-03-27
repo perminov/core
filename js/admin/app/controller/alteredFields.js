@@ -1,5 +1,5 @@
 Ext.define('Indi.controller.alteredFields', {
-    extend: 'Indi.Controller',
+    extend: 'Indi.lib.controller.Controller',
     actionsConfig: {
         index: {
             rowset: {

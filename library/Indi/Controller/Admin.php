@@ -2416,6 +2416,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         $data = array($this->row->toGridData($this->affected4grid()));
         $this->adjustGridData($data);
 
+        // Adjust grid each data item
+        foreach ($data as &$item) $this->adjustGridDataItem($item);
+
         // Return affected data, prepared for being displayed
         return array_shift($data);
     }

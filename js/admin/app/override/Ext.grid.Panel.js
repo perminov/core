@@ -92,7 +92,7 @@ Ext.override(Ext.grid.Panel, {
     getGridColumnsWidthUsage: function(isTree) {
         var me = this, columnA = me.getGridColumns(), s = me.getStore(), sortA = s.sorters.keys, sd = me.getSummaryData(),
             i, widthA = [], level, longest, px = {ellipsis: {usual: 18, rownumberer: 12, icon: 12}, sort: 18, id: 15}, cell,
-            longestWidth, _longestWidth, k, total = 0, cb = false, lineA, longestLine;
+            longestWidth, _longestWidth, k, total = 0, cb = false, lineA, longestLine, badge, hasHtml;
 
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
@@ -130,7 +130,7 @@ Ext.override(Ext.grid.Panel, {
                 // Get the longest (within current column) cell contents
                 me.getStore().each(function(r){
                     cell = typeof columnA[i].renderer == 'function'
-                        ? columnA[i].renderer(r.get(columnA[i].dataIndex))
+                        ? columnA[i].renderer(r.get(columnA[i].dataIndex), {}, r)
                         : r.get(columnA[i].dataIndex).toString();
 
                     level = 0;
@@ -145,13 +145,21 @@ Ext.override(Ext.grid.Panel, {
                     // If cell is empty - return
                     if (!cell) return;
 
-                    // If cell's html have a color-box inside, append '---' to mind color-box width,
-                    // as '---' addition will provide a same-width alternative
-                    if (Ext.isString(cell) && (cb = cell.match(/class="i-color-box"/))) cell += '---';
+                    // If cell contents is string
+                    if (Ext.isString(cell) && (hasHtml = cell.match(/<[a-zA-Z]+/))) {
+
+                        // If cell's html have a color-box inside, append '---' to mind color-box width,
+                        // as '---' addition will provide a same-width alternative
+                        if (cb = cell.match(/class="i-color-box"/)) cell += '---';
+
+                        // If cell's html have a bage-boxes inside, append '-' to mind badge-box
+                        // margin/padding, as '-' addition will provide a same-width alternative
+                        if (badge = cell.match(/class="i-grid-cell-badge"/g)) badge.forEach(function(){cell += '-'});
+                    }
 
                     // Strip tags from cell's inner text/html and re-check longest cell contents
                     if (cell.length > longest[level].length &&
-                        (!cb || (cell = Indi.stripTags(cell)).length > longest[level].length))
+                        (!hasHtml || (cell = Indi.stripTags(cell)).length > longest[level].length))
                         longest[level] = cell;
                 });
 
