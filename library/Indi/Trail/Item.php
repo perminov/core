@@ -2,6 +2,11 @@
 class Indi_Trail_Item {
 
     /**
+     * @var Indi_Db_Table_Row
+     */
+    public $filtersSharedRow = null;
+
+    /**
      * Store current trail item index/level
      *
      * @var int

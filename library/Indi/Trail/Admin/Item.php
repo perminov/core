@@ -2,11 +2,6 @@
 class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
     /**
-     * @var Indi_Db_Table_Row
-     */
-    public $filtersSharedRow = null;
-
-    /**
      * @var Indi_View_Action_Admin
      */
     public $view;

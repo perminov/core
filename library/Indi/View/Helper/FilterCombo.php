@@ -22,9 +22,9 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
      * Builds the combo for grid filter
      *
      * @param Search_Row $filter
-     * @return string
+     * @param bool $combined
      */
-    public function filterCombo($filter) {
+    public function filterCombo($filter, $combined = false) {
 
         // Filter entry
         $this->filter = $filter;
@@ -58,7 +58,14 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         }
 
         // Do stuff
-        return parent::formCombo($filter->foreign('fieldId')->alias);
+        parent::formCombo($filter->foreign('fieldId')->alias);
+
+        // If $combined arg is true - combine ids and values
+        if ($combined) {
+            $view = $this->getRow()->view($alias);
+            $view['store'] = array_combine($view['store']['ids'], $view['store']['data']);
+            $this->getRow()->view($alias, $view);
+        }
     }
 
     /**
@@ -76,7 +83,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         if ($this->filter->model()->fields('consistence') && !$this->filter->consistence) return;
 
         // If filter is non-boolean
-        if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && Indi::uri('format')) {
+        if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && (Indi::uri('format') || $this->filter->consistence == 2)) {
 
             // Get field's alias
             $alias = $this->getField()->alias;
