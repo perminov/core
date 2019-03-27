@@ -224,4 +224,99 @@ class Admin_SectionsController extends Indi_Controller_Admin {
         // Return
         return $affected;
     }
+
+    /**
+     * Created copies of selected sections and attach under section, chosen within prompt-window
+     * Caution! Do not use it, it's not completed and works properly only in specific situations
+     */
+    public function duplicateAction() {
+
+        // Get selected entries ids
+        $sectionId_disabled = $this->selected->column('id');
+
+        // If prompt has no answer yet
+        if (!Indi::get('answer')) {
+
+            // Create blank `section` entry
+            $sectionR = t()->model->createRow();
+
+            // Get `sectionId` field extjs config
+            $sectionId_field = $sectionR->combo('sectionId') + array('disabledOptions' => $sectionId_disabled);
+
+            // Build prompt msg
+            $msg = im(['Выберите родительский раздел, в подчинении у которого должны быть',
+                'созданы дубликаты выбранных разделов'], '<br>');
+
+            // Prompt for timeId
+            jprompt($msg, [$sectionId_field]);
+
+        // If answer is 'ok'
+        } else if (Indi::get('answer') == 'ok') {
+
+            // Validate prompt data and flush error is something is not ok
+            $_ = jcheck(array(
+                'sectionId' => array(
+                    'req' => true,
+                    'rex' => 'int11',
+                    'key' => 'section',
+                    'dis' => $sectionId_disabled
+                )
+            ), json_decode(Indi::post('_prompt'), true));
+
+            // Get prefix
+            $prefix = Indi::model($_['sectionId']->entityId)->table();
+
+            // Get sectionId
+            $sectionId_parent = $_['sectionId']->id;
+
+            // For each section to be copied
+            foreach ($this->selected as $r) {
+
+                // Prepare data
+                $config = $r->toArray();
+
+                // Unset id
+                unset($config['id']);
+
+                // Append values
+                $config['sectionId'] = $sectionId_parent;
+                $config['alias'] = $prefix .= ucfirst($r->foreign('entityId')->table);
+
+                // Create new entry, assign props and save
+                $new = Indi::model('Section')->createRow($config, true);
+                $new->save();
+
+                // Use new entry's id as parent for next iteration
+                $sectionId_parent = $new->id;
+
+                // Remove auto-created grid columns
+                $new->nested('grid')->delete();
+
+                // Foreach nested entity
+                foreach (ar('section2action,grid,alteredField,search') as $nested) {
+
+                    // Foreach nested entry
+                    foreach ($r->nested($nested) as $nestedR) {
+
+                        // Prepare data
+                        $values = $nestedR->toArray();
+
+                        // Unset values that we're going to change
+                        foreach (ar('id,sectionId') as $prop) unset($values[$prop]);
+
+                        // Assign `sectionId`
+                        $values['sectionId'] = $new->id;
+
+                        // Create new nested entry, assign props and save
+                        $nestedR->model()->createRow($values, true)->save();
+                    }
+                }
+            }
+
+            // Flush success
+            jflush(true, 'Copied');
+
+        // Else flush failure
+        } else jflush(false, 'Duplication cancelled');
+    }
 }
