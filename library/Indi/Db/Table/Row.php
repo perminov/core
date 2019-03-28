@@ -5448,6 +5448,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->spacePreloadWHERE()
         ));
 
+        // If $data arg contains 'purpose' param - pass into current entry's system data
+        // For now, there is only one situation where it's useful: for cases when event
+        // is being dragged within calendar UI, so user is planning to shift event to
+        // another date, so we need to detect dates, that are disabled, and highlight
+        // such dates within calendar UI, to prevent user from dropping event at disabled date
+        // So, in this cases, $data['purpose'] == 'drag', and it is used within $schedule->distinct()
+        // call, to prevent processing space owners, that are not same as current entry's space owners
+        if ($data['purpose']) $this->_system['purpose'] = $data['purpose'];
+
         // Collect distinct values for each prop
         $schedule->distinct($spaceOwners, $this, $strict);
 

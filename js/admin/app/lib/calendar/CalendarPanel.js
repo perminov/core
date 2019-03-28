@@ -21,7 +21,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
         'Ext.calendar.view.Week',
         'Ext.calendar.view.Month'
     ],
-    
+
     /**
      * @cfg {Boolean} showDayView
      * True to include the day view (and toolbar button), false to hide them (defaults to true).
@@ -321,6 +321,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
                 showToday: this.showToday,
                 showTodayText: this.showTodayText,
                 showTime: this.showTime,
+                disabledDates: {},
                 listeners: {
                     'weekclick': {
                         fn: function(vw, dt) {

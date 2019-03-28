@@ -454,8 +454,8 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     },
 
     // private
-    onInitDrag: function() {
-        this.fireEvent('initdrag', this);
+    onInitDrag: function(rec) {
+        this.fireEvent('initdrag', this, rec);
     },
 
     // private
@@ -1060,5 +1060,19 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             this.dragZone,
             this.dropZone
         );
+    },
+
+    /**
+     * Set disabled dates
+     *
+     * @param dates
+     */
+    setDisabledDates: function(dates) {
+        var me = this, method; me.disabledDates = {};
+        dates.forEach(function(date){me.disabledDates[date.replace(/-/g, '')] = true});
+        this.el.select('.ext-cal-day').each(function(dayEl){
+            method = dayEl.attr('id').split('-').pop() in me.disabledDates ? 'addCls' : 'removeCls';
+            dayEl[method]('disabled');
+        });
     }
 });

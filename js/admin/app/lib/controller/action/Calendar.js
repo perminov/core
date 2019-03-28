@@ -217,6 +217,23 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             weekViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
             monthViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
             listeners: {
+                initdrag: function(view, rec){
+
+                    // Make a special request to get the inaccessible values for each field considering their current values
+                    Indi.load('/' + me.ti().section.alias + '/form/id/' + rec.get('id') + '/consider/duration/', {
+                        params: {
+                            purpose: 'drag'
+                        },
+                        success: function(response) {
+
+                            // Get info about disabled values for each field
+                            var dd = response.responseText.json().disabled;
+
+                            // Apply those disabled values, so only non-disabled will remain accessible
+                            view.setDisabledDates(dd.date);
+                        }
+                    });
+                },
                 eventmove: function(view, rec, eOpts) {
                     me.recordRemoteSave(rec, view.store.indexOfTotal(rec) + 1);
                 },

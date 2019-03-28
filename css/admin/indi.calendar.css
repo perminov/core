@@ -898,3 +898,6 @@ td.ext-cal-dtitle-today div {
     display: inline-block;
     background: #d7ecff;
 }
+.ext-cal-day.disabled {
+    background: lightgray;
+}

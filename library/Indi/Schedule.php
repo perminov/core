@@ -1016,9 +1016,18 @@ class Indi_Schedule {
         // Foreach prop that we need to collect distinct values for
         foreach ($prop as $propI => $ruleA) {
 
+            // If self event's system 'purpose' param is 'drag', it means that user is
+            // started dragging event from original date to some another date, so we need
+            // to highlight disabled dates within calendar UI, that, in it's turn, means
+            // that we do not need to detect disabled dates for ALL possible space owners,
+            // but only for space owners, mentioned within dragged event's props
+            if ($self->system('purpose') == 'drag') $_self[$propI] = array_flip(ar($self->$propI));
+
             // Foreach entry within preloaded rowset - collect distinct values
             foreach ($this->_rs as $idx => $r) if ($r->$propI)
-                foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v]['idxA'][] = $idx;
+                foreach (ar($r->$propI) as $v)
+                    if ($self->system('purpose') != 'drag' || isset($_self[$propI][$v]))
+                        $this->_distinct[$propI][$v]['idxA'][] = $idx;
 
             // If hours-rule no set - skip, else
             if (!$ruleA['hours']) continue; else $spaceOwnerProp = $propI;
@@ -1039,7 +1048,7 @@ class Indi_Schedule {
             // of why teacher can be unavailable at that date/time. The second possible reason is that teacher's own settings,
             // that he had set up, and those settings assume that teacher is available only at, for example 11:00 at Mondays,
             // and 18:00 at Wednesdays
-            if (!$strict)
+            if (!$strict && $self->system('purpose') != 'drag')
                 foreach ($self->getComboData($propI)->column('id') as $v)
                     if (!$this->_distinct[$propI][$v])
                         $this->_distinct[$propI][$v]['idxA'] = array();
