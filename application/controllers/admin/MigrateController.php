@@ -1,12 +1,21 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
+
+    public function last4Action() {
+        foreach (ar('sectionancestor,rownumberer,filterallowclear,sectionmultiselect') as $_)
+            $this->{$_ . 'Action'}();
+        foreach (ar('sectionActions,grid,alteredFields,search') as $s)
+            section($s, ['extendsPhp' => 'Indi_Controller_Admin_Multinew']);
+        die('ok');
+    }
+
     public function sectionmultiselectAction() {
         field('section', 'multiSelect', array(
             'title' => 'Выделение более одной записи',
             'columnTypeId' => 'BOOLEAN',
             'elementId' => 'check'
         ));
-        die('ok');
+        //die('ok');
     }
 
     public function filterallowclearAction() {
@@ -16,7 +25,7 @@ class Admin_MigrateController extends Indi_Controller {
             'elementId' => 'check',
             'defaultValue' => '1',
         ))->move(6);
-        die('ok');
+        //die('ok');
     }
 
     public function rownumbererAction() {
@@ -26,7 +35,7 @@ class Admin_MigrateController extends Indi_Controller {
             'elementId' => 'check',
             'defaultValue' => '0',
         ));
-        die('ok');
+        //die('ok');
     }
 
     public function sectionancestorAction() {
@@ -43,7 +52,7 @@ class Admin_MigrateController extends Indi_Controller {
         ));
         grid('sections','extendsPhp', array('editor' => 1));
         grid('sections','extendsJs', array('editor' => 1));
-        die('ok');
+        //die('ok');
     }
 
     public function lockedAction() {
