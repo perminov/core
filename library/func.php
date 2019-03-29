@@ -673,7 +673,7 @@ if (!function_exists('apache_request_headers')) {
 function in($item, $array) {
 
     // If $array arg is bool or is null, or $item arg is bool - set $strict flag as true
-    $strict = is_bool($array) || is_null($array) || is_bool($item);
+    $strict = is_bool($array) || is_null($array) || is_bool($item) || is_null($item);
 
     // Normalize $array arg
     $array = ar($array);
