@@ -2103,16 +2103,17 @@ function innerHtml($node, $html) {
     $level = 0;
 
     // Find tags before target node
-    if (!preg_match_all($rex, $chunkA[0], $m)) return;
+    if (preg_match_all($rex, $chunkA[0], $m)) {
 
-    // Foreach tag, found before target node
-    foreach (array_shift($m) as $idx => $tag) {
+        // Foreach tag, found before target node
+        foreach (array_shift($m) as $idx => $tag) {
 
-        // If it's non-pair tag - skip
-        if (isset($ignore[$m[1][$idx]])) continue;
+            // If it's non-pair tag - skip
+            if (isset($ignore[$m[1][$idx]])) continue;
 
-        // Current level
-        $level += substr($tag, 1, 1) == '/' ? -1 : 1;
+            // Current level
+            $level += substr($tag, 1, 1) == '/' ? -1 : 1;
+        }
     }
 
     // Increment current level to respect target node
