@@ -156,26 +156,37 @@ Ext.override(Ext.grid.plugin.CellEditing, {
                     url = '/' + section.alias + '/form/id/' + record.get('id') + '/ph/' + scope.hash
                         + '/aix/' + context.rowIdx + '/';
 
-                // Show loader
-                Indi.app.loader();
+                // If it's enumset - show editor
+                if (ed.field.store.enumset) {
 
-                // Make odata-request
-                Ext.Ajax.request({
-                    url: Indi.pre.replace(/\/$/, '') + url + 'odata/' + ed.field.name + '/',
-                    success: function(response) {
+                    // Show editor
+                    me.editTask.delay(0, me.showEditor, me, [ed, context, value]);
 
-                        // Convert response.responseText to JSON object
-                        var json = JSON.parse(response.responseText);
+                // Else
+                } else {
 
-                        // Refresh store
-                        ed.field.resetInfo(value, json);
-                        ed.field[ed.field.store.ids.length ? 'enable' : 'disable']();
-                        ed.field.fetchUrl = url;
+                    // Show loader
+                    Indi.app.loader();
 
-                        // Show editor
-                        me.editTask.delay(0, me.showEditor, me, [ed, context, value]);
-                    }
-                });
+                    // Make odata-request
+                    Ext.Ajax.request({
+                        url: Indi.pre.replace(/\/$/, '') + url + 'odata/' + ed.field.name + '/',
+                        success: function(response) {
+
+                            // Convert response.responseText to JSON object
+                            var json = JSON.parse(response.responseText);
+
+                            // Refresh store
+                            ed.field.resetInfo(value, json);
+                            ed.field[ed.field.store.ids.length ? 'enable' : 'disable']();
+                            ed.field.fetchUrl = url;
+
+                            // Show editor
+                            me.editTask.delay(0, me.showEditor, me, [ed, context, value]);
+                        }
+                    });
+                }
+
             } else {
                 me.editTask.delay(15, me.showEditor, me, [ed, context, value]);
             }

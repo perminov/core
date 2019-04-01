@@ -172,7 +172,30 @@ class Indi_Trail_Item {
         if ($this->model) $array['model'] = $this->model->toArray();
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
-        if ($this->grid) $array['grid'] = $this->grid->toNestingTree()->toArray(true);
+
+        // If we have grid
+        if ($this->grid) {
+
+            // Create blank row
+            $blank = t()->model->createRow();
+
+            // Foreach grid column
+            foreach (t()->grid as $r) {
+
+                // If editor is turned off - skip
+                if (!$r->editor) continue;
+
+                // Else if it's underlying field is not an enumset-field - skip
+                if (t()->fields($r->fieldId)->relation != 6) continue;
+
+                // Pick store
+                $r->editor = ['store' => $blank->combo($r->fieldId, true)];
+            }
+
+            // Convert to nesting tree and then to array
+            $array['grid'] = $this->grid->toNestingTree()->toArray(true);
+        }
+
         if ($this->filters) $array['filters'] = $this->filters->toArray();
         if ($this->filtersSharedRow) {
 

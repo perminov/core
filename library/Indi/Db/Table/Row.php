@@ -5780,15 +5780,19 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * Build config for combo
      *
-     * @param $field
+     * todo: refactor
+     *
+     * @param int|string $field
+     * @param bool $store Get store only instead of full config
      * @return array
      */
-    public function combo($field) {
-
-        $name = $field;
+    public function combo($field, $store = false) {
 
         // Get field
         $fieldR = $this->field($field);
+
+        // Get name
+        $name = $field = $fieldR->alias;
 
         // Get params
         $params = $fieldR->params;
@@ -5913,6 +5917,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Setup groups for options
         if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
 
+        // If store arg is given - return only store data
+        if ($store) return $options;
+
         // Prepare view params
         $view = array(
             'subTplData' => array(
@@ -5938,6 +5945,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $view['subTplData']['selected'] = Indi_View_Helper_Admin_FormCombo::detectColor($selected);
         }
 
+        // Build full config
         $view = [
             'xtype' =>'combo.form',
             'fieldLabel' => $fieldR->title,
@@ -5954,6 +5962,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             'allowBlank' => $fieldR->mode == 'regular',
         ] + $view;
 
+        // Return it
         return $view;
     }
 }

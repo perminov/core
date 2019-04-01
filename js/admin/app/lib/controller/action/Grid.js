@@ -542,12 +542,27 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
-    gridColumnEditor_Combo: function(c) {
-        var me = this, f = me.ti().fields.r(c.dataIndex, 'alias'), r = me.ti().row;
+    /**
+     * Prepare cell-combo config
+     *
+     * @param c
+     * @param f
+     * @param e
+     * @return {*}
+     */
+    gridColumnEditor_Combo: function(c, f, e) {
+        var me = this, emptyStore;
+
+        // todo: check whether this line still required
         if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one' && !c.editor) return null;
+
+        // Default empty store
+        emptyStore = {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, optionHeight: "14", page: 1};
+
+        // Return cfg
         return {
             xtype: 'combo.cell',
-            store: {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, js: '', optionHeight: "14", page: 1},
+            store: e.store || emptyStore,
             field: f
         }
     },
@@ -558,8 +573,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXRadio_Editor: function(c) {
-        return this.gridColumnEditor_Combo(c);
+    gridColumnXRadio_Editor: function(c, f, e) {
+        return this.gridColumnEditor_Combo(c, f, e);
     },
 
     /**
@@ -568,8 +583,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXCombo_Editor: function(c) {
-        return this.gridColumnEditor_Combo(c);
+    gridColumnXCombo_Editor: function(c, f, e) {
+        return this.gridColumnEditor_Combo(c, f, e);
     },
 
     /**
@@ -578,8 +593,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXMulticheck_Editor: function(c) {
-        return this.gridColumnEditor_Combo(c);
+    gridColumnXMulticheck_Editor: function(c, f, e) {
+        return this.gridColumnEditor_Combo(c, f, e);
     },
 
     /**
