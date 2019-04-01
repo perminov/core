@@ -5946,21 +5946,21 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Build full config
-        $view = [
+        $view = array(
             'xtype' =>'combo.form',
             'fieldLabel' => $fieldR->title,
             'name' => $fieldR->alias,
             'value' => $selectedValue,
             'width' => '100%',
             'margin' => 5,
-            'field' => [
+            'field' => array(
                 'id' => $fieldR->id,
                 'storeRelationAbility' => $fieldR->storeRelationAbility,
                 'alias' => $fieldR->alias,
                 'relation' => $fieldR->relation
-            ],
+            ),
             'allowBlank' => $fieldR->mode == 'regular',
-        ] + $view;
+        ) + $view;
 
         // Return it
         return $view;

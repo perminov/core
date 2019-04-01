@@ -5,7 +5,7 @@ class Admin_MigrateController extends Indi_Controller {
         foreach (ar('sectionancestor,rownumberer,filterallowclear,sectionmultiselect') as $_)
             $this->{$_ . 'Action'}();
         foreach (ar('sectionActions,grid,alteredFields,search') as $s)
-            section($s, ['extendsPhp' => 'Indi_Controller_Admin_Multinew']);
+            section($s, array('extendsPhp' => 'Indi_Controller_Admin_Multinew'));
         die('ok');
     }
 

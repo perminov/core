@@ -189,7 +189,7 @@ class Indi_Trail_Item {
                 if (t()->fields($r->fieldId)->relation != 6) continue;
 
                 // Pick store
-                $r->editor = ['store' => $blank->combo($r->fieldId, true)];
+                $r->editor = array('store' => $blank->combo($r->fieldId, true));
             }
 
             // Convert to nesting tree and then to array

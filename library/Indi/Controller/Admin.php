@@ -29,7 +29,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      *
      * @var Indi_Db_Table_Rowset|array
      */
-    public $selected = [];
+    public $selected = array();
 
     /**
      * Array of section ids, starting from current section and up to the top.

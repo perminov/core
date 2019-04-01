@@ -125,7 +125,7 @@ class Admin_SectionsController extends Indi_Controller_Admin {
         );
 
         // For each row get export expression
-        $php = []; foreach ($toBeExportedRs as $toBeExportedR) $php []= $toBeExportedR->export();
+        $php = array(); foreach ($toBeExportedRs as $toBeExportedR) $php []= $toBeExportedR->export();
 
         // Apply new index
         $this->setScopeRow(false, null, $toBeExportedRs->column('id'));
@@ -159,7 +159,7 @@ class Admin_SectionsController extends Indi_Controller_Admin {
         foreach (ar('extendsPhp,extendsJs') as $prop) $default[$prop] = t()->fields($prop)->defaultValue;
 
         // Dirs dict by section type
-        $dir = ['s' => 'core', 'p' => 'www', 'o' => 'coref'];
+        $dir = array('s' => 'core', 'p' => 'www', 'o' => 'coref');
 
         // Foreach data item
         foreach ($data as &$item) {
@@ -244,11 +244,11 @@ class Admin_SectionsController extends Indi_Controller_Admin {
             $sectionId_field = $sectionR->combo('sectionId') + array('disabledOptions' => $sectionId_disabled);
 
             // Build prompt msg
-            $msg = im(['Выберите родительский раздел, в подчинении у которого должны быть',
-                'созданы дубликаты выбранных разделов'], '<br>');
+            $msg = implode(array('Выберите родительский раздел, в подчинении у которого должны быть',
+                'созданы дубликаты выбранных разделов'), '<br>');
 
             // Prompt for timeId
-            jprompt($msg, [$sectionId_field]);
+            jprompt($msg, array($sectionId_field));
 
         // If answer is 'ok'
         } else if (Indi::get('answer') == 'ok') {
