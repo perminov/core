@@ -2298,7 +2298,10 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Get name
                 name = consider._foreign && consider._foreign['consider']
                     ? consider._foreign['consider'].alias
-                    : me.$ctx.ti().fields.r(consider.consider).alias;
+                    : me.$ctx ? me.$ctx.ti().fields.r(consider.consider).alias : false;
+
+                // If name was not detected - return
+                if (!name) return;
 
                 // If such field mentioned within considerOn - merge
                 if (name in idxO) Ext.merge(me.considerOn[idxO[name]], {required: consider.required == 'y', satellite: true});
