@@ -146,7 +146,7 @@ Ext.define('Ext.calendar.dd.DropZone', {
     onCalendarDragComplete: function() {
         delete this.dragStartDate;
         delete this.dragEndDate;
-        this.view.setDisabledDates([]);
+        this.view.setDisabledValues();
         this.clearShims();
     },
 

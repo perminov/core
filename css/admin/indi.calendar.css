@@ -898,9 +898,6 @@ td.ext-cal-dtitle-today div {
     display: inline-block;
     background: #d7ecff;
 }
-.ext-cal-day.disabled {
-    background: lightgray;
-}
 .ext-cal-dayview .ext-cal-bg-row-div {
     height: 11px;
     margin-bottom: 0;
@@ -919,4 +916,23 @@ td.ext-cal-dtitle-today div {
 }
 .ext-cal-dayview .ext-cal-bg-row-in:first-child .ext-cal-bg-row-div:first-child {
     border-top: none;
+}
+.i-cal-disabled-time {
+    position: absolute;
+    opacity: 0.5;
+    left: 51px;
+    background: black;
+}
+.ext-cal-day.disabled:before {
+    background: black;
+    content: ' ';
+    height: calc(100% + 2px);
+    position: relative;
+    z-index: 100;
+    margin-right: -1px;
+    opacity: 0.5;
+    top: 0px;
+    display: block;
+    margin-bottom: -17px;
+    box-sizing: border-box;
 }

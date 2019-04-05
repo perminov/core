@@ -1074,5 +1074,66 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             method = dayEl.attr('id').split('-').pop() in me.disabledDates ? 'addCls' : 'removeCls';
             dayEl[method]('disabled');
         });
+    },
+
+    /**
+     * Mark certain areas as disabled within calendar
+     *
+     * @param disabled
+     */
+    setDisabledValues: function(disabled) {
+        var me = this, pxPerHour = 44, pxPerMin = pxPerHour /60, start, since, child, height, width, left;
+
+        // If `disabled` arg is not given - setup empty
+        me.disabledValues = disabled || {date: [], busy: {}};
+
+        // Set disabled dates
+        me.setDisabledDates(me.disabledValues.date);
+
+        // Remove previously added disabled area fading
+        me.el.select('.i-cal-disabled-time').remove();
+
+        // If we're not in daybodyview - return
+        if (me.xtype != 'daybodyview') return;
+
+        // Get width
+        width = me.ownerCt.header.el.down('.ext-cal-dtitle').getWidth();
+
+        // Get weekday indexes dict
+        var dayIdx = {};
+        me.ownerCt.header.el.select('.ext-cal-dtitle').each(function(wdEl, ce, idx){
+            dayIdx[wdEl.attr('id').split('-').pop()] = idx;
+        });
+
+        // Foreach date, that we're having disabled times defined for
+        for (var date in me.disabledValues.busy) {
+
+            // Get date object
+            start = parseInt(Ext.Date.format(new Date(date + ' 08:00:00'), 'U'));
+
+            // Get left offset
+            left = width * dayIdx[date.replace(/-/g, '')];
+
+            // Foreach busy time-chunk
+            me.disabledValues.busy[date]['chunks'].forEach(function(chunk){
+
+                // Get chunk's left bound
+                since = parseInt(chunk[0]);
+
+                // Create DOM node, that will look like faded area
+                child = me.el.createChild({cls: 'i-cal-disabled-time'});
+
+                // Set height according to busy chunk's duration
+                height = pxPerMin * chunk[1];
+
+                // Do positioning
+                child.setStyle({
+                    height: height + 'px',
+                    top: ((since - start) / 60 * pxPerMin) + 'px',
+                    width: width + 'px',
+                    left: (50 + left) + 'px'
+                });
+            });
+        }
     }
 });

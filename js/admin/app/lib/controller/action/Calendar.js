@@ -222,7 +222,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     // Make a special request to get the inaccessible values for each field considering their current values
                     Indi.load('/' + me.ti().section.alias + '/form/id/' + rec.get('id') + '/consider/duration/', {
                         params: {
-                            purpose: 'drag'
+                            purpose: 'drag',
+                            uixtype: view.ownerCt.xtype
                         },
                         success: function(response) {
 
@@ -230,7 +231,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                             var dd = response.responseText.json().disabled;
 
                             // Apply those disabled values, so only non-disabled will remain accessible
-                            view.setDisabledDates(dd.date);
+                            view.setDisabledValues(dd);
                         }
                     });
                 },

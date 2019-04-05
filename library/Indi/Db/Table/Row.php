@@ -5457,6 +5457,11 @@ class Indi_Db_Table_Row implements ArrayAccess
         // call, to prevent processing space owners, that are not same as current entry's space owners
         if ($data['purpose']) $this->_system['purpose'] = $data['purpose'];
 
+        // If $data arg contains 'uixtype' paras - pass into current entry's system data
+        // It will be used to calc disabled values for other weekdays' dates within week,
+        // that current event's date is in
+        if ($data['uixtype']) $this->_system['uixtype'] = $data['uixtype'];
+
         // Collect distinct values for each prop
         $schedule->distinct($spaceOwners, $this, $strict);
 
@@ -5612,12 +5617,108 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Use keys as values for date and timeId
         foreach ($disabled as $prop => $data) {
+
+            // Get actual dates
             if ($prop == 'date') $disabled[$prop] = array_keys($data);
-            if ($prop == 'timeId') $disabled[$prop] = array_keys($data);
+
+            // If prop is 'timeId'
+            if ($prop == 'timeId') {
+
+                // Get timeHi
+                $disabled['timeHi'] = array();
+                foreach ($disabled[$prop] = array_keys($data) as $timeId)
+                    $disabled['timeHi'][] = timeHi($timeId);
+
+                // Sort
+                sort($disabled['timeHi']);
+            }
         }
+
+        // Foreach disabled time
+        foreach ($disabled['timeHi'] as $idx => $Hi) {
+
+            // Append busy chunk
+            $chunkA []= array(strtotime($this->date . ' ' . $Hi . ':00'), 15);
+
+            // If it was first timeHi item - skip
+            if (!$idx) continue;
+
+            // Prev and next busy chunks shortcuts
+            $prev = &$chunkA[count($chunkA) - 2];
+            $curr = &$chunkA[count($chunkA) - 1];
+
+            // If current busy chunk is start at the exact same timestamp where previous busy chunk ends
+            if ($curr[0] <= $prev[0] + $prev[1] * 60) {
+
+                // Extend previous chunk's duration
+                $prev[1] += 15;
+
+                // Instead of adding new chunk
+                array_pop($chunkA);
+            }
+        }
+
+        // Foreach chunk
+        foreach ($chunkA as $idx => &$curr) {
+
+            // If it's not first chunk - setup prev busy chunks shortcut
+            if ($idx) $prev = &$chunkA[$idx - 1];
+
+            // Get right bound of free chunk's, located before curr busy chunk
+            $free = $this->duration * 60 + ($idx ? $prev[0] + $prev[1] * 60 : $curr[0] - 15 * 60);
+
+            // Get diff
+            $diff = $free > $curr[0] ? $free - $curr[0] : ($this->duration - 15) * 60;
+
+            // Shift current busy chunk's left bound
+            $curr[0] += $diff;
+
+            // Decrease current busy chunk's duration
+            $curr[1] -= $diff / 60;
+        }
+
+        // Pass busy chunks to the return value
+        $disabled['busy'][$this->date]['chunks'] = $chunkA ?: [];
+        $disabled['busy'][$this->date]['timeHi'] = array_flip($disabled['timeHi']) ?: [];
 
         // Adjust disabled values
         $this->adjustSpaceDisabledValues($disabled, $schedule);
+
+        // If we're trying to drag event within week-calendar
+        if ($this->_system['uixtype'] == 'weekview') {
+
+            // Backup date and
+            $date = $this->date;
+
+            // Unset system uixtype param, to prevent unneeded recursion
+            unset($this->_system['uixtype']);
+
+            // Get since/until for given week
+            $bounds = $schedule->bounds('week', $date); $wd = $bounds['since'];
+
+            // Foreach date within week, that dragged event's date is in
+            while ($wd < $bounds['until']) {
+
+                // If weekday's date is same as dragged event's date - skip
+                if ($date != $wd) {
+
+                    // Spoof date
+                    $data['date'] = $wd;
+
+                    // Get disabled values for weekday's date
+                    $_ = $this->spaceDisabledValues($data);
+
+                    // Append into $disabled['busy']
+                    $disabled['busy'][$wd] = $_['busy'][$wd];
+                }
+
+                // Jump to next
+                $wd = date('Y-m-d', strtotime($wd . ' +1 day'));
+            }
+
+            // Restore date and system uixtype param
+            $this->date = $date; $this->_system['uixtype'] = 'weekview';
+        }
 
         // Return info about disabled values
         return $disabled;

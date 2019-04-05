@@ -71,6 +71,10 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
 
                 this.shim(n.date, box);
                 text = this.moveText;
+                var Ymd = Ext.Date.format(n.date, 'Y-m-d');
+                if (this.view.disabledValues && this.view.disabledValues.busy[Ymd])
+                    if (dt.split(' ').pop() in this.view.disabledValues.busy[Ymd]['timeHi'])
+                        return false;
             }
             if (data.type == 'eventresize') {
                 if (!this.resizeDt) {
@@ -127,6 +131,12 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
 
     onNodeDrop: function(n, dd, e, data) {
         var rec;
+
+        // Prevent dropping at disabled time
+        if (this.view.disabledValues)
+            if (Ext.Date.format(n.date, 'H:i') in this.view.disabledValues.busy[Ext.Date.format(n.date, 'Y-m-d')]['timeHi'])
+                return false;
+
         if (n && data) {
             if (data.type == 'eventdrag') {
                 rec = this.view.getEventRecordFromEl(data.ddel);
