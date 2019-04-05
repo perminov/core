@@ -27,6 +27,8 @@ Ext.define('Ext.calendar.template.DayBody', {
                                     '<tpl for="times">',
                                         '<div class="ext-cal-bg-row {out}">',
                                             '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
+                                            '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
+                                            '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
                                         '</div>',
                                     '</tpl>',
                                 '</div>',

@@ -901,3 +901,22 @@ td.ext-cal-dtitle-today div {
 .ext-cal-day.disabled {
     background: lightgray;
 }
+.ext-cal-dayview .ext-cal-bg-row-div {
+    height: 11px;
+    margin-bottom: 0;
+}
+.ext-cal-dayview .ext-cal-bg-row {
+    height: 44px;
+}
+.ext-cal-day-time-inner {
+    height: 44px;
+}
+.ext-cal-dayview .ext-cal-bg-row-div {
+    border-top: none;
+}
+.ext-cal-dayview .ext-cal-bg-row-div:first-child {
+    border-top: 1px solid #e0eeff;
+}
+.ext-cal-dayview .ext-cal-bg-row-in:first-child .ext-cal-bg-row-div:first-child {
+    border-top: none;
+}
