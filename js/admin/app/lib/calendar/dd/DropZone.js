@@ -152,10 +152,7 @@ Ext.define('Ext.calendar.dd.DropZone', {
 
     onNodeDrop: function(n, dd, e, data) {
 
-        // If drop-date is disabled - return false
-        if (Ext.Date.format(n.date, 'Ymd') in this.view.disabledDates) return false;
-
-        if (n && data) {
+        if (n && data && !(Ext.Date.format(n.date, 'Ymd') in this.view.disabledDates)) {
             if (data.type == 'eventdrag') {
                 var rec = this.view.getEventRecordFromEl(data.ddel),
                 dt = Ext.calendar.util.Date.copyTime(rec.data[Ext.calendar.data.EventMappings.StartDate.name], n.date);

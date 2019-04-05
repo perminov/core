@@ -130,14 +130,14 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
     },
 
     onNodeDrop: function(n, dd, e, data) {
-        var rec;
+        var rec, dis;
 
         // Prevent dropping at disabled time
         if (this.view.disabledValues)
             if (Ext.Date.format(n.date, 'H:i') in this.view.disabledValues.busy[Ext.Date.format(n.date, 'Y-m-d')]['timeHi'])
-                return false;
+                dis = true;
 
-        if (n && data) {
+        if (n && data && !dis) {
             if (data.type == 'eventdrag') {
                 rec = this.view.getEventRecordFromEl(data.ddel);
                 this.view.onEventDrop(rec, n.date);
