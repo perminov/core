@@ -218,6 +218,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             monthViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
             listeners: {
                 initdrag: function(view, rec){
+                    if (!rec) return;
 
                     // Make a special request to get the inaccessible values for each field considering their current values
                     Indi.load('/' + me.ti().section.alias + '/form/id/' + rec.get('id') + '/consider/duration/', {
