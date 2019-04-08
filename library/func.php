@@ -1359,7 +1359,7 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $prop));
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
-        if ($rule['key'] && strlen($value)) {
+        if ($rule['key'] && strlen($value) && $value != '0') {
 
             // Get model/table name
             $m = preg_replace('/\*$/', '', $rule['key']);
