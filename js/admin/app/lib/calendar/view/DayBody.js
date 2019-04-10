@@ -25,8 +25,14 @@ Ext.define('Ext.calendar.view.DayBody', {
 
     //private
     initComponent: function() {
+
+        // Call parent
         this.callParent(arguments);
 
+        // Setup kanban
+        this.setupKanban();
+
+        // Add events
         this.addEvents({
             /**
              * @event eventresize
@@ -130,7 +136,8 @@ Ext.define('Ext.calendar.view.DayBody', {
                 fromHourMain: this.fromHour,
                 fromHour: this.fromHour,
                 tillHourMain: this.tillHour,
-                tillHour: this.tillHour
+                tillHour: this.tillHour,
+                kanban: this.kanban
             });
         }
         this.tpl.compile();
@@ -306,8 +313,9 @@ Ext.define('Ext.calendar.view.DayBody', {
             colWidth,
             evtWidth,
             markup,
-            target;
-        for (; day < this.dayCount; day++) {
+            target,
+            k = this.kanban;
+        for (; day < (k ? k.values.length : this.dayCount); day++) {
             ev = emptyCells = skipped = 0;
             d = this.eventGrid[0][day];
             ct = d ? d.length: 0;
@@ -331,6 +339,7 @@ Ext.define('Ext.calendar.view.DayBody', {
                     data: this.getTemplateEventData(item),
                     date: Ext.calendar.util.Date.add(this.viewStart, {days: day})
                 });
+                if (k) evts[evts.length - 1].kanban = evt.key(k.prop) || raw[k.prop];
             }
         }
 
@@ -346,7 +355,7 @@ Ext.define('Ext.calendar.view.DayBody', {
                     continue;
                 }
                 evt2 = evts[j].data;
-                if (this.isOverlapping(evt, evt2)) {
+                if ((k.prop == 'date' ? true : (evts[i].kanban == evts[j].kanban)) && this.isOverlapping(evt, evt2)) {
                     evt._overlap = evt._overlap == undefined ? 1: evt._overlap + 1;
                     if (i < j) {
                         if (evt._overcol === undefined) {
@@ -368,10 +377,15 @@ Ext.define('Ext.calendar.view.DayBody', {
 
                 evt._width = colWidth;
                 evt._left = colWidth * evt._overcol;
+                //console.log(evt._width);
             }
             markup = this.getEventTemplate().apply(evt);
-            target = this.id + '-day-col-' + Ext.Date.format(evts[i].date, 'Ymd');
-
+            if (k && k.prop == 'date') {
+                target = this.id + '-day-col-' + Ext.Date.format(evts[i].date, 'Ymd');
+            } else if (k) {
+                target = this.id + '-day-col-' + evts[i].kanban;
+            }
+            //console.log(target);
             Ext.core.DomHelper.append(target, markup);
         }
 
@@ -416,7 +430,8 @@ Ext.define('Ext.calendar.view.DayBody', {
             relY = y - viewBox.y - rowH + scroll.top,
             rowIndex = Math.max(0, Math.ceil(relY / rowH)),
             mins = (rowIndex / 2 + this.fromHour * 2) * 30,
-            dt = Ext.calendar.util.Date.add(this.viewStart, {days: dayIndex, minutes: mins}),
+            k = this.kanban,
+            dt = Ext.calendar.util.Date.add(this.viewStart, {days: k.prop == 'date' ? dayIndex : 0, minutes: mins}),
             el = this.getDayEl(dt),
             timeX = x;
 
@@ -424,7 +439,7 @@ Ext.define('Ext.calendar.view.DayBody', {
             timeX = el.getLeft();
         }
 
-        return {
+        var ret = {
             date: dt,
             el: el,
             // this is the box for the specific time block in the day that was clicked on:
@@ -435,6 +450,9 @@ Ext.define('Ext.calendar.view.DayBody', {
                 height: rowH
             }
         };
+        if (k) ret.kanban = k.values[dayIndex];
+
+        return ret;
     },
 
     // private
@@ -452,12 +470,14 @@ Ext.define('Ext.calendar.view.DayBody', {
             if (el.id && el.id.indexOf(this.dayElIdDelimiter) > -1) {
                 var dt = this.getDateFromId(el.id, this.dayElIdDelimiter);
                 this.fireEvent('dayclick', this, Ext.Date.parseDate(dt, 'Ymd'), true, Ext.get(this.getDayId(dt, true)));
+                //console.log('asd1');
                 return;
             }
         }
         var day = this.getDayAt(e.getX(), e.getY());
         if (day && day.date) {
-            this.fireEvent('dayclick', this, day.date, false, null);
+            this.fireEvent('dayclick', this, day.date, false, null, day.kanban);
+            //console.log('asd2');
         }
     }
 });

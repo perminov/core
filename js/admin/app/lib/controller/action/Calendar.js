@@ -246,8 +246,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     var action = me.ti().actions.r('form', 'alias'), aix = view.store.indexOfTotal(rec);
                     if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec, aix + 1);
                 },
-                dayclick: function(view, date) {
+                dayclick: function(view, date, wtf, el, kanban) {
                     me.rowset.space = {since: Ext.Date.format(date, 'U')};
+                    if (kanban) me.rowset.space.kanban = kanban;
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },
@@ -363,6 +364,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     if (this.ctx().rowset.space) {
                         if (this.ctx().rowset.space.since) qs = 'since/' + this.ctx().rowset.space.since + '/';
                         if (this.ctx().rowset.space.until) qs += 'until/' + this.ctx().rowset.space.until + '/';
+                        if (this.ctx().rowset.space.kanban) qs += 'kanban/' + this.ctx().rowset.space.kanban+ '/';
                     }
 
                     // If Ctrl-key is pressed

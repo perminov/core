@@ -112,6 +112,9 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
             case 'timespan': $prefill[$space['coords'][$coord]] = date('H:i', $since) . '-' . date('H:i', $since); break;
         }
 
+        //
+        if (Indi::uri()->kanban) $prefill['wteacherId'] = Indi::uri()->kanban;
+
         // Assign prepared values
         $this->row->assign($prefill);
     }

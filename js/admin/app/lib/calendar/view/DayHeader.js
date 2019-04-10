@@ -40,7 +40,8 @@ Ext.define('Ext.calendar.view.DayHeader', {
                 showTodayText: this.showTodayText,
                 todayText: this.todayText,
                 showTime: this.showTime,
-                format: this.format
+                format: this.format,
+                kanban: this.kanban
             });
         }
         this.tpl.compile();
@@ -73,12 +74,15 @@ Ext.define('Ext.calendar.view.DayHeader', {
 
     // private
     moveNext: function(noRefresh) {
-        return this.moveDays(this.dayCount, noRefresh);
+        var k = this.kanban, d = k && k.prop != 'date' ? 1 : this.dayCount;
+        return this.moveDays(d, noRefresh);
+        //return this.moveDays(k && k.prop != 'date' ? 1 : this.dayCount, noRefresh);
     },
 
     // private
     movePrev: function(noRefresh) {
-        return this.moveDays( - this.dayCount, noRefresh);
+        var k = this.kanban;
+        return this.moveDays(k && k.prop != 'date' ? - 1 :  - this.dayCount, noRefresh);
     },
 
     // private
@@ -96,5 +100,16 @@ Ext.define('Ext.calendar.view.DayHeader', {
             }
         }
         this.callParent(arguments);
+    },
+
+    // @inheritdoc
+    initComponent: function() {
+        var me = this;
+
+        // Call parent
+        me.callParent(arguments);
+
+        // Setup kanban
+        me.setupKanban();
     }
 });

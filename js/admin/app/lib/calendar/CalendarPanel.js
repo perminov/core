@@ -474,6 +474,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
         if(id !== this.id+'-edit'){
            if(id !== this.preEditView){
                 l.activeItem.setStartDate(this.startDate, true);
+               //console.log(l.activeItem);
             }
            this.updateNavState();
         }
@@ -501,11 +502,13 @@ Ext.define('Ext.calendar.CalendarPanel', {
         //if (this.showNavBar !== false) {
             var item = this.layout.activeItem,
                 suffix = item.id.split(this.id + '-')[1],
-                btn = Ext.getCmp(this.id + '-tb-' + suffix);
+                btn = Ext.getCmp(this.id + '-tb-' + suffix),
+                day = Ext.getCmp(this.id + '-tb-' + 'day');
 
             if (btn) {
                 btn.toggle(true);
             }
+            if (day) day.setText(Ext.Date.format(item.viewStart || item.header.viewStart, 'l, j F'));
         //}
     },
 

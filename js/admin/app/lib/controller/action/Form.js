@@ -429,6 +429,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             listeners: {
                 boxready: function(c) {
                     if (!c.row._original || !(c.name in c.row._original)) return;
+                    //console.log(c.name, c.row._original[c.name]);
                     c.originalValue = c.row._original[c.name];
                     c.checkDirty();
                 },

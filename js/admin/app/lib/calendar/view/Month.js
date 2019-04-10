@@ -292,7 +292,8 @@ Ext.define('Ext.calendar.view.Month', {
             evtMaxCount: this.evtMaxCount,
             weekCount: this.weekCount,
             dayCount: this.dayCount,
-            colorField: this.colorField
+            colorField: this.colorField,
+            kanban: this.kanban
         });
         this.fireEvent('eventsrendered', this);
     },

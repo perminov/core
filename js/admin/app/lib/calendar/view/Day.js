@@ -58,7 +58,7 @@ Ext.define('Ext.calendar.view.Day', {
     // private
     initComponent : function(){
         // rendering more than 7 days per view is not supported
-        this.dayCount = this.dayCount > 7 ? 7 : this.dayCount;
+        //this.dayCount = this.dayCount > 7 ? 7 : this.dayCount;
 
         var cfg = Ext.apply({}, this.initialConfig);
         cfg.showTime = this.showTime;
