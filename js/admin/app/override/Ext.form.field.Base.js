@@ -400,6 +400,49 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
+     * Overridden for `originalValue` to be kept if defined
+     *
+     * @inheritdoc
+     */
+    initValue: function() {
+        var me = this, dirty = me.originalValue !== undefined;
+
+        // No change
+        me.value = me.transformOriginalValue(me.value);
+
+        /**
+         * Modified: if originalValue is defined - keep it
+         *
+         * @inheritdoc
+         */
+        me.originalValue = me.lastValue = dirty ? me.originalValue : me.value;
+
+        // No change
+        me.suspendCheckChange++;
+        me.setValue(me.value);
+        me.suspendCheckChange--;
+    },
+
+    /**
+     * Overridden to prepend checkDirty() call, so if original-value
+     * is not equal to submit-value - field will be marked as dirty
+     */
+    onBoxReady: function() {
+        var me = this;
+
+        // Added checkDirty() call
+        if (me.originalValue != me.getSubmitValue()) me.checkDirty();
+
+        // No change
+        me.callParent();
+
+        // No change
+        if (me.setReadOnlyOnBoxReady) {
+            me.setReadOnly(me.readOnly);
+        }
+    },
+
+    /**
      * Add component into left-bar
      *
      * @param cfg

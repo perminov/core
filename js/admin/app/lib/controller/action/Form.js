@@ -424,15 +424,10 @@ Ext.define('Indi.lib.controller.action.Form', {
             disabled: field.mode == 'readonly',
             labelAlign: field.params && field.params.wide == 'true' ? 'top' : 'left',
             cls: field.params && field.params.wide == 'true' ? 'i-field-wide' : '',
+            originalValue: this.ti().row._original && field.alias in this.ti().row._original ? this.ti().row._original[field.alias] : undefined,
             field: field,
             row: this.ti().row,
             listeners: {
-                boxready: function(c) {
-                    if (!c.row._original || !(c.name in c.row._original)) return;
-                    //console.log(c.name, c.row._original[c.name]);
-                    c.originalValue = c.row._original[c.name];
-                    c.checkDirty();
-                },
                 validitychange: function(cmp, valid){
                     if (!valid) me.toggleSaveAbility(valid); else {
                         var activeErrors = 0;

@@ -74,7 +74,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
             $combo = t()->filtersSharedRow->combo($fieldId_kanban);
 
             // Setup kanban props
-            Indi::trail()->section->kanban = array(
+            t()->section->kanban = array(
                 'prop' => $combo['name'],
                 'values' => $combo['store']['ids'],
                 'titles' => array_column($combo['store']['data'], 'title')
@@ -126,8 +126,8 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
             case 'timespan': $prefill[$space['coords'][$coord]] = date('H:i', $since) . '-' . date('H:i', $since); break;
         }
 
-        //
-        if (Indi::uri()->kanban) $prefill['wteacherId'] = Indi::uri()->kanban;
+        // Append kanban value into $prefill array
+        if (($k = t()->section->kanban) && ($v = Indi::uri()->kanban)) $prefill[$k['prop']] = $v;
 
         // Assign prepared values
         $this->row->assign($prefill);
