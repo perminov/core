@@ -936,3 +936,6 @@ td.ext-cal-dtitle-today div {
     margin-bottom: -17px;
     box-sizing: border-box;
 }
+.ext-cal-day-times {
+    min-width: 50px;
+}

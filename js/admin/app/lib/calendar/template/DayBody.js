@@ -21,7 +21,7 @@ Ext.define('Ext.calendar.template.DayBody', {
 
         this.callParent([
             '<table class="ext-cal-bg-tbl" cellspacing="0" cellpadding="0">',
-                '<tbody>',
+                '<thead>',
                     '<tr height="0">',
                         '<td class="ext-cal-gutter"></td>',
                         '<td colspan="{dayCount}">',
@@ -38,6 +38,8 @@ Ext.define('Ext.calendar.template.DayBody', {
                             '</div>',
                         '</td>',
                     '</tr>',
+                '</thead>',
+                '<tbody style="position: absolute;">',
                     '<tr>',
                         '<td class="ext-cal-day-times">',
                             '<tpl for="times">',
@@ -47,7 +49,7 @@ Ext.define('Ext.calendar.template.DayBody', {
                             '</tpl>',
                         '</td>',
                         '<tpl for="days">',
-                            '<td class="ext-cal-day-col">',
+                            '<td class="ext-cal-day-col" style="width: calc(100% / {parent.days.length});">',
                                 '<div class="ext-cal-day-col-inner">',
                                     tpl,
                                 '</div>',

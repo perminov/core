@@ -63,7 +63,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                 // Set start date
                 if (k && k.prop == 'date') dt = Ext.Date.parse(k.values[d], 'Y-m-d');
 
-                isToday = dt.getTime() === Ext.calendar.util.Date.today().getTime();
+                if (!k || k.prop == 'date') isToday = dt.getTime() === Ext.calendar.util.Date.today().getTime();
                 showMonth = first || (dt.getDate() == 1);
                 prevMonth = (dt.getMonth() < thisMonth) && this.weekCount == -1;
                 nextMonth = (dt.getMonth() > thisMonth) && this.weekCount == -1;
