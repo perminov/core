@@ -184,7 +184,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this, colorField = me.ti().section.colors ? me.ti().section.colors.field : false;
+        var me = this, colorField = me.ti().section.colors ? me.ti().section.colors.field : false, kanban;
 
         // Setup id
         me.id = me.bid();
@@ -202,6 +202,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                 me.rowset.dayViewCfg.tillHour = me.rowset.weekViewCfg.tillHour
                     = parseInt(me.ti().model.daily.until.split(':')[0]);
         }
+
+        // Pass kanban info into day-view cfg
+        if (kanban = me.ti().section.kanban) me.rowset.dayViewCfg.kanban = kanban;
 
         // Set flag, indicating whether or not only month view should be available within calendar panel
         var onlyMonthView = Indi.in(me.ti().model.space.scheme, 'date,datetime,date-time,date-timeId,date-dayQty');

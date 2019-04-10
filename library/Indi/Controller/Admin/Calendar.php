@@ -67,6 +67,20 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         // Define colors
         Indi::trail()->section->colors = $this->defineColors();
 
+        // If grouping is turned On - setup kanban cfg
+        if ($fieldId_kanban = t()->section->groupBy) {
+
+            // Get combo data
+            $combo = t()->filtersSharedRow->combo($fieldId_kanban);
+
+            // Setup kanban props
+            Indi::trail()->section->kanban = array(
+                'prop' => $combo['name'],
+                'values' => $combo['store']['ids'],
+                'titles' => array_column($combo['store']['data'], 'title')
+            );
+        }
+
         // Check whether 'since' uri-param is given, and if yes - prefill current entry's
         // certain space-fields with values according to clicked timestamp ('since' uri-param)
         // or according to selected datetime-range (both 'since' and 'until' uri-params)
