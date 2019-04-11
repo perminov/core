@@ -994,6 +994,12 @@ class Indi_Controller {
      */
     public function formActionIDuration($data) {
 
+        // Append kanban info, if it was previously set up
+        if (Indi::post('uixtype') == 'dayview' && $k = t()->section->kanban) $data['kanban'] = $k;
+
+        // Append `fromHour` param
+        if ($fh = Indi::post('fromHour')) $data['fromHour'] = $fh;
+
         // Flush info about disabled options (dates and others)
         jflush(true, array('disabled' => $this->row->spaceDisabledValues($data)));
     }

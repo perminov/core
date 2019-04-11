@@ -227,7 +227,8 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     Indi.load('/' + me.ti().section.alias + '/form/id/' + rec.get('id') + '/consider/duration/', {
                         params: {
                             purpose: 'drag',
-                            uixtype: view.ownerCt.xtype
+                            uixtype: view.ownerCt.xtype,
+                            fromHour: view.ownerCt.fromHour
                         },
                         success: function(response) {
 

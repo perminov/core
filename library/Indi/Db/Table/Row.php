@@ -5457,10 +5457,18 @@ class Indi_Db_Table_Row implements ArrayAccess
         // call, to prevent processing space owners, that are not same as current entry's space owners
         if ($data['purpose']) $this->_system['purpose'] = $data['purpose'];
 
-        // If $data arg contains 'uixtype' paras - pass into current entry's system data
+        // If $data arg contains 'uixtype' param - pass into current entry's system data
         // It will be used to calc disabled values for other weekdays' dates within week,
         // that current event's date is in
         if ($data['uixtype']) $this->_system['uixtype'] = $data['uixtype'];
+
+        // If $data arg contains 'kanban' param - it means that uixtype is 'dayview'
+        // and kanban param contains kanban columns info (possible values of kanban-prop)
+        if ($data['kanban']) $this->_system['kanban'] = $data['kanban'];
+
+        // If $data arg contains 'fromHour' param - it means that uixtype is 'dayview' or 'weekiew'
+        // So we need to know what time those view-types start with
+        if ($data['fromHour']) $this->_system['fromHour'] = $data['fromHour'];
 
         // Collect distinct values for each prop
         $schedule->distinct($spaceOwners, $this, $strict);
@@ -5616,7 +5624,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Use keys as values for date and timeId
-        foreach ($disabled as $prop => $data) {
+        foreach ($disabled as $prop => $data) { // $data variable overridden here
 
             // Get actual dates
             if ($prop == 'date') $disabled[$prop] = array_keys($data);
@@ -5633,6 +5641,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 sort($disabled['timeHi']);
             }
         }
+
+        // Declare busy chunks array
+        $chunkA = array();
 
         // Foreach disabled time
         foreach ($disabled['timeHi'] as $idx => $Hi) {
@@ -5658,17 +5669,24 @@ class Indi_Db_Table_Row implements ArrayAccess
             }
         }
 
+        // Get unixtime of a time, that day/week view starts with
+        $fromHour = strtotime($this->date) + $this->_system['fromHour'] * 3600;
+
         // Foreach chunk
         foreach ($chunkA as $idx => &$curr) {
 
             // If it's not first chunk - setup prev busy chunks shortcut
             if ($idx) $prev = &$chunkA[$idx - 1];
 
-            // Get right bound of free chunk's, located before curr busy chunk
-            $free = $this->duration * 60 + ($idx ? $prev[0] + $prev[1] * 60 : $curr[0] - 15 * 60);
+            // If busy chunk's time match 'fromHour' param - set no diff, else
+            if ($curr[0] == $fromHour) $diff = 0; else {
 
-            // Get diff
-            $diff = $free > $curr[0] ? $free - $curr[0] : ($this->duration - 15) * 60;
+                // Get right bound of free chunk's, located before curr busy chunk
+                $free = $this->duration * 60 + ($idx ? $prev[0] + $prev[1] * 60 : $curr[0] - 15 * 60);
+
+                // Get diff
+                $diff = $free > $curr[0] ? $free - $curr[0] : ($this->duration - 15) * 60;
+            }
 
             // Shift current busy chunk's left bound
             $curr[0] += $diff;
@@ -5677,9 +5695,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             $curr[1] -= $diff / 60;
         }
 
-        // Pass busy chunks to the return value
-        $disabled['busy'][$this->date]['chunks'] = $chunkA ?: [];
-        $disabled['busy'][$this->date]['timeHi'] = array_flip($disabled['timeHi']) ?: [];
+        // Get kanban value
+        $kanbanKey = $this->_system['kanban'] ? $this->_system['kanban']['prop'] : 'date';
+        $kanbanVal = $this->$kanbanKey;
+
+        // Pass busy chunks, grouped by kanban values - to the return value
+        $disabled['busy'][$kanbanVal]['chunks'] = $chunkA ?: [];
+        $disabled['busy'][$kanbanVal]['timeHi'] = array_flip($disabled['timeHi']) ?: [];
 
         // Adjust disabled values
         $this->adjustSpaceDisabledValues($disabled, $schedule);
@@ -5718,6 +5740,35 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Restore date and system uixtype param
             $this->date = $date; $this->_system['uixtype'] = 'weekview';
+
+        // Else if uixtype is 'dayview' and kanban cfg is set
+        } else if ($this->_system['uixtype'] == 'dayview' && ($k = $this->_system['kanban'])) {
+
+            // Backup kanban-prop's value and
+            $kanban = $this->{$k['prop']};
+
+            // Unset system uixtype param, to prevent unneeded recursion
+            unset($this->_system['uixtype']);
+
+            // Foreach kanban column
+            foreach ($k['values'] as $value) {
+
+                // If kanban value is same as dragged event's kanban-prop's value - skip
+                if ($kanban != $value) {
+
+                    // Spoof kanban-prop's value
+                    $data[$k['prop']] = $value;
+
+                    // Get disabled values for kanban value
+                    $_ = $this->spaceDisabledValues($data);
+
+                    // Append into $disabled['busy']
+                    $disabled['busy'][$value] = $_['busy'][$value];
+                }
+            }
+
+            // Restore kanban-prop's value and system uixtype param
+            $this->{$k['prop']} = $kanban; $this->_system['uixtype'] = 'dayview';
         }
 
         // Return info about disabled values

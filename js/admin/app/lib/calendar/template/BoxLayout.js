@@ -8,7 +8,12 @@ Ext.define('Ext.calendar.template.BoxLayout', {
         Ext.apply(this, config);
 
         var weekLinkTpl = this.showWeekLinks ? '<div id="{weekLinkId}" class="ext-cal-week-link">{weekNum}</div>' : '';
-        
+
+        // Template depends on kanban
+        var tpl = (this.kanban && this.kanban.prop != 'date')
+            ? '<td id="{[this.id]}-ev-day-{kanban}" class="{titleCls}"><div>{title}</div></td>'
+            : '<td id="{[this.id]}-ev-day-{date:date("Ymd")}" class="{titleCls}"><div>{title}</div></td>';
+
         this.callParent([
             '<tpl for="weeks">',
                 '<div id="{[this.id]}-wk-{[xindex-1]}" class="ext-cal-wk-ct" style="top:{[this.getRowTop(xindex, xcount)]}%; height:{[this.getRowHeight(xcount)]}%;">',
@@ -26,7 +31,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                         '<tbody>',
                             '<tr>',
                                 '<tpl for=".">',
-                                    '<td id="{[this.id]}-ev-day-{date:date("Ymd")}" class="{titleCls}"><div>{title}</div></td>',
+                                    tpl,
                                 '</tpl>',
                             '</tr>',
                         '</tbody>',
@@ -118,7 +123,8 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                     cellCls: 'ext-cal-day ' + (isToday ? ' ext-cal-day-today' : '') + 
                         (d==0 ? ' ext-cal-day-first' : '') +
                         (prevMonth ? ' ext-cal-day-prev' : '') +
-                        (nextMonth ? ' ext-cal-day-next' : '')
+                        (nextMonth ? ' ext-cal-day-next' : ''),
+                    kanban: k ? k.values[d] : undefined
                 });
                 if (!k || k.prop != 'date') dt = Ext.calendar.util.Date.add(dt, {days: 1});
                 first = false;

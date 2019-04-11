@@ -1127,16 +1127,19 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
         });
 
         // Foreach date, that we're having disabled times defined for
-        for (var date in me.disabledValues.busy) {
+        for (var kanban in me.disabledValues.busy) {
+
+            // Get date
+            var date = kanban.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) ? kanban : Ext.Date.format(this.viewStart, 'Y-m-d');
 
             // Get date object
-            start = parseInt(Ext.Date.format(new Date(date + ' 08:00:00'), 'U'));
+            start = parseInt(Ext.Date.format(Ext.Date.add(Ext.Date.clearTime(new Date(date)), Ext.Date.HOUR, me.fromHour), 'U'));
 
             // Get left offset
-            left = width * dayIdx[date.replace(/-/g, '')];
+            left = width * dayIdx[kanban.replace(/-/g, '')];
 
             // Foreach busy time-chunk
-            me.disabledValues.busy[date]['chunks'].forEach(function(chunk){
+            me.disabledValues.busy[kanban]['chunks'].forEach(function(chunk){
 
                 // Get chunk's left bound
                 since = parseInt(chunk[0]);
@@ -1169,7 +1172,8 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
 
         // Default kanban config
         me.kanban = {prop: 'date', values: [], titles: []};
-        /*{8: 'Kid\'s world'}, {5: 'Бостон'}, {4: 'Лондон'}, {6: 'Нью-Йорк'}, {7: 'Сидней'};*/
+
+
         for (; day < me.dayCount; day++) me.kanban.values.push(
             Ext.Date.format(Ext.calendar.util.Date.add(this.viewStart, {days: day}), 'Y-m-d')
         );
