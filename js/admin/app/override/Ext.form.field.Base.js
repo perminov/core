@@ -410,12 +410,11 @@ Ext.override(Ext.form.field.Base, {
         // No change
         me.value = me.transformOriginalValue(me.value);
 
-        /**
-         * Modified: if originalValue is defined - keep it
-         *
-         * @inheritdoc
-         */
-        me.originalValue = me.lastValue = dirty ? me.originalValue : me.value;
+        // Change: `originalValue` will be set equal to `value` only if `originalValue` was not defined
+        if (!dirty) me.originalValue = me.value;
+
+        // No change
+        me.lastValue = me.value;
 
         // No change
         me.suspendCheckChange++;

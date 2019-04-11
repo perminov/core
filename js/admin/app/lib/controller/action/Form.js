@@ -566,14 +566,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-date',
             startDay: 1,
             format: item.field.params.displayFormat,
-            submitFormat: 'Y-m-d',
-            listeners: {
-                boxready: function(c) {
-                    if (!c.row._original || !(c.name in c.row._original)) return;
-                    c.originalValue = c.row._original[c.name] == '0000-00-00' ? null : c.row._original[c.name];
-                    c.checkDirty();
-                }
-            }
+            submitFormat: 'Y-m-d'
         };
     },
 
@@ -596,14 +589,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-datetime',
             startDay: 1,
             format: item.field.params.displayDateFormat,
-            submitFormat: 'Y-m-d H:i:s',
-            listeners: {
-                boxready: function(c) {
-                    if (!c.row._original || !(c.name in c.row._original)) return;
-                    c.originalValue = c.row._original[c.name] == '0000-00-00 00:00:00' ? null : c.row._original[c.name];
-                    c.checkDirty();
-                }
-            }
+            submitFormat: 'Y-m-d H:i:s'
         }
     },
 

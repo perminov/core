@@ -125,5 +125,15 @@ Ext.override(Ext.form.field.Date, {
             : (Ext.isDate(this.minValue || this.maxValue)
                 ? (this.minValue || this.maxValue)
                 : new Date()));
+    },
+
+    /**
+     * This method is overridden to handle the case when `originalValue` was
+     * initially defined, so the field will be initially displayed as dirty
+     *
+     * @return {Boolean}
+     */
+    isDirty: function() {
+        return this.callParent() && (this.originalValue !== this.zeroValue || !this.isEqual(this.getValue(), null));
     }
 });
