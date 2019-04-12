@@ -5434,20 +5434,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // the schedule if space fields were not modified, and current entry is an existing entry
         if ($this->id && $strict && !$this->isModified(array_keys($spaceFields))) return array();
 
-        // Create schedule
-        $schedule = !$strict && array_key_exists('since', $this->_temporary)
-            ? Indi::schedule($this->since, strtotime($this->until . ' +1 day'))
-            : Indi::schedule($this->_system['bounds'] ?: 'month', $this->fieldIsZero('date') ? null : $this->date);
-
-        // Expand schedule's right bound
-        $schedule->frame($frame = $this->_spaceFrame());
-
-        // Preload existing events, but do not fill schedule with them
-        $schedule->preload($this->_table, array_merge(
-            array('`id` != "' . $this->id . '"'),
-            $this->spacePreloadWHERE()
-        ));
-
         // If $data arg contains 'purpose' param - pass into current entry's system data
         // For now, there is only one situation where it's useful: for cases when event
         // is being dragged within calendar UI, so user is planning to shift event to
@@ -5469,6 +5455,23 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If $data arg contains 'fromHour' param - it means that uixtype is 'dayview' or 'weekiew'
         // So we need to know what time those view-types start with
         if ($data['fromHour']) $this->_system['fromHour'] = $data['fromHour'];
+
+        // If system 'fromHour' param is set - set system 'bounds' param to 'day'
+        if ($this->_system['fromHour']) $this->_system['bounds'] = 'day';
+
+        // Create schedule
+        $schedule = !$strict && array_key_exists('since', $this->_temporary)
+            ? Indi::schedule($this->since, strtotime($this->until . ' +1 day'))
+            : Indi::schedule($this->_system['bounds'] ?: 'month', $this->fieldIsZero('date') ? null : $this->date);
+
+        // Expand schedule's right bound
+        $schedule->frame($frame = $this->_spaceFrame());
+
+        // Preload existing events, but do not fill schedule with them
+        $schedule->preload($this->_table, array_merge(
+            array('`id` != "' . $this->id . '"'),
+            $this->spacePreloadWHERE()
+        ));
 
         // Collect distinct values for each prop
         $schedule->distinct($spaceOwners, $this, $strict);
