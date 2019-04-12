@@ -475,15 +475,20 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     },
 
     // private
-    onEventDrop: function(rec, dt) {
+    onEventDrop: function(rec, dt, kanban) {
+        var k = this.kanban;
         if (Ext.calendar.util.Date.compare(rec.data[Ext.calendar.data.EventMappings.StartDate.name], dt) === 0) {
-            // no changes
-            return;
+
+            if (!k || k.prop == 'date') return;
+            else if (String(rec.key(k.prop) || rec.raw[k.prop]) === String(kanban)) return;
         }
         var diff = dt.getTime() - rec.data[Ext.calendar.data.EventMappings.StartDate.name].getTime();
         rec.set(Ext.calendar.data.EventMappings.StartDate.name, dt);
         rec.set(Ext.calendar.data.EventMappings.EndDate.name, Ext.calendar.util.Date.add(rec.data[Ext.calendar.data.EventMappings.EndDate.name], {millis: diff}));
-
+        if (k && k.prop != 'date') {
+            rec.key(k.prop, kanban);
+            rec.set(k.prop, kanban);
+        }
         this.fireEvent('eventmove', this, rec);
     },
 

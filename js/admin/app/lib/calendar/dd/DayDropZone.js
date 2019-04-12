@@ -15,7 +15,8 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
             start,
             end,
             evtEl,
-            dayCol;
+            dayCol,
+            col;
         if (data.type == 'caldrag') {
             if (!this.dragStartMarker) {
                 // Since the container can scroll, this gets a little tricky.
@@ -71,9 +72,9 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
 
                 this.shim(n.date, box);
                 text = this.moveText;
-                var Ymd = Ext.Date.format(n.date, 'Y-m-d');
-                if (this.view.disabledValues && this.view.disabledValues.busy[Ymd])
-                    if (dt.split(' ').pop() in this.view.disabledValues.busy[Ymd]['timeHi'])
+                col = n.kanban || Ext.Date.format(n.date, 'Y-m-d');
+                if (this.view.disabledValues && this.view.disabledValues.busy[col])
+                    if (dt.split(' ').pop() in this.view.disabledValues.busy[col]['timeHi'])
                         return false;
             }
             if (data.type == 'eventresize') {
@@ -130,17 +131,17 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
     },
 
     onNodeDrop: function(n, dd, e, data) {
-        var rec, dis;
+        var rec, dis, col = n.kanban || Ext.Date.format(n.date, 'Y-m-d');
 
         // Prevent dropping at disabled time
         if (this.view.disabledValues)
-            if (Ext.Date.format(n.date, 'H:i') in this.view.disabledValues.busy[Ext.Date.format(n.date, 'Y-m-d')]['timeHi'])
+            if (Ext.Date.format(n.date, 'H:i') in this.view.disabledValues.busy[col]['timeHi'])
                 dis = true;
 
         if (n && data && !dis) {
             if (data.type == 'eventdrag') {
                 rec = this.view.getEventRecordFromEl(data.ddel);
-                this.view.onEventDrop(rec, n.date);
+                this.view.onEventDrop(rec, n.date, n.kanban);
                 this.onCalendarDragComplete();
                 delete this.dragOffset;
                 return true;

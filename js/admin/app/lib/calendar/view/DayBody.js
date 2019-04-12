@@ -377,15 +377,13 @@ Ext.define('Ext.calendar.view.DayBody', {
 
                 evt._width = colWidth;
                 evt._left = colWidth * evt._overcol;
-                //console.log(evt._width);
             }
             markup = this.getEventTemplate().apply(evt);
-            if (k && k.prop == 'date') {
+            if (!k || k.prop == 'date') {
                 target = this.id + '-day-col-' + Ext.Date.format(evts[i].date, 'Ymd');
             } else if (k) {
                 target = this.id + '-day-col-' + evts[i].kanban;
             }
-            //console.log(target);
             Ext.core.DomHelper.append(target, markup);
         }
 
@@ -432,7 +430,7 @@ Ext.define('Ext.calendar.view.DayBody', {
             mins = (rowIndex / 2 + this.fromHour * 2) * 30,
             k = this.kanban,
             dt = Ext.calendar.util.Date.add(this.viewStart, {days: k.prop == 'date' ? dayIndex : 0, minutes: mins}),
-            el = this.getDayEl(dt),
+            el = this.getDayEl(!k || k.prop == 'date' ? dt : k.values[dayIndex]),
             timeX = x;
 
         if (el) {
@@ -470,14 +468,12 @@ Ext.define('Ext.calendar.view.DayBody', {
             if (el.id && el.id.indexOf(this.dayElIdDelimiter) > -1) {
                 var dt = this.getDateFromId(el.id, this.dayElIdDelimiter);
                 this.fireEvent('dayclick', this, Ext.Date.parseDate(dt, 'Ymd'), true, Ext.get(this.getDayId(dt, true)));
-                //console.log('asd1');
                 return;
             }
         }
         var day = this.getDayAt(e.getX(), e.getY());
         if (day && day.date) {
             this.fireEvent('dayclick', this, day.date, false, null, day.kanban);
-            //console.log('asd2');
         }
     }
 });

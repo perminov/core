@@ -10,9 +10,13 @@ Ext.define('Ext.calendar.template.BoxLayout', {
         var weekLinkTpl = this.showWeekLinks ? '<div id="{weekLinkId}" class="ext-cal-week-link">{weekNum}</div>' : '';
 
         // Template depends on kanban
-        var tpl = (this.kanban && this.kanban.prop != 'date')
+        var tpl2 = (this.kanban && this.kanban.prop != 'date')
             ? '<td id="{[this.id]}-ev-day-{kanban}" class="{titleCls}"><div>{title}</div></td>'
             : '<td id="{[this.id]}-ev-day-{date:date("Ymd")}" class="{titleCls}"><div>{title}</div></td>';
+
+        var tpl1 = (this.kanban && this.kanban.prop != 'date')
+            ? '<td id="{[this.id]}-day-{kanban}" class="{cellCls}">&#160;</td>'
+            : '<td id="{[this.id]}-day-{date:date("Ymd")}" class="{cellCls}">&#160;</td>';
 
         this.callParent([
             '<tpl for="weeks">',
@@ -22,7 +26,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                         '<tbody>',
                             '<tr>',
                                 '<tpl for=".">',
-                                     '<td id="{[this.id]}-day-{date:date("Ymd")}" class="{cellCls}">&#160;</td>',
+                                     tpl1,
                                 '</tpl>',
                             '</tr>',
                         '</tbody>',
@@ -31,7 +35,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                         '<tbody>',
                             '<tr>',
                                 '<tpl for=".">',
-                                    tpl,
+                                    tpl2,
                                 '</tpl>',
                             '</tr>',
                         '</tbody>',
