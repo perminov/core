@@ -493,7 +493,7 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     },
 
     // private
-    onCalendarEndDrag: function(start, end, onComplete) {
+    onCalendarEndDrag: function(start, end, onComplete, kanban) {
         if (start && end) {
             // set this flag for other event handlers that might conflict while we're waiting
             this.dragPending = true;
@@ -502,7 +502,7 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             var o = {};
             o[Ext.calendar.data.EventMappings.StartDate.name] = start;
             o[Ext.calendar.data.EventMappings.EndDate.name] = end;
-
+            if (kanban) o.kanban = kanban;
             this.fireEvent('rangeselect', this, o, Ext.bind(this.onCalendarEndDragComplete, this, [onComplete]));
         }
     },

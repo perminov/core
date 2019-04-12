@@ -262,6 +262,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                         since: Ext.Date.format(range.spaceSince, 'U'),
                         until: Ext.Date.format(range.spaceUntil, 'U')
                     }
+                    if (range.kanban) me.rowset.space.kanban = range.kanban;
                     view.dropZone.clearShims();
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();

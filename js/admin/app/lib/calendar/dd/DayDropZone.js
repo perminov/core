@@ -39,10 +39,10 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
             if (e.xy[1] < box.y) {
                 box.height += n.timeBox.height;
                 box.y = box.y - box.height + n.timeBox.height;
-                endDt = Ext.Date.add(this.dragCreateDt, Ext.Date.MINUTE, 30);
+                endDt = Ext.Date.add(this.dragCreateDt, Ext.Date.MINUTE, 15);
             }
             else {
-                n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 30);
+                n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 15);
             }
             this.shim(this.dragCreateDt, box);
 
@@ -134,7 +134,7 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
         var rec, dis, col = n.kanban || Ext.Date.format(n.date, 'Y-m-d');
 
         // Prevent dropping at disabled time
-        if (this.view.disabledValues)
+        if (this.view.disabledValues && this.view.disabledValues.busy[col])
             if (Ext.Date.format(n.date, 'H:i') in this.view.disabledValues.busy[col]['timeHi'])
                 dis = true;
 
@@ -158,7 +158,7 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                 delete this.dragStartMarker;
                 delete this.dragCreateDt;
                 this.view.onCalendarEndDrag(this.dragStartDate, this.dragEndDate,
-                Ext.bind(this.onCalendarDragComplete, this));
+                Ext.bind(this.onCalendarDragComplete, this), n.kanban);
                 //shims are NOT cleared here -- they stay visible until the handling
                 //code calls the onCalendarDragComplete callback which hides them.
                 return true;
