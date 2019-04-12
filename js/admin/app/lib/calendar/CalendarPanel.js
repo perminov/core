@@ -508,7 +508,7 @@ Ext.define('Ext.calendar.CalendarPanel', {
             if (btn) {
                 btn.toggle(true);
             }
-            if (day) day.setText(Ext.Date.format(item.viewStart || item.header.viewStart, 'l, j F'));
+            if (day) day.setText(Ext.Date.format(item.getStartDate(), 'l, j M'));
         //}
     },
 

@@ -93,7 +93,7 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                     box.y -= box.height;
                 }
                 else {
-                    n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 30);
+                    n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 15);
                 }
                 this.shim(this.resizeDt, box);
 

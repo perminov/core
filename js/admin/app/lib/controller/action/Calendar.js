@@ -252,7 +252,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                 },
                 dayclick: function(view, date, wtf, el, kanban) {
                     me.rowset.space = {since: Ext.Date.format(date, 'U')};
-                    if (kanban) me.rowset.space.kanban = kanban;
+                    if (view.ownerCt.xtype == 'dayview' && kanban) me.rowset.space.kanban = kanban;
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },
@@ -262,8 +262,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                         since: Ext.Date.format(range.spaceSince, 'U'),
                         until: Ext.Date.format(range.spaceUntil, 'U')
                     }
-                    if (range.kanban) me.rowset.space.kanban = range.kanban;
-                    view.dropZone.clearShims();
+                    if (view.ownerCt.xtype == 'dayview' && range.kanban) me.rowset.space.kanban = range.kanban;
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },

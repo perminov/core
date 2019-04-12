@@ -503,7 +503,8 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             o[Ext.calendar.data.EventMappings.StartDate.name] = start;
             o[Ext.calendar.data.EventMappings.EndDate.name] = end;
             if (kanban) o.kanban = kanban;
-            this.fireEvent('rangeselect', this, o, Ext.bind(this.onCalendarEndDragComplete, this, [onComplete]));
+            this.fireEvent('rangeselect', this, o);
+            Ext.bind(this.onCalendarEndDragComplete, this, [onComplete])();
         }
     },
 
