@@ -16,7 +16,8 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
             end,
             evtEl,
             dayCol,
-            col;
+            col,
+            k = this.view.kanban;
         if (data.type == 'caldrag') {
             if (!this.dragStartMarker) {
                 // Since the container can scroll, this gets a little tricky.
@@ -67,7 +68,12 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                 else {
                     box.y = n.timeBox.y;
                 }
-                dt = Ext.Date.format(n.date, 'n/j H:i');
+
+                dt = Ext.Date.format(n.date, 'l, H:i');
+                if (k && k.prop != 'date') {
+                    dt = k.titles[k.values.indexOf(n.kanban)] + ', ' + dt.split(' ').pop();
+                }
+
                 box.x = n.el.getLeft();
 
                 this.shim(n.date, box);
