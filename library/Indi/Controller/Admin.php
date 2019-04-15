@@ -220,7 +220,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 // Fetch selected rows
                 $this->selected = $idA
-                    ? Indi::trail()->model->fetchAll(array('`id` IN (' . im($idA) . ')', Indi::trail()->scope->WHERE))
+                    ? Indi::trail()->model->fetchAll(array('`id` IN (' . im($idA) . ')', Indi::trail()->scope->WHERE), t()->scope->ORDER)
                     : Indi::trail()->model->createRowset();
 
                 // Prepare scope params
