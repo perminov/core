@@ -1,5 +1,5 @@
 <?php
-class Indi_Controller_Admin_Multinew extends Indi_Controller_Admin {
+class Indi_Controller_Admin_Multinew extends Indi_Controller_Admin_Exportable {
 
     /**
      * Name of field, that has `storeRelationAbility` = 'one', but we
