@@ -677,8 +677,15 @@ Ext.define('Indi', {
                         dirtyOnly: true
                     }); else {
 
-                        // Append prompt datato request
-                        if (promptData) response.request.options.params['_prompt'] = JSON.stringify(promptData);
+                        // Append prompt data to request
+                        if (promptData) {
+
+                            // Fix for cases when params are not defined
+                            if (!response.request.options.params) response.request.options.params = {};
+
+                            // Append prompt data
+                            response.request.options.params['_prompt'] = JSON.stringify(promptData);
+                        }
 
                         // Show loader
                         Ext.get('loader').css('opacity', 1).show();

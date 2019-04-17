@@ -1347,7 +1347,7 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         $c = 'I_' . ($flushFn == 'mflush' ? 'M' : 'J') . 'CHECK_';
 
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && !strlen($value)) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
+        if ($rule['req'] && (!strlen($value) || (!$value && $rule['key']))) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
 
         // If prop's value should match certain regular expression, but it does not - flush error
         if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
