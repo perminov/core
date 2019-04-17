@@ -139,11 +139,7 @@ Ext.define('Indi.lib.controller.action.Print', {
         eItem$ = 'formItem$' + Indi.ucfirst(dcfg.field.alias);
         if (Ext.isFunction(me[eItem$]) || Ext.isObject(me[eItem$])) {
             item$ = Ext.isFunction(me[eItem$]) ? me[eItem$](dcfg) : me[eItem$];
-        } else if (Ext.isString(me[eItem$])) item$ = me[eItem$]; else return false;
-
-        // If no custom config - return false, because custom config is
-        // the only place where iframe's src attr can be found in
-        if (!item$) return false;
+        } else if (Ext.isString(me[eItem$])) item$ = me[eItem$];
 
         // Get iframe src, either from item$'s `field` prop, if item$ is an object
         if (Ext.isObject(item$) && item$.field) src = me.ti().row[item$.field];
@@ -151,17 +147,31 @@ Ext.define('Indi.lib.controller.action.Print', {
         // Or from item$ itself, if it is a string
         else if (Ext.isString(item$)) src = item$;
 
+        // Else
+        else {
+
+            // Set src to be blank
+            src = 'about:blank';
+
+            // Make sure view's rendered html will be displayed within an iframe
+            Ext.merge(xcfg, {listeners: {
+                boxready: function() {
+                    window.frames[dcfg.id].document.body.innerHTML = me.ti().row._view['#' + me.ti().action.alias];
+                }
+            }})
+        }
+
         // If src is not a string, or is an empty string - return
         if (!Ext.isString(src) || !src.length) return false;
 
         // Else prepend src with Indi.std
-        else src = Indi.std + src;
+        else if (src != 'about:blank') src = Indi.std + src;
 
         // If we gonna embed a pdf-file
-        if (src.match(/\.pdf$/)) me.row.bodyPadding = 0;
+        if (src.match(/\.pdf$/) || src == 'about:blank') me.row.bodyPadding = 0;
 
         // Build iframe markup
-        xcfg.html = '<iframe name="'+ dcfg.id + '" src="' + src +'" frameborder="no" width="100%" height="100%"></iframe>';
+        xcfg.html = '<iframe name="'+ dcfg.id + '" src="' + src + '" frameborder="no" width="100%" height="100%"></iframe>';
 
         // Define dummy size usage calculation functions
         Ext.merge(xcfg, {
@@ -172,7 +182,6 @@ Ext.define('Indi.lib.controller.action.Print', {
                 return 400;
             }
         });
-
 
         // Return
         return xcfg;
