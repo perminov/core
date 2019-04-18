@@ -621,7 +621,7 @@ Ext.define('Indi', {
             } else if ('confirm' in json) boxA.push({
                 title: Indi.lang.I_MSG,
                 msg: json.msg,
-                buttons: Ext.Msg.OKCANCEL,
+                buttons: Ext.Msg[json.buttons || 'OKCANCEL'],
                 icon: Ext.Msg.QUESTION,
                 modal: true,
                 fn: function(answer) {

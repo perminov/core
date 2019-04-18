@@ -892,11 +892,12 @@ function mflush($field, $msg = '') {
  * Flush the json-encoded message, containing `status` property, and other optional properties, especially for confirm
  *
  * @param string $msg
+ * @param string $buttons
  */
-function jconfirm($msg) {
+function jconfirm($msg, $buttons = 'OKCANCEL') {
 
     // Start building data for flushing
-    $flush = array('confirm' => true, 'msg' => $msg);
+    $flush = array('confirm' => true, 'msg' => $msg, 'buttons' => $buttons);
 
     // Send content type header
     if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
