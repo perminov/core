@@ -2024,6 +2024,26 @@ function timeHi($timeId = null) {
 }
 
 /**
+ * Return monthId for a given 'yyyy-mm(-dd)' string, or full array of 'yyyy-mm' => monthId key-pairs
+ *
+ * @param null $date
+ * @return array|int
+ */
+function monthId($date = null) {
+    return Month::monthId($date);
+}
+
+/**
+ * Return 'yyyy-mm' expression according to given $monthId arg, or full array of monthId => 'yyyy-mm' key-pairs
+ *
+ * @param int $monthId
+ * @return array|string
+ */
+function monthYm($monthId = null) {
+    return Month::monthYm($monthId);
+}
+
+/**
  * Echo $then or $else arg depending on whether $if arg is true
  *
  * @param bool $if
