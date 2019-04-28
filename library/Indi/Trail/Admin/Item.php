@@ -442,6 +442,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                     // Setup view's `plain` property
                     $this->view->plain = Indi::view()->render($script);
 
+                    // Pass replacements
+                    if (Indi::view()->replace) $this->view->replace = Indi::view()->replace;
+
                     // Return the value, according to view mode
                     return $this->view->mode == 'view' ? $this->view : $this->view->plain;
                 }
