@@ -4531,6 +4531,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function date($prop, $format = 'Y-m-d', $ldate = '') {
 
+        // If zero-value - return empty string
+        if ($this->zero($prop)) return '';
+
         // If $ldate arg is given
         if ($ldate) {
 

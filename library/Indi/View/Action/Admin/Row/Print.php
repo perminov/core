@@ -61,7 +61,7 @@ class Indi_View_Action_Admin_Row_Print extends Indi_View_Action_Admin_Row {
         foreach ($this->replace as $key => $value) {
 
             // Get replacement with/without placeholder-padding
-            if (is_array($value)) $value = $value[0] . str_repeat('&nbsp; ', ($value[1] - mb_strlen($value[0]))/2);
+            if (is_array($value)) $value = $value[0] . str_repeat('&nbsp; ', max(($value[1] - mb_strlen($value[0], 'utf-8')), 0));
 
             // Replace
             $this->plain = str_replace('v' . ucfirst($key), $value, $this->plain);
