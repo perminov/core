@@ -865,8 +865,17 @@ class Indi_Controller {
      */
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
+        // Support for $alias arg, containing 'myPrefix*' values
+        $aliasA = array();
+        foreach (ar($alias) as $a)
+            if (!preg_match('#([a-zA-Z0-9]+)\*$#', $a, $prefix)) $aliasA []= $a; else {
+                $selector = ': #^' . trim($a, '*') . '#';
+                $selected = t()->model->fields()->select($selector, 'alias')->column('alias');
+                $aliasA = array_merge($aliasA, $selected);
+            }
+
         // Foreach field alias within $alias
-        foreach (ar($alias) as $a) {
+        foreach ($aliasA as $a) {
 
             // Check if such field exists, an if no - skip
             if (!$_ = t()->model->fields($a)) continue;

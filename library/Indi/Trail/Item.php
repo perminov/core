@@ -143,11 +143,15 @@ class Indi_Trail_Item {
                         $array['row']['_original'][$space['coords'][$coord]]
                             = $this->row->original($space['coords'][$coord]);
 
-            // Append original value of kanban prop
+            // Append original value for kanban prop
             if ($k = t()->section->kanban)
                 if ($this->row->isModified($k['prop']))
                     $array['row']['_original'][$k['prop']]
                         = $this->row->original($k['prop']);
+
+            // Append original values for other modified props
+            if (!$this->row->id) foreach ($this->row->modified() as $prop => $value)
+                $array['row']['_original'][$prop] = $this->row->original($prop);
 
             // If demo-mode is turned On - unset value for each shaded field
             if (Indi::demo(false)) foreach ($this->fields as $fieldR)

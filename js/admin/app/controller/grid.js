@@ -28,6 +28,9 @@ Ext.define('Indi.controller.grid', {
                     }
                 }
             },
+            formItem$GridId: {
+                jump: '/grid/form/id/{id}/'
+            },
             formItem$FieldId: {
                 jump: '/fields/form/id/{id}/'
             },

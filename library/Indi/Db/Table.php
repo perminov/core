@@ -486,14 +486,14 @@ class Indi_Db_Table
                                 $start--;
                                 $prevId = $idsHistory[$start];
                                 $ids[] = $prevId;
-                                $indents[$prevId] = indent($tree[$prevId][1]);
+                                $level[$prevId] = $tree[$prevId][1];
                             } while ($disabledA[$prevId]);
                             $ids = array_reverse($ids);
                         }
 
                         // Normal appending
                         $ids[] = $id;
-                        $indents[$id] = indent($tree[$id][1]);
+                        $level[$id] = $tree[$id][1];
 
                         // We shift end point because disabled items should be ignored
                         if ($disabledA[$id] && (is_null($page) || $page > 0)) $end++;
@@ -524,7 +524,8 @@ class Indi_Db_Table
         $assocDataA = array();
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
-            $assocDataI['_system']['indent'] = $indents[$data[$i]['id']];
+            $assocDataI['_system']['level'] = $level[$data[$i]['id']];
+            $assocDataI['_system']['indent'] = indent($level[$data[$i]['id']]);
             $assocDataA[$data[$i]['id']] = $assocDataI;
         }
         $data = $assocDataA;
@@ -1272,10 +1273,11 @@ class Indi_Db_Table
     /**
      * Return title of current model
      *
+     * @param string $title
      * @return string
      */
-    public function title() {
-        return $this->_title;
+    public function title($title = '') {
+        return $title ? $this->_title = $title : $this->_title;
     }
 
     /**

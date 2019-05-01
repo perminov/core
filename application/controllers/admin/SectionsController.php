@@ -262,6 +262,9 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
                 // Foreach nested entity
                 foreach (ar('section2action,grid,alteredField,search') as $nested) {
 
+                    // Get tree-column, if set
+                    if ($tc = Indi::model($nested)->treeColumn()) $parent[$nested] = [0 => 0];
+
                     // Foreach nested entry
                     foreach ($r->nested($nested) as $nestedR) {
 
@@ -275,7 +278,16 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
                         $values['sectionId'] = $new->id;
 
                         // Create new nested entry, assign props and save
-                        $nestedR->model()->createRow($values, true)->save();
+                        $clone = $nestedR->model()->createRow($values, true);
+
+                        // If have tree-column - assign value
+                        if ($tc) $clone->$tc = $parent[$nested][$nestedR->system('level')];
+
+                        // Save
+                        $clone->save();
+
+                        // If have tree-column - remember it's value for child entries
+                        if ($tc) $parent[$nested][$nestedR->system('level') + 1] = $clone->id;
                     }
                 }
             }
