@@ -712,7 +712,10 @@ Ext.define('Indi.lib.controller.action.Row', {
 
             // If subsection's disabledAdd prop is 1 - skip.
             // Note: it may be also set as 1 dynamically in case if 'Save' action is inaccessible
-            if (items[i].disableAdd == 1) continue;
+            if (items[i].disableAdd == 1) {
+                btnA[btnA.length - 1].overflowCfg = {iconCls: false};
+                continue;
+            }
 
             // Append 'Create new entry' button
             btnA.push({
