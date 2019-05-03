@@ -151,7 +151,10 @@ class Indi_Trail_Admin {
 
             // Save id
             $_SESSION['indi']['admin']['trail']['parentId'][self::$items[0]->section->sectionId] = Indi::uri('id');
-        }
+
+        // If we're trying to jump to creation-form in a section, having parent section - setup parent id
+        } else if (Indi::uri('action') == 'form' && Indi::uri('jump') && ($parent = Indi::uri('parent')))
+            $_SESSION['indi']['admin']['trail']['parentId'][self::$items[0]->section->sectionId] = Indi::uri('parent');
 
         // Reverse items
         self::$items = array_reverse(self::$items);

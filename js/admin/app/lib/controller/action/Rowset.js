@@ -1275,7 +1275,26 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     panelDockedInner$Nested: function(){
-        var me = this;
+        var me = this, items = Ext.clone(me.ti().sections), btnA = [];
+
+        // Foreach each nested subsection
+        for (var i = 0; i < items.length; i++) {
+
+            // Push it into btnA array
+            btnA.push(items[i]);
+
+            // If subsection's disabledAdd prop is 1 - skip.
+            // Note: it may be also set as 1 dynamically in case if 'Save' action is inaccessible
+            if (items[i].disableAdd == 1) continue;
+
+            // Append
+            btnA.push({
+                title: '+',
+                alias: items[i].alias + '',
+                overflowCfg: false
+            });
+        }
+
         return {
             id: me.bid() + '-docked-inner$nested',
             xtype: 'shrinkbar',
@@ -1288,7 +1307,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 handler: function(btn) {
 
                     // Get selection
-                    var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection();
+                    var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection(), uri = '/' + btn.alias;
 
                     // If no selection - show a message box
                     if (selection.length == 0) {
@@ -1302,26 +1321,55 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             }
                         });
 
+                    // Else load the nested subsection contents
+                    } else if (btn.alias) {
+
+                        // Finish build uri
+                        uri += btn.title == '+'
+                            ? '/form/jump/1/parent/' + selection[0].data.id + '/'
+                            : '/index/id/'  + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/';
+
+                        // Load
+                        Indi.load(uri);
+                    }
+                },
+                overflowCfg: {
+                    iconCls: 'i-btn-icon-create',
+                    handler: function(btn, e) {
+
+                        // Get selection
+                        var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection(), uri = '/' + btn.alias;
+
+                        // If no selection - show a message box
+                        if (selection.length == 0) {
+                            Ext.MessageBox.show({
+                                title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
+                                msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.WARNING,
+                                fn: function() {
+                                    Ext.defer(function(){Ext.getCmp(me.rowset.id).getView().focus();}, 100);
+                                }
+                            });
+
                         // Else load the nested subsection contents
-                    } else if (btn.alias) Indi.load('/' + btn.alias + '/index/id/'
-                        + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
+                        } else if (btn.alias) {
+
+                            // End build uri depending on what exactly was clicked: icon or item's title
+                            uri += e.getTarget('.i-btn-icon-create')
+                                ? '/form/jump/1/parent/' + selection[0].data.id + '/'
+                                : '/index/id/'  + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/';
+
+                            // Load
+                            Indi.load(uri);
+                        }
+                    }
                 }
             },
             shrinkCfg: {
                 prop: 'title'
             },
-            items: Ext.clone(me.ti().sections)
-        }
-
-        // 'Nested' item config
-        return {
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
-            }
+            items: btnA
         }
     },
 

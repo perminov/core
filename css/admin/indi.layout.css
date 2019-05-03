@@ -639,10 +639,16 @@ input[type=text],input[type=password]{padding-left: 2px; padding-right: 2px;}
     z-index: 100000 !important;
 }
 .x-shrinkbar-overflow-menu .x-menu-item-link {
-    padding: 3px 2px 3px 7px;
+    padding-left: 7px;
+}
+.x-shrinkbar-overflow-menu .i-icon .x-menu-item-link {
+    padding-left: 34px;
 }
 .x-shrinkbar-overflow-menu .x-menu-icon-separator {
     display: none;
+}
+.x-shrinkbar-overflow-menu .i-icon .x-menu-icon-separator {
+    display: initial;
 }
 .x-windowbar-overflow-menu .x-menu-item-link,
 .x-shrinkbar-overflow-menu.x-windowbar-overflow-menu .x-menu-item-link,
