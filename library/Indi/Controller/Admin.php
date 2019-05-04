@@ -2375,6 +2375,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Replace the null id with id of newly created row
                     $location = str_replace(array('/id/null/', '/id//'), '/id/' . Indi::trail()->row->id . '/', $location);
                     $location = str_replace(array('/aix/null/', '/aix//'), '/aix/' . Indi::uri()->aix . '/', $location);
+                    $location = str_replace(array('/parent/null/', '/parent//'), '/parent/' . Indi::trail()->row->id . '/', $location);
                 }
 
             // Replace the null id with id of newly created row
@@ -2382,6 +2383,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 $location = str_replace(array('/id/null/', '/id//'), '/id/' . Indi::trail()->row->id . '/', $location);
                 $location = str_replace(array('/aix/null/', '/aix//'), '/aix/' . Indi::uri()->aix . '/', $location);
+                $location = str_replace(array('/parent/null/', '/parent//'), '/parent/' . Indi::trail()->row->id . '/', $location);
             }
         }
 
