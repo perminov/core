@@ -5706,8 +5706,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         $kanbanVal = $this->$kanbanKey;
 
         // Pass busy chunks, grouped by kanban values - to the return value
-        $disabled['busy'][$kanbanVal]['chunks'] = $chunkA ?: [];
-        $disabled['busy'][$kanbanVal]['timeHi'] = array_flip($disabled['timeHi']) ?: [];
+        $disabled['busy'][$kanbanVal]['chunks'] = $chunkA ?: array();
+        $disabled['busy'][$kanbanVal]['timeHi'] = array_flip($disabled['timeHi']) ?: array();
 
         // Adjust disabled values
         $this->adjustSpaceDisabledValues($disabled, $schedule);
