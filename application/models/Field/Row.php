@@ -126,6 +126,9 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // If 'Consider'-model does not exists - return false
         if (!Indi::model('Consider', true) || !Indi::model('Consider')->fields('title')) return false;
 
+        // This feature is applicable only for non-foreign-key fields
+        if ($this->storeRelationAbility != 'none') return false;
+
         // Foreach nested `consider` entry
         foreach ($this->nested('consider') as $considerR) {
             $prop = $considerR->foreign ? 'foreign' : 'consider';
