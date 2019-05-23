@@ -702,8 +702,30 @@ Ext.define('Indi.lib.controller.action.Row', {
      * @return {Object}
      */
     panelDockedInner$Nested: function() {
-        var me = this, btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
+        var me = this, items = Ext.clone(me.ti().sections), btnA = [];
 
+        // Foreach nested subsection
+        for (var i = 0; i < items.length; i++) {
+
+            // Push it into btnA array
+            btnA.push(items[i]);
+
+            // If subsection's disabledAdd prop is 1 - skip.
+            // Note: it may be also set as 1 dynamically in case if 'Save' action is inaccessible
+            if (items[i].disableAdd == 1) {
+                btnA[btnA.length - 1].overflowCfg = {iconCls: false};
+                continue;
+            }
+
+            // Append 'Create new entry' button
+            btnA.push({
+                title: '+',
+                alias: items[i].alias + '',
+                overflowCfg: false
+            });
+        }
+
+        // Return config
         return {
             id: me.panelDockedInnerBid() + 'nested',
             xtype: 'shrinkbar',
@@ -713,14 +735,39 @@ Ext.define('Indi.lib.controller.action.Row', {
                 padding: 0,
                 border: 1,
                 handler: function(btn) {
-                    me.goto('/' + btn.alias + '/index/id/'+ me.ti().row.id
-                        +'/ph/'+ me.ti().scope.hash + '/aix/'+ me.ti().scope.aix +'/');
+
+                    // Start building url
+                    var uri = '/' + btn.alias;
+
+                    // End build uri depending on whether it's a 'Create new entry' button
+                    uri += btn.title == '+'
+                        ? '/form/jump/1/parent/' + me.ti().row.id + '/'
+                        : '/index/id/' + me.ti().row.id + '/ph/' + me.ti().scope.hash + '/aix/' + me.ti().scope.aix +'/';
+
+                    // Goto
+                    me.goto(uri);
+                },
+                overflowCfg: {
+                    iconCls: 'i-btn-icon-create',
+                    handler: function(btn, e) {
+
+                        // Start building url
+                        var uri = '/' + btn.alias;
+
+                        // End build uri depending on what exactly was clicked: icon or item's title
+                        uri += e.getTarget('.i-btn-icon-create')
+                            ? '/form/jump/1/parent/' + me.ti().row.id + '/'
+                            : '/index/id/' + me.ti().row.id + '/ph/' + me.ti().scope.hash + '/aix/' + me.ti().scope.aix +'/';
+
+                        // Goto
+                        me.goto(uri);
+                    }
                 }
             },
             shrinkCfg: {
                 prop: 'title'
             },
-            items: Ext.clone(me.ti().sections),
+            items: btnA,
             listeners: {
                 afterrender: function(cmp) {
                     var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');

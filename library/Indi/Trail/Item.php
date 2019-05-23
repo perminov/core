@@ -2,6 +2,11 @@
 class Indi_Trail_Item {
 
     /**
+     * @var Indi_Db_Table_Row
+     */
+    public $filtersSharedRow = null;
+
+    /**
      * Store current trail item index/level
      *
      * @var int
@@ -79,6 +84,10 @@ class Indi_Trail_Item {
         // Setup filters shared row
         $this->filtersSharedRow = $this->model->createRow();
 
+        // Prevent non-zero values
+        foreach ($this->filtersSharedRow->original() as $prop => $value)
+            if ($prop != 'id') $this->filtersSharedRow->zero($prop, true);
+
         // If current cms user is an alternate, and if there is corresponding column-field within current entity structure
         if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $this->model->fields(null, 'columns')))
 
@@ -134,6 +143,16 @@ class Indi_Trail_Item {
                         $array['row']['_original'][$space['coords'][$coord]]
                             = $this->row->original($space['coords'][$coord]);
 
+            // Append original value for kanban prop
+            if ($k = t()->section->kanban)
+                if ($this->row->isModified($k['prop']))
+                    $array['row']['_original'][$k['prop']]
+                        = $this->row->original($k['prop']);
+
+            // Append original values for other modified props
+            if (!$this->row->id) foreach ($this->row->modified() as $prop => $value)
+                $array['row']['_original'][$prop] = $this->row->original($prop);
+
             // If demo-mode is turned On - unset value for each shaded field
             if (Indi::demo(false)) foreach ($this->fields as $fieldR)
                 if ($fieldR->param('shade')) $array['row'][$fieldR->alias] = '';
@@ -163,13 +182,64 @@ class Indi_Trail_Item {
         if ($this->model) $array['model'] = $this->model->toArray();
         if ($this->fields) $array['fields'] = $this->fields->toArray(true);
         if ($this->gridFields) $array['gridFields'] = $this->gridFields->toArray();
-        if ($this->grid) $array['grid'] = $this->grid->toNestingTree()->toArray(true);
+
+        // If we have grid
+        if ($this->grid) {
+
+            // Create blank row
+            $blank = t()->model->createRow();
+
+            // Foreach grid column
+            foreach (t()->grid as $r) {
+
+                // If editor is turned off - skip
+                if (!$r->editor) continue;
+
+                // Else if it's underlying field is not an enumset-field - skip
+                if (t()->fields($r->fieldId)->relation != 6) continue;
+
+                // Pick store
+                $r->editor = array('store' => $blank->combo($r->fieldId, true));
+            }
+
+            // Convert to nesting tree and then to array
+            $array['grid'] = $this->grid->toNestingTree()->toArray(true);
+        }
+
         if ($this->filters) $array['filters'] = $this->filters->toArray();
-        if ($this->filtersSharedRow) $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
+        if ($this->filtersSharedRow) {
+
+            // Get fields, really existing as db table columns and assign zero values
+            foreach ($columns = $this->model->fields(null, 'columns') as $column)
+                if (($_ = $this->model->fields($column)) && $_->relation != '6')
+                    $this->filtersSharedRow->original($column, $_->zeroValue());
+
+            // Convert to array
+            $array['filtersSharedRow'] = $this->filtersSharedRow->toArray('current', true, true);
+        }
         if ($this->pseudoFields) $array['pseudoFields'] = $this->pseudoFields->toArray();
         if ($this->scope) $array['scope'] = $this->scope->toArray();
         $array['data'] = $this->data;
         $array['level'] = $this->level;
         return $array;
+    }
+
+    /**
+     * Shorthand function to call current model's fields() method
+     *
+     * @param string $names
+     * @param string $format
+     * @return mixed
+     */
+    public function fields($names = '', $format = 'rowset') {
+
+        // Get call info from backtrace
+        $call = array_pop(array_slice(debug_backtrace(), 0, 1));
+
+        // Make the call
+        return call_user_func_array(
+            array(Indi::model($this->section->entityId), $call['function']),
+            func_num_args() ? func_get_args() : $call['args']
+        );
     }
 }

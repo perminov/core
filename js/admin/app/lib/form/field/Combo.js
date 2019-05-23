@@ -116,10 +116,10 @@ Ext.define('Indi.lib.form.field.Combo', {
     colorReg: new RegExp('^[0-9]{3}(#[0-9a-fA-F]{6})$', 'i'),
 
     /**
-     * System property. Is used in cases when current combo has a satellite. For example, we changed value of
-     * satellite combo, so options of current combo are fetched with refresh-children mode. After children were
+     * System property. Is used in cases when current combo has consider-fields. For example, we changed value of
+     * consider-combo, so options of current combo are fetched with refresh-children mode. After children were
      * refreshed, we should adjust current combo width for it to take in attention the width of longest child.
-     * But if we change satellite combo value one more time, and current combo data will be refreshed again,
+     * But if we change consider combo value one more time, and current combo data will be refreshed again,
      * the width of longest child may be less than we faced earlier, and when new longest child width will be
      * taken in attention while adjusting current combo width - it (current combo width) will decrease, and
      * i don't like that. So this property - optionContentsMaxWidth - will be used to solve that problem: each time
@@ -168,7 +168,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     '</td>',
                     '<td class="i-combo-infoCell">',
                         '<div class="i-combo-info-div">',
-                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                            '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" changed="false"><tr>',
                                 '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
                                 '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
                                 '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
@@ -209,7 +209,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         '</td>',
                         '<td class="i-combo-infoCell">',
                             '<div class="i-combo-info-div">',
-                                '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" satellite="{satellite}" changed="false"><tr>',
+                                '<table class="i-combo-info" page-top="0" page-btm="0" fetch-mode="no-keyword" page-top-reached="{pageUpDisabled}" page-btm-reached="false" changed="false"><tr>',
                                     '<td class="i-combo-info-loadingCell"><img src="{[Indi.std]}/i/admin/combo-data-loading.gif"></td>',
                                     '<td class="i-combo-info-countCell"><span class="i-combo-count"></span></td>',
                                     '<td class="i-combo-info-ofCell"><span class="i-combo-of">{[Indi.lang.I_COMBO_OF]}</span></td>',
@@ -344,13 +344,15 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Workaround for cases when value is not found within the store
         // Supported currently only for single-value non-enumset combos
-        if (!me.store.enumset && !me.multiSelect && parseInt(value)
+        if (!me.store.enumset && !me.multiSelect && (value + '').match(/^[0-9]+$/) && parseInt(value)
             && me.xtype == 'combo.form' && me.store.ids.indexOf(parseInt(value)) == -1) {
 
-            me.remoteFetch({selected: value}, function() {
-                me.setValue(value);
-            });
-            return me;
+            if (!(me.wand && me.wand.pressed && !me.wand.hidden)) {
+                me.remoteFetch({selected: value}, function() {
+                    me.setValue(value);
+                });
+                return me;
+            }
         }
 
         // If combo is already rendered
@@ -517,10 +519,10 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Call parent
         me.callParent(arguments);
 
-        // Setup `forceValidation` property. We should do this, because some combos may be dependent (have satellites)
+        // Setup `forceValidation` property. We should do this, because some combos may be dependent (have consider-fields)
         // and there can be situations then combo is not allowed to be blank, but if it is disabled (due to several
-        // reasons, related to satellite-component's state) - validation won't run. So here we provide it to be forced
-        me.forceValidation = !!(me.satellite != '0' || Ext.JSON.encode(me.considerOn) != '[]');
+        // reasons, related to consider-field's state) - validation won't run. So here we provide it to be forced
+        me.forceValidation = !!(Ext.JSON.encode(me.considerOn) != '[]');
 
         // Setup noLookup property
         me.setupNoLookup();
@@ -555,10 +557,10 @@ Ext.define('Indi.lib.form.field.Combo', {
     },
 
     /**
-     * Clear satellited combo, for example in case if satellite (master) combo value was changed, so satellited combos
+     * Clear dependent combo, for example in case if consider/master combo value was changed, so dependent combos
      * should be cleared before their data will be reloaded
      */
-    clearSatellitedCombo: function() {
+    clearDependentCombo: function() {
         var me = this;
 
         // Restore default values for auxiliary attributes
@@ -581,36 +583,35 @@ Ext.define('Indi.lib.form.field.Combo', {
      *
      * @param force
      */
-    setDisabled: function(force, clear){
-        var me = this, sComboName = me.infoEl.attr('satellite').toString(), sCombo = Ext.getCmp(me.bid() + sComboName);
+    setDisabled: function(force, clear, on){
+        var me = this, sComboName = on ? on.name : false, sCombo;
 
-        // If current combo has a satellite, and satellite combo is an also existing component
-        if (sCombo) {
+        // If current combo has a consider-combo, and consider-combo is an also existing component
+        if (sComboName && (sCombo = Ext.getCmp(me.bid() + sComboName))) {
 
-            // Get satellite value
+            // Get consider-combo value
             var sv = sCombo.getValue() + ''; sv = sv.length == 0 ? 0 : parseInt(sv);
 
-            // If satellite value is 0, or 'force' argument is boolean 'true'
+            // If consider-combo's value is 0, or 'force' argument is boolean 'true'
             if (sv == 0) {
 
                 // Disable combo
-                if (!me.field.params.allowZeroSatellite) me.callParent([true]);
+                if (!on || on.required) me.callParent([true]);
 
                 // If 'clear' argument is boolean true
-                if (clear) me.clearSatellitedCombo();
+                if (clear) me.clearDependentCombo();
 
-
-                // Else if satellite value is non-zero
+            // Else if consider value is non-zero
             } else {
 
                 // Disable/Enable combo
                 me.callParent([force]);
 
                 // If 'clear' argument is boolean true
-                if (clear) me.clearSatellitedCombo();
+                if (clear) me.clearDependentCombo();
             }
 
-            // Else if current combo does not have a satellite
+        // Else if current combo does not have a consider-combo
         } else {
 
             // Disable/Enable combo
@@ -644,6 +645,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         if (me.wand && !me.store.enumset) me.lbarItems.push({
             iconCls: 'i-btn-icon-wand-plus',
             enableToggle: true,
+            name: 'wand',
             enablerEvents: 'keywordnothingfound,keywordfound,keyworderased',
             tooltip: {
                 html: Ext.isString(me.wand) ? me.wand : Indi.lang.I_COMBO_WAND_TOOLTIP,
@@ -702,6 +704,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         // Call parent
         me.callParent(arguments);
 
+        // Create a shortcut to wand-button
+        if (me.wand) me.wand = me.lbar.down('[name=wand]');
+
         // Setup keyboard handlers
         me.keywordEl.on({
             keyup: {
@@ -745,28 +750,6 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Bind a deletion click handler for .i-combo-selected-item-delete items
         me.el.select('.i-combo-selected-item-delete').on('click', me.onItemDelete, me);
-
-        // Execute javascript code, if it was assigned to default selected option/options
-        if (me.store.enumset) {
-            if (me.multiSelect) {
-                me.el.select('.i-combo-selected-item').each(function(el){
-                    var index = me.store['ids'].indexOf(el.attr('selected-id'));
-                    if (index != -1 && !me.nojs && me.store['data'][index].system.js) {
-                        Indi.eval(me.store['data'][index].system.js, me);
-                    }
-                });
-            } else {
-                var index = me.store['ids'].indexOf(me.hiddenEl.val());
-                if (index != -1 && !me.nojs  && this.store['data'][index].system.js) {
-                    Indi.eval(this.store['data'][index].system.js, me);
-                }
-            }
-        }
-
-        // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js && !me.nojs) {
-            if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
-        }
     },
 
     /**
@@ -1519,7 +1502,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         selected.splice(index, 1);
 
         // Check if me.onHiddenChange() handler for current combo should not be fired. Currently there is a only one
-        // case there this feature is used - in case if current combo is multiple and have a satellite, which
+        // case there this feature is used - in case if current combo is multiple and have a consider-combo, which
         // value has just changed, so current combo data will should be reloaded and currently selected options
         // should be removed. Usually, me.onHiddenChange() fires each time when .i-combo-selected-item-delete was clicked
         // and if we clicked on several items with such class, me.onHiddenChange() handler will be fired several times,
@@ -1682,17 +1665,8 @@ Ext.define('Indi.lib.form.field.Combo', {
         // related to current keyword should be fetched
         if (keywordChanged || moreResultsNeeded) {
 
-            // Get field satellite
-            var satellite = me.infoEl.attr('satellite');
-
-            // Get satellite as Ext combo object
-            var he = Ext.getCmp(me.bid() + satellite);
-
             // Prepare data for fetch request
             var data = {};
-
-            // Pass satellite value only if it was at east one time changed. Otherwise default satellite value will be used
-            if (he && he.infoEl.attr('changed') == 'true') data.satellite = he.hiddenEl.val();
 
             // If we are paging
             if (moreResultsNeeded) {
@@ -1716,9 +1690,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                         if (me.infoEl.attr('page-top-reached') == 'false') {
                             data.page = pageTop - 1;
 
-                            // Otherwise, if top border of range of displayed pages is already 1
-                            // so it is smallest possible value and therefore we won't do any request,
-                            // and we only should move selection to first option
+                        // Otherwise, if top border of range of displayed pages is already 1
+                        // so it is smallest possible value and therefore we won't do any request,
+                        // and we only should move selection to first option
                         } else {
 
                             me.keywordEl.attr('selectedIndex', 1);
@@ -1727,7 +1701,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                         }
                     }
 
-                    // If next page needed
+                // If next page needed
                 } else if (event.keyCode == '34') {
 
                     // If keyword was at least once changed
@@ -1781,7 +1755,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         }
 
         // If keyword was changed to empty we fire 'change' event. We do that for being sure
-        // that dependent combos (combos that are satellited by current combo) are disabled. Also,
+        // that dependent combos (combos that are considered by current combo) are disabled. Also,
         // after keyword was changed to empty, hidden value was set to 0, so we should call me.onHiddenChange() anyway
         // Note: 'change' event firing is need only if combo is running in non-multiple mode.
         if (keywordChangedToEmpty) {
@@ -2251,7 +2225,7 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // We set 'changed' attribute to 'true' to remember the fact of at least one time change.
         // We will need this fact in request data prepare process, because if at the moment of sending
-        // request 'changed' will still be 'false' (initial value), satellite property won't be set in
+        // request 'changed' will still be 'false' (initial value), consider property won't be set in
         // request data object. We need this to get upper and lower page results fetched from currently selected
         // value as startpoint. And after 'changed' attribute set to 'false', upper and lower page results will
         // have start point different to selected value, and based on most top alphabetic order.
@@ -2271,47 +2245,74 @@ Ext.define('Indi.lib.form.field.Combo', {
             if (me.keywordEl.val() == '#' || me.keywordEl.val() == '') me.colorDiv.update('');
         }
 
-        // Execute javascript code, if it was assigned to selected option. The additional clause for execution
-        // is that combo should run in single-value mode, because if it's not - we do not know what exactly item
-        // was selected and we are unable to get js, related to that exactly item. Even more - we do not exactly
-        // know about the fact of new item was added, it also could be removed, because me.onHiddenChange() (if combo is
-        // running in multiple-value mode) if firing in both cases. So, for the aim of selected item assigned javascript
-        // execution to be reached, we need this execution to be provided at me.onItemSelect() function of this script
-        if (me.store.enumset && !me.multiSelect) {
-            var index = me.store['ids'].indexOf(me.hiddenEl.val());
-            if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
-                Indi.eval(me.store['data'][index].system.js, me);
-            }
-        }
-
-        // Execute javascript code, assigned as an additional handler for 'select' event
-        if (me.store.js && !me.nojs) {
-            if (typeof me.store.js == 'function') me.store.js.call(me); else Indi.eval(me.store.js, me);
-        }
-
         // If combo is running in multiple-values mode and is rendered - empty keyword input element
         if (me.multiSelect && me.el) me.keywordEl.dom.value = Ext.emptyString;
 
         // Align picker
         Ext.defer(me.alignPicker, 10, me);
+    },
 
-        // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
-        if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
-            if (d.xtype.match(/^combo\.(form|auto)$/)) {
-                d.setDisabled(false, true);
-                if (!d.disabled) {
-                    d.remoteFetch({
-                        satellite: me.hiddenEl.val(),
-                        mode: 'refresh-children'
-                    });
-                }
-            } else if (d.xtype == 'multicheck') {
-                d.remoteFetch({
-                    satellite: me.hiddenEl.val(),
-                    mode: 'refresh-children'
-                });
-            }
-        });
+    /**
+     * If some consider-field was changed - reload current field's combo data
+     *
+     * @param sbl
+     * @param data
+     */
+    onConsiderChange: function (sbl, data) {
+        var me = this, stl, request = {mode: 'refresh-children'};
+
+        // Do not refresh children if `satellite` flag within consider-config is non-true
+        if (!sbl.satellite) return;
+
+        // If current combo is a form-combo, or auto-combo
+        if (me.xtype.match(/^combo\.(form|auto|filter)$/)) {
+
+            // Check whether it will be good to disable, and if so - do it
+            me.setDisabled(false, true, sbl);
+
+            // If still not disabled - refresh options
+            if (!me.disabled && (me.xtype != 'combo.filter' || !me.consistence)) me.remoteFetch(request);
+
+            //
+            if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');
+        }
+    },
+
+    /**
+     * Append consider-fields into considerOn array, if not yet in there
+     *
+     * @private
+     */
+    _afterRender: function() {
+        var me = this, consider, idxO = {}, name;
+
+        // If current field is a foreign-key-field, and is have consider-fields
+        if (me.field.storeRelationAbility != 'none' && me.field._nested && (consider = me.field._nested['consider'])) {
+
+            // Collect indexes
+            me.considerOn.forEach(function(cfg, idx){ idxO[cfg.name] = idx; });
+
+            // Foreach consider field
+            consider.forEach(function(consider){
+
+                // Get name
+                name = consider._foreign && consider._foreign['consider']
+                    ? consider._foreign['consider'].alias
+                    : me.$ctx ? me.$ctx.ti().fields.r(consider.consider).alias : false;
+
+                // If name was not detected - return
+                if (!name) return;
+
+                // If such field mentioned within considerOn - merge
+                if (name in idxO) Ext.merge(me.considerOn[idxO[name]], {required: consider.required == 'y', satellite: true});
+
+                // Else create new item in me.considerOn array
+                else me.considerOn.push({name: name, required: consider.required == 'y', satellite: true});
+            });
+        }
+
+        // Call parent
+        me.callParent();
     },
 
     /**
@@ -2550,17 +2551,17 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Hide options list div
             me.collapse();
 
-            // If just got resuts are result for satellited combo, autofetched after satellite value was changed
-            // and we have no results related to current satellite value, we disable satellited combo
+            // If just got results are results for considered combo, autofetched after consider-field's value was changed
+            // and we have no results related to current consider value, we disable considered combo
             if (requestData.mode == 'refresh-children') {
 
                 // Disable
-                me.setDisabled(true);
+                if (!me.wand || me.wand.hidden) me.setDisabled(true);
 
                 // Fire 'refreshchildren' event
                 me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
 
-            // Else if reason of no results was not in satellite but in keyword
+            // Else if reason of no results was not in consider-field's value, but in keyword
             } else {
 
                 // Call special handler fn
@@ -2584,6 +2585,9 @@ Ext.define('Indi.lib.form.field.Combo', {
             // Clear combo, but ensure keyword itself won't be cleared, as here we want validation to be run,
             // so this will indicate that combo is invalid as there was nothing found using given keyword
             me.clearCombo(); me.keywordEl.val(keyword); me.validate();
+
+            //
+            if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');
 
         // Else just validate
         } else me.validate();
@@ -2633,7 +2637,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * They can be collected initially (if their total count <= Indi_Db_Table_Row::$comboOptionsVisibleCount) or
      * can be collected step by step while paging upper/lower. So, since they all are a got, any keyword search will run
      * without requests to database, and will be completely handled by javascript. Such scheme will be used until next
-     * database request - this can happen if current combo field has a satellite, and satellite value was changed
+     * database request - this can happen if current combo field has a consider-field, and it's value was changed
      *
      * @param data Request data object, containing same properties, as per remote-fetch scheme
      */
@@ -2827,7 +2831,7 @@ Ext.define('Indi.lib.form.field.Combo', {
                     if (me.store.optgroup)
                         me.store.optgroup = me.mergeOptgroupInfo(me.store.optgroup, json.optgroup);
 
-                    // Else if fetched options should be appended to current options list
+                // Else if fetched options should be appended to current options list
                 } else if (data.more == 'lower') {
 
                     // If we are dealing with tree of results, we should merge existing options tree
@@ -2880,14 +2884,23 @@ Ext.define('Indi.lib.form.field.Combo', {
     /**
      * clearValue() call removed
      */
-    enableBySatellites: function(cfg) {
+    enableByConsiderFields: function(cfg) {
         var me = this, data = {};
 
         // Enable field
         if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
 
+        // Get data
+        data = me.considerOnData();
+
         // Fire 'enablebysatellite' event
-        me.fireEvent('enablebysatellite', me, me.considerOnData());
+        me.fireEvent('enablebysatellite', me, data);
+
+        // Fire 'considerchange' event
+        me.fireEvent('considerchange', me, data);
+
+        // Call 'onConsiderChange' method
+        me.onConsiderChange(cfg, data);
     },
 
     /**
@@ -3180,6 +3193,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
         // Append additonal space
         width += 10;
+
+        // Append optgroup indent
+        if (me.store.optgroup) width += 25;
 
         // Append .i-combo-info width
         if (!(me.keywordEl.attr('no-lookup') == 'true' || me.store.enumset)) width += 30;

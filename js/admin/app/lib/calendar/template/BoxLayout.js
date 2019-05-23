@@ -6,9 +6,18 @@ Ext.define('Ext.calendar.template.BoxLayout', {
     constructor: function(config){
 
         Ext.apply(this, config);
-    
+
         var weekLinkTpl = this.showWeekLinks ? '<div id="{weekLinkId}" class="ext-cal-week-link">{weekNum}</div>' : '';
-        
+
+        // Template depends on kanban
+        var tpl2 = (this.kanban && this.kanban.prop != 'date')
+            ? '<td id="{[this.id]}-ev-day-{kanban}" class="{titleCls}"><div>{title}</div></td>'
+            : '<td id="{[this.id]}-ev-day-{date:date("Ymd")}" class="{titleCls}"><div>{title}</div></td>';
+
+        var tpl1 = (this.kanban && this.kanban.prop != 'date')
+            ? '<td id="{[this.id]}-day-{kanban}" class="{cellCls}">&#160;</td>'
+            : '<td id="{[this.id]}-day-{date:date("Ymd")}" class="{cellCls}">&#160;</td>';
+
         this.callParent([
             '<tpl for="weeks">',
                 '<div id="{[this.id]}-wk-{[xindex-1]}" class="ext-cal-wk-ct" style="top:{[this.getRowTop(xindex, xcount)]}%; height:{[this.getRowHeight(xcount)]}%;">',
@@ -17,7 +26,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                         '<tbody>',
                             '<tr>',
                                 '<tpl for=".">',
-                                     '<td id="{[this.id]}-day-{date:date("Ymd")}" class="{cellCls}">&#160;</td>',
+                                     tpl1,
                                 '</tpl>',
                             '</tr>',
                         '</tbody>',
@@ -26,7 +35,7 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                         '<tbody>',
                             '<tr>',
                                 '<tpl for=".">',
-                                    '<td id="{[this.id]}-ev-day-{date:date("Ymd")}" class="{titleCls}"><div>{title}</div></td>',
+                                    tpl2,
                                 '</tpl>',
                             '</tr>',
                         '</tbody>',
@@ -50,16 +59,20 @@ Ext.define('Ext.calendar.template.BoxLayout', {
         var w = 0, title = '', first = true, isToday = false, showMonth = false, prevMonth = false, nextMonth = false,
             weeks = [[]],
             dt = Ext.Date.clone(this.viewStart),
-            thisMonth = this.startDate.getMonth();
-        
+            thisMonth = this.startDate.getMonth(),
+            k = this.kanban;
+
         for(; w < this.weekCount || this.weekCount == -1; w++){
             if(dt > this.viewEnd){
                 break;
             }
             weeks[w] = [];
             
-            for(var d = 0; d < this.dayCount; d++){
-                isToday = dt.getTime() === Ext.calendar.util.Date.today().getTime();
+            for(var d = 0; d < (k ? k.values.length : this.dayCount); d++){
+                // Set start date
+                if (k && k.prop == 'date') dt = Ext.Date.parse(k.values[d], 'Y-m-d');
+
+                if (!k || k.prop == 'date') isToday = dt.getTime() === Ext.calendar.util.Date.today().getTime();
                 showMonth = first || (dt.getDate() == 1);
                 prevMonth = (dt.getMonth() < thisMonth) && this.weekCount == -1;
                 nextMonth = (dt.getMonth() > thisMonth) && this.weekCount == -1;
@@ -71,35 +84,39 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                     weeks[w].weekLinkId = 'ext-cal-week-'+Ext.Date.format(dt, 'Ymd');
                 }
 
-                if(showMonth){
-                    if(isToday){
-                        title = this.getTodayText();
+                if (!k || k.prop == 'date') {
+
+                    if(showMonth){
+                        if(isToday){
+                            title = this.getTodayText();
+                        }
+                        else{
+                            title = Ext.Date.format(dt,
+                                this.dayCount == 1
+                                    ? 'l, F j, Y'
+                                    : (first
+                                    ? (this.format && this.format.calFirstDate
+                                    ? this.format.calFirstDate
+                                    : 'M j, Y')
+                                    : (this.format && this.format.monthFirstDate
+                                    ? this.format.monthFirstDate
+                                    : 'M j'))
+                            );
+                        }
                     }
                     else{
-                        title = Ext.Date.format(dt,
-                            this.dayCount == 1
-                                ? 'l, F j, Y'
-                                : (first
-                                    ? (this.format && this.format.calFirstDate
-                                        ? this.format.calFirstDate
-                                        : 'M j, Y')
-                                    : (this.format && this.format.monthFirstDate
-                                        ? this.format.monthFirstDate
-                                        : 'M j'))
-                        );
-                    }
-                }
-                else{
-                    var dayFmt = (w == 0 && this.showHeader !== true)
-                        ? (this.format && this.format.dayShowHeaderFalse
+                        var dayFmt = (w == 0 && this.showHeader !== true)
+                            ? (this.format && this.format.dayShowHeaderFalse
                             ? this.format.dayShowHeaderFalse
                             : 'D j')
-                        : (this.format && this.format.day
+                            : (this.format && this.format.day
                             ? this.format.day
                             : 'j');
-                    title = isToday ? this.getTodayText() : Ext.Date.format(dt, dayFmt);
-                }
-                
+                        title = isToday ? this.getTodayText() : Ext.Date.format(dt, dayFmt);
+                    }
+                } else if (k) title = k.titles[d];
+
+
                 weeks[w].push({
                     title: title,
                     date: Ext.Date.clone(dt),
@@ -110,13 +127,14 @@ Ext.define('Ext.calendar.template.BoxLayout', {
                     cellCls: 'ext-cal-day ' + (isToday ? ' ext-cal-day-today' : '') + 
                         (d==0 ? ' ext-cal-day-first' : '') +
                         (prevMonth ? ' ext-cal-day-prev' : '') +
-                        (nextMonth ? ' ext-cal-day-next' : '')
+                        (nextMonth ? ' ext-cal-day-next' : ''),
+                    kanban: k ? k.values[d] : undefined
                 });
-                dt = Ext.calendar.util.Date.add(dt, {days: 1});
+                if (!k || k.prop != 'date') dt = Ext.calendar.util.Date.add(dt, {days: 1});
                 first = false;
             }
         }
-        
+
         return this.applyOut({
             weeks: weeks
         }, []).join('');

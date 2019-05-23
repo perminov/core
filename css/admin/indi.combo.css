@@ -23,6 +23,16 @@
 .x-boundlist-item:last-child {
     border-bottom: none;
 }
+.x-boundlist-item[timeId] {
+    display: inline-block;
+}
+.x-boundlist-item-over[timeId] {
+    outline: 1px solid #45d1d2;
+    background: #45d1d2;
+    color: white;
+    border-bottom: 1px solid #45d1d2;
+    cursor: pointer;
+}
 .x-boundlist-item-group *{
     color: inherit;
 }

@@ -7,9 +7,8 @@ class Indi_View_Action_Admin_Rowset extends Indi_View_Action_Admin {
 
         // Setup filters
         foreach (Indi::trail()->filters ?: array() as $filter) if ($field = $filter->foreign('fieldId'))
-            if ($field->relation || $field->columnTypeId == 12 ||
-                ($field->storeRelationAbility != 'none' && $field->satellite && $field->dependency == 'e'))
-                Indi::view()->filterCombo($filter, 'extjs');
+            if ($field->storeRelationAbility != 'none' || $field->columnTypeId == 12)
+                Indi::view()->filterCombo($filter);
 
         // Prepare and assign raw response for rendering tab contents, if need
         $this->renderTab();

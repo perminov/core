@@ -46,6 +46,7 @@ Ext.define('Ext.calendar.dd.DragZone', {
     },
 
     onInitDrag: function(x, y) {
+        var rec;
         if (this.dragData.ddel) {
             var ghost = this.dragData.ddel.cloneNode(true),
             child = Ext.fly(ghost).down('dl');
@@ -57,12 +58,13 @@ Ext.define('Ext.calendar.dd.DragZone', {
                 child.setHeight('auto');
             }
             this.proxy.update(ghost);
+            rec = this.view.getEventRecordFromEl(this.dragData.ddel);
             this.onStartDrag(x, y);
         }
         else if (this.dragData.start) {
             this.onStartDrag(x, y);
         }
-        this.view.onInitDrag();
+        this.view.onInitDrag(rec);
         return true;
     },
 

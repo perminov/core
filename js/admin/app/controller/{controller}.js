@@ -1,5 +1,5 @@
 Ext.define('Indi.controller.{controller}', {
-    extend: 'Indi.lib.controller.Controller',
+    extend: '{extends}',
     actionsConfig: {
         index: {
 

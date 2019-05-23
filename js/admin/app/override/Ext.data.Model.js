@@ -73,5 +73,15 @@ Ext.override(Ext.data.Model, {
         if (silent !== true) {
             me.afterReject();
         }
+    },
+
+    /**
+     * Get value from system data
+     *
+     * @param key
+     * @return {*}
+     */
+    system: function(key) {
+        return this.raw._system[key];
     }
 });

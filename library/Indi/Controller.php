@@ -297,7 +297,7 @@ class Indi_Controller {
                 }
 
                 // If field is not storing foreign keys
-                if ($found->storeRelationAbility == 'none') {
+                if (!$found || $found->storeRelationAbility == 'none') {
 
                     // If $found field's control element is 'Color'
                     if ($found->elementId == 11) {
@@ -399,7 +399,7 @@ class Indi_Controller {
                     }
 
                 // Else if $found field is able to store only one foreign key, use '=' clause
-                } else if ($found->storeRelationAbility == 'one') {
+                } else if ($found->original('storeRelationAbility') == 'one') {
 
                     // Set $any as `false`
                     $any = false;
@@ -429,7 +429,7 @@ class Indi_Controller {
                     }
 
                 // Else if $found field is able to store many foreign keys, use FIND_IN_SET clause
-                } else if ($found->storeRelationAbility == 'many') {
+                } else if ($found->original('storeRelationAbility') == 'many') {
 
                     // Declare array for FIND_IN_SET clauses
                     $fisA = array();
@@ -448,7 +448,7 @@ class Indi_Controller {
                     }
 
                     // If $filterSearchFieldValue is a non-empty string, convert it to array
-                    if (is_string($filterSearchFieldValue) && strlen($filterSearchFieldValue))
+                    if ((is_string($filterSearchFieldValue) || is_scalar($filterSearchFieldValue)) && strlen($filterSearchFieldValue))
                         $filterSearchFieldValue = explode(',', $filterSearchFieldValue);
 
                     // Fill that array
@@ -483,11 +483,11 @@ class Indi_Controller {
     /**
      * Prepare arguments for $this->_odata() function call, and call that function for fetching filter-combo options data.
      * This function handles all cases, related to combo options data fetch, such as
-     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * page-by-page appending/prepending, combo-keyword lookup, respect consider-fields (for example fetch cities for second
      * combo when country was selected in first combo), and all this for filter combos
      *
      * @param string $for A name of field, that combo data should be fetched for
-     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, values of consider-fields)
      */
     public function indexActionOdata($for, $post) {
 
@@ -528,11 +528,11 @@ class Indi_Controller {
     /**
      * Prepare arguments for $this->_odata() function call, and call that function for fetching combo options data.
      * This function handles all cases, related to combo options data fetch, such as
-     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * page-by-page appending/prepending, combo-keyword lookup, respect consider-fields (for example fetch cities for second
      * combo when country was selected in first combo), and all this for form and sibling combos
      *
      * @param string $for A name of field, that combo data should be fetched for
-     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, values of consider-fields)
      */
     public function formActionOdata($for, $post) {
 
@@ -564,24 +564,50 @@ class Indi_Controller {
 
     /**
      * Fetch combo options data. This function handles all cases, related to combo options data fetch, such as
-     * page-by-page appending/prepending, combo-keyword lookup, fetch satellited data (for example fetch cities for second
+     * page-by-page appending/prepending, combo-keyword lookup, respect consider-fields (for example fetch cities for second
      * combo when country was selected in first combo), and all this for form, filter and sibling combos
      *
      * @param string $for A name of field, that combo data should be fetched for
-     * @param array $post Request params, required to make a proper fetch (page number, keyword, value of satellite)
+     * @param array $post Request params, required to make a proper fetch (page number, keyword, values of consider-fields)
      * @param Field_Row $field
      * @param string $where
      * @param string $order
      * @param string $dir
      * @param string $offset
      */
-    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null, $subTplData = null) {
+    protected function _odata($for, $post, $field, $where, $order = null, $dir = null, $offset = null) {
 
         // If field was not found neither within existing field, nor within pseudo fields
         if (!$field instanceof Field_Row) jflush(false, sprintf(I_COMBO_ODATA_FIELD404, $for));
 
-        // Set $noSatellite flag
-        $noSatellite = false; if (!$post->satellite && $field->param('allowZeroSatellite')) $noSatellite = true;
+        // Decode consider-fields values
+        $consider = json_decode($post['consider'], true) ?: array();
+
+        // Array for valid values of consider-fields
+        $picked = array();
+
+        // Foreach consider-field, linked to current field
+        foreach ($field->nested('consider') as $considerR) {
+
+            // Get shortcut for consider-field
+            $cField = $considerR->foreign('consider');
+
+            // If consider-field is not a foreign-key field - skip
+            if ($cField->storeRelationAbility == 'none') continue;
+
+            // If consider-field is not given within request data - skip
+            if (!array_key_exists($cField->alias, $consider)) continue;
+
+            // Collect info about valid values of consider-fields
+            if ($this->row->{$cField->alias} != $picked[$cField->alias])
+                $picked[$cField->alias] = $consider[$cField->alias];
+
+            // Check format, and if ok - assign value
+            $this->row->mcheck(array($cField->alias => array('rex' => '~^[a-zA-Z0-9,]*$~')), $consider);
+        }
+
+        // Remember picked values within row's system data
+        $this->row->system('consider', $picked);
 
         // If $_POST['selected'] is given, assume combo-UI is trying to retrieve data for an entry,
         // not yet represented in the combo's store, because of, for example, store contains only first
@@ -601,16 +627,10 @@ class Indi_Controller {
             $this->row->$for = $post->selected;
         }
 
-        // Check satellite is alphanumeric and/or contains comma
-        jcheck(array('satellite' => array('rex' => '/^[a-zA-Z0-9,]+$/')), $post);
-
         // Get combo data rowset
         $comboDataRs = $post->keyword
-            ? $this->row->getComboData(
-                $for, $post->page, $post->keyword, true, $post->satellite, $where, $noSatellite, $field, $order, $dir)
-            : $this->row->getComboData(
-                $for, $post->page, $this->row->$for, false, $post->satellite, $where, $noSatellite, $field, $order, $dir, $offset);
-
+            ? $this->row->getComboData($for, $post->page, $post->keyword,    true, $where, $field, $order, $dir)
+            : $this->row->getComboData($for, $post->page, $this->row->$for, false, $where, $field, $order, $dir, $offset);
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($field->params);
@@ -674,6 +694,9 @@ class Indi_Controller {
             // Adjust grid data
             $this->adjustGridData($data);
 
+            // Adjust grid data on a per-item basis
+            foreach ($data as &$item) $this->adjustGridDataItem($item);
+
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
 
@@ -697,12 +720,23 @@ class Indi_Controller {
                 if ($summary = $this->rowsetSummary()) $pageData['summary'] = $summary;
 
                 // Provide combo filters consistence
-                foreach (Indi::trail()->filters ?: array() as $filter)
-                    if ($filter->consistence && ($filter->foreign('fieldId')->relation || $filter->foreign('fieldId')->columnTypeId == 12)) {
-                        $alias = $filter->foreign('fieldId')->alias;
-                        Indi::view()->filterCombo($filter, 'extjs');
-                        $pageData['filter'][$alias] = array_pop(Indi::trail()->filtersSharedRow->view($alias));
-                    }
+                foreach (Indi::trail()->filters ?: array() as $filter) {
+
+                    // If `consistence` flag is Off - skip
+                    if (!$filter->consistence) continue;
+
+                    // Filter-field shortcut
+                    $field = $filter->foreign('fieldId');
+
+                    // If filter-field is not a foreign-key field, and is not boolean-field
+                    if ($field->storeRelationAbility == 'none' && $field->columnTypeId != 12)  continue;
+
+                    // Setup combo data
+                    Indi::view()->filterCombo($filter);
+
+                    // Pick combo data
+                    $pageData['filter'][$field->alias] = array_pop(Indi::trail()->filtersSharedRow->view($field->alias));
+                }
 
                 // Adjust json export
                 $this->adjustJsonExport($pageData);
@@ -831,8 +865,17 @@ class Indi_Controller {
      */
     public function appendDisabledField($alias, $displayInForm = false, $defaultValue = '') {
 
+        // Support for $alias arg, containing 'myPrefix*' values
+        $aliasA = array();
+        foreach (ar($alias) as $a)
+            if (!preg_match('#([a-zA-Z0-9]+)\*$#', $a, $prefix)) $aliasA []= $a; else {
+                $selector = ': #^' . trim($a, '*') . '#';
+                $selected = t()->model->fields()->select($selector, 'alias')->column('alias');
+                $aliasA = array_merge($aliasA, $selected);
+            }
+
         // Foreach field alias within $alias
-        foreach (ar($alias) as $a) {
+        foreach ($aliasA as $a) {
 
             // Check if such field exists, an if no - skip
             if (!$_ = t()->model->fields($a)) continue;
@@ -960,7 +1003,22 @@ class Indi_Controller {
      */
     public function formActionIDuration($data) {
 
+        // Append kanban info, if it was previously set up
+        if (Indi::post('uixtype') == 'dayview' && $k = t()->section->kanban) $data['kanban'] = $k;
+
+        // Append `fromHour` param
+        if ($fh = Indi::post('fromHour')) $data['fromHour'] = $fh;
+
         // Flush info about disabled options (dates and others)
         jflush(true, array('disabled' => $this->row->spaceDisabledValues($data)));
+    }
+
+    /**
+     * Adjusting grid data item. To be redefined in child classes if need
+     *
+     * @param $item
+     */
+    public function adjustGridDataItem(&$item) {
+
     }
 }

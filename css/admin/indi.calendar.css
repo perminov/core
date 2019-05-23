@@ -898,3 +898,44 @@ td.ext-cal-dtitle-today div {
     display: inline-block;
     background: #d7ecff;
 }
+.ext-cal-dayview .ext-cal-bg-row-div {
+    height: 11px;
+    margin-bottom: 0;
+}
+.ext-cal-dayview .ext-cal-bg-row {
+    height: 44px;
+}
+.ext-cal-day-time-inner {
+    height: 44px;
+}
+.ext-cal-dayview .ext-cal-bg-row-div {
+    border-top: none;
+}
+.ext-cal-dayview .ext-cal-bg-row-div:first-child {
+    border-top: 1px solid #e0eeff;
+}
+.ext-cal-dayview .ext-cal-bg-row-in:first-child .ext-cal-bg-row-div:first-child {
+    border-top: none;
+}
+.i-cal-disabled-time {
+    position: absolute;
+    opacity: 0.5;
+    left: 51px;
+    background: black;
+}
+.ext-cal-day.disabled:before {
+    background: black;
+    content: ' ';
+    height: calc(100% + 2px);
+    position: relative;
+    z-index: 100;
+    margin-right: -1px;
+    opacity: 0.5;
+    top: 0px;
+    display: block;
+    margin-bottom: -17px;
+    box-sizing: border-box;
+}
+.ext-cal-day-times {
+    min-width: 50px;
+}

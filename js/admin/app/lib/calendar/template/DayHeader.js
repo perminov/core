@@ -17,9 +17,9 @@ Ext.define('Ext.calendar.template.DayHeader', {
     requires: ['Ext.calendar.template.BoxLayout'],
     
     constructor: function(config){
-        
+
         Ext.apply(this, config);
-        
+
         this.allDayTpl = new Ext.calendar.template.BoxLayout(config);
         this.allDayTpl.compile();
         

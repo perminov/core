@@ -2,11 +2,6 @@
 class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
     /**
-     * @var Indi_Db_Table_Row
-     */
-    public $filtersSharedRow = null;
-
-    /**
      * @var Indi_View_Action_Admin
      */
     public $view;
@@ -53,7 +48,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 '`toggle` = "y"',
                 'FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `profileIds`)',
                 'FIND_IN_SET(`actionId`, "' . implode(',', Indi_Trail_Admin::$toggledActionIdA) . '")',
-                '`actionId` = "1"'
+                '`actionId` IN (1, 3)'
             ),
             'order' => 'move',
             'foreign' => 'actionId'
@@ -61,8 +56,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
         // Collect inaccessbile subsections ids from subsections list
         foreach ($sectionR->nested('section') as $subsection)
-            if (!$subsection->nested('section2action')->count())
-                $exclude[] = $subsection->id;
+            if (!$subsection->nested('section2action')->count()) $exclude[] = $subsection->id;
+            else if (!$subsection->nested('section2action')->gb(3, 'actionId')) $subsection->disableAdd = 1;
 
         // Exclude inaccessible sections
         $this->sections->exclude($exclude);
@@ -160,7 +155,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
                     // Prepend an additional part to WHERE clause array, so if row would be found,
                     // it will mean that that row match all necessary requirements
-                    array_unshift($where, '`id` = "' . Indi::uri('id') . '"');
+                    array_unshift($where, Indi::db()->sql('`id` = :s', Indi::uri('id')));
                     //i($where, 'a');
 
                     // Try to find a row by given id, that, hovewer, also match all requirements,
@@ -446,6 +441,9 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
                     // Setup view's `plain` property
                     $this->view->plain = Indi::view()->render($script);
+
+                    // Pass replacements
+                    if (Indi::view()->replace) $this->view->replace = Indi::view()->replace;
 
                     // Return the value, according to view mode
                     return $this->view->mode == 'view' ? $this->view : $this->view->plain;

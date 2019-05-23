@@ -522,10 +522,16 @@ Ext.define('Indi', {
                 // Write php-errors to the console, additionally
                 if (logger) for (var i in sesA) logger(sesA[i]);
 
+                // Build error msg
+                var err = sesA.join('<br><br>');
+
+                // If error msg length is greater than 4kb - wrap it in <textarea>
+                if (err.length > 4096) err = '<textarea style="width: 500px; height:400px;">' + err + '</textarea>';
+
                 // Show errors within a message box
                 boxA.push({
                     title: 'Server error',
-                    msg: sesA.join('<br><br>'),
+                    msg: err,
                     buttons: Ext.Msg.OK,
                     icon: Ext.MessageBox.ERROR
                 });
@@ -608,7 +614,7 @@ Ext.define('Indi', {
                     if (trigger && mismatch.entity) msg = Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG1
                         + mismatch.entity.title + '"'
                         + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                        + ' - ' + Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG2 + ': <br><br>' + msg;
+                        + Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG2 + ': <br><br>' + msg;
 
                     // Show message box
                     boxA.push({
@@ -623,7 +629,7 @@ Ext.define('Indi', {
             } else if ('confirm' in json) boxA.push({
                 title: Indi.lang.I_MSG,
                 msg: json.msg,
-                buttons: Ext.Msg.OKCANCEL,
+                buttons: Ext.Msg[json.buttons || 'OKCANCEL'],
                 icon: Ext.Msg.QUESTION,
                 modal: true,
                 fn: function(answer) {
@@ -645,21 +651,76 @@ Ext.define('Indi', {
                     }
                 }
 
+            // Else if `prompt` prop is set - build prompt's form and show it within Ext.MessageBox
+            }); else if ('prompt' in json) boxA.push({
+                title: Indi.lang.I_MSG,
+                msg: json.msg,
+                buttons: Ext.Msg.OKCANCEL,
+                icon: Ext.Msg.QUESTION,
+                modal: true,
+                scope: Ext.MessageBox,
+                form: {
+                    items: json.cfg
+                },
+                fn: function(answer) {
+                    var promptData = false;
+
+                    // Append new answer param
+                    urlOwner.url = urlOwner.url.split('?')[0] + '?answer=' + answer
+                        + (urlOwner.url.split('?')[1] ? '&' + urlOwner.url.split('?')[1] : '');
+
+                    // If answer is 'ok'
+                    if (answer == 'ok') {
+
+                        // Show load mask
+                        if (Indi.loadmask) Indi.loadmask.show();
+
+                        // Get prompt data
+                        promptData = this.down('form').getForm().getValues();
+                    }
+
+                    // Make new request
+                    if (form) form.owner.submit({
+                        submitEmptyText: false,
+                        dirtyOnly: true
+                    }); else {
+
+                        // Append prompt data to request
+                        if (promptData) {
+
+                            // Fix for cases when params are not defined
+                            if (!response.request.options.params) response.request.options.params = {};
+
+                            // Append prompt data
+                            response.request.options.params['_prompt'] = JSON.stringify(promptData);
+                        }
+
+                        // Show loader
+                        Ext.get('loader').css('opacity', 1).show();
+
+                        // Make request again
+                        Ext.Ajax.request(response.request.options);
+                    }
+                }
+
             // Else if `success` prop is set
-            }); else if ('success' in json && 'msg' in json) {
+            }); else if ('success' in json) {
 
                 // If `msg` prop is set - show it within Ext.MessageBox
-                boxA.push({
+                if ('msg' in json) boxA.push({
                     title: Indi.lang[json.success ? 'I_MSG' : 'I_ERROR'],
                     msg: json.msg,
                     buttons: Ext.Msg.OK,
                     icon: Ext.Msg[json.success ? 'INFO' : 'WARNING'],
                     modal: true
                 });
+
+                // If `json` has `goto` property - open a new browser window
+                if ('goto' in json) window.open(json.goto);
             }
 
-            // Else if `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
-            else if (json.throwOutMsg) top.window.location.reload();
+            // If `throwOutMsg` prop is set - reload page (throwOutMsg will be shown after that)
+            if (json.throwOutMsg) top.window.location.reload();
 
             // Fade out loader
             Indi.app.loader(false);

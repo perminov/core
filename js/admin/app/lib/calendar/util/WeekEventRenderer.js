@@ -33,7 +33,8 @@ Ext.define('Ext.calendar.util.WeekEventRenderer', {
                 weekCount = o.weekCount < 1 ? 6: o.weekCount,
                 dayCount = o.weekCount == 1 ? o.dayCount: 7,
                 cellCfg,
-                M = Ext.calendar.data.EventMappings;
+                M = Ext.calendar.data.EventMappings,
+                kanban = o.kanban;
 
             for (; w < weekCount; w++) {
                 if (!grid[w] || grid[w].length == 0) {

@@ -15,7 +15,9 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
             start,
             end,
             evtEl,
-            dayCol;
+            dayCol,
+            col,
+            k = this.view.kanban;
         if (data.type == 'caldrag') {
             if (!this.dragStartMarker) {
                 // Since the container can scroll, this gets a little tricky.
@@ -38,10 +40,10 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
             if (e.xy[1] < box.y) {
                 box.height += n.timeBox.height;
                 box.y = box.y - box.height + n.timeBox.height;
-                endDt = Ext.Date.add(this.dragCreateDt, Ext.Date.MINUTE, 30);
+                endDt = Ext.Date.add(this.dragCreateDt, Ext.Date.MINUTE, 15);
             }
             else {
-                n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 30);
+                n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 15);
             }
             this.shim(this.dragCreateDt, box);
 
@@ -66,11 +68,20 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                 else {
                     box.y = n.timeBox.y;
                 }
-                dt = Ext.Date.format(n.date, 'n/j H:i');
+
+                dt = Ext.Date.format(n.date, 'l, H:i');
+                if (k && k.prop != 'date') {
+                    dt = k.titles[k.values.indexOf(n.kanban)] + ', ' + dt.split(' ').pop();
+                }
+
                 box.x = n.el.getLeft();
 
                 this.shim(n.date, box);
                 text = this.moveText;
+                col = n.kanban || Ext.Date.format(n.date, 'Y-m-d');
+                if (this.view.disabledValues && this.view.disabledValues.busy[col])
+                    if (dt.split(' ').pop() in this.view.disabledValues.busy[col]['timeHi'])
+                        return false;
             }
             if (data.type == 'eventresize') {
                 if (!this.resizeDt) {
@@ -82,7 +93,7 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                     box.y -= box.height;
                 }
                 else {
-                    n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 30);
+                    n.date = Ext.Date.add(n.date, Ext.Date.MINUTE, 15);
                 }
                 this.shim(this.resizeDt, box);
 
@@ -126,11 +137,17 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
     },
 
     onNodeDrop: function(n, dd, e, data) {
-        var rec;
-        if (n && data) {
+        var rec, dis, col = n.kanban || Ext.Date.format(n.date, 'Y-m-d');
+
+        // Prevent dropping at disabled time
+        if (this.view.disabledValues && this.view.disabledValues.busy[col])
+            if (Ext.Date.format(n.date, 'H:i') in this.view.disabledValues.busy[col]['timeHi'])
+                dis = true;
+
+        if (n && data && !dis) {
             if (data.type == 'eventdrag') {
                 rec = this.view.getEventRecordFromEl(data.ddel);
-                this.view.onEventDrop(rec, n.date);
+                this.view.onEventDrop(rec, n.date, n.kanban);
                 this.onCalendarDragComplete();
                 delete this.dragOffset;
                 return true;
@@ -147,7 +164,7 @@ Ext.define('Ext.calendar.dd.DayDropZone', {
                 delete this.dragStartMarker;
                 delete this.dragCreateDt;
                 this.view.onCalendarEndDrag(this.dragStartDate, this.dragEndDate,
-                Ext.bind(this.onCalendarDragComplete, this));
+                Ext.bind(this.onCalendarDragComplete, this), n.kanban);
                 //shims are NOT cleared here -- they stay visible until the handling
                 //code calls the onCalendarDragComplete callback which hides them.
                 return true;

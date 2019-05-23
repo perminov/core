@@ -8,14 +8,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
     alternateClassName: 'Indi.Controller.Action.Rowset.Grid',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action.Rowset',
+    extend: 'Indi.lib.controller.action.Rowset',
 
     /**
      * Config of panel, that will be used for representing the rowset
      */
     rowset: {
         xtype: 'grid',
-        multiSelect: false,
         firstColumnWidthFraction: 0.4,
         smallColumnWidth: 100,
         border: 0,
@@ -241,7 +240,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     gridColumnDefault: function(field, column) {
-        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [], cfg;
+        var me = this, tooltip = column.tooltip || (field && field.tooltip), tdClsA = [], cfg, sp;
 
         // Setup align
         tdClsA.push('i-grid-column-align-' + ((field.storeRelationAbility == 'none' &&
@@ -269,7 +268,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
         if (field.params && field.params.inputMask) cfg.resizable = false;
 
         // If current column's field is a grouping field - hide it
-        if (me.ti().section.groupBy == field.id) cfg.hidden = true;
+        if (me.ti().section.groupBy == field.id || column.toggle == 'h') cfg.hidden = true;
+
+        // Set `locked` prop
+        if (column.group == 'locked') cfg.locked = true;
+
+        // Set `summaryType` and `summaryText` props
+        if (column.summaryType != 'none')
+            if (sp = column.summaryType == 'text' ? 'summaryText' : 'summaryType')
+                cfg[sp] = column[sp];
 
         // Return
         return cfg;
@@ -282,6 +289,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnA: function() {
         var me = this, columnA = [], column$Id = Ext.isFunction(me.gridColumn$Id) ? me.gridColumn$Id() : me.gridColumn$Id;
+
+        // Append rownumberer-column
+        if (me.ti().section.rownumberer) columnA.push({xtype: 'rownumberer'});
 
         // Append Id column
         if (column$Id) columnA.push(column$Id);
@@ -536,12 +546,27 @@ Ext.define('Indi.lib.controller.action.Grid', {
         }
     },
 
-    gridColumnEditor_Combo: function(c) {
-        var me = this, f = me.ti().fields.r(c.dataIndex, 'alias'), r = me.ti().row;
+    /**
+     * Prepare cell-combo config
+     *
+     * @param c
+     * @param f
+     * @param e
+     * @return {*}
+     */
+    gridColumnEditor_Combo: function(c, f, e) {
+        var me = this, emptyStore;
+
+        // todo: check whether this line still required
         if (parseInt(f.relation) == 6 && f.storeRelationAbility == 'one' && !c.editor) return null;
+
+        // Default empty store
+        emptyStore = {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, optionHeight: "14", page: 1};
+
+        // Return cfg
         return {
             xtype: 'combo.cell',
-            store: {data: [], ids: [], found: '0', enumset: parseInt(f.relation) == 6, js: '', optionHeight: "14", page: 1},
+            store: e.store || emptyStore,
             field: f
         }
     },
@@ -552,8 +577,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXRadio_Editor: function(c) {
-        return this.gridColumnEditor_Combo(c);
+    gridColumnXRadio_Editor: function(c, f, e) {
+        return this.gridColumnEditor_Combo(c, f, e);
     },
 
     /**
@@ -562,8 +587,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXCombo_Editor: function(c) {
-        return this.gridColumnEditor_Combo(c);
+    gridColumnXCombo_Editor: function(c, f, e) {
+        return this.gridColumnEditor_Combo(c, f, e);
     },
 
     /**
@@ -572,8 +597,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param f
      * @return {Object}
      */
-    gridColumnXMulticheck_Editor: function(c) {
-        return this.gridColumnEditor_Combo(c);
+    gridColumnXMulticheck_Editor: function(c, f, e) {
+        return this.gridColumnEditor_Combo(c, f, e);
     },
 
     /**
@@ -687,6 +712,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     hidden: true,
                     columns: me.gridColumnADeep(colI._nested.grid)
                 }
+
+                // Set `locked` prop
+                if (colI.group == 'locked') columnI.locked = true;
 
                 // Check if current column group has at least one non-hidden sub-column
                 // and if so, set `hidden` prop of whole group as `false`
@@ -1469,7 +1497,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 var grid = editor.grid, ctx = grid.ctx();
 
                 // Make sure pressing ENTER will not cause call of it's ordinary handler
-                grid.preventEnter = true;
+                if (grid.ownerCt.xtype == 'grid') grid.ownerCt.preventEnter = true; else grid.preventEnter = true;
 
                 // Try to save
                 ctx.recordRemoteSave(e.record, e.rowIdx + 1, null, function(json){

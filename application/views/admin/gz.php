@@ -146,7 +146,7 @@ $css = array(
 );
 // Implode js files
 Indi::implode(array('/application/lang/admin/' . Indi::ini()->lang->admin . '.php:Indi$lang'), Indi::ini()->lang->admin);
-Indi::implode($js);
+Indi::implode($js, isIE() ? 'ie' : null);
 
 // Implode css files
-Indi::implode($css);
+Indi::implode($css, isIE() ? 'ie' : null);

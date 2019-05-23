@@ -419,20 +419,15 @@ Ext.define('Indi.lib.controller.action.Form', {
             readOnly: me.row.readOnly,
             fieldLabel: field.title,
             name: field.alias,
-            satellite: field.satellite,
             value: this.ti().row[field.alias],
             allowBlank: field.mode != 'required' && (parseInt(field.relation) != 6 || field.storeRelationAbility == 'many'),
             disabled: field.mode == 'readonly',
             labelAlign: field.params && field.params.wide == 'true' ? 'top' : 'left',
             cls: field.params && field.params.wide == 'true' ? 'i-field-wide' : '',
+            originalValue: this.ti().row._original && field.alias in this.ti().row._original ? this.ti().row._original[field.alias] : undefined,
             field: field,
             row: this.ti().row,
             listeners: {
-                boxready: function(c) {
-                    if (!c.row._original || !(c.name in c.row._original)) return;
-                    c.originalValue = c.row._original[c.name];
-                    c.checkDirty();
-                },
                 validitychange: function(cmp, valid){
                     if (!valid) me.toggleSaveAbility(valid); else {
                         var activeErrors = 0;
@@ -454,12 +449,32 @@ Ext.define('Indi.lib.controller.action.Form', {
                 show: function(cmp) {
                     cmp.ownerCt.query('> *').forEach(function(sbl){
                         if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
-                    })
+                    });
+
+                    var w = cmp.up('actionrow').getWindow();
+                    var diff = cmp.getHeight() - cmp._wasHeight;
+                    if (diff && cmp.up('actionrow').heightUsage && !cmp.up('actionrow').down('[isSouth]')) {
+                        if (w.restoreSize) w.restoreSize.height += diff;
+                        if (!w.maximized) w.setHeight(w.height + diff);
+                    }
                 },
                 hide: function(cmp) {
                     cmp.ownerCt.query('> *').forEach(function(sbl){
                         if (sbl.dirtyIcon) sbl.dirtyIcon.alignTo(sbl.el, 'tl', [0, 1]);
                     })
+
+                    var w = cmp.up('actionrow').getWindow();
+                    var diff = cmp.getHeight() - cmp._wasHeight;
+                    if (diff && cmp.up('actionrow').heightUsage && !cmp.up('actionrow').down('[isSouth]')) {
+                        if (w.restoreSize) w.restoreSize.height += diff;
+                        if (!w.maximized) w.setHeight(w.height + diff);
+                    }
+                },
+                beforeshow: function(c) {
+                    c._wasHeight = c.getHeight();
+                },
+                beforehide: function(c) {
+                    c._wasHeight = c.getHeight();
                 }
             },
             getDirtyIcon: function() {
@@ -551,14 +566,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-date',
             startDay: 1,
             format: item.field.params.displayFormat,
-            submitFormat: 'Y-m-d',
-            listeners: {
-                boxready: function(c) {
-                    if (!c.row._original || !(c.name in c.row._original)) return;
-                    c.originalValue = c.row._original[c.name] == '0000-00-00' ? null : c.row._original[c.name];
-                    c.checkDirty();
-                }
-            }
+            submitFormat: 'Y-m-d'
         };
     },
 
@@ -581,14 +589,7 @@ Ext.define('Indi.lib.controller.action.Form', {
             cls: 'i-field-datetime',
             startDay: 1,
             format: item.field.params.displayDateFormat,
-            submitFormat: 'Y-m-d H:i:s',
-            listeners: {
-                boxready: function(c) {
-                    if (!c.row._original || !(c.name in c.row._original)) return;
-                    c.originalValue = c.row._original[c.name] == '0000-00-00 00:00:00' ? null : c.row._original[c.name];
-                    c.checkDirty();
-                }
-            }
+            submitFormat: 'Y-m-d H:i:s'
         }
     },
 
@@ -1072,7 +1073,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                 dd = response.responseText.json().disabled;
 
                 // Apply those disabled values, so only non-disabled will remain accessible
-                for (var i in dd) srcField.sbl(i).setDisabledOptions(dd[i]);
+                for (var i in dd) if (sbl = srcField.sbl(i)) sbl.setDisabledOptions(dd[i]);
             }
         });
     }

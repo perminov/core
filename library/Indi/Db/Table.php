@@ -37,6 +37,13 @@ class Indi_Db_Table
     protected $_hasRole = false;
 
     /**
+     * Flag, indicating that this model instances was preloaded and stored within Indi_Db::$_preloaded[$entity]
+     *
+     * @var boolean
+     */
+    protected $_preload = false;
+
+    /**
      * Id of field, that is used as title-field
      *
      * @var boolean
@@ -158,6 +165,9 @@ class Indi_Db_Table
         // Setup 'hasRole' flag
         $this->_hasRole = $config['hasRole'];
 
+        // Setup 'preload' flag to be false by default
+        $this->_preload = false;
+
         // Setup 'spaceScheme' prop
         $this->_space = $config['space'];
 
@@ -170,8 +180,11 @@ class Indi_Db_Table
             // Setup space-owner fields and their rules
             $this->_space['fields']['owners'] = $this->_spaceOwners();
 
-            // Setup satellite-fields (and their rules) for all space-owner fields
+            // Setup consider-fields (and their rules) for all space-owner fields
             $this->_space['fields']['relyOn'] = $this->_spaceOwnersRelyOn();
+
+            // Setup fields having ['auto' => true] rule
+            $this->_space['fields']['auto'] = $this->_spaceOwnersAuto();
 
             // If current space-scheme assumes that there is a duration-field
             if ($frameCoord = Indi::rexm('~(minuteQty|dayQty|timespan)~', $this->_space['scheme'], 1)) {
@@ -473,14 +486,14 @@ class Indi_Db_Table
                                 $start--;
                                 $prevId = $idsHistory[$start];
                                 $ids[] = $prevId;
-                                $indents[$prevId] = indent($tree[$prevId][1]);
+                                $level[$prevId] = $tree[$prevId][1];
                             } while ($disabledA[$prevId]);
                             $ids = array_reverse($ids);
                         }
 
                         // Normal appending
                         $ids[] = $id;
-                        $indents[$id] = indent($tree[$id][1]);
+                        $level[$id] = $tree[$id][1];
 
                         // We shift end point because disabled items should be ignored
                         if ($disabledA[$id] && (is_null($page) || $page > 0)) $end++;
@@ -511,7 +524,8 @@ class Indi_Db_Table
         $assocDataA = array();
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
-            $assocDataI['_system']['indent'] = $indents[$data[$i]['id']];
+            $assocDataI['_system']['level'] = $level[$data[$i]['id']];
+            $assocDataI['_system']['indent'] = indent($level[$data[$i]['id']]);
             $assocDataA[$data[$i]['id']] = $assocDataI;
         }
         $data = $assocDataA;
@@ -933,9 +947,9 @@ class Indi_Db_Table
         else {
             $data = Indi::db()->query($sql =
                 'SELECT * FROM `' . $this->_table . '`' .
-                    (strlen($where) ? ' WHERE ' . $where : '') .
-                    ($order ? ' ORDER BY ' . $order : '') .
-                    ($offset ? ' LIMIT ' . $offset . ',1' : '')
+                rif(strlen($where), ' WHERE ' . $where) .
+                rif($order, ' ORDER BY ' . $order) .
+                ' LIMIT ' . rif($offset, $offset . ',') . '1'
             )->fetch();
         }
 
@@ -1023,18 +1037,8 @@ class Indi_Db_Table
         // Create an instance of a row
         $row = new $rowClass($constructData);
 
-        // If $constructData['original'] is an empty array, we setup it according to model structure
-        if (!$row->id) {
-            foreach ($this->fields() as $fieldR) {
-                if ($fieldR->columnTypeId) {
-                    if (preg_match(Indi::rex('php'), $fieldR->defaultValue)) {
-                        $row->compileDefaultValue($fieldR->alias);
-                    } else if ($fieldR->foreign('columnTypeId')->type == 'TEXT') {
-                        $row->compileDefaultValue($fieldR->alias);
-                    }
-                }
-            }
-        }
+        // Compile default values for new entry
+        if (!$row->id) $row->compileDefaults();
 
         // Construct and return Indi_Db_Table_Row object,
         // but, if $assign arg is given - preliminary assign data
@@ -1258,11 +1262,39 @@ class Indi_Db_Table
     }
 
     /**
+     * Return the 'preload' flag value, with preliminary seeing it up if $on arg given
+     *
+     * @param bool $on
+     * @return bool
+     */
+    public function preload($on = false) {
+        return func_num_args() ? $this->_preload = $on : $this->_preload;
+    }
+
+    /**
      * Return title of current model
      *
+     * @param string $title
      * @return string
      */
-    public function title() {
+    public function title($title = '') {
+
+        // If $title arg is given
+        if ($title) {
+
+            // If localization is turned On
+            if (Indi::model('Entity')->fields('title')->l10n == 'y') {
+
+                // Spoof title within json
+                $_ = json_decode($this->_title);
+                $_->{Indi::ini('lang')->admin} = $title;
+                $this->_title = json_encode($_);
+
+            // Else spoof existing title
+            } else $this->_title = $title;
+        }
+
+        // If localization is turned On - pick title from json, or return as is
         return Indi::model('Entity')->fields('title')->l10n == 'y'
             ? json_decode($this->_title)->{Indi::ini('lang')->admin}
             : $this->_title;
@@ -1385,10 +1417,19 @@ class Indi_Db_Table
     /**
      * Get space scheme settings
      *
+     * @param string $keyChain Example: 'fields', 'fields.owners'
      * @return string
      */
-    public function space() {
-        return $this->_space;
+    public function space($keyChain = '') {
+
+        // If no $keyChain arg given - return all settings
+        if (!$keyChain) return $this->_space;
+
+        // Foreach key pick value each time going to deeper level
+        foreach(explode('.', $keyChain) as $key) $value = isset($value) ? $value[$key]: $this->_space[$key];
+
+        // Return value
+        return $value;
     }
 
     /**
@@ -1570,7 +1611,7 @@ class Indi_Db_Table
     }
 
     /**
-     * Collect and return satellite-fields for all space-owner fields
+     * Collect and return consider-fields for all space-owner fields
      *
      * @return array
      */
@@ -1579,28 +1620,48 @@ class Indi_Db_Table
         // Declare
         $ownerRelyOn = array();
 
-        // Collect satellite-fields for all space-owner fields
+        // Collect consider-fields for all space-owner fields
         foreach ($this->_space['fields']['owners'] as $owner => $ruleA) {
 
-            // If current space-owner field has no satellite - skip
-            if (!$sFieldId = $this->_fields->field($owner)->satellite) continue;
+            // If current space-owner field has consider-fields - for each
+            foreach ($this->_fields->field($owner)->nested('consider') as $considerR) {
 
-            // Get satellite-field
-            $sFieldR = $this->_fields->field($sFieldId);
+                // Get consider-field
+                $cFieldR = $this->_fields->field($considerR->consider);
 
-            // Setup shortcut for satellite-field's `storeRelationAbility` prop
-            $sra = $sFieldR->storeRelationAbility;
+                // Setup shortcut for consider-field's `storeRelationAbility` prop
+                $cra = $cFieldR->storeRelationAbility;
 
-            // Setup rules for space-owner field's satellite-field
-            $ownerRelyOn[$sFieldR->alias] = array('rex' => $sra == 'many' ? 'int11list' : 'int11');
+                // Setup rules for space-owner field's consider-field
+                $ownerRelyOn[$cFieldR->alias] = array('rex' => $cra == 'many' ? 'int11list' : 'int11');
+            }
         }
 
-        // Return array of satellite-fields and their rules
+        // Return array of consider-fields and their rules
         return $ownerRelyOn;
     }
 
     /**
-     * Get satellite-fields (for all space-owner fields) either as simple array of field names,
+     * Collect and return fields that should be auto-filled with one of non-disabled
+     * values in case if it will turn out that it's current value is inaccessible
+     *
+     * @return array
+     */
+    protected function _spaceOwnersAuto() {
+
+        // Declare
+        $ownerAuto = array();
+
+        // Collect auto-fields aliases
+        foreach ($this->_space['fields']['owners'] as $owner => $ruleA)
+            if ($ruleA['auto']) $ownerAuto[] = $owner;
+
+        // Return array of auto-fields aliases
+        return $ownerAuto;
+    }
+
+    /**
+     * Get consider-fields (for all space-owner fields) either as simple array of field names,
      * or as an associative array, having field names as keys and array of field rules as values.
      * This is because in some cases we need just field names only, but in some - we need each field's rules also
      *
@@ -1609,5 +1670,25 @@ class Indi_Db_Table
      */
     public function spaceOwnersRelyOn($rules = false) {
         return $rules ? $this->_space['fields']['relyOn'] : array_keys($this->_space['fields']['relyOn']);
+    }
+
+    /**
+     * Get preloaded row by a given $key (entry's ID)
+     *
+     * @param int $key
+     * @return Indi_Db_Table_Row
+     */
+    public function preloadedRow($key) {
+        return Indi::db()->preloadedRow($this->_table, $key);
+    }
+
+    /**
+     * Get rowset of сontaining preloaded rows by a given $keys (entry's ID comma-separated list or array)
+     *
+     * @param int|string|array $keys
+     * @return Indi_Db_Table_Rowset
+     */
+    public function preloadedAll($keys) {
+        return Indi::db()->preloadedAll($this->_table, $keys);
     }
 }

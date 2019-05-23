@@ -128,6 +128,7 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     // must be implemented by a subclass
     // private
     initComponent: function() {
+
         this.setStartDate(this.startDate || new Date());
 
         this.callParent(arguments);
@@ -288,7 +289,15 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
         w = 0,
         row = 0,
         dt = Ext.Date.clone(this.viewStart),
-        weeks = this.weekCount < 1 ? 6: this.weekCount;
+        weeks = this.weekCount < 1 ? 6: this.weekCount,
+        k = this.kanban, Ymd;
+        if (k && k.prop == 'date' && k.values[0] != (Ymd = Ext.Date.format(dt, 'Y-m-d'))) {
+           k.values = [];
+            while (dt < this.viewEnd) {
+                k.values.push(Ext.Date.format(dt, 'Y-m-d'));
+                dt = Ext.calendar.util.Date.add(dt, {days: 1});
+            }
+        }
 
         this.eventGrid = [[]];
         this.allDayGrid = [[]];
@@ -309,20 +318,27 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             this.eventGrid[w] = this.eventGrid[w] || [];
             this.allDayGrid[w] = this.allDayGrid[w] || [];
 
-            for (d = 0; d < this.dayCount; d++) {
+            for (d = 0; d < (k ? k.values.length : this.dayCount); d++) {
+                // Set start date
+                if (k && k.prop == 'date') dt = Ext.Date.parse(k.values[d], 'Y-m-d');
+
                 if (evtsInView.getCount() > 0) {
                     var evts = evtsInView.filterBy(function(rec) {
-                        var startDt = Ext.Date.clearTime(rec.data[Ext.calendar.data.EventMappings.StartDate.name], true),
-                            startsOnDate = dt.getTime() == startDt.getTime(),
-                            spansFromPrevView = (w == 0 && d == 0 && (dt > rec.data[Ext.calendar.data.EventMappings.StartDate.name]));
-                            
-                        return startsOnDate || spansFromPrevView;
+                        if (!k || k.prop == 'date') {
+                            var startDt = Ext.Date.clearTime(rec.data[Ext.calendar.data.EventMappings.StartDate.name], true),
+                                startsOnDate = dt.getTime() == startDt.getTime(),
+                                spansFromPrevView = (w == 0 && d == 0 && (dt > rec.data[Ext.calendar.data.EventMappings.StartDate.name]));
+
+                            return startsOnDate || spansFromPrevView;
+                        } else if (k) {
+                            return (rec.key(k.prop) || rec.raw[k.prop]) == k.values[d]
+                        }
                     },
                     this);
                     this.sortEventRecordsForDay(evts);
                     this.prepareEventGrid(evts, w, d);
                 }
-                dt = Ext.calendar.util.Date.add(dt, {days: 1});
+                if (!k || k.prop != 'date') dt = Ext.calendar.util.Date.add(dt, {days: 1});
             }
         }
         this.currentWeekCount = w;
@@ -454,25 +470,30 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     },
 
     // private
-    onInitDrag: function() {
-        this.fireEvent('initdrag', this);
+    onInitDrag: function(rec) {
+        this.fireEvent('initdrag', this, rec);
     },
 
     // private
-    onEventDrop: function(rec, dt) {
+    onEventDrop: function(rec, dt, kanban) {
+        var k = this.kanban;
         if (Ext.calendar.util.Date.compare(rec.data[Ext.calendar.data.EventMappings.StartDate.name], dt) === 0) {
-            // no changes
-            return;
+
+            if (!k || k.prop == 'date') return;
+            else if (String(rec.key(k.prop) || rec.raw[k.prop]) === String(kanban)) return;
         }
         var diff = dt.getTime() - rec.data[Ext.calendar.data.EventMappings.StartDate.name].getTime();
         rec.set(Ext.calendar.data.EventMappings.StartDate.name, dt);
         rec.set(Ext.calendar.data.EventMappings.EndDate.name, Ext.calendar.util.Date.add(rec.data[Ext.calendar.data.EventMappings.EndDate.name], {millis: diff}));
-
+        if (k && k.prop != 'date') {
+            rec.key(k.prop, kanban);
+            rec.set(k.prop, kanban);
+        }
         this.fireEvent('eventmove', this, rec);
     },
 
     // private
-    onCalendarEndDrag: function(start, end, onComplete) {
+    onCalendarEndDrag: function(start, end, onComplete, kanban) {
         if (start && end) {
             // set this flag for other event handlers that might conflict while we're waiting
             this.dragPending = true;
@@ -481,8 +502,9 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             var o = {};
             o[Ext.calendar.data.EventMappings.StartDate.name] = start;
             o[Ext.calendar.data.EventMappings.EndDate.name] = end;
-
-            this.fireEvent('rangeselect', this, o, Ext.bind(this.onCalendarEndDragComplete, this, [onComplete]));
+            if (kanban) o.kanban = kanban;
+            this.fireEvent('rangeselect', this, o);
+            Ext.bind(this.onCalendarEndDragComplete, this, [onComplete])();
         }
     },
 
@@ -742,14 +764,16 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
     setViewBounds: function(startDate) {
         var start = startDate || this.startDate,
             offset = start.getDay() - this.startDay,
-            Dt = Ext.calendar.util.Date;
+            Dt = Ext.calendar.util.Date,
+            k = this.kanban;
 
         switch (this.weekCount) {
         case 0:
         case 1:
             this.viewStart = this.dayCount < 7 ? start: Dt.add(start, {days: -offset, clearTime: true});
-            this.viewEnd = Dt.add(this.viewStart, {days: this.dayCount || 7});
+            this.viewEnd = Dt.add(this.viewStart, {days: k && k.prop != 'date' ? 1 : (this.dayCount || 7)});
             this.viewEnd = Dt.add(this.viewEnd, {seconds: -1});
+            //console.log(this.xtype, startDate, this.viewStart, this.viewEnd);
             return;
 
         case - 1:
@@ -763,9 +787,11 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             var end = Dt.add(start, {months: 1, seconds: -1});
             // fill out to the end of the week:
             this.viewEnd = Dt.add(end, {days: 7 - end.getDay()});
+            //console.log('-----1');
             return;
 
         default:
+            //console.log('-----2');
             this.viewStart = Dt.add(start, {days: -offset, clearTime: true});
             this.viewEnd = Dt.add(this.viewStart, {days: this.weekCount * 7, seconds: -1});
         }
@@ -947,7 +973,8 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             startDate: this.startDate,
             dayCount: this.dayCount,
             weekCount: this.weekCount,
-            title: this.getTitle()
+            title: this.getTitle(),
+            kanban: this.kanban
         };
     },
 
@@ -1059,6 +1086,102 @@ Ext.define('Ext.calendar.view.AbstractCalendar', {
             this.eventMenu,
             this.dragZone,
             this.dropZone
+        );
+    },
+
+    /**
+     * Set disabled dates
+     *
+     * @param dates
+     */
+    setDisabledDates: function(dates) {
+        var me = this, method; me.disabledDates = {};
+        dates.forEach(function(date){me.disabledDates[date.replace(/-/g, '')] = true});
+        this.el.select('.ext-cal-day').each(function(dayEl){
+            method = dayEl.attr('id').split('-').pop() in me.disabledDates ? 'addCls' : 'removeCls';
+            dayEl[method]('disabled');
+        });
+    },
+
+    /**
+     * Mark certain areas as disabled within calendar
+     *
+     * @param disabled
+     */
+    setDisabledValues: function(disabled) {
+        var me = this, pxPerHour = 44, pxPerMin = pxPerHour /60, start, since, child, height, width, left;
+
+        // If `disabled` arg is not given - setup empty
+        me.disabledValues = disabled || {date: [], busy: {}};
+
+        // Set disabled dates
+        me.setDisabledDates(me.disabledValues.date);
+
+        // Remove previously added disabled area fading
+        me.el.select('.i-cal-disabled-time').remove();
+
+        // If we're not in daybodyview - return
+        if (me.xtype != 'daybodyview') return;
+
+        // Get width
+        width = me.ownerCt.header.el.down('.ext-cal-dtitle').getWidth();
+
+        // Get weekday indexes dict
+        var dayIdx = {};
+        me.ownerCt.header.el.select('.ext-cal-dtitle').each(function(wdEl, ce, idx){
+            dayIdx[wdEl.attr('id').split('-').pop()] = idx;
+        });
+
+        // Foreach date, that we're having disabled times defined for
+        for (var kanban in me.disabledValues.busy) {
+
+            // Get date
+            var date = kanban.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) ? kanban : Ext.Date.format(this.viewStart, 'Y-m-d');
+
+            // Get date object
+            start = parseInt(Ext.Date.format(Ext.Date.add(Ext.Date.clearTime(new Date(date)), Ext.Date.HOUR, me.fromHour), 'U'));
+
+            // Get left offset
+            left = width * dayIdx[kanban.replace(/-/g, '')];
+
+            // Foreach busy time-chunk
+            me.disabledValues.busy[kanban]['chunks'].forEach(function(chunk){
+
+                // Get chunk's left bound
+                since = parseInt(chunk[0]);
+
+                // Create DOM node, that will look like faded area
+                child = me.el.createChild({cls: 'i-cal-disabled-time'});
+
+                // Set height according to busy chunk's duration
+                height = pxPerMin * chunk[1];
+
+                // Do positioning
+                child.setStyle({
+                    height: height + 'px',
+                    top: ((since - start) / 60 * pxPerMin) + 'px',
+                    width: width + 'px',
+                    left: (50 + left) + 'px'
+                });
+            });
+        }
+    },
+
+    setupKanban: function() {
+        var me = this, day = 0;
+
+        // If dayCount prop is not a number - return
+        if (me.kanban) {
+            me.dayCount = me.kanban.values.length;
+            return;
+        }
+
+        // Default kanban config
+        me.kanban = {prop: 'date', values: [], titles: []};
+
+
+        for (; day < me.dayCount; day++) me.kanban.values.push(
+            Ext.Date.format(Ext.calendar.util.Date.add(this.viewStart, {days: day}), 'Y-m-d')
         );
     }
 });

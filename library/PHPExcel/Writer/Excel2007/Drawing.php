@@ -58,7 +58,12 @@ class PHPExcel_Writer_Excel2007_Drawing extends PHPExcel_Writer_Excel2007_Writer
         $i = 1;
         $iterator = $pWorksheet->getDrawingCollection()->getIterator();
         while ($iterator->valid()) {
-            $this->writeDrawing($objWriter, $iterator->current(), $i);
+            /** @var BaseDrawing $pDrawing */
+            $pDrawing = $iterator->current();
+            $pRelationId = $i;
+            $hlinkClickId = $pDrawing->getHyperlink() === null ? null : ++$i;
+
+            $this->writeDrawing($objWriter, $pDrawing, $pRelationId, $hlinkClickId);
 
             $iterator->next();
             ++$i;
@@ -158,9 +163,10 @@ class PHPExcel_Writer_Excel2007_Drawing extends PHPExcel_Writer_Excel2007_Writer
      * @param     PHPExcel_Shared_XMLWriter            $objWriter         XML Writer
      * @param     PHPExcel_Worksheet_BaseDrawing        $pDrawing
      * @param     int                                    $pRelationId
+     * @param null|int $hlinkClickId
      * @throws     PHPExcel_Writer_Exception
      */
-    public function writeDrawing(PHPExcel_Shared_XMLWriter $objWriter = null, PHPExcel_Worksheet_BaseDrawing $pDrawing = null, $pRelationId = -1)
+    public function writeDrawing(PHPExcel_Shared_XMLWriter $objWriter = null, PHPExcel_Worksheet_BaseDrawing $pDrawing = null, $pRelationId = -1, $hlinkClickId = null)
     {
         if ($pRelationId >= 0) {
             // xdr:oneCellAnchor
@@ -194,6 +200,10 @@ class PHPExcel_Writer_Excel2007_Drawing extends PHPExcel_Writer_Excel2007_Writer
             $objWriter->writeAttribute('id', $pRelationId);
             $objWriter->writeAttribute('name', $pDrawing->getName());
             $objWriter->writeAttribute('descr', $pDrawing->getDescription());
+
+            //a:hlinkClick
+            $this->writeHyperLinkDrawing($objWriter, $hlinkClickId);
+
             $objWriter->endElement();
 
             // xdr:cNvPicPr
@@ -585,5 +595,21 @@ class PHPExcel_Writer_Excel2007_Drawing extends PHPExcel_Writer_Excel2007_Writer
         }
 
         return $aDrawings;
+    }
+
+    /**
+     * @param XMLWriter $objWriter
+     * @param null|int $hlinkClickId
+     */
+    private function writeHyperLinkDrawing(XMLWriter $objWriter, $hlinkClickId)
+    {
+        if ($hlinkClickId === null) {
+            return;
+        }
+
+        $objWriter->startElement('a:hlinkClick');
+        $objWriter->writeAttribute('xmlns:r', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships');
+        $objWriter->writeAttribute('r:id', 'rId' . $hlinkClickId);
+        $objWriter->endElement();
     }
 }

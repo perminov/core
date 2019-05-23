@@ -67,6 +67,20 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         // Define colors
         Indi::trail()->section->colors = $this->defineColors();
 
+        // If grouping is turned On - setup kanban cfg
+        if ($fieldId_kanban = t()->section->groupBy) {
+
+            // Get combo data
+            $combo = t()->filtersSharedRow->combo($fieldId_kanban);
+
+            // Setup kanban props
+            t()->section->kanban = array(
+                'prop' => $combo['name'],
+                'values' => $combo['store']['ids'],
+                'titles' => array_column($combo['store']['data'], 'title')
+            );
+        }
+
         // Check whether 'since' uri-param is given, and if yes - prefill current entry's
         // certain space-fields with values according to clicked timestamp ('since' uri-param)
         // or according to selected datetime-range (both 'since' and 'until' uri-params)
@@ -112,6 +126,9 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
             case 'timespan': $prefill[$space['coords'][$coord]] = date('H:i', $since) . '-' . date('H:i', $since); break;
         }
 
+        // Append kanban value into $prefill array
+        if (($k = t()->section->kanban) && ($v = Indi::uri()->kanban)) $prefill[$k['prop']] = $v;
+
         // Assign prepared values
         $this->row->assign($prefill);
     }
@@ -151,7 +168,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     }
 
     /**
-     * Adjust events depending on calendar type, and apply colors to events
+     * Adjust events' *_Row instances depending on calendar type, and apply colors to events
      */
     public function adjustGridDataRowset() {
 
@@ -165,6 +182,20 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
 
         // Apply colors
         $this->applyColors();
+    }
+
+    /**
+     * Adjust events' props-arrays depending on calendar type
+     */
+    public function adjustGridData(&$data) {
+
+        // If calendar can't be used - return
+        if (!$this->spaceFields) return;
+
+        // Adjust events data according to current calendar type
+        if ($this->_excelA)
+            foreach ($data as &$item)
+                $this->{'adjustEventDataFor' . ucfirst($this->type)}($item);
     }
 
     /**
@@ -199,7 +230,28 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      * @param Indi_Db_Table_Row $r
      */
     public function adjustEventForDay($r) {
-        $this->adjustEventForMonth($r);
+        $this->adjustEventForWeek($r);
+    }
+
+    /**
+     * @param array $data
+     */
+    public function adjustEventDataForMonth(&$data) {
+
+    }
+
+    /**
+     * @param array $data
+     */
+    public function adjustEventDataForWeek(&$data) {
+        $this->adjustEventDataForMonth($data);
+    }
+
+    /**
+     * @param array $data
+     */
+    public function adjustEventDataForDay(&$data) {
+        $this->adjustEventDataForWeek($data);
     }
 
     /**
@@ -320,8 +372,14 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      */
     public function saveAction($redirect = true, $return = false) {
 
+        // Check daily schedule
+        $this->row->system('bounds', 'day');
+
         // If calendar can be used - exclude calendar-fields fields from the list of disabled fields
         if ($this->spaceFields) $this->excludeDisabledFields('spaceSince,spaceUntil');
+
+        // Detect calendar type
+        $this->filtersWHERE();
 
         // Call parent
         return $this->callParent();

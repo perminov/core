@@ -284,6 +284,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Check conformance to all requirements / Ensure that there are no mismatches
         else if (!count($this->mismatch($check))) return;
 
+        // Setup $mflush flag, indicating whether or not system should immediately flush detected mismatches
+        $mflush = !isset($this->_system['mflush']) || $this->_system['mflush'];
+
+        // If immediate mismatch flushing is turned Off - return
+        if (!$mflush) return;
+
         // Rollback changes
         Indi::db()->rollback();
 
@@ -531,8 +537,15 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function save() {
 
+        // Setup $mflush flag, indicating whether or not system should
+        // immediately flush any mismatches detected using scratchy() and/or validate() methods
+        $mflush = !isset($this->_system['mflush']) || $this->_system['mflush'];
+
         // Data types check, and if smth is not ok - flush mismatches
-        $this->scratchy(true);
+        $this->scratchy($mflush);
+
+        // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+        if (!$mflush && $this->_mismatch) return false;
 
         // If entity, that current entry is an instance of - has non-'none' value of `spaceScheme` prop
         if (($space = $this->model()->space()) && $space['scheme'] != 'none') {
@@ -565,6 +578,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // STILL OK, we do $this->mflush(true) call, as it will do (among other things) data types check again
             $this->mflush(true);
 
+            // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+            if (!$mflush && $this->_mismatch) return false;
+
             // Backup modified data
             $modified = $update = $this->_modified;
 
@@ -588,6 +604,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Check mismatches again, because some additional changes might have been done within $this->onBeforeInsert() call
             $this->mflush(true);
+
+            // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
+            if (!$mflush && $this->_mismatch) return false;
 
             // Backup modified data
             $modified = $insert = $this->_modified;
@@ -679,14 +698,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      * 3. onBeforeSave()
      * 4. Change-logging
      * 5. Usages checking
-     * 6. Notices
+     * 6. Notices (optional)
      * 7. Space-things
      *
      * Note: Use it carefully, and for cases when you're sure the things you want to do are separated
      *
+     * @param bool $notices If `true - notices will not be omitted
+     * @param bool $amerge If `true - previous value $this->_affected will be kept, but newly affected will have a priority
      * @return int
      */
-    public function basicUpdate() {
+    public function basicUpdate($notices = false, $amerge = true) {
 
         // Data types check, and if smth is not ok - flush mismatches
         $this->scratchy(true);
@@ -700,6 +721,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Update it
         $affected = $this->model()->update($update, '`id` = "' . $this->_original['id'] . '"');
 
+        // Backup original data
+        $original = $this->_original;
+
+        // Check if row (in it's original state) matches each separate notification's criteria,
+        // and remember the results separately for each notification, attached to current row's entity
+        if ($notices) $this->_noticesStep1();
+
         // Merge $this->_original and $this->_modified arrays into $this->_original array
         $this->_original = (array) array_merge($this->_original, $this->_modified);
 
@@ -708,10 +736,17 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($this->_language[$prop]) $this->_language[$prop][Indi::ini('lang')->admin] = $value;
 
         // Empty $this->_modified, $this->_mismatch and $this->_affected arrays
-        $this->_modified = $this->_mismatch = $this->_affected = array();
+        $this->_modified = $this->_mismatch = array();
 
         // Adjust file-upload fields contents according to meta info, existing in $this->_files for such fields
         $this->files(true);
+
+        // Set up `_affected` prop, so it to contain affected field names as keys, and their previous values
+        $this->_affected = array_diff_assoc($original, $this->_original) + ($amerge ? $this->_affected : array());
+
+        // Check if row (in it's current/modified state) matches each separate notification's criteria,
+        // and compare results with the results of previous check, that was made before any modifications
+        if ($notices) $this->_noticesStep2($original);
 
         // Return number of affected rows (1 or 0)
         return $affected;
@@ -1140,19 +1175,17 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param null $page
      * @param null $selected
      * @param bool $selectedTypeIsKeyword
-     * @param null $satellite
      * @param null $where
-     * @param bool $noSatellite
      * @param null $fieldR
      * @param null $order
      * @param string $dir
      * @param null $offset
      * @param null $consistence
-     * @return Indi_Db_Table_Rowset_Combo
+     * @param null $multiSelect
+     * @return Indi_Db_Table_Rowset
      */
     public function getComboData($field, $page = null, $selected = null, $selectedTypeIsKeyword = false,
-                                 $satellite = null, $where = null, $noSatellite = null, $fieldR = null,
-                                 $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
+        $where = null, $fieldR = null, $order = null, $dir = 'ASC', $offset = null, $consistence = null, $multiSelect = null) {
 
         // Basic info
         $fieldM = Indi::model('Field');
@@ -1237,110 +1270,61 @@ class Indi_Db_Table_Row implements ArrayAccess
             // if it constains no elements ( - zero-length array), in this case
             if (is_string($consistence) && strlen($consistence)) $where[] = $consistence;
 
-        // Setup filter by satellite
-        if ($fieldR->satellite && $noSatellite != true) {
+        // Foreach field, defined as a consider-field for current field
+        foreach ($fieldR->nested('consider') as $considerR) {
 
-            // Get satellite field row
-            $satelliteR = $fieldR->foreign('satellite');
+            // Get consider-field
+            $cField = $considerR->foreign('consider');
 
-            // If we have no satellite value passed as a param, we get it from related row property
-            // or from satellite-field default value
-            if (is_null($satellite)) {
-                if (strlen($this->{$satelliteR->alias})) {
-                    $satellite = $this->{$satelliteR->alias};
-                } else {
-                    $satellite = $satelliteR->compiled('defaultValue');
-                }
+            // If it's `storeRelationAbility` prop is 'none' - skip
+            if ($cField->storeRelationAbility == 'none') continue;
+
+            // Get consider-field value
+            $cValue = $this->_cValue($fieldR->alias, $cField);
+
+            // Remember consider-field alias, because $cField may below start pointing
+            // to consider-field's foreign field rather than on consider-field itself
+            $cField_alias = $cField->alias;
+
+            // If consider-field's foreign-key field should be used instead of consider-field itself
+            if ($considerR->foreign) {
+
+                // Get that foreign-key field
+                $cField_foreign = $considerR->foreign('foreign');
+
+                // Get it's value
+                $cValueForeign = Indi::model($cField->relation)
+                    ->fetchRow('`id` = "' . $cValue . '"')
+                    ->{$cField_foreign->alias};
+
+                // Spoof variables before usage
+                $cField = $cField_foreign; $cValue = $cValueForeign;
             }
 
-            // Spoof satellite value, if need
-            $satellite = $this->_spoofSatellite($fieldR->alias, $satelliteR->alias, $satellite);
+            // If current field is linked to some certain entity
+            if ($fieldR->relation) {
 
-            // If dependency type is not 'Variable entity'
-            if ($fieldR->dependency != 'e') {
+                // Use a custom connector, if defined
+                if ($considerR->connector) $cField->system('connector',
+                    $considerR->connector == -1 ? 'id' : $considerR->foreign('connector')->alias);
 
-                // Example of situation, that is covered by use of `alternative` logic
-                // 1. Indi Engine have tables `entity`, `field`, `element`, `possibleElementParam`
-                // 2. If somewhere in entity structure i have a field that is using, for example html-editor,
-                //    i want to be able to set some params to this html-editor, such as height, width and etc.
-                // 3. html-editor is a row in `element` table, it has, for example id = 13
-                // 4. All of possible html-editor params - are stored in `possibleElementParam` table, and are linked
-                //    to html-editor by column `elementId` with value = 13
-                // 5. I want to set width=500 for one html-editor, and width=600 to another html-editor
-                // 6. Both 'one' and 'another' html-editor are rows in `field` table, and can be both linked to same
-                //    entity, or to different entities, does not matter
-                // 7. For being able to do action from point 5, i want to go 'Entities > Some test entity >
-                //    Fields > Some html-editor field > Params > Create'
-                // 8. On 'Create' screen there is a form with fieds:
-                //    1. Entity (dropdown list)
-                //    2. Field  (dropdown list)
-                //    3. Param  (dropdown list)
-                //    4. Value  (textarea)
-                // 9. 'Entity' field is a satellite for 'Field' field, and if 'Entity' field value is changed,
-                //    options in 'Field' dropdown list should be refreshed
-                // 10. 'Field' field is a satellite for 'Param' field, and if 'Field' field value is changed,
-                //    options in 'Param' dropdown list should be refreshed
-                // 11. SQL Query for refreshing 'Field' options list, mentioned in point 9 will look like
-                //     SELECT * FROM `field` WHERE `entityId` = "x"
-                // 12. SQL Query for refreshing 'Field' options list, mentioned in point 10 will look like
-                //     SELECT * FROM `possibleElementParam` WHERE `fieldId` = "y"
-                // 13. The problem is that table `possibleElementParam` has no `fieldId` column, and that is why
-                //      here is `alternative` logic is used. Result of `alternative` logic is that:
-                //      1. SQL query will look like
-                //         SELECT * FROM `possibleElementParam` WHERE `elementId` = "z"
-                //      2. "z" - will be a value of `elementId` column of a selected row in 'Field' dropdown
-                if ($fieldR->alternative) {
+                // Build WHERE clause
+                if ($this->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required)
+                    && array_key_exists($cField_alias, $this->_modified)
+                    && $this->_modified[$cField_alias] != $this->_original[$cField_alias]
+                    && ($this->id || (!$this->_system['consider'] && $this->_system['consider'][$cField_alias])))
+                    $hasModifiedConsiderWHERE = true;
 
-                    // If we have satellite value passed as a param, we set it as value for $this->{$satelliteR->alias},
-                    // because foreign() menthod use internal row property value, that store a foreign key,
-                    // and do not use any external values
-                    if (!is_null($satellite)) $this->{$satelliteR->alias} = $satellite;
-                    $rowLinkedToSatellite = $this->foreign($satelliteR->alias);
-                    $v = $rowLinkedToSatellite->{$fieldR->alternative};
-                    $c = $satelliteR->satellitealias ? $satelliteR->satellitealias : $fieldR->alternative;
-                    $alternativeR = Indi::model($satelliteR->relation)->fields($fieldR->alternative);
-                    $where['satellite'] = in('many', array($satelliteR->storeRelationAbility, $alternativeR->storeRelationAbility))
-                        && preg_match('/,/', $v)
-                        ? 'CONCAT(",", `' . $c . '`, ",") REGEXP ",(' . implode('|', explode(',', $v)) . '),"'
-                        : 'FIND_IN_SET("' . $v . '", `' . $c . '`)';
+            // Else it mean that current-field is linked to variable entity, and that entity is identified by $cValue, so
+            } else {
 
-                // If we had used a column name (field alias) for satellite, that cannot be used in WHERE clause,
-                // we use it's alias instead. Example:
-                // 1. Current row is stored in a table `similar` with columns `countryId`, 'cityId', `similarCountryId`,
-                //    `similarCityId`
-                // 2. After value was changed in combo, linked to `similarCountryId` we want to fetch related cities
-                //    for `similarCityId` combo, but if we would use standard logic, sql query for fetching would look like:
-                //    SELECT * FROM `city` WHERE `similarCountryId` = "12345". The problem is that table `city` have no
-                //    `similarCountryId` column, it has only `countryId` column.
-                // 3. So, implemented solution allow to replace column name `similarCountryId` with `countryId` in that sql query,
-                //    and instead of "12345" will be passed selected value in combo, linked to `similarCountryId`, not to
-                //    `countryId` so the result will be exactly as we need
-                } else if ($satelliteR->satellitealias) {
-
-                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
-                        ? 'CONCAT(",", `' . $satelliteR->satellitealias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
-                        : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->satellitealias . '`)';
-
-                // Standard logic
-                } else {
-
-                    $where['satellite'] = $satelliteR->storeRelationAbility == 'many' && preg_match('/,/', $satellite)
-                        ? 'CONCAT(",", `' . $satelliteR->alias . '`, ",") REGEXP ",(' . implode('|', explode(',', $satellite)) . '),"'
-                        : 'FIND_IN_SET("' . $satellite . '", `' . $satelliteR->alias . '`)';
-                }
-
-                // If satellite-value is zero, and $noSatellite arg is given as null or not explicitly given,
-                // and field's 'allowZeroSatellite' param is 'true' - unset satellite-where
-                if (!$satellite && $noSatellite === null && $fieldR->param('allowZeroSatellite')) unset($where['satellite']);
-
-            // If dependency type is 'Variable entity' we replace $relatedM object with calculated model
-            } else if ($fieldR->dependency == 'e' && $satellite) {
-                $relatedM = Indi::model($satellite);
+                // Setup model, that combo data will be fetched from
+                $relatedM = $cValue ? Indi::model($cValue) : false;
             }
         }
 
-        // If we have no related model - this happen if we have 'varibale entity' satellite dependency type
-        // and current satellite value is not defined - we return empty rowset
+        // If we have no related model - this happen if we have 'varibale entity'
+        // consider type but that entity is not defined - we return empty rowset
         if (!$relatedM) return new Indi_Db_Table_Rowset(array('titleColumn' => 'title', 'rowClass' => __CLASS__));
 
         // Get title column
@@ -1350,7 +1334,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_null($order)) {
             if ($relatedM->comboDataOrder) {
                 $order = $relatedM->comboDataOrder;
-                if (!@func_get_arg(9) && $relatedM->comboDataOrderDirection)
+                if (!@func_get_arg(7) && $relatedM->comboDataOrderDirection)
                     $dir = $relatedM->comboDataOrderDirection;
             } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
@@ -1372,7 +1356,6 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
-            //$keyword = str_replace('"','\"', $selected);
             $keyword = $selected;
 
         // Else if fetch-mode is 'no-keyword'
@@ -1382,16 +1365,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if (!is_array($order) && $order && !preg_match('/\(/', $order)) {
-                //$keyword = str_replace('"','\"', $selectedR->{trim($order, '`')});
-                $keyword = $selectedR->{trim($order, '`')};
-            }
+            if (!is_array($order) && $order && !preg_match('/\(/', $order)) $keyword = $selectedR->{trim($order, '`')};
         }
 
         // Alternate WHERE
         if (Indi::admin()->alternate && !$fieldR->ignoreAlternate && !$fieldR->params['ignoreAlternate']
-            && $alternateField = $relatedM->fields(Indi::admin()->alternate . 'Id'))
-            $where[] = $alternateField->storeRelationAbility == 'many'
+            && ($af = Indi::admin()->alternate($relatedM->table()))
+            && ($alternateField = $relatedM->fields($af))
+            && !array_key_exists('consider:' . $af, $where))
+            $where['alternate'] = $alternateField->storeRelationAbility == 'many'
                 ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $alternateField->alias . '`)'
                 : '`' . $alternateField->alias . '` = "' . Indi::admin()->id .'"';
 
@@ -1402,7 +1384,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // is 1, it will be 2, because actually results of page 1 were already fetched
             // and displayed at the stage of combo first initialization
             if ($page != null) {
-                if(!$selected || $selectedTypeIsKeyword || (func_num_args() > 4 && func_get_arg(4))) $page++;
+                if (!$selected || $selectedTypeIsKeyword || $hasModifiedConsiderWHERE) $page++;
 
                 // Page number is not null when we are paging, and this means that we are trying to fetch
                 // more results that are upper or lower and start point for paging ($selected) was not changed.
@@ -1433,7 +1415,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($groupByFieldOrder = $groupByField->order('ASC', $where))
                         $order = array($groupByFieldOrder, $order);
 
-                if (func_num_args() < 5 || is_null(func_get_arg(4))) {
+                if (!$hasModifiedConsiderWHERE) {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, $selected);
                 } else {
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
@@ -1467,8 +1449,8 @@ class Indi_Db_Table_Row implements ArrayAccess
                         ? '(`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%" OR `' . $titleColumn . '` LIKE "%' . $keyword2 . '%")'
                         : '`' . $titleColumn . '` LIKE "%' . str_replace('"', '\"', $keyword) . '%"';
 
-                // We should get results started from selected value only if we have no $satellite argument passed
-                } else if (is_null(func_get_arg(4))) {
+                // Else we should get results started from selected value only if consider-fields were not modified
+                } else if (!$hasModifiedConsiderWHERE) {
 
                     // If $order is a name of a column, and not an SQL expression, we setup results start point as
                     // current row's column's value
@@ -1480,7 +1462,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // mean that:
                     // 1. we have selected value,
                     // 2. selected value is not a keyword,
-                    // 3. $satellite logic is not used,
+                    // 3. none of consider-fields (if they exist) are changed
                     // 4. first option of final results, fetched by current function (getComboData) - wil be option
                     //    related to selected value
                     // So, we remember this fact, because if $found will be not greater than self::$comboOptionsVisibleCount
@@ -1492,7 +1474,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $foundRowsWhere = im($selectedTypeIsKeyword ? $where : $whereBackup, ' AND ');
 
                 // Adjust WHERE clause so it surely match existing value
-                if (is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($foundRowsWhere, $fieldR, $consistence);
+                if (!$hasModifiedConsiderWHERE) $this->comboDataExistingValueWHERE($foundRowsWhere, $fieldR, $consistence);
 
                 //
                 $foundRowsWhere = $foundRowsWhere ? 'WHERE ' . $foundRowsWhere : '';
@@ -1543,7 +1525,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                     // Adjust WHERE clause so it surely match existing value
-                    if (!$selectedTypeIsKeyword && is_null(func_get_arg(4))) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
+                    if (!$selectedTypeIsKeyword && !$hasModifiedConsiderWHERE) $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
                 }
 
                 // Append additional ORDER clause, for grouping
@@ -1583,7 +1565,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $order .= ' ' . ($dir == 'DESC' ? 'DESC' : 'ASC');
 
                     // Adjust WHERE clause so it surely match consistence values
-                    if (is_null($page) && !$selectedTypeIsKeyword && is_null(func_num_args() > 3 ? func_get_arg(4) : null))
+                    if (is_null($page) && !$selectedTypeIsKeyword && !$hasModifiedConsiderWHERE)
                         $this->comboDataExistingValueWHERE($where, $fieldR, $consistence);
 
                     // Append additional ORDER clause, for grouping
@@ -1752,6 +1734,55 @@ class Indi_Db_Table_Row implements ArrayAccess
         return $dataRs;
     }
 
+
+    protected function _comboDataConsiderWHERE(&$where, Field_Row $fieldR, Field_Row $cField, $cValue, $required) {
+
+        // Setup a key, that current consider's WHERE clause will be set up within $where arg under,
+        $_wkey = 'consider:' . $cField->alias;
+
+        // If consider-value is zero
+        if (!$cValue) {
+
+            // But it's not required - set WHERE clause to be FALSE
+            if ($required == 'y') return $where[$_wkey] = 'FALSE';
+
+            // Return
+            return false;
+        }
+
+        // Get column name
+        $column = $cField->system('connector') ?: $cField->alias;
+
+        // Set $multi flag, indicating single- or multi-key mode
+        $multi = $cField->storeRelationAbility == 'many' && preg_match('~,~', $cValue);
+
+        // Build WHERE clause
+        return $where[$_wkey] = $multi
+            ? 'CONCAT(",", `' . $column . '`, ",") REGEXP ",(' . implode('|', explode(',', $cValue)) . '),"'
+            : 'FIND_IN_SET("' . $cValue . '", `' . $column . '`)';
+    }
+
+    /**
+     * Get value for consider field, to be involved in building WHERE clause
+     *
+     * @param $for
+     * @param $cField
+     * @param $cValue
+     * @return mixed
+     */
+    protected function _cValue($for, $cField, $cValue = null) {
+
+        // Get consider-field's alias
+        $prop = $cField->alias;
+
+        // If we have no consider field's value passed as a param, we get it
+        // from related row property or from consider-field zero value
+        if (is_null($cValue)) $cValue = strlen($this->$prop) ? $this->$prop : $cValue = $cField->zeroValue();
+
+        // Spoof consider value, if need
+        return $this->_spoofConsider($for, $prop, $cValue);
+    }
+
     /**
      * Build and return a <span/> element with css class and styles definitions, that will represent a color value
      * for each combo option, in case if combo options have color specification. This function was created for using in
@@ -1866,7 +1897,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($fieldR = $this->model()->fields($key)) {
 
                 // If field do not store foreign keys - throw exception
-                if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e'))
+                if ($fieldR->storeRelationAbility == 'none'
+                    || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
                     throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
                 // Get foreign key value
@@ -1896,11 +1928,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // If field is able to store single key, or able to store multiple, but current key's value isn't empty
                 if ($fieldR->storeRelationAbility == 'one' || strlen($val) || $aux) {
 
-                    // Determine a model, for foreign row to be got from. If field dependency is 'variable entity',
-                    // then model is a value of satellite field. Otherwise model is field's `relation` property
-                    $model = $fieldR->dependency == 'e'
-                        ? $this->{$fieldR->foreign('satellite')->alias}
-                        : $fieldR->relation;
+                    // Determine a model, for foreign row to be got from. If consider type is 'variable entity',
+                    // then model is a value of consider-field. Otherwise model is field's `relation` property
+                    $model = $fieldR->relation ?: $this->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
 
                     // Determine a fetch method
                     $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
@@ -1930,19 +1960,30 @@ class Indi_Db_Table_Row implements ArrayAccess
                             $col = 'id';
                         }
 
-                        // Finish building WHERE clause
-                        $where[] = '`' . $col . '` ' .
-                            ($fieldR->storeRelationAbility == 'many'
-                                ? 'IN(' . (strlen($val) ? $val : 0) . ')'
-                                : '= "' . $val . '"');
+                        // If foreign model's `preload` flag was turned On
+                        if (Indi::model($model)->preload()) {
 
-                        // Fetch foreign row/rows
-                        $foreign = Indi::model($model)->{'fetch' . $methodType}(
-                            $where,
-                            $fieldR->storeRelationAbility == 'many'
-                                ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
-                                : null
-                        );
+                            // Use preloaded data as foreign data rather than
+                            // obtaining foreign data by separate sql-query
+                            $foreign = Indi::model($model)->{'preloaded' . $methodType}($val);
+
+                        // Else fetch foreign from db
+                        } else {
+
+                            // Finish building WHERE clause
+                            $where[] = '`' . $col . '` ' .
+                                ($fieldR->storeRelationAbility == 'many'
+                                    ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
+                                    : '= "' . $val . '"');
+
+                            // Fetch foreign row/rows
+                            $foreign = Indi::model($model)->{'fetch' . $methodType}(
+                                $where,
+                                $fieldR->storeRelationAbility == 'many'
+                                    ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
+                                    : null
+                            );
+                        }
                     }
                 }
 
@@ -2086,15 +2127,15 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($fieldR->foreign('elementId')->alias == 'upload')
                     $alias[] = $fieldR->alias;
 
-            // If no 'upload' fields found - return
-            if (!$alias) return;
-
-            // Use that file upload fields aliases list to build a part of a pattern for use in php glob() function
-            $field = '{' . im($alias) . '}';
+            // Spoof $field arg
+            $field = $alias;
         }
 
         // If value of $field variable is still empty - return
         if (!$field) return;
+
+        // Use file upload fields aliases list to build a part of a pattern for use in php glob() function
+        $field = '{' . im(ar($field)) . '}';
 
         // Get all of the possible files, uploaded using that field, and all their versions
         $fileA = glob($dir . $this->id . '_' . $field . '[.,]*', GLOB_BRACE);
@@ -2470,6 +2511,11 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @return string
      */
     public static function safeHtml($html, $allowedTags = '') {
+
+        // If $allowedTags arg is '*' - return as is. This may be useful
+        // in case if there is a need to save raw (for example: parsed) html code
+        // and view it within a textarea rather than some WYSIWYG editor
+        if ($allowedTags == '*') return $html;
 
         // Build list of allowed tags, using tags, passed with $allowedTags arg and default tags
         $allowedS = im(array_unique(array_merge(ar('font,span,br'), ar(strtolower($allowedTags)))));
@@ -4673,6 +4719,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function date($prop, $format = 'Y-m-d', $ldate = '') {
 
+        // If zero-value - return empty string
+        if ($this->zero($prop)) return '';
+
         // If $ldate arg is given
         if ($ldate) {
 
@@ -4930,8 +4979,8 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     protected function comboDataExistingValueWHERE(&$where, $fieldR, $consistence = null) {
 
-        // If current entry is not yet exist - return
-        if (!$this->id && !$consistence) return;
+        // If current entry is a filters shared row and no consistence is set - return
+        if ($this->{$fieldR->alias} == $fieldR->zeroValue() && !$consistence) return;
 
         // If $where arg is an empty array - return
         if (is_array($where) && !count($where)) return;
@@ -5084,10 +5133,26 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Create and append nested rows, having keys
-        foreach ($new as $id) Indi::model($nested)->createRow(array_merge(array(
-            $this->table() . 'Id' => $this->id,
-            $connector => $id
-        ), $ctor), true)->save();
+        foreach ($new as $id) {
+
+            // Create row
+            $r = Indi::model($nested)->createRow();
+
+            // Setup main props
+            $r->assign(array($this->table() . 'Id' => $this->id, $connector => $id));
+
+            // Setup prop, presented by $ctor arg.
+            $_ = is_callable($ctor) ? $ctor($r, $id, $connector) : $ctor;
+
+            // If callback return value is boolean false - skip
+            if ($_ === false) continue;
+
+            // Assign additional props
+            if (is_array($_)) $r->assign($_);
+
+            // Save
+            $r->save();
+        }
 
         // Return info about values that were kept, deleted and added
         return array('del' => $del, 'kpt' => $kpt, 'new' => $new);
@@ -5117,13 +5182,21 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If $prop prop does not deal with foreign-keys
         if (!$entityId = $this->field($prop)->relation) return;
 
+        // If $ctor arg is 'check' - return true
+        if ($ctor == 'check') return true;
+
         // Create new entry
         $entry = Indi::model($entityId)->createRow(array_merge(array(
             'title' => $this->$prop
         ), $ctor), true);
 
-        // Save entry
-        $entry->save();
+        // Build WHERE clause to detect whether such entry is already exist
+        $where = array();
+        foreach ($entry->modified() as $key => $value)
+            $where[] = Indi::db()->sql('`' . $key . '` = :s', $value);
+
+        // Check whether such entry is already exist, and if yes - use existing, or save new otherwise
+        if ($already = Indi::model($entityId)->fetchRow($where)) $entry = $already; else $entry->save();
 
         // Assign or append new entry's id, depend of field's storeRelationAbility
         if ($field->storeRelationAbility == 'one') $this->$prop = $entry->id;
@@ -5149,7 +5222,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         else {
 
             // Set zero-value for $this->$prop
-            $this->$prop = $this->field($prop)->zeroValue();
+            foreach (ar($prop) as $alias) $this->$alias = $this->field($alias)->zeroValue();
 
             // Return *_Row instance itself
             return $this;
@@ -5258,6 +5331,10 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function mcheck($ruleA, $data = array(), $flush = true) {
 
+        // If $flush arg is not explicitly given, override it's default value `true` - to `false`,
+        // for cases when immediate flushing is turned off for current *_Row instance
+        if (func_num_args() < 3 && $this->_system['mflush'] === false) $flush = false;
+
         // Foreach prop having mismatch rules
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
 
@@ -5359,16 +5436,23 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
-     * Spoof satelite value, before it will be involved in combo data fetch sql query.
+     * Alias for _spoofConsider(). Temporary kept for backwards compatibility
+     */
+    protected function _spoofSatellite($for, $cField, $cValue) {
+        return $this->_spoofConsider($for, $cField, $cValue);
+    }
+
+    /**
+     * Spoof consider value, before it will be involved in combo data fetch sql query.
      * No actual spoof by default, but another logic my be implemented in child classes
      *
      * @param $for
-     * @param $sField
-     * @param $sValue
+     * @param $cField
+     * @param $cValue
      * @return mixed
      */
-    protected function _spoofSatellite($for, $sField, $sValue) {
-        return $sValue;
+    protected function _spoofConsider($for, $cField, $cValue) {
+        return $cValue;
     }
 
     /**
@@ -5532,7 +5616,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Get space-owners fields  with their validation rules
         $spaceOwners = $this->model()->spaceOwners(true);
 
-        // Get satellite-fields (e.g. fields that space-owner fields rely on) with their validation rules
+        // Get consider-fields (e.g. fields that space-owner fields rely on) with their validation rules
         $ownerRelyOn = $this->model()->spaceOwnersRelyOn(true);
 
         // Setup validation rules for $data['since'] and $data['until']
@@ -5546,10 +5630,38 @@ class Indi_Db_Table_Row implements ArrayAccess
         // the schedule if space fields were not modified, and current entry is an existing entry
         if ($this->id && $strict && !$this->isModified(array_keys($spaceFields))) return array();
 
+        // If $data arg contains 'purpose' param - pass into current entry's system data
+        // For now, there is only one situation where it's useful: for cases when event
+        // is being dragged within calendar UI, so user is planning to shift event to
+        // another date, so we need to detect dates, that are disabled, and highlight
+        // such dates within calendar UI, to prevent user from dropping event at disabled date
+        // So, in this cases, $data['purpose'] == 'drag', and it is used within $schedule->distinct()
+        // call, to prevent processing space owners, that are not same as current entry's space owners
+        if ($data['purpose']) $this->_system['purpose'] = $data['purpose'];
+
+        // If $data arg contains 'uixtype' param - pass into current entry's system data
+        // It will be used to calc disabled values for other weekdays' dates within week,
+        // that current event's date is in
+        if ($data['uixtype']) $this->_system['uixtype'] = $data['uixtype'];
+
+        // If $data arg contains 'kanban' param - it means that uixtype is 'dayview'
+        // and kanban param contains kanban columns info (possible values of kanban-prop)
+        if ($data['kanban']) $this->_system['kanban'] = $data['kanban'];
+
+        // If $data arg contains 'fromHour' param - it means that uixtype is 'dayview' or 'weekiew'
+        // So we need to know what time those view-types start with
+        if ($data['fromHour']) $this->_system['fromHour'] = $data['fromHour'];
+
+        // If system 'fromHour' param is set - set system 'bounds' param to 'day'
+        if ($this->_system['fromHour']) $this->_system['bounds'] = 'day';
+
         // Create schedule
         $schedule = !$strict && array_key_exists('since', $this->_temporary)
             ? Indi::schedule($this->since, strtotime($this->until . ' +1 day'))
-            : Indi::schedule('month', $this->fieldIsZero('date') ? null : $this->date);
+            : Indi::schedule($this->_system['bounds'] ?: 'month', $this->fieldIsZero('date') ? null : $this->date);
+
+        // Expand schedule's right bound
+        $schedule->frame($frame = $this->_spaceFrame());
 
         // Preload existing events, but do not fill schedule with them
         $schedule->preload($this->_table, array_merge(
@@ -5557,11 +5669,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->spacePreloadWHERE()
         ));
 
-        // Expand schedule's right bound
-        $schedule->frame($frame = $this->_spaceFrame());
-
         // Collect distinct values for each prop
-        $schedule->distinct($spaceOwners);
+        $schedule->distinct($spaceOwners, $this, $strict);
 
         // Get daily working hours
         $daily = $this->daily(); $disabled = array('date' => array(), 'timeId' => array());
@@ -5594,18 +5703,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Prepare $hours arg for busyDates call
                 if (!$ruleA['hours']) $hours = false; else $hours = array(
-                    'idsFn' => $ruleA['hours'],
+                    'idsFn' => $ruleA['hours']['time'],
+                    'only' => $ruleA['hours']['only'],
                     'owner' => $info['entry'],
                     'event' => $this
                 );
 
                 // Setup daily working hours per each date separately
-                // if ($hours) $dateA = $schedule->ownerDaily($hours);
+                if ($hours && !$hours['only']) $schedule->ownerDaily($hours);
 
                 // Collect info about disabled values per each busy date
                 // So for each busy date we will have the exact reasons of why it is busy
                 // Also, fulfil $both array with partially busy dates
-                foreach ($dates = $schedule->busyDates($frame, $both, $hours) as $date)
+                foreach ($dates = $schedule->busyDates($frame, $both, $hours['only'] ? $hours : false) as $date)
                     $busy['date'][$date][] = $id;
 
                 // Get given date's busy hours for current prop's value
@@ -5614,7 +5724,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // containing in $schedule->dates array
                 if ($dates = $hours ? $schedule->dates : $both)
                     foreach ($dates as $date)
-                        foreach ($schedule->busyHours($date, '30m', true, $hours) as $Hi)
+                        foreach ($schedule->busyHours($date, '15m', true, $hours['only'] ? $hours : false) as $Hi)
                             $busy['time'][$date][$Hi][] = $id;
             }
 
@@ -5700,6 +5810,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                     }
                 }
             }
+
+            // If current space field is auto-field -  setup list of possible values
+            if ($ruleA['auto']) $this->_system['possible'][$prop] = array_diff($psblA, $disabled[$prop]);
         }
 
         // Append disabled timeIds, for time that is before opening and after closing
@@ -5710,9 +5823,151 @@ class Indi_Db_Table_Row implements ArrayAccess
         }
 
         // Use keys as values for date and timeId
-        foreach ($disabled as $prop => $data) {
+        foreach ($disabled as $prop => $data) { // $data variable overridden here
+
+            // Get actual dates
             if ($prop == 'date') $disabled[$prop] = array_keys($data);
-            if ($prop == 'timeId') $disabled[$prop] = array_keys($data);
+
+            // If prop is 'timeId'
+            if ($prop == 'timeId') {
+
+                // Get timeHi
+                $disabled['timeHi'] = array();
+                foreach ($disabled[$prop] = array_keys($data) as $timeId)
+                    $disabled['timeHi'][] = timeHi($timeId);
+
+                // Sort
+                sort($disabled['timeHi']);
+            }
+        }
+
+        // Declare busy chunks array
+        $chunkA = array();
+
+        // Foreach disabled time
+        foreach ($disabled['timeHi'] as $idx => $Hi) {
+
+            // Append busy chunk
+            $chunkA []= array(strtotime($this->date . ' ' . $Hi . ':00'), 15);
+
+            // If it was first timeHi item - skip
+            if (!$idx) continue;
+
+            // Prev and next busy chunks shortcuts
+            $prev = &$chunkA[count($chunkA) - 2];
+            $curr = &$chunkA[count($chunkA) - 1];
+
+            // If current busy chunk is start at the exact same timestamp where previous busy chunk ends
+            if ($curr[0] <= $prev[0] + $prev[1] * 60) {
+
+                // Extend previous chunk's duration
+                $prev[1] += 15;
+
+                // Instead of adding new chunk
+                array_pop($chunkA);
+            }
+        }
+
+        // Get unixtime of a time, that day/week view starts with
+        $fromHour = strtotime($this->date) + $this->_system['fromHour'] * 3600;
+
+        // Foreach chunk
+        foreach ($chunkA as $idx => &$curr) {
+
+            // If it's not first chunk - setup prev busy chunks shortcut
+            if ($idx) $prev = &$chunkA[$idx - 1];
+
+            // If busy chunk's time match 'fromHour' param - set no diff, else
+            if ($curr[0] == $fromHour) $diff = 0; else {
+
+                // Get right bound of free chunk's, located before curr busy chunk
+                $free = $this->duration * 60 + ($idx ? $prev[0] + $prev[1] * 60 : $curr[0] - 15 * 60);
+
+                // Get diff
+                $diff = $free > $curr[0] ? $free - $curr[0] : ($this->duration - 15) * 60;
+            }
+
+            // Shift current busy chunk's left bound
+            $curr[0] += $diff;
+
+            // Decrease current busy chunk's duration
+            $curr[1] -= $diff / 60;
+        }
+
+        // Get kanban value
+        $kanbanKey = $this->_system['kanban'] ? $this->_system['kanban']['prop'] : 'date';
+        $kanbanVal = $this->$kanbanKey;
+
+        // Pass busy chunks, grouped by kanban values - to the return value
+        $disabled['busy'][$kanbanVal]['chunks'] = $chunkA ?: array();
+        $disabled['busy'][$kanbanVal]['timeHi'] = array_flip($disabled['timeHi']) ?: array();
+
+        // Adjust disabled values
+        $this->adjustSpaceDisabledValues($disabled, $schedule);
+
+        // If we're trying to drag event within week-calendar
+        if ($this->_system['uixtype'] == 'weekview') {
+
+            // Backup date and
+            $date = $this->date;
+
+            // Unset system uixtype param, to prevent unneeded recursion
+            unset($this->_system['uixtype']);
+
+            // Get since/until for given week
+            $bounds = $schedule->bounds('week', $date); $wd = $bounds['since'];
+
+            // Foreach date within week, that dragged event's date is in
+            while ($wd < $bounds['until']) {
+
+                // If weekday's date is same as dragged event's date - skip
+                if ($date != $wd) {
+
+                    // Spoof date
+                    $data['date'] = $wd;
+
+                    // Get disabled values for weekday's date
+                    $_ = $this->spaceDisabledValues($data);
+
+                    // Append into $disabled['busy']
+                    $disabled['busy'][$wd] = $_['busy'][$wd];
+                }
+
+                // Jump to next
+                $wd = date('Y-m-d', strtotime($wd . ' +1 day'));
+            }
+
+            // Restore date and system uixtype param
+            $this->date = $date; $this->_system['uixtype'] = 'weekview';
+
+        // Else if uixtype is 'dayview' and kanban cfg is set
+        } else if ($this->_system['uixtype'] == 'dayview' && ($k = $this->_system['kanban'])) {
+
+            // Backup kanban-prop's value and
+            $kanban = $this->{$k['prop']};
+
+            // Unset system uixtype param, to prevent unneeded recursion
+            unset($this->_system['uixtype']);
+
+            // Foreach kanban column
+            foreach ($k['values'] as $value) {
+
+                // If kanban value is same as dragged event's kanban-prop's value - skip
+                if ($kanban != $value) {
+
+                    // Spoof kanban-prop's value
+                    $data[$k['prop']] = $value;
+
+                    // Get disabled values for kanban value
+                    $_ = $this->spaceDisabledValues($data);
+
+                    // Append into $disabled['busy']
+                    $disabled['busy'][$value] = $_['busy'][$value];
+                }
+            }
+
+            // Restore kanban-prop's value and system uixtype param
+            $this->{$k['prop']} = $kanban; $this->_system['uixtype'] = 'dayview';
         }
 
         // Return info about disabled values
@@ -5730,5 +5985,335 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function spacePreloadWHERE() {
         return array();
+    }
+
+    /**
+     * Empty function. TO be redefined in child classes in cases when some some
+     * new value was assigned and it require custom validation to be performed again
+     *
+     * @param $field
+     */
+    public function spaceValidateAutoField($field) {
+
+    }
+
+    /**
+     * Check whether there are some space-fields having values that are in the list of disables values,
+     * and if found - try to find non-disabled values and assign found or build mismatch messages, if
+     * initially/newly assigned values are empty or did not met the requirements of custom validation
+     *
+     * @param $auto
+     */
+    public function spaceMismatches($auto) {
+
+        // Check space-fields, and collect problem-values
+        foreach ($this->spaceDisabledValues(false) as $prop => $disabledA)
+            foreach ($disabledA as $disabledI)
+                if (in($disabledI, $this->$prop))
+                    $this->_mismatch[$prop][] = $disabledI;
+
+        // Foreach space auto-field
+        foreach ($auto as $prop) {
+
+            // Get field shortcut
+            $field = $this->field($prop);
+
+            // While there are possible values remaining
+            // Note: $this->_system['possible'][$prop] is being set up within
+            //       $this->spaceDisabledValues() for field having ['auto' => true] rule
+            while ($this->_system['possible'][$prop]) {
+
+                // If it currently is having zero-value, or non-zero, but it's in the list of disabled values
+                if ($this->zero($prop) || $this->_mismatch[$prop]) {
+
+                    // Pick one of possible values, or zero-value if there are no remaining possible values
+                    // Note: this logic is not ok for multi-value fields
+                    $this->$prop = array_shift($this->_system['possible'][$prop]) ?: $field->zeroValue();
+
+                    // Unset prop's mismatch, as here at this stage mismatch can only be in case if
+                    // current value was in the list of disabled values, but now we assigned a value
+                    // got from $this->_system['possible'][$prop], so now value is surely not in the
+                    // list of disabled values, so we need to unset the mismatch
+                    unset($this->_mismatch[$prop]);
+
+                    // Validate newly-assigned value
+                    if ($this->$prop) $this->spaceValidateAutoField($prop);
+                    else $this->_mismatch[$prop] = sprintf(I_MCHECK_REQ, $field->title);
+                }
+
+                // If still no mismatch - break
+                if (!$this->_mismatch[$prop]) break;
+            }
+        }
+
+        // Walk through fields and their problem-values
+        foreach ($this->_mismatch as $prop => $disabledValueA) if (is_array($disabledValueA)) {
+
+            // Get field shortcut
+            $field = $this->field($prop);
+
+            // Get title of value, that caused the problem
+            if ($field->storeRelationAbility == 'none') $value = $disabledValueA[0];
+            else if ($field->storeRelationAbility == 'one') $value = $this->foreign($prop)->title;
+            else if ($field->storeRelationAbility == 'many') $value =
+                $this->foreign($prop)->select($disabledValueA)->column('title', ', ');
+
+            // Setup mismatch message
+            $this->_mismatch[$prop] = sprintf(I_COMBO_MISMATCH_DISABLED_VALUE, $value, $field->title);
+        }
+    }
+
+    /**
+     * Adjust alternate-connector column name
+     * Function can be overridden in child classes
+     *
+     * @param string $table
+     * @return string
+     */
+    public function alternate($table) {
+
+        // If current instance is not an account having some role - return
+        if (!$this->model()->hasRole()) return;
+
+        // Build connector name
+        return $this->alternate . 'Id';
+    }
+
+    /**
+     * Get parent entry
+     *
+     * @return Indi_Db_Table_Row|Indi_Db_Table_Rowset|null
+     */
+    public function parent() {
+
+        // If current entity has no tree-column - return
+        if (!$tc = $this->model()->treeColumn()) return;
+
+        // Return parent entry
+        return $this->foreign($tc);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function compileDefaults() {
+
+        // If it's an existing entry - return
+        if ($this->id) return;
+
+        // Foreach field
+        foreach ($this->model()->fields() as $fieldR) {
+
+            // If field does not have underlying db table column - return
+            if (!$fieldR->columnTypeId) continue;
+
+            // If default value should be set up as a result of php-expression's execution - do it
+            if (preg_match(Indi::rex('php'), $fieldR->defaultValue))
+                $this->compileDefaultValue($fieldR->alias);
+
+            // Else if underlying column's datatype is TEXT - set up default value, stored in Indi
+            // Engine field's settings as MySQL does not suppoer native default values for TEXT column
+            else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
+                $this->compileDefaultValue($fieldR->alias);
+        }
+    }
+
+    /**
+     * Adjust space disabled values. To be overridden in child classed
+     *
+     * @param array $disabled
+     * @param Indi_Schedule $schedule
+     */
+    public function adjustSpaceDisabledValues(array &$disabled, Indi_Schedule $schedule) {
+
+    }
+
+    /**
+     * Build config for combo
+     *
+     * todo: refactor
+     *
+     * @param int|string $field
+     * @param bool $store Get store only instead of full config
+     * @return array
+     */
+    public function combo($field, $store = false) {
+
+        // Get field
+        $fieldR = $this->field($field);
+
+        // Get name
+        $name = $field = $fieldR->alias;
+
+        // Get params
+        $params = $fieldR->params;
+
+        // Get default value
+        $defaultValue = $this->compileDefaultValue($field);
+
+        // If current row is an existing row, or current value is not
+        // empty - use current value as selected value, else use default value
+        $selectedValue = $this->id || strlen($this->$field) ? $this->$field : $defaultValue;
+
+        // Get initial combo options rowset
+        $comboDataRs = $this->getComboData($name, null, $selectedValue);
+
+        // Prepare combo options data
+        $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
+
+
+        $options = $comboDataA['options'];
+        $keyProperty = $comboDataA['keyProperty'];
+
+        // If combo is boolean
+        if ($fieldR->storeRelationAbility == 'none' && $fieldR->columnTypeId == 12) {
+
+            // Setup a key
+            if ($this->$name) {
+                $key = $this->$name;
+            } else if ($comboDataRs->enumset) {
+                $key = key($options);
+            } else {
+                $key = $defaultValue;
+            }
+
+            // Setup an info about selected value
+            if (strlen($key)) {
+                $selected = array(
+                    'title' => $options[$key]['title'],
+                    'value' => $key
+                );
+            } else {
+                $selected = array(
+                    'title' => null,
+                    'value' => null
+                );
+            }
+
+        // Else if current field column type is ENUM or SET, and current row have no selected value, we use first
+        // option to get default info about what title should be displayed in input keyword field and what value
+        // should have hidden field
+        } else if ($fieldR->storeRelationAbility == 'one') {
+
+            // Setup a key
+            if (($this->id && !$comboDataRs->enumset) || !is_null($this->$name)) {
+                $key = $this->$name;
+            } else if ($comboDataRs->enumset) {
+                $key = key($options);
+            } else {
+                $key = $defaultValue;
+            }
+
+            // Setup an info about selected value
+            $selected = array(
+                'title' => $options[$key]['title'],
+                'value' => $key
+            );
+
+            // Add box color
+            if ($options[$key]['system']['boxColor']) $selected['boxColor'] = $options[$key]['system']['boxColor'];
+
+            // Setup css color property for input, if original title of selected value contained a color definition
+            if ($options[$selected['value']]['system']['color'])
+                $selected['style'] =  ' style="color: ' . $options[$selected['value']]['system']['color'] . ';"';
+
+            // Set up html attributes for hidden input, if optionAttrs param was used
+            if ($options[$selected['value']]['attrs']) {
+                $attrs = array();
+                foreach ($options[$selected['value']]['attrs'] as $k => $v) {
+                    $attrs[] = $k . '="' . $v . '"';
+                }
+                $attrs = ' ' . implode(' ', $attrs);
+            }
+
+        // Else if combo is multiple
+        } else if ($fieldR->storeRelationAbility == 'many') {
+
+            // Set value for hidden input
+            $selected = array('value' => $selectedValue);
+
+            // Set up html attributes for hidden input, if optionAttrs param was used
+            $exploded = explode(',', $selected['value']);
+            $attrs = array();
+            for ($i = 0; $i < count($exploded); $i++) {
+                if ($options[$exploded[$i]]['attrs']) {
+                    foreach ($options[$exploded[$i]]['attrs'] as $k => $v) {
+                        $attrs[] = $k . '-' . $exploded[$i] . '="' . $v . '"';
+                    }
+                }
+            }
+            $attrs = ' ' . implode(' ', $attrs);
+        }
+
+        // Prepare options data
+        $options = array(
+            'ids' => array_keys($options),
+            'data' => array_values($options),
+            'found' => $comboDataRs->found(),
+            'page' => $comboDataRs->page(),
+            'enumset' => $comboDataRs->enumset
+        );
+
+        // Setup tree flag in entity has a tree structure
+        if ($comboDataRs->table() && $comboDataRs->model()->treeColumn()) $options['tree'] = true;
+
+        // Setup groups for options
+        if ($comboDataRs->optgroup) $options['optgroup'] = $comboDataRs->optgroup;
+
+        // Setup option height. Current context does not have a $this->ignoreTemplate member,but inherited class *_FilterCombo
+        // does, so option height that is applied to form combo will not be applied to filter combo, unless $this->ignoreTemplate
+        // in *_FilterCombo is set to false
+        $options['optionHeight'] = $params['optionHeight'] && !$fieldR->param('ignoreTemplate') ? $params['optionHeight'] : 14;
+
+        // Setup groups for options
+        if ($comboDataRs->optionAttrs) $options['attrs'] = $comboDataRs->optionAttrs;
+
+        // If store arg is given - return only store data
+        if ($store) return $options;
+
+        // Prepare view params
+        $view = array(
+            'subTplData' => array(
+                'attrs' => $attrs,
+                'pageUpDisabled' => $this->$name ? 'false' : 'true',
+            ),
+            'store' => $options
+        );
+
+        // Setup view data,related to currenty selected value(s)
+        if ($fieldR->storeRelationAbility == 'many') {
+            $view['subTplData']['selected'] = $selected;
+            foreach($comboDataRs->selected as $selectedR) {
+                $item = Indi_View_Helper_Admin_FormCombo::detectColor(array(
+                    'title' => ($_tc = $fieldR->param('titleColumn'))
+                        ? $selectedR->$_tc
+                        : $selectedR->title()
+                ));
+                $item['id'] = $selectedR->$keyProperty;
+                $view['subTplData']['selected']['items'][] = $item;
+            }
+        } else {
+            $view['subTplData']['selected'] = Indi_View_Helper_Admin_FormCombo::detectColor($selected);
+        }
+
+        // Build full config
+        $view = array(
+            'xtype' =>'combo.form',
+            'fieldLabel' => $fieldR->title,
+            'name' => $fieldR->alias,
+            'value' => $selectedValue,
+            'width' => '100%',
+            'margin' => 5,
+            'field' => array(
+                'id' => $fieldR->id,
+                'storeRelationAbility' => $fieldR->storeRelationAbility,
+                'alias' => $fieldR->alias,
+                'relation' => $fieldR->relation
+            ),
+            'allowBlank' => $fieldR->mode == 'regular',
+        ) + $view;
+
+        // Return it
+        return $view;
     }
 }

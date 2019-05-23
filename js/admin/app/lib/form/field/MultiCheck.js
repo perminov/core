@@ -31,12 +31,6 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
     vertical: true,
 
     /**
-     * Temporary config, for switching enumset options javascript execution on/off
-     * This config will be removed once Indi Engine grid cell=editing ability will be fully completed
-     */
-    nojs: false,
-
-    /**
      * Append `zeroValue` property initialisation
      */
     constructor: function() {
@@ -51,6 +45,10 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
         // Normalize value
         me.value = me.normalizeValue(me.value);
+
+        // Setup disabled options
+        if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
+        else if (me.disabledOptions === undefined) me.disabledOptions = [];
 
         // Setup checkboxes
         me.items = me.itemA();
@@ -107,9 +105,15 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
      * @return {Array}
      */
     itemA: function(store) {
+        var me = this, itemI, itemA = [], inputValue, disabled = {};
 
-        // Setup auxiliary variables
-        var me = this, itemI, itemA = [], inputValue;
+        // If `disabledOptions` arg is a string - split it by comma
+        if (Ext.isString(me.disabledOptions)) me.disabledOptions = me.disabledOptions.split(',');
+
+        // Store disabled values as keys
+        me.disabledOptions.forEach(function(value){
+            disabled[value] = true;
+        });
 
         // For each store data item
         (store || me.row.view(me.name).store).data.forEach(function(enumset, index){
@@ -129,17 +133,7 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                     staticOffset: [-2, -5]
                 } : false,
                 enumset: enumset,
-                listeners: {
-                    change: function(rb, now) {
-                        if (now && !me.nojs) {
-                            try {
-                                Indi.eval(rb.enumset.system.js, rb.ownerCt);
-                            } catch (e) {
-                                throw e;
-                            }
-                        }
-                    }
-                },
+                disabled: inputValue in disabled,
 
                 // Here we ensure that each individual checkbox's value won't be submit,
                 // mean the native data submit approach, implemented for xtype:checkboxgroup
@@ -162,21 +156,19 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
     // @inheritdoc
     afterRender: function() {
-
-        // Get checked radio
         var me = this, checked = me.getChecked();
 
         // If checked checkboxes exists - fire 'change' event for each
         for (var i = 0; i < checked.length; i++)
             checked[i].fireEvent('change', checked[i], true);
 
-        // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
-
         // Call parent
         me.callParent();
 
-        // Fire `enablebysatellite` event
+        // Call _afterRender() method, borrowed from Indi.lib.form.field.Combo, to prepare considerOn config
+        me._afterRender();
+
+        // Fire `considerchange` event
         me.mixins.fieldBase._afterRender.call(this, arguments);
     },
 
@@ -192,6 +184,15 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
         var me = this, data = me.normalizeValue(me.getValue());
         data[me.name] = data[me.name].join(',');
         return data;
+    },
+
+    /**
+     * Get comma-separated list of values, according to checkboxes having {checked: true}
+     *
+     * @return string
+     */
+    getSubmitValue: function() {
+        return this.getValue();
     },
 
     /**
@@ -258,15 +259,10 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
     /**
      * Function that will be called after combo value change. Provide dependent-combos reloading in case
-     * if current field is a satellite for one or more combos, that are siblings to current field
+     * if current field is a consider-field for one or more other fields, that are siblings to current field
      */
     onChange: function() {
-
-        // Setup auxilliary variables
         var me = this;
-
-        // Execute javascript code, assigned as an additional handler value change event
-        if (me.field.javascript && !me.nojs) Indi.eval(me.field.javascript, me);
 
         // Call parent
         me.callParent(arguments);
@@ -280,19 +276,6 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 box.enable();
             })
         }
-
-        // If current field is a satellite for one or more sibling combos, we should refresh data in that sibling combos
-        if (me.ownerCt) me.ownerCt.query('[satellite="' + me.field.id + '"]').forEach(function(d){
-            if (d.xtype == 'combo.form') {
-                d.setDisabled(false, true);
-                if (!d.disabled) {
-                    d.remoteFetch({
-                        satellite: me.getValue(),
-                        mode: 'refresh-children'
-                    });
-                }
-            }
-        });
 
         // Call mixin's _onChange() method
         me.mixins.fieldBase._onChange.call(this, arguments);
@@ -362,12 +345,57 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
                 me.add(itemI);
             });
 
-        // If just got results are result for satellited combo, autofetched after satellite value was changed
-        // and we have no results related to current satellite value, we disable satellited combo
+        // If just got results - are result for consider-fields-dependent field, autofetched after one of consider-field's
+        // value was changed and we have no results that conform to consider-fields values, we disable dependent combo
         } else me.setDisabled(true);
 
         // Fire 'refreshchildren' event
         me.fireEvent('refreshchildren', me, parseInt(responseData['found']));
+    },
+
+    /**
+     * Function acts identical as same parent class function, but with one difference - if 'clear' argument is set to
+     * boolean 'true', then combo will be not only disabled, but cleared, mean there will be zero-value set up for combo
+     *
+     * @param force
+     */
+    setDisabled: function(force, clear, on){
+        var me = this, sComboName = on ? on.name : false, sCombo;
+
+        // If current combo has a consider-combo, and consider-combo is an also existing component
+        if (sComboName && (sCombo = Ext.getCmp(me.bid() + sComboName))) {
+
+            // Get consider-combo value
+            var sv = sCombo.getValue() + ''; sv = sv.length == 0 ? 0 : parseInt(sv);
+
+            // If consider-combo's value is 0, or 'force' argument is boolean 'true'
+            if (sv == 0) {
+
+                // Disable combo
+                if (!on || on.required) me.callParent([true]);
+
+                // If 'clear' argument is boolean true
+                if (clear) me.setValue('');
+
+            // Else if consider value is non-zero
+            } else {
+
+                // Disable/Enable combo
+                me.callParent([force]);
+
+                // If 'clear' argument is boolean true
+                if (clear) me.setValue('');
+            }
+
+        // Else if current combo does not have a consider-combo
+        } else {
+
+            // Disable/Enable combo
+            me.callParent([force]);
+
+            // Clea combo, if it should be cleared
+            if (clear) me.setValue('');
+        }
     },
 
     /**
@@ -383,12 +411,34 @@ Ext.define('Indi.lib.form.field.MultiCheck', {
 
         // Return
         return !me.isEqual(me.getValue(), me.originalValue) && (!me.disabled || !d);
+    },
+
+    /**
+     * If some consider-field was changed - reload current field's combo data
+     *
+     * @param sbl
+     * @param data
+     */
+    onConsiderChange: function (sbl, data) {
+        var me = this, stl, request = {mode: 'refresh-children'};
+
+        // Do not refresh children if `satellite` flag within consider-config is non-true
+        if (!sbl.satellite) return;
+
+        // Check whether it will be good to disable, and if so - do it
+        me.setDisabled(false, true, sbl);
+
+        // If still not disabled - refresh options
+        if (!me.disabled) me.remoteFetch(request);
     }
 }, function(){
     var me = this;
 
-    // Borrow `getInputWidthUsage` detection function from Indi.lib.form.field.Radios
-    me.borrow(Indi.lib.form.field.Radios, ['getInputWidthUsage']);
+    // Borrow `getInputWidthUsage` and 'setDisabledOptions' functions from Indi.lib.form.field.Radios
+    me.borrow(Indi.lib.form.field.Radios, ['getInputWidthUsage', 'setDisabledOptions']);
+
+    // Borrow `_afterRender` and 'bid' functions from Indi.lib.form.field.Combo
+    me.borrow(Indi.lib.form.field.Combo, ['_afterRender', 'bid']);
 
     // Borrow other dimension-usage-detection functions from Ext.form.field.Base
     me.borrow(Ext.form.field.Base, ['getHeightUsage', 'getWidthUsage', 'getLabelWidthUsage']);

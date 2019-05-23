@@ -33,7 +33,7 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
-     * The list of additonal (non-primary) satellites
+     * The list of consider-fields, e.g. fields that current field rely on
      */
     considerOn: [],
 
@@ -41,14 +41,12 @@ Ext.override(Ext.form.field.Base, {
      * Append `zeroValue` property initialisation
      */
     constructor: function() {
-        var me = this;
+        var me = this; me.considerOn = [];
         me.callParent(arguments);
         me._constructor();
     },
 
-    /**
-     * Append 'enablebysatellite' event
-     */
+    // @inheritdoc
     initComponent: function() {
         var me = this;
         me.callParent();
@@ -98,34 +96,54 @@ Ext.override(Ext.form.field.Base, {
         return me.getValue() === null || me.getValue() == me.zeroValue;
     },
 
-    /**
-     * Provide current field to be disabled if any of required satellited
-     * have zero value as it's current value
-     */
+    // @inheritdoc
     afterRender: function() {
         var me = this;
+
+        // Call parent
         me.callParent();
+
+        // Do additional things, related to considerOn config
         me._afterRender();
+
+        // Init left toolbar
         me.initLbar();
     },
 
     /**
-     * Check if any of required satellites currently has a zero-value,
+     * Check if any of required consider-fields currently has a zero-value,
      * and if so - disable current field, and assign a zero-value to it
      *
      * @return {Boolean} Result of a check
      */
-    disableBySatellites: function() {
-        var me = this, disable = false;
+    disableByConsiderFields: function() {
+        var me = this, disable = false, sbl, fire = false, data;
 
-        // Check if any of required satellites currently has a zero-value,
+        // Check if any of required consider-fields currently has a zero-value,
         // and therefore current field should be disabled and zero-valued
         me.considerOn.forEach(function(item){
-            if (item.required) disable = disable || me.sbl(item.name).hasZeroValue();
+            if (!item.required) return;
+            if (item.fire) fire = true;
+            if (disable) return;
+            if (!(sbl = me.sbl(item.name))) return;
+            disable = sbl.hasZeroValue();
         });
 
         // Disable current field, and assign a zero-value to it
         if (disable) me.disable().clearValue();
+
+        // If field should be kept disabled, but 'considerchange' event should be anyway fired
+        if (disable && fire) {
+
+            // Get data
+            data = me.considerOnData();
+
+            // Fire 'enablebysatellite' event (kept temporarily, for backwards compatibility)
+            me.fireEvent('enablebysatellite', me, data);
+
+            // Fire 'considerchange' event
+            me.fireEvent('considerchange', me, data);
+        }
 
         // Return the result of a check
         return disable;
@@ -137,15 +155,15 @@ Ext.override(Ext.form.field.Base, {
      * @return {Object}
      */
     considerOnData: function() {
-        var me = this, data = {}, v, s;
+        var me = this, data = {}, v, s, sbl;
 
-        // Collect satellite values
+        // Collect consider-fields values
         if (Ext.isArray(me.considerOn)) {
             me.considerOn.forEach(function(stl){
-                if (me.sbl(stl.name)) {
+                if ((sbl = me.sbl(stl.name)) || me.row) {
 
                     // Get submit value
-                    v = me.sbl(stl.name).getSubmitValue();
+                    v = sbl ? sbl.getSubmitValue() : me.row[stl.name];
 
                     // Get it's string version
                     s = v + '';
@@ -171,10 +189,10 @@ Ext.override(Ext.form.field.Base, {
     },
 
     /**
-     * Enable current field and fire 'enablebysatellite' event, passing an object containing all satellites values
+     * Enable current field and fire 'considerchange' event, passing an object containing all consider-fields values
      */
-    enableBySatellites: function(cfg) {
-        var me = this;
+    enableByConsiderFields: function(cfg) {
+        var me = this, data;
 
         // Enable field
         if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
@@ -182,19 +200,37 @@ Ext.override(Ext.form.field.Base, {
         // Clear value
         if (!cfg.hasOwnProperty('clear') || cfg.clear) me.clearValue();
 
-        // Fire 'enablebysatellite' event
-        me.fireEvent('enablebysatellite', me, me.considerOnData());
+        // Get data
+        data = me.considerOnData();
+
+        // Fire 'enablebysatellite' event (kept temporarily, for backwards compatibility)
+        me.fireEvent('enablebysatellite', me, data);
+
+        // Fire 'considerchange' event
+        me.fireEvent('considerchange', me, data);
+
+        // Call 'onConsiderChange' method
+        me.onConsiderChange(cfg, data);
     },
 
     /**
-     * Check whether or not current field's satellites are in state, that allows to enable/disable current field
+     *
+     * @param сfg
+     * @param data
      */
-    toggleBySatellites: function(cfg) {
-        var me = this; if (!me.disableBySatellites(cfg)) me.enableBySatellites(cfg);
+    onConsiderChange: function(сfg, data) {
+
     },
 
     /**
-     * Lookup satellites changes
+     * Check whether or not current field's consider-fields are in state, that allows to enable/disable current field
+     */
+    toggleByConsiderFields: function(cfg) {
+        var me = this; if (!me.disableByConsiderFields(cfg)) me.enableByConsiderFields(cfg);
+    },
+
+    /**
+     * Lookup consider-fields changes
      */
     onChange: function() {
         var me = this; me.callParent(arguments); me._onChange();
@@ -215,7 +251,7 @@ Ext.override(Ext.form.field.Base, {
      * @private
      */
     _initComponent: function() {
-        this.addEvents('enablebysatellite');
+        this.addEvents('enablebysatellite', 'considerchange');
     },
 
     /**
@@ -225,7 +261,10 @@ Ext.override(Ext.form.field.Base, {
      */
     _afterRender: function() {
         var me = this;
-        if ((!me.disabled || me.readOnly) && !me.disableBySatellites()) me.fireEvent('enablebysatellite', me, me.considerOnData());
+        if ((!me.disabled || me.readOnly) && !me.disableByConsiderFields()) {
+            me.fireEvent('enablebysatellite', me, me.considerOnData());
+            me.fireEvent('considerchange', me, me.considerOnData());
+        }
     },
 
     /**
@@ -236,11 +275,11 @@ Ext.override(Ext.form.field.Base, {
     _onChange: function() {
         var me = this;
 
-        // Lookup current field's satellites changes, and toggle it, depending on their state
+        // Lookup current field's dependent fields, and toggle them
         if (me.ownerCt) me.ownerCt.query('> *').forEach(function(sbl){
             if (Ext.isArray(sbl.considerOn)) {
                 sbl.considerOn.forEach(function(considerOnStlCfg){
-                    if (considerOnStlCfg.name == me.name) sbl.toggleBySatellites(considerOnStlCfg);
+                    if (considerOnStlCfg.name == me.name) sbl.toggleByConsiderFields(considerOnStlCfg);
                 });
             }
         });
@@ -358,6 +397,48 @@ Ext.override(Ext.form.field.Base, {
 
         // Return left-bar
         return me.lbar;
+    },
+
+    /**
+     * Overridden for `originalValue` to be kept if defined
+     *
+     * @inheritdoc
+     */
+    initValue: function() {
+        var me = this, dirty = me.originalValue !== undefined;
+
+        // No change
+        me.value = me.transformOriginalValue(me.value);
+
+        // Change: `originalValue` will be set equal to `value` only if `originalValue` was not defined
+        if (!dirty) me.originalValue = me.value;
+
+        // No change
+        me.lastValue = me.value;
+
+        // No change
+        me.suspendCheckChange++;
+        me.setValue(me.value);
+        me.suspendCheckChange--;
+    },
+
+    /**
+     * Overridden to prepend checkDirty() call, so if original-value
+     * is not equal to submit-value - field will be marked as dirty
+     */
+    onBoxReady: function() {
+        var me = this;
+
+        // Added checkDirty() call
+        if (me.originalValue != me.getSubmitValue()) me.checkDirty();
+
+        // No change
+        me.callParent();
+
+        // No change
+        if (me.setReadOnlyOnBoxReady) {
+            me.setReadOnly(me.readOnly);
+        }
     },
 
     /**

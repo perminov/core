@@ -95,7 +95,7 @@ class Indi_Trail_Admin {
         ));
 
         // Grid columns WHERE clause
-        $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` = "y"');
+        $gridWHERE = array('`sectionId` = "' . $routeA[0] . '"', '`toggle` != "n"');
         if (Indi::model('Grid')->fields('access') && Indi::model('Grid')->fields('profileIds')) {
             $gridWHERE[] = '(' . im(array(
                 '`access` = "all"',
@@ -151,7 +151,10 @@ class Indi_Trail_Admin {
 
             // Save id
             $_SESSION['indi']['admin']['trail']['parentId'][self::$items[0]->section->sectionId] = Indi::uri('id');
-        }
+
+        // If we're trying to jump to creation-form in a section, having parent section - setup parent id
+        } else if (Indi::uri('action') == 'form' && Indi::uri('jump') && ($parent = Indi::uri('parent')))
+            $_SESSION['indi']['admin']['trail']['parentId'][self::$items[0]->section->sectionId] = Indi::uri('parent');
 
         // Reverse items
         self::$items = array_reverse(self::$items);
@@ -185,6 +188,7 @@ class Indi_Trail_Admin {
         // Setup blank scope object for each trail item
         for ($i = 0; $i < count(self::$items) - 1; $i++)
             if (Indi::trail($i)->section->sectionId) {
+                if (Indi::trail($i)->row) Indi::trail($i)->row->compileDefaults();
                 Indi::trail($i)->scope = new Indi_Trail_Admin_Item_Scope($i);
                 Indi::trail($i)->filtersSharedRow($i);
             }

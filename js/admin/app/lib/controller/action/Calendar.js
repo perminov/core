@@ -186,7 +186,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
 
     // @inheritdoc
     initComponent: function() {
-        var me = this, colorField = me.ti().section.colors ? me.ti().section.colors.field : false;
+        var me = this, colorField = me.ti().section.colors ? me.ti().section.colors.field : false, kanban;
 
         // Setup id
         me.id = me.bid();
@@ -205,6 +205,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     = parseInt(me.ti().model.daily.until.split(':')[0]);
         }
 
+        // Pass kanban info into day-view cfg
+        if (kanban = me.ti().section.kanban) me.rowset.dayViewCfg.kanban = kanban;
+
         // Set flag, indicating whether or not only month view should be available within calendar panel
         var onlyMonthView = Indi.in(me.ti().model.space.scheme, 'date,datetime,date-time,date-timeId,date-dayQty');
 
@@ -219,6 +222,26 @@ Ext.define('Indi.lib.controller.action.Calendar', {
             weekViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
             monthViewCfg: {store: me.getStore(), colorField: colorField, scheme: me.ti().model.space.scheme},
             listeners: {
+                initdrag: function(view, rec){
+                    if (!rec) return;
+
+                    // Make a special request to get the inaccessible values for each field considering their current values
+                    Indi.load('/' + me.ti().section.alias + '/form/id/' + rec.get('id') + '/consider/duration/', {
+                        params: {
+                            purpose: 'drag',
+                            uixtype: view.ownerCt.xtype,
+                            fromHour: view.ownerCt.fromHour
+                        },
+                        success: function(response) {
+
+                            // Get info about disabled values for each field
+                            var dd = response.responseText.json().disabled;
+
+                            // Apply those disabled values, so only non-disabled will remain accessible
+                            view.setDisabledValues(dd);
+                        }
+                    });
+                },
                 eventmove: function(view, rec, eOpts) {
                     me.recordRemoteSave(rec, view.store.indexOfTotal(rec) + 1);
                 },
@@ -229,8 +252,9 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     var action = me.ti().actions.r('form', 'alias'), aix = view.store.indexOfTotal(rec);
                     if (action) me.panelDockedInner$Actions_DefaultInnerHandlerLoad(action, rec, aix + 1);
                 },
-                dayclick: function(view, date) {
+                dayclick: function(view, date, wtf, el, kanban) {
                     me.rowset.space = {since: Ext.Date.format(date, 'U')};
+                    if (view.ownerCt.xtype == 'dayview' && kanban) me.rowset.space.kanban = kanban;
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },
@@ -240,7 +264,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                         since: Ext.Date.format(range.spaceSince, 'U'),
                         until: Ext.Date.format(range.spaceUntil, 'U')
                     }
-                    view.dropZone.clearShims();
+                    if (view.ownerCt.xtype == 'dayview' && range.kanban) me.rowset.space.kanban = range.kanban;
                     var create = Ext.getCmp(me.id + '-docked-inner$create');
                     if (create && !create.disabled) create.press();
                 },
@@ -343,8 +367,11 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                     var south, already, qs = '';
 
                     // If we are
-                    if (this.ctx().rowset.space.since) qs = 'since/' + this.ctx().rowset.space.since + '/';
-                    if (this.ctx().rowset.space.until) qs += 'until/' + this.ctx().rowset.space.until + '/';
+                    if (this.ctx().rowset.space) {
+                        if (this.ctx().rowset.space.since) qs = 'since/' + this.ctx().rowset.space.since + '/';
+                        if (this.ctx().rowset.space.until) qs += 'until/' + this.ctx().rowset.space.until + '/';
+                        if (this.ctx().rowset.space.kanban) qs += 'kanban/' + this.ctx().rowset.space.kanban+ '/';
+                    }
 
                     // If Ctrl-key is pressed
                     if (Ext.EventObject.ctrlKey) {

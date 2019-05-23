@@ -10,15 +10,15 @@ define('I_LOGIN_BOX_REMEMBER', 'Remember');
 define('I_LOGIN_BOX_ENTER', 'Enter');
 define('I_LOGIN_BOX_RESET', 'Reset');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');
-define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Enter your username');
-define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Enter your password');
+define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Username not specified');
+define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Password not specified');
 define('I_LOGIN_BOX_LANGUAGE', 'Language');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Such account does not exist');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Wrong password');
-define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Your account is switched off');
-define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Your account is of type, that is switched off');
-define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'There is no sections accessible for you yet');
+define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'This account is switched off');
+define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'This account is of type, that is switched off');
+define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'There is yet no sections, accessible by this account');
 
 define('I_THROW_OUT_ACCOUNT_DELETED', 'Your account had just been deleted');
 define('I_THROW_OUT_PASSWORD_CHANGED', 'Your password had just been changed');
@@ -108,8 +108,8 @@ define('I_ROWSAVE_ERROR_NOTDIRTY_MSG', 'You did not make any changes');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Current row cannot be set as parent for itself in field "%s"');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Row with id "%s", specified in field "%s", - is not exists, so can not be set up as parent row');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Row "%s", specified in field "%s", - is a child/descendant row for a current row "%s", so it can not be set up as parent row');
-define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'While processing your request, one of an auto-processed operations, in particular - <br>on the entry of type "');
-define('I_ROWSAVE_ERROR_MFLUSH_MSG2', 'returned the following errors');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'During your request, one of the operations on the entry of type "');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG2', ' - returned the below errors');
 
 define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Field "%s" is required');
 define('I_ADMIN_ROWSAVE_LOGIN_OCCUPIED', 'Value "%s" of field "%s" is already used as an username for another account');
@@ -161,7 +161,7 @@ define('I_FORM_DATETIME_MINUTES', 'minutes');
 define('I_FORM_DATETIME_SECONDS', 'seconds');
 define('I_COMBO_OF', 'of');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'The maximum allowed number of selected options is');
-define('I_COMBO_MISMATCH_DISABLED_VALUE', 'This option is unavailable');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Option "%s" is unavailable for selection in field "%s"');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Nothing found using this keyword');
 define('I_COMBO_ODATA_FIELD404', 'Field "%s" is neither real field nor pseudo field');
 define('I_COMBO_GROUPBY_NOGROUP', 'Grouping not set');
@@ -213,11 +213,13 @@ define('I_MCHECK_REQ', 'Field "%s" - is required');
 define('I_MCHECK_REG', 'Value "%s" of field "%s" - is in invalid format');
 define('I_MCHECK_KEY', 'No object of type "%s" was found by key "%s"');
 define('I_MCHECK_EQL', 'Wrong value');
+define('I_MCHECK_DIS', 'Value "%s" of field "%s" - is in the list of disabled values');
 define('I_MCHECK_UNQ', 'Value "%s" of field "%s" - is not unique. It should be unique.');
 define('I_JCHECK_REQ', 'Param "%s" - is not given');
 define('I_JCHECK_REG', 'Value "%s" of param "%s" - is in invalid format');
 define('I_JCHECK_KEY', 'No object of type "%s" was found by key "%s"');
 define('I_JCHECK_EQL', 'Wrong value');
+define('I_JCHECK_DIS', 'Value "%s" of param "%s" - is in the list of disabled values');
 
 define('I_PRIVATE_DATA', '*private data*');
 

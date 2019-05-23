@@ -79,4 +79,48 @@ class Section2action_Row extends Indi_Db_Table_Row {
             $this->foreign('actionId')->alias . "', " .
             $this->_ctor() . ");";
     }
+
+    /**
+     * Add roles into linked `section` entry's `roleIds` prop, if need
+     */
+    public function onInsert() {
+
+        // Foreach added role
+        foreach ($this->adelta('profileIds', 'ins') as $ins)
+
+            // Mention that role in section's `roleIds` prop
+            $this->foreign('sectionId')->push('roleIds', $ins);
+
+        // Save section
+        $this->foreign('sectionId')->save();
+    }
+
+    /**
+     * Add/remove roles from linked `section` entry, if need
+     */
+    public function onUpdate() {
+
+        // Foreach added role
+        foreach ($this->adelta('profileIds', 'ins') as $ins)
+
+            // Mention that role in section's `roleIds` prop
+            $this->foreign('sectionId')->push('roleIds', $ins);
+
+        // Foreach removed role
+        foreach ($this->adelta('profileIds', 'del') as $del)
+
+            // If section have no more actions accessible for removed role
+            if (!Indi::db()->query('
+                SELECT COUNT(*) FROM `section2action`
+                WHERE 1
+                  AND `sectionId` = "'. $this->sectionId . '"
+                  AND FIND_IN_SET("'. $del.'", `profileIds`)
+            ')->fetchColumn())
+
+                // Remove that role from section entry's `roleIds` prop
+                $this->foreign('sectionId')->drop('roleIds', $del);
+
+        // Save section
+        $this->foreign('sectionId')->save();
+    }
 }

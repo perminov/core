@@ -146,7 +146,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         for (var i = 0; i < filterCmpA.length; i++) {
 
             // We do not involve values of hidden or disabled filter components in request query building
-            if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden) || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field.satellite)) continue;
+            if ((filterCmpA[i].hidden && !filterCmpA[i].isImportantDespiteHidden)
+                || (filterCmpA[i].disabled && filterCmpA[i].field && filterCmpA[i].field._nested['consider'].r('y', 'required'))) continue;
 
             // Define a shortcut for filter filed alias
             var alias = filterCmpA[i].name;
@@ -264,7 +265,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             }
 
             // If used filter is a combobox or multislider, we reload store data immideatly
-            if (['combobox', 'combo.filter', 'multislider'].indexOf(cmp.xtype) != -1) {
+            if (['combobox', 'combo.filter', 'multislider', 'checkbox'].indexOf(cmp.xtype) != -1) {
                 me.preventViewFocus = true;
                 me.getStore().reload();
 
@@ -698,8 +699,10 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         }
 
         // Setup non-regular filters
-        if (me.panel.docked && me.panel.docked.inner && me.panel.docked.inner.filter && me.panel.docked.inner.filter.length)
-        moreItemA = me.push(me.panel.docked.inner.filter, 'panelDocked$Filter', false, function(itemI){
+        if (!arguments.length && me.panel.docked
+            && me.panel.docked.inner && me.panel.docked.inner.filter
+            && me.panel.docked.inner.filter.length) moreItemA
+            = me.push(me.panel.docked.inner.filter, 'panelDocked$Filter', false, function(itemI){
             return Ext.merge({
                 listeners: {
                     change: function(cmp) {
@@ -763,7 +766,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             value: Ext.isNumeric(row[field.alias]) ? parseInt(row[field.alias]) : row[field.alias],
             subTplData: row.view(field.alias).subTplData,
             store: row.view(field.alias).store,
-            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false
+            multiSelect: parseInt(filter.any) || filter.foreign('fieldId').storeRelationAbility == 'many' ? true : false,
+            consistence: filter.consistence,
+            allowClear: !!filter.allowClear
         }
     },
 
@@ -1277,7 +1282,29 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     panelDockedInner$Nested: function(){
-        var me = this;
+        var me = this, items = Ext.clone(me.ti().sections), btnA = [];
+
+        // Foreach each nested subsection
+        for (var i = 0; i < items.length; i++) {
+
+            // Push it into btnA array
+            btnA.push(items[i]);
+
+            // If subsection's disabledAdd prop is 1 - skip.
+            // Note: it may be also set as 1 dynamically in case if 'Save' action is inaccessible
+            if (items[i].disableAdd == 1) {
+                btnA[btnA.length - 1].overflowCfg = {iconCls: false};
+                continue;
+            }
+
+            // Append
+            btnA.push({
+                title: '+',
+                alias: items[i].alias + '',
+                overflowCfg: false
+            });
+        }
+
         return {
             id: me.bid() + '-docked-inner$nested',
             xtype: 'shrinkbar',
@@ -1290,7 +1317,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 handler: function(btn) {
 
                     // Get selection
-                    var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection();
+                    var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection(), uri = '/' + btn.alias;
 
                     // If no selection - show a message box
                     if (selection.length == 0) {
@@ -1304,26 +1331,55 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             }
                         });
 
+                    // Else load the nested subsection contents
+                    } else if (btn.alias) {
+
+                        // Finish build uri
+                        uri += btn.title == '+'
+                            ? '/form/jump/1/parent/' + selection[0].data.id + '/'
+                            : '/index/id/'  + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/';
+
+                        // Load
+                        Indi.load(uri);
+                    }
+                },
+                overflowCfg: {
+                    iconCls: 'i-btn-icon-create',
+                    handler: function(btn, e) {
+
+                        // Get selection
+                        var selection = Ext.getCmp(me.rowset.id).getSelectionModel().getSelection(), uri = '/' + btn.alias;
+
+                        // If no selection - show a message box
+                        if (selection.length == 0) {
+                            Ext.MessageBox.show({
+                                title: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_TITLE,
+                                msg: Indi.lang.I_ACTION_INDEX_SUBSECTIONS_WARNING_MSG,
+                                buttons: Ext.MessageBox.OK,
+                                icon: Ext.MessageBox.WARNING,
+                                fn: function() {
+                                    Ext.defer(function(){Ext.getCmp(me.rowset.id).getView().focus();}, 100);
+                                }
+                            });
+
                         // Else load the nested subsection contents
-                    } else if (btn.alias) Indi.load('/' + btn.alias + '/index/id/'
-                        + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/');
+                        } else if (btn.alias) {
+
+                            // End build uri depending on what exactly was clicked: icon or item's title
+                            uri += e.getTarget('.i-btn-icon-create')
+                                ? '/form/jump/1/parent/' + selection[0].data.id + '/'
+                                : '/index/id/'  + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/';
+
+                            // Load
+                            Indi.load(uri);
+                        }
+                    }
                 }
             },
             shrinkCfg: {
                 prop: 'title'
             },
-            items: Ext.clone(me.ti().sections)
-        }
-
-        // 'Nested' item config
-        return {
-            tooltip: {
-                html: Indi.lang.I_NAVTO_NESTED,
-                hideDelay: 0,
-                showDelay: 1000,
-                dismissDelay: 2000,
-                staticOffset: [0, 1]
-            }
+            items: btnA
         }
     },
 
@@ -1411,10 +1467,17 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @return {Object}
      */
     storeField_Default: function(field) {
+        var type;
+
+        // Get type
+        if (field.foreign('elementId').alias == 'price') type = 'float';
+        else if (field.foreign('elementId').alias == 'number') type = 'int';
+        else type = 'string';
+
+        // Return
         return {
             name: field.alias,
-            type: !parseInt(field.relation) && [3,5].indexOf(parseInt(field.columnTypeId)) != -1 && !parseInt(field.satellite)
-                ? (field.foreign('elementId').alias == 'price' ? 'float' : 'int') : 'string'
+            type: type
         }
     },
 
@@ -1784,7 +1847,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
         return Ext.merge({
             id: me.id + '-rowset',
             dockedItems: me.rowsetDockedA(),
-            store: me.getStore()
+            store: me.getStore(),
+            multiSelect: me.ti().section.multiSelect
         }, me.rowset);
     },
 
@@ -1983,7 +2047,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Params
             url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
-                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/' + search,
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/ref/rowset/' + search,
             method: 'POST',
             params: params,
 

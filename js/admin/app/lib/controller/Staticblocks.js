@@ -36,7 +36,7 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                         }
                     },
                     listeners: {
-                        enablebysatellite: function(c, d) {
+                        considerchange: function(c, d) {
                             c.setVisible(d.type == 'html');
                         }
                     }
@@ -86,7 +86,7 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.type == 'html');
                     }
                 }
@@ -97,7 +97,7 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.type == 'html');
                     }
                 }
@@ -108,7 +108,7 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.type == 'string');
                     }
                 }
@@ -119,7 +119,7 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.type == 'textarea');
                     }
                 }

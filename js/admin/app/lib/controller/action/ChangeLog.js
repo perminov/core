@@ -7,7 +7,7 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     alternateClassName: 'Indi.Controller.Action.Rowset.ChangeLog',
 
     // @inheritdoc
-    extend: 'Indi.Controller.Action.Rowset.Grid',
+    extend: 'Indi.lib.controller.action.Grid',
 
     // @inheritdoc
     panel: {
@@ -18,14 +18,6 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
                 filter: [{alias: 'keyword', margin: '0 5 4 2'}]
             }
         }
-    },
-
-    // @inheritdoc
-    rowset: {
-        features: [{
-            ftype: 'grouping',
-            groupHeaderTpl: '{name}'
-        }]
     },
 
     panelDocked$Filter$Keyword: function() {
@@ -56,18 +48,33 @@ Ext.define('Indi.lib.controller.action.ChangeLog', {
     gridColumn$EntityId: false,
 
     /**
-     * Turn Off Author grid column, as author titles are involved within grouper contents
+     * Turn Off `changerId` grid column, as it's mentioned within group title
      *
      * @param column
      */
     gridColumn$ChangerId: false,
 
     /**
-     * Turn Off Datetime grid column, as datetimes are involved within grouper contents
+     * Turn Off `profileId` grid column, as it's mentioned within group title
+     *
+     * @param column
+     */
+    gridColumn$ProfileId: false,
+
+    /**
+     * Turn Off `datetime` grid column, as datetimes are involved within grouper contents
      *
      * @param column
      */
     gridColumn$Datetime: false,
+
+    /**
+     * Turn Off `key` grid column, as entry title (e.g. "<entity-title> » <entry-title>")
+     * anyway won't be displayed as a separate grid column
+     *
+     * @param column
+     */
+    gridColumn$Key: false,
 
     /**
      * Restrict most of column abilities for 'Field' column

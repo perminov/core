@@ -25,8 +25,14 @@ Ext.define('Ext.calendar.view.DayBody', {
 
     //private
     initComponent: function() {
+
+        // Call parent
         this.callParent(arguments);
 
+        // Setup kanban
+        this.setupKanban();
+
+        // Add events
         this.addEvents({
             /**
              * @event eventresize
@@ -130,7 +136,8 @@ Ext.define('Ext.calendar.view.DayBody', {
                 fromHourMain: this.fromHour,
                 fromHour: this.fromHour,
                 tillHourMain: this.tillHour,
-                tillHour: this.tillHour
+                tillHour: this.tillHour,
+                kanban: this.kanban
             });
         }
         this.tpl.compile();
@@ -140,7 +147,7 @@ Ext.define('Ext.calendar.view.DayBody', {
         this.callParent(arguments);
 
         // default scroll position to 7am:
-        this.scrollTo(7 * 42);
+        this.scrollTo(7 * 44);
     },
 
     // private
@@ -270,7 +277,7 @@ Ext.define('Ext.calendar.view.DayBody', {
 
     // private
     getTemplateEventBox: function(evt) {
-        var heightFactor = 0.7,
+        var heightFactor = 44 / 60,
             M = Ext.calendar.data.EventMappings,
             dec = Ext.Date.format(evt[M.EndDate.name], 'H:i:s') == '00:00:00',
             start = evt[M.StartDate.name],
@@ -306,8 +313,9 @@ Ext.define('Ext.calendar.view.DayBody', {
             colWidth,
             evtWidth,
             markup,
-            target;
-        for (; day < this.dayCount; day++) {
+            target,
+            k = this.kanban;
+        for (; day < (k ? k.values.length : this.dayCount); day++) {
             ev = emptyCells = skipped = 0;
             d = this.eventGrid[0][day];
             ct = d ? d.length: 0;
@@ -331,6 +339,7 @@ Ext.define('Ext.calendar.view.DayBody', {
                     data: this.getTemplateEventData(item),
                     date: Ext.calendar.util.Date.add(this.viewStart, {days: day})
                 });
+                if (k) evts[evts.length - 1].kanban = evt.key(k.prop) || raw[k.prop];
             }
         }
 
@@ -346,7 +355,7 @@ Ext.define('Ext.calendar.view.DayBody', {
                     continue;
                 }
                 evt2 = evts[j].data;
-                if (this.isOverlapping(evt, evt2)) {
+                if ((k.prop == 'date' ? true : (evts[i].kanban == evts[j].kanban)) && this.isOverlapping(evt, evt2)) {
                     evt._overlap = evt._overlap == undefined ? 1: evt._overlap + 1;
                     if (i < j) {
                         if (evt._overcol === undefined) {
@@ -370,8 +379,11 @@ Ext.define('Ext.calendar.view.DayBody', {
                 evt._left = colWidth * evt._overcol;
             }
             markup = this.getEventTemplate().apply(evt);
-            target = this.id + '-day-col-' + Ext.Date.format(evts[i].date, 'Ymd');
-
+            if (!k || k.prop == 'date') {
+                target = this.id + '-day-col-' + Ext.Date.format(evts[i].date, 'Ymd');
+            } else if (k) {
+                target = this.id + '-day-col-' + evts[i].kanban;
+            }
             Ext.core.DomHelper.append(target, markup);
         }
 
@@ -411,30 +423,34 @@ Ext.define('Ext.calendar.view.DayBody', {
             scroll = this.el.getScroll(),
             row = this.el.down('.ext-cal-bg-row'),
             // first avail row, just to calc size
-            rowH = row.getHeight() / 2,
+            rowH = row.getHeight() / 2 / 2,
             // 30 minute increment since a row is 60 minutes
             relY = y - viewBox.y - rowH + scroll.top,
             rowIndex = Math.max(0, Math.ceil(relY / rowH)),
-            mins = (rowIndex + this.fromHour * 2) * 30,
-            dt = Ext.calendar.util.Date.add(this.viewStart, {days: dayIndex, minutes: mins}),
-            el = this.getDayEl(dt),
+            mins = (rowIndex / 2 + this.fromHour * 2) * 30,
+            k = this.kanban,
+            dt = Ext.calendar.util.Date.add(this.viewStart, {days: k.prop == 'date' ? dayIndex : 0, minutes: mins}),
+            el = this.getDayEl(!k || k.prop == 'date' ? dt : k.values[dayIndex]),
             timeX = x;
 
         if (el) {
             timeX = el.getLeft();
         }
 
-        return {
+        var ret = {
             date: dt,
             el: el,
             // this is the box for the specific time block in the day that was clicked on:
             timeBox: {
                 x: timeX,
-                y: (rowIndex * 21) + viewBox.y - scroll.top,
+                y: (rowIndex * 11) + viewBox.y - scroll.top,
                 width: daySize.width,
                 height: rowH
             }
         };
+        if (k) ret.kanban = k.values[dayIndex];
+
+        return ret;
     },
 
     // private
@@ -457,7 +473,7 @@ Ext.define('Ext.calendar.view.DayBody', {
         }
         var day = this.getDayAt(e.getX(), e.getY());
         if (day && day.date) {
-            this.fireEvent('dayclick', this, day.date, false, null);
+            this.fireEvent('dayclick', this, day.date, false, null, day.kanban);
         }
     }
 });

@@ -13,12 +13,15 @@ Ext.define('Ext.calendar.template.DayBody', {
     extend: 'Ext.XTemplate',
     
     constructor: function(config){
-
+        var k;
         Ext.apply(this, config);
+        var tpl = ((k = this.kanban) && k.prop != 'date')
+            ? '<div id="{[this.id]}-day-col-{.}" class="ext-cal-day-col-gutter"></div>'
+            : '<div id="{[this.id]}-day-col-{.:date("Ymd")}" class="ext-cal-day-col-gutter"></div>';
 
         this.callParent([
             '<table class="ext-cal-bg-tbl" cellspacing="0" cellpadding="0">',
-                '<tbody>',
+                '<thead>',
                     '<tr height="0">',
                         '<td class="ext-cal-gutter"></td>',
                         '<td colspan="{dayCount}">',
@@ -27,12 +30,16 @@ Ext.define('Ext.calendar.template.DayBody', {
                                     '<tpl for="times">',
                                         '<div class="ext-cal-bg-row {out}">',
                                             '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
+                                            '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
+                                            '<div class="ext-cal-bg-row-div ext-row-{[xindex]}"></div>',
                                         '</div>',
                                     '</tpl>',
                                 '</div>',
                             '</div>',
                         '</td>',
                     '</tr>',
+                '</thead>',
+                '<tbody style="position: absolute;">',
                     '<tr>',
                         '<td class="ext-cal-day-times">',
                             '<tpl for="times">',
@@ -42,9 +49,9 @@ Ext.define('Ext.calendar.template.DayBody', {
                             '</tpl>',
                         '</td>',
                         '<tpl for="days">',
-                            '<td class="ext-cal-day-col">',
+                            '<td class="ext-cal-day-col" style="width: calc(100% / {parent.days.length});">',
                                 '<div class="ext-cal-day-col-inner">',
-                                    '<div id="{[this.id]}-day-col-{.:date("Ymd")}" class="ext-cal-day-col-gutter"></div>',
+                                    tpl,
                                 '</div>',
                             '</td>',
                         '</tpl>',
@@ -62,10 +69,12 @@ Ext.define('Ext.calendar.template.DayBody', {
         var i = 0,
             days = [],
             dt = Ext.Date.clone(o.viewStart),
-            times = [];
-            
-        for(; i<this.dayCount; i++){
-            days[i] = Ext.calendar.util.Date.add(dt, {days: i});
+            times = [],
+            k = this.kanban;
+
+        for(; i< (k ? k.values.length : this.dayCount); i++){
+            if (k && k.prop == 'date') days[i] = Ext.Date.parse(k.values[i], 'Y-m-d');
+            else if (k) days[i] = k.values[i];
         }
 
         // use a fixed DST-safe date so times don't get skipped on DST boundaries

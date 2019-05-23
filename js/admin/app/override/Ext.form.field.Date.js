@@ -41,14 +41,17 @@ Ext.override(Ext.form.field.Date, {
     /**
      * clearValue() call removed
      */
-    enableBySatellites: function() {
+    enableByConsiderFields: function(cfg) {
         var me = this, data = {};
 
         // Enable field
-        me.enable();
+        if (!cfg.hasOwnProperty('enable') || cfg.enable) me.enable();
 
-        // Fire 'enablebysatellite' event
+        // Fire 'enablebysatellite' event (kept temporarily, for backwards compatibility)
         me.fireEvent('enablebysatellite', me, me.considerOnData());
+
+        // Fire 'considerchange' event
+        me.fireEvent('considerchange', me, me.considerOnData());
     },
 
     /**
@@ -109,5 +112,28 @@ Ext.override(Ext.form.field.Date, {
             value = this.getValue();
 
         return value ? Ext.Date.format(value, format) : this.zeroValue;
+    },
+
+    /**
+     * @private
+     * Sets the Date picker's value to match the current field value when expanding.
+     */
+    onExpand: function() {
+        var value = this.getValue();
+        this.picker.setValue(Ext.isDate(value)
+            ? value
+            : (Ext.isDate(this.minValue || this.maxValue)
+                ? (this.minValue || this.maxValue)
+                : new Date()));
+    },
+
+    /**
+     * This method is overridden to handle the case when `originalValue` was
+     * initially defined, so the field will be initially displayed as dirty
+     *
+     * @return {Boolean}
+     */
+    isDirty: function() {
+        return this.callParent() && (this.originalValue !== this.zeroValue || !this.isEqual(this.getValue(), null));
     }
 });

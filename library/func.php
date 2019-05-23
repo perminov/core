@@ -685,7 +685,7 @@ if (!function_exists('apache_request_headers')) {
 function in($item, $array) {
 
     // If $array arg is bool or is null, or $item arg is bool - set $strict flag as true
-    $strict = is_bool($array) || is_null($array) || is_bool($item);
+    $strict = is_bool($array) || is_null($array) || is_bool($item) || is_null($item);
 
     // Normalize $array arg
     $array = ar($array);
@@ -896,18 +896,20 @@ function mflush($field, $msg = '') {
     // Flush
     jflush(false, array('mismatch' => array(
         'direct' => true,
-        'errors' => $mismatch
+        'errors' => $mismatch,
+        'trace' => array_slice(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 1)
     )));
 }
 /**
  * Flush the json-encoded message, containing `status` property, and other optional properties, especially for confirm
  *
  * @param string $msg
+ * @param string $buttons
  */
-function jconfirm($msg) {
+function jconfirm($msg, $buttons = 'OKCANCEL') {
 
     // Start building data for flushing
-    $flush = array('confirm' => true, 'msg' => $msg);
+    $flush = array('confirm' => true, 'msg' => $msg, 'buttons' => $buttons);
 
     // Send content type header
     if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
@@ -917,6 +919,40 @@ function jconfirm($msg) {
 
     // Flush
     iexit(json_encode($flush));
+}
+
+/**
+ * Flush the json-encoded message, containing `prompt` flag, and $cfg param, containing,
+ * in it's turn, array of configurations for each field to be rendered within prompt window
+ *
+ * @param string $msg
+ * @param array $cfg
+ */
+function jprompt($msg, array $cfg) {
+
+    // Start building data for flushing
+    $flush = array('prompt' => true, 'msg' => $msg, 'cfg' => $cfg);
+
+    // Send content type header
+    if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
+
+    // Here we send HTTP/1.1 400 Bad Request to prevent success handler from being fired
+    if (!headers_sent() && !isIE()) header('HTTP/1.1 400 Bad Request');
+
+    // Flush
+    iexit(json_encode($flush));
+}
+
+/**
+ * Flush text to be shown within <textarea>
+ *
+ * @param bool $success
+ * @param string $text
+ */
+function jtextarea($success, $text) {
+
+    // Flush
+    jflush($success, '<textarea style="width: 500px; height: 400px;">' . $text . '</textarea>');
 }
 
 /**
@@ -1344,7 +1380,7 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         $c = 'I_' . ($flushFn == 'mflush' ? 'M' : 'J') . 'CHECK_';
 
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && !strlen($value)) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
+        if ($rule['req'] && (!strlen($value) || (!$value && $rule['key']))) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
 
         // If prop's value should match certain regular expression, but it does not - flush error
         if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
@@ -1352,8 +1388,11 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // If value should be a json-encoded expression, and it is - decode
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
+        // If value should not be in the list of disabled values - flush error
+        if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $prop));
+
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
-        if ($rule['key'] && strlen($value)) {
+        if ($rule['key'] && strlen($value) && $value != '0') {
 
             // Get model/table name
             $m = preg_replace('/\*$/', '', $rule['key']);
@@ -1764,13 +1803,36 @@ function section2action($section, $action, array $ctor = array()) {
 }
 
 /**
- * Get `action` entry by it's alias
+ * Get `action` entry either by alias or by ID, or create/update it
  *
- * @param $alias
+ * @param string|int $alias Action ID or alias
+ * @param array $ctor Props to be involved in insert/update
  * @return Indi_Db_Table_Row|null
  */
-function action($alias) {
-    return Indi::model('Action')->fetchRow('`alias` = "' . $alias . '"');
+function action($alias, array $ctor = array()) {
+
+    // If $alias arg is an integer - assume it's an `action` entry's `id`, otherwise assume it's a `alias`
+    $byprop = Indi::rexm('int11', $alias) ? 'id' : 'alias';
+
+    // Return `action` entry
+    $actionR = Indi::model('Action')->fetchRow('`' . $byprop . '` = "' . $alias . '"');
+
+    // If $ctor arg is an empty array - return `action` entry, if found, or null otherwise.
+    // This part of this function differs from such part if other similar functions, for example grid() function,
+    // because presence of $alias - is not enough for `action` entry to be created
+    if (!$ctor) return $actionR;
+
+    // If `alias` prop is not defined within $ctor arg - use value given by $alias arg
+    if (!array_key_exists('alias', $ctor)) $ctor['alias'] = $alias;
+
+    // If `action` entry was not found - create it
+    if (!$actionR) $actionR = Indi::model('Action')->createRow();
+
+    // Assign other props and save
+    $actionR->assign($ctor)->save();
+
+    // Return `action` entry (newly created, or existing but updated)
+    return $actionR;
 }
 
 /**
@@ -1922,6 +1984,58 @@ function param($table, $field, $alias, $value = null) {
 }
 
 /**
+ * Short-hand function that allows to manipulate `consider` entry, identified by $entity, $field and $consider args.
+ * If only those three args given - function will fetch and return appropriate `consider` entry (or null, if not found)
+ * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `section`
+ * entry, or update existing if found
+ *
+ * @param string $entity Table name of the entity, that dependent field is in
+ * @param string $field Alias of dependent field
+ * @param string $consider Alias of field, that dependent field depends on
+ * @param bool|array $ctor Props to be involved in insert/update
+ * @return Consider_Row|null
+ */
+function consider($entity, $field, $consider, $ctor = false) {
+
+    // Get `entityId`, `fieldId` and `consider`-id according first 3 args
+    $entityId = entity($entity)->id ?: 0;
+    $fieldId = field($entity, $field)->id ?: 0;
+    $consider = field($entity, $consider)->id ?: 0;
+
+    // Try to find such `consider` entry
+    $considerR = Indi::model('Consider')->fetchRow(array(
+        '`entityId` = "' . $entityId . '"',
+        '`fieldId` = "' . $fieldId . '"',
+        '`consider` = "' . $consider . '"'
+    ));
+
+    // If $ctor arg is non-false and is not an empty array - return found `consider` entry, or null otherwise
+    // This part of this function differs from such part if other similar functions, for example field() function,
+    // because presence of first 3 args - is minimum enough for `consider` entry to be created
+    if (!$ctor && !is_array($ctor)) return $considerR;
+
+    // If any of `sectionId`, `fieldId` and `consider` prop are not defined
+    // within $ctor arg - use values given by $entity, $field and $consider args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('entityId,fieldId,consider') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `consider` entry was not found - create it
+    if (!$considerR) $considerR = Indi::model('Consider')->createRow();
+
+    // Assign some props first
+    foreach (ar('entityId,fieldId,consider') as $prop)
+        if ($ctor[$prop] && $considerR->$prop = $ctor[$prop]) unset($ctor[$prop]);
+
+    // Assign other props and save
+    $considerR->assign($ctor)->save();
+
+    // Return `consider` entry (newly created, or existing but updated)
+    return $considerR;
+}
+
+/**
  * Return timeId for a given 'hh:mm' string, or full array of 'hh:mm' => timeId key-pairs
  *
  * @param null $Hi
@@ -1939,4 +2053,245 @@ function timeId($Hi = null) {
  */
 function timeHi($timeId = null) {
     return Indi_Schedule::timeHi($timeId);
+}
+
+/**
+ * Return monthId for a given 'yyyy-mm(-dd)' string, or full array of 'yyyy-mm' => monthId key-pairs
+ *
+ * @param null $date
+ * @return array|int
+ */
+function monthId($date = null) {
+    return Month::monthId($date);
+}
+
+/**
+ * Return 'yyyy-mm' expression according to given $monthId arg, or full array of monthId => 'yyyy-mm' key-pairs
+ *
+ * @param int $monthId
+ * @return array|string
+ */
+function monthYm($monthId = null) {
+    return Month::monthYm($monthId);
+}
+
+/**
+ * Echo $then or $else arg depending on whether $if arg is true
+ *
+ * @param bool $if
+ * @param string $then
+ * @param string $else
+ */
+function eif($if, $then, $else = '') {
+    echo $if ? $then : $else;
+}
+
+/**
+ * Return $then or $else arg depending on whether $if arg is true
+ *
+ * @param bool $if
+ * @param string $then
+ * @param string $else
+ * @return string
+ */
+function rif($if, $then, $else = '') {
+    return $if ? $then : $else;
+}
+
+/**
+ * Parser function. Get array of content between strings, specified by $since arg and strings specified by $until arg
+ * Both $since and until args can be regular expressions
+ *
+ * @param string $since
+ * @param string $until
+ * @param string $html
+ * @return array
+ */
+function between($since, $until, $html) {
+
+    // Regular expression to detect regulat expression
+    $rex = '/^(\/|#|\+|%|~)[^\1]*\1[imsxeu]*$/';
+
+    // Detect whether $since and/or $until args are regular expressions
+    $splitFn_since = preg_match($rex, $since) ? 'preg_split' : 'explode';
+    $splitFn_until = preg_match($rex, $until) ? 'preg_split' : 'explode';
+
+    // Collect items
+    $itemA = array();
+    foreach ($splitFn_since($since, $html) as $i => $_)
+        if ($i) $itemA []= array_shift($splitFn_until($until, $_));
+
+    // Return collected
+    return $itemA;
+}
+
+/**
+ * Parser function. Get inner html for each node that match regular expression given in $node arg.
+ * If aim is to pick inner html of multiple nodes, all those nodes should be located at same level
+ * of nesting within html-tags tree, given by $html arg.
+ *
+ * Note: this function rely on that all pair tags are closed, for example each '<p>' tag should closed, e.g have '</p>'
+ *
+ * @param string $node Regular expression. For example: '~<div id="results">~' or '~<span class="[^"]*item-info[^"]*">~'
+ * @param string $html Raw html to search in
+ * @return array
+ */
+function innerHtml($node, $html) {
+
+    // Split
+    $chunkA = preg_split($node, $html);
+
+    // If nothing found - return
+    if (($chunkQty = count($chunkA)) < 2) return;
+
+    // Ignore non-pair tags while watching on tag nesting levels
+    $ignore = array_flip(array(
+        'img', 'link', 'meta', 'input', 'br', 'hr', 'base', 'basefont', 'source', 'col', 'embed', 'area', 'param', 'track'
+    ));
+
+    // Regular expression for searching tags (opening an closing)
+    $rex = '~(</?[a-zA-Z-0-9-:]+(?(?= ) [^>]*|)>)~';
+
+    // Initial nesting level
+    $level = 0;
+
+    // Find tags before target node
+    if (preg_match_all($rex, $chunkA[0], $m)) {
+
+        // Foreach tag, found before target node
+        foreach (array_shift($m) as $idx => $tag) {
+
+            // If it's non-pair tag - skip
+            if (isset($ignore[$m[1][$idx]])) continue;
+
+            // Current level
+            $level += substr($tag, 1, 1) == '/' ? -1 : 1;
+        }
+    }
+
+    // Increment current level to respect target node
+    $level ++;
+
+    // Remember target level
+    $targetLevel = $level;
+
+    // Array for inner html of found nodes
+    $innerHtml = array();
+
+    // Foreach chunk since 2nd
+    for ($i = 1; $i < $chunkQty; $i++) {
+
+        // Reset level, and increment it level because we'll be processing inner html
+        $level = $targetLevel + 1; unset($prevDir);
+
+        // Split html, that appear after target node's opening tag, and capture tags and offsets
+        foreach(preg_split($rex, $chunkA[$i], -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_OFFSET_CAPTURE) as $chunk) {
+
+            // If chunk is not a tag - skip
+            if (!preg_match('~^</?([a-zA-Z-0-9-]+)~', $chunk[0], $m)) continue;
+
+            // If it is a tag, but is a non-pair tag - skip
+            if (isset($ignore[$m[1]])) continue;
+
+            // Setup level change direction
+            $dir = substr($chunk[0], 1, 1) == '/' ? -1 : 1;
+
+            // If direction equal to previous one - apply it
+            if (isset($prevDir) && $prevDir == $dir) $level += $dir;
+
+            // If we finally went back to target level
+            if ($level == $targetLevel) {
+
+                // Get offset
+                $pos = $chunk[1];
+
+                // Stop loop
+                break;
+            }
+
+            // Debug
+            // echo str_pad($level, '3', '0', STR_PAD_LEFT) . str_pad('', $level - $targetLevel, ' ', STR_PAD_LEFT) . $chunk[0] . "\n";
+
+            // Set previous direction
+            $prevDir = $dir;
+        }
+
+        // Return target node inner html
+        $innerHtml []= mb_substr($chunkA[$i], 0, $pos, 'utf-8');
+    }
+
+    // Return inner html of all matched nodes
+    return $innerHtml;
+}
+
+/**
+ * Get array, containing outer html of root nodes, found within raw html, given by $innerHtml arg
+ *
+ * @param string $innerHtml
+ * @param bool $debug
+ * @return array
+ */
+function rootNodes($innerHtml, $debug = false) {
+
+    // Ignore non-pair tags while watching on tag nesting levels
+    $ignoreRex = '~^<(' . implode('|', array(
+        'img', 'link', 'meta', 'input', 'br', 'hr', 'base', 'basefont', 'source', 'col', 'embed', 'area', 'param', 'track'
+    )) . ')~';
+
+    // Regular expression for searching tags (opening an closing)
+    $rex = '~(</?[a-zA-Z-0-9-:]+(?(?= ) [^>]*|)>)~u';
+
+    // Remove raw javascript
+    $innerHtml = str_replace(between('~<script[^>]*>~', '</script>', $innerHtml), '', $innerHtml);
+
+    // Remove raw css
+    $innerHtml = str_replace(between('~<style[^>]*>~', '</style>', $innerHtml), '', $innerHtml);
+
+    // Initial nesting level
+    $level = 0;
+
+    // Root nodes array
+    $rootNodes = array();
+
+    // Split html, that appear after target node's opening tag, and capture tags and offsets
+    foreach($s = preg_split($rex, $innerHtml, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_OFFSET_CAPTURE) as $chunk) {
+
+        // If chunk is not a tag, or is a non-pair tag - skip
+        if (!preg_match($rex, $chunk[0], $m) || preg_match($ignoreRex, $chunk[0])) {
+
+            // Remember last chunk's offset
+            $until = $chunk[1];
+
+            // Goto next chunk
+            continue;
+        }
+
+        // Setup level change direction
+        $dir = substr($chunk[0], 1, 1) == '/' ? -1 : 1;
+
+        // If direction equal to previous one - apply it
+        if (isset($prevDir) && $prevDir === $dir) $level += $dir;
+
+        // Debug
+        if ($debug) str_pad($level, '3', '0', STR_PAD_LEFT) . str_pad('', $level, ' ', STR_PAD_LEFT) . $chunk[0] . "\n";
+
+        // If we finally went back to target level
+        if ($level == 0) {
+
+            // If current chunk is a closing tag - get root node outer html
+            if ($dir == -1) $rootNodes []= substr($innerHtml, $since, $until - $since) . $chunk[0];
+
+            // Else if current chunk is an opening tag - remember offset
+            else $since = $chunk[1];
+        }
+
+        // Remember last chunk's offset
+        $until = $chunk[1];
+
+        // Set previous direction
+        $prevDir = $dir;
+    }
+
+    // Return root nodes
+    return $rootNodes;
 }

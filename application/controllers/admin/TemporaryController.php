@@ -6,6 +6,43 @@
  */
 class Admin_TemporaryController extends Indi_Controller {
 
+    public function satelliteAction() {
+
+        field('consider', 'required', array (
+            'title' => 'Обязательное',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('consider', 'required', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Да'));
+        enumset('consider', 'required', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+        grid('consider','required', array (
+            'alterTitle' => '[ ! ]',
+            'tooltip' => 'Обязательное',
+        ));
+        $connector = field('consider', 'connector', array (
+            'title' => 'Коннектор',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+        ));
+
+        grid('consider', 'connector', true);
+        if (!Indi::model('Consider')->fetchRow('`fieldId` = "' . $connector->id . '"'))
+            Indi::model('Consider')->createRow(array(
+                'entityId' => entity('consider')->id,
+                'fieldId' => $connector->id,
+                'consider' => field('consider', 'fieldId')->id,
+                'foreign' => field('field', 'relation')->id,
+                'required' => 'y'
+            ), true)->save();
+        die('ok');
+    }
+
     /**
      * Convert disabledFields-feature to alteredFields-feature
      */
@@ -506,6 +543,33 @@ class Admin_TemporaryController extends Indi_Controller {
         if ($_->affected('id')) $_->move(19)->move(-3);
 
         // Exit
+        die('ok');
+    }
+
+    public function sectionRolesAction() {
+
+        field('section', 'roleIds', array (
+            'title' => 'Доступ',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'combo',
+            'relation' => 'profile',
+            'storeRelationAbility' => 'many',
+            'mode' => 'hidden',
+        ));
+        field('section', 'entityId', array ('title' => 'Сущность'));
+        filter('sections', 'roleIds', true);
+
+        $sectionRs = Indi::model('Section')->fetchAll();
+        $sectionRs->nested('section2action');
+        foreach ($sectionRs as $sectionR) {
+            $sectionR->roleIds = '';
+            foreach ($sectionR->nested('section2action') as $section2actionR)
+                foreach (ar($section2actionR->profileIds) as $roleId)
+                    $sectionR->push('roleIds', $roleId);
+            $sectionR->save();
+        }
+        enumset('grid', 'toggle', 'h', array('title' => 'Скрыт', 'color' => 'lightgray'));
+        action('goto', array('title' => 'Перейти', 'type' => 's'));
         die('ok');
     }
 }

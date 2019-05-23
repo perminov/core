@@ -93,6 +93,7 @@ class Indi {
         'vk' => '~^https://vk.com/([a-zA-Z0-9_\.]{3,})~',
         'coords' => '/^([0-9]{1,3}+\.[0-9]{1,12})\s*,\s*([0-9]{1,3}+\.[0-9]{1,12}+)$/',
         'timespan' => '/^[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}$/',
+        'ipv4' => '~^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$~',
         'json' => '/
           (?(DEFINE)
              (?<number>   -? (?= [1-9]|0(?!\d) ) \d+ (\.\d+)? ([eE] [+-]? \d+)? )
@@ -1130,7 +1131,29 @@ class Indi {
                     }
 
                 // Echo that file contents
-                } else readfile($file);
+                } else if ($ext == 'css') {
+                
+                    // Get file contents
+                    $txt = file_get_contents($file);
+                    
+                    // Get dir, relative to document root
+                    $dir = pathinfo(preg_replace('~^/(www|coref|core)~', '', $mirrorA[$i]), PATHINFO_DIRNAME);
+                    
+                    // Convert relative paths, mentioned in css files to paths, relative to web root
+                    $txt = preg_replace('!url\((\'|"|)/!', 'url($1' . STD . '/', $txt);
+                    $txt = preg_replace('!url\((\'|"|)(\.\./)!', 'url($1' . STD . $dir .  '/$2', $txt);
+
+                    // Remove comments from css
+                    $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
+
+                    // Remove tabs, excessive spaces and newlines
+                    $txt = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   '), '', $txt);
+                    
+                    // Flush
+                    echo $txt;
+                    
+                // Flush file contents into output buffer
+                } else readfile($file); 
 
                 // Echo ';' if we deal with javascript files. Also flush double newline
                 echo ($ext == 'js' ? ';' : '') . "\n\n";
@@ -1142,20 +1165,8 @@ class Indi {
             // Get output
             $txt = ob_get_clean();
 
-            // If we currently deal with 'css' files
-            if ($ext == 'css') {
-
-                // Convert relative paths, mentioned in css files to paths, relative to web root
-                $txt = preg_replace('!url\((\'|)/!', 'url($1' . STD . '/', $txt);
-                $txt = preg_replace('!url\((\'|"|)\.\./\.\./resources!', 'url($1' . STD . '/library/extjs4/resources', $txt);
-
-                // Remove comments from css
-                $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
-
-                // Remove tabs, excessive spaces and newlines
-                $txt = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '   '), '', $txt);
-
-            } else if ($ext == 'js') {
+            // If we currently deal with 'js' files
+            if ($ext == 'js') {
 
                 // Remove comments, return-carets, tabs and pseudo tabs (4 spaces) from js
                 $txt = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $txt);
@@ -1164,11 +1175,11 @@ class Indi {
             }
 
             // Compress compilation
-            $txt = gzencode($txt, 9);
+            if ($alias != 'ie') $txt = gzencode($txt, 9);
 
             // Build the filename
             $gz = DOC . STD . '/core' . (Indi::uri()->module == 'front' ? 'f' : '')
-                . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . '.gz.' . $ext;
+                . $rel . '/' . Indi::uri()->module . '/indi.all' . ($alias ? '.' . $alias : '') . rif($alias != 'ie', '.gz') .'.' . $ext;
 
             // Refresh compilation file
             $fp = fopen($gz , 'w');
@@ -2116,7 +2127,7 @@ class Indi {
     public static function lwget($url) {
 
         // If hostname is not specified within $url, prepend $url with self hostname and PRE constant
-        $url = 'http://' . $_SERVER['HTTP_HOST'] . PRE . $url;
+        $url = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . PRE . $url;
 
         // Get request headers, and declare $hrdS variable for collecting stringified headers list
         $hdrA = apache_request_headers(); $hdrS = '';
@@ -2129,6 +2140,9 @@ class Indi {
 
         // Prepare context options
         $opt = array('http'=> array('method'=> 'GET', 'header'=> $hdrS));
+        
+        // Append ssl settings
+        if ($_SERVER['REQUEST_SCHEME'] == 'https') $opt['ssl'] = array('verify_peer' => false, 'verify_peer_name' => false);
 
         // Create context, for passing as a third argument within file_get_contents() call
         $ctx = stream_context_create($opt);
@@ -2507,7 +2521,7 @@ class Indi {
      * Prevent user from doing something when demo-mode is turned On
      */
     public static function demo($flush = true) {
-        if (Indi::ini('general')->demo && Indi::admin()->profileId != 1)
+        if ((Indi::ini('general')->demo && Indi::admin()->profileId != 1) || Indi::admin()->demo == 'y')
             return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
 

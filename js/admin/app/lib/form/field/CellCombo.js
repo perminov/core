@@ -4,10 +4,7 @@
 Ext.define('Indi.lib.form.field.CellCombo', {
 
     // @inheritdoc
-    extend: 'Indi.form.SiblingCombo',
-
-    // @inheritdoc
-    alternateClassName: 'Indi.form.CellCombo',
+    extend: 'Indi.lib.form.field.SiblingCombo',
 
     // @inheritdoc
     alias: 'widget.combo.cell',
@@ -33,7 +30,7 @@ Ext.define('Indi.lib.form.field.CellCombo', {
     /**
      * Empty prop
      */
-    subTplData: {satellite: null, attrs: null, pageUpDisabled: "true", selected: {title: null, value: 0}},
+    subTplData: {attrs: null, pageUpDisabled: "true", selected: {title: null, value: 0}},
 
     // @inheritdoc
     fitWidth: function() {

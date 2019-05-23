@@ -42,7 +42,6 @@ Ext.define('Indi.controller.config', {
                         fieldI = {
                             alias: t + 'Value_' + autoItemXA[i],
                             title: itemA[at].fieldLabel,
-                            satellite: '0',
                             _foreign: {
                                 elementId: {alias: autoItemXA[i]}
                             }
@@ -85,7 +84,7 @@ Ext.define('Indi.controller.config', {
                 return {
                     considerOn: considerOn,
                     listeners: {
-                        enablebysatellite: function(c, d) {
+                        considerchange: function(c, d) {
                             c.setVisible(d.elementId && c.sbl('elementId').prop('alias') == control);
                             if (kind == 'current' && !me.ti().row.id) c.setValue(d['defaultValue_' + control]);
                         }
@@ -107,7 +106,7 @@ Ext.define('Indi.controller.config', {
                     required: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.val(d.elementId ? c.sbl('defaultValue_' + c.sbl('elementId').prop('alias')).getSubmitValue() + '' : '');
                     }
                 }
@@ -127,7 +126,7 @@ Ext.define('Indi.controller.config', {
                     required: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.val(d.elementId ? c.sbl('currentValue_' + c.sbl('elementId').prop('alias')).getSubmitValue() + '' : '');
                     }
                 }
@@ -155,7 +154,7 @@ Ext.define('Indi.controller.config', {
                     name: 'elementId'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.elementId);
                     }
                 }
@@ -167,7 +166,7 @@ Ext.define('Indi.controller.config', {
                     name: 'currentValue'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.elementId);
                     }
                 }
@@ -179,7 +178,7 @@ Ext.define('Indi.controller.config', {
                     name: 'expiryType'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.elementId && d.expiryType == 'temporary');
                         if (d.expiryType == 'temporary') c.val(new Date()); else c.reset();
                     }
@@ -190,7 +189,7 @@ Ext.define('Indi.controller.config', {
                     name: 'elementId'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.elementId);
                     }
                 }
@@ -204,7 +203,7 @@ Ext.define('Indi.controller.config', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         if (!d.elementId) c.hide(); else c.setVisible(d.expiryType == 'temporary');
                     }
                 }
@@ -216,7 +215,7 @@ Ext.define('Indi.controller.config', {
                     name: 'expiryType'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         if (!d.elementId) c.hide(); else c.setVisible(d.expiryType == 'temporary');
                     }
                 }

@@ -42,6 +42,12 @@ Ext.define('Ext.calendar.dd.DropZone', {
             var msg = Ext.util.Format.format(data.type == 'eventdrag' ? this.moveText: this.createText, range);
             data.proxy.updateMsg(msg);
         }
+
+        // Highlight disabled day
+        if (data.type == 'eventdrag')
+            if (Ext.Date.format(end, 'Ymd') in this.view.disabledDates)
+                return false;
+
         return this.dropAllowed;
     },
 
@@ -140,11 +146,13 @@ Ext.define('Ext.calendar.dd.DropZone', {
     onCalendarDragComplete: function() {
         delete this.dragStartDate;
         delete this.dragEndDate;
+        this.view.setDisabledValues();
         this.clearShims();
     },
 
     onNodeDrop: function(n, dd, e, data) {
-        if (n && data) {
+
+        if (n && data && !(Ext.Date.format(n.date, 'Ymd') in this.view.disabledDates)) {
             if (data.type == 'eventdrag') {
                 var rec = this.view.getEventRecordFromEl(data.ddel),
                 dt = Ext.calendar.util.Date.copyTime(rec.data[Ext.calendar.data.EventMappings.StartDate.name], n.date);

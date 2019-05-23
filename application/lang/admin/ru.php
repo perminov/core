@@ -10,15 +10,15 @@ define('I_LOGIN_BOX_REMEMBER', 'Запомнить');
 define('I_LOGIN_BOX_ENTER', 'Вход');
 define('I_LOGIN_BOX_RESET', 'Сброс');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');
-define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Укажите имя пользователя');
-define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Укажите пароль');
+define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Имя пользователя не указано');
+define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Пароль не указан');
 define('I_LOGIN_BOX_LANGUAGE', 'Язык');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Нет такого аккаунта');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Вы ввели неправильный пароль');
-define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Ваш аккаунт отключен');
-define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Тип вашего аккаунта отключен');
-define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'В системе пока нет ни одного доступного для вас раздела');
+define('I_LOGIN_ERROR_ACCOUNT_IS_OFF', 'Данный аккаунт отключен');
+define('I_LOGIN_ERROR_PROFILE_IS_OFF', 'Тип данного аккаунта отключен');
+define('I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS', 'В системе пока нет ни одного раздела, доступного этой для учетной записи');
 
 define('I_THROW_OUT_ACCOUNT_DELETED', 'Ваш аккаунт только что был удален');
 define('I_THROW_OUT_PASSWORD_CHANGED', 'Ваш пароль только что был изменен');
@@ -109,7 +109,7 @@ define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_SELF', 'Текущая запи
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_404', 'Запись с идентификатором "%s", указанным в поле "%s", - не существует, и поэтому не может быть выбрана в качестве родительской');
 define('I_ROWSAVE_ERROR_VALUE_TREECOLUMN_INVALID_CHILD', 'Запись "%s", указанная в поле "%s", является дочерней/подчиненной по отношению к текущей записи "%s", и поэтому не может быть выбрана в качестве родительской');
 define('I_ROWSAVE_ERROR_MFLUSH_MSG1', 'При выполнении вашего запроса, одна из автоматически производимых операций, в частности над записью типа "');
-define('I_ROWSAVE_ERROR_MFLUSH_MSG2', 'выдала следующие ошибки');
+define('I_ROWSAVE_ERROR_MFLUSH_MSG2', ' - выдала следующие ошибки');
 
 define('I_ADMIN_ROWSAVE_LOGIN_REQUIRED', 'Поле "%s" обязательно для заполнения');
 define('I_ADMIN_ROWSAVE_LOGIN_OCCUPIED', 'Значение "%s" указанное в поле "%s" уже задействовано в качестве имени пользователя в другой учетной записи');
@@ -161,7 +161,7 @@ define('I_FORM_DATETIME_MINUTES', 'минут');
 define('I_FORM_DATETIME_SECONDS', 'секунд');
 define('I_COMBO_OF', 'из');
 define('I_COMBO_MISMATCH_MAXSELECTED', 'Максимальное количество выбранных опций -');
-define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Это значение недоступно для выбора');
+define('I_COMBO_MISMATCH_DISABLED_VALUE', 'Значение "%s" недоступно для выбора в поле "%s"');
 define('I_COMBO_KEYWORD_NO_RESULTS', 'Ничего не найдено');
 define('I_COMBO_ODATA_FIELD404', 'Поле "%s" не является ни реальным полем, ни псевдо-полем');
 define('I_COMBO_GROUPBY_NOGROUP', 'Принадлежность не указана');
@@ -213,11 +213,13 @@ define('I_MCHECK_REQ', 'Поле "%s" - обязательно для запол
 define('I_MCHECK_REG', 'Значение "%s" поля "%s" - имеет неправильный формат');
 define('I_MCHECK_KEY', 'Объект типа "%s" с идентификатором "%s" - не найден');
 define('I_MCHECK_EQL', 'Неверное значение');
+define('I_MCHECK_DIS', 'Значение "%s" поля "%s" - в списке недоступных значений');
 define('I_MCHECK_UNQ', 'Значение "%s" поля "%s" - должно быть уникальным');
 define('I_JCHECK_REQ', 'Параметр "%s" - является обязательным');
 define('I_JCHECK_REG', 'Значение "%s" параметра "%s" - имеет неправильный формат');
 define('I_JCHECK_KEY', 'Объект типа "%s" с идентификатором "%s" - не найден');
 define('I_JCHECK_EQL', 'Неверное значение');
+define('I_JCHECK_DIS', 'Значение "%s" параметра "%s" - в списке недоступных значений');
 
 define('I_PRIVATE_DATA', '*данные скрыты*');
 

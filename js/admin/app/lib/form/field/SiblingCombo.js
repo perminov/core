@@ -4,10 +4,7 @@
 Ext.define('Indi.lib.form.field.SiblingCombo', {
 
     // @inheritdoc
-    extend: 'Indi.form.Combo',
-
-    // @inheritdoc
-    alternateClassName: 'Indi.form.SiblingCombo',
+    extend: 'Indi.lib.form.field.Combo',
 
     // @inheritdoc
     alias: 'widget.combo.sibling',

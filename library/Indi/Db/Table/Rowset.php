@@ -462,6 +462,27 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     }
 
     /**
+     * Remove $count items from the ending of rowset
+     *
+     * @param int $count
+     */
+    public function pop($count = 1) {
+
+        // Remove rows
+        for ($i = 0; $i < $count; $i++) {
+
+            // Remove item from $this->_rows array
+            array_pop($this->_rows);
+
+            // Decrement $this->_count prop
+            $this->_count --;
+
+            // Force $this->_pointer to be not out from the bounds of current rowset
+            if ($this->_pointer > $this->_count) $this->_pointer = $this->_count;
+        }
+    }
+
+    /**
      * Empty rowset
      *
      * @return Indi_Db_Table_Rowset
@@ -985,26 +1006,30 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         : $this;
 
             // If field do not store foreign keys - throw exception
-            if ($fieldR->storeRelationAbility == 'none' || ($fieldR->relation == 0 && $fieldR->dependency != 'e'))
+            if ($fieldR->storeRelationAbility == 'none'
+                || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
                 throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
 
             // Declare array for distinct values of foreign keys
             $distinctA = array();
 
             // If field dependency is 'Variable entity'
-            if ($fieldR->dependency == 'e')
+            if ($fieldR->relation == 0 && $fieldR->nested('consider')->count()) {
+
+                // Get consider-field, e.g. field, that current field depends on
+                $consider = $fieldR->nested('consider')->at(0)->foreign('consider')->alias;
 
                 // Foreach row within current rowset
                 foreach ($this as $r) {
 
                     // Get the id of entity, that current foreign key is related to
-                    $entityId = $r->{$fieldR->foreign('satellite')->alias};
+                    $entityId = $r->$consider;
 
                     // Collect foreign key values, grouped by entity id
                     $distinctA[$entityId] = array_merge(
 
                         // If there are already items exist within group, representing keys that are related
-                        // to certain entity id (entity id is a satellite as per 'Variable entity' concept),
+                        // to certain entity id (entity id is a consider as per 'Variable entity' concept),
                         // - we use this group as array which will be a first array in list of merged arrays
                         is_array($distinctA[$entityId]) ? $distinctA[$entityId] : array(),
 
@@ -1022,7 +1047,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Else if foreign field dependency is not 'Variable entity', that mean that we deal with single entity
             // - entity, that current foreign key is related to
-            else
+            } else
 
                 // Foreach row within current rowset
                 foreach ($this as $r)
@@ -1050,7 +1075,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // their entity ids, so values in $distinctA array will now be truly distinct
             foreach ($distinctA as $entityId => $keys) $distinctA[$entityId] = array_unique($distinctA[$entityId]);
 
-            // Check whether or not current field has a column within databasу table
+            // Check whether or not current field has a column within database table
             $imitated = !array_key_exists($fieldR->alias, $this->at(0)->original());
 
             // For each $entityId => $key pair within $distinctA array we fetch rowsets, that contain all rows that
@@ -1089,14 +1114,28 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         $col = 'id';
                     }
 
-                    // Finish building WHERE clause
-                    $where[] = count($distinctA[$entityId])
-                        ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
-                        : 'FALSE';
+                    // If foreign model's `preload` flag was turned On
+                    if (Indi::model($entityId)->preload()) {
 
-                    // Fetch foreign data
-                    $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
+                        // Use preloaded data as foreign data rather than
+                        // obtaining foreign data by separate sql-query
+                        $foreignRs[$entityId] = Indi::model($entityId)->preloadedAll($distinctA[$entityId]);
+
+                    // Else fetch foreign from db
+                    } else {
+
+                        // Finish building WHERE clause
+                        $where[] = count($distinctA[$entityId])
+                            ? '`' . $col . '` IN (' . $q . implode($q . ',' . $q, $distinctA[$entityId]) . $q . ')'
+                            : 'FALSE';
+
+                        // Fetch foreign data
+                        $foreignRs[$entityId] = Indi::model($entityId)->fetchAll($where);
+                    }
                 }
+
+                // Adjust foreign rowset
+                $this->_adjustForeignRowset($key, $foreignRs[$entityId]);
 
                 // Call a user-defined method for foreign data rowset, if need
                 if ($call) eval('$foreignRs[$entityId]->' . $call . ';');
@@ -1144,9 +1183,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // Get the id of entity, that current row's foreign key is related to. If foreign key field
                 // dependency is 'Variable entity' - entity id is dynamic, that mean is may differ for each row
-                $foreignKeyEntityId = $fieldR->dependency == 'e'
-                    ? $r->{$fieldR->foreign('satellite')->alias}
-                    : $fieldR->relation;
+                $foreignKeyEntityId = $fieldR->relation ?: $r->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
 
                 // Get the column name, which value will be used for match
                 $col = $foreignKeyEntityId == 6 ? 'alias' : 'id';
@@ -1386,17 +1423,26 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
     /**
      * Append row to current rowset, using $original argument as the base data for
-     * construction of a row, that will be appended
+     * construction of a row, that will be appended to the end, or injected at desired index
      * 
-     * @param array $original
+     * @param array|Indi_Db_Table_Row $original
+     * @param int $index
      * @return Indi_Db_Table_Rowset
      */
-    public function append($original) {
-        
-        // Append
-        $this->_rows[] = $original instanceof Indi_Db_Table_Row
+    public function append($original, $index = null) {
+
+        // Prepare data
+        $append = $original instanceof Indi_Db_Table_Row
             ? $original
             : new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
+
+        // If $before arg is not given - append to th ending
+        if ($index === null) $this->_rows[] = $append;
+
+        // Else inject at desired index
+        else array_splice($this->_rows, $index, 0, array($append));
+
+        // Increase counters
         $this->_count++;
         $this->_found++;
         
@@ -1489,5 +1535,16 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function sum($prop) {
         return array_sum($this->column($prop));
+    }
+
+    /**
+     * Adjust rowset, fetched to be used as foreign data
+     *
+     * @see Consider_Rowset for usage example
+     * @param $key
+     * @param $rowset
+     */
+    public function _adjustForeignRowset($key, &$rowset) {
+
     }
 }

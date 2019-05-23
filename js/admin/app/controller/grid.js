@@ -1,5 +1,5 @@
 Ext.define('Indi.controller.grid', {
-    extend: 'Indi.Controller',
+    extend: 'Indi.lib.controller.Controller',
     actionsConfig: {
         index: {
             rowset: {multiSelect: true},
@@ -9,29 +9,40 @@ Ext.define('Indi.controller.grid', {
         },
         form: {
             formItem$Alias: {
-                allowBlank: true,
                 considerOn: [{
                     name: 'fieldId'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(!d.fieldId);
                     }
                 }
             },
             formItem$ProfileIds: {
-                allowBlank: true,
                 considerOn: [{
                     name: 'access'
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.access != 'all');
                     }
                 }
             },
+            formItem$GridId: {
+                jump: '/grid/form/id/{id}/'
+            },
             formItem$FieldId: {
                 jump: '/fields/form/id/{id}/'
+            },
+            formItem$SummaryText: {
+                considerOn: [{
+                    name: 'summaryType'
+                }],
+                listeners: {
+                    considerchange: function(c, d) {
+                        c.setVisible(d.summaryType == 'text');
+                    }
+                }
             }
         }
     }

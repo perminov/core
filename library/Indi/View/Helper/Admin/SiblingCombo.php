@@ -42,8 +42,6 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->columnTypeId = 3;
         //$pseudoFieldR->defaultValue = Indi::trail()->row->id;
         $pseudoFieldR->relation = Indi::trail()->section->entityId;
-        $pseudoFieldR->dependency = 'u';
-        $pseudoFieldR->satellite = 0;
         $pseudoFieldR->filter = Indi::trail()->scope->WHERE;
         $pseudoFieldR->ignoreAlternate = true;
 
@@ -59,8 +57,6 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
         $pseudoFieldR->columnTypeId = 3;
         //$pseudoFieldR->defaultValue = Indi::trail()->row->id;
         $pseudoFieldR->relation = $entityId;
-        $pseudoFieldR->dependency = 'u';
-        $pseudoFieldR->satellite = 0;
         $pseudoFieldR->filter = $filter;
         return $pseudoFieldR;
     }
@@ -72,7 +68,6 @@ class Indi_View_Helper_Admin_SiblingCombo extends Indi_View_Helper_Admin_FormCom
     public function extjs($options) {
         $this->getRow()->view($this->field->alias, array(
             'subTplData' => array(
-                'satellite' => $this->satellite->alias,
                 'attrs' => $this->attrs,
                 'pageUpDisabled' => $this->getRow()->id ? 'false' : 'true',
                 'selected' => self::detectColor($this->selected)

@@ -8,7 +8,7 @@ Ext.define('Indi.controller.notices', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.tplFor == 'inc');
                     }
                 }
@@ -19,7 +19,7 @@ Ext.define('Indi.controller.notices', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.tplFor == 'inc');
                     }
                 }
@@ -30,7 +30,7 @@ Ext.define('Indi.controller.notices', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.tplFor == 'dec');
                     }
                 }
@@ -41,7 +41,7 @@ Ext.define('Indi.controller.notices', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.tplFor == 'dec');
                     }
                 }
@@ -52,7 +52,7 @@ Ext.define('Indi.controller.notices', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.tplFor == 'evt');
                     }
                 }
@@ -63,7 +63,7 @@ Ext.define('Indi.controller.notices', {
                     clear: false
                 }],
                 listeners: {
-                    enablebysatellite: function(c, d) {
+                    considerchange: function(c, d) {
                         c.setVisible(d.tplFor == 'evt');
                     }
                 }

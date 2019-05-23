@@ -170,7 +170,7 @@ class Indi_Schedule {
     public function __construct($since = 'month', $until = null, $gap = false) {
 
         // If $since arg is either 'week' or 'month'
-        if (in($since, 'week,month')) extract($this->bounds($since, $until));
+        if (in($since, 'day,week,month')) extract($this->bounds($since, $until));
 
         // Set `_since`
         $this->_since = is_numeric($since) ? $since : strtotime($since);
@@ -425,14 +425,15 @@ class Indi_Schedule {
         // Config for different wrap kinds
         $wrapCfg = array(
             'month' => array('format' => 'Y-m-01', 'days' => 7 * 6),
-            'week'  => array('format' => 'Y-m-d',  'days' => 7 * 1)
+            'week'  => array('format' => 'Y-m-d',  'days' => 7 * 1),
+            'day'   => array('format' => 'Y-m-d',  'days' => 1)
         );
 
         // Get unix-timestamp
         $ts = strtotime(date($wrapCfg[$wrap]['format'], is_numeric($date) ? $date : strtotime($date)));
 
         // Get date, that is a monday in the same week as $ts
-        $since = date('Y-m-d', $ts - (date('N', $ts) - 1) * $this->_shift['system']);
+        $since = date('Y-m-d', $ts - ($wrap == 'day' ? 0 : date('N', $ts) - 1) * $this->_shift['system']);
 
         // Get bottom right date of pseudo-calendar
         $until = date('Y-m-d', strtotime($since . '+' . $wrapCfg[$wrap]['days'] . ' days'));
@@ -1000,9 +1001,11 @@ class Indi_Schedule {
      * and collect indexes of entries having those values
      *
      * @param $prop
+     * @param $self
+     * @param $strict
      * @return array
      */
-    public function distinct($prop = null) {
+    public function distinct($prop = null, Indi_Db_Table_Row $self = null, $strict = false) {
 
         // If no args given - return $this->_distinct as is
         if (!func_num_args() || (!is_string($prop) && !is_array($prop))) return $this->_distinct;
@@ -1013,12 +1016,42 @@ class Indi_Schedule {
         // Foreach prop that we need to collect distinct values for
         foreach ($prop as $propI => $ruleA) {
 
+            // If self event's system 'purpose' param is 'drag', it means that user is
+            // started dragging event from original date to some another date, so we need
+            // to highlight disabled dates within calendar UI, that, in it's turn, means
+            // that we do not need to detect disabled dates for ALL possible space owners,
+            // but only for space owners, mentioned within dragged event's props
+            if ($self->system('purpose') == 'drag') $_self[$propI] = array_flip(ar($self->$propI));
+
             // Foreach entry within preloaded rowset - collect distinct values
             foreach ($this->_rs as $idx => $r) if ($r->$propI)
-                foreach (ar($r->$propI) as $v) $this->_distinct[$propI][$v]['idxA'][] = $idx;
+                foreach (ar($r->$propI) as $v)
+                    if ($self->system('purpose') != 'drag' || isset($_self[$propI][$v]))
+                        $this->_distinct[$propI][$v]['idxA'][] = $idx;
 
             // If hours-rule no set - skip, else
             if (!$ruleA['hours']) continue; else $spaceOwnerProp = $propI;
+
+            // Also, consider values of event entry's prop
+            if ($self->$propI)
+                foreach (ar($self->$propI) as $v)
+                    if (!$this->_distinct[$propI][$v])
+                        $this->_distinct[$propI][$v]['idxA'] = array();
+
+            // If $strict arg is false, this means that current distinct() call was NOT made within $self->validate() call,
+            // and this, in it's turn, means that we're in the process of detecting disabled values for space fields, so
+            // we need to find disabled values among ALL POSSIBLE values (rather than only values used by existing events):
+            // 1 .Initially, the process of detection of disabled values was based only on those values actual usage, so, for
+            // example, some teacher is unavailable at some date and time because he has a classroom scheduled at that exact
+            // date and time.
+            // 2. But the real life shows that existing classroom, scheduled at certain date/time - is not the only reason
+            // of why teacher can be unavailable at that date/time. The second possible reason is that teacher's own settings,
+            // that he had set up, and those settings assume that teacher is available only at, for example 11:00 at Mondays,
+            // and 18:00 at Wednesdays
+            if (!$strict && $self->system('purpose') != 'drag')
+                foreach ($self->getComboData($propI)->column('id') as $v)
+                    if (!$this->_distinct[$propI][$v])
+                        $this->_distinct[$propI][$v]['idxA'] = array();
 
             // If no distinct values collected - skip
             if (!$vA = array_keys($this->_distinct[$spaceOwnerProp] ?: array())) continue;
@@ -1026,8 +1059,12 @@ class Indi_Schedule {
             // Get model, that space owner prop relates to
             $spaceOwnerModelId = $this->_rs->model()->fields($spaceOwnerProp)->relation;
 
+            // Shortcut for space owner model
+            $m = Indi::model($spaceOwnerModelId);
+
             // Collect space owner distict entries and inject them into $this->_distinct array
-            foreach (Indi::model($spaceOwnerModelId)->fetchAll('`id` IN (' . im($vA) . ')') as $spaceOwnerEntry)
+            $rs = $m->preload() ? $m->preloadedAll($vA) : $m->fetchAll('`id` IN (' . im($vA) . ')');
+            foreach ($rs as $spaceOwnerEntry)
                 $this->_distinct[$spaceOwnerProp][$spaceOwnerEntry->id]['entry'] = $spaceOwnerEntry;
         }
     }
@@ -1087,7 +1124,7 @@ class Indi_Schedule {
 
         // If self::$_timeIdA is null - fetch key-value pairs
         if (self::$_timeIdA === null) self::$_timeIdA = Indi::db()->query('
-            SELECT `title`, `id` FROM `time` ORDER BY `title`
+            SELECT `title`, `id` FROM `time` WHERE `title` REGEXP ":(00|15|30|45)$" ORDER BY `title`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If self::$_timeHiA is null - setup it by flipping self::$_timeIdA
@@ -1107,7 +1144,7 @@ class Indi_Schedule {
 
         // If self::$_timeHiA is null - fetch key-value pairs
         if (self::$_timeHiA === null) self::$_timeHiA = Indi::db()->query('
-            SELECT `id`, `title` FROM `time` ORDER BY `title`
+            SELECT `id`, `title` FROM `time` WHERE `title` REGEXP ":(00|15|30|45)$" ORDER BY `title`
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // If self::$_timeIdA is null - setup it by flipping self::$_timeHiA

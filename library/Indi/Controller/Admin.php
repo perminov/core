@@ -24,6 +24,14 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected $_isNestedSeparate = false;
 
     /**
+     * Rowset, containing Indi_Db_Table_Row instances according to current selection.
+     * Those instances are collected by `ids`, given by Indi::uri()->id and Indi::post()->others
+     *
+     * @var Indi_Db_Table_Rowset|array
+     */
+    public $selected = array();
+
+    /**
      * Array of section ids, starting from current section and up to the top.
      *
      * @var array
@@ -199,24 +207,39 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Else if where is some another action
             } else {
 
-                // If 'others' param exists in $_POST, and it's not empty
-                // Unset unallowed values
-                if ($otherIdA = ar(Indi::post()->others))
-                    foreach ($otherIdA as $i => $otherIdI)
-                        if (!(int) $otherIdI) unset($otherIdA[$i]);
-                $selectedIdA = $otherIdA ?: array();
-                if ((int) Indi::uri('id')) $selectedIdA[] = (int) Indi::uri('id');
+                // Array of selected entries initially contain only $this->row->id
+                if ($this->row->id) $idA[] = $this->row->id; else $idA = array();
 
-                // Apply some scope params
-                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix, 'lastIds' => $selectedIdA);
+                // If 'others' param exists in $_POST, and it's not empty
+                if ($otherIdA = ar(Indi::post()->others)) {
+
+                    // Unset invalid values
+                    foreach ($otherIdA as $i => $otherIdI) if (!(int) $otherIdI) unset($otherIdA[$i]);
+
+                    // If $otherIdA array is still not empty append it's item into $idA array
+                    if ($otherIdA) $idA = array_merge($idA, $otherIdA);
+                }
+
+                // Fetch selected rows
+                $this->selected = $idA
+                    ? Indi::trail()->model->fetchAll(array('`id` IN (' . im($idA) . ')', Indi::trail()->scope->WHERE), t()->scope->ORDER)
+                    : Indi::trail()->model->createRowset();
+
+                // Prepare scope params
+                $applyA = array('hash' => Indi::uri()->ph, 'aix' => Indi::uri()->aix, 'lastIds' => $this->selected->column('id'));
+
+                // Append 'toggledSave' scope-param
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
+
+                // Apply prepared scope params
                 Indi::trail()->scope->apply($applyA);
 
                 // If we are here for just check of row availability, do it
                 if (Indi::uri()->check) jflush(true, $this->checkRowIsInScope());
 
-                // Set last accessed row
-                $this->setScopeRow();
+                // Set last accessed rows
+                $this->setScopeRow(false, null, $this->selected->column('id'));
+
             }
         }
     }
@@ -462,11 +485,14 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If current admin is not alternate - return
         if (!Indi::admin()->alternate) return;
 
+        // Get alternate-connector
+        $af = Indi::admin()->alternate(Indi::trail($trailStepsUp)->model->table());
+
         // If one of model's fields relates to alternate
-        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields(Indi::admin()->alternate . 'Id'))
-            return $alternateFieldR->storeRelationAbility == 'many'
-                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . Indi::admin()->alternate . 'Id' . '`)'
-                : '`' . Indi::admin()->alternate . 'Id' . '` = "' . Indi::admin()->id . '"';
+        if ($alternateFieldR = Indi::trail($trailStepsUp)->model->fields($af))
+            return $alternateFieldR->original('storeRelationAbility') == 'many'
+                ? 'FIND_IN_SET("' . Indi::admin()->id . '", `' . $af . '`)'
+                : '`' . $af . '` = "' . Indi::admin()->id . '"';
 
         // Else if model itself is the same as alternate
         else if (Indi::trail($trailStepsUp)->model->table() == Indi::admin()->alternate)
@@ -1346,9 +1372,34 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Prepend href with protocol and hostname
                     $a[1] = $protocol . $server . $a[1];
 
-                    // Set cell value as hyperlink
-                    $objPHPExcel->getActiveSheet()->getCell($columnL . $currentRowIndex)->getHyperlink()->setUrl($a[1]);
-                    $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getFont()->setUnderline(true);
+                    // Filter
+                    $url = array_shift(explode(' ', trim($a[1])));
+
+                    // Try detect an image
+                    if (preg_match('/<img src="([^"]+)"/', $value, $src) && $abs = Indi::abs($src[1])) {
+
+                        // Setup additional x-offset for color-box, for it to be centered within the cell
+                        $additionalOffsetX = ceil(($columnI['width']-16)/2);
+
+                        //  Add the image to a worksheet
+                        $objDrawing = new PHPExcel_Worksheet_Drawing();
+                        $objDrawing->setPath($abs);
+                        $objDrawing->setCoordinates($columnL . $currentRowIndex);
+                        $objDrawing->setOffsetY(3)->setOffsetX($additionalOffsetX);
+                        $objDrawing->setHyperlink(new PHPExcel_Cell_Hyperlink($url));
+                        $objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+                        // Replace .i-color-box item from value, and prepend it with 6 spaces to provide an indent,
+                        // because gd image will override cell value otherwise
+                        $value = str_pad('', 6, ' ');
+
+                    // Else
+                    } else {
+
+                        // Set cell value as hyperlink
+                        $objPHPExcel->getActiveSheet()->getCell($columnL . $currentRowIndex)->getHyperlink()->setUrl($url);
+                        $objPHPExcel->getActiveSheet()->getStyle($columnL . $currentRowIndex)->getFont()->setUnderline(true);
+                    }
                 }
 
                 // Strip html content from $value
@@ -1655,6 +1706,16 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected function _findSigninUserData($username, $password, $place = 'admin', $profileId = null,
                                            $level1ToggledSectionIdA = array()) {
 
+        // If $username arg is an instance of Indi_Db_Table_Row class, this means that
+        // there are some user already logged in, but wants to switch to another account
+        if ($username instanceof Indi_Db_Table_Row) {
+
+            // Pick username and password
+            $switchTo = $username;
+            $username = $switchTo->email;
+            $password = $switchTo->password;
+        }
+
         $profileId = Indi::model($place)->fields('profileId') ? '`a`.`profileId`' : '"' . $profileId . '"';
         $adminToggle = Indi::model($place)->fields('toggle') ? '`a`.`toggle` = "y"' : '1';
         return Indi::db()->query('
@@ -1691,7 +1752,7 @@ class Indi_Controller_Admin extends Indi_Controller {
      * @param $password
      * @return array|mixed|string
      */
-    private function _authLevel1($username, $password) {
+    private function _authLevel1($username, $password = null) {
 
         // Get array of most top toggled 'On' sections ids
         $level0ToggledOnSectionIdA = Indi::db()->query('
@@ -1750,7 +1811,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // 5. User have no accessbile sections
         else if (!$data['atLeastOneSectionAccessible']) $error = I_LOGIN_ERROR_NO_ACCESSIBLE_SECTIONS;
 
-        return $error ? $error : $data;
+        // Return error or signin-data
+        return $error ?: $data;
     }
 
     /**
@@ -2321,6 +2383,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Replace the null id with id of newly created row
                     $location = str_replace(array('/id/null/', '/id//'), '/id/' . Indi::trail()->row->id . '/', $location);
                     $location = str_replace(array('/aix/null/', '/aix//'), '/aix/' . Indi::uri()->aix . '/', $location);
+                    $location = str_replace(array('/parent/null/', '/parent//'), '/parent/' . Indi::trail()->row->id . '/', $location);
                 }
 
             // Replace the null id with id of newly created row
@@ -2328,6 +2391,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
                 $location = str_replace(array('/id/null/', '/id//'), '/id/' . Indi::trail()->row->id . '/', $location);
                 $location = str_replace(array('/aix/null/', '/aix//'), '/aix/' . Indi::uri()->aix . '/', $location);
+                $location = str_replace(array('/parent/null/', '/parent//'), '/parent/' . Indi::trail()->row->id . '/', $location);
             }
         }
 
@@ -2361,6 +2425,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
         $data = array($this->row->toGridData($this->affected4grid()));
         $this->adjustGridData($data);
+
+        // Adjust grid each data item
+        foreach ($data as &$item) $this->adjustGridDataItem($item);
 
         // Return affected data, prepared for being displayed
         return array_shift($data);
@@ -2441,15 +2508,18 @@ class Indi_Controller_Admin extends Indi_Controller {
                 ? Indi::trail()->model->fetchRow('`id` = "' . Indi::uri('id') . '"')->$connectorAlias
                 : $_SESSION['indi']['admin']['trail']['parentId'][Indi::trail(1)->section->id]);
 
+        // Connector field shortcut
+        $connectorField = t()->model->fields($connectorAlias);
+
         // Return clause
-        $return = Indi::trail()->model->fields($connectorAlias)->storeRelationAbility == 'many'
+        $return = $connectorField->storeRelationAbility == 'many'
             ? 'CONCAT(",", `' . $connectorAlias . '`, ",") REGEXP ",(' . im(ar($connectorValue), '|') . '),"'
             : '`' . $connectorAlias . '` = "' . $connectorValue . '"';
 
-        // If connector field - is a field having Variable Entity satellite dependency
-        if (t()->model->fields($connectorAlias)->dependency == 'e') {
-            $sField = t()->model->fields($connectorAlias)->foreign('satellite')->alias;
-            $prepend = '`' . $sField . '` = "' . t(1)->section->entityId . '"';
+        // If connector field - is a field having Variable Entity consider dependency
+        if ($connectorField->storeRelationAbility != 'none' && !$connectorField->relation) {
+            $eField = $connectorField->nested('consider')->at(0)->foreign('consider')->alias;
+            $prepend = '`' . $eField . '` = "' . t(1)->section->entityId . '"';
             $return = '(' . $prepend . ' AND ' . $return . ')';
         }
 
@@ -2480,10 +2550,36 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function loginAction() {
 
         // Force signin for selected user
-        if (Indi::trail()->model->table() == 'user') $_SESSION['user'] = $this->row->toArray();
+        if (Indi::trail()->model->table() == 'user')  {
 
-        // Redirect
-        $this->redirect();
+            $_SESSION['user'] = $this->row->toArray();
+
+            // Redirect
+            $this->redirect();
+        }
+
+        // Check that current model is linked to some role, and if not - flush failure
+        if (!Indi::trail()->model->hasRole())
+            jflush(false, sprintf('Model "%s" is not linked to any role', Indi::trail()->model->title()));
+
+        // If no username given
+        if (!$this->row->email) $data = I_LOGIN_ERROR_ENTER_YOUR_USERNAME;
+
+        // Else if no password given
+        else if (!$this->row->password) $data = I_LOGIN_ERROR_ENTER_YOUR_PASSWORD;
+
+        // Else try to find user's data
+        else $data = $this->_authLevel1($this->row);
+
+        // If $data is not an array, e.g some error there, output it as json with that error
+        if (!is_array($data)) jflush(false, $data);
+
+        // Else start a session for user and report that sing-in was ok
+        foreach (ar('id,title,email,password,profileId,profileTitle,alternate,mid') as $allowedI)
+            $_SESSION['admin'][$allowedI] = $data[$allowedI];
+
+        // Reload main window for new session data to be picked
+        jflush(true, array('throwOutMsg' => true));
     }
 
     /**
@@ -2504,8 +2600,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Adjust access rights
         $this->adjustAccess();
 
-        // Adjust existing row access rights
-        if (Indi::trail()->row->id) $this->adjustExistingRowAccess(Indi::trail()->row);
+        // If we're operating in single-row mode
+        if ($row = Indi::trail()->row) {
+
+            // Adjust trailing row access with no attention to whether is existing or new
+            $this->adjustTrailingRowAccess($row);
+
+            // Adjust trailing row access with attention to whether is existing or new
+            $this->{$row->id ? 'adjustExistingRowAccess' : 'adjustCreatingRowAccess'}($row);
+        }
 
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
@@ -2707,10 +2810,10 @@ class Indi_Controller_Admin extends Indi_Controller {
                     return;
 
             // Else if belonging mode is represented by 'alternate' concept, and current system user is an alternate
-            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate . 'Id')) {
+            } else if (Indi::admin()->alternate && Indi::trail()->model->fields($af = Indi::admin()->alternate(t()->model->table()))) {
 
                 // If current entry does not belongto current system user - return
-                if (Indi::admin()->id == $this->row->$af) return;
+                if (in(Indi::admin()->id, $this->row->$af)) return;
             
             // Else if there is no any kind of belonging
             } else return;
@@ -2720,6 +2823,24 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Setup special value for section's `disableAdd` prop, indicating that creation is still possible
         Indi::trail()->section->disableAdd = 2;
+    }
+
+    /**
+     * Empty function. To be overridden in child classes
+     *
+     * @param Indi_Db_Table_Row $row
+     */
+    public function adjustTrailingRowAccess(Indi_Db_Table_Row $row) {
+
+    }
+
+    /**
+     * Empty function. To be overridden in child classes
+     *
+     * @param Indi_Db_Table_Row $row
+     */
+    public function adjustCreatingRowAccess(Indi_Db_Table_Row $row) {
+
     }
 
     /**
@@ -2998,5 +3119,22 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Flush button details
         jflush($button['Result'], $button['ErrorStr'] ?: $button);
+    }
+
+    /**
+     * Show confirmation prompt
+     *
+     * @param $msg
+     */
+    public function confirm($msg) {
+
+        // Get $_GET['answer']
+        $answer = Indi::get()->answer;
+
+        // If no answer, flush confirmation prompt
+        if (!$answer) jconfirm($msg);
+
+        // If answer is 'cancel' - stop request processing
+        else if ($answer == 'cancel') jflush(false);
     }
 }

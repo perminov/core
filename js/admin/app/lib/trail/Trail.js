@@ -243,7 +243,8 @@ Ext.define('Indi.lib.trail.Trail', {
      * @param route
      */
     apply: function(scope){
-        var section = scope.route.last().section.alias, action = scope.route.last().action.alias, controller;
+        var ti = scope.route.last(), section = ti.section.alias, action = ti.action.alias,
+            controller, extend = ti.section.extendsJs;
 
         // Fulfil global fields storage
         scope.route.forEach(function(r, i, a) {
@@ -270,8 +271,11 @@ Ext.define('Indi.lib.trail.Trail', {
         // If failed
         } catch (e) {
 
+            // Get parent class
+            if (extend != 'Indi.lib.controller.Controller') Indi.app.getController(extend);
+
             // Define needed controller on-the-fly
-            Ext.define('Indi.controller.' + section, {extend: 'Indi.Controller'});
+            Ext.define('Indi.controller.' + section, {extend: extend || 'Indi.Controller'});
 
             // Instantiate it, and dispatch needed action
             Indi.app.getController(section).dispatch(scope);
