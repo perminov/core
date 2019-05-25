@@ -112,15 +112,40 @@ Ext.define('Ext.calendar.CalendarPanel', {
 
         this.viewCount = 0;
 
-        if (this.showDayView) {
+        if (this.showMonthView) {
             this.tbar.items.push({
-                id: this.id + '-tb-day',
-                text: this.dayText,
-                handler: this.onDayClick,
+                xtype: 'splitbutton',
+                id: this.id + '-tb-month',
+                text: this.monthText,
+                handler: this.onMonthClick,
                 scope: this,
-                toggleGroup: this.id + '-tb-views'
+                toggleGroup: this.id + '-tb-views',
+                menu: {
+                    bodyPadding: 0,
+                    items: {
+                        scope: this,
+                        xtype: 'monthpicker',
+                        border: 0,
+                        margin: 0,
+                        listeners: {
+                            okclick: function(c, v) {
+                                var dt, sdt = this.scope.startDate, m;
+                                if (v[0] === null) v[0] = parseInt(Ext.Date.format(sdt, 'n')) - 1;
+                                if (v[1] === null) v[1] = parseInt(Ext.Date.format(sdt, 'Y'));
+                                dt = Ext.Date.parse(v[1] + '-' + (v[0] + 1) + '-' + Ext.Date.format(sdt, 'd'), 'Y-n-d');
+                                c.scope.startDate = dt;
+                                c.scope.setActiveView(c.scope.id + '-month');
+                                c.ownerCt.hide();
+                            },
+                            cancelclick: function(c) {
+                                c.ownerCt.hide();
+                            }
+                        }
+                    }
+                }
             });
             this.viewCount++;
+            this.showMonthView = true;
         }
         if (this.showWeekView) {
             this.tbar.items.push({
@@ -132,16 +157,32 @@ Ext.define('Ext.calendar.CalendarPanel', {
             });
             this.viewCount++;
         }
-        if (this.showMonthView || this.viewCount == 0) {
+        if (this.showDayView || this.viewCount == 0) {
             this.tbar.items.push({
-                id: this.id + '-tb-month',
-                text: this.monthText,
-                handler: this.onMonthClick,
+                id: this.id + '-tb-day',
+                xtype: 'splitbutton',
+                text: this.dayText,
+                handler: this.onDayClick,
                 scope: this,
-                toggleGroup: this.id + '-tb-views'
+                toggleGroup: this.id + '-tb-views',
+                menu: {
+                    bodyPadding: 0,
+                    items: {
+                        scope: this,
+                        xtype: 'datepicker',
+                        border: 0,
+                        margin: 0,
+                        listeners: {
+                            select: function(c, d) {
+                                c.scope.startDate = d;
+                                c.scope.setActiveView(c.scope.id + '-day');
+                                c.ownerCt.hide();
+                            }
+                        }
+                    }
+                }
             });
             this.viewCount++;
-            this.showMonthView = true;
         }
         this.tbar.items.push({
             id: this.id + '-tb-next',
