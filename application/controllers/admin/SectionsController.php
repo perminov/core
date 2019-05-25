@@ -263,7 +263,7 @@ class Admin_SectionsController extends Indi_Controller_Admin_Exportable {
                 foreach (ar('section2action,grid,alteredField,search') as $nested) {
 
                     // Get tree-column, if set
-                    if ($tc = Indi::model($nested)->treeColumn()) $parent[$nested] = [0 => 0];
+                    if ($tc = Indi::model($nested)->treeColumn()) $parent[$nested] = array(0 => 0);
 
                     // Foreach nested entry
                     foreach ($r->nested($nested) as $nestedR) {
