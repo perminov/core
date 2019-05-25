@@ -540,17 +540,17 @@ Ext.define('Ext.calendar.CalendarPanel', {
 
     // private
     updateNavState: function() {
-        //if (this.showNavBar !== false) {
-            var item = this.layout.activeItem,
-                suffix = item.id.split(this.id + '-')[1],
-                btn = Ext.getCmp(this.id + '-tb-' + suffix),
-                day = Ext.getCmp(this.id + '-tb-' + 'day');
+        var item = this.layout.activeItem, dt = item.getStartDate(),
+            suffix = item.id.split(this.id + '-')[1],
+            btn = Ext.getCmp(this.id + '-tb-' + suffix),
+            day = Ext.getCmp(this.id + '-tb-day'),
+            week = Ext.getCmp(this.id + '-tb-week'),
+            month = Ext.getCmp(this.id + '-tb-month');
 
-            if (btn) {
-                btn.toggle(true);
-            }
-            if (day) day.setText(Ext.Date.format(item.getStartDate(), 'l, j M'));
-        //}
+        if (btn) btn.toggle(true);
+        if (day) day.setText(Ext.Date.format(dt, 'l, j'));
+        if (week) week.setText(this.weekText + ' #' + Ext.Date.format(dt, 'W'));
+        if (month) month.setText(Ext.Date.format(dt, 'F Y'));
     },
 
     /**

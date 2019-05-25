@@ -268,7 +268,7 @@ Ext.define('Indi.lib.controller.action.Calendar', {
                 },
                 viewchange: function(p, vw, dateInfo){
                     var m = Ext.getCmp(p.id +'-tb-month');
-                    if (dateInfo && m) m.setText(Ext.Date.format(dateInfo.activeDate, 'F'));
+                    if (dateInfo && m) m.setText(Ext.Date.format(dateInfo.activeDate, 'F Y'));
                 },
                 boxready: function(c) {
 
