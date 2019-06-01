@@ -1827,6 +1827,9 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Else if source layout is 'ru' - setup destination layout as 'en'
                 else if (src == 'ru') dst = 'en';
 
+                // Else if source layout is 'en' - setup destination layout as 'ru'
+                else if (src == 'en') dst = 'ru';
+
                 // Get converted character
                 if (dst) converted += kl[dst][kl[src].indexOf(c)];
             }
