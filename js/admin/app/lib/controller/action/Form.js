@@ -445,6 +445,12 @@ Ext.define('Indi.lib.controller.action.Form', {
                 },
                 resize: function(cmp) {
                     if (cmp.dirtyIcon) cmp.dirtyIcon.alignTo(cmp.el, 'tl', [0, 1]);
+                    var w = cmp.up('actionrow').getWindow();
+                    var diff = arguments[2] - arguments[4];
+                    if (diff && cmp.up('actionrow').heightUsage && !cmp.up('actionrow').down('[isSouth]')) {
+                        if (w.restoreSize) w.restoreSize.height += diff;
+                        if (!w.maximized) w.setHeight(w.height + diff);
+                    }
                 },
                 show: function(cmp) {
                     cmp.ownerCt.query('> *').forEach(function(sbl){

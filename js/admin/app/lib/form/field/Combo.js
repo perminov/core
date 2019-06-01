@@ -1528,6 +1528,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.hiddenEl.val(selected.join(','));
 
         if (noChange == false) me.getNative().setValue.call(me, me.hiddenEl.val());
+
+        // Refresh height
+        me.setHeight();
     },
 
     /**
@@ -2165,16 +2168,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Restore list of options
                 me.keywordErased(mode);
 
-                // Execute javascript-code, assigned to selected item
-                if (me.store.enumset) {
-                    var index = me.store['ids'].indexOf(li.attr(name));
-                    if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
-                        Indi.eval(me.store['data'][index].system.js, me);
-                    }
-                }
-
                 // Additional operations, that should be done after some option was selected
                 me.postSelect(li);
+
+                // Refresh height
+                me.setHeight();
 
             // Indicate that option can't be once more selected because it's already selected
             } else {
