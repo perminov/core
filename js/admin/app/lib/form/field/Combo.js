@@ -2267,11 +2267,18 @@ Ext.define('Indi.lib.form.field.Combo', {
         // If current combo is a form-combo, or auto-combo
         if (me.xtype.match(/^combo\.(form|auto|filter)$/)) {
 
+            // Remember value before clear (this is supported only for single-value combos)
+            if (!me.multiSelect && !me.enumset) me.beforeClearValue = parseInt(me.value);
+
             // Check whether it will be good to disable, and if so - do it
             me.setDisabled(false, true, sbl);
 
             // If still not disabled - refresh options
-            if (!me.disabled && (me.xtype != 'combo.filter' || !me.consistence)) me.remoteFetch(request);
+            if (!me.disabled && (me.xtype != 'combo.filter' || !me.consistence)) me.remoteFetch(request, function() {
+
+                // If combo is single-value, and value-before-clear is in store - apply it
+                if (!me.multiSelect && !me.enumset && ~this.store.ids.indexOf(me.beforeClearValue)) me.val(me.beforeClearValue);
+            });
 
             //
             if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');
