@@ -29,7 +29,26 @@ class Indi_Controller {
         if (Indi::uri('module') == 'front' && is_array($dsdirA = (array) Indi::ini('view')->design))
             foreach($dsdirA as $dsdirI => $domainS)
                 if (in($_SERVER['HTTP_HOST'], explode(' ', $domainS)))
-                    Indi::ini()->design = $dsdirI;
+                    Indi::ini()->design[] = $dsdirI;
+
+        // If more than 1 designs detected for current domain
+        if (count(Indi::ini()->design) > 1) {
+
+            // Views dir shortcut
+            $dir = DOC . STD . '/www/application/views/';
+
+            // Foreach design
+            foreach (Indi::ini()->design as $design) {
+
+                // Get template filename, applicable for section/action combination
+                $tpl = $dir . $design . '/' . Indi::uri('section') . '/' . Indi::uri('action') . '.php';
+
+                // If template exists - force usage of current design especially for section/action combination
+                if (file_exists($tpl) && (Indi::ini()->design = $design)) break;
+            }
+
+        // Else use first
+        } else Indi::ini()->design = Indi::ini()->design[0];
 
         // Do paths setup twice: first for module-specific paths, second for general-paths
         for ($i = 0; $i < 2; $i++) {
