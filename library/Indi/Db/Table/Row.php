@@ -4385,6 +4385,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If field is a file-upload field, we implement special logic of zeroValue detection
         if ($this->field($field)->foreign('elementId')->alias == 'upload') {
 
+            // Pick info from $_FILES
+            $this->files($field);
+
             // If file was uploaded, but it is a temporary - return false
             if (is_array($this->_files[$field])) return false;
 
