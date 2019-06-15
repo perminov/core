@@ -26,6 +26,9 @@ class Indi_Controller {
         // Get db table, that current admin user entry is stored in, if logged in
         $admin = Indi::admin() ? Indi::admin()->table() : false;
 
+        // Reset design if need, as we can arrive here twice
+        if (Indi::ini()->general->seoUri) Indi::ini()->design = [];
+
         // If module is 'front', and design-specific config was set up,
         // detect design specific dir name, that will be used to build
         // additional paths for both scripts and helpers
