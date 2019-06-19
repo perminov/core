@@ -380,15 +380,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function exclude($keys, $type = 'id', $inverse = false){
 
-        // If $keys argument is a string
-        if (is_string($keys) || is_integer($keys) || is_null($keys)) {
-
-            // Check if it contains a match expression
-            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
-
-            // If $keys argument is not an array, we convert it to it by exploding by comma
-            else if (!is_array($keys)) $keys = explode(',', $keys);
-        }
+        // Process keys
+        list($keys, $expr) = $this->_selector($keys);
 
         // Flip $keys array
         if (is_array($keys)) $keys = array_flip($keys);
@@ -649,41 +642,53 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
 
+                // Shortcuts
+                $entry = $r; $value = $r->$columnI; $further = false;
+
+                // If grid column have further-foreign field defined
+                if ($this->model()->id() != $fieldRs->field($columnI)->entityId
+                    && preg_match('~^([0-9a-zA-Z_]+)_([0-9a-zA-Z]+)$~', $columnI, $m)
+                    && ($_ = $this->model()->fields($m[1]))
+                    && $_->storeRelationAbility != 'none') {
+
+                    // Spoof entry and value
+                    $entry = $r->foreign($m[1]);
+                    $value = $entry->{$further = $m[2]};
+                }
+
                 // If field column type is regular, e.g no foreign keys, no prices, no dates, etc. - we do no changes
-                if (isset($typeA['other'][$columnI]))
-                    $data[$pointer][$columnI] = $r->$columnI;
+                if (isset($typeA['other'][$columnI])) $data[$pointer][$columnI] = $value;
 
                 // If field column type is 'decimal', we right pad column value by certain precision length
                 // so if current row's price is '30.5' - we convert it to '30.50'
                 if (isset($typeA['price'][$columnI]))
-                    $data[$pointer][$columnI] = count($parts = explode('.', $r->$columnI))
+                    $data[$pointer][$columnI] = count($parts = explode('.', $value))
                         ? $parts[0] . '.' . str_pad($parts[1], $typeA['price'][$columnI], '0', STR_PAD_RIGHT)
                         : $data[$pointer][$columnI] . str_pad('.', $typeA['price'][$columnI] + 1, '0', STR_PAD_RIGHT);
 
                 // If field column type is 'boolean', we replace actual value with localized 'Yes' or 'No' strings
-                if (isset($typeA['boolean'][$columnI]))
-                    $data[$pointer][$columnI] = $r->$columnI ? I_YES : I_NO;
+                if (isset($typeA['boolean'][$columnI])) $data[$pointer][$columnI] = $value ? I_YES : I_NO;
 
                 // If field column type is a single foreign key, we use title of related foreign row
-                if (isset($typeA['foreign']['single'][$columnI])) $data[$pointer][$columnI] = $r->foreign($columnI)
+                if (isset($typeA['foreign']['single'][$columnI])) $data[$pointer][$columnI] = $entry->foreign($further ?: $columnI)
                     ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]) ? $titleColumn : 'title'};
 
                 // If field column type is a multiple foreign key, we use comma-separated titles of related foreign rows
                 if (isset($typeA['foreign']['multiple'][$columnI]))
-                    foreach ($r->foreign($columnI) as $m)
+                    foreach ($entry->foreign($further ?: $columnI) as $m)
                         $data[$pointer][$columnI] .= $m
                             ->{is_string($titleColumn = $typeA['foreign']['multiple'][$columnI]) ? $titleColumn : 'title'} .
-                            ($r->foreign($columnI)->key() < $r->foreign($columnI)->count() - 1 ? ', ' : '');
+                            ($entry->foreign($further ?: $columnI)->key() < $entry->foreign($further ?: $columnI)->count() - 1 ? ', ' : '');
 
                 // If field column type is 'date' we adjust it's format if need. If date is '0000-00-00' we set it
                 // to empty string
                 if (isset($typeA['date'][$columnI])
                     && $typeA['date'][$columnI]['displayFormat']
-                    && preg_match(Indi::rex('date'), $r->$columnI))
+                    && preg_match(Indi::rex('date'), $value))
 
-                    $data[$pointer][$columnI] = $r->$columnI == '0000-00-00'
+                    $data[$pointer][$columnI] = $value == '0000-00-00'
                         ? ''
-                        : date($typeA['date'][$columnI]['displayFormat'], strtotime($r->$columnI));
+                        : date($typeA['date'][$columnI]['displayFormat'], strtotime($value));
 
                 // If field column type is datetime, we adjust it's format if need. If datetime is '0000-00-00 00:00:00'
                 // we set it to empty string
@@ -695,15 +700,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     if (!$typeA['datetime'][$columnI]['displayTimeFormat'])
                         $typeA['datetime'][$columnI]['displayTimeFormat'] = 'H:i:s';
 
-                    $data[$pointer][$columnI] = $r->$columnI == '0000-00-00 00:00:00'
+                    $data[$pointer][$columnI] = $value == '0000-00-00 00:00:00'
                         ? '' : ldate($typeA['datetime'][$columnI]['displayDateFormat'] . ' ' .
-                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($r->$columnI),
+                            $typeA['datetime'][$columnI]['displayTimeFormat'], strtotime($value),
                             $typeA['datetime'][$columnI]['when']);
                 }
 
                 // If field type is fileupload, we build something like
                 // '<a href="/url/for/file/download/">DOCX » 1.25mb</a>'
-                if (isset($typeA['upload'][$columnI])) $data[$pointer][$columnI] = $r->file($columnI)->link;
+                if (isset($typeA['upload'][$columnI])) $data[$pointer][$columnI] = $entry->file($columnI)->link;
 
                 // If there the color-value in format 'hue#rrgbb' can probably be found in field value
                 // we do a try, and if found - inject a '.i-color-box' element
@@ -715,7 +720,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     if (preg_match(Indi::rex('hrgb'), $data[$pointer][$columnI], $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>#'. $color[1];
-                    } else if (preg_match(Indi::rex('hrgb'), $r->$columnI, $color)) {
+                    } else if (preg_match(Indi::rex('hrgb'), $value, $color)) {
                         $data[$pointer][$columnI] = '<span class="i-color-box" style="background: #'
                             . $color[1] . ';"></span>';
                     } else if (preg_match('/box/', $data[$pointer][$columnI]) && !in($this->table(), 'enumset,changeLog')) {
@@ -730,13 +735,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 }
 
                 // If field should be shaded - prevent actual value from being assigned
-                if (isset($typeA['shade'][$columnI])) if ($r->$columnI) $data[$pointer][$columnI] = I_PRIVATE_DATA;
+                if (isset($typeA['shade'][$columnI])) if ($value) $data[$pointer][$columnI] = I_PRIVATE_DATA;
 
                 // Include the original foreign keys data
                 if (isset($typeA['foreign']['single'][$columnI])
                     || isset($typeA['foreign']['multiple'][$columnI])
                     || isset($typeA['boolean'][$columnI]))
-                    $data[$pointer]['$keys'][$columnI] = $r->$columnI;
+                    $data[$pointer]['$keys'][$columnI] = $value;
             }
 
             // Setup special 'title' property within '_system' property. This is for having proper title
@@ -1546,5 +1551,24 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function _adjustForeignRowset($key, &$rowset) {
 
+    }
+
+    /**
+     * Process keys, and extract regexp if $key arg contain regexp to be used instead of just list of keys
+     */
+    protected function _selector($keys) {
+
+        // If $keys argument is a string
+        if (is_string($keys) || is_integer($keys) || is_null($keys)) {
+
+            // Check if it contains a match expression
+            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
+
+            // If $keys argument is not an array, we convert it to it by exploding by comma
+            else if (!is_array($keys)) $keys = explode(',', $keys);
+        }
+
+        // Return
+        return [$keys, $expr];
     }
 }

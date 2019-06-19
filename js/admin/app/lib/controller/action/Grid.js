@@ -258,7 +258,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cls: tooltip ? 'i-tooltip' : undefined,
             $ctx: me,
             tdCls: tdClsA.join(' '),
-            sortable: true,
+            sortable: !!column.further,
             editor: column.editor,
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
@@ -696,7 +696,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             colI = colA[i];
 
             // Setup a shortcut for a grid field
-            field = me.ti().fields.r(colI.fieldId);
+            field = me.ti().fields.r(colI.further || colI.fieldId);
 
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {

@@ -164,4 +164,15 @@ class Grid_Row extends Indi_Db_Table_Row {
         // If summaryType is not 'text' - set `summaryText` to be empty
         if ($this->summaryType != 'text') $this->zero('summaryText', true);
     }
+
+    /**
+     * Check whether current grid column should be accessible by current user
+     *
+     * @return bool
+     */
+    public function accessible() {
+        if (!$this->access || $this->access == 'all') return true;
+        if ($this->access == 'only' && in(Indi::admin()->profileId, $this->profileIds)) return true;
+        if ($this->access == 'except' && !in(Indi::admin()->profileId, $this->profileIds)) return true;
+    }
 }
