@@ -591,8 +591,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 // Mode shortcut
                 $mode = $foreign->storeRelationAbility == 'one' ? 'single' : 'multiple';
 
-                // Collect further-foreign fields info in a format, compatible with $this->foreign()
-                $typeA['foreign'][$mode][$foreign->alias]['foreign'] []= $m[2];
+                // Collect further-foreign fields info in a format, compatible with $this->foreign() usage
+                $typeA['foreign'][$mode][$foreign->alias]['foreign'][0] []= $m[2];
 
                 // Collect further-foreign fields info in a format, easy for detecting
                 // whether some field is a further-foreign field at a later stage
@@ -641,7 +641,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
         // Setup foreign rows, fetched by foreign keys, mentioned in fields, that are set up as grid columns
         if ($foreign = $typeA['foreign']['single'] + $typeA['foreign']['multiple']) $this->foreign($foreign);
-i($foreign);
+
         // Declare an array for grid data
         $data = array();
 
@@ -936,7 +936,7 @@ i($foreign);
      *                  ),
      *                  'foreignKey2Name' => 'subForeignKeyCName,subForeignKeyDName'
      *                ));
-
+     *
      *             So, function allow to fetch
      *             1. foreign data,
      *             2. foreign data for foreign data,
