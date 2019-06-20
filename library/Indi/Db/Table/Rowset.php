@@ -569,7 +569,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'datetime' => array(),
             'upload' => array(),
             'other' => array('id' => true),
-            'shade' => array()
+            'shade' => array(),
+            'further' => array()
         );
 
         // Get fields
@@ -581,7 +582,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Setup actual info about types of columns, that we will have to deal with
         foreach ($fieldRs as $gridFieldR) {
 
-
             // If grid column have further-foreign field defined
             if ($this->model()->id() != $gridFieldR->entityId
                 && preg_match('~^([0-9a-zA-Z_]+)_([0-9a-zA-Z]+)$~', $gridFieldR->alias, $m)
@@ -592,11 +592,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 $mode = $foreign->storeRelationAbility == 'one' ? 'single' : 'multiple';
 
                 // Collect further-foreign fields info in a format, compatible with $this->foreign() usage
-                $typeA['foreign'][$mode][$foreign->alias]['foreign'][0] []= $m[2];
+                if ($further = Indi::model($foreign->relation)->fields($m[2]))
+                    if ($further->storeRelationAbility != 'none')
+                        $typeA['foreign'][$mode][$foreign->alias]['foreign'][0] []= $m[2];
 
                 // Collect further-foreign fields info in a format, easy for detecting
                 // whether some field is a further-foreign field at a later stage
-                $typeA['foreign'][$mode][$gridFieldR->alias]['further'] = $foreign->alias;
+                $typeA['further'][$gridFieldR->alias] = true;
             }
 
             // Foreign keys (single and multiple)
@@ -661,10 +663,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 $entry = $r; $value = $r->$columnI; $further = false;
 
                 // If grid column have further-foreign field defined
-                if ($foreign[$columnI]['further'] && preg_match('~^([0-9a-zA-Z_]+)_([0-9a-zA-Z]+)$~', $columnI, $m)) {
+                if ($typeA['further'][$columnI] && preg_match('~^([0-9a-zA-Z_]+)_([0-9a-zA-Z]+)$~', $columnI, $m)) {
 
-                    // Spoof entry and value
+                    // Spoof entry
                     $entry = $r->foreign($m[1]);
+
+                    // Spoof value
                     $value = $entry->{$further = $m[2]};
                 }
 
