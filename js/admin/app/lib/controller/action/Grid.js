@@ -258,7 +258,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cls: tooltip ? 'i-tooltip' : undefined,
             $ctx: me,
             tdCls: tdClsA.join(' '),
-            sortable: !!column.further,
+            sortable: !!!column.further,
             editor: column.editor,
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
