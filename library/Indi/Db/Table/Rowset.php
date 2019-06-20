@@ -686,11 +686,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 if (isset($typeA['boolean'][$columnI])) $data[$pointer][$columnI] = $value ? I_YES : I_NO;
 
                 // If field column type is a single foreign key, we use title of related foreign row
-                if (isset($typeA['foreign']['single'][$columnI]['title'])) $data[$pointer][$columnI] = $entry->foreign($further ?: $columnI)
+                if (isset($typeA['foreign']['single'][$columnI]['title']) && $entry) $data[$pointer][$columnI] = $entry->foreign($further ?: $columnI)
                     ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]['title']) ? $titleColumn : 'title'};
 
                 // If field column type is a multiple foreign key, we use comma-separated titles of related foreign rows
-                if (isset($typeA['foreign']['multiple'][$columnI]['title']))
+                if (isset($typeA['foreign']['multiple'][$columnI]['title']) && $entry)
                     foreach ($entry->foreign($further ?: $columnI) as $m)
                         $data[$pointer][$columnI] .= $m
                             ->{is_string($titleColumn = $typeA['foreign']['multiple'][$columnI]['title']) ? $titleColumn : 'title'} .
