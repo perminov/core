@@ -2278,6 +2278,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Demo mode
         Indi::demo();
 
+        // If 'ref' uri-param given - assign it into entry's system props
+        if ($ref = Indi::uri()->ref) $this->row->system('ref', $ref);
+
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
 

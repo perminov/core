@@ -624,7 +624,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->files(true);
 
         // Do some needed operations that are required to be done right after row was inserted/updated
-        if ($new) $this->onInsert(); else if ($this->_onUpdate) $this->onUpdate($original); else $this->_onUpdate = true;
+        if ($new) {
+            $this->onInsert();
+            $this->onSave();
+        } else if ($this->_onUpdate) {
+            $this->onUpdate($original);
+            $this->onSave();
+        } else $this->_onUpdate = true;
 
         // Check if row (in it's current/modified state) matches each separate notification's criteria,
         // and compare results with the results of previous check, that was made before any modifications
@@ -791,6 +797,14 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Unset results
             unset($this->_notices[$noticeR->id]);
         }
+    }
+
+    /**
+     * This method will be called after onInsert/onUpdate methods calls,
+     * It can be useful in cases when we need to do something once where was an entry inserted/updated in database table
+     */
+    public function onSave() {
+
     }
 
     /**
