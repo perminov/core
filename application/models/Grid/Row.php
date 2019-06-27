@@ -15,7 +15,9 @@ class Grid_Row extends Indi_Db_Table_Row {
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
-            else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
+            else if ($columnName == 'further') {
+                $value = $this->fieldId && ($_ = field(section($this->sectionId)->entityId, $this->fieldId)->relation) ? field($_, $value)->id : 0;
+            } else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
         }
 
         // Call parent
@@ -72,7 +74,7 @@ class Grid_Row extends Indi_Db_Table_Row {
         unset($ctor['id'], $ctor['move']);
 
         // Exclude props that are already represented by one of shorthand-fn args
-        foreach (ar('sectionId,fieldId,alias') as $arg) unset($ctor[$arg]);
+        foreach (ar('sectionId,fieldId,alias,further') as $arg) unset($ctor[$arg]);
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -114,8 +116,15 @@ class Grid_Row extends Indi_Db_Table_Row {
     public function export() {
 
         // Return creation expression
-        return "grid('" .
-            $this->foreign('sectionId')->alias . "','" .
+        if ($this->further) return "grid('" .
+            $this->foreign('sectionId')->alias . "', '" .
+            $this->foreign('fieldId')->alias . "', '" .
+            $this->foreign('fieldId')->rel()->fields($this->further)->alias . "', " .
+            $this->_ctor() . ");";
+
+        // Return creation expression
+        else return "grid('" .
+            $this->foreign('sectionId')->alias . "', '" .
             ($this->foreign('fieldId')->alias ?: $this->alias) . "', " .
             $this->_ctor() . ");";
     }

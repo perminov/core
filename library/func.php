@@ -1609,12 +1609,31 @@ function grid($section, $field, $ctor = false) {
     // Get `sectionId` and `fieldId` according to $section and $field args
     $sectionR = section($section);
     $sectionId = $sectionR->id;
-    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id ?: 0;
+    $fieldR = field($sectionR->foreign('entityId')->table, $field);
+    $fieldId = $fieldR->id ?: 0;
     if (!$fieldId) $alias = $field;
 
     // Build WHERE clause
     $w = array('`sectionId` = "' . $sectionId . '"');
-    $w []= $fieldId ? '`fieldId` = "' . $fieldId . '"' : '`alias` = "' . $field . '"';
+
+    // If $field arg points to existing `field` entry
+    if ($fieldId) {
+
+        // Append to WHERE clause
+        $w []= '`fieldId` = "' . $fieldId . '"';
+
+        // Detect $further
+        if (func_num_args() > 3) {
+            $further = $ctor; $ctor = func_get_arg(3);
+        } else if (func_num_args() == 3 && is_string($ctor)) {
+            $further = $ctor; $ctor = false;
+        }
+
+        // Mind `further` field
+        if ($further) $w []= '`further` = "' . $fieldR->rel()->fields($further)->id . '"';
+
+    // Else involve $field arg into WHERE clause
+    } else $w []= '`alias` = "' . $field . '"';
 
     // Try to find `grid` entry
     $gridR = Indi::model('Grid')->fetchRow($w);
@@ -1627,15 +1646,18 @@ function grid($section, $field, $ctor = false) {
     // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
     // - use values given by $section and $fields args
     if (!is_array($ctor)) $ctor = array();
-    foreach (ar('sectionId,fieldId,alias') as $prop)
-        if (!array_key_exists($prop, $ctor))
+    foreach (ar('sectionId,fieldId,alias,further') as $prop)
+        if (!array_key_exists($prop, $ctor) && isset($$prop))
             $ctor[$prop] = $$prop;
 
     // If `grid` entry was not found - create it
     if (!$gridR) $gridR = Indi::model('Grid')->createRow();
 
-    // Assign `sectionId` prop first
+    // Assign `sectionId` prop first, to be able to detect `fieldId`
     if ($ctor['sectionId'] && $gridR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign `fieldId` prop first, to be able to detect `further`
+    if ($ctor['fieldId'] && $gridR->fieldId = $ctor['fieldId']) unset($ctor['fieldId']);
 
     // Assign other props and save
     $gridR->assign($ctor)->save();

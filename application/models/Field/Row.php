@@ -1493,4 +1493,13 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
     }
+
+    /**
+     * Get the model, that value of current field's `relation` prop points to
+     *
+     * @return Indi_Db_Table
+     */
+    public function rel() {
+        return Indi::model($this->relation);
+    }
 }
