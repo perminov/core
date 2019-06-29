@@ -2073,7 +2073,7 @@ function monthYm($monthId = null) {
  * @param string $else
  */
 function eif($if, $then, $else = '') {
-    echo $if ? $then : $else;
+    echo $if ? str_replace('$1', $if, $then) : $else;
 }
 
 /**
@@ -2085,7 +2085,7 @@ function eif($if, $then, $else = '') {
  * @return string
  */
 function rif($if, $then, $else = '') {
-    return $if ? $then : $else;
+    return $if ? str_replace('$1', $if, $then) : $else;
 }
 
 /**

@@ -333,7 +333,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c], s;
         if (column.displayZeroes !== true && parseFloat(v) == 0) return '' ;
         s = Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-        if (column.colors && m) {
+        if (column.colors) {
             if (v > 0) {
                 return '<span style="color:limegreen;">' + s + '</span>';
             } else if (v < 0) {

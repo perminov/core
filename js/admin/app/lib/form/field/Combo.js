@@ -1246,7 +1246,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         value = value || '';
 
         // Declare `info` object
-        var info = {title: data.title ? data.title.trim() : '', color: '', src: '', box: '', css: {color: ''}}, color;
+        var info = {title: (data.option || data.title || '').trim(), color: '', src: '', box: '', css: {color: ''}}, color;
 
         // Check if `title` or `value` contain a color definition
         if (color = value.toString().match(this.colorReg)) {

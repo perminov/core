@@ -1373,6 +1373,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Option title maximum indent
         $titleMaxIndent = 0;
 
+        // Get title-column field. If it's a foreig-key field - pull foreign data
+        if ($tc = $this->model()->fields($this->titleColumn))
+            if ($tc->storeRelationAbility != 'none')
+                $this->foreign($foreign = $tc->alias);
+
+        // Set column
+        $column = $foreign ? $tc->rel()->titleColumn() : 'title';
+
         // Setup primary data for options. Here we use '$o' name instead of '$comboDataR', because
         // it is much more convenient to use such name to deal with option row object while creating
         // a template in $params['template'] contents, if it is set, because php expressions are executed
@@ -1385,15 +1393,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // Set group identifier for an option
             if ($by) $system = array_merge($system, array('group' => $o->$by));
 
-            // Set javascript handler on option select event, if needed
-            if ($this->enumset && $o->javascript)
-                $system = array_merge($system, array('js' => $o->javascript));
+            // If title column's field is a foreign-key field - use it to obtain the actual title
+            $title = $foreign ? $o->foreign($foreign)->$column : $o->{$this->titleColumn};
 
             // Here we are trying to detect, does $o->title have tag with color definition, for example
             // <span style="color: red">Some option title</span> or <font color=lime>Some option title</font>, etc.
             // We should do that because such tags existance may cause a dom errors while performing usubstr()
             $info = Indi_View_Helper_Admin_FormCombo::detectColor(array(
-                'title' => $o->{$this->titleColumn}, 'value' => $o->$keyProperty
+                'title' => $title, 'value' => $o->$keyProperty
             ));
 
             // If color was detected as a box, append $system['boxColor'] property
