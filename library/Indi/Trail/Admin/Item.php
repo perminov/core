@@ -77,15 +77,29 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
 
             // Alter fields
+            $originalDefaults = array();
             foreach ($sectionR->nested(entity('alteredField') ? 'alteredField' : 'disabledField') as $_) {
-                $alter = array();
-                if (strlen($_->rename)) $alter['title'] = $_->rename;
-                if (strlen($_->defaultValue)) $alter['defaultValue'] = $_->defaultValue;
-                if (!$_->mode) $alter['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
-                else if ($_->mode != 'inherit') $alter['mode'] = $_->mode;
-                $this->fields->gb($_->fieldId)->assign($alter);
+
+                // Prepare modifications
+                $modify = array();
+                if (strlen($_->rename)) $modify['title'] = $_->rename;
+                if (strlen($_->defaultValue)) $modify['defaultValue'] = $_->defaultValue;
+                if (!$_->mode) $modify['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
+                else if ($_->mode != 'inherit') $modify['mode'] = $_->mode;
+
+                // Apply modifications
+                $fieldR = $this->fields->gb($_->fieldId);
+                $fieldR->assign($modify);
+
+                // If field's `defaultValue` prop changed - collect 'field's alias' => 'original default value' pairs
+                if ($fieldR->isModified('defaultValue'))
+                    $originalDefaults[$fieldR->alias] = $fieldR->original('defaultValue');
             }
 
+            // Save save those pairs under 'originalDefaults' key within section's system data
+            $this->section->system('originalDefaults', $originalDefaults);
+
+        // Else
         } else {
 
             // Setup action as 'index'
@@ -204,6 +218,19 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
                 // Create an empty row object
                 $this->row = $this->model->createRow();
+
+                // If original defaults collected
+                if ($od = $this->section->system('originalDefaults'))
+
+                    // Foreach original default value
+                    foreach ($od as $fieldAlias => $originalDefaultValue) {
+
+                        // Directly set current value as modified
+                        $this->row->modified($fieldAlias, $this->row->original($fieldAlias));
+
+                        // Directly set collected value as original
+                        $this->row->original($fieldAlias, $originalDefaultValue);
+                    }
 
                 // If current cms user is an alternate, and if there is corresponding column-field within current entity structure
                 if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $this->model->fields(null, 'columns')))

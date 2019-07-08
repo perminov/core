@@ -1074,7 +1074,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
             // for data-options, that will have at least one matching row within rowset, in case of their selection
             // as a part of a rowset search criteria.
-            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+            $dataRs = is_array($consistence) ? $dataRs->select($consistence, 'alias') : clone $dataRs;
 
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
@@ -1082,6 +1082,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If current field store relation ability is 'many' - we setup selected as rowset object
             if ($multiSelect) $dataRs->selected = $dataRs->select($selected, 'alias');
+
+            // Exclude values
+            if ($exclude = $fieldR->param('exclude')) $dataRs->exclude($exclude, 'alias');
 
             // Return combo data
             return $dataRs;

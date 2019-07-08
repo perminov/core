@@ -938,6 +938,9 @@ class Indi_Controller {
             // Setup $default
             t()->row->original($a, $defaultValue);
         }
+
+        // Return itself
+        return $this;
     }
 
     /**
