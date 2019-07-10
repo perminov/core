@@ -2056,7 +2056,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If current model has a tree column, and it is not forced to be ignored - append special
         // clause to WHERE-clauses stack for summaries to be calculated only for top-level entries
         if (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'])
-            $where[] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
+            $where['rootRowsOnly'] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
 
         // Append scope's WHERE clause to the stack
         if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
