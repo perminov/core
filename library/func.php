@@ -1900,7 +1900,7 @@ function filter($section, $field, $ctor = false) {
     // If $ctor arg is non-false and is not and empty array - return found `filter` entry, or null otherwise
     // This part of this function differs from such part if other similar functions, for example field() function,
     // because presence of $section and $field args - is minimum enough for `filter` entry to be created
-    if (!$ctor && !is_array($ctor)) return $gridR;
+    if (!$ctor && !is_array($ctor)) return $filterR;
 
     // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
     // - use values given by $section and $fields args
