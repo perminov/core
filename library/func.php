@@ -932,12 +932,16 @@ function jprompt($msg, array $cfg) {
 }
 
 /**
- * Flush text to be shown within <textarea>
+ * Flush text to be shown within <textarea>.
+ * If $text are is not a scalar, it will be preliminary stringified by print_r() fn
  *
  * @param bool $success
- * @param string $text
+ * @param mixed $text
  */
 function jtextarea($success, $text) {
+
+    // If $text is not a scalar - stringify it using print_r() fn
+    if (!is_scalar($text)) $text = print_r($text, true);
 
     // Flush
     jflush($success, '<textarea style="width: 500px; height: 400px;">' . $text . '</textarea>');
@@ -2073,7 +2077,7 @@ function monthYm($monthId = null) {
  * @param string $else
  */
 function eif($if, $then, $else = '') {
-    echo $if ? str_replace('$1', $if, $then) : $else;
+    echo $if ? str_replace('$1', is_scalar($if) ? $if : '$1', $then) : $else;
 }
 
 /**
@@ -2085,7 +2089,7 @@ function eif($if, $then, $else = '') {
  * @return string
  */
 function rif($if, $then, $else = '') {
-    return $if ? str_replace('$1', $if, $then) : $else;
+    return $if ? str_replace('$1', is_scalar($if) ? $if : '$1', $then) : $else;
 }
 
 /**

@@ -777,7 +777,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      * Fetch the rowset, nested to current rowset, assing that rowset within $this->_nested array under certain key,
      * and return that rowset
      *
-     * @param $table A table, where rowset will be fetched from
+     * @param string $table A table, where rowset will be fetched from
      * @param array $fetch Array of fetch params, that are same as Indi_Db_Table::fetchAll() possible arguments
      * @param null $alias The key, that fetched rowset will be stored in $this->_nested array under
      * @param null $field Connector field, in case if it is different from $this->_table . 'Id'
@@ -1518,13 +1518,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     }
 
     /**
-     * Alias for offsetGet()
+     * Same as offsetGet(), except that internal pointer value will remain same
      * 
-     * @param $offset
+     * @param $idx
      * @return Indi_Db_Table_Row|null
      */
-    public function at($offset) {
-        return $this->offsetGet($offset);
+    public function at($idx) {
+        return $this->_rows[$idx];
     }
 
     /**
