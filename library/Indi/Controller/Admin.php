@@ -457,7 +457,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         $where = $this->adjustPrimaryWHERE($where);
 
         // If uri has 'single' param - append it to primary WHERE clause
-        if (strlen(Indi::uri('single'))) $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
+        if (strlen(Indi::uri('single')) && t()->action->rowRequired == 'y')
+            $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
 
         if (Indi::uri('action') == 'index') {
 

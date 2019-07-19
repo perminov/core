@@ -1064,9 +1064,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param root
      */
     bindJumps: function(root) {
+        var me = this;
         root.getEl().select('[jump]').each(function(el){
             el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
+                var attr = Ext.get(dom).attr('jump'), m;
+                if (m = attr.match(/\{sections\[([0-9])\]\}/)) {
+                    Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]));
+                } else {
+                    Indi.load(attr + 'jump/1/');
+                }
             });
         });
     },
