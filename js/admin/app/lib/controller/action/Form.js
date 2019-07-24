@@ -515,7 +515,7 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 },
                 beforeshow: function(c) {
-                    c._wasHeight = c.getHeight();
+                    if (this.el) c._wasHeight = this.getHeight();
                 },
                 beforehide: function(c) {
                     c._wasHeight = c.getHeight();
