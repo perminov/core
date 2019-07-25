@@ -457,7 +457,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         $where = $this->adjustPrimaryWHERE($where);
 
         // If uri has 'single' param - append it to primary WHERE clause
-        if (strlen(Indi::uri('single'))) $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
+        if (strlen(Indi::uri('single')) && t()->action->rowRequired == 'y')
+            $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
 
         if (Indi::uri('action') == 'index') {
 
@@ -2056,7 +2057,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If current model has a tree column, and it is not forced to be ignored - append special
         // clause to WHERE-clauses stack for summaries to be calculated only for top-level entries
         if (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'])
-            $where[] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
+            $where['rootRowsOnly'] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
 
         // Append scope's WHERE clause to the stack
         if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
@@ -2277,6 +2278,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Demo mode
         Indi::demo();
+
+        // If 'ref' uri-param given - assign it into entry's system props
+        if ($ref = Indi::uri()->ref) $this->row->system('ref', $ref);
 
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');

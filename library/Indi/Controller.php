@@ -23,13 +23,48 @@ class Indi_Controller {
         // Get the script path
         $spath = Indi::ini('view')->scriptPath;
 
+        // Get db table, that current admin user entry is stored in, if logged in
+        $admin = Indi::admin() ? Indi::admin()->table() : false;
+
+        // Reset design if need, as we can arrive here twice
+        if (Indi::ini()->general->seoUri) Indi::ini()->design = [];
+
         // If module is 'front', and design-specific config was set up,
         // detect design specific dir name, that will be used to build
         // additional paths for both scripts and helpers
         if (Indi::uri('module') == 'front' && is_array($dsdirA = (array) Indi::ini('view')->design))
-            foreach($dsdirA as $dsdirI => $domainS)
-                if (in($_SERVER['HTTP_HOST'], explode(' ', $domainS)))
-                    Indi::ini()->design = $dsdirI;
+            foreach($dsdirA as $dsdirI => $domainS) foreach (explode(' ', $domainS) as $domain) {
+
+                // Split $domain by domain name itself and admin-type, that may be specified
+                // for cases when new design is not fully ready and should be accessible only by
+                // admin of specified type
+                list($d, $u) = explode(':', $domain);
+
+                // If design's domain does not match current domain - skip
+                if ($d != $_SERVER['HTTP_HOST']) continue;
+
+                // If design is in public access, or is not, but is accessible for current admin - append design
+                if (!$u || $u == $admin) Indi::ini()->design[] = $dsdirI;
+            }
+
+        // If more than 1 designs detected for current domain
+        if (count(Indi::ini()->design) > 1) {
+
+            // Views dir shortcut
+            $dir = DOC . STD . '/www/application/views/';
+
+            // Foreach design
+            foreach (Indi::ini()->design as $design) {
+
+                // Get template filename, applicable for section/action combination
+                $tpl = $dir . $design . '/' . Indi::uri('section') . '/' . Indi::uri('action') . '.php';
+
+                // If template exists - force usage of current design especially for section/action combination
+                if (file_exists($tpl) && (Indi::ini()->design = $design)) break;
+            }
+
+        // Else use first
+        } else Indi::ini()->design = Indi::ini()->design[0];
 
         // Do paths setup twice: first for module-specific paths, second for general-paths
         for ($i = 0; $i < 2; $i++) {
@@ -903,6 +938,9 @@ class Indi_Controller {
             // Setup $default
             t()->row->original($a, $defaultValue);
         }
+
+        // Return itself
+        return $this;
     }
 
     /**

@@ -624,7 +624,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->files(true);
 
         // Do some needed operations that are required to be done right after row was inserted/updated
-        if ($new) $this->onInsert(); else if ($this->_onUpdate) $this->onUpdate($original); else $this->_onUpdate = true;
+        if ($new) {
+            $this->onInsert();
+            $this->onSave();
+        } else if ($this->_onUpdate) {
+            $this->onUpdate($original);
+            $this->onSave();
+        } else $this->_onUpdate = true;
 
         // Check if row (in it's current/modified state) matches each separate notification's criteria,
         // and compare results with the results of previous check, that was made before any modifications
@@ -791,6 +797,14 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Unset results
             unset($this->_notices[$noticeR->id]);
         }
+    }
+
+    /**
+     * This method will be called after onInsert/onUpdate methods calls,
+     * It can be useful in cases when we need to do something once where was an entry inserted/updated in database table
+     */
+    public function onSave() {
+
     }
 
     /**
@@ -1060,7 +1074,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
             // for data-options, that will have at least one matching row within rowset, in case of their selection
             // as a part of a rowset search criteria.
-            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+            $dataRs = is_array($consistence) ? $dataRs->select($consistence, 'alias') : clone $dataRs;
 
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
@@ -1068,6 +1082,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If current field store relation ability is 'many' - we setup selected as rowset object
             if ($multiSelect) $dataRs->selected = $dataRs->select($selected, 'alias');
+
+            // Exclude values
+            if ($exclude = $fieldR->param('exclude')) $dataRs->exclude($exclude, 'alias');
 
             // Return combo data
             return $dataRs;
@@ -4384,6 +4401,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If field is a file-upload field, we implement special logic of zeroValue detection
         if ($this->field($field)->foreign('elementId')->alias == 'upload') {
+
+            // Pick info from $_FILES
+            $this->files($field);
 
             // If file was uploaded, but it is a temporary - return false
             if (is_array($this->_files[$field])) return false;

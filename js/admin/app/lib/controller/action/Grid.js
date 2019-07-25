@@ -258,7 +258,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cls: tooltip ? 'i-tooltip' : undefined,
             $ctx: me,
             tdCls: tdClsA.join(' '),
-            sortable: true,
+            sortable: !!!column.further,
             editor: column.editor,
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
@@ -333,7 +333,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c], s;
         if (column.displayZeroes !== true && parseFloat(v) == 0) return '' ;
         s = Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-        if (column.colors && m) {
+        if (column.colors) {
             if (v > 0) {
                 return '<span style="color:limegreen;">' + s + '</span>';
             } else if (v < 0) {
@@ -696,7 +696,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             colI = colA[i];
 
             // Setup a shortcut for a grid field
-            field = me.ti().fields.r(colI.fieldId);
+            field = me.ti().fields.r(colI.further || colI.fieldId);
 
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
@@ -1064,9 +1064,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param root
      */
     bindJumps: function(root) {
+        var me = this;
         root.getEl().select('[jump]').each(function(el){
             el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
+                var attr = Ext.get(dom).attr('jump'), m;
+                if (m = attr.match(/\{sections\[([0-9])\]\}/)) {
+                    Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]));
+                } else {
+                    Indi.load(attr + 'jump/1/');
+                }
             });
         });
     },
