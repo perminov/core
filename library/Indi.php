@@ -58,7 +58,7 @@ class Indi {
      *
      * @var string
      */
-    public static $cmpOut = '';
+    public static $cmpOut = array();
 
     /**
      * Regular expressions patterns for common usage
