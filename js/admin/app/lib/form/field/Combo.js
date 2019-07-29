@@ -340,7 +340,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {Ext.form.field.Text} this
      */
     setValue: function(value) {
-        var me = this, data;
+        var me = this, data, ctxInterval;
 
         // Workaround for cases when value is not found within the store
         // Supported currently only for single-value non-enumset combos
@@ -348,9 +348,13 @@ Ext.define('Indi.lib.form.field.Combo', {
             && me.xtype == 'combo.form' && me.store.ids.indexOf(parseInt(value)) == -1) {
 
             if (!(me.wand && me.wand.pressed && !me.wand.hidden)) {
-                me.remoteFetch({selected: value}, function() {
-                    me.setValue(value);
-                });
+                ctxInterval = setInterval(function(){
+                    if (!me.ctx()) return;
+                    clearInterval(ctxInterval);
+                    me.remoteFetch({selected: value}, function() {
+                        me.setValue(value);
+                    });
+                }, 10);
                 return me;
             }
         }
