@@ -51,7 +51,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         listeners: {
             boxready: function(){
                 Ext.defer(function(){
-                    this.el.removeAttr('tabindex');
+                    this.body.attr('tabindex', '0');
                 }, 100, this);
             },
             validitychange: function(form, valid){
@@ -515,10 +515,10 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 },
                 beforeshow: function(c) {
-                    if (this.el) c._wasHeight = this.getHeight();
+                    if (this.el) c._wasHeight = c.getHeight();
                 },
                 beforehide: function(c) {
-                    c._wasHeight = c.getHeight();
+                    if (this.el) c._wasHeight = c.getHeight();
                 }
             },
             getDirtyIcon: function() {

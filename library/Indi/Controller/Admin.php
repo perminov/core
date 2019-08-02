@@ -314,7 +314,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     /**
      * Provide delete action
      */
-    public function deleteAction($redirect = true) {
+    public function deleteAction($flush = true) {
         
         // Demo mode
         Indi::demo();
@@ -358,9 +358,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Do post delete maintenance
         $this->postDelete($deleted);
 
-        // Flush json response, containing new page index, in case if now row
+        // Prepare args for jflush() call, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
-        jflush((bool) $deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
+        $args = array(
+            (bool) $deleted,
+            $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array()
+        );
+
+        // Flush or return json response, depending on $flush arg
+        if ($flush) jflush($args[0], $args[1]); else return $args;
     }
 
     /**
@@ -3011,16 +3017,20 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Show confirmation prompt
      *
      * @param $msg
+     * @param string $buttons
      */
-    public function confirm($msg) {
+    public function confirm($msg, $buttons = 'OKCANCEL') {
 
         // Get $_GET['answer']
         $answer = Indi::get()->answer;
 
         // If no answer, flush confirmation prompt
-        if (!$answer) jconfirm($msg);
+        if (!$answer) jconfirm($msg, $buttons);
 
         // If answer is 'cancel' - stop request processing
         else if ($answer == 'cancel') jflush(false);
+
+        // Return answer
+        return $answer;
     }
 }
