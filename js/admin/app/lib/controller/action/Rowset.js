@@ -1995,8 +1995,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @param record
      * @param aix
+     * @param cell dataIndex of a column, that cell editor was used within
      */
-    recordRemoteSave: function(record, aix, $ti, callback) {
+    recordRemoteSave: function(record, aix, $ti, callback, cell) {
         var me = this, ti = $ti || me.ti(), params, bool = [];
 
         // If no changed was made - return
@@ -2040,7 +2041,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Params
             url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
-                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/ref/rowset/' + search,
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/' + rif(cell, 'cell/$1/', 'ref/rowset/') + search,
             method: 'POST',
             params: params,
 

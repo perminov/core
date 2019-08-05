@@ -2285,8 +2285,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Demo mode
         Indi::demo();
 
-        // If 'ref' uri-param given - assign it into entry's system props
-        if ($ref = Indi::uri()->ref) $this->row->system('ref', $ref);
+        // If 'ref' or 'cell' uri-param given
+        if ($ref = Indi::uri()->ref || $cell = Indi::uri()->cell) {
+
+            // Assign 'ref' it into entry's system props
+            $this->row->system('ref', $ref ?: 'rowset');
+
+            // Call onBeforeCellSave(), if need
+            if ($cell) $this->onBeforeCellSave($cell, Indi::post($cell));
+        }
 
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
@@ -3032,5 +3039,39 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Return answer
         return $answer;
+    }
+
+    /**
+     * Show prompt with additional fields
+     *
+     * @param $msg
+     * @param array $cfg
+     * @return mixed
+     */
+    public function prompt($msg, $cfg = array()) {
+
+        // Get $_GET['answer']
+        $answer = Indi::get()->answer;
+
+        // If no answer, flush confirmation prompt
+        if (!$answer) jprompt($msg, $cfg);
+
+        // If answer is 'cancel' - stop request processing
+        else if ($answer == 'cancel') jflush(false);
+
+        // Return prompt data
+        return json_decode(Indi::post('_prompt'), true);
+    }
+
+    /**
+     * Empty function. Can be overridden in child classes for cases when there is a need to
+     * show some confirmation prompt before new cell value will be saved
+     */
+    public function onBeforeCellSave($cell, $value) {
+
+        // If $value is not 'agmt' - do nothing
+        if ($value != 'agmt') return;
+
+
     }
 }

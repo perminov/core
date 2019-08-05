@@ -368,7 +368,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         list($keys, $expr) = $this->_selector($keys);
 
         // If regexp detected - return
-        if ($expr) return $rowset;
+        if ($expr || $type != 'alias') return $rowset;
 
         // Foreach key
         foreach ($keys as $key) {
@@ -391,8 +391,11 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
             // Prepend foreign field alias to further-foreign field alias
             $further->alias = $fieldR->alias . '_' . $further->alias;
 
-            // Apend further-foreign field to $rowset
+            // Append further-foreign field to $rowset
             $rowset->append($further);
+
+            // Append further-foreign field to $this
+            $this->append($further);
         }
 
         // Return $rowset

@@ -19,6 +19,9 @@
     top: 2px;
     vertical-align: text-bottom;
 }
+.x-grid-cell-inner > span[title] {border-bottom: 1px dotted;}
+.x-grid-cell-inner > span[title][jump] {border-bottom: 1px dashed; text-decoration: none;}
+.x-grid-cell-inner > span.i-color-box[title][jump] {border-bottom: none;}
 .i-bgimg-box-wrap .i-color-box[style*="background: url"]{
     vertical-align: text-bottom;
 }

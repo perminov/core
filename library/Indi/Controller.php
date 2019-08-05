@@ -988,7 +988,7 @@ class Indi_Controller {
             }
         }
     }
-    
+
     /**
      * This function is an injection that allows to adjust any trail items before their involvement
      */
@@ -1002,6 +1002,9 @@ class Indi_Controller {
      * @param $propS string|array Comma-separated prop names (e.g. field aliases)
      */
     public function inclGridProp($propS) {
+
+        // Preliminary exclude those props, to prevent duplicates
+        $this->exclGridProp($propS);
 
         // Get `field` instances rowset with value of `alias` prop, mentioned in $propS arg
         $fieldRs = Indi::trail()->model->fields(im(ar($propS)), 'rowset');

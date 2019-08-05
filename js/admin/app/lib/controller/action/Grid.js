@@ -1515,7 +1515,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     // Call additional callback, defined as one of listeners, and pass json-decoded response
                     if (Ext.isFunction(eOpts.remotesave))
                         eOpts.remotesave.call(editor, e, json);
-                });
+                }, editor.context.field);
             }
         }
     },
