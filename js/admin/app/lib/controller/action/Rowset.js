@@ -2074,6 +2074,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param json
      */
     affectRecord: function(record, json) {
+        var data = {}, value;
 
         // If response contains info about affected fields
         if (Ext.isObject(json) && Ext.isObject(json.affected)) {
@@ -2104,11 +2105,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
                     if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
 
-                    // Set field's value
-                    record.set(i, value);
+                    // Collect data to be assigned
+                    data[i] = value;
                 }
             });
         }
+
+        // Assign collected values
+        record.set(data);
 
         // Commit row
         record.commit();

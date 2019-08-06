@@ -119,7 +119,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
                         dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
                         enumset = field && field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
-                        canSave = me.ti().actions.r('save', 'alias'), cb;
+                        canSave = me.ti().actions.r('save', 'alias'), cb, m, jump = e.target.getAttribute('jump'),
+                        load = e.target.getAttribute('load'), attr = jump || load;
+
+                    // If clicked element has 'jump' or 'load' attribute - do load/jump
+                    if (attr) return (m = attr.match(/\{sections\[([0-9])\]\}/))
+                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]))
+                        : Indi.load(rif(jump, '$1jump/1/', load));
 
                     // If 'Save' action is accessible, and column is linked to 'enumset' field
                     // and that field is not in the list of disabled fields - provide some kind
@@ -1035,46 +1041,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Adjust grid column widths
         //console.log('1st fit', me.getStore().getCount());
         me.gridColumnAFit();
-
-        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'load' attibute
-        me.bindLoads(grid);
-
-        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'jump' attibute
-        Ext.defer(function(){
-            me.bindJumps(grid);
-        }, 100);
-    },
-
-    /**
-     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'load' attibute
-     *
-     * @param root
-     */
-    bindLoads: function(root) {
-        root.getEl().select('[load]').each(function(el){
-            el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('load'));
-            });
-        });
-    },
-
-    /**
-     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'jump' attibute
-     *
-     * @param root
-     */
-    bindJumps: function(root) {
-        var me = this;
-        root.getEl().select('[jump]').each(function(el){
-            el.on('click', function(e, dom){
-                var attr = Ext.get(dom).attr('jump'), m;
-                if (m = attr.match(/\{sections\[([0-9])\]\}/)) {
-                    Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]));
-                } else {
-                    Indi.load(attr + 'jump/1/');
-                }
-            });
-        });
     },
 
     /**

@@ -767,6 +767,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
             // Implement indents if need
             if ($data[$pointer]['title']) $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];
+
+            // Unset '_foreign'
+            unset($data[$pointer]['_foreign']);
         }
 
         // Return grid data
