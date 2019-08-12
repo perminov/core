@@ -27,7 +27,7 @@ class Indi_Controller {
         $admin = Indi::admin() ? Indi::admin()->table() : false;
 
         // Reset design if need, as we can arrive here twice
-        if (Indi::ini()->general->seoUri) Indi::ini()->design = [];
+        if (Indi::ini()->general->seoUri) Indi::ini()->design = array();
 
         // If module is 'front', and design-specific config was set up,
         // detect design specific dir name, that will be used to build
