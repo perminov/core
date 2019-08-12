@@ -809,7 +809,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @return {Object}
      */
     panelDockedInner$Actions_Default: function(action) {
-        var me = this, bid = me.panelDockedInnerBid(), btnSave;
+        var me = this, bid = me.panelDockedInnerBid(), ats;
 
         // If action is visible - return
         if (action.display != 1) return null;
@@ -827,9 +827,10 @@ Ext.define('Indi.lib.controller.action.Action', {
             rowRequired: action.rowRequired,
             listeners: {
                 boxready: function(btn) {
-                    if (me.ti().action.rowRequired == 'y') btn.setDisabled(
-                        (!me.ti().row.id && (btnSave = Ext.getCmp(bid + 'save')) && !btnSave.pressed)
-                    );
+                    if (me.ti().action.rowRequired == 'y'
+                        && !me.ti().row.id
+                        && !(ats = Ext.getCmp(bid + 'autosave')))
+                        btn.setDisabled(true)
                 }
             }
         }

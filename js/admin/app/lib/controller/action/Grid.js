@@ -119,7 +119,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
                         dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
                         enumset = field && field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
-                        canSave = me.ti().actions.r('save', 'alias'), cb;
+                        canSave = me.ti().actions.r('save', 'alias'), cb, m, jump = e.target.getAttribute('jump'),
+                        load = e.target.getAttribute('load'), attr = jump || load;
+
+                    // If clicked element has 'jump' or 'load' attribute - do load/jump
+                    if (attr) return (m = attr.match(/\{sections\[([0-9])\]\}/))
+                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]))
+                        : Indi.load(rif(jump, '$1jump/1/', load));
 
                     // If 'Save' action is accessible, and column is linked to 'enumset' field
                     // and that field is not in the list of disabled fields - provide some kind
@@ -258,7 +264,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cls: tooltip ? 'i-tooltip' : undefined,
             $ctx: me,
             tdCls: tdClsA.join(' '),
-            sortable: true,
+            sortable: !!!column.further,
             editor: column.editor,
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
@@ -333,7 +339,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c], s;
         if (column.displayZeroes !== true && parseFloat(v) == 0) return '' ;
         s = Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-        if (column.colors && m) {
+        if (column.colors) {
             if (v > 0) {
                 return '<span style="color:limegreen;">' + s + '</span>';
             } else if (v < 0) {
@@ -696,7 +702,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             colI = colA[i];
 
             // Setup a shortcut for a grid field
-            field = me.ti().fields.r(colI.fieldId);
+            field = me.ti().fields.r(colI.further || colI.fieldId);
 
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
@@ -1035,40 +1041,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Adjust grid column widths
         //console.log('1st fit', me.getStore().getCount());
         me.gridColumnAFit();
-
-        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'load' attibute
-        me.bindLoads(grid);
-
-        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'jump' attibute
-        Ext.defer(function(){
-            me.bindJumps(grid);
-        }, 100);
-    },
-
-    /**
-     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'load' attibute
-     *
-     * @param root
-     */
-    bindLoads: function(root) {
-        root.getEl().select('[load]').each(function(el){
-            el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('load'));
-            });
-        });
-    },
-
-    /**
-     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'jump' attibute
-     *
-     * @param root
-     */
-    bindJumps: function(root) {
-        root.getEl().select('[jump]').each(function(el){
-            el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
-            });
-        });
     },
 
     /**
@@ -1509,7 +1481,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     // Call additional callback, defined as one of listeners, and pass json-decoded response
                     if (Ext.isFunction(eOpts.remotesave))
                         eOpts.remotesave.call(editor, e, json);
-                });
+                }, editor.context.field);
             }
         }
     },

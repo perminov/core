@@ -51,7 +51,7 @@ Ext.define('Indi.lib.controller.action.Form', {
         listeners: {
             boxready: function(){
                 Ext.defer(function(){
-                    this.el.removeAttr('tabindex');
+                    this.body.attr('tabindex', '0');
                 }, 100, this);
             },
             validitychange: function(form, valid){
@@ -123,6 +123,44 @@ Ext.define('Indi.lib.controller.action.Form', {
                     return wrp.getWindow().close();
                 }
 
+                // If form saved
+                if (json.success) {
+
+                    // Apply callbacks for redirect-request
+                    Ext.merge(cfg, {
+
+                        // If redirect was unsuccessful - make sure current action will be reloaded
+                        failure: function() {
+                            uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias
+                                + '/id/' + json.id + '/ph/' + me.ti().scope.hash
+                                + '/aix/' + json.aix + '/';
+                            Indi.load(uri);
+                        },
+
+                        // If entry was successfully deleted - close window
+                        callback: function(options, success, response) {
+                            if (success && gotoO.action == 'delete') wrp.getWindow().close();
+                        }
+                    });
+
+                    // If jump is intended to goto 'create-new-entry' action within one of nested sections
+                    if (gotoO.action == 'form' && gotoO.jump && gotoO.section != me.ti().section.alias) {
+
+                        // Close
+                        //wrp.getWindow().close();
+
+                        // Spoof uri
+                        var uri = '/' + me.ti().section.alias + '/' + me.ti().action.alias
+                            + '/id/' + json.id + '/ph/' + me.ti().scope.hash
+                            + '/aix/' + json.aix + '/';
+
+                        // Force jump-uri to be loaded, but after 'created-new-entry'
+                        // screen is overwritten by 'edit-existing' screen
+                        cfg.callback = function(options, success, response) {
+                            if (success) Indi.load(json.redirect);
+                        }
+                    }
+                }
                 // Load required contents
                 Indi.load(uri, cfg);
             },
@@ -477,10 +515,10 @@ Ext.define('Indi.lib.controller.action.Form', {
                     }
                 },
                 beforeshow: function(c) {
-                    c._wasHeight = c.getHeight();
+                    if (this.el) c._wasHeight = c.getHeight();
                 },
                 beforehide: function(c) {
-                    c._wasHeight = c.getHeight();
+                    if (this.el) c._wasHeight = c.getHeight();
                 }
             },
             getDirtyIcon: function() {
@@ -819,17 +857,10 @@ Ext.define('Indi.lib.controller.action.Form', {
             handler: function(cb){
 
                 // Create shortcuts for involved components
-                var btnSave = Ext.getCmp(bid + 'save'), sqNested = Ext.getCmp(bid + 'nested'), btn;
-
-                // Toggle action-buttons
-                if (!me.ti().row.id)
-                    for (var i = 0; i < me.ti().actions.length; i++)
-                        if (btn = Ext.getCmp(bid + me.ti().actions[i].alias))
-                            btn.setDisabled(!cb.checked);
+                var btnSave = Ext.getCmp(bid + 'save');
 
                 // Other items adjustments
                 if (btnSave) btnSave.toggle();
-                if (sqNested && me.ti().sections.length && !me.ti().row.id) sqNested.setDisabled(!cb.checked);
             },
             listeners: {
                 afterrender: function(){

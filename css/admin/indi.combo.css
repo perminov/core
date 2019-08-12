@@ -19,6 +19,9 @@
     vertical-align: top;
     overflow: hidden;
 }
+.x-boundlist-item .i-color-box[style*="background: url"] {
+    vertical-align: text-bottom;
+}
 .x-boundlist-item .i-combo-color-box {display: inline-block;}
 .x-boundlist-item:last-child {
     border-bottom: none;

@@ -1995,8 +1995,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      *
      * @param record
      * @param aix
+     * @param cell dataIndex of a column, that cell editor was used within
      */
-    recordRemoteSave: function(record, aix, $ti, callback) {
+    recordRemoteSave: function(record, aix, $ti, callback, cell) {
         var me = this, ti = $ti || me.ti(), params, bool = [];
 
         // If no changed was made - return
@@ -2040,7 +2041,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
 
             // Params
             url: Indi.pre + '/' + ti.section.alias + '/save/id/' + record.get('id')
-                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/ref/rowset/' + search,
+                + '/ph/' + ti.scope.hash + '/aix/' + aix + '/' + rif(cell, 'cell/$1/', 'ref/rowset/') + search,
             method: 'POST',
             params: params,
 
@@ -2073,6 +2074,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * @param json
      */
     affectRecord: function(record, json) {
+        var data = {}, value;
 
         // If response contains info about affected fields
         if (Ext.isObject(json) && Ext.isObject(json.affected)) {
@@ -2103,11 +2105,14 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     // If field's type is 'bool' (this may, for example, happen in case if 'xtype: checkcolumn' usage)
                     if (field && field.type.type == 'bool') value = !!parseInt(json.affected.$keys[i]);
 
-                    // Set field's value
-                    record.set(i, value);
+                    // Collect data to be assigned
+                    data[i] = value;
                 }
             });
         }
+
+        // Assign collected values
+        record.set(data);
 
         // Commit row
         record.commit();

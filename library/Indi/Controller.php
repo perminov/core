@@ -709,9 +709,9 @@ class Indi_Controller {
         $call = array_pop(array_slice(debug_backtrace(), 1, 1));
 
         // Make the call
-        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+        return call_user_func_array(array($this, get_parent_class($call['class']) . '::' .  $call['function']), func_num_args() ? func_get_args() : $call['args']);
     }
-
+    
     /**
      * Provide default index action
      */
@@ -938,6 +938,9 @@ class Indi_Controller {
             // Setup $default
             t()->row->original($a, $defaultValue);
         }
+
+        // Return itself
+        return $this;
     }
 
     /**
@@ -985,7 +988,7 @@ class Indi_Controller {
             }
         }
     }
-    
+
     /**
      * This function is an injection that allows to adjust any trail items before their involvement
      */
@@ -999,6 +1002,9 @@ class Indi_Controller {
      * @param $propS string|array Comma-separated prop names (e.g. field aliases)
      */
     public function inclGridProp($propS) {
+
+        // Preliminary exclude those props, to prevent duplicates
+        $this->exclGridProp($propS);
 
         // Get `field` instances rowset with value of `alias` prop, mentioned in $propS arg
         $fieldRs = Indi::trail()->model->fields(im(ar($propS)), 'rowset');

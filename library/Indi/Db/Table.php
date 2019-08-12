@@ -571,6 +571,7 @@ class Indi_Db_Table
      * @return array
      */
     public function fetchRawTree($order = null, $where = null) {
+
         // ORDER clause
         if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
@@ -579,7 +580,13 @@ class Indi_Db_Table
 
         // Construct sql query
         $query = 'SELECT `id`, `' . $tc . '` FROM `' . $this->_table . '`';
-        $query .= ($order ? ' ORDER BY ' . $order : '');
+
+        // If $where arg contains 'important' key - use it's value as WHERE clause to prevent
+        // fetching whole tree. This can be useful when in case we need certain part of tree
+        if (is_array($where) && isset($where['important'])) $query .= ' WHERE ' . $where['important'];
+
+        // Use $order arg as ORDER clause, if given
+        $query .= rif($order, ' ORDER BY $1');
 
         // Get general tree data for whole table, but only `id` and `treeColumn` columns
         $tree = Indi::db()->query($query)->fetchAll();
