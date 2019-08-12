@@ -1612,6 +1612,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         }
 
         // Return
-        return [$keys, $expr];
+        return array($keys, $expr);
     }
 }
