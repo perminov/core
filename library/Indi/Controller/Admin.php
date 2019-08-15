@@ -3024,18 +3024,20 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Show confirmation prompt
      *
      * @param $msg
-     * @param string $buttons
+     * @param string $buttons OKCANCEL, YESNO, YESNOCANCEL
+     * @param string|null $cancelMsg Msg, that will be shown in case if 'Cancel'
+     *                    button was pressed or confirmation window was closed
      */
-    public function confirm($msg, $buttons = 'OKCANCEL') {
+    public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
 
         // Get $_GET['answer']
         $answer = Indi::get()->answer;
 
         // If no answer, flush confirmation prompt
-        if (!$answer) jconfirm($msg, $buttons);
+        if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
 
         // If answer is 'cancel' - stop request processing
-        else if ($answer == 'cancel') jflush(false);
+        else if ($answer == 'cancel') jflush(false, $cancelMsg);
 
         // Return answer
         return $answer;
@@ -3068,10 +3070,6 @@ class Indi_Controller_Admin extends Indi_Controller {
      * show some confirmation prompt before new cell value will be saved
      */
     public function onBeforeCellSave($cell, $value) {
-
-        // If $value is not 'agmt' - do nothing
-        if ($value != 'agmt') return;
-
 
     }
 }
