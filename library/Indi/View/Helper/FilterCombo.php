@@ -98,7 +98,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
             $sw = $this->getController()->finalWHERE($primaryWHERE, null, false);
 
             // Exclude WHERE clause part, related to current filter
-            unset($sw['filters'][$alias]); if (!count($sw['filters'])) unset($sw['filters']);
+            unset($sw['filters'][$alias]); if (!$sw['filters']) unset($sw['filters']);
 
             // Force $finalWHERE to be single-dimension array
             foreach ($sw as $p => $w) if (is_array($w)) $sw[$p] = im($w, ' AND '); $sw = implode(' AND ', $sw);
