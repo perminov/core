@@ -290,8 +290,11 @@ class Indi_Controller_Admin extends Indi_Controller {
             '`move` ' . ($direction == 'up' ? 'ASC' : 'DESC')
         );
 
+        // Get grouping field
+        $groupBy = t()->section->groupBy ? t()->section->foreign('groupBy')->alias : '';
+
         // For each row
-        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within)) break;
+        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within, $groupBy)) break;
 
         // Get the page of results, that we were at
         $wasPage = Indi::trail()->scope->page;

@@ -911,7 +911,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $within
      * @return bool
      */
-    public function move($direction = 'up', $within = '') {
+    public function move($direction = 'up', $within = '', $groupBy = '') {
 
         // If $direction arg is either 'up' or 'down'
         if (in_array($direction, array('up', 'down'))) {
@@ -921,7 +921,11 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Apend additional part to WHERE clause, in case if current entity - is a tree-like entity
             if ($this->model()->treeColumn())
-                $where[] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
+                $where['treeColumn'] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
+
+            // Append groupBy-part of WHERE clause, for cases when moving should be made among
+            // sibling entries, having value of $groupBy prop equal tos current entry's $groupBy prop
+            if ($groupBy) $where['groupBy'] = '`' . $groupBy . '` = "' . $this->$groupBy . '"';
 
             // Append nearest-neighbour WHERE clause part, for finding the row,
             // that current row should exchange value of `move` property with
