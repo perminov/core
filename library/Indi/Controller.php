@@ -53,14 +53,40 @@ class Indi_Controller {
             // Views dir shortcut
             $dir = DOC . STD . '/www/application/views/';
 
+            // Build tpl for current action within current section
+            $actionTpl = Indi::uri('section') . '/' . Indi::uri('action');
+
             // Foreach design
             foreach (Indi::ini()->design as $design) {
 
                 // Get template filename, applicable for section/action combination
-                $tpl = $dir . $design . '/' . Indi::uri('section') . '/' . Indi::uri('action') . '.php';
+                $tpl = $dir . $design . '/' . $actionTpl . '.php';
 
                 // If template exists - force usage of current design especially for section/action combination
-                if (file_exists($tpl) && (Indi::ini()->design = $design)) break;
+                if (file_exists($tpl) && (Indi::ini()->design = $design)) {
+
+                    // Force action-tpl to be used as inner tpl
+                    $view->innerTpl = $actionTpl;
+
+                    // Break;
+                    break;
+                }
+
+                // Build name of tpl especially for certain entry
+                $entryTpl = $actionTpl . rif(Indi::uri('id'), '-$1');
+
+                // Get custom template filename, applicable for section/action/entry combination
+                $tpl = $dir . $design . '/' . $entryTpl . '.php';
+
+                // If template exists - force usage of current design especially for section/action/entry combination
+                if (file_exists($tpl) && (Indi::ini()->design = $design)) {
+
+                    // For entry-tpl to be used as inner tpl
+                    $view->innerTpl = $entryTpl;
+
+                    // Break;
+                    break;
+                }
             }
 
         // Else use first
