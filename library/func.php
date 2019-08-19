@@ -1471,11 +1471,11 @@ function u() {
  */
 function wrap($val, $html, $cond = null) {
 
-    // Detect html-tagname
-    preg_match('~<([a-zA-Z]+)\s*~', $html, $m);
+    // Detect html-tagname, and arg ($val or $cond) that should be used as condition
+    preg_match('~<([a-zA-Z]+)\s*~', $html, $m); $if = func_num_args() > 2 ? $cond : $val;
 
     // Return $value, wrapped with $html, if $cond arg is true
-    return (func_num_args() > 2 ? $cond : $val) ? $html . $val . '</' . $m[1] . '>' : $val;
+    return $if ? str_replace('$1', is_scalar($if) ? $if : '$1', $html) . $val . '</' . $m[1] . '>' : $val;
 }
 
 /**

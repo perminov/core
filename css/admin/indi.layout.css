@@ -962,3 +962,12 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 .i-grid-cell-badge[data-state="error"] {
     background: red;
 }
+.i-cell-img {
+    margin-right: 10px;margin-top: -2px;margin-bottom: -4px;
+}
+.i-overflow .i-cell-img {
+    display: none;
+}
+.i-overflow:hover .x-grid-cell-inner a {
+    cursor: pointer;
+}
