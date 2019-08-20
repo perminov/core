@@ -124,7 +124,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                     // If clicked element has 'jump' or 'load' attribute - do load/jump
                     if (attr) return (m = attr.match(/\{sections\[([0-9])\]\}/))
-                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]))
+                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]), '[sectionId]')
                         : Indi.load(rif(jump, '$1jump/1/', load));
 
                     // If 'Save' action is accessible, and column is linked to 'enumset' field
@@ -337,17 +337,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnRenderer_Numeric: function(v, m, r, i, c, s) {
         var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c], s;
-        if (column.displayZeroes !== true && parseFloat(v) == 0) return '' ;
+
+        // If value is zero - return either empty string, or gray-coloured zero
+        if (parseFloat(v) == 0) return column.displayZeroes !== true ? '' : '<span style="color:lightgray;">' + v + '</span>';
+
+        // If value is non-zero - format it
         s = Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-        if (column.colors) {
-            if (v > 0) {
-                return '<span style="color:limegreen;">' + s + '</span>';
-            } else if (v < 0) {
-                return '<span style="color:red;">' + s + '</span>';
-            } else {
-                return '<span style="color:lightgray;">' + s + '</span>';
-            }
-        } else return s;
+
+        // Return formatted, wrapped into color, if need
+        return column.colors ? '<span style="color: ' + (v > 0 ?  'limegreen' : 'red') + ';">' + s + '</span>' : s;
     },
 
     /**

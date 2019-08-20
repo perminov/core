@@ -108,8 +108,13 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
                 SELECT DISTINCT `'. $alias . '` FROM `' . $this->distinctFrom($alias, $tbl) .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
             )->fetchAll(PDO::FETCH_COLUMN);
 
-            // Unset zero-length values
-            foreach ($in as $i => $inI) if (!strlen($inI)) unset($in[$i]);
+            // Setup $m flag/shortcut, indicating whether field is really multi-key,
+            // because current value of `storeRelationAbility` may be not same as original,
+            // due to filter's single/multi-value mode inversion checkbox
+            $m = $this->getField()->original('storeRelationAbility') == 'many';
+
+            // Unset zero-length values and split comma-separated values
+            foreach ($in as $i => $inI) if (!strlen($inI)) unset($in[$i]); else if ($m) foreach(ar($inI) as $_) $in []= $_;
 
             // Return
             return in($relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : '0') . ')';

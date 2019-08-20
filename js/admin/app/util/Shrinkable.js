@@ -175,14 +175,14 @@ Ext.define('Indi.util.Shrinkable', {
      *
      * @param index Zero-based index of the item within the shrinkable collection
      */
-    press: function(index) {
+    press: function(index, query) {
         var me = this, b, el;
 
         // If shrinklist is disabled - return
         if (me.disabled) return;
 
         // If shrinklist's store does not contain a record, related to given index - return
-        if (!(b = me.getComponent(index))) return;
+        if (!(b = query ? me.query(query)[index] : me.getComponent(index))) return;
 
         // Press the button
         b.press();
