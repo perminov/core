@@ -2289,7 +2289,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         Indi::demo();
 
         // If 'ref' or 'cell' uri-param given
-        if ($ref = Indi::uri()->ref || $cell = Indi::uri()->cell) {
+        if (($ref = Indi::uri()->ref) || $cell = Indi::uri()->cell) {
 
             // Assign 'ref' it into entry's system props
             $this->row->system('ref', $ref ?: 'rowset');

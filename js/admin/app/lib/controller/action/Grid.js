@@ -148,7 +148,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         value = valueItem.alias;
                         record.key(dataIndex, value);
                         record.set(dataIndex, valueItem.title.replace(/(<\/span>).*$/, '\1'));
-                        me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti());
+                        me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti(), Ext.emptyFn, field.alias);
                     }
                 }
             }
