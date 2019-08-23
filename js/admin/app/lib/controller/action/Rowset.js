@@ -727,7 +727,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$Filter_Default: function(filter) {
 
         // Setup auxilliary variables
-        var me = this, itemI, itemIDefault, control = filter.foreign('fieldId').foreign('elementId').alias;
+        var me = this, itemI, itemIDefault, control = filter.foreign(filter.further ? 'further' : 'fieldId').foreign('elementId').alias;
 
         // Setup default filter config, builded upon filter field's xtype
         itemIDefault = 'panelDocked$FilterX' + Indi.ucfirst(control);
@@ -749,8 +749,8 @@ Ext.define('Indi.lib.controller.action.Rowset', {
     panelDocked$FilterXCombo: function(filter) {
 
         // Setup auxilliary variables/shortcuts
-        var me = this, field = filter.foreign('fieldId'), alias = field.alias, filterCmpId = me.bid() + '-toolbar$filter$'
-            + alias, fieldLabel = filter.alt || field.title, row = me.ti().filtersSharedRow;
+        var me = this, field = filter.foreign(filter.further ? 'further' : 'fieldId'), alias = field.alias,
+            filterCmpId = me.bid() + '-toolbar$filter$' + alias, fieldLabel = filter.alt || field.title, row = me.ti().filtersSharedRow;
 
         // Push the special extjs component data object to represent needed filter. Component consists of
         // two hboxed components. First is extjs label component, and second - is setup to pick up
@@ -1642,13 +1642,19 @@ Ext.define('Indi.lib.controller.action.Rowset', {
      * filter will be empty.
      */
     setFilterValues: function(){
-        var me = this, name, control, def, d, filterCmpId, already = [];
+        var me = this, name, control, def, d, filterCmpId, already = [], filter, field;
 
         // Foreach filter
         for (var i = 0; i < me.ti().filters.length; i++) {
 
+            // Create filter shortcut
+            filter = me.ti().filters[i];
+
+            // Create filter's underlying field (got by 'further' or 'fieldId' prop) shortcut
+            field = filter.foreign(filter.further ? 'further' : 'fieldId');
+
             // Create a shortcut for filter field alias
-            name = me.ti().filters[i].foreign('fieldId').alias;
+            name = field.alias;
 
             // Append name to `already` array. This will be needed bit later,
             // in the process of assigning values for non-regular filters,
@@ -1656,7 +1662,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
             already.push(name);
 
             // Create a shortcut for filter field control element alias
-            control = me.ti().filters[i].foreign('fieldId').foreign('elementId').alias;
+            control = field.foreign('elementId').alias;
 
             // At first, we check if current scope contain the value for the current filter, and if so - we use
             // that value instead of filter's own default value, whether it was defined or not. Also, we
@@ -1674,23 +1680,23 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     def.lte = me.getScopeFilter(name + '-lte');
 
                 // If at least 'gte' or 'lte' properies was set, we assing 'def' object as filter default value
-                if (Object.getOwnPropertyNames(def).length) me.ti().filters[i].defaultValue = def;
+                if (Object.getOwnPropertyNames(def).length) filter.defaultValue = def;
 
             // Else current filter is not a range-filter
             } else if (me.getScopeFilter(name)) {
 
                 // Just assign the value, got from scope as filter default value
-                me.ti().filters[i].defaultValue = me.getScopeFilter(name);
+                filter.defaultValue = me.getScopeFilter(name);
             }
 
             // Finally, if filter has a non-null default value
-            if (me.ti().filters[i].defaultValue || (control == 'check' && me.ti().filters[i].defaultValue === 0)) {
+            if (filter.defaultValue || (control == 'check' && filter.defaultValue === 0)) {
 
                 // Setup a shortcut for filter's default value
-                d = me.ti().filters[i].defaultValue;
+                d = filter.defaultValue;
 
                 // Prepare the id for current filter component
-                filterCmpId = me.bid() + '-toolbar$filter$' + me.ti().filters[i].foreign('fieldId').alias;
+                filterCmpId = me.bid() + '-toolbar$filter$' + field.alias;
 
                 // If current filter is a range filter - set up min and/or max separately
                 if (['number', 'calendar', 'datetime'].indexOf(control) != -1) {
@@ -1729,7 +1735,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     Ext.getCmp(filterCmpId).noReload = true;
 
                     // If filter is for multiple combo - set value as array, joined by comma
-                    if (me.ti().filters[i].foreign('fieldId').storeRelationAbility == 'many')
+                    if (field.storeRelationAbility == 'many')
                         Ext.getCmp(filterCmpId).setValue(typeof d == 'string' ? d : d.join(','));
 
                     // Else if filter is for color field, that is represented by two-thumb multislider

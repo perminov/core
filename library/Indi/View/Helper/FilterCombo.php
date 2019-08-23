@@ -141,7 +141,7 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
     }
 
     public function getField() {
-        return t()->model->fields($this->filter->fieldId);
+        return t()->model->fields($this->filter->further ?: $this->filter->fieldId);
     }
 
     /**

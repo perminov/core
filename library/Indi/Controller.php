@@ -346,12 +346,19 @@ class Indi_Controller {
                     if ($fieldR->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias))
                         $found = $fieldR;
 
+                // Set $further flag
+                $lookupBy = ($further = $found && $found->entityId != t()->model->id()) ? 'further' : 'fieldId';
+
+                // If further-foreign field detected - detect $foreign (e.g. filter->fieldId->alias)
+                // and $further (e.g. filter->further->alias)
+                if ($further) list($foreign, $further) = explode('_', $found->alias);
+
                 // Pick the current filter field title to $excelA
                 if (array_key_exists($found->alias, $excelA) == false) {
 
                     // Get filter `alt` property
                     if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset)
-                        $alt = Indi::trail()->filters->select($found->id, 'fieldId')->current()->alt;
+                        $alt = Indi::trail()->filters->select($found->id, $lookupBy)->current()->alt;
 
                     // Set excel filter mention title
                     $excelA[$found->alias] = array('title' => $alt ? $alt : $found->title);
@@ -469,14 +476,32 @@ class Indi_Controller {
                     if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
 
                         // Get filter row
-                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+                        $filterR = Indi::trail()->filters->gb($found->id, $lookupBy);
 
                         // If filter is multiple (desipite field is singe) set up $mode as `any`
                         if ($filterR->any()) $any = true;
                     }
 
-                    // Set up WHERE clause according to value of $any flag
-                    $where[$found->alias] = Indi::db()->sql($any
+                    // If further-foreign filter's field should be used
+                    if ($further) {
+
+                        // Get WHERE clause to be run on table, that filter's field's relation points to
+                        $furtherWHERE = Indi::db()->sql(
+                            $any ? 'FIND_IN_SET(`' . $further . '`, :s)' : '`' . $further . '` = :s',
+                            $filterSearchFieldValue
+                        );
+
+                        // Get ids
+                        $idA = Indi::db()->query(
+                            'SELECT `id` FROM `:p` WHERE ' . $furtherWHERE,
+                            Indi::model($found->entityId)->table()
+                        )->fetchAll(PDO::FETCH_COLUMN);
+
+                        // Set up WHERE clause according to value of $any flag
+                        $where[$found->alias] = Indi::db()->sql('FIND_IN_SET(`' . $foreign . '`, :s)', im($idA));
+
+                    // Else set up WHERE clause according to value of $any flag
+                    } else $where[$found->alias] = Indi::db()->sql($any
                         ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, :s)'
                         : '`' . $filterSearchFieldAlias . '` = :s', $filterSearchFieldValue);
 
@@ -502,7 +527,7 @@ class Indi_Controller {
                     if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
 
                         // Get filter row
-                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+                        $filterR = Indi::trail()->filters->gb($found->id, $lookupBy);
 
                         // If filter should search any match rather than all matches
                         if ($filterR->any()) $any = true;
@@ -791,6 +816,9 @@ class Indi_Controller {
 
                     // If filter-field is not a foreign-key field, and is not boolean-field
                     if ($field->storeRelationAbility == 'none' && $field->columnTypeId != 12)  continue;
+
+                    // Make sure filters will have consistent options in case if grid data is fetched in same request
+                    if (t()->section->rowsetSeparate == 'no') $filter->consistence = 2;
 
                     // Setup combo data
                     Indi::view()->filterCombo($filter);
