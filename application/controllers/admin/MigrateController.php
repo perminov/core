@@ -1,6 +1,23 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
 
+    public function foreignFilterAction() {
+        field('search', 'further', array (
+            'title' => 'Поле по ключу',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+        ))->move(12);
+        consider('grid', 'further', 'fieldId', array (
+            'foreign' => 'relation',
+            'required' => 'y',
+            'connector' => 'entityId',
+        ));
+        die('ok');
+    }
+
     public function foreignGridAction(){
         field('grid', 'further', array (
             'title' => 'Поле по ключу',

@@ -1770,7 +1770,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if (in($refresh, 'ins,del,was')) {
 
                     // If foreign key field is a multi-value field and $refresh arg is 'ins' or 'del'
-                    if ($fieldR->storeRelationAbility == 'many' && in($refresh, 'ins,del')) {
+                    if ($fieldR->original('storeRelationAbility') == 'many' && in($refresh, 'ins,del')) {
 
                         // We need to fetch foreign data for keys, inserted or deleted from the field's value,
                         // so we replace existing keys list with list of inserted or removed keys, to be used for fetching
@@ -1788,14 +1788,14 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
 
                 // If field is able to store single key, or able to store multiple, but current key's value isn't empty
-                if ($fieldR->storeRelationAbility == 'one' || strlen($val) || $aux) {
+                if ($fieldR->original('storeRelationAbility') == 'one' || strlen($val) || $aux) {
 
                     // Determine a model, for foreign row to be got from. If consider type is 'variable entity',
                     // then model is a value of consider-field. Otherwise model is field's `relation` property
                     $model = $fieldR->relation ?: $this->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
 
                     // Determine a fetch method
-                    $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
+                    $methodType = $fieldR->original('storeRelationAbility') == 'many' ? 'All' : 'Row';
 
                     // If current field is an imitated-field, and is an enumset-field
                     if (!array_key_exists($fieldR->alias, $this->_original) && $model == 6) {
@@ -1834,14 +1834,14 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                             // Finish building WHERE clause
                             $where[] = '`' . $col . '` ' .
-                                ($fieldR->storeRelationAbility == 'many'
+                                ($fieldR->original('storeRelationAbility') == 'many'
                                     ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
                                     : '= "' . $val . '"');
 
                             // Fetch foreign row/rows
                             $foreign = Indi::model($model)->{'fetch' . $methodType}(
                                 $where,
-                                $fieldR->storeRelationAbility == 'many'
+                                $fieldR->original('storeRelationAbility') == 'many'
                                     ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
                                     : null
                             );

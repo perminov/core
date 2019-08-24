@@ -138,7 +138,8 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
             $m = $field->original('storeRelationAbility') == 'many';
 
             // Unset zero-length values and split comma-separated values
-            foreach ($in as $i => $inI) if (!strlen($inI)) unset($in[$i]); else if ($m) foreach(ar($inI) as $_) $in []= $_;
+            foreach ($in as $i => $inI) if (!strlen($inI)) unset($in[$i]);
+            else if ($m) {foreach(ar($inI) as $_) $in []= $_; unset($in[$i]);}
 
             // Return
             return in($field->relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : '0') . ')';
