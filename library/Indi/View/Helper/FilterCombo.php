@@ -82,11 +82,14 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
         // Check if consistency is not toggled Off for current filter
         if ($this->filter->model()->fields('consistence') && !$this->filter->consistence) return;
 
+        // Field shortcut
+        $field = $this->getField();
+
         // If filter is non-boolean
-        if ((($relation = $this->getField()->relation) || $this->getField()->columnTypeId == 12) && (Indi::uri('format') || $this->filter->consistence == 2)) {
+        if (($field->relation || $field->columnTypeId == 12) && (Indi::uri('format') || $this->filter->consistence == 2)) {
 
             // Get field's alias
-            $alias = $this->getField()->alias;
+            $alias = $field->alias;
 
             // Get table name
             $tbl = Indi::trail()->model->table();
@@ -103,21 +106,42 @@ class Indi_View_Helper_FilterCombo extends Indi_View_Helper_FormCombo {
             // Force $finalWHERE to be single-dimension array
             foreach ($sw as $p => $w) if (is_array($w)) $sw[$p] = im($w, ' AND '); $sw = implode(' AND ', $sw);
 
-            // Get the distinct list of possibilities
-            $in = Indi::db()->query('
-                SELECT DISTINCT `'. $alias . '` FROM `' . $this->distinctFrom($alias, $tbl) .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
+            // If further-field defined for this filter
+            if ($this->filter->further) {
+
+                // Get connector field, e.g. field, that is an initially
+                // underlying field for current filter (got by `fieldId`)
+                $connector = t()->fields->gb($this->filter->fieldId);
+
+                // Get connector consistent values
+                $connector_in = Indi::db()->query('
+                  SELECT DISTINCT `' . $connector->alias . '`
+                  FROM `' . $tbl . '`' .
+                  (strlen($sw) ? 'WHERE ' . $sw : '')
+                )->fetchAll(PDO::FETCH_COLUMN);
+
+                // Get the distinct list of possibilities
+                $in = Indi::db()->query('
+                  SELECT DISTINCT `'. $field->original('alias') . '`
+                  FROM `' . $connector->rel()->table() .'`
+                  WHERE `id` IN (0' . rif(im($connector_in), ',$1') . ')'
+                )->fetchAll(PDO::FETCH_COLUMN);
+
+            // Else get the distinct list of possibilities using usual approach
+            } else $in = Indi::db()->query('
+              SELECT DISTINCT `'. $alias . '` FROM `' . $this->distinctFrom($alias, $tbl) .'`' .  (strlen($sw) ? 'WHERE ' . $sw : '')
             )->fetchAll(PDO::FETCH_COLUMN);
 
             // Setup $m flag/shortcut, indicating whether field is really multi-key,
             // because current value of `storeRelationAbility` may be not same as original,
             // due to filter's single/multi-value mode inversion checkbox
-            $m = $this->getField()->original('storeRelationAbility') == 'many';
+            $m = $field->original('storeRelationAbility') == 'many';
 
             // Unset zero-length values and split comma-separated values
             foreach ($in as $i => $inI) if (!strlen($inI)) unset($in[$i]); else if ($m) foreach(ar($inI) as $_) $in []= $_;
 
             // Return
-            return in($relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : '0') . ')';
+            return in($field->relation, '0,6') ? $in : '`id` IN (' . ($in ? implode(',', $in) : '0') . ')';
         }
     }
 

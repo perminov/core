@@ -812,7 +812,7 @@ class Indi_Controller {
                     if (!$filter->consistence) continue;
 
                     // Filter-field shortcut
-                    $field = $filter->foreign('fieldId');
+                    $field = t()->fields->gb($filter->further ?: $filter->fieldId);
 
                     // If filter-field is not a foreign-key field, and is not boolean-field
                     if ($field->storeRelationAbility == 'none' && $field->columnTypeId != 12)  continue;
