@@ -97,6 +97,19 @@ Ext.override(Ext.grid.Panel, {
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
 
+            // If fixed width usage is already pre-defined for this column
+            if (columnA[i].fixedWidthUsage) {
+
+                // Apply it
+                columnA[i].widthUsage = columnA[i].fixedWidthUsage;
+
+                // If column is not hidden - increase grid's `widthUsage` prop
+                if (!columnA[i].hidden) me.widthUsage += widthA[i];
+
+                // Goto next column
+                continue;
+            }
+
             // Get initial column width, based on a column title metrics
             if (columnA[i].icon) widthA[i] = 16; else {
 
