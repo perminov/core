@@ -192,7 +192,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function titleUpdate(Field_Row $titleFieldR) {
 
         // If field, used as title field - is storing single foreign key
-        if ($titleFieldR->storeRelationAbility == 'one') {
+        if ($titleFieldR->original('storeRelationAbility') == 'one') {
 
             // If foreign row can be successfully got by that foreign key
             if ($this->foreign($titleFieldR->alias))

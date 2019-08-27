@@ -1,6 +1,19 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
 
+    public function gridcolWidthUsageAction() {
+        field('grid', 'width', array (
+            'title' => 'Ширина',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ))->move(6);
+        param('grid', 'width', 'measure', 'px');
+        grid('grid', 'width', array('editor' => '1'));
+        action('rwu', array('rowRequired' => 'n', 'type' => 's', 'display' => 0));
+        die('ok');
+    }
+
     public function foreignFilterAction() {
         field('search', 'further', array (
             'title' => 'Поле по ключу',

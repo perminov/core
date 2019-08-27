@@ -3075,4 +3075,38 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function onBeforeCellSave($cell, $value) {
 
     }
+
+    /**
+     * Remember width usage.
+     *
+     * Pick grid columns width usage from $_POST and save those widths
+     * separately for each grid column, so next time grid columns will use
+     * that saved width to prevent re-calculation and improve client-side performance
+     */
+    public function rwuAction() {
+
+        // Check request data for 'widthUsage' prop, that should be json
+        $_ = jcheck(array(
+            'widthUsage' => array(
+                'req' => true,
+                'rex' => 'json'
+            )
+        ), Indi::post());
+
+        // Foreach key-value pair within $_['widthUsage']
+        foreach ($_['widthUsage'] as $gridId => $width) {
+
+            // If no such grid column - skip
+            if (!$gridR = t()->section->nested('grid')->gb($gridId)) continue;
+
+            // Set `width`
+            $gridR->width = $width;
+
+            // Save
+            $gridR->save();
+        }
+
+        // Flush success
+        jflush(true, 'OK');
+    }
 }

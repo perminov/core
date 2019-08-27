@@ -266,6 +266,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
             tdCls: tdClsA.join(' '),
             sortable: !!!column.further,
             editor: column.editor,
+            internalId: column.id,
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
 
@@ -1199,7 +1200,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     rowsetInner$Excel: function() {
-        var me = this;
+        var me = this, columnA = {};
 
         // 'Excel-export' item cfg
         return {
@@ -1207,7 +1208,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
             iconCls: 'i-btn-icon-xls',
             tooltip: Indi.lang.I_EXPORT_EXCEL,
             handler: function(){
-                window.location = me.rowsetExportQuery('excel');
+
+                // If ctrl-key is pressed, hidden 'rwu' action will be called
+                // 'rwu' - means 'remember width usage'
+                if (Ext.EventObject.ctrlKey) {
+                    me.rowsetExportColumnA().forEach(function(column){
+                        columnA[column.internalId] = column.getWidth();
+                    });
+                    me.panelDockedInner$Actions_DefaultInnerHandlerLoad({alias: 'rwu'}, '', '', '', {
+                        params: {widthUsage: JSON.stringify(columnA)}
+                    });
+
+                // Else goto excel-export uri
+                } else window.location = me.rowsetExportQuery('excel');
             }
         }
     },
