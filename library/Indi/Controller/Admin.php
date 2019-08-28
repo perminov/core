@@ -342,7 +342,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         );
 
         // For each row
-        foreach ($toBeDeletedRs as $toBeDeletedR) if ($deleted = (int) $toBeDeletedR->delete()) {
+        foreach ($toBeDeletedRs as $toBeDeletedR) if ($deleted []= (int) $toBeDeletedR->delete()) {
 
             // Get the page of results, that we were at
             $wasPage = Indi::trail()->scope->page;
@@ -361,7 +361,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Prepare args for jflush() call, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
         $args = array(
-            (bool) $deleted,
+            (bool) count($deleted),
             $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array()
         );
 
