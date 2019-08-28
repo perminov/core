@@ -1332,6 +1332,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                             ? '/form/jump/1/parent/' + selection[0].data.id + '/'
                             : '/index/id/'  + selection[0].data.id + '/ph/' + me.ti().scope.hash + '/aix/' + (selection[0].index + 1)+'/';
 
+                        // If qsa prop exists - append to uri and delete
+                        if (btn.qsa) { uri += '?' + btn.qsa; delete btn.qsa;}
+
                         // Load
                         Indi.load(uri);
                     }

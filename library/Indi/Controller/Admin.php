@@ -121,6 +121,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (Indi::uri()->ph) $applyA['upperHash'] = Indi::uri()->ph;
                 if (Indi::uri()->aix) $applyA['upperAix'] = Indi::uri()->aix;
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
+                if (Indi::get()->filter) $applyA['filters'] = $this->_filter2search();
                 Indi::trail()->scope->apply($applyA);
 
                 // If there was no 'format' param passed within the uri
@@ -3108,5 +3109,25 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Flush success
         jflush(true, 'OK');
+    }
+
+    /**
+     * Convert $_GET['filter'], which is in {param1: value1, param2: value2} format,
+     * into $_GET['search'] format (e.g. [{param1: value1}, {param2: value2}])
+     *
+     * @return mixed
+     */
+    protected function _filter2search() {
+
+        // If $_GET['filter'] is not an array - return
+        if (!is_array($filter = Indi::get()->filter)) return;
+
+        // Convert filter values format
+        // from {param1: value1, param2: value2}
+        // to [{param1: value1}, {param2: value2}]
+        $search = array(); foreach ($filter as $param => $value) $search []= array($param => $value);
+
+        // Json-encode and return
+        return json_encode($search);
     }
 }

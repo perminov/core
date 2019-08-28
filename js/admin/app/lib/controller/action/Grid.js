@@ -124,8 +124,8 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
                     // If clicked element has 'jump' or 'load' attribute - do load/jump
                     if (attr) return (m = attr.match(/\{sections\[([0-9])\]\}/))
-                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]), '[sectionId]')
-                        : Indi.load(rif(jump, '$1jump/1/', load));
+                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]), '[sectionId]', attr.split('?')[1])
+                        : Indi.load(rif(jump && jump.split('?')[0], '$1jump/1/' + rif(jump && jump.split('?')[1], '?$1'), load));
 
                     // If 'Save' action is accessible, and column is linked to 'enumset' field
                     // and that field is not in the list of disabled fields - provide some kind
