@@ -602,12 +602,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             }
 
             // Foreign keys (single and multiple)
-            if ($gridFieldR->storeRelationAbility == 'one')
+            if ($gridFieldR->original('storeRelationAbility') == 'one')
                 $typeA['foreign']['single'][$gridFieldR->alias]['title'] = $gridFieldR->relation
                     ? ($gridFieldR->params['titleColumn'] ?: Indi::model($gridFieldR->relation)->titleColumn())
                     : true;
 
-            else if ($gridFieldR->storeRelationAbility == 'many')
+            else if ($gridFieldR->original('storeRelationAbility') == 'many')
                 $typeA['foreign']['multiple'][$gridFieldR->alias]['title'] = $gridFieldR->relation
                     ? ($gridFieldR->params['titleColumn'] ?: Indi::model($gridFieldR->relation)->titleColumn())
                     : true;
@@ -1079,7 +1079,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         // to $distinctA array under $entityId key, otherwise we create and array that contains
                         // only one item and also append it to $distinctA array under $entityId key
                         strlen($r->$key)
-                            ? ($fieldR->storeRelationAbility == 'many'
+                            ? ($fieldR->original('storeRelationAbility') == 'many'
                                 ? explode(',', $r->$key)
                                 : array($r->$key))
                             : array()
@@ -1106,7 +1106,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                         // to $distinctA array under $entityId key, otherwise we create and array that contains
                         // only one item and also append it to $distinctA array under $entityId key
                         strlen($r->$key)
-                            ? ($fieldR->storeRelationAbility == 'many'
+                            ? ($fieldR->original('storeRelationAbility') == 'many'
                                 ? explode(',', $r->$key)
                                 : array($r->$key))
                             : array()
@@ -1230,7 +1230,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 $col = $foreignKeyEntityId == 6 ? 'alias' : 'id';
 
                 // If current foreign key field is able to store only one key
-                if ($fieldR->storeRelationAbility == 'one') {
+                if ($fieldR->original('storeRelationAbility') == 'one') {
 
                     // For each foreign row, fetched for entity, that have same id as $foreignKeyEntityId
                     foreach ($foreignRs[$foreignKeyEntityId] as $foreignR) {
@@ -1248,7 +1248,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     }
 
                 // Else if current foreign key field is able to store more that one key
-                } else if ($fieldR->storeRelationAbility == 'many') {
+                } else if ($fieldR->original('storeRelationAbility') == 'many') {
 
                     // Declare/reset array of rows, related to multiple-foreign-key, for current row within current rowset
                     $rows = array();
@@ -1612,6 +1612,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         }
 
         // Return
-        return [$keys, $expr];
+        return array($keys, $expr);
     }
 }

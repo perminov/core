@@ -121,6 +121,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (Indi::uri()->ph) $applyA['upperHash'] = Indi::uri()->ph;
                 if (Indi::uri()->aix) $applyA['upperAix'] = Indi::uri()->aix;
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
+                if (Indi::get()->filter) $applyA['filters'] = $this->_filter2search();
                 Indi::trail()->scope->apply($applyA);
 
                 // If there was no 'format' param passed within the uri
@@ -290,8 +291,11 @@ class Indi_Controller_Admin extends Indi_Controller {
             '`move` ' . ($direction == 'up' ? 'ASC' : 'DESC')
         );
 
+        // Get grouping field
+        $groupBy = t()->section->groupBy ? t()->section->foreign('groupBy')->alias : '';
+
         // For each row
-        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within)) break;
+        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within, $groupBy)) break;
 
         // Get the page of results, that we were at
         $wasPage = Indi::trail()->scope->page;
@@ -2286,7 +2290,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         Indi::demo();
 
         // If 'ref' or 'cell' uri-param given
-        if ($ref = Indi::uri()->ref || $cell = Indi::uri()->cell) {
+        if (($ref = Indi::uri()->ref) || $cell = Indi::uri()->cell) {
 
             // Assign 'ref' it into entry's system props
             $this->row->system('ref', $ref ?: 'rowset');
@@ -3024,18 +3028,20 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Show confirmation prompt
      *
      * @param $msg
-     * @param string $buttons
+     * @param string $buttons OKCANCEL, YESNO, YESNOCANCEL
+     * @param string|null $cancelMsg Msg, that will be shown in case if 'Cancel'
+     *                    button was pressed or confirmation window was closed
      */
-    public function confirm($msg, $buttons = 'OKCANCEL') {
+    public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
 
         // Get $_GET['answer']
         $answer = Indi::get()->answer;
 
         // If no answer, flush confirmation prompt
-        if (!$answer) jconfirm($msg, $buttons);
+        if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
 
         // If answer is 'cancel' - stop request processing
-        else if ($answer == 'cancel') jflush(false);
+        else if ($answer == 'cancel') jflush(false, $cancelMsg);
 
         // Return answer
         return $answer;
@@ -3069,9 +3075,59 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function onBeforeCellSave($cell, $value) {
 
-        // If $value is not 'agmt' - do nothing
-        if ($value != 'agmt') return;
+    }
 
+    /**
+     * Remember width usage.
+     *
+     * Pick grid columns width usage from $_POST and save those widths
+     * separately for each grid column, so next time grid columns will use
+     * that saved width to prevent re-calculation and improve client-side performance
+     */
+    public function rwuAction() {
 
+        // Check request data for 'widthUsage' prop, that should be json
+        $_ = jcheck(array(
+            'widthUsage' => array(
+                'req' => true,
+                'rex' => 'json'
+            )
+        ), Indi::post());
+
+        // Foreach key-value pair within $_['widthUsage']
+        foreach ($_['widthUsage'] as $gridId => $width) {
+
+            // If no such grid column - skip
+            if (!$gridR = t()->section->nested('grid')->gb($gridId)) continue;
+
+            // Set `width`
+            $gridR->width = $width;
+
+            // Save
+            $gridR->save();
+        }
+
+        // Flush success
+        jflush(true, 'OK');
+    }
+
+    /**
+     * Convert $_GET['filter'], which is in {param1: value1, param2: value2} format,
+     * into $_GET['search'] format (e.g. [{param1: value1}, {param2: value2}])
+     *
+     * @return mixed
+     */
+    protected function _filter2search() {
+
+        // If $_GET['filter'] is not an array - return
+        if (!is_array($filter = Indi::get()->filter)) return;
+
+        // Convert filter values format
+        // from {param1: value1, param2: value2}
+        // to [{param1: value1}, {param2: value2}]
+        $search = array(); foreach ($filter as $param => $value) $search []= array($param => $value);
+
+        // Json-encode and return
+        return json_encode($search);
     }
 }

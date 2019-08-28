@@ -27,7 +27,7 @@ class Indi_Controller {
         $admin = Indi::admin() ? Indi::admin()->table() : false;
 
         // Reset design if need, as we can arrive here twice
-        if (Indi::ini()->general->seoUri) Indi::ini()->design = [];
+        if (Indi::ini()->general->seoUri) Indi::ini()->design = array();
 
         // If module is 'front', and design-specific config was set up,
         // detect design specific dir name, that will be used to build
@@ -53,14 +53,40 @@ class Indi_Controller {
             // Views dir shortcut
             $dir = DOC . STD . '/www/application/views/';
 
+            // Build tpl for current action within current section
+            $actionTpl = Indi::uri('section') . '/' . Indi::uri('action');
+
             // Foreach design
             foreach (Indi::ini()->design as $design) {
 
                 // Get template filename, applicable for section/action combination
-                $tpl = $dir . $design . '/' . Indi::uri('section') . '/' . Indi::uri('action') . '.php';
+                $tpl = $dir . $design . '/' . $actionTpl . '.php';
 
                 // If template exists - force usage of current design especially for section/action combination
-                if (file_exists($tpl) && (Indi::ini()->design = $design)) break;
+                if (file_exists($tpl) && (Indi::ini()->design = $design)) {
+
+                    // Force action-tpl to be used as inner tpl
+                    $view->innerTpl = $actionTpl;
+
+                    // Break;
+                    break;
+                }
+
+                // Build name of tpl especially for certain entry
+                $entryTpl = $actionTpl . rif(Indi::uri('id'), '-$1');
+
+                // Get custom template filename, applicable for section/action/entry combination
+                $tpl = $dir . $design . '/' . $entryTpl . '.php';
+
+                // If template exists - force usage of current design especially for section/action/entry combination
+                if (file_exists($tpl) && (Indi::ini()->design = $design)) {
+
+                    // For entry-tpl to be used as inner tpl
+                    $view->innerTpl = $entryTpl;
+
+                    // Break;
+                    break;
+                }
             }
 
         // Else use first
@@ -248,6 +274,9 @@ class Indi_Controller {
             // Find a field, that column is linked to
             foreach (Indi::trail()->fields as $fieldR) if ($fieldR->alias == $column) break;
 
+            // Skip further-foreign fields. todo: add support for such fields
+            if ($fieldR->entityId != t()->model->id()) continue;
+
             // If no direction - set as ASC by default
             if (!preg_match('/^(ASC|DESC)$/', $direction)) $direction = 'ASC';
 
@@ -320,12 +349,19 @@ class Indi_Controller {
                     if ($fieldR->alias == preg_replace('/-(lte|gte)$/','',$filterSearchFieldAlias))
                         $found = $fieldR;
 
+                // Set $further flag
+                $lookupBy = ($further = $found && $found->entityId != t()->model->id()) ? 'further' : 'fieldId';
+
+                // If further-foreign field detected - detect $foreign (e.g. filter->fieldId->alias)
+                // and $further (e.g. filter->further->alias)
+                if ($further) list($foreign, $further) = explode('_', $found->alias);
+
                 // Pick the current filter field title to $excelA
                 if (array_key_exists($found->alias, $excelA) == false) {
 
                     // Get filter `alt` property
                     if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset)
-                        $alt = Indi::trail()->filters->select($found->id, 'fieldId')->current()->alt;
+                        $alt = Indi::trail()->filters->select($found->id, $lookupBy)->current()->alt;
 
                     // Set excel filter mention title
                     $excelA[$found->alias] = array('title' => $alt ? $alt : $found->title);
@@ -443,14 +479,32 @@ class Indi_Controller {
                     if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
 
                         // Get filter row
-                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+                        $filterR = Indi::trail()->filters->gb($found->id, $lookupBy);
 
                         // If filter is multiple (desipite field is singe) set up $mode as `any`
                         if ($filterR->any()) $any = true;
                     }
 
-                    // Set up WHERE clause according to value of $any flag
-                    $where[$found->alias] = Indi::db()->sql($any
+                    // If further-foreign filter's field should be used
+                    if ($further) {
+
+                        // Get WHERE clause to be run on table, that filter's field's relation points to
+                        $furtherWHERE = Indi::db()->sql(
+                            $any ? 'FIND_IN_SET(`' . $further . '`, :s)' : '`' . $further . '` = :s',
+                            $filterSearchFieldValue
+                        );
+
+                        // Get ids
+                        $idA = Indi::db()->query(
+                            'SELECT `id` FROM `:p` WHERE ' . $furtherWHERE,
+                            Indi::model($found->entityId)->table()
+                        )->fetchAll(PDO::FETCH_COLUMN);
+
+                        // Set up WHERE clause according to value of $any flag
+                        $where[$found->alias] = Indi::db()->sql('FIND_IN_SET(`' . $foreign . '`, :s)', im($idA));
+
+                    // Else set up WHERE clause according to value of $any flag
+                    } else $where[$found->alias] = Indi::db()->sql($any
                         ? 'FIND_IN_SET(`' . $filterSearchFieldAlias . '`, :s)'
                         : '`' . $filterSearchFieldAlias . '` = :s', $filterSearchFieldValue);
 
@@ -476,7 +530,7 @@ class Indi_Controller {
                     if (Indi::trail()->filters instanceof Indi_Db_Table_Rowset) {
 
                         // Get filter row
-                        $filterR = Indi::trail()->filters->gb($found->id, 'fieldId');
+                        $filterR = Indi::trail()->filters->gb($found->id, $lookupBy);
 
                         // If filter should search any match rather than all matches
                         if ($filterR->any()) $any = true;
@@ -761,10 +815,13 @@ class Indi_Controller {
                     if (!$filter->consistence) continue;
 
                     // Filter-field shortcut
-                    $field = $filter->foreign('fieldId');
+                    $field = t()->fields->gb($filter->further ?: $filter->fieldId);
 
                     // If filter-field is not a foreign-key field, and is not boolean-field
                     if ($field->storeRelationAbility == 'none' && $field->columnTypeId != 12)  continue;
+
+                    // Make sure filters will have consistent options in case if grid data is fetched in same request
+                    if (t()->section->rowsetSeparate == 'no') $filter->consistence = 2;
 
                     // Setup combo data
                     Indi::view()->filterCombo($filter);

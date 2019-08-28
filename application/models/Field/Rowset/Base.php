@@ -284,6 +284,9 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         $id = $original instanceof Field_Row ? $original->id : $original['id'];
         $alias = $original instanceof Field_Row ? $original->alias : $original['alias'];
 
+        // Prevent duplicates
+        if (array_key_exists($alias, $this->_aliases)) return $this;
+
         // If $before arg is not given, or is, but ot found among the keys of $this->_aliases
         if (!$before || !array_key_exists($before, $this->_aliases)) {
 

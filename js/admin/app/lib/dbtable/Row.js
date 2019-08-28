@@ -13,7 +13,7 @@ Indi.lib.dbtable.Row.prototype = function (data) {
     this.foreign = function(key) {
 
         // If key name is 'fieldId'
-        if (key == 'fieldId') return Indi.field(this.fieldId);
+        if (key == 'fieldId') return Indi.field(this.fieldId); else if (key == 'further') return Indi.field(this.further);
 
         // Else if key name is not 'fieldId', but current row has `_foreign` property, and
         // such key - is one of existing keys within `_foreign` property - return it

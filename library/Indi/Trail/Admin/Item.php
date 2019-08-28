@@ -66,7 +66,23 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         if (count(Indi_Trail_Admin::$items) == 0) {
 
             // Setup filters
-            $this->filters = $sectionR->nested('search');
+            foreach ($this->filters = $sectionR->nested('search') as $filterR) {
+
+                // Get field
+                if (!$fieldR = $this->fields($filterR->fieldId)) continue;
+
+                // If further-foreign field is not defined for current filter - skip
+                if (!$filterR->further) continue;
+
+                // Get further-foreign field
+                $fieldR_further = clone $fieldR->rel()->fields($filterR->further);
+
+                // Prepend foreign field alias to further-foreign field alias
+                $fieldR_further->alias = $fieldR->alias . '_' . $fieldR_further->alias;
+
+                // Append to fields list
+                $this->fields->append($fieldR_further);
+            }
 
             // Setup action
             foreach ($this->actions as $actionR)
@@ -141,7 +157,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             if ($gridR->further) {
 
                 // Get further-foreign field
-                $fieldR_further = Indi::model($fieldR->relation)->fields($gridR->further);
+                $fieldR_further = clone $fieldR->rel()->fields($gridR->further);
 
                 // Prepend foreign field alias to further-foreign field alias
                 $fieldR_further->alias = $fieldR->alias . '_' . $fieldR_further->alias;

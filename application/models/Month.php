@@ -11,7 +11,7 @@ class Month extends Indi_Db_Table {
     /**
      * @var string
      */
-    public $comboDataOrder = 'month';
+    public $comboDataOrder = '`yearId` $dir, `month` $dir';
 
     /**
      * Array of key-value pairs fetched from `month` and `year` tables

@@ -184,4 +184,17 @@ class Grid_Row extends Indi_Db_Table_Row {
         if ($this->access == 'only' && in(Indi::admin()->profileId, $this->profileIds)) return true;
         if ($this->access == 'except' && !in(Indi::admin()->profileId, $this->profileIds)) return true;
     }
+
+    /**
+     * Make sure parent gridcol's width will be adjusted if need
+     */
+    public function onSave() {
+
+        // If `width` was not affected, or this gridcol is a top-level gridcol - do nothing
+        if (!$this->affected('width') || !$this->gridId) return;
+
+        // Affect parent gridcol's width
+        $this->foreign('gridId')->width += $this->adelta('width');
+        $this->foreign('gridId')->save();
+    }
 }

@@ -192,7 +192,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function titleUpdate(Field_Row $titleFieldR) {
 
         // If field, used as title field - is storing single foreign key
-        if ($titleFieldR->storeRelationAbility == 'one') {
+        if ($titleFieldR->original('storeRelationAbility') == 'one') {
 
             // If foreign row can be successfully got by that foreign key
             if ($this->foreign($titleFieldR->alias))
@@ -911,7 +911,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $within
      * @return bool
      */
-    public function move($direction = 'up', $within = '') {
+    public function move($direction = 'up', $within = '', $groupBy = '') {
 
         // If $direction arg is either 'up' or 'down'
         if (in_array($direction, array('up', 'down'))) {
@@ -921,7 +921,11 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Apend additional part to WHERE clause, in case if current entity - is a tree-like entity
             if ($this->model()->treeColumn())
-                $where[] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
+                $where['treeColumn'] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
+
+            // Append groupBy-part of WHERE clause, for cases when moving should be made among
+            // sibling entries, having value of $groupBy prop equal tos current entry's $groupBy prop
+            if ($groupBy) $where['groupBy'] = '`' . $groupBy . '` = "' . $this->$groupBy . '"';
 
             // Append nearest-neighbour WHERE clause part, for finding the row,
             // that current row should exchange value of `move` property with
@@ -1192,8 +1196,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_null($order)) {
             if ($relatedM->comboDataOrder) {
                 $order = $relatedM->comboDataOrder;
-                if (!@func_get_arg(7) && $relatedM->comboDataOrderDirection)
-                    $dir = $relatedM->comboDataOrderDirection;
+                if (!@func_get_arg(7) && $relatedM->comboDataOrderDirection) $dir = $relatedM->comboDataOrderDirection;
+                if (!preg_match('~^[a-zA-Z0-9]+$~', $order)) $order = str_replace('$dir', $dir, $order);
             } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
             } else {
@@ -1210,7 +1214,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
         // So, if order is empty, the results will be retrieved in the order of their physical placement in
         // their database table
-        if (!is_array($order) && !preg_match('/\(/', $order)) $order = '`' . $order . '`';
+        if (!is_array($order) && preg_match('~^[a-zA-Z0-9]$~', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
@@ -1766,7 +1770,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if (in($refresh, 'ins,del,was')) {
 
                     // If foreign key field is a multi-value field and $refresh arg is 'ins' or 'del'
-                    if ($fieldR->storeRelationAbility == 'many' && in($refresh, 'ins,del')) {
+                    if ($fieldR->original('storeRelationAbility') == 'many' && in($refresh, 'ins,del')) {
 
                         // We need to fetch foreign data for keys, inserted or deleted from the field's value,
                         // so we replace existing keys list with list of inserted or removed keys, to be used for fetching
@@ -1784,14 +1788,14 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
 
                 // If field is able to store single key, or able to store multiple, but current key's value isn't empty
-                if ($fieldR->storeRelationAbility == 'one' || strlen($val) || $aux) {
+                if ($fieldR->original('storeRelationAbility') == 'one' || strlen($val) || $aux) {
 
                     // Determine a model, for foreign row to be got from. If consider type is 'variable entity',
                     // then model is a value of consider-field. Otherwise model is field's `relation` property
                     $model = $fieldR->relation ?: $this->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
 
                     // Determine a fetch method
-                    $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
+                    $methodType = $fieldR->original('storeRelationAbility') == 'many' ? 'All' : 'Row';
 
                     // If current field is an imitated-field, and is an enumset-field
                     if (!array_key_exists($fieldR->alias, $this->_original) && $model == 6) {
@@ -1830,14 +1834,14 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                             // Finish building WHERE clause
                             $where[] = '`' . $col . '` ' .
-                                ($fieldR->storeRelationAbility == 'many'
+                                ($fieldR->original('storeRelationAbility') == 'many'
                                     ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
                                     : '= "' . $val . '"');
 
                             // Fetch foreign row/rows
                             $foreign = Indi::model($model)->{'fetch' . $methodType}(
                                 $where,
-                                $fieldR->storeRelationAbility == 'many'
+                                $fieldR->original('storeRelationAbility') == 'many'
                                     ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
                                     : null
                             );
