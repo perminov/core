@@ -391,6 +391,9 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
             // Get further-foreign field
             if (!$further = Indi::model($fieldR->relation)->fields($m[2])) continue;
 
+            // Use cloned field
+            $further = clone $further;
+
             // Prepend foreign field alias to further-foreign field alias
             $further->alias = $fieldR->alias . '_' . $further->alias;
 
