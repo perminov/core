@@ -10,6 +10,8 @@
 .x-form-item-label{padding: 1px 0;}
 .i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px; cursor: pointer;}
 .i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
+.i-color-box.i-color-box-slim {width: 10px; height: 4px; vertical-align: super;position: relative; top: 2px; border-bottom: none;}
+.i-color-box.i-color-box-slim[title] {border-bottom: none;}
 .i-color-box-wrap .i-color-box[style*="background: url"],
 .i-bgimg-box-wrap .i-color-box[style*="background: url"], .i-color-box[style*="background: url"] {
     height: 16px;

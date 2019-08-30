@@ -944,6 +944,7 @@ class Indi_Db_Table
     public function fetchRow($where = null, $order = null, $offset = null) {
         // Build WHERE and ORDER clauses
         if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
+        else if (preg_match('~^[0-9]+$~', $where)) $where = '`id` = "' . $where . '"';
         if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // If we are trying to get row by offset, and current model is a tree - use special approach
@@ -1005,7 +1006,7 @@ class Indi_Db_Table
      *
      * @param array $input
      * @param bool $assign
-     * @return mixed
+     * @return Indi_Db_Table_Row
      */
     public function createRow($input = array(), $assign = false) {
 
