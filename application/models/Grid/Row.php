@@ -15,9 +15,8 @@ class Grid_Row extends Indi_Db_Table_Row {
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
-            else if ($columnName == 'further') {
-                $value = $this->fieldId && ($_ = field(section($this->sectionId)->entityId, $this->fieldId)->relation) ? field($_, $value)->id : 0;
-            } else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
+            else if ($columnName == 'further') $value = field(field(section($this->sectionId)->entityId, $this->fieldId)->relation, $value)->id;
+            else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
         }
 
         // Call parent
@@ -97,8 +96,13 @@ class Grid_Row extends Indi_Db_Table_Row {
             }
         }
 
+        // Unset `width` if current `grid` entry has nested entries
+        if ($this->nested('grid')->count()) unset($ctor['width']);
+
         // Stringify
-        $ctorS = var_export($ctor, true);
+        $ctorS = preg_replace("~(array \()\n~", 'array(', var_export($ctor, true));
+        $ctorS = preg_replace("~  ('[a-zA-Z0-9_]+' => '.*?',)\n~", '$1 ', $ctorS);
+        $ctorS = preg_replace("~, \)~", ')', $ctorS);
 
         // Minify
         if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);

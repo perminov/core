@@ -15,6 +15,7 @@ class Search_Row extends Indi_Db_Table_Row {
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
+            else if ($columnName == 'further') $value = field(field(section($this->sectionId)->entityId, $this->fieldId)->relation, $value)->id;
         }
 
         // Call parent
@@ -44,7 +45,7 @@ class Search_Row extends Indi_Db_Table_Row {
         unset($ctor['id'], $ctor['move']);
 
         // Exclude props that are already represented by one of shorthand-fn args
-        foreach (ar('sectionId,fieldId') as $arg) unset($ctor[$arg]);
+        foreach (ar('sectionId,fieldId,further') as $arg) unset($ctor[$arg]);
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -66,7 +67,9 @@ class Search_Row extends Indi_Db_Table_Row {
         }
 
         // Stringify
-        $ctorS = var_export($ctor, true);
+        $ctorS = preg_replace("~(array \()\n~", 'array(', var_export($ctor, true));
+        $ctorS = preg_replace("~  ('[a-zA-Z0-9_]+' => '.*?',)\n~", '$1 ', $ctorS);
+        $ctorS = preg_replace("~, \)~", ')', $ctorS);
 
         // Minify
         if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
@@ -83,8 +86,15 @@ class Search_Row extends Indi_Db_Table_Row {
      */
     public function export() {
 
+        // Return creation expression
+        if ($this->further) return "filter('" .
+            $this->foreign('sectionId')->alias . "', '" .
+            $this->foreign('fieldId')->alias . "', '" .
+            $this->foreign('fieldId')->rel()->fields($this->further)->alias . "', " .
+            $this->_ctor() . ");";
+
         // Build and return `filter` entry creation expression
-        return "filter('" .
+        else return "filter('" .
             $this->foreign('sectionId')->alias . "', '" .
             $this->foreign('fieldId')->alias . "', " .
             $this->_ctor() . ");";

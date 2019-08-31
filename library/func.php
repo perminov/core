@@ -1893,13 +1893,24 @@ function filter($section, $field, $ctor = false) {
     // Get `sectionId` and `fieldId` according to $section and $field args
     $sectionR = section($section);
     $sectionId = $sectionR->id;
-    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id;
+    $fieldR = field($sectionR->foreign('entityId')->table, $field);
+    $fieldId = $fieldR->id;
+
+    // Initial WHERE clause
+    $w = array('`sectionId` = "' . $sectionId . '"', '`fieldId` = "' . $fieldId . '"');
+
+    // Detect $further
+    if (func_num_args() > 3) {
+        $further = $ctor; $ctor = func_get_arg(3);
+    } else if (func_num_args() == 3 && is_string($ctor)) {
+        $further = $ctor; $ctor = false;
+    }
+
+    // Mind `further` field
+    if ($further) $w []= '`further` = "' . $fieldR->rel()->fields($further)->id . '"';
 
     // Try to find `filter` entry
-    $filterR = Indi::model('Search')->fetchRow(array(
-        '`sectionId` = "' . $sectionId . '"',
-        '`fieldId` = "' . $fieldId . '"'
-    ));
+    $filterR = Indi::model('Search')->fetchRow($w);
 
     // If $ctor arg is non-false and is not and empty array - return found `filter` entry, or null otherwise
     // This part of this function differs from such part if other similar functions, for example field() function,
@@ -1909,8 +1920,8 @@ function filter($section, $field, $ctor = false) {
     // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
     // - use values given by $section and $fields args
     if (!is_array($ctor)) $ctor = array();
-    foreach (ar('sectionId,fieldId') as $prop)
-        if (!array_key_exists($prop, $ctor))
+    foreach (ar('sectionId,fieldId,further') as $prop)
+        if (isset($$prop) && !array_key_exists($prop, $ctor))
             $ctor[$prop] = $$prop;
 
     // If `filter` entry was not found - create it
@@ -1918,6 +1929,9 @@ function filter($section, $field, $ctor = false) {
 
     // Assign `sectionId` prop first
     if ($ctor['sectionId'] && $filterR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign `fieldId` prop first, to be able to detect `further`
+    if ($ctor['fieldId'] && $filterR->fieldId = $ctor['fieldId']) unset($ctor['fieldId']);
 
     // Assign other props and save
     $filterR->assign($ctor)->save();
