@@ -2621,7 +2621,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Adjust trailing row access with attention to whether is existing or new
             $this->{$row->id ? 'adjustExistingRowAccess' : 'adjustCreatingRowAccess'}($row);
-        }
+
+        // Else if we're operating in multi-row mode - adjust rowset access
+        } else $this->adjustRowsetAccess();
 
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
@@ -3129,5 +3131,13 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Json-encode and return
         return json_encode($search);
+    }
+
+    /**
+     * Empty function, to be overridden in child classes.
+     * Can be useful for switching on/off or doing another changes in grid columns, filters, actions, etc
+     */
+    public function adjustRowsetAccess() {
+
     }
 }
