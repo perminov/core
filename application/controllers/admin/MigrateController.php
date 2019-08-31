@@ -23,7 +23,7 @@ class Admin_MigrateController extends Indi_Controller {
             'relation' => 'field',
             'storeRelationAbility' => 'one',
         ))->move(12);
-        consider('grid', 'further', 'fieldId', array (
+        consider('search', 'further', 'fieldId', array (
             'foreign' => 'relation',
             'required' => 'y',
             'connector' => 'entityId',
