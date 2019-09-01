@@ -1479,10 +1479,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function append($original, $index = null) {
 
-        // Prepare data
-        $append = $original instanceof Indi_Db_Table_Row
-            ? $original
-            : new $this->_rowClass(array('original' => $original, 'table' => $this->_table));
+        // Convert $original into *_Row instance, if need
+        if ($original instanceof Indi_Db_Table_Row) $append = $original; else {
+            $append = Indi::model($this->_table)->createRow();
+            foreach($original as $prop => $value) $append->original($prop, $value);
+        }
 
         // If $before arg is not given - append to th ending
         if ($index === null) $this->_rows[] = $append;

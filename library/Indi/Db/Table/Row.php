@@ -1227,7 +1227,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if (!is_array($order) && $order && !preg_match('/\(/', $order)) $keyword = $selectedR->{trim($order, '`')};
+            if (!is_array($order) && $order && !preg_match('/[\(,]/', $order)) $keyword = $selectedR->{trim($order, '`')};
         }
 
         // Alternate WHERE

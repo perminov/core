@@ -229,7 +229,6 @@ class Indi_View_Helper_Admin_FormCombo {
             'found' => $comboDataRs->found(),
             'page' => $comboDataRs->page(),
             'enumset' => $comboDataRs->enumset,
-            'js' => $this->field->javascript,
             'titleMaxLength' => $this->titleMaxLength
         );
 
