@@ -1284,6 +1284,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
             }
 
+            // Setup indents
+            foreach ($dataRs as $dataR) $dataR->system('indent', indent($dataR->system('level')));
+
             // Unset found rows to prevent disabling of paging up
             if ($unsetFoundRows) $dataRs->found('unset');
 
