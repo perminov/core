@@ -1303,7 +1303,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
                 // Get the index/value
-                if ($columnI['dataIndex']) $value = $data[$i][$columnI['dataIndex']];
+                if ($columnI['dataIndex']) $value = $data[$i]['_render'][$columnI['dataIndex']] ?: $data[$i][$columnI['dataIndex']];
                 else if ($columnI['type'] == 'rownumberer') $value = $i + 1;
                 else $value = '';
 

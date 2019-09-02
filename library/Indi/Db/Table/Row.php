@@ -6147,4 +6147,11 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return it
         return $view;
     }
+
+    /**
+     * Get nesting-level, if applicable
+     */
+    public function level() {
+        $level = 0; $up = $this; while ($up = $up->parent()) $level ++; return $level;
+    }
 }

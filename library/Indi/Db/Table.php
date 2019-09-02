@@ -525,7 +525,6 @@ class Indi_Db_Table
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
             $assocDataI['_system']['level'] = $level[$data[$i]['id']];
-            $assocDataI['_system']['indent'] = indent($level[$data[$i]['id']]);
             $assocDataA[$data[$i]['id']] = $assocDataI;
         }
         $data = $assocDataA;

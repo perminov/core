@@ -2094,6 +2094,9 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                 // Apply _system modifications
                 if (i.match(/^_system/)) record.raw._system = json.affected[i];
 
+                // Apply _render modifications
+                if (i.match(/^_render/)) record.raw._render = json.affected[i];
+
                 // If affected field's name starts with '_' - skip
                 if (i.match(/^_/)) return;
 

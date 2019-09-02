@@ -647,6 +647,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Declare an array for grid data
         $data = array();
 
+        // Get tree column
+        $tc = $this->model()->treeColumn();
+
         // Foreach row within $this rowset
         foreach ($this as $pointer => $r) {
 
@@ -766,7 +769,10 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $data[$pointer]['_system']['title'] = $titleProp ? $data[$pointer][$titleProp] : $r->title();
 
             // Implement indents if need
-            if ($data[$pointer]['title']) $data[$pointer]['title'] = $r->system('indent') . $data[$pointer]['title'];
+            if ($data[$pointer]['title'] && $tc)
+                if ($r->system('level') !== null || $r->system('level', $r->level()))
+                    $data[$pointer]['_render']['title']
+                        = str_repeat('&nbsp;', 5 * $r->system('level')) . $data[$pointer]['title'];
 
             // Unset '_foreign'
             unset($data[$pointer]['_foreign']);
