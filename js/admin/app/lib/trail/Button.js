@@ -22,8 +22,8 @@ Ext.define('Indi.lib.trail.Button', {
         if (me.menuItems && me.menuItems.length) {
             me.menu = {
                 plain: true,
-                cls: 'i-trail-item-menu',
-                style: 'border-top-width:0',
+                cls: me.menuCls || 'i-trail-item-menu',
+                style: me.menuStyle || 'border-top-width:0',
                 margin: 0,
                 padding: 0,
                 border: 1,
@@ -33,7 +33,7 @@ Ext.define('Indi.lib.trail.Button', {
                     height: 15,
                     border: 0,
                     handler: function(btn) {
-                        if (btn.load) Indi.load(btn.load, {trail: true});
+                        if (btn.load) Indi.load(btn.load, me.loadCfg);
                     }
                 },
                 items: me.menuItems,

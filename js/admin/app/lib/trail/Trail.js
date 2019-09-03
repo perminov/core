@@ -107,7 +107,7 @@ Ext.define('Indi.lib.trail.Trail', {
     /**
      * Build the breadcrumbs
      */
-    breadCrumbA: function(route){
+    breadCrumbA: function(route, wh){
         var me = this, crumbA = [], menuItems, i, item;
 
         // If no trail items exist yet
@@ -147,7 +147,7 @@ Ext.define('Indi.lib.trail.Trail', {
                     // this check because there will be visual duplicates otherwise
                     if (sibling.id != item.section.id) {
                         menuItems.push({
-                            text: ' &raquo; ' + sibling.title,
+                            text: rif(!wh, ' &raquo; ') + sibling.title,
                             load: me._crumbHref(sibling.alias, prev)
                         });
                     }

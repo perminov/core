@@ -68,6 +68,26 @@ Ext.override(Ext.button.Button, {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    /**
+     * Overridden to pick me.menuOffset if defined
+     *
+     * @return {*}
+     */
+    showMenu: function() {
+        var me = this;
+        if (me.rendered && me.menu) {
+            if (me.tooltip && me.getTipAttr() != 'title') {
+                Ext.tip.QuickTipManager.getQuickTip().cancelShow(me.btnEl);
+            }
+            if (me.menu.isVisible()) {
+                me.menu.hide();
+            }
+
+            me.menu.showBy(me.el, me.menuAlign, me.menuOffset || (((!Ext.isStrict && Ext.isIE) || Ext.isIE6) ? [-20, -2] : undefined));
+        }
+        return me;
     }
 });
 
