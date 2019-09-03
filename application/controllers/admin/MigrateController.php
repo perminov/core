@@ -1,5 +1,10 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
+    public function fieldsmodeAction() {
+        action('activate', array('title' => 'Активировать', 'rowRequired' => 'y', 'type' => 's'));
+        section2action('fields','activate', array ('profileIds' => '1', 'rename' => 'Выбрать режим'))->move(1);
+        die('ok');
+    }
 
     public function gridcolWidthUsageAction() {
         field('grid', 'width', array (
