@@ -2320,7 +2320,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 else $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
 
         // If current cms user is an alternate, and if there is corresponding field within current entity structure
-        if ($this->alternateWHERE() && Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $possibleA))
+        if ($this->alternateWHERE() && Indi::admin()->alternate 
+            && in($aid = Indi::admin()->alternate . 'Id', $possibleA) && !$this->allowOtherAlternateForSave())
 
             // Prevent alternate field to be set via POST, as it was already (properly)
             // set at the stage of trail item row initialization
@@ -3139,5 +3140,12 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function adjustRowsetAccess() {
 
+    }
+    
+    /**
+     *
+     */
+    public function allowOtherAlternateForSave() {
+        return false;
     }
 }
