@@ -668,7 +668,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXCalendar: function(column, field) {
         return {
             xtype: 'datecolumn',
-            format: field.params.displayFormat
+            format: field.params.displayFormat,
+            defaultRenderer: function(value){
+                return Ext.isDate(value) ? Ext.util.Format.date(value, this.format) : value;
+            }            
         }
     },
 
