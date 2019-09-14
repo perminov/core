@@ -22,13 +22,13 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
     public function activateAction() {
 
         // Build combo config for that field
-        $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('mode');
+        $combo = array('fieldLabel' => '', 'allowBlank' => 0) + t()->row->combo('mode');
 
         // Get field title
         $title = mb_strtolower($this->row->field('mode')->title);
 
         // Show prompt and obtain data
-        $prompt = $this->prompt('Пожалуйста, выберите ' . $title, [$combo]);
+        $prompt = $this->prompt('Пожалуйста, выберите ' . $title, array($combo));
 
         // Save new mode
         foreach ($this->selected as $selected) $selected->assign(array('mode' => $prompt['mode']))->save();
