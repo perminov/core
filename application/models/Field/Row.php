@@ -1182,7 +1182,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
                 // Get a list of comma-imploded aliases, ordered by their titles
                 $set = Indi::db()->query($sql = '
-                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
+                    SELECT GROUP_CONCAT(`alias` ORDER BY `move`)
                     FROM `enumset`
                     WHERE `fieldId` = "' . $this->id . '"
                 ')->fetchColumn(0);
