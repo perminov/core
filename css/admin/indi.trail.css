@@ -1,3 +1,6 @@
+.i-window-header .x-btn-default-toolbar-small-over,
+.i-window-header .x-btn-default-toolbar-small-menu-active,
+.i-window-header .x-btn-default-toolbar-small-pressed,
 .i-trail .x-btn-default-toolbar-small-over,
 .i-trail .x-btn-default-toolbar-small-menu-active,
 .i-trail .x-btn-default-toolbar-small-pressed {
@@ -10,6 +13,16 @@
     content: '\000BB\00A0';
     font-style: normal;
     padding-left: 4px;
+}
+.i-window-header .i-trail-item-section.x-btn-default-toolbar-small .x-btn-inner:before,
+.i-window-header .i-trail-item-action.x-btn-default-toolbar-small .x-btn-inner:before,
+.i-window-header .i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner:before {
+    content: '';
+    font-style: normal;
+    padding-left: 0;
+}
+.i-window-header .x-btn-default-toolbar-small .x-btn-inner {
+    padding: 0;
 }
 .i-trail .x-btn.x-btn-default-toolbar-small .x-btn-inner {
     font-size: 12px;
@@ -26,6 +39,11 @@
 .i-trail-item-action-active.x-btn-default-toolbar-small-over .x-btn-inner{
     color: #a5bce8;
 }
+.i-window-header .i-trail-item-row-title.x-btn-default-toolbar-small-over .x-btn-inner,
+.i-window-header .i-trail-item-section.x-btn-default-toolbar-small-over .x-btn-inner,
+.i-window-header .i-trail-item-action-active.x-btn-default-toolbar-small-over .x-btn-inner{
+    color: #a5bce8;
+}
 .i-trail .x-btn.i-trail-item-row-title.x-btn-default-toolbar-small .x-btn-inner {
     font-style: italic;
     padding-right: 2px;
@@ -35,6 +53,15 @@
     top: -1px !important;
     padding: 0 2px 0 2px;
     border-top-width: 0;
+}
+.i-trail-item-menu.i-window-header-menu .x-menu-body {
+    background: white !important;
+    top: 0 !important;
+    padding: 0 2px 0 2px;
+    border-top-width: 1px;
+}
+.i-trail-item-menu.i-window-header-menu .x-menu-item-text {
+    font-size: 11px;
 }
 .i-trail-overflow-menu.i-trail-item-menu .x-menu-body {
     top: 0 !important;

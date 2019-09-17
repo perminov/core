@@ -10,6 +10,8 @@
 .x-form-item-label{padding: 1px 0;}
 .i-color-box{width: 14px; display: inline-block; height: 11px; position: relative; top: 1px; margin-right: 3px; cursor: pointer;}
 .i-color-box-wrap .i-color-box, i-bgimg-box-wrap .i-color-box {margin: 0;}
+.i-color-box.i-color-box-slim {width: 10px; height: 4px; vertical-align: super;position: relative; top: 2px; border-bottom: none;}
+.i-color-box.i-color-box-slim[title] {border-bottom: none;}
 .i-color-box-wrap .i-color-box[style*="background: url"],
 .i-bgimg-box-wrap .i-color-box[style*="background: url"], .i-color-box[style*="background: url"] {
     height: 16px;
@@ -17,7 +19,11 @@
     margin: -3px 0 0 0;
     position: relative;
     top: 2px;
+    vertical-align: text-bottom;
 }
+.x-grid-cell-inner > span[title] {border-bottom: 1px dotted;}
+.x-grid-cell-inner > span[title][jump] {border-bottom: 1px dashed; text-decoration: none;}
+.x-grid-cell-inner > span.i-color-box[title][jump] {border-bottom: none;}
 .i-bgimg-box-wrap .i-color-box[style*="background: url"]{
     vertical-align: text-bottom;
 }
@@ -957,4 +963,13 @@ td.i-overflow:hover .x-grid-cell-inner, td.i-overflow:hover .x-grid-cell-inner *
 }
 .i-grid-cell-badge[data-state="error"] {
     background: red;
+}
+.i-cell-img {
+    margin-right: 10px;margin-top: -2px;margin-bottom: -4px;
+}
+.i-overflow .i-cell-img {
+    display: none;
+}
+.i-overflow:hover .x-grid-cell-inner a {
+    cursor: pointer;
 }

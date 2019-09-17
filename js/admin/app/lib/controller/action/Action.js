@@ -660,7 +660,7 @@ Ext.define('Indi.lib.controller.action.Action', {
                 }
 
             // Else if we're here because of some of trail-buttons was clicked
-            } else if (me.cfg.trail) {
+            } else if (me.cfg.trail || me.cfg.whd) {
 
                 // Set up `create` flag as `false`
                 create = false;
@@ -677,7 +677,35 @@ Ext.define('Indi.lib.controller.action.Action', {
         cfg = {
             wrapperId: me.panel.id,
             title: me.panel.title,
-            ctx: me
+            ctx: me,
+            replaceTitle: {
+                xtype: 'toolbar',
+                cls: 'i-window-header',
+                padding: 0,
+                style: 'background: none;',
+                border: 0,
+                enableOverflow: {
+                    menu: {
+                        cls: 'i-trail-item-menu i-trail-overflow-menu i-window-header-menu',
+                        plain: true
+                    }
+                },
+                defaults: {
+                    xtype: 'trailbutton',
+                    padding: 0,
+                    margin: 0,
+                    height: 15,
+                    border: 0,
+                    menuStyle: 'border-top-width: 1px',
+                    menuCls: 'i-trail-item-menu i-window-header-menu',
+                    menuOffset: [-5, 0],
+                    loadCfg: {whd: true},
+                    handler: function(btn) {
+                        if (btn.load) Indi.load(btn.load, btn.loadCfg);
+                    }
+                },
+                items: Indi.trail(true).breadCrumbA(me.route, true).pop()
+            }
         }
 
         // If new window should be created
@@ -809,7 +837,7 @@ Ext.define('Indi.lib.controller.action.Action', {
      * @return {Object}
      */
     panelDockedInner$Actions_Default: function(action) {
-        var me = this, bid = me.panelDockedInnerBid(), btnSave;
+        var me = this, bid = me.panelDockedInnerBid(), ats;
 
         // If action is visible - return
         if (action.display != 1) return null;
@@ -827,9 +855,10 @@ Ext.define('Indi.lib.controller.action.Action', {
             rowRequired: action.rowRequired,
             listeners: {
                 boxready: function(btn) {
-                    if (me.ti().action.rowRequired == 'y') btn.setDisabled(
-                        (!me.ti().row.id && (btnSave = Ext.getCmp(bid + 'save')) && !btnSave.pressed)
-                    );
+                    if (me.ti().action.rowRequired == 'y'
+                        && !me.ti().row.id
+                        && !(ats = Ext.getCmp(bid + 'autosave')))
+                        btn.setDisabled(true)
                 }
             }
         }

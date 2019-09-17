@@ -18,6 +18,7 @@ Ext.override(Ext.grid.column.Column, {
             config.cls = 'i-column-header-icon';
             config.tooltip = config.tooltip || config.header;
             config.header = '<img src="' + Indi.std + config.icon + '">';
+            config.minWidth = 30;
         }
 
         // Call parent

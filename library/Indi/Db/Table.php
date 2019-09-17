@@ -525,7 +525,6 @@ class Indi_Db_Table
         for ($i = 0; $i < count($data); $i++) {
             $assocDataI = $data[$i];
             $assocDataI['_system']['level'] = $level[$data[$i]['id']];
-            $assocDataI['_system']['indent'] = indent($level[$data[$i]['id']]);
             $assocDataA[$data[$i]['id']] = $assocDataI;
         }
         $data = $assocDataA;
@@ -571,6 +570,7 @@ class Indi_Db_Table
      * @return array
      */
     public function fetchRawTree($order = null, $where = null) {
+
         // ORDER clause
         if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
@@ -579,7 +579,13 @@ class Indi_Db_Table
 
         // Construct sql query
         $query = 'SELECT `id`, `' . $tc . '` FROM `' . $this->_table . '`';
-        $query .= ($order ? ' ORDER BY ' . $order : '');
+
+        // If $where arg contains 'important' key - use it's value as WHERE clause to prevent
+        // fetching whole tree. This can be useful when in case we need certain part of tree
+        if (is_array($where) && isset($where['important'])) $query .= ' WHERE ' . $where['important'];
+
+        // Use $order arg as ORDER clause, if given
+        $query .= rif($order, ' ORDER BY $1');
 
         // Get general tree data for whole table, but only `id` and `treeColumn` columns
         $tree = Indi::db()->query($query)->fetchAll();
@@ -937,6 +943,7 @@ class Indi_Db_Table
     public function fetchRow($where = null, $order = null, $offset = null) {
         // Build WHERE and ORDER clauses
         if (is_array($where) && count($where = un($where, null))) $where = implode(' AND ', $where);
+        else if (preg_match('~^[0-9]+$~', $where)) $where = '`id` = "' . $where . '"';
         if (is_array($order) && count($order = un($order, null))) $order = implode(', ', $order);
 
         // If we are trying to get row by offset, and current model is a tree - use special approach
@@ -998,7 +1005,7 @@ class Indi_Db_Table
      *
      * @param array $input
      * @param bool $assign
-     * @return mixed
+     * @return Indi_Db_Table_Row
      */
     public function createRow($input = array(), $assign = false) {
 

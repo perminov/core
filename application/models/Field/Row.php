@@ -1182,7 +1182,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
                 // Get a list of comma-imploded aliases, ordered by their titles
                 $set = Indi::db()->query($sql = '
-                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
+                    SELECT GROUP_CONCAT(`alias` ORDER BY `move`)
                     FROM `enumset`
                     WHERE `fieldId` = "' . $this->id . '"
                 ')->fetchColumn(0);
@@ -1480,18 +1480,26 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         $lineA[] = "field('" . $this->foreign('entityId')->table . "', '" . $this->alias . "', " . $this->_ctor() . ");";
 
         // Foreach `enumset` entry, nested within current `field` entry
+        // - build `enumset` entry's creation expression
         foreach ($this->nested('enumset', array('order' => 'move')) as $enumsetR)
-
-            // Build `enumset` entry's creation expression
             $lineA[] = $enumsetR->export();
 
-        // Foreach `param` entry, nested within current `field` entry
-        foreach ($this->nested('param') as $paramR)
+        // Foreach `param` entry, nested within current `field` entry - do same
+        foreach ($this->nested('param') as $paramR) $lineA[] = $paramR->export();
 
-            // Build `param` entry's creation expression
-            $lineA[] = $paramR->export();
+        // Foreach `param` entry, nested within current `field` entry - do same
+        foreach ($this->nested('consider') as $considerR) $lineA[] = $considerR->export();
 
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
+    }
+
+    /**
+     * Get the model, that value of current field's `relation` prop points to
+     *
+     * @return Indi_Db_Table
+     */
+    public function rel() {
+        return Indi::model($this->relation);
     }
 }

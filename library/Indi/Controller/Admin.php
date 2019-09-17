@@ -121,6 +121,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 if (Indi::uri()->ph) $applyA['upperHash'] = Indi::uri()->ph;
                 if (Indi::uri()->aix) $applyA['upperAix'] = Indi::uri()->aix;
                 if (Indi::get()->stopAutosave) $applyA['toggledSave'] = false;
+                if (Indi::get()->filter) $applyA['filters'] = $this->_filter2search();
                 Indi::trail()->scope->apply($applyA);
 
                 // If there was no 'format' param passed within the uri
@@ -290,8 +291,11 @@ class Indi_Controller_Admin extends Indi_Controller {
             '`move` ' . ($direction == 'up' ? 'ASC' : 'DESC')
         );
 
+        // Get grouping field
+        $groupBy = t()->section->groupBy ? t()->section->foreign('groupBy')->alias : '';
+
         // For each row
-        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within)) break;
+        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within, $groupBy)) break;
 
         // Get the page of results, that we were at
         $wasPage = Indi::trail()->scope->page;
@@ -314,7 +318,7 @@ class Indi_Controller_Admin extends Indi_Controller {
     /**
      * Provide delete action
      */
-    public function deleteAction($redirect = true) {
+    public function deleteAction($flush = true) {
         
         // Demo mode
         Indi::demo();
@@ -342,7 +346,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         );
 
         // For each row
-        foreach ($toBeDeletedRs as $toBeDeletedR) if ($deleted = (int) $toBeDeletedR->delete()) {
+        foreach ($toBeDeletedRs as $toBeDeletedR) if ($deleted []= (int) $toBeDeletedR->delete()) {
 
             // Get the page of results, that we were at
             $wasPage = Indi::trail()->scope->page;
@@ -358,9 +362,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Do post delete maintenance
         $this->postDelete($deleted);
 
-        // Flush json response, containing new page index, in case if now row
+        // Prepare args for jflush() call, containing new page index, in case if now row
         // index change is noticeable enough for rowset current page was shifted
-        jflush((bool) $deleted, $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array());
+        $args = array(
+            (bool) count($deleted),
+            $wasPage != ($nowPage = Indi::trail()->scope->page) ? array('page' => $nowPage) : array()
+        );
+
+        // Flush or return json response, depending on $flush arg
+        if ($flush) jflush($args[0], $args[1]); else return $args;
     }
 
     /**
@@ -459,6 +469,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If uri has 'single' param - append it to primary WHERE clause
         if (strlen(Indi::uri('single'))) $where['single'] = '`id` = "' . (int) Indi::uri('single') . '"';
 
+        //
         if (Indi::uri('action') == 'index') {
 
             // Get a string version of WHERE stack
@@ -1292,7 +1303,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $columnL = PHPExcel_Cell::stringFromColumnIndex($n);
 
                 // Get the index/value
-                if ($columnI['dataIndex']) $value = $data[$i][$columnI['dataIndex']];
+                if ($columnI['dataIndex']) $value = $data[$i]['_render'][$columnI['dataIndex']] ?: $data[$i][$columnI['dataIndex']];
                 else if ($columnI['type'] == 'rownumberer') $value = $i + 1;
                 else $value = '';
 
@@ -2079,7 +2090,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If current model has a tree column, and it is not forced to be ignored - append special
         // clause to WHERE-clauses stack for summaries to be calculated only for top-level entries
         if (Indi::trail()->model->treeColumn() && !$this->actionCfg['misc']['index']['ignoreTreeColumn'])
-            $where[] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
+            $where['rootRowsOnly'] = '`' . Indi::trail()->model->treeColumn() . '` = "0"';
 
         // Append scope's WHERE clause to the stack
         if (strlen(Indi::trail()->scope->WHERE)) $where[] = Indi::trail()->scope->WHERE;
@@ -2338,6 +2349,16 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Demo mode
         Indi::demo();
 
+        // If 'ref' or 'cell' uri-param given
+        if (($ref = Indi::uri()->ref) || $cell = Indi::uri()->cell) {
+
+            // Assign 'ref' it into entry's system props
+            $this->row->system('ref', $ref ?: 'rowset');
+
+            // Call onBeforeCellSave(), if need
+            if ($cell) $this->onBeforeCellSave($cell, Indi::post($cell));
+        }
+
         // Get array of aliases of fields, that are actually represented in database table
         $possibleA = Indi::trail()->model->fields(null, 'columns');
 
@@ -2359,7 +2380,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                 else $data[$fieldR->alias] = $fieldR->compiled('defaultValue');
 
         // If current cms user is an alternate, and if there is corresponding field within current entity structure
-        if ($this->alternateWHERE() && Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $possibleA))
+        if ($this->alternateWHERE() && Indi::admin()->alternate 
+            && in($aid = Indi::admin()->alternate . 'Id', $possibleA) && !$this->allowOtherAlternateForSave())
 
             // Prevent alternate field to be set via POST, as it was already (properly)
             // set at the stage of trail item row initialization
@@ -2660,7 +2682,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // Adjust trailing row access with attention to whether is existing or new
             $this->{$row->id ? 'adjustExistingRowAccess' : 'adjustCreatingRowAccess'}($row);
-        }
+
+        // Else if we're operating in multi-row mode - adjust rowset access
+        } else $this->adjustRowsetAccess();
 
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
@@ -3067,16 +3091,121 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Show confirmation prompt
      *
      * @param $msg
+     * @param string $buttons OKCANCEL, YESNO, YESNOCANCEL
+     * @param string|null $cancelMsg Msg, that will be shown in case if 'Cancel'
+     *                    button was pressed or confirmation window was closed
      */
-    public function confirm($msg) {
+    public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
 
         // Get $_GET['answer']
         $answer = Indi::get()->answer;
 
         // If no answer, flush confirmation prompt
-        if (!$answer) jconfirm($msg);
+        if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
+
+        // If answer is 'cancel' - stop request processing
+        else if ($answer == 'cancel') jflush(false, $cancelMsg);
+
+        // Return answer
+        return $answer;
+    }
+
+    /**
+     * Show prompt with additional fields
+     *
+     * @param $msg
+     * @param array $cfg
+     * @return mixed
+     */
+    public function prompt($msg, $cfg = array()) {
+
+        // Get $_GET['answer']
+        $answer = Indi::get()->answer;
+
+        // If no answer, flush confirmation prompt
+        if (!$answer) jprompt($msg, $cfg);
 
         // If answer is 'cancel' - stop request processing
         else if ($answer == 'cancel') jflush(false);
+
+        // Return prompt data
+        return json_decode(Indi::post('_prompt'), true);
+    }
+
+    /**
+     * Empty function. Can be overridden in child classes for cases when there is a need to
+     * show some confirmation prompt before new cell value will be saved
+     */
+    public function onBeforeCellSave($cell, $value) {
+
+    }
+
+    /**
+     * Remember width usage.
+     *
+     * Pick grid columns width usage from $_POST and save those widths
+     * separately for each grid column, so next time grid columns will use
+     * that saved width to prevent re-calculation and improve client-side performance
+     */
+    public function rwuAction() {
+
+        // Check request data for 'widthUsage' prop, that should be json
+        $_ = jcheck(array(
+            'widthUsage' => array(
+                'req' => true,
+                'rex' => 'json'
+            )
+        ), Indi::post());
+
+        // Foreach key-value pair within $_['widthUsage']
+        foreach ($_['widthUsage'] as $gridId => $width) {
+
+            // If no such grid column - skip
+            if (!$gridR = t()->section->nested('grid')->gb($gridId)) continue;
+
+            // Set `width`
+            $gridR->width = $width;
+
+            // Save
+            $gridR->save();
+        }
+
+        // Flush success
+        jflush(true, 'OK');
+    }
+
+    /**
+     * Convert $_GET['filter'], which is in {param1: value1, param2: value2} format,
+     * into $_GET['search'] format (e.g. [{param1: value1}, {param2: value2}])
+     *
+     * @return mixed
+     */
+    protected function _filter2search() {
+
+        // If $_GET['filter'] is not an array - return
+        if (!is_array($filter = Indi::get()->filter)) return;
+
+        // Convert filter values format
+        // from {param1: value1, param2: value2}
+        // to [{param1: value1}, {param2: value2}]
+        $search = array(); foreach ($filter as $param => $value) $search []= array($param => $value);
+
+        // Json-encode and return
+        return json_encode($search);
+    }
+
+    /**
+     * Empty function, to be overridden in child classes.
+     * Can be useful for switching on/off or doing another changes in grid columns, filters, actions, etc
+     */
+    public function adjustRowsetAccess() {
+
+    }
+    
+    /**
+     *
+     */
+    public function allowOtherAlternateForSave() {
+        return false;
     }
 }

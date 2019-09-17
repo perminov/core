@@ -340,7 +340,7 @@ Ext.define('Indi.lib.form.field.Combo', {
      * @return {Ext.form.field.Text} this
      */
     setValue: function(value) {
-        var me = this, data;
+        var me = this, data, ctxInterval;
 
         // Workaround for cases when value is not found within the store
         // Supported currently only for single-value non-enumset combos
@@ -348,9 +348,13 @@ Ext.define('Indi.lib.form.field.Combo', {
             && me.xtype == 'combo.form' && me.store.ids.indexOf(parseInt(value)) == -1) {
 
             if (!(me.wand && me.wand.pressed && !me.wand.hidden)) {
-                me.remoteFetch({selected: value}, function() {
-                    me.setValue(value);
-                });
+                ctxInterval = setInterval(function(){
+                    if (!me.ctx()) return;
+                    clearInterval(ctxInterval);
+                    me.remoteFetch({selected: value}, function() {
+                        me.setValue(value);
+                    });
+                }, 10);
                 return me;
             }
         }
@@ -1246,7 +1250,7 @@ Ext.define('Indi.lib.form.field.Combo', {
         value = value || '';
 
         // Declare `info` object
-        var info = {title: data.title ? data.title.trim() : '', color: '', src: '', box: '', css: {color: ''}}, color;
+        var info = {title: (data.option || data.title || '').trim(), color: '', src: '', box: '', css: {color: ''}}, color;
 
         // Check if `title` or `value` contain a color definition
         if (color = value.toString().match(this.colorReg)) {
@@ -1528,6 +1532,9 @@ Ext.define('Indi.lib.form.field.Combo', {
         me.hiddenEl.val(selected.join(','));
 
         if (noChange == false) me.getNative().setValue.call(me, me.hiddenEl.val());
+
+        // Refresh height
+        me.setHeight();
     },
 
     /**
@@ -1823,6 +1830,9 @@ Ext.define('Indi.lib.form.field.Combo', {
 
                 // Else if source layout is 'ru' - setup destination layout as 'en'
                 else if (src == 'ru') dst = 'en';
+
+                // Else if source layout is 'en' - setup destination layout as 'ru'
+                else if (src == 'en') dst = 'ru';
 
                 // Get converted character
                 if (dst) converted += kl[dst][kl[src].indexOf(c)];
@@ -2165,16 +2175,11 @@ Ext.define('Indi.lib.form.field.Combo', {
                 // Restore list of options
                 me.keywordErased(mode);
 
-                // Execute javascript-code, assigned to selected item
-                if (me.store.enumset) {
-                    var index = me.store['ids'].indexOf(li.attr(name));
-                    if (index != -1 && !me.nojs  && me.store['data'][index].system.js) {
-                        Indi.eval(me.store['data'][index].system.js, me);
-                    }
-                }
-
                 // Additional operations, that should be done after some option was selected
                 me.postSelect(li);
+
+                // Refresh height
+                me.setHeight();
 
             // Indicate that option can't be once more selected because it's already selected
             } else {
@@ -2267,11 +2272,18 @@ Ext.define('Indi.lib.form.field.Combo', {
         // If current combo is a form-combo, or auto-combo
         if (me.xtype.match(/^combo\.(form|auto|filter)$/)) {
 
+            // Remember value before clear (this is supported only for single-value combos)
+            if (!me.multiSelect && !me.enumset) me.beforeClearValue = parseInt(me.value);
+
             // Check whether it will be good to disable, and if so - do it
             me.setDisabled(false, true, sbl);
 
             // If still not disabled - refresh options
-            if (!me.disabled && (me.xtype != 'combo.filter' || !me.consistence)) me.remoteFetch(request);
+            if (!me.disabled && (me.xtype != 'combo.filter' || !me.consistence)) me.remoteFetch(request, function() {
+
+                // If combo is single-value, and value-before-clear is in store - apply it
+                if (!me.multiSelect && !me.enumset && ~this.store.ids.indexOf(me.beforeClearValue)) me.val(me.beforeClearValue);
+            });
 
             //
             if (me.wand && me.wand.pressed && !me.wand.hidden) me.setSubmitMode('keyword');
