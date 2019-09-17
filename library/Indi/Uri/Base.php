@@ -136,6 +136,9 @@ class Indi_Uri_Base {
         // Set cookie domain and path
         $this->setCookieDomain();
 
+        // If 'Indi-Auth' header given - use it's value as session id
+        if ($id = $_SERVER['HTTP_INDI_AUTH']) session_id($id);
+
         // Start session
         session_start();
 

@@ -1910,6 +1910,10 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function auth() {
 
+        // Allow CORS
+        header('Access-Control-Allow-Headers: x-requested-with, indi-auth');
+        header('Access-Control-Allow-Origin: *');
+
         // If visitor is a visitor, e.g. he has not signed in yet
         if (!$_SESSION['admin']) {
 
@@ -1946,7 +1950,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Else start a session for user and report that sing-in was ok
                     $allowedA = array('id', 'title', 'email', 'password', 'profileId', 'profileTitle', 'alternate', 'mid');
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
-                    jflush(true, array('ok' => '1'));
+
+                    // Flush response
+                    jflush(true, array_key_exists('HTTP_INDI_AUTH', $_SERVER) ? $this->info() : array('ok' => '1'));
                 }
 
                 // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
@@ -1956,18 +1962,35 @@ class Indi_Controller_Admin extends Indi_Controller {
                     unset($_SESSION['indi']['throwOutMsg']);
                 }
 
-                // Render login page
-                $out = Indi::view()->render('login.php');
+                // If user is trying to access server-app using standalone client-app
+                if (array_key_exists('HTTP_INDI_AUTH', $_SERVER)) {
 
-                // Do paths replacements, if current project runs within webroot subdirectory
-                if (STD) {
-                    $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
-                    $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
-                    $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                    // Flush basic info
+                    jflush(true, array(
+                        'std' => STD,
+                        'com' => COM ? '' : '/admin',
+                        'pre' => PRE,
+                        'uri' => Indi::uri()->toArray(),
+                        'title' => Indi::ini('general')->title ?: 'Indi Engine',
+                        'throwOutMsg' => Indi::view()->throwOutMsg
+                    ));
+
+                // Else if user is trying to access server-app using usual way
+                } else {
+
+                    // Render login page
+                    $out = Indi::view()->render('login.php');
+
+                    // Do paths replacements, if current project runs within webroot subdirectory
+                    if (STD) {
+                        $out = preg_replace('/(<link[^>]+)(href)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                        $out = preg_replace('/(<script[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                        $out = preg_replace('/(<img[^>]+)(src)=("|\')\//', '$1$2=$3' . STD . '/', $out);
+                    }
+
+                    // Flush the login page
+                    iexit($out);
                 }
-
-                // Flush the login page
-                iexit($out);
             }
 
         // Else if user is already signed in, and is trying to perform some action in some section
@@ -2093,11 +2116,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If we are in a root of interface, build the general layout
         if (Indi::uri('section') == 'index' && Indi::uri('action') == 'index') {
 
-            // Setup the left menu
-            $menu = Section::menu(); $this->menuNotices($menu); $this->adjustMenu($menu); Indi::view()->menu = $menu;
+            // Get info
+            $info = $this->info();
 
-            // Setup info about current logged in cms user
-            Indi::view()->admin = $_SESSION['admin']['title'] . ' [' . $_SESSION['admin']['profileTitle']  . ']';
+            // If request was made via Indi Engine client app - flush info right now
+            if ($_SERVER['HTTP_INDI_AUTH']) jflush(true, $info);
+
+            // Setup info about current logged in cms user, and accessible menu
+            Indi::view()->admin = $info['user']['title'] . ' [' . $info['user']['role']  . ']';
+            Indi::view()->menu = $info['user']['menu'];
 
             // Render the layout
             $out = Indi::view()->render('index.php');
@@ -2138,6 +2165,39 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Flush output
             iexit($out);
         }
+    }
+
+    /**
+     * Prepare params to be flushed on successful sign-in or on existing session resume
+     *
+     * @return array
+     */
+    protected function info() {
+
+        // Get menu, accessible for current user
+        $menu = Section::menu(); $this->menuNotices($menu); $this->adjustMenu($menu);
+
+        // Return
+        return array(
+            'std' => STD,
+            'com' => COM ? '' : '/admin',
+            'pre' => PRE,
+            'uri' => Indi::uri()->toArray(),
+            'time' => time(),
+            'ini' => array(
+                'ws' => array_merge((array) Indi::ini('ws'), array('pem' => is_file(DOC . STD . '/core/application/ws.pem'))),
+                'demo' => Indi::demo(false)
+            ),
+            'user' => array(
+                'title' => Indi::admin()->title(),
+                'uid' => Indi::admin()->profileId . '-' . Indi::admin()->id,
+                'role' => Indi::admin()->foreign('profileId')->title,
+                'menu' => $menu,
+                'auth' => session_id(),
+                'dashboard' => Indi::admin()->foreign('profileId')->dashboard ?: false,
+                'maxWindows' => Indi::admin()->foreign('profileId')->maxWindows ?: 15
+            )
+        );
     }
 
     /**
