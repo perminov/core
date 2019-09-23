@@ -55,6 +55,9 @@ class Indi_View_Action_Admin_Row_Print extends Indi_View_Action_Admin_Row {
 
             // Remove bottom comments list
             $this->plain = str_replace($clb[0], '', $this->plain);
+
+            // Remove '[w1]' links
+            $this->plain = preg_replace('~\[w[0-9]+\]~', '', $this->plain);
         }
 
         // Replace static variables
