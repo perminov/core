@@ -5215,6 +5215,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($fgn = Indi::model($rule['key'])->fetchRow('`id` = "' . $this->$prop . '"')) $this->foreign($prop, $fgn);
                     else jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $this->$prop));
                 }
+                
+                // If prop's value should be equal to some certain value, but it's not equal - flush error
+                if (array_key_exists('eql', $rule) && $this->$prop != $rule['eql'])
+                    jflush(false, sprintf(I_JCHECK_EQL, $rule['eql'], $this->$prop));                
             }
         }
     }

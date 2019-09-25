@@ -137,15 +137,27 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
             if (shell_exec($wsCheck)) jflush(false);
         }
 
+        // Check whether pid-file is writable
+        if (!is_writable($wsLock)) jflush(false, 'ws.pid file is not writable');
+
+        // Check whether err-file is writable
+        if (DOC . STD . '/core/application/ws.err') jflush(false, 'ws.err file is not writable');
+        
         // Path to websocket-server php script
         $wsServer = '/core/application/ws.php';
         
-        // Start websocket server
-        preg_match('/^WIN/i', PHP_OS)
-            ? exec('start /B php ..' . $wsServer . '')
-            : exec('nohup wget -qO- "'. ($_SERVER['REQUEST_SCHEME'] ?: 'http') . '://' . $_SERVER['HTTP_HOST'] . STD . $wsServer . '" > /dev/null &');
+        // Build websocket startup cmd
+        $result['cmd'] = preg_match('/^WIN/i', PHP_OS)
+            ? 'start /B php ..' . $wsServer . ''
+            : 'nohup wget --no-check-certificate -qO- "'. ($_SERVER['REQUEST_SCHEME'] ?: 'http') . '://' . $_SERVER['HTTP_HOST'] . STD . $wsServer . '" > /dev/null &';
 
+        // Start websocket server
+        exec($result['cmd'], $result['output'], $result['return']);
+
+        // Unset 'cmd'-key
+        unset($result['cmd']);
+        
         // Flush msg
-        jflush(true);
+        jflush(true, $result);
     }
 }
