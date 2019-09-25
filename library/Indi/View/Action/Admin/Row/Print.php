@@ -39,7 +39,7 @@ class Indi_View_Action_Admin_Row_Print extends Indi_View_Action_Admin_Row {
 
                     // Prepare regexp snap points
                     $rex = array(
-                        '<span.*?class=MsoCommentReference.*? id="_anchor_' . ($idx = $m1[1]) . '"',
+                        '<span[^>]+class=MsoCommentReference.*? id="_anchor_' . ($idx = $m1[1]) . '"',
                         'mso-special-character:comment\'>&nbsp;</span></span></span>'
                     );
 
@@ -51,7 +51,7 @@ class Indi_View_Action_Admin_Row_Print extends Indi_View_Action_Admin_Row {
 
                     // Prepare regexp
                     $_rex = '~' . im($rex, '[^\~]*?') . '~sui';
-                    
+
                     // Strip
                     $this->plain = preg_replace($_rex, '', $this->plain);
             }
