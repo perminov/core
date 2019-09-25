@@ -69,6 +69,11 @@ class Indi_Controller_Admin extends Indi_Controller {
     protected $_excelA = array();
 
     /**
+     * Array for explanation messages to be shown in case if some action was denied by $this->deny('myAction', 'some reason');
+     */
+    protected $_deny = array();
+    
+    /**
      * Constructor
      */
     public function __construct() {
@@ -2693,7 +2698,19 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::trail()->actions->select($action, 'alias')->at(0)) $this->{$action . 'Action'}();
 
         // Else flush an error message
-        else jflush(false, sprintf(I_ACCESS_ERROR_ACTION_IS_OFF_DUETO_CIRCUMSTANCES, Indi::model('Action')->fetchRow('`alias` = "' . $action . '"')->title));
+        else {
+        
+            // Get title
+            $title = Indi::model('Action')->fetchRow('`alias` = "' . $action . '"')->title;
+            
+            // Get reason
+            foreach ($this->_deny as $actions => $reason)
+                if (in($action, $actions))
+                    break;
+        
+            // Flush msg
+            jflush(false, $reason ?: sprintf(I_ACCESS_ERROR_ACTION_IS_OFF_DUETO_CIRCUMSTANCES, $title));
+        }
     }
 
     /**
@@ -2716,14 +2733,15 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Deny actions, enumerated within $actions argument, from being called
      *
      * @param $actions
+     * @param string $msg
      */
-    public function deny($actions) {
+    public function deny($actions, $msg = '') {
+
+        // Convert $actions arg to an array
+        $actions = ar($actions);
 
         // If 'create' action is in the list of actions to be denied
         if (in('create', $actions)) {
-
-            // Convert $actions arg to an array
-            $actions = ar($actions);
 
             // Setup current section's `disableAdd` property as 1
             Indi::trail()->section->disableAdd = 1;
@@ -2737,6 +2755,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Apply exclusions to the list of allowed actions
         Indi::trail()->actions->exclude($actions, 'alias');
+        
+        // Remember the reason, if given
+        if ($msg) $this->_deny[im($actions)] = $msg;
     }
 
     /**

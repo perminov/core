@@ -83,6 +83,7 @@ Ext.define('Indi.lib.form.field.Radios', {
                 inputValue: inputValue,
                 checked: inputValue == me.row[me.name],
                 enumset: enumset,
+                readOnly: me.readOnly,
                 disabled: inputValue in disabled,
                 onBoxClick: function(e) {
                     var me = this;
