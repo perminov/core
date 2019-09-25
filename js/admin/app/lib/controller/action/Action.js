@@ -865,9 +865,7 @@ Ext.define('Indi.lib.controller.action.Action', {
 
         // Setup iconCls property, if need
         if (me.panel.toolbarMasterItemActionIconA.indexOf(action.alias) != -1) {
-            actionItem.iconCls = 'i-btn-icon-' + action.alias;
-            actionItem.text = '';
-            actionItem.tooltip = action.title;
+            actionItem.iconCls = '!i-btn-icon-' + action.alias;
         }
 
         // Return

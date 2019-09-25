@@ -52,15 +52,15 @@ Ext.override(Ext.button.Button, {
     constructor: function(config) {
         var me = this;
 
-        // Add icon and move text to tooltip
+        // Add icon and move text to tooltip, if specified
         if (config.icon) {
             config.icon = Indi.std + config.icon;
             config.tooltip = config.text + '';
             config.text = '';
-        }
+        } 
 
-        // Make that if `iconCls` is specified with '!'-sign at the beginning - button text will be moved to tooltip
-        if (config.iconCls && config.iconCls.match(/^!/)) {
+        // Else if `iconCls` is specified with '!'-sign at the beginning - button text will be also moved to tooltip
+        else if (config.iconCls && config.iconCls.match(/^!/)) {
             config.iconCls = config.iconCls.replace(/^!/, '');
             config.tooltip = config.text + '';
             config.text = '';
