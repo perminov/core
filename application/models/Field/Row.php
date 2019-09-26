@@ -1190,6 +1190,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 // Build the order clause, using FIND_IN_SET function
                 $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . $set . '") ' . $direction;
 
+            // Else we're going to sort entries by `monthId` column, or other-named
+            // column referencing to `month` entries - apply custom behaviour
+            } else if ($this->rel()->table() == 'month') {
+
+                // Build the order clause, using FIND_IN_SET function and comma-separated
+                // list of months' ids, as monthId() fn return them in right chronology
+                $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . im(monthId()) . '")' . $direction;
+
             // If column is of type (BIG|SMALL|MEDIUM|)INT
             } else if (preg_match('/INT/', $this->foreign('columnTypeId')->type)) {
 
