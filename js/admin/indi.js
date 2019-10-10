@@ -668,7 +668,7 @@ Ext.define('Indi', {
                     if (trigger && mismatch.entity) msg = Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG1
                         + mismatch.entity.title + '"'
                         + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                        + Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG2 + ': <br><br>' + msg;
+                        + Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG2 + ': <br><br>' + '<div style="max-height: 387px; overflow: auto">' + msg + '</div>';
 
                     // Show message box
                     boxA.push({

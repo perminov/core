@@ -4,10 +4,11 @@ Ext.define('Indi.controller.sections', {
         index: {
             gridColumn$RowsOnPage: {editor: true},
             gridColumn$Alias: {editor: true},
-            gridColumn$Title: {editor: true},
+            gridColumn$Title: {editor: true, resizable: false, minWidth: 200},
             rowset: {
                 multiSelect: true
             },
+            panelDocked$Filter$RoleIds: {allowClear: false},
             gridColumn$Alias_Renderer: function(v, s, r) {
                 var pc = r.system('php-class'), pe = r.system('php-error'), pt,
                     jc = r.system('js-class'),  je = r.system('js-error'),  jt;
