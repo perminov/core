@@ -159,6 +159,13 @@ class Indi_Controller_Admin extends Indi_Controller {
                     // Get final WHERE clause, that will implode primaryWHERE, filterWHERE and keywordWHERE
                     $finalWHERE = $this->finalWHERE($primaryWHERE);
 
+                    // If $_GET['group'] is an json-encoded object rather than array containing that object
+                    if (json_decode(Indi::get()->group) instanceof stdClass)
+
+                        // Prepend it to the list of sorters, to provide compatibility with ExtJS 6.7 behaviour,
+                        // because ExtJS 4.1 auto-added grouping to the list of sorters but ExtJS 6.7 does not do that
+                        Indi::get()->sort = preg_replace('~^\[~', '$0' . Indi::get()->group . ',', Indi::get()->sort);
+
                     // Get final ORDER clause, built regarding column name and sorting direction
                     $finalORDER = $this->finalORDER($finalWHERE, Indi::get()->sort);
 
@@ -2068,7 +2075,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If all possible results are already fetched, and if section view type is grid - return,
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
         if ((Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !$force) && !Indi::trail()->model->treeColumn())
-            if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf')) return;
+            if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf'))
+                if (!$_SERVER['HTTP_INDI_AUTH']) return;
 
         // Define an array containing extjs summary types and their sql representatives
         $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');
@@ -2506,7 +2514,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->adjustGridData($data);
 
         // Adjust grid each data item
-        foreach ($data as &$item) $this->adjustGridDataItem($item);
+        foreach ($data as &$item) {
+            $this->adjustGridDataItem($item);
+            $this->renderGridDataItem($item);
+        }
 
         // Return affected data, prepared for being displayed
         return array_shift($data);

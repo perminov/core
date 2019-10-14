@@ -784,7 +784,10 @@ class Indi_Controller {
             $this->adjustGridData($data);
 
             // Adjust grid data on a per-item basis
-            foreach ($data as &$item) $this->adjustGridDataItem($item);
+            foreach ($data as &$item) {
+                $this->adjustGridDataItem($item);
+                $this->renderGridDataItem($item);
+            }
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
@@ -1118,5 +1121,42 @@ class Indi_Controller {
      */
     public function adjustGridDataItem(&$item) {
 
+    }
+
+    /**
+     * Render cell values using 'jump' and 'over' params, if given
+     *
+     * @param $item
+     */
+    public function renderGridDataItem(&$item) {
+
+        // If no 'jump' and 'over' system props defined for given item - return
+        if (!($jumpA = &$item['_system']['jump']) && !($overA = &$item['_system']['over'])) return;
+
+        // Foreach prop
+        foreach ($jumpA as $prop => &$jump) {
+
+            // Shortcut to hover title
+            $over = &$overA[$prop];
+
+            // If it's array
+            if (is_array($jump)) {
+
+                // Foreach jump - build <span> containing destination, hover title
+                $spanA = array(); foreach ($jump as $dest)
+                    $spanA []= '<span jump="' . $dest['href'] . '"'
+                        . rif($dest['over'], ' title="$1"')
+                        . rif($dest['ibox'], ' $1')
+                        . '>' . rif(!$dest['ibox'], $dest['text']) . '</span>';
+
+                // Render
+                $item['_render'][$prop] = wrap($item[$prop], '<span title="$1">', $over) . rif(im($spanA, ', '), ' $1');
+
+            // Else use just as jump-attribute
+            } else $item['_render'][$prop] = wrap($item[$prop], '<span' . rif($over, ' title="$1"') . ' jump="' . $jump . '">');
+        }
+
+        // Unset
+        unset($item['_system']['jump'], $item['_system']['over']);
     }
 }
