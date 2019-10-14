@@ -22,7 +22,7 @@ Ext.override(Ext.grid.header.Container, {
             renderer,
             value,
             metaData,
-            store = panel.store;
+            store = panel.store, rendered;
 
         for (; colIdx < headersLn; colIdx++) {
             metaData = {
@@ -32,11 +32,12 @@ Ext.override(Ext.grid.header.Container, {
             header = headers[colIdx];
             headerId = header.id;
             renderer = header.renderer;
-            value = record.raw._render && (header.dataIndex in record.raw._render) // +
+            rendered = false;
+            value = record.raw._render && (rendered = header.dataIndex in record.raw._render) // +
                 ? record.raw._render[header.dataIndex]             // +
                 : data[header.dataIndex];                          // +
 
-            if (typeof renderer == "function") {
+            if (!rendered && typeof renderer == "function") {
                 value = renderer.call(
                     header.scope || me.ownerCt,
                     value,
