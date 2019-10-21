@@ -580,7 +580,7 @@ Ext.define('Indi', {
                 var err = sesA.join('<br><br>');
 
                 // If error msg length is greater than 4kb - wrap it in <textarea>
-                if (err.length > 4096) err = '<textarea style="width: 500px; height:400px;">' + err + '</textarea>';
+                err = '<div style="max-height: 387px; word-break: break-all; overflow: auto">' + err + '</div>';
 
                 // Show errors within a message box
                 boxA.push({
