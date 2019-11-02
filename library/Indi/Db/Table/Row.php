@@ -5982,8 +5982,20 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function combo($field, $store = false) {
 
-        // Get field
-        $fieldR = $this->field($field);
+        // If $field arg is an array - assume pseudo-field should be created
+        if (is_array($field)) {
+
+            // Create
+            $fieldR = Indi::model('Field')->createRow();
+
+            // Assign config
+            $fieldR->assign($field);
+
+            // Setup `entityId`, if not given within config
+            if (!$fieldR->entityId) $fieldR->entityId = $this->model()->id;
+
+        // Else get existing field
+        } else $fieldR = $this->field($field);
 
         // Get name
         $name = $field = $fieldR->alias;
@@ -5999,8 +6011,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         $selectedValue = $this->id || strlen($this->$field) ? $this->$field : $defaultValue;
 
         // Get initial combo options rowset
-        $comboDataRs = $this->getComboData($name, null, $selectedValue);
+        $comboDataRs = $this->getComboData($name, null, $selectedValue, null, null, $fieldR);
 
+        i($comboDataRs, 'a');
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
 
