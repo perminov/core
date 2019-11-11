@@ -78,6 +78,10 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function __construct() {
 
+        // Prevent Fatal error plain msg from breaking json output,
+        // This won't stop showing errors, as they are passed to json
+        ini_set('display_errors', 0);
+
         // Call parent constructor
         parent::__construct();
 

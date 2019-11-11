@@ -103,6 +103,10 @@ function jerror($errno, $errstr, $errfile, $errline) {
     // Send HTTP 500 code
     if (!headers_sent() && !isIE()) header('HTTP/1.1 500 Internal Server Error');
 
+    // If Indi Engine standalone client-app is in use - flush first error
+    // todo: collect all non-fatal errors and flush collected either on end on execution or on fatal-error
+    if (APP) jflush(false, array('errors' => array($error)));
+
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
 }

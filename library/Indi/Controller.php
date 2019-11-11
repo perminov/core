@@ -68,8 +68,8 @@ class Indi_Controller {
                     // Force action-tpl to be used as inner tpl
                     $view->innerTpl = $actionTpl;
 
-                    // Break;
-                    break;
+                    // Set $found flag
+                    $found = true;
                 }
 
                 // Build name of tpl especially for certain entry
@@ -84,9 +84,12 @@ class Indi_Controller {
                     // For entry-tpl to be used as inner tpl
                     $view->innerTpl = $entryTpl;
 
-                    // Break;
-                    break;
+                    // Set $found flag
+                    $found = true;
                 }
+
+                // Break
+                if ($found) break;
             }
 
         // Else use first
@@ -805,6 +808,10 @@ class Indi_Controller {
                 $pageData = array(
                     'totalCount' => $this->rowset->found(),
                     'blocks' => $data,
+                );
+
+                // Setup meta data
+                $metaData = array(
                     'scope' => $scope
                 );
 
@@ -830,8 +837,13 @@ class Indi_Controller {
                     Indi::view()->filterCombo($filter);
 
                     // Pick combo data
-                    $pageData['filter'][$field->alias] = array_pop(Indi::trail()->filtersSharedRow->view($field->alias));
+                    $metaData['filter'][$field->alias] = array_pop(Indi::trail()->filtersSharedRow->view($field->alias));
                 }
+
+                // If current request was made using Indi Engine standalone
+                // client-app - pass meta data under separate 'metaData' key,
+                // as it's the only way to avoid using {keepRawData: true} in ExtJS
+                if (APP) $pageData['metaData'] = $metaData; else $pageData += $metaData;
 
                 // Adjust json export
                 $this->adjustJsonExport($pageData);
