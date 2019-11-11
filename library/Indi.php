@@ -2146,8 +2146,11 @@ class Indi {
      */
     public static function iflush($flag) {
 
-        // Set up no cache
-        if ($flag && !headers_sent()) header('Cache-Control: no-cache');
+        // Set up headers
+        if ($flag && !headers_sent()) {
+            header('Cache-Control: no-cache');
+            header('X-Accel-Buffering: no');
+        }
 
         // Set up output buffering implicit flush mode
         ob_implicit_flush($flag);
