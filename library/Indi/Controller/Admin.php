@@ -3041,7 +3041,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $item['title'] .= '<span class="menu-qty menu-qty-' . $qtyI['id'] . '"'
                     . '" style="' . ($qtyI['bg'] ? 'background: ' . $qtyI['bg'] : '') . '; color: ' . ($qtyI['fg'] ?: 'initial') . ';'
                     . ($qtyI['qty'] ? '' : 'display: none')
-                    . '" data-qtip="' . $qtyI['tip'] . '">' . $qtyI['qty'] . '</span>';
+                    . '" data-qtip="' . $qtyI['tip'] . '" data-qtip-side="right">' . $qtyI['qty'] . '</span>';
         }
     }
 
