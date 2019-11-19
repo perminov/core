@@ -216,6 +216,9 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 'FIND_IN_SET(`id`, "' . $this->_original['entityId'] . ',' . $this->_modified['entityId'] . '")'
             )->column('table');
 
+            // Get real table, as $table may contain VIEW-name rather that TABLE-name
+            $table = Indi::model($table)->table(true);
+
             // Drop column from old table, if that column exists
             if ($this->_original['columnTypeId'])
                 Indi::db()->query('ALTER TABLE `' . $wasTable . '` DROP COLUMN `' . $this->_original['alias'] .'`');
@@ -242,7 +245,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         } else {
 
             // Get name of the table, related to `entityId` property
-            $table = Indi::model($this->entityId)->table();
+            $table = Indi::model($this->entityId)->table(true);
         }
 
         // We should add a new column in database table in 3 cases:
