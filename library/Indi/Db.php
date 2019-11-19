@@ -328,7 +328,7 @@ class Indi_Db {
                         'aliases' => array_values($eFieldA[$entityI['id']]['aliases'] ?: array()),
                         'ids' => array_values($eFieldA[$entityI['id']]['ids'] ?: array()),
                         'rowClass' => 'Field_Row',
-                        'found' => count($eFieldA[$entityI['id']]['rows'])
+                        'found' => count($eFieldA[$entityI['id']]['rows'] ?: array())
                     ))
                 );
 
