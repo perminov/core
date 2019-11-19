@@ -68,8 +68,8 @@ class Indi_Controller {
                     // Force action-tpl to be used as inner tpl
                     $view->innerTpl = $actionTpl;
 
-                    // Break;
-                    break;
+                    // Set $found flag
+                    $found = true;
                 }
 
                 // Build name of tpl especially for certain entry
@@ -84,9 +84,12 @@ class Indi_Controller {
                     // For entry-tpl to be used as inner tpl
                     $view->innerTpl = $entryTpl;
 
-                    // Break;
-                    break;
+                    // Set $found flag
+                    $found = true;
                 }
+
+                // Break
+                if ($found) break;
             }
 
         // Else use first
@@ -784,7 +787,10 @@ class Indi_Controller {
             $this->adjustGridData($data);
 
             // Adjust grid data on a per-item basis
-            foreach ($data as &$item) $this->adjustGridDataItem($item);
+            foreach ($data as &$item) {
+                $this->adjustGridDataItem($item);
+                $this->renderGridDataItem($item);
+            }
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
             if (in(Indi::uri('format'), 'excel,pdf')) $this->export($data, Indi::uri('format'));
@@ -802,6 +808,10 @@ class Indi_Controller {
                 $pageData = array(
                     'totalCount' => $this->rowset->found(),
                     'blocks' => $data,
+                );
+
+                // Setup meta data
+                $metaData = array(
                     'scope' => $scope
                 );
 
@@ -827,8 +837,13 @@ class Indi_Controller {
                     Indi::view()->filterCombo($filter);
 
                     // Pick combo data
-                    $pageData['filter'][$field->alias] = array_pop(Indi::trail()->filtersSharedRow->view($field->alias));
+                    $metaData['filter'][$field->alias] = array_pop(Indi::trail()->filtersSharedRow->view($field->alias));
                 }
+
+                // If current request was made using Indi Engine standalone
+                // client-app - pass meta data under separate 'metaData' key,
+                // as it's the only way to avoid using {keepRawData: true} in ExtJS
+                if (APP) $pageData['metaData'] = $metaData; else $pageData += $metaData;
 
                 // Adjust json export
                 $this->adjustJsonExport($pageData);
@@ -917,6 +932,9 @@ class Indi_Controller {
         // in $this->filtersWHERE() function, so one column can be used to find either selected-grid-filter-value or keyword,
         // not both at the same time
         $exclude = array_keys(Indi::obar());
+
+        // Exclude further-foreign fields, as no support yet implemented for
+        $exclude = array_merge($exclude, t()->fields->select(': != ' . t()->model->id(), 'entityId')->column('alias'));
 
         // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
         return Indi::trail()->{Indi::trail()->gridFields ? 'gridFields' : 'fields'}->keywordWHERE($keyword, $exclude);
@@ -1118,5 +1136,42 @@ class Indi_Controller {
      */
     public function adjustGridDataItem(&$item) {
 
+    }
+
+    /**
+     * Render cell values using 'jump' and 'over' params, if given
+     *
+     * @param $item
+     */
+    public function renderGridDataItem(&$item) {
+
+        // If no 'jump' and 'over' system props defined for given item - return
+        if (!($jumpA = &$item['_system']['jump']) && !($overA = &$item['_system']['over'])) return;
+
+        // Foreach prop
+        foreach ($jumpA as $prop => &$jump) {
+
+            // Shortcut to hover title
+            $over = &$overA[$prop];
+
+            // If it's array
+            if (is_array($jump)) {
+
+                // Foreach jump - build <span> containing destination, hover title
+                $spanA = array(); foreach ($jump as $dest)
+                    $spanA []= '<span jump="' . $dest['href'] . '"'
+                        . rif($dest['over'], ' title="$1"')
+                        . rif($dest['ibox'], ' $1')
+                        . '>' . rif(!$dest['ibox'], $dest['text']) . '</span>';
+
+                // Render
+                $item['_render'][$prop] = wrap($item[$prop], '<span title="$1">', $over) . rif(im($spanA, ', '), ' $1');
+
+            // Else use just as jump-attribute
+            } else $item['_render'][$prop] = wrap($item[$prop], '<span' . rif($over, ' title="$1"') . ' jump="' . $jump . '">');
+        }
+
+        // Unset
+        unset($item['_system']['jump'], $item['_system']['over']);
     }
 }

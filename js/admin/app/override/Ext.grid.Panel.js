@@ -142,9 +142,11 @@ Ext.override(Ext.grid.Panel, {
 
                 // Get the longest (within current column) cell contents
                 me.getStore().each(function(r){
-                    cell = typeof columnA[i].renderer == 'function'
-                        ? columnA[i].renderer(r.get(columnA[i].dataIndex), {}, r)
-                        : r.get(columnA[i].dataIndex).toString();
+                    cell = columnA[i].dataIndex in (r.raw._render || {})
+                        ? r.raw._render[columnA[i].dataIndex]
+                        : (typeof columnA[i].renderer == 'function'
+                            ? columnA[i].renderer(r.get(columnA[i].dataIndex), {}, r)
+                            : r.get(columnA[i].dataIndex).toString());
 
                     level = 0;
                     if (Ext.isString(cell) && isTree && columnA[i].dataIndex == 'title') {

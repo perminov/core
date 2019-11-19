@@ -4903,12 +4903,16 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * This function is for compiling prop default values within *_Row instance context
      *
-     * @param $prop
+     * @param string $prop
+     * @param string $level DEFAULT 'model'
      */
-    public function compileDefaultValue($prop) {
-        if (strlen($this->_original[$prop])) {
-            Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
-        }
+    public function compileDefaultValue($prop, $level = 'model') {
+
+        // If compile expr is empty - return
+        if (!strlen($expr = $this->{$level == 'trail' ? '_modified' : '_original'}[$prop])) return;
+
+        // Compile and assign
+        Indi::$cmpTpl = $expr; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
     }
 
     /**
@@ -5932,9 +5936,10 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * @param string $level DEFAULT 'model'
      * @return mixed
      */
-    public function compileDefaults() {
+    public function compileDefaults($level = 'model') {
 
         // If it's an existing entry - return
         if ($this->id) return;
@@ -5946,13 +5951,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (!$fieldR->columnTypeId) continue;
 
             // If default value should be set up as a result of php-expression's execution - do it
-            if (preg_match(Indi::rex('php'), $fieldR->defaultValue))
-                $this->compileDefaultValue($fieldR->alias);
+            if (preg_match(Indi::rex('php'), $fieldR->{$level == 'trail' ? 'modified' : 'original'}('defaultValue')))
+                $this->compileDefaultValue($fieldR->alias, $level);
 
             // Else if underlying column's datatype is TEXT - set up default value, stored in Indi
             // Engine field's settings as MySQL does not suppoer native default values for TEXT column
             else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                $this->compileDefaultValue($fieldR->alias);
+                $this->compileDefaultValue($fieldR->alias, $level);
         }
     }
 
@@ -5977,8 +5982,20 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function combo($field, $store = false) {
 
-        // Get field
-        $fieldR = $this->field($field);
+        // If $field arg is an array - assume pseudo-field should be created
+        if (is_array($field)) {
+
+            // Create
+            $fieldR = Indi::model('Field')->createRow();
+
+            // Assign config
+            $fieldR->assign($field);
+
+            // Setup `entityId`, if not given within config
+            if (!$fieldR->entityId) $fieldR->entityId = $this->model()->id;
+
+        // Else get existing field
+        } else $fieldR = $this->field($field);
 
         // Get name
         $name = $field = $fieldR->alias;
@@ -5994,8 +6011,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         $selectedValue = $this->id || strlen($this->$field) ? $this->$field : $defaultValue;
 
         // Get initial combo options rowset
-        $comboDataRs = $this->getComboData($name, null, $selectedValue);
+        $comboDataRs = $this->getComboData($name, null, $selectedValue, null, null, $fieldR);
 
+        i($comboDataRs, 'a');
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
 

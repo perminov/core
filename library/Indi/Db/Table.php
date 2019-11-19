@@ -1045,7 +1045,7 @@ class Indi_Db_Table
         $row = new $rowClass($constructData);
 
         // Compile default values for new entry
-        if (!$row->id) $row->compileDefaults();
+        if (!$row->id) $row->compileDefaults($level = 'model');
 
         // Construct and return Indi_Db_Table_Row object,
         // but, if $assign arg is given - preliminary assign data

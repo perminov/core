@@ -479,6 +479,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return {
             xtype: 'datefield',
             hideTrigger: true,
+            startDay: 1,
             height: 18,
             format: field.params.displayFormat
         }
@@ -495,6 +496,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return {
             xtype: 'datetimefield',
             hideTrigger: true,
+            startDay: 1,
             height: 18,
             format: field.params.displayDateFormat
         }

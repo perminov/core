@@ -23,6 +23,9 @@ Options FollowSymLinks
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html
 </IfModule>
+<FilesMatch "\.js$">
+  Header set Access-Control-Allow-Origin: *
+</FilesMatch>
 <FilesMatch "gz\.(js|css)$">
   Header set Content-Encoding gzip
   <IfModule mod_env.c>
