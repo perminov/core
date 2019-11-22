@@ -927,8 +927,8 @@ class Indi_Db_Table
      *
      * @return string
      */
-    public function table() {
-        return $this->_table;
+    public function table($base = false) {
+        return $base && $this->_baseTable ? $this->_baseTable : $this->_table;
     }
 
     /**
