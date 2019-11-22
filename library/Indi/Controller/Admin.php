@@ -1990,7 +1990,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // If user is trying to access server-app using standalone client-app
-                if (array_key_exists('HTTP_INDI_AUTH', $_SERVER)) {
+                if (APP) {
 
                     // Flush basic info
                     jflush(true, array(
