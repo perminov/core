@@ -86,6 +86,12 @@ Ext.define('Indi.lib.controller.action.Row', {
 
         // Set handler
         cfg.handler = function(btn) {
+
+            // Get the autosave-checkbox and turn it On if this is a new entry
+            var ats = Ext.getCmp(me.panelDockedInnerBid() + 'autosave');
+            if (!me.ti().row.id && ats && !ats.checked) ats.setValue(true);
+
+            // Goto
             me.goto(
                 '/' + me.ti().section.alias +
                 '/' + btn.actionAlias +
@@ -178,6 +184,11 @@ Ext.define('Indi.lib.controller.action.Row', {
                         }
                     }
                 });
+            },
+            listeners: {
+                boxready: function(c) {
+                    if (!me.ti().row.id) c.setDisabled(true);
+                }
             }
         }
     },
@@ -744,6 +755,10 @@ Ext.define('Indi.lib.controller.action.Row', {
                         ? '/form/jump/1/parent/' + me.ti().row.id + '/'
                         : '/index/id/' + me.ti().row.id + '/ph/' + me.ti().scope.hash + '/aix/' + me.ti().scope.aix +'/';
 
+                    // Get the autosave-checkbox and turn it On if this is a new entry
+                    var ats = Ext.getCmp(me.panelDockedInnerBid() + 'autosave');
+                    if (!me.ti().row.id && ats && !ats.checked) ats.setValue(true);
+
                     // Goto
                     me.goto(uri);
                 },
@@ -770,8 +785,7 @@ Ext.define('Indi.lib.controller.action.Row', {
             items: btnA,
             listeners: {
                 afterrender: function(cmp) {
-                    var btnSave = Ext.getCmp(me.panelDockedInnerBid() + 'save');
-                    cmp.setDisabled(!me.ti().row.id && btnSave && !btnSave.pressed);
+                    if (!me.ti().row.id && !Ext.getCmp(me.panelDockedInnerBid() + 'autosave')) cmp.setDisabled(true);
                 }
             }
         }

@@ -79,4 +79,61 @@ class Consider_Row extends Indi_Db_Table_Row {
         // Return
         return $dataRs;
     }
+
+    /**
+     * Build a string, that will be used in Consider_Row->export()
+     *
+     * @return string
+     */
+    protected function _ctor() {
+
+        // Use original data as initial ctor
+        $ctor = $this->_original;
+
+        // Exclude `id` and `title` as those will be set automatically by MySQL and Indi Engine, respectively
+        unset($ctor['id'], $ctor['title']);
+
+        // Exclude props that will be already represented by shorthand-fn args
+        foreach (ar('entityId,fieldId,consider') as $arg) unset($ctor[$arg]);
+
+        // Replace ids with aliases for `foreign` and `connector` fields
+        // Foreach $ctor prop
+        foreach ($ctor as $prop => &$value) {
+
+            // Get field
+            $field = $this->model()->fields($prop);
+
+            // Exclude prop, if it has value equal to default value
+            if ($field->defaultValue == $value) unset($ctor[$prop]);
+
+            // Else if prop contains keys - use aliases instead
+            else if ($field->storeRelationAbility != 'none') {
+                if (in($prop, 'foreign,connector')) $value = $this->foreign($prop)->alias;
+            }
+        }
+
+        // Stringify
+        $ctorS = var_export($ctor, true);
+
+        // Return
+        return $ctorS;
+    }
+
+    /**
+     * Build an expression for creating the current `consider` entry in another project, running on Indi Engine
+     *
+     * @return string
+     */
+    public function export() {
+
+        // Build `field` entry creation line
+        $lineA[] = "consider('"
+            . $this->foreign('entityId')->table . "', '"
+            . $this->foreign('fieldId')->alias  . "', '"
+            . $this->foreign('consider')->alias . "', "
+            . $this->_ctor() . ");";
+
+        // Return newline-separated list of creation expressions
+        return im($lineA, "\n");
+    }
 }

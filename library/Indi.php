@@ -58,7 +58,7 @@ class Indi {
      *
      * @var string
      */
-    public static $cmpOut = '';
+    public static $cmpOut = array();
 
     /**
      * Regular expressions patterns for common usage
@@ -1317,14 +1317,19 @@ class Indi {
         // Determine title column name
         if ($titleColumn = $model->comboDataOrder ?: current(array_intersect($columnA, array('title', '_title')))) {
 
+            // Check whether $titleColumn contains some expression rather than just some column name,
+            // and if so - use it as is but strip '$dir' from it or replace with actual direction ($dir)
+            // else wrap $titleColumn with '`' and append $dir
+            $expr = preg_match('~^[a-zA-Z0-9]+$~', $titleColumn)
+                ? '`' . $titleColumn . '` ' . $dir
+                : str_replace('$dir', $dir, $titleColumn);
+
             // Setup a new order for $idA
             $idA = Indi::db()->query('
-
                 SELECT `id`
                 FROM `' . $model->table() . '`
                 WHERE `id` IN (' . implode(',', $idA) . ')
-                ORDER BY `' . $titleColumn . '` ' . $dir . '
-
+                ORDER BY ' . $expr . '
             ')->fetchAll(PDO::FETCH_COLUMN);
         }
 
@@ -1614,7 +1619,7 @@ class Indi {
         preg_match($rex, $subject, $found);
 
         // Return
-        return $found ? (func_num_args() == 3 ? $found[$sub] : $found) : $found;
+        return $found ? (func_num_args() == 3 ? $found[$sub] : $found) : ($found ?: '');
     }
 
     /**
@@ -2219,8 +2224,11 @@ class Indi {
      */
     public static function iflush($flag) {
 
-        // Set up no cache
-        if ($flag && !headers_sent()) header('Cache-Control: no-cache');
+        // Set up headers
+        if ($flag && !headers_sent()) {
+            header('Cache-Control: no-cache');
+            header('X-Accel-Buffering: no');
+        }
 
         // Set up output buffering implicit flush mode
         ob_implicit_flush($flag);

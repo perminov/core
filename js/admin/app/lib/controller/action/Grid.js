@@ -119,7 +119,13 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     var me = gridview.ctx(), col = gridview.headerCt.getGridColumns()[cellIndex],
                         dataIndex = col['dataIndex'], field = me.ti().fields.r(dataIndex, 'alias'),
                         enumset = field && field._nested && field._nested.enumset, value, valueItem, valueItemIndex, oldValue, s,
-                        canSave = me.ti().actions.r('save', 'alias'), cb;
+                        canSave = me.ti().actions.r('save', 'alias'), cb, m, jump = e.target.getAttribute('jump'),
+                        load = e.target.getAttribute('load'), attr = jump || load;
+
+                    // If clicked element has 'jump' or 'load' attribute - do load/jump
+                    if (attr) return (m = attr.match(/\{sections\[([0-9])\]\}/))
+                        ? Ext.getCmp(me.bid() + '-docked-inner$nested').press(parseInt(m[1]), '[sectionId]', attr.split('?')[1])
+                        : Indi.load(rif(jump && jump.split('?')[0], '$1jump/1/' + rif(jump && jump.split('?')[1], '?$1'), load));
 
                     // If 'Save' action is accessible, and column is linked to 'enumset' field
                     // and that field is not in the list of disabled fields - provide some kind
@@ -142,7 +148,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                         value = valueItem.alias;
                         record.key(dataIndex, value);
                         record.set(dataIndex, valueItem.title.replace(/(<\/span>).*$/, '\1'));
-                        me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti());
+                        me.recordRemoteSave(record, s.indexOfTotal(record) + 1, me.ti(), Ext.emptyFn, field.alias);
                     }
                 }
             }
@@ -258,8 +264,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
             cls: tooltip ? 'i-tooltip' : undefined,
             $ctx: me,
             tdCls: tdClsA.join(' '),
-            sortable: true,
+            sortable: !!!column.further,
             editor: column.editor,
+            internalId: column.id,
             resizable: [1, 4, 5, 6, 7, 13, 23].indexOf(field.elementId) != -1 || me.ti().model.titleFieldId == field.id
         };
 
@@ -269,6 +276,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
 
         // If current column's field is a grouping field - hide it
         if (me.ti().section.groupBy == field.id || column.toggle == 'h') cfg.hidden = true;
+
+        // If width is pre-defined for this column - use it
+        if (column.width) cfg.width = cfg.fixedWidthUsage = column.width;
 
         // Set `locked` prop
         if (column.group == 'locked') cfg.locked = true;
@@ -335,17 +345,15 @@ Ext.define('Indi.lib.controller.action.Grid', {
      */
     gridColumnRenderer_Numeric: function(v, m, r, i, c, s) {
         var column = this.xtype == 'gridcolumn' ? this : this.headerCt.getGridColumns()[c], s;
-        if (column.displayZeroes !== true && parseFloat(v) == 0) return '' ;
+
+        // If value is zero - return either empty string, or gray-coloured zero
+        if (parseFloat(v) == 0) return column.displayZeroes !== true ? '' : '<span style="color:lightgray;">' + v + '</span>';
+
+        // If value is non-zero - format it
         s = Indi.numberFormat(v, column.decimalPrecision, column.decimalSeparator, column.thousandSeparator);
-        if (column.colors && m) {
-            if (v > 0) {
-                return '<span style="color:limegreen;">' + s + '</span>';
-            } else if (v < 0) {
-                return '<span style="color:red;">' + s + '</span>';
-            } else {
-                return '<span style="color:lightgray;">' + s + '</span>';
-            }
-        } else return s;
+
+        // Return formatted, wrapped into color, if need
+        return column.colors ? '<span style="color: ' + (v > 0 ?  'limegreen' : 'red') + ';">' + s + '</span>' : s;
     },
 
     /**
@@ -475,6 +483,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return {
             xtype: 'datefield',
             hideTrigger: true,
+            startDay: 1,
             height: 18,
             format: field.params.displayFormat
         }
@@ -491,6 +500,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
         return {
             xtype: 'datetimefield',
             hideTrigger: true,
+            startDay: 1,
             height: 18,
             format: field.params.displayDateFormat
         }
@@ -664,7 +674,10 @@ Ext.define('Indi.lib.controller.action.Grid', {
     gridColumnXCalendar: function(column, field) {
         return {
             xtype: 'datecolumn',
-            format: field.params.displayFormat
+            format: field.params.displayFormat,
+            defaultRenderer: function(value){
+                return Ext.isDate(value) ? Ext.util.Format.date(value, this.format) : value;
+            }            
         }
     },
 
@@ -689,9 +702,9 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @param colA
      * @return {Array}
      */
-    gridColumnADeep: function(colA) {
+    gridColumnADeep: function(colA, calcWidth) {
         var me = this, i, c, colI, field, columnA = [], columnI, columnX, eColumnX, column$, eColumn$, eColumnSummaryX,
-            eColumnXRenderer, eColumn$Renderer, eColumnXEditor, canSave = me.ti().actions.r('save', 'alias');
+            eColumnXRenderer, eColumn$Renderer, eColumnXEditor, canSave = me.ti().actions.r('save', 'alias'), nested = [], wu = 0;
 
         // Other columns
         for (i = 0; i < colA.length; i++) {
@@ -700,18 +713,25 @@ Ext.define('Indi.lib.controller.action.Grid', {
             colI = colA[i];
 
             // Setup a shortcut for a grid field
-            field = me.ti().fields.r(colI.fieldId);
+            field = me.ti().fields.r(colI.further || colI.fieldId);
 
             // If current col - is a group col
             if (colI._nested && colI._nested.grid && colI._nested.grid.length) {
+
+                // Get nested columns
+                nested = me.gridColumnADeep(colI._nested.grid, true);
 
                 // Base cfg. Note that here we set up whole column group to be hidden, initialy,
                 // and if at least one of the sub-columns is not hidden - we will set `hidden` prop as `false`
                 columnI = {
                     text: colI.alterTitle || colI.title,
                     hidden: true,
-                    columns: me.gridColumnADeep(colI._nested.grid)
+                    columns: nested.columns,
+                    width: colI.width || nested.fixedWidthUsage
                 }
+
+                // Increase total width usage
+                wu += nested.widthUsage;
 
                 // Set `locked` prop
                 if (colI.group == 'locked') columnI.locked = true;
@@ -801,12 +821,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
                 }
 
                 // Add column
-                if (columnI) columnA.push(columnI);
+                if (columnI) {
+
+                    // Push column into columns array
+                    columnA.push(columnI);
+
+                    // Increase total fixed width usage
+                    if (columnI.fixedWidthUsage) wu += columnI.fixedWidthUsage;
+                }
             }
         }
 
         // Return columns array
-        return columnA;
+        return calcWidth ? {columns: columnA, fixedWidthUsage: wu} : columnA;
     },
 
     /**
@@ -1039,40 +1066,6 @@ Ext.define('Indi.lib.controller.action.Grid', {
         // Adjust grid column widths
         //console.log('1st fit', me.getStore().getCount());
         me.gridColumnAFit();
-
-        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'load' attibute
-        me.bindLoads(grid);
-
-        // Bind Indi.load(...) for all DOM nodes (within grid), that have 'jump' attibute
-        Ext.defer(function(){
-            me.bindJumps(grid);
-        }, 100);
-    },
-
-    /**
-     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'load' attibute
-     *
-     * @param root
-     */
-    bindLoads: function(root) {
-        root.getEl().select('[load]').each(function(el){
-            el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('load'));
-            });
-        });
-    },
-
-    /**
-     * Bind Indi.load(...) call on click on all DOM nodes (within `root`), that have 'jump' attibute
-     *
-     * @param root
-     */
-    bindJumps: function(root) {
-        root.getEl().select('[jump]').each(function(el){
-            el.on('click', function(e, dom){
-                Indi.load(Ext.get(dom).attr('jump') + 'jump/1/');
-            });
-        });
     },
 
     /**
@@ -1216,7 +1209,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
      * @return {Object}
      */
     rowsetInner$Excel: function() {
-        var me = this;
+        var me = this, columnA = {};
 
         // 'Excel-export' item cfg
         return {
@@ -1224,7 +1217,19 @@ Ext.define('Indi.lib.controller.action.Grid', {
             iconCls: 'i-btn-icon-xls',
             tooltip: Indi.lang.I_EXPORT_EXCEL,
             handler: function(){
-                window.location = me.rowsetExportQuery('excel');
+
+                // If ctrl-key is pressed, hidden 'rwu' action will be called
+                // 'rwu' - means 'remember width usage'
+                if (Ext.EventObject.ctrlKey) {
+                    me.rowsetExportColumnA().forEach(function(column){
+                        columnA[column.internalId] = column.getWidth();
+                    });
+                    me.panelDockedInner$Actions_DefaultInnerHandlerLoad({alias: 'rwu'}, '', '', '', {
+                        params: {widthUsage: JSON.stringify(columnA)}
+                    });
+
+                // Else goto excel-export uri
+                } else window.location = me.rowsetExportQuery('excel');
             }
         }
     },
@@ -1513,7 +1518,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
                     // Call additional callback, defined as one of listeners, and pass json-decoded response
                     if (Ext.isFunction(eOpts.remotesave))
                         eOpts.remotesave.call(editor, e, json);
-                });
+                }, editor.context.field);
             }
         }
     },

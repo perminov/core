@@ -39,7 +39,7 @@ Ext.define('Indi', {
          * A list of function names, that are declared within Indi object, but should be accessible within global scope
          * @type {Array}
          */
-        share: ['alias', 'hide', 'show', 'number', 'mt'],
+        share: ['alias', 'hide', 'show', 'number', 'mt', 'rif', 'wrap', 'jump'],
 
         /**
          * Microtime
@@ -367,6 +367,68 @@ Ext.define('Indi', {
         },
 
         /**
+         * Return `then` if $if == true, or return $else arg otherwise
+         *
+         * Usages:
+         * rif(123, 'Price is $1')                         will return 'Price is 123'
+         * rif(0, 'Price is $1')                           will return '' (empty string)
+         * rif(0, 'Price is $1', 'This is free item!')     will return 'This is free item!'
+         *
+         * @param $if
+         * @param then You can use '$1' expr as a reference to $if arg, so if,
+         *        for example $if arg is a string, it can be used as replacement for '$1' if in `then` arg
+         * @param $else
+         * @return {*}
+         */
+        rif: function($if, then, $else) {
+            return $if ? then.replace('$1', $if) : (arguments.length > 2 ? $else : '');
+        },
+
+        /**
+         * Wrap `val` arg into a html-tag, in case if `val` arg is true, or, if `cond` arg is true, if given
+         * '$1' can be used as a placeholder for `cond` arg
+         *
+         * Usages:
+         * wrap(123, '<span class="price">')                       will return '<span class="price">123</span>'
+         * wrap('myip.com', '<strong>')                            will return '<strong>myip.com</strong>'
+         * wrap('', '<strong>')                                    will return '' (empty string)
+         * wrap('Check my IP', '<a href="$1">', 'http://myip.com') will return '<a href="https://myip.com">Check my IP</a>'
+         *
+         * @param val
+         * @param html
+         * @param cond
+         * @return {String}
+         */
+        wrap: function(val, html, cond){
+            return (arguments.length > 2 ? cond : val)
+                ? html.replace('$1', cond) + val + '</' + html.match(/^<([a-zA-Z]+)/)[1] + '>' : val;
+        },
+
+        /**
+         * Build jumps
+         *
+         * @param jump
+         * @return {String}
+         */
+        jump: function(jump) {
+
+            // If jump arg is empty - return empty string, else if jump is non-empty string - return it as attr
+            if (!jump) return ''; else if (jump.trim) return ' jump="' + jump + '"'; var _ = [], i, tpl;
+
+            // If jump arg is an object containing 'href' prop - convert to array with single item
+            if ('href' in jump) jump = [jump];
+
+            // Walk through jump array and build <span>-s
+            jump.forEach(function(item){
+                tpl = '<span jump="' + item.href + '"' + rif(item.over, ' title="$1"') + rif(item.ibox, ' $1') + '>';
+                _.push(item.ibox ? tpl + '</span>' : wrap(item.text, tpl));
+            });
+
+            // Return
+            return _.join(', ');
+        },
+
+        /**
          * Share all functions/objects/variables, that have names, existing in indi.share array  -  to global scope.
          */
         shareWith: function(context){
@@ -526,7 +588,7 @@ Ext.define('Indi', {
                 var err = sesA.join('<br><br>');
 
                 // If error msg length is greater than 4kb - wrap it in <textarea>
-                if (err.length > 4096) err = '<textarea style="width: 500px; height:400px;">' + err + '</textarea>';
+                err = '<div style="max-height: 387px; word-break: break-all; overflow: auto">' + err + '</div>';
 
                 // Show errors within a message box
                 boxA.push({
@@ -614,7 +676,7 @@ Ext.define('Indi', {
                     if (trigger && mismatch.entity) msg = Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG1
                         + mismatch.entity.title + '"'
                         + (parseInt(mismatch.entity.entry) ? ' [id#' + mismatch.entity.entry + ']' : '')
-                        + Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG2 + ': <br><br>' + msg;
+                        + Indi.lang.I_ROWSAVE_ERROR_MFLUSH_MSG2 + ': <br><br>' + '<div style="max-height: 387px; overflow: auto">' + msg + '</div>';
 
                     // Show message box
                     boxA.push({
@@ -1429,8 +1491,9 @@ Ext.define('Indi', {
                 margin: 0,
                 height: 15,
                 border: 1,
+                loadCfg: {trail: true},
                 handler: function(btn) {
-                    if (btn.load) Indi.load(btn.load, {trail: true});
+                    if (btn.load) Indi.load(btn.load, btn.loadCfg);
                 }
             },
             items: crumbA

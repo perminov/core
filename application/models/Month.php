@@ -11,7 +11,7 @@ class Month extends Indi_Db_Table {
     /**
      * @var string
      */
-    public $comboDataOrder = 'month';
+    public $comboDataOrder = '`yearId` $dir, `month` $dir';
 
     /**
      * Array of key-value pairs fetched from `month` and `year` tables
@@ -181,5 +181,19 @@ class Month extends Indi_Db_Table {
 
         // If $monthId arg is given - return 'yyyy-mm' expr of corresponding `month` entry
         return $monthId ? self::$_monthYmA[$monthId] : self::$_monthYmA;
+    }
+
+    /**
+     * Calc difference in months between $Ym1 and $Ym2 args
+     *
+     * @static
+     * @param $Ym1
+     * @param $Ym2
+     * @return int
+     */
+    public static function diff($Ym1, $Ym2) {
+        $Ym1 = explode('-', $Ym1);
+        $Ym2 = explode('-', $Ym2);
+        return $Ym1[0] * 12 + $Ym1[1] - ($Ym2[0] * 12 + $Ym2[1]);
     }
 }

@@ -97,6 +97,19 @@ Ext.override(Ext.grid.Panel, {
         // For each column, mapped to a store field
         for (i = 0; i < columnA.length; i++) {
 
+            // If fixed width usage is already pre-defined for this column
+            if (columnA[i].fixedWidthUsage) {
+
+                // Apply it
+                columnA[i].widthUsage = columnA[i].fixedWidthUsage;
+
+                // If column is not hidden - increase grid's `widthUsage` prop
+                if (!columnA[i].hidden) me.widthUsage += widthA[i];
+
+                // Goto next column
+                continue;
+            }
+
             // Get initial column width, based on a column title metrics
             if (columnA[i].icon) widthA[i] = 16; else {
 
@@ -129,9 +142,11 @@ Ext.override(Ext.grid.Panel, {
 
                 // Get the longest (within current column) cell contents
                 me.getStore().each(function(r){
-                    cell = typeof columnA[i].renderer == 'function'
-                        ? columnA[i].renderer(r.get(columnA[i].dataIndex), {}, r)
-                        : r.get(columnA[i].dataIndex).toString();
+                    cell = columnA[i].dataIndex in (r.raw._render || {})
+                        ? r.raw._render[columnA[i].dataIndex]
+                        : (typeof columnA[i].renderer == 'function'
+                            ? columnA[i].renderer(r.get(columnA[i].dataIndex), {}, r)
+                            : r.get(columnA[i].dataIndex).toString());
 
                     level = 0;
                     if (Ext.isString(cell) && isTree && columnA[i].dataIndex == 'title') {

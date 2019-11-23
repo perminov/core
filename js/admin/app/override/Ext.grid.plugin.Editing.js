@@ -29,6 +29,9 @@ Ext.override(Ext.grid.plugin.Editing, {
             return;
         }
 
+        // Do nothing if clicked element have 'jump' attr
+        if (e.target.getAttribute('jump')) return;
+
         // cancel editing if the element that was clicked was a tree expander
         if(!view.expanderSelector || !e.getTarget(view.expanderSelector)) {
             view.editorTimeout = setTimeout(function(){

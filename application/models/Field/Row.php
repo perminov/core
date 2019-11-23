@@ -350,6 +350,9 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 'FIND_IN_SET(`id`, "' . $this->_original['entityId'] . ',' . $this->_modified['entityId'] . '")'
             )->column('table');
 
+            // Get real table, as $table may contain VIEW-name rather that TABLE-name
+            $table = Indi::model($table)->table(true);
+
             // Drop column from old table, if that column exists
             if ($this->_original['columnTypeId'])
                 Indi::db()->query('ALTER TABLE `' . $wasTable . '` DROP COLUMN `' . $this->_original['alias'] .'`');
@@ -376,7 +379,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         } else {
 
             // Get name of the table, related to `entityId` property
-            $table = Indi::model($this->entityId)->table();
+            $table = Indi::model($this->entityId)->table(true);
         }
 
         // We should add a new column in database table in 3 cases:
@@ -1316,13 +1319,21 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
                 // Get a list of comma-imploded aliases, ordered by their titles
                 $set = Indi::db()->query($sql = '
-                    SELECT GROUP_CONCAT(`alias` ORDER BY `title`)
+                    SELECT GROUP_CONCAT(`alias` ORDER BY `move`)
                     FROM `enumset`
                     WHERE `fieldId` = "' . $this->id . '"
                 ')->fetchColumn(0);
 
                 // Build the order clause, using FIND_IN_SET function
                 $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . $set . '") ' . $direction;
+
+            // Else we're going to sort entries by `monthId` column, or other-named
+            // column referencing to `month` entries - apply custom behaviour
+            } else if ($this->rel()->table() == 'month') {
+
+                // Build the order clause, using FIND_IN_SET function and comma-separated
+                // list of months' ids, as monthId() fn return them in right chronology
+                $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . im(monthId()) . '")' . $direction;
 
             // If column is of type (BIG|SMALL|MEDIUM|)INT
             } else if (preg_match('/INT/', $this->foreign('columnTypeId')->type)) {
@@ -1614,16 +1625,15 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
         $lineA[] = "field('" . $this->foreign('entityId')->table . "', '" . $this->alias . "', " . $this->_ctor() . ");";
 
         // Foreach `enumset` entry, nested within current `field` entry
+        // - build `enumset` entry's creation expression
         foreach ($this->nested('enumset', array('order' => 'move')) as $enumsetR)
-
-            // Build `enumset` entry's creation expression
             $lineA[] = $enumsetR->export();
 
-        // Foreach `param` entry, nested within current `field` entry
-        foreach ($this->nested('param') as $paramR)
+        // Foreach `param` entry, nested within current `field` entry - do same
+        foreach ($this->nested('param') as $paramR) $lineA[] = $paramR->export();
 
-            // Build `param` entry's creation expression
-            $lineA[] = $paramR->export();
+        // Foreach `param` entry, nested within current `field` entry - do same
+        foreach ($this->nested('consider') as $considerR) $lineA[] = $considerR->export();
 
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
@@ -1691,5 +1701,14 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Call parent
         return $this->callParent();
+    }
+
+    /**
+     * Get the model, that value of current field's `relation` prop points to
+     *
+     * @return Indi_Db_Table
+     */
+    public function rel() {
+        return Indi::model($this->relation);
     }
 }

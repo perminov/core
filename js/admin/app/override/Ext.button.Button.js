@@ -52,15 +52,15 @@ Ext.override(Ext.button.Button, {
     constructor: function(config) {
         var me = this;
 
-        // Add icon and move text to tooltip
+        // Add icon and move text to tooltip, if specified
         if (config.icon) {
             config.icon = Indi.std + config.icon;
             config.tooltip = config.text + '';
             config.text = '';
-        }
+        } 
 
-        // Make that if `iconCls` is specified with '!'-sign at the beginning - button text will be moved to tooltip
-        if (config.iconCls && config.iconCls.match(/^!/)) {
+        // Else if `iconCls` is specified with '!'-sign at the beginning - button text will be also moved to tooltip
+        else if (config.iconCls && config.iconCls.match(/^!/)) {
             config.iconCls = config.iconCls.replace(/^!/, '');
             config.tooltip = config.text + '';
             config.text = '';
@@ -68,6 +68,26 @@ Ext.override(Ext.button.Button, {
 
         // Call parent
         me.callParent(arguments);
+    },
+
+    /**
+     * Overridden to pick me.menuOffset if defined
+     *
+     * @return {*}
+     */
+    showMenu: function() {
+        var me = this;
+        if (me.rendered && me.menu) {
+            if (me.tooltip && me.getTipAttr() != 'title') {
+                Ext.tip.QuickTipManager.getQuickTip().cancelShow(me.btnEl);
+            }
+            if (me.menu.isVisible()) {
+                me.menu.hide();
+            }
+
+            me.menu.showBy(me.el, me.menuAlign, me.menuOffset || (((!Ext.isStrict && Ext.isIE) || Ext.isIE6) ? [-20, -2] : undefined));
+        }
+        return me;
     }
 });
 

@@ -1,5 +1,16 @@
 <?php
 
+// Flush Access-Control-Allow-Origin header
+header('Access-Control-Allow-Origin: *');
+
+// If request method is OPTIONS - flush headers for Indi app
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    header('HTTP/1.1 200 OK');
+    header('Access-Control-Allow-Headers: indi-auth,x-requested-with');
+    header('Access-Control-Allow-Method: POST');
+    exit;
+}
+
 // Displays phpinfo if needed
 if(isset($_GET['info'])){phpinfo();die();}
 
@@ -32,6 +43,9 @@ define('URI', $_SERVER['REQUEST_URI'] == '/' ? '/' : rtrim($_SERVER['REQUEST_URI
 // In case if execution WAS started via Indi::cmd(), this constant will be already defined,
 // so constant's value won't be overwritten by below-line definition
 define('CMD', false);
+
+// Setup APP constant, indicating that this execution was initiated using Indi Engine standalone client-app
+define('APP', array_key_exists('HTTP_INDI_AUTH', $_SERVER));
 
 // Set include path. Here we add more include paths, in case if some stuff is related to front module only,
 // but required to be available in admin module.

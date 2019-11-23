@@ -133,6 +133,9 @@ Ext.define('Indi.view.desktop.Window', {
         // Call parent
         me.callParent(arguments);
 
+        // Hide title and insert replacement
+        me.header.add(1, me.replaceTitle); me.setTitle('');
+
         // Add current window to Indi.app.windows collection
         Indi.app.windows.add(me.id, me);
 
@@ -198,6 +201,10 @@ Ext.define('Indi.view.desktop.Window', {
 
         // Destroy existing wrapper
         if (me.getWrapper()) me.getWrapper().destroy();
+
+        // Hide title and insert replacement
+        me.header.down('[cls=i-window-header]').destroy();
+        me.header.add(1, cfg.replaceTitle); me.setTitle('');
 
         // Set up new wrapperId
         me.wrapperId = cfg.wrapperId;

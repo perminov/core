@@ -277,4 +277,13 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
             $this->foreign('fieldId')->alias . "', '" .
             $this->alias . "', " . $this->_ctor() . ");";
     }
+
+    /**
+     * Get color box
+     *
+     * @return string
+     */
+    public function box() {
+        return preg_match('~<span.*?class=".*?i-color-box.*?".*?></span>~', $this->title, $m) ? $m[0] : '';
+    }
 }

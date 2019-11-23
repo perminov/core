@@ -151,7 +151,8 @@ class Indi_Trail_Item {
 
             // Append original values for other modified props
             if (!$this->row->id) foreach ($this->row->modified() as $prop => $value)
-                $array['row']['_original'][$prop] = $this->row->original($prop);
+                if (!in($this->fields($prop)->mode, 'hidden,readonly'))
+                    $array['row']['_original'][$prop] = $this->row->original($prop);
 
             // If demo-mode is turned On - unset value for each shaded field
             if (Indi::demo(false)) foreach ($this->fields as $fieldR)

@@ -156,7 +156,9 @@ Ext.define('Indi.lib.controller.action.Print', {
             // Make sure view's rendered html will be displayed within an iframe
             Ext.merge(xcfg, {listeners: {
                 boxready: function() {
-                    window.frames[dcfg.id].document.body.innerHTML = me.ti().row._view['#' + me.ti().action.alias];
+                    var body = window.frames[dcfg.id].document.body;
+                    body.innerHTML = me.ti().row._view['#' + me.ti().action.alias];
+                    if ('contentEditable' in item$) body.setAttribute('contentEditable', 'true');
                 }
             }})
         }
