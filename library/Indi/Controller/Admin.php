@@ -1991,12 +1991,6 @@ class Indi_Controller_Admin extends Indi_Controller {
                     unset($_SESSION['indi']['throwOutMsg']);
                 }
 
-                // Setup list of possible translations and current/last chosen one
-                Indi::view()->lang = array(
-                    'odata' => $_ = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang`')->fetchAll(),
-                    'value' => in($_COOKIE['lang'], array_column($_, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin
-                );
-
                 // If user is trying to access server-app using standalone client-app
                 if (APP) {
 
@@ -2007,7 +2001,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'pre' => PRE,
                         'uri' => Indi::uri()->toArray(),
                         'title' => Indi::ini('general')->title ?: 'Indi Engine',
-                        'throwOutMsg' => Indi::view()->throwOutMsg
+                        'throwOutMsg' => Indi::view()->throwOutMsg,
+                        'lang' => Indi::view()->lang
                     ));
 
                 // Else if user is trying to access server-app using usual way
