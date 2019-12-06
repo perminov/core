@@ -1,7 +1,3 @@
-/**
- * Here we override Ext.Component component, to provide an ability for 'tooltip' config properties to be used for
- * creating Ext.tip.ToolTip objects instead of standart Ext.tip.QuickTip objects
- */
 Ext.override(Ext.data.Model, {
 
     /**
