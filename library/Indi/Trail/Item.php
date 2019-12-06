@@ -253,6 +253,6 @@ class Indi_Trail_Item {
     public function summary($json = true) {
 
         // If summary definitions given by $_GET['summary'] - return as is
-        if ($summary = Indi::get('summary')) return $json ? json_encode($summary) : $summary;
+        if ($summary = Indi::get('summary')) return $json ? $summary : json_decode($summary);
     }
 }
