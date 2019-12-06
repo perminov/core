@@ -2070,8 +2070,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     function rowsetSummary($force = false) {
 
-        // If there is no 'summary' key within $_GET params - return
-        if (!$summary = Indi::get('summary')) return;
+        // Retrieve summary definitions from $_GET['summary'] if given, else from `grid`.`summaryType`
+        if (!$summary = t()->summary()) return;
 
         // If $summary is not json-decodable - return
         if (!($summary = json_decode($summary, true))) return;

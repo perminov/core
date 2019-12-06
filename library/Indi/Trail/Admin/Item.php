@@ -594,4 +594,25 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         // Get the action-view instance
         return $this->view = new $actionClass();
     }
+
+    /**
+     * Retrieve summary definitions from $_GET['summary'] if given, else from `grid`.`summaryType`
+     *
+     * @param bool $json
+     * @return array|string|void
+     */
+    public function summary($json = true) {
+
+        // If summary definitions given by $_GET['summary'] - return as is
+        if ($summary = Indi::get('summary')) return $json ? json_encode($summary) : $summary;
+
+        // Else collect default definitions
+        $summary = array();
+        foreach ($this->grid as $gridR)
+            if ($gridR->summaryType != 'none')
+                $summary[$gridR->summaryType] []= $gridR->foreign('fieldId')->alias;
+
+        // Return array, but before json-encode it if need
+        return $json ? json_encode($summary) : $summary;
+    }
 }
