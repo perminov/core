@@ -75,6 +75,13 @@ Indi::ini('application/config.ini');
 if (function_exists('geoip_country_code_by_name')
     && geoip_country_code_by_name($_SERVER['REMOTE_ADDR']) == 'GB')
         Indi::ini('lang')->admin = 'en';
+
+// If request came from client-app - split 'Indi-Auth' header's value by ':', and set cookies
+if (APP && $_ = explode(':', $_SERVER['HTTP_INDI_AUTH'])) {
+    if ($_[0]) $_COOKIE['PHPSESSID'] = $_[0];
+    if ($_[1]) $_COOKIE['i-language'] = $_[1];
+}
+
 Indi::cache();
 Indi::db(Indi::ini()->db);
 

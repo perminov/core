@@ -1979,7 +1979,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
 
                     // Flush response
-                    jflush(true, array_key_exists('HTTP_INDI_AUTH', $_SERVER) ? $this->info() : array('ok' => '1'));
+                    jflush(true, APP ? $this->info() : array('ok' => '1'));
                 }
 
                 // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
@@ -2080,7 +2080,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
         if ((Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !$force) && !Indi::trail()->model->treeColumn())
             if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf'))
-                if (!$_SERVER['HTTP_INDI_AUTH']) return;
+                if (!APP) return;
 
         // Define an array containing extjs summary types and their sql representatives
         $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');
@@ -2148,7 +2148,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $info = $this->info();
 
             // If request was made via Indi Engine client app - flush info right now
-            if ($_SERVER['HTTP_INDI_AUTH']) jflush(true, $info);
+            if (APP) jflush(true, $info);
 
             // Setup info about current logged in cms user, and accessible menu
             Indi::view()->admin = $info['user']['title'] . ' [' . $info['user']['role']  . ']';
@@ -2221,7 +2221,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'uid' => Indi::admin()->profileId . '-' . Indi::admin()->id,
                 'role' => Indi::admin()->foreign('profileId')->title,
                 'menu' => $menu,
-                'auth' => session_id(),
+                'auth' => session_id() . ':' . Indi::ini('lang')->admin,
                 'dashboard' => Indi::admin()->foreign('profileId')->dashboard ?: false,
                 'maxWindows' => Indi::admin()->foreign('profileId')->maxWindows ?: 15
             )
