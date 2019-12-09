@@ -1999,7 +1999,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'pre' => PRE,
                         'uri' => Indi::uri()->toArray(),
                         'title' => Indi::ini('general')->title ?: 'Indi Engine',
-                        'throwOutMsg' => Indi::view()->throwOutMsg
+                        'throwOutMsg' => Indi::view()->throwOutMsg,
+                        'lang' => Indi::view()->lang
                     ));
 
                 // Else if user is trying to access server-app using usual way
@@ -3260,7 +3261,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         foreach ($langA as &$langI) {
             $langI['const'] = array();
             $php = file_get_contents(DOC . STD . '/core/application/lang/admin/' . $langI['alias'] . '.php');
-            foreach (ar('I_LOGIN_BOX_USERNAME,I_LOGIN_BOX_PASSWORD,I_LOGIN_BOX_ENTER,I_LOGIN_ERROR_MSGBOX_TITLE') as $const) {
+            foreach (ar('I_LOGIN_BOX_USERNAME,I_LOGIN_BOX_PASSWORD,I_LOGIN_BOX_ENTER,I_LOGIN_ERROR_MSGBOX_TITLE,I_MSG,I_ERROR') as $const) {
                 $phrase = Indi::rexm('~define\(\'' . $const . '\', \'(.*?)\'\);~', $php, 1);
                 $langI['const'][$const] = $phrase;
             }
