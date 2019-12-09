@@ -143,7 +143,7 @@ class Indi_Controller {
 
         // Setup the Content-Type header
         header('Content-Type: text/html; charset=' . $this->encoding);
-        i('lang()', 'a');
+
         // Setup lang info
         $this->lang();
 
