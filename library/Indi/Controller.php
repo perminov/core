@@ -144,11 +144,8 @@ class Indi_Controller {
         // Setup the Content-Type header
         header('Content-Type: text/html; charset=' . $this->encoding);
 
-        // Setup list of possible translations and current/last chosen one
-        Indi::view()->lang = array(
-            'odata' => $_ = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang`')->fetchAll(),
-            'value' => in($_COOKIE['lang'], array_column($_, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin
-        );
+        // Setup lang info
+        $this->lang();
 
         // Do the pre-dispatch maintenance
         $this->preDispatch();
@@ -1179,5 +1176,12 @@ class Indi_Controller {
 
         // Unset
         unset($item['_system']['jump'], $item['_system']['over']);
+    }
+
+    /**
+     * Empty function, to be overridden in child classes
+     */
+    public function lang() {
+
     }
 }
