@@ -3244,4 +3244,32 @@ class Indi_Controller_Admin extends Indi_Controller {
     public function allowOtherAlternateForSave() {
         return false;
     }
+
+    /**
+     * Get lang info
+     */
+    public function lang() {
+
+        // Get available languages
+        $langA = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang` WHERE `toggle` = "y"')->fetchAll();
+
+        // Get default/current language
+        $lang = in($_COOKIE['lang'], array_column($langA, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin;
+
+        // Get all languages' versions for 4 constants
+        foreach ($langA as &$langI) {
+            $langI['const'] = array();
+            $php = file_get_contents(DOC . STD . '/core/application/lang/admin/' . $langI['alias'] . '.php');
+            foreach (ar('I_LOGIN_BOX_USERNAME,I_LOGIN_BOX_PASSWORD,I_LOGIN_BOX_ENTER,I_LOGIN_ERROR_MSGBOX_TITLE') as $const) {
+                $phrase = Indi::rexm('~define\(\'' . $const . '\', \'(.*?)\'\);~', $php, 1);
+                $langI['const'][$const] = $phrase;
+            }
+        }
+
+        // Setup list of possible translations and current/last chosen one
+        Indi::view()->lang = array(
+            'odata' => $langA,
+            'name' => $lang
+        );
+    }
 }
