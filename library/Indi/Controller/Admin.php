@@ -3373,7 +3373,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         foreach ($langA as &$langI) {
             $langI['const'] = array();
             $php = file_get_contents(DOC . STD . '/core/application/lang/admin/' . $langI['alias'] . '.php');
-            foreach (ar('I_LOGIN_BOX_USERNAME,I_LOGIN_BOX_PASSWORD,I_LOGIN_BOX_ENTER,I_LOGIN_ERROR_MSGBOX_TITLE') as $const) {
+            foreach (ar('I_LOGIN_BOX_USERNAME,I_LOGIN_BOX_PASSWORD,I_LOGIN_BOX_ENTER,I_LOGIN_ERROR_MSGBOX_TITLE,I_MSG,I_ERROR') as $const) {
                 $phrase = Indi::rexm('~define\(\'' . $const . '\', \'(.*?)\'\);~', $php, 1);
                 $langI['const'][$const] = $phrase;
             }
