@@ -1,5 +1,5 @@
 <?php
-class Admin_LogoutController extends Indi_Controller {
+class Admin_LogoutController extends Indi_Controller_Admin {
     /**
      * Action to preform Admin System logout
      * and redirect to Admin System login page
@@ -22,7 +22,7 @@ class Admin_LogoutController extends Indi_Controller {
             'uri' => Indi::uri()->toArray(),
             'title' => Indi::ini('general')->title ?: 'Indi Engine',
             'throwOutMsg' => Indi::view()->throwOutMsg,
-            'lang' => Indi::view()->lang
+            'lang' => $this->lang()
         ));
 
         // Else redirect

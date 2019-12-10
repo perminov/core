@@ -946,12 +946,13 @@ class Indi {
      * Short-hand access for current cms user (admin) object
      *
      * @static
+     * @param bool $refresh Mind whether $_SESSION['admin']['id'] still ok
      * @return mixed|null
      */
-    public static function admin(){
+    public static function admin($refresh = false){
 
         // If there is no value for 'uri' key in registry yet, we setup it
-        if (is_null(Indi::store('admin'))) {
+        if (is_null(Indi::store('admin')) || $refresh) {
 
             // Get the database table name, where current cms user was found in
             $table = $_SESSION['admin']['alternate'] ? $_SESSION['admin']['alternate'] : 'admin';
@@ -1633,7 +1634,7 @@ class Indi {
     public static function rexma($rex, $subject) {
 
         // Check that self::$_rex array has a value under $alias key
-        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+        if ($_ = Indi::rex($rex)) $rex = $_;
 
         // Match
         $success = preg_match_all($rex, $subject, $found);

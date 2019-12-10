@@ -144,9 +144,6 @@ class Indi_Controller {
         // Setup the Content-Type header
         header('Content-Type: text/html; charset=' . $this->encoding);
 
-        // Setup lang info
-        $this->lang();
-
         // Do the pre-dispatch maintenance
         $this->preDispatch();
 
