@@ -2000,7 +2000,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'uri' => Indi::uri()->toArray(),
                         'title' => Indi::ini('general')->title ?: 'Indi Engine',
                         'throwOutMsg' => Indi::view()->throwOutMsg,
-                        'lang' => Indi::view()->lang
+                        'lang' => $this->lang()
                     ));
 
                 // Else if user is trying to access server-app using usual way
@@ -2217,6 +2217,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'ws' => array_merge((array) Indi::ini('ws'), array('pem' => is_file(DOC . STD . '/core/application/ws.pem'))),
                 'demo' => Indi::demo(false)
             ),
+            'lang' => $this->lang(),
             'user' => array(
                 'title' => Indi::admin()->title(),
                 'uid' => Indi::admin()->profileId . '-' . Indi::admin()->id,
@@ -3251,6 +3252,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function lang() {
 
+        // If was set up previously - return as is
+        if (Indi::view()->lang) return Indi::view()->lang;
+
         // Get available languages
         $langA = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang` WHERE `toggle` = "y"')->fetchAll();
 
@@ -3259,18 +3263,42 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Get all languages' versions for 4 constants
         foreach ($langA as &$langI) {
+
+            // Declare
             $langI['const'] = array();
-            $php = file_get_contents(DOC . STD . '/core/application/lang/admin/' . $langI['alias'] . '.php');
-            foreach (ar('I_LOGIN_BOX_USERNAME,I_LOGIN_BOX_PASSWORD,I_LOGIN_BOX_ENTER,I_LOGIN_ERROR_MSGBOX_TITLE,I_MSG,I_ERROR') as $const) {
-                $phrase = Indi::rexm('~define\(\'' . $const . '\', \'(.*?)\'\);~', $php, 1);
-                $langI['const'][$const] = $phrase;
+
+            // Foreach dir
+            foreach (ar('core,www') as $dir) {
+
+                // Build filename of a php-file, containing l10n constants
+                $l10n_file = DOC . STD . '/' . $dir . '/application/lang/admin/' . $langI['alias'] . '.php';
+
+                // If no file - skip
+                if (!file_exists($l10n_file)) continue;
+
+                // If emtpy file - skip
+                if (!$php = file_get_contents($l10n_file)) continue;
+
+                // Collect all-languages versions of small number of constants, required for loginbox
+                foreach (array(
+                     'I_LOGIN_BOX_USERNAME',
+                     'I_LOGIN_BOX_PASSWORD',
+                     'I_LOGIN_BOX_ENTER',
+                     'I_LOGIN_ERROR_MSGBOX_TITLE',
+                     'I_MSG',
+                     'I_ERROR'
+                ) as $const) if (preg_match('~define\(\'' . $const . '\', \'(.*?)\'\);~', $php, $m))
+                    $langI['const'][$const] = $m[1];
+
+                // Collect all l10n constants for a default/current language
+                if ($langI['alias'] == $lang && Indi::admin(true)) {
+                    $const = Indi::rexma('~define\(\'(.*?)\', ?\'(.*?)\'\);~', $php);
+                    $l10n = array_combine($const[1], $const[2]) + ($l10n ?: array());
+                }
             }
         }
 
         // Setup list of possible translations and current/last chosen one
-        Indi::view()->lang = array(
-            'odata' => $langA,
-            'name' => $lang
-        );
+        return Indi::view()->lang = array('odata' => $langA, 'name' => $lang) + ($l10n ?: array());
     }
 }
