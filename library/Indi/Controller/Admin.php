@@ -2008,6 +2008,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Else if user is trying to access server-app using usual way
                 } else {
 
+                    // Setup l10n data
+                    $this->lang();
+
                     // Render login page
                     $out = Indi::view()->render('login.php');
 
@@ -3405,6 +3408,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 // Collect all l10n constants for a default/current language
                 if ($langI['alias'] == $lang && Indi::admin(true)) {
                     $const = Indi::rexma('~define\(\'(.*?)\', ?\'(.*?)\'\);~', $php);
+                    foreach ($const[2] as &$value) $value = stripslashes($value);
                     $l10n = array_combine($const[1], $const[2]) + ($l10n ?: array());
                 }
             }

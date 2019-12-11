@@ -48,7 +48,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 '`toggle` = "y"',
                 'FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `profileIds`)',
                 'FIND_IN_SET(`actionId`, "' . implode(',', Indi_Trail_Admin::$toggledActionIdA) . '")',
-                '`actionId` IN (1, 3)'
+                '`actionId` IN (1, 2, 3)'
             ),
             'order' => 'move',
             'foreign' => 'actionId'
@@ -57,7 +57,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         // Collect inaccessbile subsections ids from subsections list
         foreach ($sectionR->nested('section') as $subsection)
             if (!$subsection->nested('section2action')->count()) $exclude[] = $subsection->id;
-            else if (!$subsection->nested('section2action')->gb(3, 'actionId')) $subsection->disableAdd = 1;
+            else if ($subsection->nested('section2action')->select('3,2', 'actionId')->count() != 2)
+                $subsection->disableAdd = 1;
 
         // Exclude inaccessible sections
         $this->sections->exclude($exclude);

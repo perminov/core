@@ -160,4 +160,16 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // Flush msg
         jflush(true, $result);
     }
+
+    /**
+     * Flush contents of all app js files, concatenated into single text blob
+     */
+    public function appjsAction($exit = true) {
+
+        // Header
+        header('Content-Type: application/javascript');
+
+        // Flush
+        echo appjs('/js/admin/app/lib,/js/admin/app/controller'); if ($exit) exit;
+    }
 }
