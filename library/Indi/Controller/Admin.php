@@ -2000,7 +2000,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'uri' => Indi::uri()->toArray(),
                         'title' => Indi::ini('general')->title ?: 'Indi Engine',
                         'throwOutMsg' => Indi::view()->throwOutMsg,
-                        'lang' => $this->lang()
+                        'lang' => $this->lang(),
+                        'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: ''
                     ));
 
                 // Else if user is trying to access server-app using usual way
@@ -2220,6 +2221,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'ws' => array_merge((array) Indi::ini('ws'), array('pem' => is_file(DOC . STD . '/core/application/ws.pem'))),
                 'demo' => Indi::demo(false)
             ),
+            'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: '',
             'lang' => $this->lang(),
             'user' => array(
                 'title' => Indi::admin()->title(),
