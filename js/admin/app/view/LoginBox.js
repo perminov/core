@@ -13,7 +13,7 @@ Ext.define('Indi.view.LoginBox', {
 
         // Setup currently selected and all available translations
         Ext.merge(me.items[3], {
-            value: Indi.lang.value,
+            value:  Indi.lang.name,
             hidden: hidden,
             store: {
                 data: Indi.lang.odata
