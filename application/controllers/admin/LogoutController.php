@@ -22,7 +22,8 @@ class Admin_LogoutController extends Indi_Controller_Admin {
             'uri' => Indi::uri()->toArray(),
             'title' => Indi::ini('general')->title ?: 'Indi Engine',
             'throwOutMsg' => Indi::view()->throwOutMsg,
-            'lang' => $this->lang()
+            'lang' => $this->lang(),
+            'logo' => Indi::ini('general')->logo
         ));
 
         // Else redirect

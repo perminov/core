@@ -2001,7 +2001,8 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'title' => Indi::ini('general')->title ?: 'Indi Engine',
                         'throwOutMsg' => Indi::view()->throwOutMsg,
                         'lang' => $this->lang(),
-                        'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: ''
+                        'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: '',
+                        'logo' => Indi::ini('general')->logo
                     ));
 
                 // Else if user is trying to access server-app using usual way
@@ -2223,6 +2224,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             ),
             'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: '',
             'lang' => $this->lang(),
+            'logo' => Indi::ini('general')->logo,
             'user' => array(
                 'title' => Indi::admin()->title(),
                 'uid' => Indi::admin()->profileId . '-' . Indi::admin()->id,
