@@ -2005,6 +2005,12 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'logo' => Indi::ini('general')->logo
                     ));
 
+                // Else if '/admin' folder exists and contains Indi standalone client app
+                } else if (file_exists($client = DOC . STD . '/admin/index.html')) {
+
+                    // Flush client app's bootstrap file
+                    iexit(readfile($client));
+
                 // Else if user is trying to access server-app using usual way
                 } else {
 
