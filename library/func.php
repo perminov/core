@@ -2359,7 +2359,7 @@ function stack() {
 function scandirr($dir, &$fileA = array()) {
 
     // Foreach path-entry inside $dir
-    foreach (scandir($dir) as $value) {
+    if (is_dir($dir)) foreach (scandir($dir) as $value) {
 
         // Get full path
         $path = realpath($dir .DIRECTORY_SEPARATOR . $value);

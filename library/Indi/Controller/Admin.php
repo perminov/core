@@ -2007,6 +2007,12 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'logo' => Indi::ini('general')->logo
                     ));
 
+                // Else if '/admin' folder exists and contains Indi standalone client app
+                } else if (file_exists($client = DOC . STD . '/admin/index.html')) {
+
+                    // Flush client app's bootstrap file
+                    iexit(readfile($client));
+
                 // Else if user is trying to access server-app using usual way
                 } else {
 
@@ -2157,6 +2163,12 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             // If request was made via Indi Engine client app - flush info right now
             if (APP) jflush(true, $info);
+
+            // Else if '/admin' folder exists and contains Indi standalone client app
+            else if (file_exists($client = DOC . STD . '/admin/index.html'))
+
+                // Flush client app's bootstrap file
+                iexit(readfile($client));
 
             // Setup info about current logged in cms user, and accessible menu
             Indi::view()->admin = $info['user']['title'] . ' [' . $info['user']['role']  . ']';
