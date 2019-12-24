@@ -94,7 +94,7 @@
             
             function loadjQueryLibaries() {
                 if (typeof (jQuery) == 'undefined') {
-                    CKEDITOR.scriptLoader.load('http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js', function () {
+                    CKEDITOR.scriptLoader.load('//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js', function () {
                         if (typeof (jQuery.fn.oembed) == 'undefined') {
                             CKEDITOR.scriptLoader.load(CKEDITOR.getUrl(CKEDITOR.plugins.getPath('oembed') + 'libs/jquery.oembed.min.js'));
                         }
