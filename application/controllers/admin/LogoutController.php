@@ -1,5 +1,5 @@
 <?php
-class Admin_LogoutController extends Indi_Controller {
+class Admin_LogoutController extends Indi_Controller_Admin {
     /**
      * Action to preform Admin System logout
      * and redirect to Admin System login page
@@ -14,7 +14,19 @@ class Admin_LogoutController extends Indi_Controller {
         // Unset session
         if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
 
-        // Redirect
-        iexit('<script>window.location.replace("' . PRE . '/")</script>');
+        // Flush basic info
+        if (APP) jflush(true, array(
+            'std' => STD,
+            'com' => COM ? '' : '/admin',
+            'pre' => PRE,
+            'uri' => Indi::uri()->toArray(),
+            'title' => Indi::ini('general')->title ?: 'Indi Engine',
+            'throwOutMsg' => Indi::view()->throwOutMsg,
+            'lang' => $this->lang(),
+            'logo' => Indi::ini('general')->logo
+        ));
+
+        // Else redirect
+        else iexit('<script>window.location.replace("' . PRE . '/")</script>');
     }
 }

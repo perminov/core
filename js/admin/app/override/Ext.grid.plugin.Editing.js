@@ -103,7 +103,7 @@ Ext.override(Ext.grid.plugin.Editing, {
         }
 
         // If there was a selection to provide a starting context...
-        if (record && columnHeader && me.triggerEvent != 'cellsecondclick') {
+        if (record && columnHeader && me.triggerEvent != 'cellsecondclick') { // added "&& me.triggerEvent != 'cellsecondclick'"
             me.startEdit(record, columnHeader);
         }
     }
@@ -138,7 +138,8 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             return false;
         }
 
-        value = record.key(columnHeader.dataIndex) === null ? record.get(columnHeader.dataIndex) : record.key(columnHeader.dataIndex);
+        value = record.get(columnHeader.dataIndex);
+        value = record.key(columnHeader.dataIndex) === null ? value : record.key(columnHeader.dataIndex); // +
 
         context.originalValue = context.value = value;
         if (me.beforeEdit(context) === false || me.fireEvent('beforeedit', me, context) === false || context.cancel) {
@@ -154,6 +155,9 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             column: context.colIdx
         });
         if (ed) {
+            // me.editTask.delay(15, me.showEditor, me, [ed, context, value]);                              // -
+
+            // + start
             if (ed.field.field && (!ed.field.store.enumset || columnHeader.initialConfig.editor)) {
                 var ctx = me.view.ctx(), ti = ctx.ti(), section = ti.section, scope = ti.scope,
                     url = '/' + section.alias + '/form/id/' + record.get('id') + '/ph/' + scope.hash
@@ -193,6 +197,8 @@ Ext.override(Ext.grid.plugin.CellEditing, {
             } else {
                 me.editTask.delay(15, me.showEditor, me, [ed, context, value]);
             }
+            // + end
+
             return true;
         }
 
@@ -275,10 +281,10 @@ Ext.override(Ext.grid.plugin.CellEditing, {
 
         ed.startEdit(me.getCell(record, columnHeader), value);
 
-        if (typeof ed.field.onTriggerClick == 'function') {
-            if (Ext.isFunction(ed.field.expand)) ed.field.expand();
-            ed.field.focus(false, true);
-        } //+
+        if (typeof ed.field.onTriggerClick == 'function') {         // +
+            if (Ext.isFunction(ed.field.expand)) ed.field.expand(); // +
+            ed.field.focus(false, true);                            // +
+        }                                                           // +
 
         me.editing = true;
         me.scroll = me.view.el.getScroll();

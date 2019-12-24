@@ -243,4 +243,16 @@ class Indi_Trail_Item {
             func_num_args() ? func_get_args() : $call['args']
         );
     }
+
+    /**
+     * Retrieve summary definitions from $_GET['summary']
+     *
+     * @param bool $json
+     * @return mixed|string
+     */
+    public function summary($json = true) {
+
+        // If summary definitions given by $_GET['summary'] - return as is
+        if ($summary = Indi::get('summary')) return $json ? $summary : json_decode($summary);
+    }
 }

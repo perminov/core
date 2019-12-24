@@ -1979,7 +1979,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     foreach ($allowedA as $allowedI) $_SESSION['admin'][$allowedI] = $data[$allowedI];
 
                     // Flush response
-                    jflush(true, array_key_exists('HTTP_INDI_AUTH', $_SERVER) ? $this->info() : array('ok' => '1'));
+                    jflush(true, APP ? $this->info() : array('ok' => '1'));
                 }
 
                 // If user was thrown out from the system, assign a throwOutMsg to Indi::view() object, for this message
@@ -1990,7 +1990,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 }
 
                 // If user is trying to access server-app using standalone client-app
-                if (array_key_exists('HTTP_INDI_AUTH', $_SERVER)) {
+                if (APP) {
 
                     // Flush basic info
                     jflush(true, array(
@@ -1999,11 +1999,17 @@ class Indi_Controller_Admin extends Indi_Controller {
                         'pre' => PRE,
                         'uri' => Indi::uri()->toArray(),
                         'title' => Indi::ini('general')->title ?: 'Indi Engine',
-                        'throwOutMsg' => Indi::view()->throwOutMsg
+                        'throwOutMsg' => Indi::view()->throwOutMsg,
+                        'lang' => $this->lang(),
+                        'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: '',
+                        'logo' => Indi::ini('general')->logo
                     ));
 
                 // Else if user is trying to access server-app using usual way
                 } else {
+
+                    // Setup l10n data
+                    $this->lang();
 
                     // Render login page
                     $out = Indi::view()->render('login.php');
@@ -2070,8 +2076,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     function rowsetSummary($force = false) {
 
-        // If there is no 'summary' key within $_GET params - return
-        if (!$summary = Indi::get('summary')) return;
+        // Retrieve summary definitions from $_GET['summary'] if given, else from `grid`.`summaryType`
+        if (!$summary = t()->summary()) return;
 
         // If $summary is not json-decodable - return
         if (!($summary = json_decode($summary, true))) return;
@@ -2080,7 +2086,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         // as in such sutuation we can fully rely on grid's own summary feature, built on javascript
         if ((Indi::trail()->section->rowsOnPage >= Indi::trail()->scope->found && !$force) && !Indi::trail()->model->treeColumn())
             if ($this->actionCfg['view']['index'] == 'grid' && !in(Indi::uri('format'), 'excel,pdf'))
-                if (!$_SERVER['HTTP_INDI_AUTH']) return;
+                if (!APP) return;
 
         // Define an array containing extjs summary types and their sql representatives
         $js2sql = array('sum' => 'SUM', 'min' => 'min', 'max' => 'MAX', 'average' => 'AVG');//, 'count' => 'COUNT');
@@ -2148,7 +2154,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $info = $this->info();
 
             // If request was made via Indi Engine client app - flush info right now
-            if ($_SERVER['HTTP_INDI_AUTH']) jflush(true, $info);
+            if (APP) jflush(true, $info);
 
             // Setup info about current logged in cms user, and accessible menu
             Indi::view()->admin = $info['user']['title'] . ' [' . $info['user']['role']  . ']';
@@ -2216,12 +2222,16 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'ws' => array_merge((array) Indi::ini('ws'), array('pem' => is_file(DOC . STD . '/core/application/ws.pem'))),
                 'demo' => Indi::demo(false)
             ),
+            'css' => @file_get_contents(DOC . STD . '/www/css/admin/app.css') ?: '',
+            'lang' => $this->lang(),
+            'logo' => Indi::ini('general')->logo,
+            'title' => Indi::ini('general')->title ?: 'Indi Engine',
             'user' => array(
                 'title' => Indi::admin()->title(),
                 'uid' => Indi::admin()->profileId . '-' . Indi::admin()->id,
                 'role' => Indi::admin()->foreign('profileId')->title,
                 'menu' => $menu,
-                'auth' => session_id(),
+                'auth' => session_id() . ':' . Indi::ini('lang')->admin,
                 'dashboard' => Indi::admin()->foreign('profileId')->dashboard ?: false,
                 'maxWindows' => Indi::admin()->foreign('profileId')->maxWindows ?: 15
             )
@@ -3243,5 +3253,61 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function allowOtherAlternateForSave() {
         return false;
+    }
+
+    /**
+     * Get lang info
+     */
+    public function lang() {
+
+        // If was set up previously - return as is
+        if (Indi::view()->lang) return Indi::view()->lang;
+
+        // Get available languages
+        $langA = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang` WHERE `toggle` = "y"')->fetchAll();
+
+        // Get default/current language
+        $lang = in($_COOKIE['lang'], array_column($langA, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin;
+
+        // Get all languages' versions for 4 constants
+        foreach ($langA as &$langI) {
+
+            // Declare
+            $langI['const'] = array();
+
+            // Foreach dir
+            foreach (ar('core,www') as $dir) {
+
+                // Build filename of a php-file, containing l10n constants
+                $l10n_file = DOC . STD . '/' . $dir . '/application/lang/admin/' . $langI['alias'] . '.php';
+
+                // If no file - skip
+                if (!file_exists($l10n_file)) continue;
+
+                // If emtpy file - skip
+                if (!$php = file_get_contents($l10n_file)) continue;
+
+                // Collect all-languages versions of small number of constants, required for loginbox
+                foreach (array(
+                     'I_LOGIN_BOX_USERNAME',
+                     'I_LOGIN_BOX_PASSWORD',
+                     'I_LOGIN_BOX_ENTER',
+                     'I_LOGIN_ERROR_MSGBOX_TITLE',
+                     'I_MSG',
+                     'I_ERROR'
+                ) as $const) if (preg_match('~define\(\'' . $const . '\', \'(.*?)\'\);~', $php, $m))
+                    $langI['const'][$const] = $m[1];
+
+                // Collect all l10n constants for a default/current language
+                if ($langI['alias'] == $lang && Indi::admin(true)) {
+                    $const = Indi::rexma('~define\(\'(.*?)\', ?\'(.*?)\'\);~', $php);
+                    foreach ($const[2] as &$value) $value = stripslashes($value);
+                    $l10n = array_combine($const[1], $const[2]) + ($l10n ?: array());
+                }
+            }
+        }
+
+        // Setup list of possible translations and current/last chosen one
+        return Indi::view()->lang = array('odata' => $langA, 'name' => $lang) + ($l10n ?: array());
     }
 }

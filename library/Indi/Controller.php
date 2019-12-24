@@ -1174,4 +1174,11 @@ class Indi_Controller {
         // Unset
         unset($item['_system']['jump'], $item['_system']['over']);
     }
+
+    /**
+     * Empty function, to be overridden in child classes
+     */
+    public function lang() {
+
+    }
 }

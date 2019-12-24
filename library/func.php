@@ -2316,3 +2316,47 @@ function rootNodes($innerHtml, $debug = false) {
 function stack() {
     ob_start(); debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS); return ob_get_clean();
 }
+
+/**
+ * Scan dir recursively and return array of filepaths
+ *
+ * @param $dir
+ * @param array $fileA
+ * @return array list of all files in $dir and it's ALL subdirs
+ */
+function scandirr($dir, &$fileA = array()) {
+
+    // Foreach path-entry inside $dir
+    if (is_dir($dir)) foreach (scandir($dir) as $value) {
+
+        // Get full path
+        $path = realpath($dir .DIRECTORY_SEPARATOR . $value);
+
+        // If it's not a dir - collect path
+        if (!is_dir($path)) $fileA[] = $path;
+
+        // Else go deeper
+        else if ($value != '.' && $value != '..') scandirr($path, $fileA);
+    }
+
+    // Return
+    return $fileA;
+}
+
+/**
+ * Get imploded contents of all files, found in $dir
+ *
+ * @param string $dir Can be array or comma-separated list of directory names relative to DOC . STD . '/www'
+ * @return string
+ */
+function appjs($dir = '/js/admin') {
+
+    // Collect raw contents
+    $raw = array();
+    foreach (ar($dir) as $_dir)
+        foreach (scandirr(DOC . STD . '/www' . $_dir) as $file)
+            $raw[$file] = file_get_contents($file);
+
+    // Return all app's js files concatenated into single string
+    return implode(';' . "\n\n", $raw);
+}

@@ -16420,11 +16420,11 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                         k.baseProto.detach.call(this);
                         this.clearCustomData();
                         c.getDocumentElement().clearCustomData();
-                        d.clearCustomData();
+                        if (d) d.clearCustomData();
                         CKEDITOR.tools.removeFunction(this._.frameLoadedHandler);
-                        (c = d.removeCustomData("onResize")) && c.removeListener();
+                        d && (c = d.removeCustomData("onResize")) && c.removeListener();
                         a.fire("contentDomUnload");
-                        d.remove()
+                        if (d) d.remove()
                     }
                 }
             })
