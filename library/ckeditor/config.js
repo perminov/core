@@ -14,3 +14,4 @@ CKEDITOR.editorConfig = function( config ) {
     config.baseFloatZIndex = 100001;
 };
 CKEDITOR.dtd.$removeEmpty['i'] = false;
+CKEDITOR.dtd.$removeEmpty['a'] = false;
