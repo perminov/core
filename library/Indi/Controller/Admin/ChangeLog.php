@@ -94,10 +94,11 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
         for ($i = 0; $i < count($data); $i++) {
 
             // Build group title
+            $data[$i]['_render']['datetime'] = $data[$i]['datetime'] . rif($data[$i]['changerId'], ' - ' . $data[$i]['changerId'] . ' [' . $data[$i]['profileId'] . ']');
             $data[$i]['changerId'] = $data[$i]['datetime'] . ' - ' . $data[$i]['changerId'] . ' [' . $data[$i]['profileId'] . ']';
 
             // Unset separate values for `datetime` and `profileId` columns, as now they're in group title
-            unset($data[$i]['datetime'], $data[$i]['profileId']);
+            unset($data[$i]['profileId']);
 
             // If $key flag is true
             if ($key) {
@@ -109,6 +110,7 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
                 unset($data[$i]['entityId']);
 
                 // Append build text value for `key` column to text value for `changerId` column
+                $data[$i]['_render']['datetime'] .= ' - ' . $data[$i]['key'];
                 $data[$i]['changerId'] .= ' - ' . $data[$i]['key'];
 
                 // Unset text value for `key` column, as it's already IN $data[$i]['changerId']
