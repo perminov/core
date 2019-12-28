@@ -111,7 +111,7 @@ Ext.override(Ext.grid.Panel, {
             }
 
             // Get initial column width, based on a column title metrics
-            if (columnA[i].icon) widthA[i] = 16; else {
+            if (columnA[i].icon) widthA[i] = columnA[i].innerWidth || 16; else {
 
                 // Here we check if column header's inner text is multiline, and if so
                 // 1. Detect the longest line
