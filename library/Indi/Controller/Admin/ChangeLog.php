@@ -44,9 +44,15 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
         // Exclude `changerType` and `monthId` grid columns
         $this->exclGridProp('changerType,monthId');
 
-        // If current changeLog-section is for operating on changeLog-entries,
-        // nested under some single entry - exclude `key` grid column
-        if (Indi::trail(1)->section->entityId) $this->exclGridProp('key');
+        // If current changeLog-section is for operating on changeLog-entries, nested under some single entry
+        if (Indi::trail(1)->section->entityId) {
+
+            // Exclude `key` grid column
+            $this->exclGridProp('key');
+
+            // If Indi client app is used - make 'datetime' to be grouping field
+            if (APP) t()->section->groupBy = 'datetime';
+        }
 
         // Else force `fieldId`-filter's combo-data to be grouped by `entityId`
         else Indi::trail()->model->fields('fieldId')->param('groupBy', 'entityId');
