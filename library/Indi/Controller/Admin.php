@@ -1378,7 +1378,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
 
                     // If there is no protocol definition within href, we set it as 'http://'
-                    $protocol = preg_match('/:\/\//', $a[1]) ? '' : 'http://';
+                    $protocol = preg_match('/:\/\//', $a[1]) || preg_match('~^(mailto|tel):~', $a[1]) ? '' : 'http://';
 
                     // If href start with a '/', it means that there is no hostname specified, so we define default
                     $server = preg_match('/^\/[^\/]{0,1}/', $a[1]) ? $_SERVER['HTTP_HOST'] : '';
