@@ -1327,35 +1327,39 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 // Build the order clause, using FIND_IN_SET function
                 $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . $set . '") ' . $direction;
 
-            // Else we're going to sort entries by `monthId` column, or other-named
-            // column referencing to `month` entries - apply custom behaviour
-            } else if ($this->rel()->table() == 'month') {
-
-                // Build the order clause, using FIND_IN_SET function and comma-separated
-                // list of months' ids, as monthId() fn return them in right chronology
-                $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . im(monthId()) . '")' . $direction;
-
             // If column is of type (BIG|SMALL|MEDIUM|)INT
             } else if (preg_match('/INT/', $this->foreign('columnTypeId')->type)) {
 
                 // Do nothing for variable-entity fields. todo: make for variable entity
                 if ($this->relation) {
 
-                    // Get the possible foreign keys
-                    $setA = Indi::db()->query('
-                        SELECT DISTINCT `' . $this->alias . '` AS `id`
-                        FROM `' . Indi::model($this->entityId)->table() . '`
-                        ' . ($where ? 'WHERE ' . (is_array($where) ? implode($where, ' AND ') : $where) : '') . '
-                    ')->fetchAll(PDO::FETCH_COLUMN);
+                    // If we're going to sort entries by `monthId` column, or other-named
+                    // column referencing to `month` entries - apply custom behaviour
+                    if ($this->rel()->table() == 'month') {
 
-                    // If at least one key was found
-                    if (count($setA)) {
+                        // Build the order clause, using FIND_IN_SET function and comma-separated
+                        // list of months' ids, as monthId() fn return them in right chronology
+                        $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . im(monthId()) . '")' . $direction;
 
-                        // Setup a proper order of elements in $setA array, depending on their titles
-                        $setA = Indi::order($this->relation, $setA);
+                    // Else
+                    } else {
 
-                        // Build the order clause, using FIND_IN_SET function
-                        $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $setA) . '") ' . 'ASC';
+                        // Get the possible foreign keys
+                        $setA = Indi::db()->query('
+                            SELECT DISTINCT `' . $this->alias . '` AS `id`
+                            FROM `' . Indi::model($this->entityId)->table() . '`
+                            ' . ($where ? 'WHERE ' . (is_array($where) ? implode($where, ' AND ') : $where) : '') . '
+                        ')->fetchAll(PDO::FETCH_COLUMN);
+
+                        // If at least one key was found
+                        if (count($setA)) {
+
+                            // Setup a proper order of elements in $setA array, depending on their titles
+                            $setA = Indi::order($this->relation, $setA);
+
+                            // Build the order clause, using FIND_IN_SET function
+                            $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $setA) . '") ' . 'ASC';
+                        }
                     }
                 }
             }

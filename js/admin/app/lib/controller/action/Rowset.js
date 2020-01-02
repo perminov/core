@@ -47,7 +47,7 @@ Ext.define('Indi.lib.controller.action.Rowset', {
                     win = c.getWindow();
 
                 // If filters toolbar has no items (e.g. there is no filters) - return
-                if (f.empty || !win || !win.down('tool[alias="fundock"]') || !f.lastBox) return;
+                if (!f || f.empty || !win || !win.down('tool[alias="fundock"]') || !f.lastBox) return;
 
                 // If filters toolbar's height wastes more than 20% of total height, available for wrapper-panel
                 if (f.lastBox.height / c.getHeight() > 0.2) {
