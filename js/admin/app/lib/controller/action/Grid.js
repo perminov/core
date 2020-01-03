@@ -50,6 +50,7 @@ Ext.define('Indi.lib.controller.action.Grid', {
          * View config
          */
         viewConfig: {
+            enableTextSelection: true,        
             getRowClass: function (row) {
                 var cls = [];
 

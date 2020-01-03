@@ -14,6 +14,7 @@ CKEDITOR.editorConfig = function( config ) {
     config.baseFloatZIndex = 100001;
 };
 CKEDITOR.dtd.$removeEmpty['i'] = false;
+CKEDITOR.dtd.$removeEmpty['a'] = false;
 
 // Redefine DTD to allow block-elements inside inline-elements
 CKEDITOR.dtd['a']['div'] = 1;

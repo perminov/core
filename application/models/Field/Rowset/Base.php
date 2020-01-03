@@ -295,7 +295,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
             $this->_ids[$id] = $this->_count;
 
             // Call parent
-            parent::append($original, 0);
+            parent::append($original, $this->_count);
 
         // Else
         } else {
