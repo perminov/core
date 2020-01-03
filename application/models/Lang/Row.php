@@ -13,7 +13,7 @@ class Lang_Row extends Indi_Db_Table_Row {
             ),
             'alias' => array(
                 'req' => true,
-                'rex' => '/^[a-zA-Z0-9_]+$/',
+                'rex' => '/^[a-zA-Z0-9_\-]+$/',
                 'unq' => true
             )
         ));
@@ -82,6 +82,9 @@ class Lang_Row extends Indi_Db_Table_Row {
      */
     public function onInsert() {
 
+        // If `lang` entry is turned Off - do no translations for now
+        if ($this->toggle == 'n') return;
+
         // Get info about what entities have what localized fields
         $fieldA = Indi::db()->query('
             SELECT `e`.`table`, `f`.`alias` AS `field`, "1" AS `where`
@@ -92,7 +95,7 @@ class Lang_Row extends Indi_Db_Table_Row {
               AND `f`.`relation` = "0"
         ')->fetchAll();
 
-        // If localized enumset-fields found, append new item in $fieldA
+        // If localized enumset-fields found, append them in $fieldA
         if ($fieldIdA_enumset = Indi::db()->query('
             SELECT `id` FROM `field` WHERE `l10n` = "y" AND `relation` = "6"
         ')->fetchAll(PDO::FETCH_COLUMN))
@@ -127,6 +130,9 @@ class Lang_Row extends Indi_Db_Table_Row {
      * Remove translation from localized fields' values
      */
     public function onDelete() {
+
+        // If `lang` entry is turned Off - do no translations for now
+        if ($this->toggle == 'n') return;
 
         // Get info about what entities have what localized fields
         $fieldA = Indi::db()->query('

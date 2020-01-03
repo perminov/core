@@ -30,6 +30,7 @@ v = 5.59
 [lang]
 front = ru
 admin = ru
+gapi.key =
 
 [view]
 scriptPath = application/views
