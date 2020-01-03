@@ -15,7 +15,7 @@ class Admin_LangController extends Indi_Controller_Admin {
         $langA = Indi::db()->query('SELECT `alias`, `title` FROM `lang`')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // Create Google Cloud Translation PHP API
-        $gapi = new TranslateClient(['key' => 'AIzaSyAlKpxgeJdjkHpfZqDmeAMvFj8jsaaCYkc']);
+        $gapi = new TranslateClient(['key' => Indi::ini('lang')->gapi->key]);
 
         // New languages counter
         $l = 0;
