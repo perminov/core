@@ -2293,6 +2293,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function toggleAction() {
 
+        // Demo mode
+        Indi::demo();
+
         // Toggle
         Indi::trail()->row->toggle();
 
