@@ -288,6 +288,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Get the scope of rows to move within
         $within = Indi::trail()->scope->WHERE;
 
+        // Get shift, 1 by default
+        $shift = (int) Indi::post('shift') ?: 1;
+
         // Declare array of ids of entries, that should be moved, and push main entry's id as first item
         $toBeMovedIdA[] = $this->row->id;
 
@@ -311,17 +314,19 @@ class Indi_Controller_Admin extends Indi_Controller {
         $groupBy = t()->section->groupBy ? t()->section->foreign('groupBy')->alias : '';
 
         // For each row
-        foreach ($toBeMovedRs as $i => $toBeMovedR) if (!$toBeMovedR->move($direction, $within, $groupBy)) break;
+        for ($i = 0; $i < $shift; $i++)
+            foreach ($toBeMovedRs as $toBeMovedR)
+                if (!$toBeMovedR->move($direction, $within, $groupBy)) break;
 
         // Get the page of results, that we were at
         $wasPage = Indi::trail()->scope->page;
 
         // If current model has a tree-column, detect new row index by a special algorithm
         if (Indi::trail()->model->treeColumn()) Indi::uri()->aix = Indi::trail()->model->detectOffset(
-            Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $this->row->id);
+            Indi::trail()->scope->WHERE, Indi::trail()->scope->ORDER, $toBeMovedRs->at(0)->id);
 
         // Else just shift current row index by inc/dec-rementing
-        else Indi::uri()->aix += $direction == 'up' ? -1 : 1;
+        else Indi::uri()->aix += ($direction == 'up' ? -1 : 1) * $shift;
 
         // Apply new index
         $this->setScopeRow(false, null, $toBeMovedRs->column('id'));
@@ -2006,7 +2011,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     ));
 
                 // Else if '/admin' folder exists and contains Indi standalone client app
-                } else if (file_exists($client = DOC . STD . '/admin/index.html')) {
+                } else if (file_exists($client = DOC . STD . '/admin/index.html') && !isset(Indi::get()->classic)) {
 
                     // Flush client app's bootstrap file
                     iexit(readfile($client));
@@ -2163,7 +2168,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             if (APP) jflush(true, $info);
 
             // Else if '/admin' folder exists and contains Indi standalone client app
-            else if (file_exists($client = DOC . STD . '/admin/index.html'))
+            else if (file_exists($client = DOC . STD . '/admin/index.html') && !isset(Indi::get()->classic))
 
                 // Flush client app's bootstrap file
                 iexit(readfile($client));
@@ -2287,6 +2292,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Toggle current row, and redirect back
      */
     public function toggleAction() {
+
+        // Demo mode
+        Indi::demo();
 
         // Toggle
         Indi::trail()->row->toggle();
