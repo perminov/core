@@ -141,7 +141,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         if (!is_writable($wsLock)) jflush(false, 'ws.pid file is not writable');
 
         // Check whether err-file is writable
-        if (DOC . STD . '/core/application/ws.err') jflush(false, 'ws.err file is not writable');
+        if (!is_writable(DOC . STD . '/core/application/ws.err')) jflush(false, 'ws.err file is not writable');
         
         // Path to websocket-server php script
         $wsServer = '/core/application/ws.php';
