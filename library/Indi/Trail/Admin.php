@@ -107,7 +107,7 @@ class Indi_Trail_Admin {
         // Setup grid columns
         $sectionRs->nested('grid', array(
             'where' => $gridWHERE,
-            'order' => 'move'
+            'order' => '`group` = "locked" DESC, `move`'
         ));
 
         // Altered field WHERE clause

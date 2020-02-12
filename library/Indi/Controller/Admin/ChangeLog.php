@@ -140,6 +140,9 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
      */
     public function revertAction() {
 
+        // Demo mode
+        Indi::demo();
+
         // Declare array of ids of entries, that should be moved, and push main entry's id as first item
         $toBeRevertedIdA[] = $this->row->id;
 

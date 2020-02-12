@@ -759,7 +759,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 // Include the original foreign keys data
                 if (isset($typeA['foreign']['single'][$columnI]['title'])
                     || isset($typeA['foreign']['multiple'][$columnI]['title'])
-                    || isset($typeA['boolean'][$columnI]['title']))
+                    || isset($typeA['boolean'][$columnI]))
                     $data[$pointer]['$keys'][$columnI] = $value;
             }
 
