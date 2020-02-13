@@ -2472,8 +2472,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Save the row
         $this->row->save();
 
-        // If current row has been just successfully created - update Indi::uri('aix')
-        if ($updateAix && $this->row->id) $this->updateAix($this->row);
+        // If current row has been just successfully created
+        if ($updateAix && $this->row->id) {
+
+            // Update Indi::uri('aix')
+            $this->updateAix($this->row);
+
+            // Update parent id, so nested entries will be mapped under entry, that was just saved
+            $_SESSION['indi']['admin']['trail']['parentId'][t()->section->id] = $this->row->id;
+        }
 
         // Setup row index
         $this->setScopeRow();
@@ -2621,6 +2628,14 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If current section does not have a parent section, or have, but is a root section - return
         if (!Indi::trail(1)->section->sectionId) return;
+
+        // Force parent WHERE to be 'FALSE' for cases when we're going to browse nested section
+        // mapped under non yet existing parent entry, so we prevent `<parent>Id` = "0" clause because
+        // there may be some entries in nested section that are actually should not be displayed,
+        // e.g. if we're going to display UI with create-form for `country` entry and grid
+        // of `city` entries in same UI's south panel, that grid should have NO entries, despite even
+        // if there are actually do exist entries in `city` db table having `countryId` = "0"
+        if (Indi::uri('action') == 'index' && Indi::uri('id') === '0') return 'FALSE';
 
         // We check if a non-standard parent connector field name should be used to fetch childs
         // For example, if we have 'Countries' section (displayed rows a fetched from 'country' db table)

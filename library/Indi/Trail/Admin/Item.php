@@ -291,6 +291,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 ? Indi::trail($index-1)->section->foreign('parentSectionConnector')->alias
                 : Indi::trail($index)->model->table() . 'Id';
 
+            // Create empty row to be used as parent row, if need
+            if (Indi::uri('id') === '0' && Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1)
+                if ($this->row = $this->model->createRow())
+                    return;
+
             // Get the id
             $id = Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1
                 ? Indi::uri('id')
