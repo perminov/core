@@ -2534,17 +2534,24 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Pick fresh values for affected for current row's affected fields
      * and prepare them for being used as a grid-cells replacements
      *
+     * @param bool $phantom
      * @return mixed
      */
-    public function affected() {
+    public function affected($phantom = false) {
 
         // Wrap row in a rowset, process it by $this->adjustGridDataRowset(), and unwrap back
         $this->rowset = Indi::trail()->model->createRowset(array('rows' => array($this->row)));
         $this->adjustGridDataRowset();
         $this->row = $this->rowset->at(0);
 
+        // If $phantom arg is true, it means that new phantom entry is going to be added into grid,
+        // so here we need to pass ALL grid columns as 1st arg for $this->row->toGridData() call,
+        // rather than just affected columns, because entry does not yet exists but may have default values
+        // which should be anyway prepared to appear in ExtJS grid panel
+        $dataColumns = $phantom ? t()->gridFields->column('alias') : $this->affected4grid();
+
         // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
-        $data = array($this->row->toGridData($this->affected4grid()));
+        $data = array($this->row->toGridData($dataColumns));
         $this->adjustGridData($data);
 
         // Adjust grid each data item
@@ -2739,11 +2746,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
 
-        // If action was not excluded from the list of allowed actions - call it
-        if (Indi::trail()->actions->select($action, 'alias')->at(0)) $this->{$action . 'Action'}();
+        // If action was not excluded from the list of allowed actions
+        if (Indi::trail()->actions->select($action, 'alias')->at(0)) {
+
+            // Call that action it
+            $this->{$action . 'Action'}();
+
+            // If new entry is going to be created via grid rather than via form - flush entry template
+            if ($action == 'form' && !t()->row->id && Indi::uri()->phantom)
+                jflush(array('success' => true, 'phantom' => $this->affected(true)));
 
         // Else flush an error message
-        else {
+        } else {
         
             // Get title
             $title = Indi::model('Action')->fetchRow('`alias` = "' . $action . '"')->title;

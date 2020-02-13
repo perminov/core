@@ -91,7 +91,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                     $this->action = $actionR;
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
-            if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
+            if ($this->action->rowRequired == 'n' || Indi::uri()->phantom) $this->gridFields($sectionR);
 
             // Alter fields
             $originalDefaults = array();

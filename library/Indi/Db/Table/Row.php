@@ -6013,7 +6013,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Get initial combo options rowset
         $comboDataRs = $this->getComboData($name, null, $selectedValue, null, null, $fieldR);
 
-        i($comboDataRs, 'a');
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
 
