@@ -3183,51 +3183,6 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
-     * Show confirmation prompt
-     *
-     * @param $msg
-     * @param string $buttons OKCANCEL, YESNO, YESNOCANCEL
-     * @param string|null $cancelMsg Msg, that will be shown in case if 'Cancel'
-     *                    button was pressed or confirmation window was closed
-     */
-    public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
-
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
-
-        // If no answer, flush confirmation prompt
-        if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
-
-        // If answer is 'cancel' - stop request processing
-        else if ($answer == 'cancel') jflush(false, $cancelMsg);
-
-        // Return answer
-        return $answer;
-    }
-
-    /**
-     * Show prompt with additional fields
-     *
-     * @param $msg
-     * @param array $cfg
-     * @return mixed
-     */
-    public function prompt($msg, $cfg = array()) {
-
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
-
-        // If no answer, flush confirmation prompt
-        if (!$answer) jprompt($msg, $cfg);
-
-        // If answer is 'cancel' - stop request processing
-        else if ($answer == 'cancel') jflush(false);
-
-        // Return prompt data
-        return json_decode(Indi::post('_prompt'), true);
-    }
-
-    /**
      * Empty function. Can be overridden in child classes for cases when there is a need to
      * show some confirmation prompt before new cell value will be saved
      */
