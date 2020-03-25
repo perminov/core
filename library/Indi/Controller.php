@@ -934,7 +934,10 @@ class Indi_Controller {
         $exclude = array_keys(Indi::obar());
 
         // Exclude further-foreign fields, as no support yet implemented for
-        $exclude = array_merge($exclude, t()->fields->select(': != ' . t()->model->id(), 'entityId')->column('alias'));
+        $exclude = array_merge($exclude, 
+            t()->fields->select(': != ' . t()->model->id(), 'entityId')->column('alias'),
+            t()->fields->select(': #[a-zA-Z]+#', 'id')->column('alias')
+        );
 
         // Use keywordWHERE() method call on fields rowset to obtain a valid WHERE clause for the given keyword
         return Indi::trail()->{Indi::trail()->gridFields ? 'gridFields' : 'fields'}->keywordWHERE($keyword, $exclude);
