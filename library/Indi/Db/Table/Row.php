@@ -5353,7 +5353,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // Merge props, related to foreign-key entry into $dataA array
                         $dataA += $this->foreign($_pref = array_shift($path))
-                            ->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref);
+                            ? $this->foreign($_pref)->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref)
+                            : array();
 
                     // Else if it's a multiple-values foreign key field - skip, as no support yet implemented
                     } else continue;
@@ -6013,7 +6014,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Get initial combo options rowset
         $comboDataRs = $this->getComboData($name, null, $selectedValue, null, null, $fieldR);
 
-        i($comboDataRs, 'a');
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
 
