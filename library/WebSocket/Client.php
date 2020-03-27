@@ -59,7 +59,7 @@ class Client extends Base {
     if (!empty($fragment)) $path_with_query .= '#' . $fragment;
 
     if (!in_array($scheme, array('ws', 'wss'))) {
-      throw new BadUriException(
+      throw new Exception(
         "Url should have scheme ws or wss, not '$scheme' from URI '$this->socket_uri' ."
       );
     }
@@ -73,7 +73,7 @@ class Client extends Base {
         $context = $this->options['context'];
       }
       else {
-        throw new \InvalidArgumentException(
+        throw new Exception(
           "Stream context in \$options['context'] isn't a valid context"
         );
       }
@@ -94,7 +94,7 @@ class Client extends Base {
     );
 
     if ($this->socket === false) {
-      throw new ConnectionException(
+      throw new Exception(
         "Could not open socket to \"$host:$port\": $errstr ($errno)."
       );
     }
@@ -148,7 +148,7 @@ class Client extends Base {
     // Validate response.
     if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
       $address = $scheme . '://' . $host . ':' . $port . $path_with_query;
-      throw new ConnectionException(
+      throw new Exception(
         "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
         . $response
       );
@@ -159,7 +159,7 @@ class Client extends Base {
       = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
     if ($keyAccept !== $expectedResonse) {
-      throw new ConnectionException('Server sent bad upgrade response.');
+      throw new Exception('Server sent bad upgrade response.');
     }
 
     $this->is_connected = true;
