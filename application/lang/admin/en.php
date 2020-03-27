@@ -219,6 +219,7 @@ define('I_JCHECK_REG', 'Value "%s" of param "%s" - is in invalid format');
 define('I_JCHECK_KEY', 'No object of type "%s" was found by key "%s"');
 define('I_JCHECK_EQL', 'Wrong value');
 define('I_JCHECK_DIS', 'Value "%s" of param "%s" - is in the list of disabled values');
+define('I_JCHECK_UNQ', 'Value "%s" of param "%s" - is not unique. It should be unique.');
 
 define('I_PRIVATE_DATA', '*private data*');
 

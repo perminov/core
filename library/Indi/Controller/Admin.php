@@ -1650,15 +1650,24 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Create writer
         $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, $formatCfg[$format]['writer']);
 
-        // Buffer raw data
-        ob_start(); $objWriter->save('php://output'); $raw = ob_get_clean();
+        // Create temporary file
+        $tmp = tempnam(ini_get('upload_tmp_dir'), 'xls');
+		
+        // Save into temporary file
+        $objWriter->save($tmp);
 
+        // Get raw file contents
+        $raw = file_get_contents($tmp);
+		
         // Flush Content-Length header
         header('Content-Length: ' . strlen($raw));
 
         // Flush raw
         echo $raw;
 
+        // Delete temporary file
+        unlink($tmp);
+		
         // Exit
         iexit();
     }
@@ -1766,6 +1775,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     AND FIND_IN_SET(`sa`.`sectionId`, "' . implode(',', $level1ToggledSectionIdA) . '")
                 )
             WHERE `a`.`email` = :s
+            GROUP BY `a`.`id`
             LIMIT 1
         ', $password, $password, $username)->fetch();
     }
@@ -3217,6 +3227,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Get $_GET['answer']
         $answer = Indi::get()->answer;
 
+        // Build meta
+        $meta = array(); foreach($cfg as $field) $meta[$field['name']] = $field;
+        
         // If no answer, flush confirmation prompt
         if (!$answer) jprompt($msg, $cfg);
 
@@ -3224,7 +3237,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else if ($answer == 'cancel') jflush(false);
 
         // Return prompt data
-        return json_decode(Indi::post('_prompt'), true);
+        return json_decode(Indi::post('_prompt'), true) + array('_meta' => $meta);
     }
 
     /**

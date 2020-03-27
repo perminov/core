@@ -57,6 +57,7 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         $subj = $this->foreign('noticeId')->{'tpl' . $dir . 'Subj'};
         $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body', null);
         $body = $this->foreign('noticeId')->compiled('tpl' . $dir . 'Body');
+        $audio = $dir == 'Inc' ? $this->foreign('noticeId')->src('tpl' . $dir . 'Audio') : false;
 
         // Get recipients
         $notifyA = $this->users('criteria' . ($this->criteriaRelyOn == 'event' ? 'Evt' : $dir));
@@ -67,7 +68,7 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         // For each applicable way - do notify
         foreach ($notifyA['wayA'] as $way => $field)
             if (method_exists($this, $method = '_' . $way))
-                $this->$method($notifyA['rs'], $field, $subj, $body, $diff);
+                $this->$method($notifyA['rs'], $field, $subj, $body, $diff, $audio);
     }
 
     /**
@@ -79,20 +80,27 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
      * @param $body
      * @param $diff
      */
-    private function _ws($rs, $field, $subj, $body, $diff) {
+    private function _ws($rs, $field, $subj, $body, $diff, $audio = false) {
 
+        // Prepare msg
+        $msg = array(
+            'header' => $subj,
+            'body' => $body
+        );
+    
+        // Append audio if need
+        if ($audio) $msg['audio'] = $audio;
+    
         // Send web-socket messages
         Indi::ws(array(
             'type' => 'notice',
             'mode' => 'menu-qty',
+            'qtyReload' => $this->foreign('noticeId')->qtyReload,
             'noticeId' => $this->noticeId,
             'diff' => $diff,
             'row' => $this->row->id,
             'to' => array($this->profileId => array_column($rs, $field)),
-            'msg' => array(
-                'header' => $subj,
-                'body' => $body
-            )
+            'msg' => $msg
         ));
     }
 
@@ -117,7 +125,7 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         if (!$emailA = array_keys($__)) return;
 
         // Convert square brackets into <>
-        $body = str_replace(ar('[,]'), ar('<,>'), $body);
+        $body = str_replace(ar('[,]'), ar('<,>'), nl2br($body));
 
         // Convert hrefs uri's to absolute
         $body = preg_replace(

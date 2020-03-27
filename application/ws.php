@@ -91,7 +91,7 @@ if (!is_file('ws.pem')) $prot = 'tcp'; else {
 $server = stream_socket_server($prot . '://0.0.0.0:' . $port . '/', $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
 
 // If socket server creation failed - exit
-if (!$server) err('Can\'t start socket server: $errstr ($errno)', true);
+if (!$server) err('Can\'t start socket server: ' . $errstr . '(' . $errno . ')', true);
 
 // Clients' streams array
 $clientA = array();
