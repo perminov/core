@@ -59,6 +59,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     protected $_rowClass = 'Indi_Db_Table_Row';
 
     /**
+     * Sql query used to fetch this rowset
+     *
+     * @var mixed (null,int)
+     */
+    protected $_query = null;
+
+    /**
      * Constructor.
      *
      * @param array $config
@@ -103,6 +110,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Setup page and total found results number
         if (isset($config['page'])) $this->_page = $config['page'];
         if (isset($config['found'])) $this->_found = $config['found'];
+        if (isset($config['query'])) $this->_query = $config['query'];
 
         $this->_count = count($this->_rows);
     }
@@ -519,6 +527,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
      */
     public function page(){
         return $this->_page;
+    }
+
+    /**
+     * Return the query, that was used to fetch current rowset
+     *
+     * @return string
+     */
+    public function query(){
+        return $this->_query;
     }
 
     /**

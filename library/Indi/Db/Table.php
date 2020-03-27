@@ -264,7 +264,8 @@ class Indi_Db_Table
             'data' => $data,
             'rowClass' => $this->_rowClass,
             'found'=> $limit ? $this->_found($where) : count($data),
-            'page' => $page
+            'page' => $page,
+            'query' => $sql
         );
 
         // Return Indi_Db_Table_Rowset object
