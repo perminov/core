@@ -6,6 +6,23 @@ error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^
 chdir(__DIR__);
 
 /**
+ * Check whether process exists having given $pid
+ *
+ * @param $pid
+ * @return bool
+ */
+function checkpid($pid) {
+
+    // Prepare command, that will check whether process is still running
+    $cmd = preg_match('/^WIN/i', PHP_OS)
+        ? 'tasklist /FI "PID eq ' . $pid . '" | find "' . $pid . '"'
+        : 'ps -p ' . $pid . ' -o comm=';
+
+    // If such process is found - return string output found within process list, else return false
+    return shell_exec($cmd) ?: false;
+}
+
+/**
  * Error logging
  *
  * @param null $msg
@@ -25,9 +42,26 @@ function err($msg = null, $exit = false) {
     if ($exit === true) exit;
 }
 
+/**
+ * Shutdown function, for use as a shutdown handler
+ */
+function shutdown() {
+
+    // Erase pid-file and release the lock
+    if ($GLOBALS['pid']) {
+        ftruncate($GLOBALS['pid'], 0);
+        flock($GLOBALS['pid'], LOCK_UN);
+    }
+
+    // Close server stream
+    if ($GLOBALS['server']) fclose($GLOBALS['server']);
+
+    // Log shutdown
+    err('ws.pid: ' . $GLOBALS['PID'] . '. mypid: ' . getmypid() . ' => shutdown', false);
+}
+
 // Register shutdown handler functions
 register_shutdown_function('shutdown');
-register_shutdown_function('err', error_reporting());
 
 // Set error handler
 set_error_handler('err');
@@ -39,6 +73,11 @@ if (!array_key_exists('ws', $ini)) err('No [ws] section found in ini-file', true
 if (!$ini = $ini['ws']) err('[ws] section found, but it is empty', true);
 if (!array_key_exists('port', $ini)) err('No socket port specified in ini-file', true);
 if (!$port = (int) $ini['port']) err('Invalid socket port specified in ini-file', true);
+
+// If ws.pid file exists, and there is process within process list having such PID - log error
+if (file_exists('ws.pid') && $PID = trim(file_get_contents('ws.pid')))
+    if (checkpid($PID))
+        err('ws.pid: ' . $PID . '. mypid: ' . getmypid() . ' => prevented', true);
 
 // Open pid-file
 $pid = fopen('ws.pid', 'c');
@@ -61,21 +100,6 @@ ignore_user_abort(1);
 
 // Erase pid-file and write current pid into it
 ftruncate($pid, 0); fwrite($pid, getmypid());
-
-/**
- * Shutdown function, for use as a shutdown handler
- */
-function shutdown() {
-
-    // Erase pid-file and release the lock
-    if ($GLOBALS['pid']) {
-        ftruncate($GLOBALS['pid'], 0);
-        flock($GLOBALS['pid'], LOCK_UN);
-    }
-
-    // Close server stream
-    if ($GLOBALS['server']) fclose($GLOBALS['server']);
-}
 
 // Create context
 $context = stream_context_create();
