@@ -149,18 +149,15 @@ class Client extends Base {
     if (!preg_match('#Sec-WebSocket-Accept:\s(.*)$#mUi', $response, $matches)) {
       $address = $scheme . '://' . $host . ':' . $port . $path_with_query;
       throw new Exception(
-        "Connection to '{$address}' failed: Server sent invalid upgrade response:\n"
+        "Connection to '{$address}' failed: Server sent no 'Sec-WebSocket-Accept' header:\n"
         . $response
       );
     }
 
     $keyAccept = trim($matches[1]);
-    $expectedResonse
-      = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+    $expectedResonse = base64_encode(pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
 
-    if ($keyAccept !== $expectedResonse) {
-      throw new Exception('Server sent bad upgrade response.');
-    }
+    if ($keyAccept !== $expectedResonse) throw new Exception('Server and client keys do not match.');
 
     $this->is_connected = true;
   }
