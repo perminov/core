@@ -2425,14 +2425,20 @@ class Indi {
         // Protocol
         $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
 
-        // Create client
-        $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
+        // Try send websocket-message
+        try {
 
-        // Send message
-        $client->send(json_encode($data));
+            // Create client
+            $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
 
-        // Close client
-        $client->close();
+            // Send message
+            $client->send(json_encode($data));
+
+            // Close client
+            $client->close();
+
+        // Catch exception
+        } catch (Exception $e) { wslog($e->getMessage()); }
     }
 
     /**

@@ -2371,3 +2371,29 @@ function appjs($dir = '/js/admin') {
     // Return all app's js files concatenated into single string
     return implode(';' . "\n\n", $raw);
 }
+
+/**
+ * Write string to ws.err file
+ *
+ * @param $msg
+ */
+function wslog($msg, $path = null) {
+    file_put_contents(($path ?: DOC . STD . '/core/application') . '/ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+}
+
+/**
+ * Check whether process exists having given $pid
+ *
+ * @param $pid
+ * @return bool
+ */
+function checkpid($pid) {
+
+    // Prepare command, that will check whether process is still running
+    $cmd = preg_match('/^WIN/i', PHP_OS)
+        ? 'tasklist /FI "PID eq ' . $pid . '" | find "' . $pid . '"'
+        : 'ps -p ' . $pid . ' -o comm=';
+
+    // If such process is found - return string output found within process list, else return false
+    return shell_exec($cmd) ?: false;
+}

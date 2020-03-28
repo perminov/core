@@ -5,22 +5,11 @@ error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^
 // Change dir
 chdir(__DIR__);
 
-/**
- * Check whether process exists having given $pid
- *
- * @param $pid
- * @return bool
- */
-function checkpid($pid) {
+// Include func.php
+include '../library/func.php';
 
-    // Prepare command, that will check whether process is still running
-    $cmd = preg_match('/^WIN/i', PHP_OS)
-        ? 'tasklist /FI "PID eq ' . $pid . '" | find "' . $pid . '"'
-        : 'ps -p ' . $pid . ' -o comm=';
-
-    // If such process is found - return string output found within process list, else return false
-    return shell_exec($cmd) ?: false;
-}
+// Log that execution reached ws.php
+wslog('Reached ws.php', __DIR__);
 
 /**
  * Error logging
@@ -57,7 +46,7 @@ function shutdown() {
     if ($GLOBALS['server']) fclose($GLOBALS['server']);
 
     // Log shutdown
-    err('ws.pid: ' . $GLOBALS['PID'] . '. mypid: ' . getmypid() . ' => shutdown', false);
+    err('ws.pid: ' . ($GLOBALS['PID'] ?: 'truncated') . '. mypid: ' . getmypid() . ' => shutdown', false);
 }
 
 // Register shutdown handler functions
@@ -74,10 +63,30 @@ if (!$ini = $ini['ws']) err('[ws] section found, but it is empty', true);
 if (!array_key_exists('port', $ini)) err('No socket port specified in ini-file', true);
 if (!$port = (int) $ini['port']) err('Invalid socket port specified in ini-file', true);
 
-// If ws.pid file exists, and there is process within process list having such PID - log error
-if (file_exists('ws.pid') && $PID = trim(file_get_contents('ws.pid')))
-    if (checkpid($PID))
-        err('ws.pid: ' . $PID . '. mypid: ' . getmypid() . ' => prevented', true);
+// If ws.pid file exists
+if (file_exists('ws.pid'))
+
+    // If it contains PID of process
+    if ($PID = trim(file_get_contents('ws.pid'))) {
+
+        // If process having such PID still running
+        if (checkpid($PID)) {
+
+            // Log that, and initiate shutting down of current process to prevent duplicate
+            err('ws.pid: ' . $PID . ' => process found. mypid: ' . getmypid() . ' => process will be shut down', true);
+
+        // Else
+        }  else {
+
+            // Backup PID value and truncate ws.pid
+            $wasPID = $PID; file_put_contents('ws.pid', $PID = '');
+
+            // Log that before going further
+            err('ws.pid: ' . $wasPID . ' => proc not found => truncated. mypid: ' . getmypid() . ' => going further');
+        }
+
+    // Else if ws.pid is empty - log that before going further
+    } else err('ws.pid: truncated. mypid: ' . getmypid() . ' => going further');
 
 // Open pid-file
 $pid = fopen('ws.pid', 'c');
@@ -98,9 +107,6 @@ set_time_limit(0);
 // Ignore user about
 ignore_user_abort(1);
 
-// Erase pid-file and write current pid into it
-ftruncate($pid, 0); fwrite($pid, getmypid());
-
 // Create context
 $context = stream_context_create();
 
@@ -115,7 +121,13 @@ if (!is_file('ws.pem')) $prot = 'tcp'; else {
 $server = stream_socket_server($prot . '://0.0.0.0:' . $port . '/', $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
 
 // If socket server creation failed - exit
-if (!$server) err('Can\'t start socket server: ' . $errstr . '(' . $errno . ')', true);
+if (!$server) err('Can\'t start socket server: ' . $errstr . '(' . $errno . '), mypid: ' . getmypid() . ' => process will be shut down', true);
+
+// Write current pid into ws.pid
+fwrite($pid, getmypid());
+
+// Log that we successfully started websocket-server
+err('mypid: ' . getmypid() . ' => socket server started, ws.pid: ' . getmypid() . ' => updated');
 
 // Clients' streams array
 $clientA = array();
