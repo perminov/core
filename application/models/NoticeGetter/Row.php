@@ -85,7 +85,7 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         // Prepare msg
         $msg = array(
             'header' => $subj,
-            'body' => $body
+            'body' => preg_replace('~jump=".*?,([^,"]+)"~', 'jump="$1"', $body)
         );
     
         // Append audio if need
