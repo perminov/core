@@ -1638,4 +1638,35 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Return
         return array($keys, $expr);
     }
+
+    /**
+     * Call *_Row->assign($data) for each *_Row instance within current rowset
+     *
+     * @param array $data
+     * @return $this
+     */
+    public function assign(array $data) {
+
+        // Assign $data into each row within current rowset
+        foreach ($this as $row) $row->assign($data);
+
+        // Return rowset itself
+        return $this;
+    }
+
+    /**
+     * Call *_Row->basicUpdate($notices, $amerge) for each *_Row instance within current rowset
+     *
+     * @param bool $notices
+     * @param bool $amerge
+     * @return $this
+     */
+    public function basicUpdate($notices = false, $amerge = true) {
+
+        // Call basicUpdate() on each row within current rowset
+        foreach ($this as $row) $row->basicUpdate($notices, $amerge);
+
+        // Return rowset itself
+        return $this;
+    }
 }
