@@ -1823,13 +1823,14 @@ class Indi_Controller_Admin extends Indi_Controller {
             ')->fetchAll();
 
             // Foreach possible place - try to find
-            foreach ($profile2tableA as $profile2tableI)
-                if (current($data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
-                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA)))
-                    break;
+            foreach ($profile2tableA as $profile2tableI) {
+                $data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
+                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA);
+                if ($data['id']) break;
+            }
 
             // If found - assign some additional info to found data
-            if ($profile2tableI) {
+            if ($data && $data['id'] && $profile2tableI) {
                 $data['alternate'] = $profile2tableI['table'];
                 $data['profileId'] = $profile2tableI['profileId'];
             }
@@ -2067,6 +2068,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $_SESSION['indi']['throwOutMsg'] = $data;
 
                 // Logout
+                if (APP) $this->logout(); else
                 if (Indi::uri()->section == 'index') iexit(header('Location: ' . PRE . '/logout/'));
                 else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else jflush(false, array('throwOutMsg' => $data));
@@ -2736,6 +2738,34 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Reload main window for new session data to be picked
         jflush(true, array('throwOutMsg' => true));
+    }
+
+    /**
+     *
+     */
+    public function logout() {
+
+        // Allow CORS
+        header('Access-Control-Allow-Headers: x-requested-with, indi-auth');
+        header('Access-Control-Allow-Origin: *');
+
+        // Unset session
+        if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
+
+        // Flush basic info
+        if (APP) jflush(true, array(
+            'std' => STD,
+            'com' => COM ? '' : '/admin',
+            'pre' => PRE,
+            'uri' => Indi::uri()->toArray(),
+            'title' => Indi::ini('general')->title ?: 'Indi Engine',
+            'throwOutMsg' => $_SESSION['indi']['throwOutMsg'],
+            'lang' => $this->lang(),
+            'logo' => Indi::ini('general')->logo
+        ));
+
+        // Else redirect
+        else iexit('<script>window.location.replace("' . PRE . '/")</script>');
     }
 
     /**
