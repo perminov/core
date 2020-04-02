@@ -2429,7 +2429,7 @@ class Indi {
         try {
 
             // Log
-            if (Indi::ini('ws')->log) wsmsglog($data, 'evt');
+            if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
 
             // Create client
             $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
