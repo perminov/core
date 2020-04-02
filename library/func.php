@@ -2382,6 +2382,20 @@ function wslog($msg, $path = null) {
 }
 
 /**
+ * Log websocket messages to ws.$log.msg file
+ *
+ * $log should be:
+ * evt - msgs, sent by Indi::ws()
+ * rcv - msgs, received by ws.php
+ * snt - msgs, sent by ws.php
+ *
+ * @param $msg
+ */
+function wsmsglog($msg, $logtype, $path = null) {
+    file_put_contents(($path ?: DOC . STD . '/core/application') . '/ws.' . $logtype . '.msg', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+}
+
+/**
  * Check whether process exists having given $pid
  *
  * @param $pid

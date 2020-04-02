@@ -2428,6 +2428,9 @@ class Indi {
         // Try send websocket-message
         try {
 
+            // Log
+            if (Indi::ini('ws')->log) wsmsglog($data, 'evt');
+
             // Create client
             $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
 

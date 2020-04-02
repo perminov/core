@@ -197,9 +197,6 @@ while (true) {
         // Decode data
         $data = decode($data);
 
-        // If logging is On - do log
-        if ($ini['log']) file_put_contents('ws.log', print_r($data, true) . "\n", FILE_APPEND);
-        
         // Here we skip messages having 'type' not 'text'
         if ($data['type'] != 'text') continue;
 
@@ -220,6 +217,9 @@ while (true) {
         // Else
         } else if ($data['type'] == 'notice') {
 
+            // If logging is On - do log
+            if ($ini['log']) file_put_contents('ws.rcv.msg', print_r($data, true) . "\n", FILE_APPEND);
+
             // Walk through roles, that recipients should have
             // If there are channels already exist for recipients, having such role
             foreach ($data['to'] as $rid => $uidA) if ($channelA[$rid]) {
@@ -227,15 +227,27 @@ while (true) {
                 // If all recipients having such role should be messaged
                 // Send message to all recipients having such role
                 if ($data['to'][$rid] === true) foreach ($channelA[$rid] as $uid => $byrole)
-                    foreach ($channelA[$rid][$uid] as $cid)
+                    foreach ($channelA[$rid][$uid] as $cid) {
+
+                        // If logging is On - do log
+                        if ($ini['log']) file_put_contents('ws.snt.msg', date('Y-m-d H:i:s => ') . print_r($data + compact('rid', 'uid', 'cid'), true) . "\n", FILE_APPEND);
+
+                        // Write message into channel
                         fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
+                    }
 
                 // Else if we have certain list of recipients
                 // Send message to certain recipients
                 else foreach ($data['to'][$rid] as $uid)
                     if ($channelA[$rid][$uid])
-                        foreach ($channelA[$rid][$uid] as $cid)
+                        foreach ($channelA[$rid][$uid] as $cid) {
+
+                            // If logging is On - do log
+                            if ($ini['log']) file_put_contents('ws.snt.msg', date('Y-m-d H:i:s => ') . print_r($data + compact('rid', 'uid', 'cid'), true) . "\n", FILE_APPEND);
+
+                            // Write message into channel
                             fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
+                        }
             }
         }
     }
