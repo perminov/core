@@ -25,7 +25,7 @@ function err($msg = null, $exit = false) {
 
     // Log errors
     if (func_num_args() >= 4) err(func_get_arg(1) . '[' . func_get_arg(0) . '] at ' . func_get_arg(2) . ' on line ' . func_get_arg(3));
-    else file_put_contents('ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+    else file_put_contents(rtrim(__DIR__, '\\/') . '/' . 'ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
 
     // Exit
     if ($exit === true) exit;
