@@ -2,3 +2,5 @@ config.ini
 ws.pid
 ws.err
 ws.pem
+ws.run
+ws.chl

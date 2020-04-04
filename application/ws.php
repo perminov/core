@@ -63,6 +63,13 @@ if (!$ini = $ini['ws']) err('[ws] section found, but it is empty', true);
 if (!array_key_exists('port', $ini)) err('No socket port specified in ini-file', true);
 if (!$port = (int) $ini['port']) err('Invalid socket port specified in ini-file', true);
 
+// If last execution of ws.php was initiated less than 5 seconds ago - prevent duplicate
+if (file_exists('ws.run') && strtotime(date('Y-m-d H:i:s')) < strtotime(file_get_contents('ws.run')) + 5)
+    err('Prevent duplicate. mypid: ' . getmypid() . ' => process will be shut down', true);
+
+// Remember timestamp of current execution
+file_put_contents('ws.run', date('Y-m-d H:i:s'));
+
 // If ws.pid file exists
 if (file_exists('ws.pid'))
 
@@ -184,8 +191,17 @@ while (true) {
 
             // Unset meta info, related to current stream
             foreach ($channelA as $rid => $byrid)
-                foreach ($channelA[$rid] as $uid => $byuid)
-                    unset($channelA[$rid][$uid][$index]);
+                foreach ($channelA[$rid] as $uid => $byuid) {
+                    if (isset($channelA[$rid][$uid][$index])) {
+
+                        // Remove channel from channels registry
+                        unset($channelA[$rid][$uid][$index]);
+
+                        // Log that channel was closed
+                        if ($ini['log']) file_put_contents('ws.chl',
+                            date('Y-m-d H:i:s') . ' => close: ' . $rid . '-' . $uid . '-' . $index . "\n", FILE_APPEND);
+                    }
+                }
 
             // Unset current stream
             unset($clientA[$index]); echo 'close';
@@ -214,11 +230,15 @@ while (true) {
             if (!is_array($channelA[$rid][$uid])) $channelA[$rid][$uid] = array();
             $channelA[$rid][$uid][$index] = $index;
 
+            // Log that channel was opened
+            if ($ini['log']) file_put_contents('ws.chl',
+                date('Y-m-d H:i:s') . ' => open: ' . $data['uid'] . '-' . $index . "\n", FILE_APPEND);
+
         // Else
         } else if ($data['type'] == 'notice') {
 
             // If logging is On - do log
-            if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', print_r($data, true) . "\n", FILE_APPEND);
+            if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
 
             // Walk through roles, that recipients should have
             // If there are channels already exist for recipients, having such role
