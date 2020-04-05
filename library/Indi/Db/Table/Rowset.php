@@ -674,7 +674,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $data[$pointer]['_system'] = $r->system();
 
             // Merge with temporary props
-            $data[$pointer] = array_merge($data[$pointer], $r->toArray('temporary'));
+            $data[$pointer] = array_merge($data[$pointer], $r->toArray('temporary', false));
 
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
