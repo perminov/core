@@ -6174,6 +6174,17 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Build extjs config object for {'xtype': 'radios'}, based on given field
+     *
+     * @param $field
+     * @param bool $store
+     * @return array
+     */
+    public function radio($field, $store = false) {
+        return array('xtype' => 'radios', 'cls' => 'i-field-radio') + $this->combo($field, $store);
+    }
+
+    /**
      * Get nesting-level, if applicable
      */
     public function level() {

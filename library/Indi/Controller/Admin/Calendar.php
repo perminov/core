@@ -318,12 +318,18 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
                 ? sprintf('rgba(%d, %d, %d, 0.2)', hexdec(substr($hex, 0, 2)),
                     hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))) : '';
 
+            // Background color for selected events
+            $backgroundSelected = ($hex = preg_replace('/^#/', '', $hex))
+                ? sprintf('rgba(%d, %d, %d, 0.4)', hexdec(substr($hex, 0, 2)),
+                    hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))) : '';
+
             // Build css
             $css = array(
                 'color' => sprintf('rgb(%d, %d, %d)', hexdec(substr($hex, 0, 2)) - 50,
                     hexdec(substr($hex, 2, 2)) - 50, hexdec(substr($hex, 4, 2)) - 50),
                 'border-color' => $color,
-                'background-color' => $background
+                'background-color' => $background,
+                'background-color-selected' => $backgroundSelected
             );
 
             // Adjust it for custom needs
