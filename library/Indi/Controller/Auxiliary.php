@@ -168,6 +168,6 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         header('Content-Type: application/javascript');
 
         // Flush
-        echo appjs('/js/admin/app/lib,/js/admin/app/controller'); if ($exit) exit;
+        echo appjs('/js/admin/app/proxy,/js/admin/app/data,/js/admin/app/lib,/js/admin/app/controller'); if ($exit) exit;
     }
 }
