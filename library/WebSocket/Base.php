@@ -48,7 +48,7 @@ class Base {
     if (!$this->is_connected) $this->connect(); /// @todo This is a client function, fixme!
 
     if (!in_array($opcode, array_keys(self::$opcodes))) {
-      throw new BadOpcodeException("Bad opcode '$opcode'.  Try 'text' or 'binary'.");
+      throw new Exception("Bad opcode '$opcode'.  Try 'text' or 'binary'.");
     }
 
     // record the length of the payload
@@ -155,7 +155,7 @@ class Base {
     $opcode_int = ord($data[0]) & 31; // Bits 4-7
     $opcode_ints = array_flip(self::$opcodes);
     if (!array_key_exists($opcode_int, $opcode_ints)) {
-      throw new ConnectionException("Bad opcode in websocket frame: $opcode_int");
+      throw new Exception("Bad opcode in websocket frame: $opcode_int");
     }
     $opcode = $opcode_ints[$opcode_int];
 
@@ -246,7 +246,7 @@ class Base {
     $written = fwrite($this->socket, $data);
 
     if ($written < strlen($data)) {
-      throw new ConnectionException(
+      throw new Exception(
         "Could only write $written out of " . strlen($data) . " bytes."
       );
     }
@@ -258,7 +258,7 @@ class Base {
       $buffer = fread($this->socket, $length - strlen($data));
       if ($buffer === false) {
         $metadata = stream_get_meta_data($this->socket);
-        throw new ConnectionException(
+        throw new Exception(
           'Broken frame, read ' . strlen($data) . ' of stated '
           . $length . ' bytes.  Stream state: '
           . json_encode($metadata)
@@ -266,7 +266,7 @@ class Base {
       }
       if ($buffer === '') {
         $metadata = stream_get_meta_data($this->socket);
-        throw new ConnectionException(
+        throw new Exception(
           'Empty read; connection dead?  Stream state: ' . json_encode($metadata)
         );
       }

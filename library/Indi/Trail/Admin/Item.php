@@ -91,7 +91,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                     $this->action = $actionR;
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
-            if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
+            if ($this->action->rowRequired == 'n' || Indi::uri()->phantom) $this->gridFields($sectionR);
 
             // Alter fields
             $originalDefaults = array();
@@ -290,6 +290,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             $connector = Indi::trail($index-1)->section->parentSectionConnector
                 ? Indi::trail($index-1)->section->foreign('parentSectionConnector')->alias
                 : Indi::trail($index)->model->table() . 'Id';
+
+            // Create empty row to be used as parent row, if need
+            if (Indi::uri('id') === '0' && Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1)
+                if ($this->row = $this->model->createRow())
+                    return;
 
             // Get the id
             $id = Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1

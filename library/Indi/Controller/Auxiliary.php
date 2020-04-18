@@ -128,13 +128,8 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // If websocket-server lock-file exists, and contains websocket-server's process ID, and it's an integer
         if (is_file($wsLock) && $wsPid = (int) trim(file_get_contents($wsLock))) {
 
-            // Prepare command, that will check whether process is still running
-            $wsCheck = preg_match('/^WIN/i', PHP_OS)
-                ? 'tasklist /FI "PID eq ' . $wsPid . '" | find "' . $wsPid . '"'
-                : 'ps -p ' . $wsPid . ' -o comm=';
-        
             // If such process is found - flush msg and exit
-            if (shell_exec($wsCheck)) jflush(false);
+            if (checkpid($wsPid)) jflush(false);
         }
 
         // Check whether pid-file is writable
@@ -148,11 +143,14 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         
         // Build websocket startup cmd
         $result['cmd'] = preg_match('/^WIN/i', PHP_OS)
-            ? 'start /B php ..' . $wsServer . ''
+            ? sprintf('start /B %sphp ..%s 2>&1', rif(Indi::ini('general')->phpdir, '$1/'), $wsServer)
             : 'nohup wget --no-check-certificate -qO- "'. ($_SERVER['REQUEST_SCHEME'] ?: 'http') . '://' . $_SERVER['HTTP_HOST'] . STD . $wsServer . '" > /dev/null &';
 
         // Start websocket server
+        wslog('------------------------------');
+        wslog('Exec: ' . $result['cmd']);
         exec($result['cmd'], $result['output'], $result['return']);
+        wslog('Output: ' . print_r($result['output'], true) . ', return: ' . $result['return']);
 
         // Unset 'cmd'-key
         unset($result['cmd']);
@@ -170,6 +168,6 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         header('Content-Type: application/javascript');
 
         // Flush
-        echo appjs('/js/admin/app/lib,/js/admin/app/controller'); if ($exit) exit;
+        echo appjs('/js/admin/app/proxy,/js/admin/app/data,/js/admin/app/lib,/js/admin/app/controller'); if ($exit) exit;
     }
 }

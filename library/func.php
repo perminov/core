@@ -839,7 +839,7 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     }
 
     // If $die arg is an url - do not flush data
-    if (!$redir) echo json_encode($flush);
+    if (!$redir) echo version_compare(PHP_VERSION, '5.4.0', 'ge') ? json_encode($flush, JSON_UNESCAPED_UNICODE) : json_encode($flush);
 
     // Exit if need
     if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
@@ -1346,6 +1346,12 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // Shortcut to $data[$prop]
         $value = $data[$prop];
 
+        // Get meta
+        $meta = isset($data['_meta'][$prop]) ? $data['_meta'][$prop] : array();
+        
+        // Get label, or use $prop if label/meta is not given
+        $label = $meta['fieldLabel'] ?: $prop;
+        
         // Flush fn
         $flushFn = $fn == 'mflush' ? 'mflush' : 'jflush';
 
@@ -1356,16 +1362,16 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         $c = 'I_' . ($flushFn == 'mflush' ? 'M' : 'J') . 'CHECK_';
 
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && (!strlen($value) || (!$value && $rule['key']))) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
+        if (($rule['req'] || $rule['unq']) && (!strlen($value) || (!$value && $rule['key']))) $flushFn($arg1, sprintf(constant($c . 'REQ'), $label));
 
         // If prop's value should match certain regular expression, but it does not - flush error
-        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
+        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $label));
 
         // If value should be a json-encoded expression, and it is - decode
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
         // If value should not be in the list of disabled values - flush error
-        if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $prop));
+        if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $label));
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
         if ($rule['key'] && strlen($value) && $value != '0') {
@@ -1390,6 +1396,11 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // If prop's value should be equal to some certain value, but it's not equal - flush error
         if (array_key_exists('eql', $rule) && $value != $rule['eql'])
             $flushFn($arg1, sprintf(constant($c . 'EQL'), $rule['eql'], $value));
+        
+        // If prop's value should be unique within the whole database table, but it's not - flush error
+        if ($rule['unq'] && count($_ = explode('.', $rule['unq'])) == 2 && Indi::model($_[0])->fetchRow(array(
+            '`' . $_[1] . '` = "' . $value . '"'
+        ))) $flushFn($arg1, sprintf(constant($c . 'UNQ'), $value, $label));
     }
 
     // Return *_Row objects, collected for props, that have 'key' rule
@@ -2359,4 +2370,44 @@ function appjs($dir = '/js/admin') {
 
     // Return all app's js files concatenated into single string
     return implode(';' . "\n\n", $raw);
+}
+
+/**
+ * Write string to ws.err file
+ *
+ * @param $msg
+ */
+function wslog($msg, $path = null) {
+    file_put_contents(($path ?: DOC . STD . '/core/application') . '/ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+}
+
+/**
+ * Log websocket messages to ws.$log.msg file
+ *
+ * $log should be:
+ * evt - msgs, sent by Indi::ws()
+ * rcv - msgs, received by ws.php
+ * snt - msgs, sent by ws.php
+ *
+ * @param $msg
+ */
+function wsmsglog($msg, $logtype, $path = null) {
+    file_put_contents(($path ?: DOC . STD . '/core/application') . '/ws.' . $logtype . '.msg', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+}
+
+/**
+ * Check whether process exists having given $pid
+ *
+ * @param $pid
+ * @return bool
+ */
+function checkpid($pid) {
+
+    // Prepare command, that will check whether process is still running
+    $cmd = preg_match('/^WIN/i', PHP_OS)
+        ? 'tasklist /FI "PID eq ' . $pid . '" | find "' . $pid . '"'
+        : 'ps -p ' . $pid . ' -o comm=';
+
+    // If such process is found - return string output found within process list, else return false
+    return shell_exec($cmd) ?: false;
 }

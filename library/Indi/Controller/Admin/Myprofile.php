@@ -1,6 +1,11 @@
 <?php
 class Indi_Controller_Admin_Myprofile extends Indi_Controller_Admin {
 
+	/**
+	 * Default action
+	 */
+    public $action = 'form';
+
     /**
      * Replace view type for 'index' action from 'grid' to 'changeLog'
      */
@@ -18,7 +23,7 @@ class Indi_Controller_Admin_Myprofile extends Indi_Controller_Admin {
             Indi::uri()->format = 'json';
             parent::preDispatch();
 
-            Indi::uri()->action = 'form';
+            Indi::uri()->action = $this->action;
             Indi::uri()->id = Indi::admin()->id;
             Indi::uri()->ph = Indi::trail()->scope->hash;
             Indi::uri()->aix = Indi::trail()->scope->aix;

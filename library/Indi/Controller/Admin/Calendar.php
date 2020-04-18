@@ -209,7 +209,13 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
      * Detect color for a certain event, given by $r arg.
      */
     public function detectEventColor($r) {
-        return $this->colors['field'] ? $r->{$this->colors['field']} : null;
+
+        // Detect major color and point color
+        $major = $this->colors['major']['field'] ? $r->{$this->colors['major']['field']} : null;
+        $point = $this->colors['point']['field'] ? $r->{$this->colors['point']['field']} : null;
+
+        // Return both
+        return compact('major', 'point');
     }
 
     /**
@@ -278,11 +284,22 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         // If nothing found - return
         if (!$found) return false;
 
-        // Get field having bigger qty of colored enum values
-        $info = array('field' => '', 'colors' => array());
+        // If major-color field and/or point-color field are explicitly defined - setup info
+        foreach (ar('major,point') as $kind)
+            if ($$kind = t()->model->space('fields.colors.' . $kind))
+                $info[$kind] = array(
+                    'field' => $$kind,
+                    'colors' => $found[$$kind]
+                );
+
+        // If $info was set up - return it
+        if ($info) return $info;
+
+        // Else auto-choose field having bigger qty of colored enum values
+        $info['major'] = array('field' => '', 'colors' => array());
         foreach ($found as $field => $colors)
-            if (count($colors) > count($info['colors']) && $info['field'] = $field)
-                $info['colors'] = $colors;
+            if (count($colors) > count($info['major']['colors']) && $info['major']['field'] = $field)
+                $info['major']['colors'] = $colors;
 
         // Return info about automatically-detected colors
         return $info;
@@ -305,7 +322,7 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
         if (!$info) return false;
 
         // Prepare colors
-        foreach ($info['colors'] as $option => $color) {
+        foreach ($info['major']['colors'] as $option => $color) {
 
             // If $color is a color in format #rrggbb
             if (Indi::rexm('rgb', $color)) $hex = $color;
@@ -318,19 +335,25 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
                 ? sprintf('rgba(%d, %d, %d, 0.2)', hexdec(substr($hex, 0, 2)),
                     hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))) : '';
 
+            // Background color for selected events
+            $backgroundSelected = ($hex = preg_replace('/^#/', '', $hex))
+                ? sprintf('rgba(%d, %d, %d, 0.4)', hexdec(substr($hex, 0, 2)),
+                    hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))) : '';
+
             // Build css
             $css = array(
                 'color' => sprintf('rgb(%d, %d, %d)', hexdec(substr($hex, 0, 2)) - 50,
                     hexdec(substr($hex, 2, 2)) - 50, hexdec(substr($hex, 4, 2)) - 50),
                 'border-color' => $color,
-                'background-color' => $background
+                'background-color' => $background,
+                'background-color-selected' => $backgroundSelected
             );
 
             // Adjust it for custom needs
             $this->adjustColorsCss($option, $color, $css);
 
             // Assign css
-            $info['colors'][$option] = $css;
+            $info['major']['colors'][$option] = $css;
         }
 
         // Assign colors info into $this->colors, and return it
@@ -345,10 +368,13 @@ class Indi_Controller_Admin_Calendar extends Indi_Controller_Admin {
     public function adjustColors(&$info) {
 
         // Set empty info
-        if (!$info) $info = array('field' => '', 'colors' => array());
+        if (!$info) $info = array(
+            'major' => array('field' => '', 'colors' => array()),
+            'point' => array('field' => '', 'colors' => array())
+        );
 
         // Append one more color definition
-        $info['colors']['default'] = 'lime';
+        $info['major']['colors']['default'] = 'lime';
     }
 
     /**
