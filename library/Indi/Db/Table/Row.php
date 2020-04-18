@@ -1764,7 +1764,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // If field do not store foreign keys - throw exception
                 if ($fieldR->storeRelationAbility == 'none'
                     || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
-                    throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
+                    throw new Exception('Field with alias `' . $key . '` (`' . $fieldR->alias . '`) within entity with table name `' . $this->_table .'` is not a foreign key');
 
                 // Get foreign key value
                 $val = $this->$key;
