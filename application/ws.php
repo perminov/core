@@ -173,7 +173,6 @@ while (true) {
 
             // Write empty json
             fwrite($clientI, encode('{}'));
-            fwrite($clientI, encode('{}'));
             file_put_contents('ws.chl', date('Y-m-d H:i:s') . ' => handshake: ' . print_r($info, true) . "\n", FILE_APPEND);
         }
 
@@ -217,8 +216,16 @@ while (true) {
             continue;
         }
 
+        // Log that channel was closed
+        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
+            date('Y-m-d H:i:s') . ' => chl:' . $index . ', raw:' . print_r($data, true) . "\n", FILE_APPEND);
+
         // Decode data
         $data = decode($data);
+
+        // Log that channel was closed
+        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
+            date('Y-m-d H:i:s') . ' => chl:' . $index . ', obj:' . print_r($data, true) . "\n", FILE_APPEND);
 
         // Here we skip messages having 'type' not 'text'
         if ($data['type'] != 'text') continue;
