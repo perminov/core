@@ -186,6 +186,9 @@ class Indi_Db_Table
             // Setup fields having ['auto' => true] rule
             $this->_space['fields']['auto'] = $this->_spaceOwnersAuto();
 
+            // Setup fields, responsible for colors
+            $this->_space['fields']['colors'] = $this->_spaceColors();
+
             // If current space-scheme assumes that there is a duration-field
             if ($frameCoord = Indi::rexm('~(minuteQty|dayQty|timespan)~', $this->_space['scheme'], 1)) {
 
@@ -264,7 +267,8 @@ class Indi_Db_Table
             'data' => $data,
             'rowClass' => $this->_rowClass,
             'found'=> $limit ? $this->_found($where) : count($data),
-            'page' => $page
+            'page' => $page,
+            'query' => $sql
         );
 
         // Return Indi_Db_Table_Rowset object
@@ -1677,6 +1681,16 @@ class Indi_Db_Table
      */
     public function spaceOwnersRelyOn($rules = false) {
         return $rules ? $this->_space['fields']['relyOn'] : array_keys($this->_space['fields']['relyOn']);
+    }
+
+
+    /**
+     * Get fields, responsible for major color and point color
+     *
+     * @return array
+     */
+    protected function _spaceColors() {
+        return array('major' => null, 'point' => null);
     }
 
     /**

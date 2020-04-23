@@ -1923,7 +1923,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // If field do not store foreign keys - throw exception
                 if ($fieldR->storeRelationAbility == 'none'
                     || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
-                    throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
+                    throw new Exception('Field with alias `' . $key . '` (`' . $fieldR->alias . '`) within entity with table name `' . $this->_table .'` is not a foreign key');
 
                 // Get foreign key value
                 $val = $this->$key;
@@ -5546,7 +5546,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // Merge props, related to foreign-key entry into $dataA array
                         $dataA += $this->foreign($_pref = array_shift($path))
-                            ->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref);
+                            ? $this->foreign($_pref)->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref)
+                            : array();
 
                     // Else if it's a multiple-values foreign key field - skip, as no support yet implemented
                     } else continue;
@@ -6206,7 +6207,6 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Get initial combo options rowset
         $comboDataRs = $this->getComboData($name, null, $selectedValue, null, null, $fieldR);
 
-        i($comboDataRs, 'a');
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
 
@@ -6364,6 +6364,17 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return it
         return $view;
+    }
+
+    /**
+     * Build extjs config object for {'xtype': 'radios'}, based on given field
+     *
+     * @param $field
+     * @param bool $store
+     * @return array
+     */
+    public function radio($field, $store = false) {
+        return array('xtype' => 'radios', 'cls' => 'i-field-radio') + $this->combo($field, $store);
     }
 
     /**

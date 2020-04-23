@@ -107,7 +107,7 @@ class Indi_Trail_Admin {
         // Setup grid columns
         $sectionRs->nested('grid', array(
             'where' => $gridWHERE,
-            'order' => 'move'
+            'order' => '`group` = "locked" DESC, `move`'
         ));
 
         // Altered field WHERE clause
@@ -173,7 +173,7 @@ class Indi_Trail_Admin {
 
         // Else if 'id' param is mentioned in uri, but it's value either not specified,
         // or does not match allowed format - setup an error
-        } else if (array_key_exists('id', (array) Indi::uri()) && !preg_match('/^[1-9][0-9]*$/', Indi::uri()->id))
+        } else if (array_key_exists('id', (array) Indi::uri()) && !preg_match('/^[0-9]+$/', Indi::uri()->id))
             $error = I_URI_ERROR_ID_FORMAT;
 
         // Setup row for each trail item, or setup an access error

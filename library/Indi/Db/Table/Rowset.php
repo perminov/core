@@ -59,6 +59,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     protected $_rowClass = 'Indi_Db_Table_Row';
 
     /**
+     * Sql query used to fetch this rowset
+     *
+     * @var mixed (null,int)
+     */
+    protected $_query = null;
+
+    /**
      * Constructor.
      *
      * @param array $config
@@ -103,6 +110,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Setup page and total found results number
         if (isset($config['page'])) $this->_page = $config['page'];
         if (isset($config['found'])) $this->_found = $config['found'];
+        if (isset($config['query'])) $this->_query = $config['query'];
 
         $this->_count = count($this->_rows);
     }
@@ -522,6 +530,15 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
     }
 
     /**
+     * Return the query, that was used to fetch current rowset
+     *
+     * @return string
+     */
+    public function query(){
+        return $this->_query;
+    }
+
+    /**
      * If $found argument is null or not given, function will return the total count of rows, that can be fetched
      * in case if LIMIT clause would not be used in sql query. Else if $found argument is 'unset' function will
      * unset $this->_found property from current rowset, otherwise, if $found argument is numeric - function will
@@ -657,7 +674,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $data[$pointer]['_system'] = $r->system();
 
             // Merge with temporary props
-            $data[$pointer] = array_merge($data[$pointer], $r->toArray('temporary'));
+            $data[$pointer] = array_merge($data[$pointer], $r->toArray('temporary', false));
 
             // Foreach field column within each row we check if we should perform any transformation
             foreach ($columnA as $columnI) {
@@ -759,7 +776,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 // Include the original foreign keys data
                 if (isset($typeA['foreign']['single'][$columnI]['title'])
                     || isset($typeA['foreign']['multiple'][$columnI]['title'])
-                    || isset($typeA['boolean'][$columnI]['title']))
+                    || isset($typeA['boolean'][$columnI]))
                     $data[$pointer]['$keys'][$columnI] = $value;
             }
 
@@ -1620,5 +1637,36 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
         // Return
         return array($keys, $expr);
+    }
+
+    /**
+     * Call *_Row->assign($data) for each *_Row instance within current rowset
+     *
+     * @param array $data
+     * @return $this
+     */
+    public function assign(array $data) {
+
+        // Assign $data into each row within current rowset
+        foreach ($this as $row) $row->assign($data);
+
+        // Return rowset itself
+        return $this;
+    }
+
+    /**
+     * Call *_Row->basicUpdate($notices, $amerge) for each *_Row instance within current rowset
+     *
+     * @param bool $notices
+     * @param bool $amerge
+     * @return $this
+     */
+    public function basicUpdate($notices = false, $amerge = true) {
+
+        // Call basicUpdate() on each row within current rowset
+        foreach ($this as $row) $row->basicUpdate($notices, $amerge);
+
+        // Return rowset itself
+        return $this;
     }
 }

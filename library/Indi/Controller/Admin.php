@@ -1652,15 +1652,24 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Create writer
         $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, $formatCfg[$format]['writer']);
 
-        // Buffer raw data
-        ob_start(); $objWriter->save('php://output'); $raw = ob_get_clean();
+        // Create temporary file
+        $tmp = tempnam(ini_get('upload_tmp_dir'), 'xls');
+		
+        // Save into temporary file
+        $objWriter->save($tmp);
 
+        // Get raw file contents
+        $raw = file_get_contents($tmp);
+		
         // Flush Content-Length header
         header('Content-Length: ' . strlen($raw));
 
         // Flush raw
         echo $raw;
 
+        // Delete temporary file
+        unlink($tmp);
+		
         // Exit
         iexit();
     }
@@ -1768,6 +1777,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                     AND FIND_IN_SET(`sa`.`sectionId`, "' . implode(',', $level1ToggledSectionIdA) . '")
                 )
             WHERE `a`.`email` = :s
+            GROUP BY `a`.`id`
             LIMIT 1
         ', $password, $password, $username)->fetch();
     }
@@ -1815,13 +1825,14 @@ class Indi_Controller_Admin extends Indi_Controller {
             ')->fetchAll();
 
             // Foreach possible place - try to find
-            foreach ($profile2tableA as $profile2tableI)
-                if (current($data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
-                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA)))
-                    break;
+            foreach ($profile2tableA as $profile2tableI) {
+                $data = $this->_findSigninUserData($username, $password, $profile2tableI['table'],
+                    $profile2tableI['profileId'], $level1ToggledOnSectionIdA);
+                if ($data['id']) break;
+            }
 
             // If found - assign some additional info to found data
-            if ($profile2tableI) {
+            if ($data && $data['id'] && $profile2tableI) {
                 $data['alternate'] = $profile2tableI['table'];
                 $data['profileId'] = $profile2tableI['profileId'];
             }
@@ -2059,6 +2070,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $_SESSION['indi']['throwOutMsg'] = $data;
 
                 // Logout
+                if (APP) $this->logout(); else
                 if (Indi::uri()->section == 'index') iexit(header('Location: ' . PRE . '/logout/'));
                 else if (!Indi::uri()->format) iexit('<script>top.window.location="' . PRE .'/logout/"</script>');
                 else jflush(false, array('throwOutMsg' => $data));
@@ -2295,6 +2307,9 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function toggleAction() {
 
+        // Demo mode
+        Indi::demo();
+
         // Toggle
         Indi::trail()->row->toggle();
 
@@ -2471,8 +2486,15 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Save the row
         $this->row->save();
 
-        // If current row has been just successfully created - update Indi::uri('aix')
-        if ($updateAix && $this->row->id) $this->updateAix($this->row);
+        // If current row has been just successfully created
+        if ($updateAix && $this->row->id) {
+
+            // Update Indi::uri('aix')
+            $this->updateAix($this->row);
+
+            // Update parent id, so nested entries will be mapped under entry, that was just saved
+            $_SESSION['indi']['admin']['trail']['parentId'][t()->section->id] = $this->row->id;
+        }
 
         // Setup row index
         $this->setScopeRow();
@@ -2533,17 +2555,24 @@ class Indi_Controller_Admin extends Indi_Controller {
      * Pick fresh values for affected for current row's affected fields
      * and prepare them for being used as a grid-cells replacements
      *
+     * @param bool $phantom
      * @return mixed
      */
-    public function affected() {
+    public function affected($phantom = false) {
 
         // Wrap row in a rowset, process it by $this->adjustGridDataRowset(), and unwrap back
         $this->rowset = Indi::trail()->model->createRowset(array('rows' => array($this->row)));
         $this->adjustGridDataRowset();
         $this->row = $this->rowset->at(0);
 
+        // If $phantom arg is true, it means that new phantom entry is going to be added into grid,
+        // so here we need to pass ALL grid columns as 1st arg for $this->row->toGridData() call,
+        // rather than just affected columns, because entry does not yet exists but may have default values
+        // which should be anyway prepared to appear in ExtJS grid panel
+        $dataColumns = $phantom ? t()->gridFields->column('alias') : $this->affected4grid();
+
         // Wrap data entry in an array, process it by $this->adjustGridData(), and uwrap back
-        $data = array($this->row->toGridData($this->affected4grid()));
+        $data = array($this->row->toGridData($dataColumns));
         $this->adjustGridData($data);
 
         // Adjust grid each data item
@@ -2613,6 +2642,14 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If current section does not have a parent section, or have, but is a root section - return
         if (!Indi::trail(1)->section->sectionId) return;
+
+        // Force parent WHERE to be 'FALSE' for cases when we're going to browse nested section
+        // mapped under non yet existing parent entry, so we prevent `<parent>Id` = "0" clause because
+        // there may be some entries in nested section that are actually should not be displayed,
+        // e.g. if we're going to display UI with create-form for `country` entry and grid
+        // of `city` entries in same UI's south panel, that grid should have NO entries, despite even
+        // if there are actually do exist entries in `city` db table having `countryId` = "0"
+        if (Indi::uri('action') == 'index' && Indi::uri('id') === '0') return 'FALSE';
 
         // We check if a non-standard parent connector field name should be used to fetch childs
         // For example, if we have 'Countries' section (displayed rows a fetched from 'country' db table)
@@ -2706,6 +2743,34 @@ class Indi_Controller_Admin extends Indi_Controller {
     }
 
     /**
+     *
+     */
+    public function logout() {
+
+        // Allow CORS
+        header('Access-Control-Allow-Headers: x-requested-with, indi-auth');
+        header('Access-Control-Allow-Origin: *');
+
+        // Unset session
+        if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
+
+        // Flush basic info
+        if (APP) jflush(true, array(
+            'std' => STD,
+            'com' => COM ? '' : '/admin',
+            'pre' => PRE,
+            'uri' => Indi::uri()->toArray(),
+            'title' => Indi::ini('general')->title ?: 'Indi Engine',
+            'throwOutMsg' => $_SESSION['indi']['throwOutMsg'],
+            'lang' => $this->lang(),
+            'logo' => Indi::ini('general')->logo
+        ));
+
+        // Else redirect
+        else iexit('<script>window.location.replace("' . PRE . '/")</script>');
+    }
+
+    /**
      * Default 'print' action
      */
     public function printAction() {
@@ -2738,11 +2803,18 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If only row creation is allowed, but now we deal with existing row - prevent it from being saved
         if (Indi::trail()->section->disableAdd == 2 && Indi::trail()->row->id) $this->deny('save');
 
-        // If action was not excluded from the list of allowed actions - call it
-        if (Indi::trail()->actions->select($action, 'alias')->at(0)) $this->{$action . 'Action'}();
+        // If action was not excluded from the list of allowed actions
+        if (Indi::trail()->actions->select($action, 'alias')->at(0)) {
+
+            // Call that action it
+            $this->{$action . 'Action'}();
+
+            // If new entry is going to be created via grid rather than via form - flush entry template
+            if ($action == 'form' && !t()->row->id && Indi::uri()->phantom)
+                jflush(array('success' => true, 'phantom' => $this->affected(true)));
 
         // Else flush an error message
-        else {
+        } else {
         
             // Get title
             $title = Indi::model('Action')->fetchRow('`alias` = "' . $action . '"')->title;
@@ -3272,8 +3344,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
 
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
+        // Get answer
+        $answer = Indi::get()->{'answer' . rif(Indi::$answer, count(Indi::$answer) + 1)};
 
         // If no answer, flush confirmation prompt
         if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
@@ -3282,7 +3354,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else if ($answer == 'cancel') jflush(false, $cancelMsg);
 
         // Return answer
-        return $answer;
+        return Indi::$answer[count(Indi::$answer)] = $answer;
     }
 
     /**
@@ -3294,17 +3366,23 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function prompt($msg, $cfg = array()) {
 
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
+        // Get answer
+        $answer = Indi::get()->{'answer' . rif(Indi::$answer, count(Indi::$answer) + 1)};
 
+        // Build meta
+        $meta = array(); foreach($cfg as $field) $meta[$field['name']] = $field;
+        
         // If no answer, flush confirmation prompt
         if (!$answer) jprompt($msg, $cfg);
 
         // If answer is 'cancel' - stop request processing
         else if ($answer == 'cancel') jflush(false);
 
+        // Push answer
+        Indi::$answer[count(Indi::$answer)] = $answer;
+
         // Return prompt data
-        return json_decode(Indi::post('_prompt'), true);
+        return json_decode(Indi::post('_prompt'), true) + array('_meta' => $meta);
     }
 
     /**
