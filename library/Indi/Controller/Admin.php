@@ -3232,8 +3232,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
 
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
+        // Get answer
+        $answer = Indi::get()->{'answer' . rif(Indi::$answer, count(Indi::$answer) + 1)};
 
         // If no answer, flush confirmation prompt
         if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
@@ -3242,7 +3242,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else if ($answer == 'cancel') jflush(false, $cancelMsg);
 
         // Return answer
-        return $answer;
+        return Indi::$answer[count(Indi::$answer)] = $answer;
     }
 
     /**
@@ -3254,8 +3254,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function prompt($msg, $cfg = array()) {
 
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
+        // Get answer
+        $answer = Indi::get()->{'answer' . rif(Indi::$answer, count(Indi::$answer) + 1)};
 
         // Build meta
         $meta = array(); foreach($cfg as $field) $meta[$field['name']] = $field;
@@ -3265,6 +3265,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If answer is 'cancel' - stop request processing
         else if ($answer == 'cancel') jflush(false);
+
+        // Push answer
+        Indi::$answer[count(Indi::$answer)] = $answer;
 
         // Return prompt data
         return json_decode(Indi::post('_prompt'), true) + array('_meta' => $meta);

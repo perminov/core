@@ -61,6 +61,13 @@ class Indi {
     public static $cmpOut = array();
 
     /**
+     * Array of prompt answers
+     *
+     * @var array
+     */
+    public static $answer = array();
+
+    /**
      * Regular expressions patterns for common usage
      *
      * @var array
