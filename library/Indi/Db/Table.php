@@ -1483,9 +1483,10 @@ class Indi_Db_Table
      * @param null $where
      * @param null $order
      * @param int $limit
+     * @param bool $rowset
      * @throws Exception
      */
-    public function batch($operation, $where = null, $order = null, $limit = 500) {
+    public function batch($operation, $where = null, $order = null, $limit = 500, $rowset = false) {
 
         // Check that $operation arg is callable
         if (!is_callable($operation)) throw new Exception('$operation arg is not callable');
@@ -1503,11 +1504,25 @@ class Indi_Db_Table
         // Fetch usages by $limit at a time
         for ($p = 1; $p <= ceil($qty/$limit); $p++) {
 
+            // Count how many entries should be deducted from range.
+            // However here we need this as a flag indicating whether
+            // we should fetch next page as planned, or fetch first page again
+            // with understanding that despite it's a again the first page
+            // it will contain another results
+            $deduct = 0;
+
             // Fetch usages
             $rs = $this->fetchAll($where, $order, $limit, $p);
 
+            // If nothing found - return
+            if (!$rs->count()) return;
+
             // Update usages
-            foreach ($rs as $r) $operation($r);
+            if ($rowset) $operation($rs, $deduct); else foreach ($rs as $r) $operation($r, $deduct);
+
+            // If now (e.g. after $operation() call completed) less entries match WHERE clause,
+            // it means that we need to fetch same page again rather than fetching next page
+            if ($deduct) $p -= (int) !($deduct = 0);
         }
     }
 
