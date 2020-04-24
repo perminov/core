@@ -8,7 +8,7 @@ class Admin_LangController extends Indi_Controller_Admin {
      */
     public function dictAction() {
 
-        // Required Google Cloud Translation PHP API
+        // Require Google Cloud Translation PHP API
         require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
 
         // Get languages, already existing as `lang` entries
@@ -128,5 +128,66 @@ class Admin_LangController extends Indi_Controller_Admin {
             // Write raw contents into constants-file
             file_put_contents($l10n_target_abs, $l10n_target_raw);
         }
+    }
+
+    /**
+     * Create `queueTask` entry
+     *
+     * @param $cell
+     * @param $value
+     */
+    public function onBeforeCellSave($cell, $value) {
+
+        // Get field
+        $fieldR = t()->model->fields($cell);
+
+        // Ask what we're going to do
+        $answer = $this->confirm(sprintf(
+            'Если вы хотите добавить новый язык для категории "%s" нажмите "%s". ' .
+            'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
+            $fieldR->nested('grid')->column('title', ' - '), I_YES, I_NO), 'YESNOCANCEL');
+
+        // Remember
+        if ($answer != 'yes' || !preg_match('~^admin~', $cell) || $value != 'q') return;
+
+        // Create phantom `langId` field
+        $langId_combo = Indi::model('Field')->createRow([
+            'title' => 'asdasd',
+            'alias' => 'langId',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'storeRelationAbility' => 'one',
+            'relation' => 'lang',
+            'filter' => '`id` != "' . t()->row->id . '" AND `' . $cell . '` = "y"',
+            'mode' => 'hidden',
+            'defaultValue' => 0
+        ], true);
+
+        // Append to fields list
+        t()->model->fields()->append($langId_combo);
+
+        // Build config for langId-combo
+        $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('langId');
+
+        // Prompt for source language
+        $prompt = $this->prompt('Выберите исходный язык', [$combo]);
+
+        // Check prompt data
+        $_ = jcheck(['langId' => ['req' => true, 'rex' => 'int11', 'key' => 'lang']], $prompt);
+
+        // Build queue class name
+        $queueClassName = 'Indi_Queue_L10n_' . ucfirst($cell);
+
+        // Check that class exists
+        if (!class_exists($queueClassName)) jflush(false, sprintf('Не найден класс %s', $queueClassName));
+
+        // Create queue class instance
+        $queue = new $queueClassName();
+
+        // Run first stage
+        $queue->chunk(array(
+            'source' => $_['langId']->alias,
+            'target' => t()->row->alias
+        ));
     }
 }
