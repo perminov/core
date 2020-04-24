@@ -62,6 +62,15 @@ class Indi_Controller_Cmd extends Indi_Controller {
         }
     }
 
+    /**
+     * Start running queue
+     *
+     * @param $queueTaskId
+     */
+    public function queueAction($queueTaskId) {
+        Indi::model('QueueTask')->fetchRow($queueTaskId)->start();
+    }
+
 
     public function fieldToggleL10nAction($toggle, $field, $table, $where) {
 

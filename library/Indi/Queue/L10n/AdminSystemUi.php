@@ -193,6 +193,7 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
 
                 // Increment `itemsSize` prop on `queueTask` entry and save it
                 $queueTaskR->itemsSize ++;
+                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8');
                 $queueTaskR->basicUpdate();
 
             // Fetch entries according to chunk's WHERE clause, and order by `id` ASC
