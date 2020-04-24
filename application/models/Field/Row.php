@@ -1676,18 +1676,23 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 'enumset' => 'title,alias',
                 'resize' => 'alias',
                 'possibleElementParam' => 'alias,defaultValue',
-                'field' => 'alias,defaultValue,filter,satellitealias,alternative',
+                'field' => 'alias,defaultValue,filter',
                 'alteredField' => 'defaultValue',
                 'noticeGetter' => 'criteriaEvt,criteriaInc,criteriaDec',
                 'admin' => 'email,password',
-                'section' => 'alias,extends,filter',
+                'section' => 'alias,extendsPhp,extendsJs,filter',
                 'profile' => 'dashboard',
                 'grid' => 'alias',
                 'entity' => 'table,extends',
                 'columnType' => 'type',
                 'notice' => 'event,qtySql',
                 'search' => 'filter,defautValue',
-                'element' => 'alias'
+                'element' => 'alias',
+                'role' => 'dashboard',
+                'lang' => 'title,alias',
+                'queueTask' => 'title',
+                'queueItem' => 'target,value,result',
+                'queueChunk' => 'where,location'
             );
 
             // Setup $exclude flag, indicating whether or not field should not be localized despite it's type is ok
