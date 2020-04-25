@@ -139,6 +139,9 @@ class Admin_MigrateController extends Indi_Controller {
         section2action('lang','delete', array('profileIds' => '1'));
         section2action('lang','up', array('profileIds' => '1'));
         section2action('lang','down', array('profileIds' => '1'));
+        action('dict', array('title' => 'Доступные языки', 'rowRequired' => 'n', 'type' => 's'));
+        action('constants', array('title' => 'Константы', 'rowRequired' => 'y', 'type' => 's'));
+        action('run', array('title' => 'Запустить', 'rowRequired' => 'y', 'type' => 's'));
         section2action('lang','dict', array('profileIds' => '1'));
         section2action('lang','constants', array('profileIds' => '1'));
         grid('lang', 'title', true);
@@ -156,7 +159,348 @@ class Admin_MigrateController extends Indi_Controller {
         grid('lang', 'move', true);
         filter('lang', 'state', true);
         filter('lang', 'toggle', true);
-
+        entity('queueTask', array (
+            'title' => 'Очередь',
+            'system' => 'y',
+        ));
+        field('queueTask', 'title', array (
+            'title' => 'Наименование',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'required',
+        ));
+        field('queueTask', 'params', array (
+            'title' => 'Параметры',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+        ));
+        field('queueTask', 'proc', array (
+            'title' => 'Процесс',
+            'elementId' => 'span',
+        ));
+        field('queueTask', 'procSince', array (
+            'title' => 'Начат',
+            'columnTypeId' => 'DATETIME',
+            'elementId' => 'datetime',
+            'defaultValue' => '0000-00-00 00:00:00',
+        ));
+        field('queueTask', 'procID', array (
+            'title' => 'PID',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        field('queueTask', 'stage', array (
+            'title' => 'Этап',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'count',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('queueTask', 'stage', 'count', array('title' => 'Оценка масштабов'));
+        enumset('queueTask', 'stage', 'items', array('title' => 'Создание очереди'));
+        enumset('queueTask', 'stage', 'queue', array('title' => 'Процессинг очереди'));
+        enumset('queueTask', 'stage', 'apply', array('title' => 'Применение результатов'));
+        field('queueTask', 'state', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('queueTask', 'state', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueTask', 'state', 'progress', array('title' => 'В работе'));
+        enumset('queueTask', 'state', 'finished', array('title' => 'Завершено'));
+        field('queueTask', 'chunk', array (
+            'title' => 'Сегменты',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ));
+        field('queueTask', 'count', array (
+            'title' => 'Оценка',
+            'elementId' => 'span',
+        ));
+        field('queueTask', 'countState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueTask', 'countState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueTask', 'countState', 'progress', array('title' => 'В работе'));
+        enumset('queueTask', 'countState', 'finished', array('title' => 'Завершено'));
+        field('queueTask', 'countSize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        field('queueTask', 'items', array (
+            'title' => 'Создание',
+            'elementId' => 'span',
+        ));
+        field('queueTask', 'itemsState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueTask', 'itemsState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueTask', 'itemsState', 'progress', array('title' => 'В работе'));
+        enumset('queueTask', 'itemsState', 'finished', array('title' => 'Завершено'));
+        field('queueTask', 'itemsSize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        field('queueTask', 'itemsBytes', array (
+            'title' => 'Байт',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ));
+        field('queueTask', 'queue', array (
+            'title' => 'Процессинг',
+            'elementId' => 'span',
+        ));
+        field('queueTask', 'queueState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueTask', 'queueState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueTask', 'queueState', 'progress', array('title' => 'В работе'));
+        enumset('queueTask', 'queueState', 'finished', array('title' => 'Завершено'));
+        field('queueTask', 'queueSize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ));
+        field('queueTask', 'apply', array (
+            'title' => 'Применение',
+            'elementId' => 'span',
+        ));
+        field('queueTask', 'applyState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueTask', 'applyState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueTask', 'applyState', 'progress', array('title' => 'В работе'));
+        enumset('queueTask', 'applyState', 'finished', array('title' => 'Завершено'));
+        field('queueTask', 'applySize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        entity('queueTask', array('titleFieldId' => 'title'));
+        entity('queueChunk', array (
+            'title' => 'Сегмент очереди',
+            'system' => 'y',
+        ));
+        field('queueChunk', 'queueTaskId', array (
+            'title' => 'Очередь задач',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'queueTask',
+            'storeRelationAbility' => 'one',
+        ));
+        field('queueChunk', 'entityId', array (
+            'title' => 'Сущность',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'entity',
+            'storeRelationAbility' => 'one',
+        ));
+        field('queueChunk', 'fieldId', array (
+            'title' => 'Поле',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+        ));
+        consider('queueChunk', 'fieldId', 'entityId', array (
+            'required' => 'y',
+        ));
+        field('queueChunk', 'location', array (
+            'title' => 'Расположение',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+        ));
+        field('queueChunk', 'where', array (
+            'title' => 'Условие выборки',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+        ));
+        field('queueChunk', 'count', array (
+            'title' => 'Оценка',
+            'elementId' => 'span',
+        ));
+        field('queueChunk', 'countState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueChunk', 'countState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueChunk', 'countState', 'progress', array('title' => 'В работе'));
+        enumset('queueChunk', 'countState', 'finished', array('title' => 'Завершено'));
+        field('queueChunk', 'countSize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        field('queueChunk', 'items', array (
+            'title' => 'Создание',
+            'elementId' => 'span',
+        ));
+        field('queueChunk', 'itemsState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueChunk', 'itemsState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueChunk', 'itemsState', 'progress', array('title' => 'В работе'));
+        enumset('queueChunk', 'itemsState', 'finished', array('title' => 'Завершено'));
+        field('queueChunk', 'itemsSize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        field('queueChunk', 'queue', array (
+            'title' => 'Процессинг',
+            'elementId' => 'span',
+        ));
+        field('queueChunk', 'queueState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueChunk', 'queueState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueChunk', 'queueState', 'progress', array('title' => 'В работе'));
+        enumset('queueChunk', 'queueState', 'finished', array('title' => 'Завершено'));
+        field('queueChunk', 'queueSize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ));
+        field('queueChunk', 'apply', array (
+            'title' => 'Применение',
+            'elementId' => 'span',
+        ));
+        field('queueChunk', 'applyState', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'waiting',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('queueChunk', 'applyState', 'waiting', array('title' => 'Ожидание'));
+        enumset('queueChunk', 'applyState', 'progress', array('title' => 'В работе'));
+        enumset('queueChunk', 'applyState', 'finished', array('title' => 'Завершено'));
+        field('queueChunk', 'applySize', array (
+            'title' => 'Размер',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'mode' => 'readonly',
+        ));
+        entity('queueChunk', array (
+        ));
+        entity('queueItem', array (
+            'title' => 'Элемент очереди',
+            'system' => 'y',
+        ));
+        field('queueItem', 'queueTaskId', array (
+            'title' => 'Очередь',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'relation' => 'queueTask',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        field('queueItem', 'queueChunkId', array (
+            'title' => 'Сегмент',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'queueChunk',
+            'storeRelationAbility' => 'one',
+        ));
+        field('queueItem', 'target', array (
+            'title' => 'Таргет',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'readonly',
+        ));
+        field('queueItem', 'value', array (
+            'title' => 'Значение',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'readonly',
+        ));
+        field('queueItem', 'result', array (
+            'title' => 'Результат',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+        ));
+        field('queueItem', 'stage', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'items',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('queueItem', 'stage', 'items', array('title' => 'Добавлен'));
+        enumset('queueItem', 'stage', 'queue', array('title' => 'Обработан'));
+        enumset('queueItem', 'stage', 'apply', array('title' => 'Применен'));
         section('queueTask', array (
             'sectionId' => 'configuration',
             'entityId' => 'queueTask',
