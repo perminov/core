@@ -1,5 +1,5 @@
 <?php
-class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
+class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
 
     /**
      * Create queue chunks
@@ -16,6 +16,12 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
 
         // Save `queueTask` entries
         $queueTaskR->save();
+
+        // Get table and field
+        list ($table, $field) = explode(':', $params['field']);
+
+        // If it's a custom entity - append chunk and return
+        $entityR = entity($table); if ($entityR->system == 'n') return $this->appendChunk($queueTaskR, $entityR, field($table, $field));
 
         // Dict of entities having purpose-distinction
         $master = array(
@@ -75,7 +81,7 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
 
         // Get source and target languages
         $source = json_decode($queueTaskR->params)->source;
-        $target = json_decode($queueTaskR->params)->target;
+        $targets = json_decode($queueTaskR->params)->target;
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
@@ -90,19 +96,23 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
             $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "items"';
 
             // Get queue items by 50 entries at a time
-            Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $target) {
+            Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $targets) {
 
-                // Get translations from Google Cloud Translate API
-                $result = array_column($gapi->translateBatch($rs->column('value'), [
-                    'source' => $source,
-                    'target' => $target,
-                ]), 'text');
+                // Foreach target language - make api call to google
+                foreach (ar($targets) as $target)
+                    $resultByLang[$target] = array_column($gapi->translateBatch($rs->column('value'), [
+                        'source' => $source,
+                        'target' => $target,
+                    ]), 'text');
 
                 // Foreach fetched `queueItem` entry
                 foreach ($rs as $idx => $r) {
 
+                    // Collect result for each target language
+                    $result = []; foreach ($resultByLang as $target => $byIdx) $result[$target] = $byIdx[$idx];
+
                     // Write translation result
-                    $r->assign(array('result' => $result[$idx], 'stage' => 'queue'))->basicUpdate();
+                    $r->assign(array('result' => json_encode($result, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT), 'stage' => 'queue'))->basicUpdate();
 
                     // Increment `queueSize` prop on `queueChunk` entry and save it
                     $queueChunkR->queueSize ++; $queueChunkR->basicUpdate();
@@ -142,7 +152,7 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
 
         // Get source and target languages
         $source = json_decode($queueTaskR->params)->source;
-        $target = json_decode($queueTaskR->params)->target;
+        $targets = json_decode($queueTaskR->params)->target;
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
@@ -159,17 +169,27 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
 
+            // Convert column type to TEXT
+            if (field($table, $field)->relation != 6) field($table, $field, ['columnTypeId' => 'TEXT']);
+
             // Get queue items
-            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $source, $target, $table, $field) {
+            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $source, $targets, $table, $field) {
 
                 // Get cell's current value
                 $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
 
                 // If cell value is not an empty string, but is not a json - force it to be json
-                if ($json && !preg_match('~^{"~', $json)) $json = json_encode([$source => $json], JSON_UNESCAPED_UNICODE);
+                if (!preg_match('~^{"~', $json)) $json = json_encode([$source => $json], JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
 
-                // Append translation to cell value
-                $data = json_decode($json ?: '{}'); $data->$target = $r->result; $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+                // Temporary thing
+                if (!is_array($result = json_decode($r->result, true))) foreach (ar($targets) as $target)
+                    $result[$target] = preg_match('~[{,]"(' . $target . ')":"(.*?)"[,}]~', $r->result, $m) ? stripslashes($m[2]) : '';
+
+                // Merge results
+                $data = array_merge(json_decode($json ?: '{}', true), $result);
+
+                // JSON-encode
+                $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
                 // Update cell value
                 Indi::db()->query('UPDATE `:p` SET `:p` = :s WHERE `id` = :i', $table, $field, $json, $r->target);
@@ -195,9 +215,29 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
         // Mark stage as 'Finished' and save `queueTask` entry
         $queueTaskR->assign(array('state' => 'finished', 'applyState' => 'finished'))->save();
 
-        // Update target `lang` entry's state for current fraction
-        $langR_target = Indi::model('Lang')->fetchRow('`alias` = "' . $target . '"');
-        $langR_target->{lcfirst(preg_replace('~^Indi_Queue_L10n_~', '', __CLASS__))} = 'y';
-        $langR_target->save();
+        // Unset previously nested data
+        $queueTaskR->nested('queueChunk', 'unset');
+
+        // Foreach finished `queueChunk` entries, nested under `queueTask` entry
+        foreach ($queueTaskR->nested('queueChunk', ['where' => '`applyState` = "finished"', 'order' => '`id`']) as $queueChunkR) {
+
+            // Split `location` on $table and $field
+            list ($table, $field) = explode(':', $queueChunkR->location);
+
+            // Find field and update it's `l10n` prop
+            field($table, $field, ['l10n' => 'y']);
+        }
+    }
+
+    /**
+     * @return int
+     */
+    public function itemsBytesMultiplier($target) {
+
+        //
+        if (is_string($target)) return count(ar($target));
+
+        //
+        return 1;
     }
 }

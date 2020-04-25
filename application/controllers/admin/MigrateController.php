@@ -1,5 +1,242 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
+    public function l10nAction() {
+        enumset('field', 'l10n', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'))->move(1);
+        entity('lang', array (
+            'title' => 'Язык',
+            'system' => 'y',
+        ));
+        field('lang', 'title', array (
+            'title' => 'Наименование',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'required',
+        ));
+        field('lang', 'alias', array (
+            'title' => 'Ключ',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'required',
+        ));
+        field('lang', 'state', array (
+            'title' => 'Состояние',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'noth',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('lang', 'state', 'smth', array('title' => 'Чтото'));
+        enumset('lang', 'state', 'noth', array('title' => 'Ничего'));
+        field('lang', 'toggle', array (
+            'title' => 'Статус',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'y',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'toggle', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Включен'));
+        enumset('lang', 'toggle', 'n', array('title' => '<span class="i-color-box" style="background: red;"></span>Выключен'));
+        field('lang', 'admin', array (
+            'title' => 'Админка',
+            'elementId' => 'span',
+        ));
+        field('lang', 'adminSystem', array (
+            'title' => 'Система',
+            'elementId' => 'span',
+        ));
+        field('lang', 'adminSystemUi', array (
+            'title' => 'Интерфейс',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'adminSystemUi', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
+        enumset('lang', 'adminSystemUi', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminSystemUi', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        field('lang', 'adminSystemConst', array (
+            'title' => 'Константы',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'adminSystemConst', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
+        enumset('lang', 'adminSystemConst', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminSystemConst', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        field('lang', 'adminCustom', array (
+            'title' => 'Проект',
+            'elementId' => 'span',
+        ));
+        field('lang', 'adminCustomUi', array (
+            'title' => 'Интерфейс',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'adminCustomUi', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
+        enumset('lang', 'adminCustomUi', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomUi', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        field('lang', 'adminCustomConst', array (
+            'title' => 'Константы',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'adminCustomConst', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
+        enumset('lang', 'adminCustomConst', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomConst', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        field('lang', 'adminCustomData', array (
+            'title' => 'Данные',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'adminCustomData', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
+        enumset('lang', 'adminCustomData', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomData', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        field('lang', 'adminCustomTmpl', array (
+            'title' => 'Шаблоны',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('lang', 'adminCustomTmpl', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
+        enumset('lang', 'adminCustomTmpl', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomTmpl', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        field('lang', 'move', array (
+            'title' => 'Порядок',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'move',
+            'defaultValue' => '0',
+        ));
+        entity('lang', array('titleFieldId' => 'title'));
+        section('lang', array (
+            'sectionId' => 'configuration',
+            'entityId' => 'lang',
+            'title' => 'Языки',
+            'type' => 's',
+            'groupBy' => 'state',
+            'roleIds' => '1',
+            'multiSelect' => '1',
+        ))->nested('grid')->delete();
+        section2action('lang','index', array('profileIds' => '1'));
+        section2action('lang','form', array('profileIds' => '1'));
+        section2action('lang','save', array('profileIds' => '1'));
+        section2action('lang','delete', array('profileIds' => '1'));
+        section2action('lang','up', array('profileIds' => '1'));
+        section2action('lang','down', array('profileIds' => '1'));
+        section2action('lang','dict', array('profileIds' => '1'));
+        section2action('lang','constants', array('profileIds' => '1'));
+        grid('lang', 'title', true);
+        grid('lang', 'alias', true);
+        grid('lang', 'admin', true);
+        grid('lang', 'toggle', array('gridId' => 'admin'));
+        grid('lang', 'adminSystem', array('gridId' => 'admin'));
+        grid('lang', 'adminSystemUi', array('gridId' => 'adminSystem'));
+        grid('lang', 'adminSystemConst', array('gridId' => 'adminSystem'));
+        grid('lang', 'adminCustom', array('gridId' => 'admin'));
+        grid('lang', 'adminCustomUi', array('gridId' => 'adminCustom'));
+        grid('lang', 'adminCustomConst', array('gridId' => 'adminCustom'));
+        grid('lang', 'adminCustomData', array('gridId' => 'adminCustom'));
+        grid('lang', 'adminCustomTmpl', array('gridId' => 'adminCustom'));
+        grid('lang', 'move', true);
+        filter('lang', 'state', true);
+        filter('lang', 'toggle', true);
+
+        section('queueTask', array (
+            'sectionId' => 'configuration',
+            'entityId' => 'queueTask',
+            'title' => 'Очереди',
+            'disableAdd' => '1',
+            'type' => 's',
+            'roleIds' => '1',
+        ))->nested('grid')->delete();
+        section2action('queueTask','index', array('profileIds' => '1'));
+        section2action('queueTask','form', array('profileIds' => '1'));
+        section2action('queueTask','delete', array('profileIds' => '1'));
+        section2action('queueTask','run', array('profileIds' => '1'));
+        grid('queueTask', 'title', true);
+        grid('queueTask', 'params', true);
+        grid('queueTask', 'stage', array('toggle' => 'h'));
+        grid('queueTask', 'state', array('toggle' => 'h'));
+        grid('queueTask', 'chunk', true);
+        grid('queueTask', 'proc', true);
+        grid('queueTask', 'procID', array('gridId' => 'proc'));
+        grid('queueTask', 'procSince', array('gridId' => 'proc'));
+        grid('queueTask', 'count', true);
+        grid('queueTask', 'countState', array('gridId' => 'count'));
+        grid('queueTask', 'countSize', array('gridId' => 'count'));
+        grid('queueTask', 'items', true);
+        grid('queueTask', 'itemsState', array('gridId' => 'items'));
+        grid('queueTask', 'itemsSize', array('gridId' => 'items'));
+        grid('queueTask', 'itemsBytes', array('gridId' => 'items'));
+        grid('queueTask', 'queue', true);
+        grid('queueTask', 'queueState', array('gridId' => 'queue'));
+        grid('queueTask', 'queueSize', array('gridId' => 'queue'));
+        grid('queueTask', 'apply', true);
+        grid('queueTask', 'applyState', array('gridId' => 'apply'));
+        grid('queueTask', 'applySize', array('gridId' => 'apply'));
+        section('queueChunk', array (
+            'sectionId' => 'queueTask',
+            'entityId' => 'queueChunk',
+            'title' => 'Сегменты очереди',
+            'disableAdd' => '1',
+            'type' => 's',
+            'rowsetSeparate' => 'no',
+            'roleIds' => '1',
+            'rownumberer' => '1',
+        ))->nested('grid')->delete();
+        section2action('queueChunk','index', array('profileIds' => '1'));
+        section2action('queueChunk','form', array('profileIds' => '1'));
+        grid('queueChunk', 'entityId', array('toggle' => 'n'));
+        grid('queueChunk', 'fieldId', array('toggle' => 'n'));
+        grid('queueChunk', 'location', true);
+        grid('queueChunk', 'where', true);
+        grid('queueChunk', 'count', true);
+        grid('queueChunk', 'countState', array('gridId' => 'count'));
+        grid('queueChunk', 'countSize', array('gridId' => 'count', 'summaryType' => 'sum'));
+        grid('queueChunk', 'items', true);
+        grid('queueChunk', 'itemsState', array('gridId' => 'items'));
+        grid('queueChunk', 'itemsSize', array('gridId' => 'items', 'summaryType' => 'sum'));
+        grid('queueChunk', 'queue', true);
+        grid('queueChunk', 'queueState', array('gridId' => 'queue'));
+        grid('queueChunk', 'queueSize', array('gridId' => 'queue', 'summaryType' => 'sum'));
+        grid('queueChunk', 'apply', true);
+        grid('queueChunk', 'applyState', array('gridId' => 'apply'));
+        grid('queueChunk', 'applySize', array('gridId' => 'apply', 'summaryType' => 'sum'));
+        section('queueItem', array (
+            'sectionId' => 'queueChunk',
+            'entityId' => 'queueItem',
+            'title' => 'Элементы очереди',
+            'disableAdd' => '1',
+            'type' => 's',
+            'roleIds' => '1',
+        ))->nested('grid')->delete();
+        section2action('queueItem','index', array('profileIds' => '1'));
+        section2action('queueItem','save', array('profileIds' => '1'));
+        grid('queueItem', 'target', true);
+        grid('queueItem', 'value', true);
+        grid('queueItem', 'result', array(  'editor' => 1,
+        ));
+        grid('queueItem', 'stage', true);
+        filter('queueItem', 'stage', true);
+        die('xx');
+    }
+
     public function fieldsmodeAction() {
         action('activate', array('title' => 'Активировать', 'rowRequired' => 'y', 'type' => 's'));
         section2action('fields','activate', array ('profileIds' => '1', 'rename' => 'Выбрать режим'))->move(1);

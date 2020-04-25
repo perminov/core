@@ -138,9 +138,30 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
+     * Get fraction(s), that this field belongs to
+     */
+    public function l10nFraction() {
+
+        // Get field's entity
+        $entityR = $this->foreign('entityId');
+
+        // If field's entity is a system-entity
+        if ($entityR->system == 'y') {
+            $fraction = 'adminSystemUi,adminCustomUi';
+
+        // Else it's a custom entity
+        } else if ($entityR->system == 'n') {
+            $fraction = 'adminCustomData';
+        }
+
+        // Return fraction
+        return $fraction;
+    }
+
+    /**
      * Ensure that if value of `l10n` prop have been changed - l10n() method will be called
      */
-    public function onUpdate() {
+    public function onUpdate1() {
 
         // If value of `l10n` prop have been changed - convert field data
         if ($this->affected('l10n')) $this->toggleL10n($this->l10n == 'y');

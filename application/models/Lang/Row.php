@@ -23,6 +23,23 @@ class Lang_Row extends Indi_Db_Table_Row {
     }
 
     /**
+     * Update `state` prop, as it will be used to provide
+     * entries having at least something turned On to be
+     * at the top of the grid
+     */
+    public function onBeforeSave() {
+
+        // Initial state
+        $this->state = 'noth';
+
+        // If something is non-'n', update state
+        foreach ($this->model()->fields()->select(6, 'relation')->column('alias') as $alias)
+            if ($alias != 'state' && $this->$alias != 'n')
+                if ($this->state = 'smth') // Assignment, just for avoiding brackets
+                    break;
+    }
+
+    /**
      * Update language alias within json-encoded translations
      */
     public function onUpdate() {
