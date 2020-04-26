@@ -93,7 +93,7 @@ class Indi_Queue_L10n extends Indi_Queue {
                     ? $r->language($field, $params['source'])
                     : (preg_match('~^{"~', $r->$field)
                         ? json_decode($value)->{$params['source']}
-                        : $r->$field);
+                        : $r->language($field, $params['source']));
 
                 // Create `queueItem` entry
                 $queueItemR = Indi::model('QueueItem')->createRow(array(
