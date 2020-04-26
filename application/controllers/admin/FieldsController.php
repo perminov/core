@@ -51,15 +51,23 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
         // If $cell is not 'l10n' - skip
         if ($cell != 'l10n') return;
 
-        // Ask whether we want to turn l10n On/Off,
-        // or want to arrange value of `l10n` for it to match real situation.
-        $answer = $this->confirm(sprintf(
-            'Если вы хотите включить мультиязычность для поля "%s" нажмите "%s". ' .
-            'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
-            t()->row->title, I_YES, I_NO), 'YESNOCANCEL');
+        // If we're going to create queue task for turning selected language either On or Off
+        if (in($value, 'qy,qn')) {
 
-        // If we just want to arrange
-        if ($answer == 'no') return; else if ($value != 'q') return;
+            // Ask whether we want to turn l10n On/Off,
+            // or want to arrange value of `l10n` for it to match real situation.
+            if ('no' == $this->confirm(sprintf(
+                'Если вы хотите %s мультиязычность для поля "%s" нажмите "%s". ' .
+                'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
+                $value == 'qy' ? 'включить' : 'выключить', t()->row->title, I_YES, I_NO), 'YESNOCANCEL'))
+                return;
+
+        // Else if we're going to setup fraction-status directly
+        } else if ('ok' == $this->confirm(sprintf(
+            'Для поля "%s" мультиязычность будет вручную указана как "%s". Продолжить?',
+            t()->row->title, t()->row->enumset($cell, $value)
+        ), 'OKCANCEL'))
+            return;
 
         // Create phantom `langId` field
         $langId_combo = Indi::model('Field')->createRow([
@@ -80,13 +88,16 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
         $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('langId');
 
         // Prompt for source language
-        $prompt = $this->prompt(sprintf('Выберите текущий язык поля "%s"', t()->row->title), [$combo]);
+        $prompt = $this->prompt(sprintf(
+            $value == 'qy' ? 'Выберите текущий язык поля "%s"' : 'Выберите язык который должен остаться в поле "%s"',
+            t()->row->title
+        ), [$combo]);
 
         // Check prompt data
         $_ = jcheck(['langId' => ['req' => true, 'rex' => 'int11', 'key' => 'lang']], $prompt);
 
         // Build queue class name
-        $queueClassName = 'Indi_Queue_L10n_FieldToggleL10n' . ucfirst($value == 'q' ? 'y' : $value);
+        $queueClassName = 'Indi_Queue_L10n_FieldToggleL10n';
 
         // Check that class exists
         if (!class_exists($queueClassName)) jflush(false, sprintf('Не найден класс %s', $queueClassName));
@@ -101,11 +112,17 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
             '`alias` != "' . $_['langId']->alias . '"'
         ])->column('alias', true);
 
-        // Run first stage
-        $queue->chunk(array(
+        // Prepare params
+        $params = [
             'field' => Indi::model(t()->row->entityId)->table() . ':' . t()->row->alias,
-            'source' => $_['langId']->alias,
-            'target' => count($target) > 1 ? $target : current($target)
-        ));
+            'source' => $_['langId']->alias
+        ];
+
+        // If we're going to turn l10n On for this field - specify target languages,
+        // else setup 'toggle' param as 'n', indicating that l10n will be turned On for this field
+        if ($value == 'qy') $params['target'] = count($target) > 1 ? $target : current($target); else $params['toggle'] = 'n';
+
+        // Run first stage
+        $queue->chunk($params);
     }
 }

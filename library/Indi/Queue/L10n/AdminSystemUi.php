@@ -168,8 +168,8 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
                 // Get cell's current value
                 $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
 
-                // If cell value is not an empty string, but is not a json - force it to be json
-                if ($json && !preg_match('~^{"~', $json)) $json = json_encode([$params['source'] => $json], JSON_UNESCAPED_UNICODE);
+                // If cell value is not a json - force it to be json
+                if (!preg_match('~^{"~', $json)) $json = json_encode([$params['source'] => $json], JSON_UNESCAPED_UNICODE);
 
                 // Decode translations
                 $data = json_decode($json ?: '{}');

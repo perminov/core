@@ -1,5 +1,5 @@
 <?php
-class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
+class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
     /**
      * Create queue chunks
@@ -11,7 +11,8 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
             'title' => array_pop(explode('_', __CLASS__)),
-            'params' => json_encode($params)
+            'params' => json_encode($params),
+            'queueState' => $params['toggle'] == 'n' ? 'noneed' : 'waiting'
         ), true);
 
         // Save `queueTask` entries
@@ -66,12 +67,15 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
      */
     public function queue($queueTaskId) {
 
+        // Get `queueTask` entry
+        $queueTaskR = Indi::model('QueueTask')->fetchRow($queueTaskId);
+
+        // If `queueState` is 'noneed' - do nothing
+        if ($queueTaskR->queueState == 'noneed') return;
+
         // Require and instantiate Google Cloud Translation PHP API and
         require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
         $gapi = new Google\Cloud\Translate\V2\TranslateClient(array('key' => Indi::ini('lang')->gapi->key));
-
-        // Get `queueTask` entry
-        $queueTaskR = Indi::model('QueueTask')->fetchRow($queueTaskId);
 
         // Update `stage` and `state`
         $queueTaskR->stage = 'queue';
@@ -98,9 +102,12 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
             // Get queue items by 50 entries at a time
             Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $targets) {
 
-                // Foreach target language - make api call to google
+                // Get values
+                $values = $rs->column('value');
+
+                // Foreach target language - make api call to google passing source values
                 foreach (ar($targets) as $target)
-                    $resultByLang[$target] = array_column($gapi->translateBatch($rs->column('value'), [
+                    $resultByLang[$target] = array_column($gapi->translateBatch($values, [
                         'source' => $source,
                         'target' => $target,
                     ]), 'text');
@@ -109,7 +116,7 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
                 foreach ($rs as $idx => $r) {
 
                     // Collect result for each target language
-                    $result = []; foreach ($resultByLang as $target => $byIdx) $result[$target] = $byIdx[$idx];
+                    $result = []; foreach ($resultByLang as $target => $byIdx) $result[$target] = str_replace('&quot;', '"', $byIdx[$idx]);
 
                     // Write translation result
                     $r->assign(array('result' => json_encode($result, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT), 'stage' => 'queue'))->basicUpdate();
@@ -150,9 +157,8 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
         $queueTaskR->applyState = 'progress';
         $queueTaskR->basicUpdate();
 
-        // Get source and target languages
-        $source = json_decode($queueTaskR->params)->source;
-        $targets = json_decode($queueTaskR->params)->target;
+        // Get params
+        $params = json_decode($queueTaskR->params, true);
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
@@ -164,35 +170,41 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
             $queueChunkR->assign(array('applyState' => 'progress'))->basicUpdate();
 
             // Build WHERE clause for batch() call
-            $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "queue"';
+            $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "' . ($params['toggle'] == 'n' ? 'items' : 'queue') . '"';
 
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
 
             // Convert column type to TEXT
-            if (field($table, $field)->relation != 6) field($table, $field, ['columnTypeId' => 'TEXT']);
+            if (field($table, $field)->relation != 6 && $params['toggle'] != 'n') field($table, $field, ['columnTypeId' => 'TEXT']);
 
             // Get queue items
-            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $source, $targets, $table, $field) {
+            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field) {
 
-                // Get cell's current value
-                $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
+                // If localization is going to turned Off - use `queueItem` entry's `value` as target value, else
+                if ($params['toggle'] == 'n') $value = $r->value; else {
 
-                // If cell value is not an empty string, but is not a json - force it to be json
-                if (!preg_match('~^{"~', $json)) $json = json_encode([$source => $json], JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+                    // Get cell's current value
+                    $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
 
-                // Temporary thing
-                if (!is_array($result = json_decode($r->result, true))) foreach (ar($targets) as $target)
-                    $result[$target] = preg_match('~[{,]"(' . $target . ')":"(.*?)"[,}]~', $r->result, $m) ? stripslashes($m[2]) : '';
+                    // If cell value is not an empty string, but is not a json - force it to be json
+                    if (!preg_match('~^{"~', $json)) $json = json_encode([$params['source'] => $json], JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
 
-                // Merge results
-                $data = array_merge(json_decode($json ?: '{}', true), $result);
+                    // Temporary thing
+                    if (!is_array($result = json_decode($r->result, true)))
+                        foreach (ar($params['targets']) as $target)
+                            $result[$target] = preg_match('~[{,]"(' . $target . ')":"(.*?)"[,}]~', $r->result, $m)
+                                ? stripslashes(str_replace('&quot;', '"', $m[2])) : '';
 
-                // JSON-encode
-                $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+                    // Merge results
+                    $data = array_merge(json_decode($json ?: '{}', true), $result);
+
+                    // JSON-encode
+                    $value = json_encode($data, JSON_UNESCAPED_UNICODE);
+                }
 
                 // Update cell value
-                Indi::db()->query('UPDATE `:p` SET `:p` = :s WHERE `id` = :i', $table, $field, $json, $r->target);
+                Indi::db()->query('UPDATE `:p` SET `:p` = :s WHERE `id` = :i', $table, $field, $value, $r->target);
 
                 // Write translation result
                 $r->assign(array('stage' => 'apply'))->basicUpdate();
@@ -207,6 +219,9 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
                 $queueTaskR->applySize ++; $queueTaskR->basicUpdate();
 
             }, $where, '`id` ASC');
+
+            // Convert column type to TEXT
+            if (field($table, $field)->relation != 6 && $params['toggle'] == 'n') field($table, $field, ['columnTypeId' => 'VARCHAR(255)']);
 
             // Remember that our try to count was successful
             $queueChunkR->assign(array('applyState' => 'finished'))->basicUpdate();
@@ -225,7 +240,7 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
             list ($table, $field) = explode(':', $queueChunkR->location);
 
             // Find field and update it's `l10n` prop
-            field($table, $field, ['l10n' => 'y']);
+            field($table, $field, ['l10n' => $params['toggle'] ?: 'y']);
         }
     }
 
