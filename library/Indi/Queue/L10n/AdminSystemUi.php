@@ -11,7 +11,8 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
             'title' => array_pop(explode('_', __CLASS__)),
-            'params' => json_encode($params)
+            'params' => json_encode($params),
+            'queueState' => $params['toggle'] == 'n' ? 'noneed' : 'waiting'
         ), true);
 
         // Save `queueTask` entries
@@ -60,12 +61,15 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
      */
     public function queue($queueTaskId) {
 
+        // Get `queueTask` entry
+        $queueTaskR = Indi::model('QueueTask')->fetchRow($queueTaskId);
+
+        // If `queueState` is 'noneed' - do nothing
+        if ($queueTaskR->queueState == 'noneed') return;
+
         // Require and instantiate Google Cloud Translation PHP API and
         require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
         $gapi = new Google\Cloud\Translate\V2\TranslateClient(array('key' => Indi::ini('lang')->gapi->key));
-
-        // Get `queueTask` entry
-        $queueTaskR = Indi::model('QueueTask')->fetchRow($queueTaskId);
 
         // Update `stage` and `state`
         $queueTaskR->stage = 'queue';
@@ -140,9 +144,8 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
         $queueTaskR->applyState = 'progress';
         $queueTaskR->basicUpdate();
 
-        // Get source and target languages
-        $source = json_decode($queueTaskR->params)->source;
-        $target = json_decode($queueTaskR->params)->target;
+        // Get params
+        $params = json_decode($queueTaskR->params, true);
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
@@ -154,22 +157,28 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
             $queueChunkR->assign(array('applyState' => 'progress'))->basicUpdate();
 
             // Build WHERE clause for batch() call
-            $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "queue"';
+            $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "' . ($params['toggle'] == 'n' ? 'items' : 'queue') . '"';
 
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
 
             // Get queue items
-            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $source, $target, $table, $field) {
+            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field) {
 
                 // Get cell's current value
                 $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
 
                 // If cell value is not an empty string, but is not a json - force it to be json
-                if ($json && !preg_match('~^{"~', $json)) $json = json_encode([$source => $json], JSON_UNESCAPED_UNICODE);
+                if ($json && !preg_match('~^{"~', $json)) $json = json_encode([$params['source'] => $json], JSON_UNESCAPED_UNICODE);
 
-                // Append translation to cell value
-                $data = json_decode($json ?: '{}'); $data->$target = $r->result; $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+                // Decode translations
+                $data = json_decode($json ?: '{}');
+
+                // If 'toggle'-param is 'n' - unset translation, else append it
+                if ($params['toggle'] == 'n') unset($data->{$params['source']}); else $data->{$params['target']} = $r->result;
+
+                // Encode back
+                $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
                 // Update cell value
                 Indi::db()->query('UPDATE `:p` SET `:p` = :s WHERE `id` = :i', $table, $field, $json, $r->target);
@@ -196,8 +205,8 @@ class Indi_Queue_L10n_AdminSystemUi extends Indi_Queue_L10n {
         $queueTaskR->assign(array('state' => 'finished', 'applyState' => 'finished'))->save();
 
         // Update target `lang` entry's state for current fraction
-        $langR_target = Indi::model('Lang')->fetchRow('`alias` = "' . $target . '"');
-        $langR_target->{lcfirst(preg_replace('~^Indi_Queue_L10n_~', '', __CLASS__))} = 'y';
+        $langR_target = Indi::model('Lang')->fetchRow('`alias` = "' . $params[$params['toggle'] == 'n' ? 'source' : 'target'] . '"');
+        $langR_target->{lcfirst(preg_replace('~^Indi_Queue_L10n_~', '', __CLASS__))} = $params['toggle'] ?: 'y';
         $langR_target->save();
     }
 }

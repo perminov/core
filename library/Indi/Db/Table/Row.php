@@ -6383,4 +6383,23 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function level() {
         $level = 0; $up = $this; while ($up = $up->parent()) $level ++; return $level;
     }
+
+    /**
+     * Get all translations for all props, or all translations for certain prop, or certain translation for certain prop
+     *
+     * @param $prop
+     * @param $lang
+     * @return array|mixed
+     */
+    public function language($prop, $lang) {
+
+        // If no args given - return $this->_language
+        if (func_num_args() == 0) return $this->_language;
+
+        // If only $prop arg given - return existing translations for certain prop
+        if (func_num_args() == 1) return $this->_language[$prop];
+
+        // If $prop and $lang args given - return certain translation for certain prop
+        if (func_num_args() == 2) return $this->_language[$prop][$lang];
+    }
 }

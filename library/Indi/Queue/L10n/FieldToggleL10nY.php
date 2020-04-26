@@ -232,12 +232,15 @@ class Indi_Queue_L10n_FieldToggleL10nY extends Indi_Queue_L10n {
     /**
      * @return int
      */
-    public function itemsBytesMultiplier($target) {
+    public function itemsBytesMultiplier($params) {
 
-        //
-        if (is_string($target)) return count(ar($target));
+        // If we're turning field's localization off - return 0
+        if ($params['toggle'] == 'n') return 0;
 
-        //
+        // If target-param is comma-separated string - return number of items
+        if (is_string($params['target'])) return count(ar($params['target']));
+
+        // Return 1 by default
         return 1;
     }
 }

@@ -61,9 +61,8 @@ class Indi_Queue_L10n extends Indi_Queue {
         $queueTaskR->itemsState = 'progress';
         $queueTaskR->basicUpdate();
 
-        // Get source language
-        $source = json_decode($queueTaskR->params)->source;
-        $target = json_decode($queueTaskR->params)->target;
+        // Get params
+        $params = json_decode($queueTaskR->params, true);
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
@@ -87,10 +86,14 @@ class Indi_Queue_L10n extends Indi_Queue {
             $where = $where ? im($where, ' AND ') : null;
 
             // Foreach entry matching chunk's definition
-            Indi::model($table)->batch(function(&$r) use (&$queueTaskR, &$queueChunkR, $field, $source, $target) {
+            Indi::model($table)->batch(function(&$r) use (&$queueTaskR, &$queueChunkR, $field, $params) {
 
                 // Get value
-                $value = preg_match('~^{"~', $r->$field) ? json_decode($value)->$source : $r->$field;
+                $value = $params['toggle'] == 'n'
+                    ? $r->language($field, $params['source'])
+                    : (preg_match('~^{"~', $r->$field)
+                        ? json_decode($value)->{$params['source']}
+                        : $r->$field);
 
                 // Create `queueItem` entry
                 $queueItemR = Indi::model('QueueItem')->createRow(array(
@@ -109,7 +112,7 @@ class Indi_Queue_L10n extends Indi_Queue {
 
                 // Increment `itemsSize` prop on `queueTask` entry and save it
                 $queueTaskR->itemsSize ++;
-                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($target);
+                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params);
                 $queueTaskR->basicUpdate();
 
                 // Fetch entries according to chunk's WHERE clause, and order by `id` ASC
@@ -140,7 +143,8 @@ class Indi_Queue_L10n extends Indi_Queue {
         $queueChunkR = Indi::model('QueueChunk')->createRow(array(
             'queueTaskId' => $queueTaskR->id,
             'entityId' => $entityR->id,
-            'fieldId' => $fieldR_having_l10nY->id
+            'fieldId' => $fieldR_having_l10nY->id,
+            'queueState' => $queueTaskR->queueState
         ), true);
 
         // If it's an enumset-field
@@ -178,7 +182,7 @@ class Indi_Queue_L10n extends Indi_Queue {
      *
      * @return int
      */
-    public function itemsBytesMultiplier($target) {
-        return 1;
+    public function itemsBytesMultiplier($params) {
+        return $params['toggle'] != 'n';
     }
 }

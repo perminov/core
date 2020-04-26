@@ -1,7 +1,11 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
     public function l10nAction() {
-        enumset('field', 'l10n', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'))->move(1);
+        enumset('field', 'l10n', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключена'));
+        enumset('field', 'l10n', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'))->move(1);
+        enumset('field', 'l10n', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включена'));
+        enumset('field', 'l10n', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
+
         entity('lang', array (
             'title' => 'Язык',
             'system' => 'y',
@@ -18,17 +22,6 @@ class Admin_MigrateController extends Indi_Controller {
             'elementId' => 'string',
             'mode' => 'required',
         ));
-        field('lang', 'state', array (
-            'title' => 'Состояние',
-            'columnTypeId' => 'ENUM',
-            'elementId' => 'combo',
-            'defaultValue' => 'noth',
-            'relation' => 'enumset',
-            'storeRelationAbility' => 'one',
-            'mode' => 'readonly',
-        ));
-        enumset('lang', 'state', 'smth', array('title' => 'Чтото'));
-        enumset('lang', 'state', 'noth', array('title' => 'Ничего'));
         field('lang', 'toggle', array (
             'title' => 'Статус',
             'columnTypeId' => 'ENUM',
@@ -39,6 +32,17 @@ class Admin_MigrateController extends Indi_Controller {
         ));
         enumset('lang', 'toggle', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Включен'));
         enumset('lang', 'toggle', 'n', array('title' => '<span class="i-color-box" style="background: red;"></span>Выключен'));
+        field('lang', 'state', array (
+            'title' => 'Состояние',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'noth',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ));
+        enumset('lang', 'state', 'noth', array('title' => 'Ничего'));
+        enumset('lang', 'state', 'smth', array('title' => 'Чтото'));
         field('lang', 'admin', array (
             'title' => 'Админка',
             'elementId' => 'span',
@@ -56,8 +60,9 @@ class Admin_MigrateController extends Indi_Controller {
             'storeRelationAbility' => 'one',
         ));
         enumset('lang', 'adminSystemUi', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
-        enumset('lang', 'adminSystemUi', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminSystemUi', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
         enumset('lang', 'adminSystemUi', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        enumset('lang', 'adminSystemUi', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
         field('lang', 'adminSystemConst', array (
             'title' => 'Константы',
             'columnTypeId' => 'ENUM',
@@ -67,8 +72,9 @@ class Admin_MigrateController extends Indi_Controller {
             'storeRelationAbility' => 'one',
         ));
         enumset('lang', 'adminSystemConst', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
-        enumset('lang', 'adminSystemConst', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminSystemConst', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
         enumset('lang', 'adminSystemConst', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        enumset('lang', 'adminSystemConst', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
         field('lang', 'adminCustom', array (
             'title' => 'Проект',
             'elementId' => 'span',
@@ -82,8 +88,9 @@ class Admin_MigrateController extends Indi_Controller {
             'storeRelationAbility' => 'one',
         ));
         enumset('lang', 'adminCustomUi', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
-        enumset('lang', 'adminCustomUi', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomUi', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
         enumset('lang', 'adminCustomUi', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        enumset('lang', 'adminCustomUi', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
         field('lang', 'adminCustomConst', array (
             'title' => 'Константы',
             'columnTypeId' => 'ENUM',
@@ -93,8 +100,9 @@ class Admin_MigrateController extends Indi_Controller {
             'storeRelationAbility' => 'one',
         ));
         enumset('lang', 'adminCustomConst', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
-        enumset('lang', 'adminCustomConst', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomConst', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
         enumset('lang', 'adminCustomConst', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        enumset('lang', 'adminCustomConst', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
         field('lang', 'adminCustomData', array (
             'title' => 'Данные',
             'columnTypeId' => 'ENUM',
@@ -104,8 +112,9 @@ class Admin_MigrateController extends Indi_Controller {
             'storeRelationAbility' => 'one',
         ));
         enumset('lang', 'adminCustomData', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
-        enumset('lang', 'adminCustomData', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomData', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
         enumset('lang', 'adminCustomData', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        enumset('lang', 'adminCustomData', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
         field('lang', 'adminCustomTmpl', array (
             'title' => 'Шаблоны',
             'columnTypeId' => 'ENUM',
@@ -115,8 +124,9 @@ class Admin_MigrateController extends Indi_Controller {
             'storeRelationAbility' => 'one',
         ));
         enumset('lang', 'adminCustomTmpl', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключен'));
-        enumset('lang', 'adminCustomTmpl', 'q', array('title' => '<span class="i-color-box" style="background: orange;"></span>В очереди'));
+        enumset('lang', 'adminCustomTmpl', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
         enumset('lang', 'adminCustomTmpl', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включен'));
+        enumset('lang', 'adminCustomTmpl', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
         field('lang', 'move', array (
             'title' => 'Порядок',
             'columnTypeId' => 'INT(11)',
@@ -288,6 +298,7 @@ class Admin_MigrateController extends Indi_Controller {
         enumset('queueTask', 'queueState', 'waiting', array('title' => 'Ожидание'));
         enumset('queueTask', 'queueState', 'progress', array('title' => 'В работе'));
         enumset('queueTask', 'queueState', 'finished', array('title' => 'Завершено'));
+        enumset('queueTask', 'queueState', 'noneed', array('title' => 'Не требуется'));
         field('queueTask', 'queueSize', array (
             'title' => 'Размер',
             'columnTypeId' => 'INT(11)',
@@ -421,6 +432,7 @@ class Admin_MigrateController extends Indi_Controller {
         enumset('queueChunk', 'queueState', 'waiting', array('title' => 'Ожидание'));
         enumset('queueChunk', 'queueState', 'progress', array('title' => 'В работе'));
         enumset('queueChunk', 'queueState', 'finished', array('title' => 'Завершено'));
+        enumset('queueChunk', 'queueState', 'noneed', array('title' => 'Не требуется'));
         field('queueChunk', 'queueSize', array (
             'title' => 'Размер',
             'columnTypeId' => 'INT(11)',

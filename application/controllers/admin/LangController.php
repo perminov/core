@@ -141,39 +141,66 @@ class Admin_LangController extends Indi_Controller_Admin {
         // Get field
         $fieldR = t()->model->fields($cell);
 
-        // Ask what we're going to do
-        $answer = $this->confirm(sprintf(
-            'Если вы хотите добавить новый язык для категории "%s" нажмите "%s". ' .
-            'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
-            $fieldR->nested('grid')->column('title', ' - '), I_YES, I_NO), 'YESNOCANCEL');
+        // Skip if $cell is not a l10n-fraction field
+        if ($fieldR->rel()->table() != 'enumset' || $cell == 'toggle') return;
 
-        // Remember
-        if ($answer != 'yes' || !preg_match('~^admin~', $cell) || $value != 'q') return;
+        // Get fraction
+        $fraction = $fieldR->nested('grid')->column('title', ' - ');
 
-        // Create phantom `langId` field
-        $langId_combo = Indi::model('Field')->createRow([
-            'title' => 'asdasd',
-            'alias' => 'langId',
-            'columnTypeId' => 'INT(11)',
-            'elementId' => 'combo',
-            'storeRelationAbility' => 'one',
-            'relation' => 'lang',
-            'filter' => '`id` != "' . t()->row->id . '" AND `' . $cell . '` = "y"',
-            'mode' => 'hidden',
-            'defaultValue' => 0
-        ], true);
+        // If we're going to create queue task for turning selected language either On or Off
+        if (in($value, 'qy,qn')) {
 
-        // Append to fields list
-        t()->model->fields()->append($langId_combo);
+            // Ask what we're going to do
+            if ('no' == $this->confirm(sprintf(
+                'Если вы хотите %s язык "%s" для фракции "%s" нажмите "%s". ' .
+                'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
+                $value == 'qy' ? 'добавить' : 'удалить', t()->row->title, $fraction, I_YES, I_NO), 'YESNOCANCEL'))
+                return;
 
-        // Build config for langId-combo
-        $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('langId');
+        // Else if we're going to setup fraction-status directly
+        } else if ('ok' == $this->confirm(sprintf(
+            'Для фракции "%s" язык "%s" будет вручную помечен как "%s". Продолжить?',
+            $fraction, t()->row->title, t()->row->enumset($cell, $value)
+        ), 'OKCANCEL'))
+            return;
 
-        // Prompt for source language
-        $prompt = $this->prompt('Выберите исходный язык', [$combo]);
+        // If we're going to add new translation
+        if ($value == 'qy') {
 
-        // Check prompt data
-        $_ = jcheck(['langId' => ['req' => true, 'rex' => 'int11', 'key' => 'lang']], $prompt);
+            // Create phantom `langId` field
+            $langId_combo = Indi::model('Field')->createRow([
+                'title' => 'asdasd',
+                'alias' => 'langId',
+                'columnTypeId' => 'INT(11)',
+                'elementId' => 'combo',
+                'storeRelationAbility' => 'one',
+                'relation' => 'lang',
+                'filter' => '`id` != "' . t()->row->id . '" AND `' . $cell . '` = "y"',
+                'mode' => 'hidden',
+                'defaultValue' => 0
+            ], true);
+
+            // Append to fields list
+            t()->model->fields()->append($langId_combo);
+
+            // Build config for langId-combo
+            $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('langId');
+
+            // Prompt for source language
+            $prompt = $this->prompt('Выберите исходный язык', [$combo]);
+
+            // Check prompt data
+            $_ = jcheck(['langId' => ['req' => true, 'rex' => 'int11', 'key' => 'lang']], $prompt);
+
+            // Prepare params
+            $params = ['source' => $_['langId']->alias, 'target' => t()->row->alias];
+
+        // Else
+        } else {
+
+            // Prepare params
+            $params = ['source' => t()->row->alias, 'toggle' => 'n'];
+        }
 
         // Build queue class name
         $queueClassName = 'Indi_Queue_L10n_' . ucfirst($cell);
@@ -185,9 +212,6 @@ class Admin_LangController extends Indi_Controller_Admin {
         $queue = new $queueClassName();
 
         // Run first stage
-        $queue->chunk(array(
-            'source' => $_['langId']->alias,
-            'target' => t()->row->alias
-        ));
+        $queue->chunk($params);
     }
 }
