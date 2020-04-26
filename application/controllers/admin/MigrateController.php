@@ -170,14 +170,21 @@ class Admin_MigrateController extends Indi_Controller {
         filter('lang', 'state', true);
         filter('lang', 'toggle', true);
         entity('queueTask', array (
-            'title' => 'Очередь',
+            'title' => 'Очередь задач',
             'system' => 'y',
         ));
         field('queueTask', 'title', array (
-            'title' => 'Наименование',
+            'title' => 'Задача',
             'columnTypeId' => 'VARCHAR(255)',
             'elementId' => 'string',
             'mode' => 'required',
+        ));
+        field('queueTask', 'datetime', array (
+            'title' => 'Создана',
+            'columnTypeId' => 'DATETIME',
+            'elementId' => 'datetime',
+            'defaultValue' => '<?=date(\'Y-m-d H:i:s\')?>',
+            'mode' => 'readonly',
         ));
         field('queueTask', 'params', array (
             'title' => 'Параметры',
@@ -516,7 +523,9 @@ class Admin_MigrateController extends Indi_Controller {
         section('queueTask', array (
             'sectionId' => 'configuration',
             'entityId' => 'queueTask',
-            'title' => 'Очереди',
+            'title' => 'Очереди задач',
+            'defaultSortField' => 'datetime',
+            'defaultSortDirection' => 'DESC',
             'disableAdd' => '1',
             'type' => 's',
             'roleIds' => '1',
@@ -525,6 +534,7 @@ class Admin_MigrateController extends Indi_Controller {
         section2action('queueTask','form', array('profileIds' => '1'));
         section2action('queueTask','delete', array('profileIds' => '1'));
         section2action('queueTask','run', array('profileIds' => '1'));
+        grid('queueTask', 'datetime', true);
         grid('queueTask', 'title', true);
         grid('queueTask', 'params', true);
         grid('queueTask', 'stage', array('toggle' => 'h'));
