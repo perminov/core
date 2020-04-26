@@ -500,7 +500,7 @@ class Admin_MigrateController extends Indi_Controller {
         ));
         field('queueItem', 'value', array (
             'title' => 'Значение',
-            'columnTypeId' => 'VARCHAR(255)',
+            'columnTypeId' => 'TEXT',
             'elementId' => 'string',
             'mode' => 'readonly',
         ));

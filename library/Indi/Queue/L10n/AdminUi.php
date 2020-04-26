@@ -50,8 +50,8 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
             else $where = false;
 
             // Foreach `field` entry, having `l10n` = "y"
-            if ($master['entity']['value'] == 'y' || $where)
-                foreach (Indi::model($entityR->id)->fields()->select('y', 'l10n') as $fieldR_having_l10nY)
+            foreach (Indi::model($entityR->id)->fields()->select('y', 'l10n') as $fieldR_having_l10nY)
+                if ($master['entity']['value'] == 'y' || ($where && $fieldR_having_l10nY->relation != 6))
                     $this->appendChunk($queueTaskR, $entityR, $fieldR_having_l10nY, $where ? [$where] : []);
         }
     }
