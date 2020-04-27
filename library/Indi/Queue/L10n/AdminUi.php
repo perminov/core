@@ -107,6 +107,9 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
                 // Foreach fetched `queueItem` entry
                 foreach ($rs as $idx => $r) {
 
+                    // Amend result
+                    $this->amendResult($result[$idx], $r);
+
                     // Write translation result
                     $r->assign(array('result' => $result[$idx], 'stage' => 'queue'))->basicUpdate();
 

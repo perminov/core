@@ -185,4 +185,13 @@ class Indi_Queue_L10n extends Indi_Queue {
     public function itemsBytesMultiplier($params) {
         return $params['toggle'] != 'n';
     }
+
+    /**
+     * @param $result
+     * @param $queueItemR
+     * @return mixed
+     */
+    public function amendResult(&$result, $queueItemR) {
+
+    }
 }
