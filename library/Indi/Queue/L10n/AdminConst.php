@@ -235,26 +235,30 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
             // Build filename of a php-file, containing l10n constants for source language
             $l10n_source_abs = DOC . STD . $queueChunkR->location;
 
-            // Build filename of a php-file, containing l10n constants for target language
-            $l10n_target_abs = preg_replace('~'. $params['source'] . '(\.php)$~', $params['target'] . '$1', $l10n_source_abs);
+            // This thing may seem strange, but provides empty string to be set up as the value of each php-constant
+            if ($params['toggle'] == 'n') $l10n_target_raw = file_get_contents($l10n_target_abs = $l10n_source_abs); else {
 
-            // If target file not yet exists
-            if (!file_exists($l10n_target_abs)) {
+                // Build filename of a php-file, containing l10n constants for target language
+                $l10n_target_abs = preg_replace('~'. $params['source'] . '(\.php)$~', $params['target'] . '$1', $l10n_source_abs);
 
-                // If no file - skip
-                if (!file_exists($l10n_source_abs)) jflush(false, 'File ' . $l10n_source_abs . ' - not found');
+                // If target file not yet exists
+                if (!file_exists($l10n_target_abs)) {
 
-                // If target file is emtpy - flush error
-                if (!$l10n_source_raw = file_get_contents($l10n_source_abs))  jflush(false, 'Source file ' . $l10n_source_abs . ' - is empty');
+                    // If no file - skip
+                    if (!file_exists($l10n_source_abs)) jflush(false, 'File ' . $l10n_source_abs . ' - not found');
 
-                // If can't copy - flush error
-                if (!copy($l10n_source_abs, $l10n_target_abs)) jflush(false, 'Can\'t copy ' . $l10n_source_abs . ' into ' . $l10n_target_abs);
+                    // If target file is emtpy - flush error
+                    if (!$l10n_source_raw = file_get_contents($l10n_source_abs))  jflush(false, 'Source file ' . $l10n_source_abs . ' - is empty');
 
-                // Copy contents
-                $l10n_target_raw = $l10n_source_raw;
+                    // If can't copy - flush error
+                    if (!copy($l10n_source_abs, $l10n_target_abs)) jflush(false, 'Can\'t copy ' . $l10n_source_abs . ' into ' . $l10n_target_abs);
 
-            // If target file exists but is emtpy - flush error
-            } else if (!$l10n_target_raw = file_get_contents($l10n_target_abs))  jflush(false, 'Target file ' . $l10n_source_abs . ' - is empty');
+                    // Copy contents
+                    $l10n_target_raw = $l10n_source_raw;
+
+                    // If target file exists but is emtpy - flush error
+                } else if (!$l10n_target_raw = file_get_contents($l10n_target_abs))  jflush(false, 'Target file ' . $l10n_source_abs . ' - is empty');
+            }
 
             // Get queue items
             Indi::model('QueueItem')->batch(function (&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field, &$l10n_target_raw, $l10n_target_abs) {
@@ -267,8 +271,6 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
 
                 // Update target file
                 file_put_contents($l10n_target_abs, $l10n_target_raw);
-
-                //$r->queueTaskId = $queueTaskR->id . rif(rand(0, 1), 'asd');
 
                 // Write translation result
                 $r->assign(array('stage' => 'apply'))->basicUpdate();
@@ -285,6 +287,9 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
                 $queueTaskR->basicUpdate();
 
             }, $where, '`id` ASC');
+
+            // Unlink constants file
+            if ($params['toggle'] == 'n') unlink(DOC . STD . $queueChunkR->location);
 
             // Remember that our try to count was successful
             $queueChunkR->assign(array('applyState' => 'finished'))->basicUpdate();
