@@ -348,25 +348,6 @@ class Admin_MigrateController extends Indi_Controller {
             'relation' => 'queueTask',
             'storeRelationAbility' => 'one',
         ));
-        field('queueChunk', 'entityId', array (
-            'title' => 'Сущность',
-            'columnTypeId' => 'INT(11)',
-            'elementId' => 'combo',
-            'defaultValue' => '0',
-            'relation' => 'entity',
-            'storeRelationAbility' => 'one',
-        ));
-        field('queueChunk', 'fieldId', array (
-            'title' => 'Поле',
-            'columnTypeId' => 'INT(11)',
-            'elementId' => 'combo',
-            'defaultValue' => '0',
-            'relation' => 'field',
-            'storeRelationAbility' => 'one',
-        ));
-        consider('queueChunk', 'fieldId', 'entityId', array (
-            'required' => 'y',
-        ));
         field('queueChunk', 'location', array (
             'title' => 'Расположение',
             'columnTypeId' => 'VARCHAR(255)',

@@ -142,8 +142,6 @@ class Indi_Queue_L10n extends Indi_Queue {
         // Create `queueChunk` entry and setup basic props
         $queueChunkR = Indi::model('QueueChunk')->createRow(array(
             'queueTaskId' => $queueTaskR->id,
-            'entityId' => $entityR->id,
-            'fieldId' => $fieldR_having_l10nY->id,
             'queueState' => $queueTaskR->queueState
         ), true);
 
