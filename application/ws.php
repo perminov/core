@@ -248,7 +248,24 @@ while (true) {
             if ($ini['log']) file_put_contents('ws.chl',
                 date('Y-m-d H:i:s') . ' => open: ' . $data['uid'] . '-' . $index . "\n", FILE_APPEND);
 
-        // Else
+            // Write message into channel
+            fwrite($clientA[$channelA[$rid][$uid][$index]], encode(json_encode(array('type' => 'opened', 'cid' => $index))));
+
+        // Else if previously connected user pings the server
+        } else if ($data['type'] == 'ping') {
+
+            // Get user's role id and self id
+            list($rid, $uid) = explode('-', $data['uid']);
+
+            // If logging is On - do log
+            if ($ini['log']) file_put_contents('ws.ping.msg', date('Y-m-d H:i:s => ') . print_r($data, true) . "\n", FILE_APPEND);
+
+            // Change type to 'pong'
+            $data['type'] = 'pong';
+
+            // Write pong-message into channel
+            fwrite($clientA[$channelA[$rid][$uid][$data['cid']]], encode(json_encode($data)));
+
         } else if ($data['type'] == 'notice') {
 
             // If logging is On - do log
