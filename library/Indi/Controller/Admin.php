@@ -3085,8 +3085,8 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If no 'Notice' entity found - return
         if (!Indi::model('NoticeGetter', true) || !Indi::model('NoticeGetter')->fields('criteriaRelyOn')) return;
 
-        // Get ids of notices, that should be used to setup menu-qty counters for current user's menu
-        $noticeIdA_relyOnMe = Indi::db()->query('
+        // Get ids of relyOnGetter-notices, that should be used to setup menu-qty counters for current user's menu
+        $noticeIdA_relyOnGetter = Indi::db()->query('
             SELECT `noticeId`
             FROM `noticeGetter`
             WHERE 1
@@ -3094,11 +3094,26 @@ class Indi_Controller_Admin extends Indi_Controller {
               AND `profileId` = "' . Indi::admin()->profileId . '"
         ')->fetchAll(PDO::FETCH_COLUMN);
 
+        // Get ids of relyOnEvent-notices, that should be used to setup menu-qty counters for current user's menu
+        $noticeIdA_relyOnEvent = Indi::db()->query('
+            SELECT `noticeId`, `criteriaEvt`
+            FROM `noticeGetter`
+            WHERE 1
+              AND `criteriaRelyOn` = "event"
+              AND `profileId` = "' . Indi::admin()->profileId . '"
+        ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // Remove relyOnEvent-notices having criteria that current user/getter not match
+        foreach ($noticeIdA_relyOnEvent as $noticeId => $criteriaEvt)
+            if ($criteriaEvt && !Indi::admin()->model()->fetchRow('`id` = "' . Indi::admin()->id . '" AND ' . $criteriaEvt))
+                unset($noticeIdA_relyOnEvent[$noticeId]);
+                $noticeIdA_relyOnEvent = array_keys($noticeIdA_relyOnEvent);
+
         // Get notices
         $_noticeRs = Indi::model('Notice')->fetchAll(array(
             'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
             'CONCAT(",", `sectionId`, ",") REGEXP ",(' . im($sectionIdA, '|') . '),"',
-            '(`qtyDiffRelyOn` = "event" OR FIND_IN_SET(`id`, "' . im($noticeIdA_relyOnMe) . '"))',
+            'FIND_IN_SET(`id`, IF(`qtyDiffRelyOn` = "event", "' . im($noticeIdA_relyOnEvent) . '", "' . im($noticeIdA_relyOnGetter) . '"))',
             '`toggle` = "y"'
         ));
 
