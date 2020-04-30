@@ -232,7 +232,7 @@ class Indi_Db_Table
      * @param null|int $offset
      * @return Indi_Db_Table_Rowset
      */
-    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
+    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null, $split = null) {
         // Build WHERE and ORDER clauses
         if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
         if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
@@ -244,7 +244,8 @@ class Indi_Db_Table
                 $count -= abs($offset);
                 $offset = 0;
             }
-            $limit = $offset . ($count ? ',' : '') . $count;
+            $div = $split ? $this->enumset($split)->count() : 1;
+            $limit = ($offset / $div) . ($count ? ',' : '') . ($count / $div);
 
             // the SQL_CALC_FOUND_ROWS flag
             if (!is_null($page) || !is_null($count)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
@@ -258,6 +259,20 @@ class Indi_Db_Table
             . ($order ? ' ORDER BY ' . $order : '')
             . ($limit ? ' LIMIT ' . $limit : '');
 
+        // If $split arg is given - prepare UNION query chunks
+        if ($split) {
+            $union = array();
+            foreach ($this->enumset($split) as $idx => $enumsetR) {
+                $sw = '`' . $split .'` = "' . $enumsetR->alias . '"';
+                $su = $where 
+                    ? preg_replace('~WHERE ~', '$0 ' . $sw . ' AND ', $sql)
+                    : preg_replace('ORDER BY', 'WHERE ' . $sw . ' $0');
+                $su = preg_replace('~SQL_CALC_FOUND_ROWS ~', '', $su);
+                $union []= $su;
+            }
+            $sql = '(' . im($union, ') UNION (') . ')';
+        }
+
         // Fetch data
         $data = Indi::db()->query($sql)->fetchAll();
 
@@ -266,7 +281,7 @@ class Indi_Db_Table
             'table'   => $this->_table,
             'data' => $data,
             'rowClass' => $this->_rowClass,
-            'found'=> $limit ? $this->_found($where) : count($data),
+            'found'=> $limit ? $this->_found($where, $union) : count($data),
             'page' => $page,
             'query' => $sql
         );
@@ -283,7 +298,23 @@ class Indi_Db_Table
      * @param $where
      * @return array|int|string
      */
-    protected function _found($where = '') {
+    protected function _found($where = '', $union = null) {
+        
+        // If $union arg given
+        if ($union) {
+            
+            // Foreach SELECT query calc found rows
+            foreach ($union as $select) {
+                $select = preg_replace('~\* FROM~', 'COUNT(*) FROM', $select);
+                $select = preg_replace('~ LIMIT [0-9,]+$~', '', $select);
+                $found[] = (int) Indi::db()->query($select)->fetchColumn();
+            }
+            
+            // Use max
+            return max($found);
+        }
+        
+        // Default logic
         return Indi::db()->query('SELECT FOUND_ROWS()')->fetchColumn();
     }
 
