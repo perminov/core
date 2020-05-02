@@ -116,7 +116,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                 foreach ($rs as $idx => $r) {
 
                     // Collect result for each target language
-                    $result = []; foreach ($resultByLang as $target => $byIdx) $result[$target] = str_replace('&quot;', '"', $byIdx[$idx]);
+                    $result = []; foreach ($resultByLang as $target => $byIdx) {
+                        $result[$target] = $byIdx[$idx]; $this->amendResult($result[$target], $r);
+                    }
 
                     // Write translation result
                     $r->assign(array('result' => json_encode($result, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT), 'stage' => 'queue'))->basicUpdate();
@@ -245,6 +247,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
     }
 
     /**
+     * Count symbols properly, e.g. multiply on target languages queantity,
+     * as Google charges 20 USD per 1 million symbols
+     *
      * @return int
      */
     public function itemsBytesMultiplier($params) {
@@ -257,5 +262,21 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Return 1 by default
         return 1;
+    }
+
+    /**
+     * Amend result, got from Google translate API
+     *
+     * @param $result
+     * @param $queueItemR
+     * @return mixed
+     */
+    public function amendResult(&$result, $queueItemR) {
+
+        // Convert &quot; to "
+        $result = str_replace('&quot;', '"', $result);
+
+        // Trim space after ending span
+        $result = str_replace('"></span> ', '"></span>', $result);
     }
 }

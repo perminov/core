@@ -1,5 +1,19 @@
 <?php
 class Admin_MigrateController extends Indi_Controller {
+    public function l10n2Action() {
+        consider('grid', 'alterTitle', 'title', array ('required' => 'y'));
+        consider('search', 'alt', 'title', array ('required' => 'y'));
+        consider('section2action', 'rename', 'title', array ('required' => 'y'));
+        consider('alteredField', 'rename', 'title', array ('required' => 'y'));
+        field('queueItem', 'result', array (
+            'title' => 'Результат',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'html',
+        ));
+        die('xx');
+        /** medstom */
+
+    }
     public function l10nAction() {
         enumset('field', 'l10n', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключена'));
         enumset('field', 'l10n', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'))->move(1);
