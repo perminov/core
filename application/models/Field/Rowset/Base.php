@@ -127,15 +127,8 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
      */
     public function exclude($keys, $type = 'id', $inverse = false) {
 
-        // If $keys argument is a string
-        if (is_string($keys) || is_integer($keys) || is_null($keys)) {
-
-            // Check if it contains a match expression
-            if (preg_match('/^: (.*)/', $keys, $expr)) $expr = $expr[1];
-
-            // If $keys argument is not an array, we convert it to it by exploding by comma
-            else if (!is_array($keys)) $keys = explode(',', $keys);
-        }
+        // Process keys
+        list($keys, $expr) = $this->_selector($keys);
 
         // Flip $keys array
         if (is_array($keys)) $keys = array_flip($keys);
@@ -291,6 +284,9 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
         $id = $original instanceof Field_Row ? $original->id : $original['id'];
         $alias = $original instanceof Field_Row ? $original->alias : $original['alias'];
 
+        // Prevent duplicates
+        if (array_key_exists($alias, $this->_aliases)) return $this;
+
         // If $before arg is not given, or is, but ot found among the keys of $this->_aliases
         if (!$before || !array_key_exists($before, $this->_aliases)) {
 
@@ -299,7 +295,7 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
             $this->_ids[$id] = $this->_count;
 
             // Call parent
-            $this->callParent();
+            parent::append($original, $this->_count);
 
         // Else
         } else {
@@ -347,5 +343,68 @@ class Field_Rowset_Base extends Indi_Db_Table_Rowset {
 
         // Return field itself
         return $this->field($name);
+    }
+
+    /**
+     * Force rowset to contain only rows, that have keys, mentioned in $keys argument
+     * If $clone argument is set to true (this is it's default value), a clone of current rowset
+     * will be filtered and returned. Otherwise - method will operate with current rowset instead of it's clone
+     *
+     * Further-foreign keys are supported. Syntax: 'title,price,categoryId,categoryId_info,category_discountPerCategoryId'
+     * This is used in *_Rowset->toGridData(), for grid data ability to contain both plain/foreign data for those of grid's
+     * fields, what are non-plain fields, e.g. - are foreign-key fields themselves.
+     * Note that in the above example 'categoryId' is equal to 'categoryId_title' in most cases, because in most cases
+     * 'title'-field is the title-field (see `entity`.`titleFieldId`).
+     * If entity does not have `title`, `id`-column is used as title-column by default
+     *
+     * @param $keys
+     * @param string $type
+     * @param bool $clone
+     * @return Indi_Db_Table_Rowset Fluent interface
+     */
+    public function select($keys, $type = 'id', $clone = true) {
+
+        // Get initial result
+        $rowset = $this->callParent();
+
+        // Process keys
+        list($keys, $expr) = $this->_selector($keys);
+
+        // If regexp detected - return
+        if ($expr || $type != 'alias') return $rowset;
+
+        // Foreach key
+        foreach ($keys as $key) {
+
+            // If already selected - skip, else
+            if (isset($this->_aliases[$key])) continue;
+
+            // Check whether key name can contain <foreign field>_<further-foreign field> definition, and if no - skip
+            if (!preg_match('~^([0-9a-zA-Z_]+)_([0-9a-zA-Z]+)$~', $key, $m)) continue;
+
+            // If no field can by found by foreign field name definition, parsed from $key - skip
+            if (!$fieldR = $this->field($m[1])) continue;
+
+            // If found, but it's non-foreign field - skip
+            if ($fieldR->storeRelationAbility == 'none') continue;
+
+            // Get further-foreign field
+            if (!$further = Indi::model($fieldR->relation)->fields($m[2])) continue;
+
+            // Use cloned field
+            $further = clone $further;
+
+            // Prepend foreign field alias to further-foreign field alias
+            $further->alias = $fieldR->alias . '_' . $further->alias;
+
+            // Append further-foreign field to $rowset
+            $rowset->append($further);
+
+            // Append further-foreign field to $this
+            $this->append($further);
+        }
+
+        // Return $rowset
+        return $rowset;
     }
 }

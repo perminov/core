@@ -121,24 +121,47 @@ class Indi_Trail_Admin_Item_Scope {
     }
 
     /**
-     * Get the value of filter, identified as $alias, from current scope
+     * Get/set the value of current scope's filter, identified by $alias
      *
      * @param $alias
+     * @param $value
      * @return mixed
      */
-    public function filter($alias = null) {
+    public function filter($alias = null, $value = null) {
 
         // Try to decode json-string, stored in $this->filters
-        $filterA =  json_decode($this->filters);
+        $filterA =  json_decode($this->filters, true);
 
-        // If decoding was successful, as decode result is an array
+        // If decoding was successful, and decode result is an array
         if (is_array($filterA))
 
             // If $alias argument is given
             if ($alias) {
 
-                // Try to find an $alias key within each $filterA array, and return it's value if such a key found
-                foreach ($filterA as $filterI) if (key($filterI) == $alias) return current($filterI);
+                // Set $found flag to be false by default
+                $found = false;
+
+                // Foreach filter
+                foreach ($filterA as $idx => &$filterI)
+
+                    // If filter's key is $alias, remember index
+                    if (key($filterI) == $alias && (($found = $idx) || true))
+
+                        // If we're going to get the value - do it, else break
+                        if (func_num_args() == 1) return current($filterI); else break;
+
+                // If we're going to set the value
+                if (func_num_args() > 1) {
+
+                    // If value is not null - create/overwrite filter's value
+                    if ($value !== null) $filterA[$found === false ? count($filterA) : $found][$alias] = $value;
+
+                    // Else unset that filter
+                    else if ($found !== false) unset ($filterA[$found]);
+
+                    // Encode back to json
+                    $this->filters = json_encode($filterA);
+                }
 
             // Else
             } else {

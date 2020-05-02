@@ -15,6 +15,7 @@ class Grid_Row extends Indi_Db_Table_Row {
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
+            else if ($columnName == 'further') $value = field(field(section($this->sectionId)->entityId, $this->fieldId)->relation, $value)->id;
             else if ($columnName == 'gridId') $value = grid($this->sectionId, $value)->id;
         }
 
@@ -72,7 +73,7 @@ class Grid_Row extends Indi_Db_Table_Row {
         unset($ctor['id'], $ctor['move']);
 
         // Exclude props that are already represented by one of shorthand-fn args
-        foreach (ar('sectionId,fieldId,alias') as $arg) unset($ctor[$arg]);
+        foreach (ar('sectionId,fieldId,alias,further') as $arg) unset($ctor[$arg]);
 
         // Foreach $ctor prop
         foreach ($ctor as $prop => &$value) {
@@ -95,8 +96,13 @@ class Grid_Row extends Indi_Db_Table_Row {
             }
         }
 
+        // Unset `width` if current `grid` entry has nested entries
+        if ($this->nested('grid')->count()) unset($ctor['width']);
+
         // Stringify
-        $ctorS = var_export($ctor, true);
+        $ctorS = preg_replace("~(array \()\n~", 'array(', var_export($ctor, true));
+        $ctorS = preg_replace("~  ('[a-zA-Z0-9_]+' => '.*?',)\n~", '$1 ', $ctorS);
+        $ctorS = preg_replace("~, \)~", ')', $ctorS);
 
         // Minify
         if (count($ctor) == 1) $ctorS = preg_replace('~^array \(\s+(.*),\s+\)$~', 'array($1)', $ctorS);
@@ -114,8 +120,15 @@ class Grid_Row extends Indi_Db_Table_Row {
     public function export() {
 
         // Return creation expression
-        return "grid('" .
-            $this->foreign('sectionId')->alias . "','" .
+        if ($this->further) return "grid('" .
+            $this->foreign('sectionId')->alias . "', '" .
+            $this->foreign('fieldId')->alias . "', '" .
+            $this->foreign('fieldId')->rel()->fields($this->further)->alias . "', " .
+            $this->_ctor() . ");";
+
+        // Return creation expression
+        else return "grid('" .
+            $this->foreign('sectionId')->alias . "', '" .
             ($this->foreign('fieldId')->alias ?: $this->alias) . "', " .
             $this->_ctor() . ");";
     }
@@ -163,5 +176,29 @@ class Grid_Row extends Indi_Db_Table_Row {
 
         // If summaryType is not 'text' - set `summaryText` to be empty
         if ($this->summaryType != 'text') $this->zero('summaryText', true);
+    }
+
+    /**
+     * Check whether current grid column should be accessible by current user
+     *
+     * @return bool
+     */
+    public function accessible() {
+        if (!$this->access || $this->access == 'all') return true;
+        if ($this->access == 'only' && in(Indi::admin()->profileId, $this->profileIds)) return true;
+        if ($this->access == 'except' && !in(Indi::admin()->profileId, $this->profileIds)) return true;
+    }
+
+    /**
+     * Make sure parent gridcol's width will be adjusted if need
+     */
+    public function onSave() {
+
+        // If `width` was not affected, or this gridcol is a top-level gridcol - do nothing
+        if (!$this->affected('width') || !$this->gridId) return;
+
+        // Affect parent gridcol's width
+        $this->foreign('gridId')->width += $this->adelta('width');
+        $this->foreign('gridId')->save();
     }
 }

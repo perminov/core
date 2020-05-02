@@ -23,6 +23,9 @@ Options FollowSymLinks
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html
 </IfModule>
+<FilesMatch "\.js$">
+  Header set Access-Control-Allow-Origin: *
+</FilesMatch>
 <FilesMatch "gz\.(js|css)$">
   Header set Content-Encoding gzip
   <IfModule mod_env.c>
@@ -64,6 +67,11 @@ RewriteRule .* coref%{ENV:URI} [L]
 
 RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/core%{ENV:URI} -f
 RewriteRule .* core%{ENV:URI} [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} resources|classic
+RewriteCond %{DOCUMENT_ROOT}%{ENV:STD}/admin -d
+RewriteRule .* admin%{ENV:URI} [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule \.(jpg|jpeg|png|gif|css|js|ico|txt)$ core/application/static404.php

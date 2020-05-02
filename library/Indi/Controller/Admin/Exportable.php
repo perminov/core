@@ -32,6 +32,6 @@ class Indi_Controller_Admin_Exportable extends Indi_Controller_Admin {
         $this->setScopeRow(false, null, $toBeExportedRs->column('id'));
 
         // Flush
-        jtextarea(true, im($php, "\n/*----------------*/\n"));
+        jtextarea(true, im($php, "\n"));
     }
 }

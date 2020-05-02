@@ -2,6 +2,13 @@
 class Indi_Db_Table_Foto extends Indi_Db_Table {
 
     /**
+     * Class name for row
+     *
+     * @var string
+     */
+    protected $_rowClass = 'Indi_Db_Table_Row_Foto';
+
+    /**
      * The alias of field, that will determine the scope of fotos to be auto-titled.
      * This property should be non-null in child classes
      *

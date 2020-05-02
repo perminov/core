@@ -192,7 +192,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function titleUpdate(Field_Row $titleFieldR) {
 
         // If field, used as title field - is storing single foreign key
-        if ($titleFieldR->storeRelationAbility == 'one') {
+        if ($titleFieldR->original('storeRelationAbility') == 'one') {
 
             // If foreign row can be successfully got by that foreign key
             if ($this->foreign($titleFieldR->alias))
@@ -624,7 +624,13 @@ class Indi_Db_Table_Row implements ArrayAccess
         $this->files(true);
 
         // Do some needed operations that are required to be done right after row was inserted/updated
-        if ($new) $this->onInsert(); else if ($this->_onUpdate) $this->onUpdate($original); else $this->_onUpdate = true;
+        if ($new) {
+            $this->onInsert();
+            $this->onSave();
+        } else if ($this->_onUpdate) {
+            $this->onUpdate($original);
+            $this->onSave();
+        } else $this->_onUpdate = true;
 
         // Check if row (in it's current/modified state) matches each separate notification's criteria,
         // and compare results with the results of previous check, that was made before any modifications
@@ -794,6 +800,14 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * This method will be called after onInsert/onUpdate methods calls,
+     * It can be useful in cases when we need to do something once where was an entry inserted/updated in database table
+     */
+    public function onSave() {
+
+    }
+
+    /**
      * This method will be called after onBeforeInsert/onBeforeUpdate methods calls,
      * but before insert/update sql-queries actual execution
      */
@@ -897,7 +911,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param string $within
      * @return bool
      */
-    public function move($direction = 'up', $within = '') {
+    public function move($direction = 'up', $within = '', $groupBy = '') {
 
         // If $direction arg is either 'up' or 'down'
         if (in_array($direction, array('up', 'down'))) {
@@ -907,7 +921,11 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // Apend additional part to WHERE clause, in case if current entity - is a tree-like entity
             if ($this->model()->treeColumn())
-                $where[] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
+                $where['treeColumn'] = '`' . $this->model()->treeColumn() . '` = "' . $this->{$this->model()->treeColumn()} . '"';
+
+            // Append groupBy-part of WHERE clause, for cases when moving should be made among
+            // sibling entries, having value of $groupBy prop equal tos current entry's $groupBy prop
+            if ($groupBy) $where['groupBy'] = '`' . $groupBy . '` = "' . $this->$groupBy . '"';
 
             // Append nearest-neighbour WHERE clause part, for finding the row,
             // that current row should exchange value of `move` property with
@@ -1060,7 +1078,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             // and is a part of a number of tricks, that provide the availability of filter-combo data-options only
             // for data-options, that will have at least one matching row within rowset, in case of their selection
             // as a part of a rowset search criteria.
-            if (is_array($consistence)) $dataRs = $dataRs->select($consistence, 'alias');
+            $dataRs = is_array($consistence) ? $dataRs->select($consistence, 'alias') : clone $dataRs;
 
             // We should mark rowset as related to field, that has a ENUM or SET column type
             // because values of property `alias` should be used as options keys, instead of values of property `id`
@@ -1068,6 +1086,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If current field store relation ability is 'many' - we setup selected as rowset object
             if ($multiSelect) $dataRs->selected = $dataRs->select($selected, 'alias');
+
+            // Exclude values
+            if ($exclude = $fieldR->param('exclude')) $dataRs->exclude($exclude, 'alias');
 
             // Return combo data
             return $dataRs;
@@ -1175,8 +1196,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_null($order)) {
             if ($relatedM->comboDataOrder) {
                 $order = $relatedM->comboDataOrder;
-                if (!@func_get_arg(7) && $relatedM->comboDataOrderDirection)
-                    $dir = $relatedM->comboDataOrderDirection;
+                if (!@func_get_arg(7) && $relatedM->comboDataOrderDirection) $dir = $relatedM->comboDataOrderDirection;
+                if (!preg_match('~^[a-zA-Z0-9]+$~', $order)) $order = str_replace('$dir', $dir, $order);
             } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
             } else {
@@ -1193,7 +1214,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         // because we can have situations, there order is not set at all and if so, we won't use ORDER clause
         // So, if order is empty, the results will be retrieved in the order of their physical placement in
         // their database table
-        if (!is_array($order) && !preg_match('/\(/', $order)) $order = '`' . $order . '`';
+        if (!is_array($order) && preg_match('~^[a-zA-Z0-9]$~', $order)) $order = '`' . $order . '`';
 
         // If fetch-mode is 'keyword'
         if ($selectedTypeIsKeyword) {
@@ -1206,7 +1227,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if (!is_array($order) && $order && !preg_match('/\(/', $order)) $keyword = $selectedR->{trim($order, '`')};
+            if (!is_array($order) && $order && !preg_match('/[\(,]/', $order)) $keyword = $selectedR->{trim($order, '`')};
         }
 
         // Alternate WHERE
@@ -1262,6 +1283,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                     $dataRs = $relatedM->fetchTree($where, $order, self::$comboOptionsVisibleCount, $page, 0, null, null);
                 }
             }
+
+            // Setup indents
+            foreach ($dataRs as $dataR) $dataR->system('indent', indent($dataR->system('level')));
 
             // Unset found rows to prevent disabling of paging up
             if ($unsetFoundRows) $dataRs->found('unset');
@@ -1740,7 +1764,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // If field do not store foreign keys - throw exception
                 if ($fieldR->storeRelationAbility == 'none'
                     || ($fieldR->relation == 0 && ($fieldR->dependency != 'e' && !$fieldR->nested('consider')->count())))
-                    throw new Exception('Field with alias `' . $key . '` within entity with table name `' . $this->_table .'` is not a foreign key');
+                    throw new Exception('Field with alias `' . $key . '` (`' . $fieldR->alias . '`) within entity with table name `' . $this->_table .'` is not a foreign key');
 
                 // Get foreign key value
                 $val = $this->$key;
@@ -1749,7 +1773,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if (in($refresh, 'ins,del,was')) {
 
                     // If foreign key field is a multi-value field and $refresh arg is 'ins' or 'del'
-                    if ($fieldR->storeRelationAbility == 'many' && in($refresh, 'ins,del')) {
+                    if ($fieldR->original('storeRelationAbility') == 'many' && in($refresh, 'ins,del')) {
 
                         // We need to fetch foreign data for keys, inserted or deleted from the field's value,
                         // so we replace existing keys list with list of inserted or removed keys, to be used for fetching
@@ -1767,14 +1791,14 @@ class Indi_Db_Table_Row implements ArrayAccess
                 }
 
                 // If field is able to store single key, or able to store multiple, but current key's value isn't empty
-                if ($fieldR->storeRelationAbility == 'one' || strlen($val) || $aux) {
+                if ($fieldR->original('storeRelationAbility') == 'one' || strlen($val) || $aux) {
 
                     // Determine a model, for foreign row to be got from. If consider type is 'variable entity',
                     // then model is a value of consider-field. Otherwise model is field's `relation` property
                     $model = $fieldR->relation ?: $this->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
 
                     // Determine a fetch method
-                    $methodType = $fieldR->storeRelationAbility == 'many' ? 'All' : 'Row';
+                    $methodType = $fieldR->original('storeRelationAbility') == 'many' ? 'All' : 'Row';
 
                     // If current field is an imitated-field, and is an enumset-field
                     if (!array_key_exists($fieldR->alias, $this->_original) && $model == 6) {
@@ -1813,14 +1837,14 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                             // Finish building WHERE clause
                             $where[] = '`' . $col . '` ' .
-                                ($fieldR->storeRelationAbility == 'many'
+                                ($fieldR->original('storeRelationAbility') == 'many'
                                     ? 'IN(' . (strlen($val) ? (Indi::rexm('int11list', $val) ? $val : '"' . im(ar($val), '","') . '"') : 0) . ')'
                                     : '= "' . $val . '"');
 
                             // Fetch foreign row/rows
                             $foreign = Indi::model($model)->{'fetch' . $methodType}(
                                 $where,
-                                $fieldR->storeRelationAbility == 'many'
+                                $fieldR->original('storeRelationAbility') == 'many'
                                     ? 'FIND_IN_SET(`' . $col . '`, "' . $val . '")'
                                     : null
                             );
@@ -4385,6 +4409,9 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If field is a file-upload field, we implement special logic of zeroValue detection
         if ($this->field($field)->foreign('elementId')->alias == 'upload') {
 
+            // Pick info from $_FILES
+            $this->files($field);
+
             // If file was uploaded, but it is a temporary - return false
             if (is_array($this->_files[$field])) return false;
 
@@ -4639,7 +4666,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $call = array_pop(array_slice(debug_backtrace(), 1, 1));
 
         // Make the call
-        return call_user_func_array(get_parent_class($call['class']) . '::' . $call['function'], func_num_args() ? func_get_args() : $call['args']);
+        return call_user_func_array(array($this, get_parent_class($call['class']) . '::' .  $call['function']), func_num_args() ? func_get_args() : $call['args']);
     }
     
     /**
@@ -4876,12 +4903,16 @@ class Indi_Db_Table_Row implements ArrayAccess
     /**
      * This function is for compiling prop default values within *_Row instance context
      *
-     * @param $prop
+     * @param string $prop
+     * @param string $level DEFAULT 'model'
      */
-    public function compileDefaultValue($prop) {
-        if (strlen($this->_original[$prop])) {
-            Indi::$cmpTpl = $this->_original[$prop]; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
-        }
+    public function compileDefaultValue($prop, $level = 'model') {
+
+        // If compile expr is empty - return
+        if (!strlen($expr = $this->{$level == 'trail' ? '_modified' : '_original'}[$prop])) return;
+
+        // Compile and assign
+        Indi::$cmpTpl = $expr; eval(Indi::$cmpRun); $this->$prop = Indi::cmpOut();
     }
 
     /**
@@ -5188,6 +5219,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($fgn = Indi::model($rule['key'])->fetchRow('`id` = "' . $this->$prop . '"')) $this->foreign($prop, $fgn);
                     else jflush(false, sprintf(I_JCHECK_KEY, $rule['key'], $this->$prop));
                 }
+                
+                // If prop's value should be equal to some certain value, but it's not equal - flush error
+                if (array_key_exists('eql', $rule) && $this->$prop != $rule['eql'])
+                    jflush(false, sprintf(I_JCHECK_EQL, $rule['eql'], $this->$prop));                
             }
         }
     }
@@ -5318,7 +5353,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                         // Merge props, related to foreign-key entry into $dataA array
                         $dataA += $this->foreign($_pref = array_shift($path))
-                            ->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref);
+                            ? $this->foreign($_pref)->props(im($path, '.'), ($pref ? $pref . '.' : '') . $_pref)
+                            : array();
 
                     // Else if it's a multiple-values foreign key field - skip, as no support yet implemented
                     } else continue;
@@ -5901,9 +5937,10 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * @param string $level DEFAULT 'model'
      * @return mixed
      */
-    public function compileDefaults() {
+    public function compileDefaults($level = 'model') {
 
         // If it's an existing entry - return
         if ($this->id) return;
@@ -5915,13 +5952,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             if (!$fieldR->columnTypeId) continue;
 
             // If default value should be set up as a result of php-expression's execution - do it
-            if (preg_match(Indi::rex('php'), $fieldR->defaultValue))
-                $this->compileDefaultValue($fieldR->alias);
+            if (preg_match(Indi::rex('php'), $fieldR->{$level == 'trail' ? 'modified' : 'original'}('defaultValue')))
+                $this->compileDefaultValue($fieldR->alias, $level);
 
             // Else if underlying column's datatype is TEXT - set up default value, stored in Indi
             // Engine field's settings as MySQL does not suppoer native default values for TEXT column
             else if ($fieldR->foreign('columnTypeId')->type == 'TEXT')
-                $this->compileDefaultValue($fieldR->alias);
+                $this->compileDefaultValue($fieldR->alias, $level);
         }
     }
 
@@ -5946,8 +5983,20 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function combo($field, $store = false) {
 
-        // Get field
-        $fieldR = $this->field($field);
+        // If $field arg is an array - assume pseudo-field should be created
+        if (is_array($field)) {
+
+            // Create
+            $fieldR = Indi::model('Field')->createRow();
+
+            // Assign config
+            $fieldR->assign($field);
+
+            // Setup `entityId`, if not given within config
+            if (!$fieldR->entityId) $fieldR->entityId = $this->model()->id;
+
+        // Else get existing field
+        } else $fieldR = $this->field($field);
 
         // Get name
         $name = $field = $fieldR->alias;
@@ -5963,7 +6012,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $selectedValue = $this->id || strlen($this->$field) ? $this->$field : $defaultValue;
 
         // Get initial combo options rowset
-        $comboDataRs = $this->getComboData($name, null, $selectedValue);
+        $comboDataRs = $this->getComboData($name, null, $selectedValue, null, null, $fieldR);
 
         // Prepare combo options data
         $comboDataA = $comboDataRs->toComboData($params, $fieldR->param('ignoreTemplate'));
@@ -6122,5 +6171,23 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Return it
         return $view;
+    }
+
+    /**
+     * Build extjs config object for {'xtype': 'radios'}, based on given field
+     *
+     * @param $field
+     * @param bool $store
+     * @return array
+     */
+    public function radio($field, $store = false) {
+        return array('xtype' => 'radios', 'cls' => 'i-field-radio') + $this->combo($field, $store);
+    }
+
+    /**
+     * Get nesting-level, if applicable
+     */
+    public function level() {
+        $level = 0; $up = $this; while ($up = $up->parent()) $level ++; return $level;
     }
 }

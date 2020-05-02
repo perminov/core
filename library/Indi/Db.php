@@ -150,6 +150,12 @@ class Indi_Db {
                 'ORDER BY `move`'
             )->fetchAll();
 
+            // Overwrite Indi::ini('lang')->admin for it to be same as $_COOKIE['i-language'], if possible
+            // We do it here because this should be done BEFORE any *_Row (and *_Noeval) instance creation
+            if (($lang = $_COOKIE['i-language']) && Indi::ini('lang')->admin != $lang
+                && in($lang, Indi::db()->query('SELECT `alias` FROM `lang` WHERE `toggle` = "y"')->fetchAll(PDO::FETCH_COLUMN)))
+                Indi::ini('lang')->admin = $_COOKIE['i-language'];
+
             // Get info about existing control elements
             $elementA = self::$_instance->query('SELECT * FROM `element`')->fetchAll();
             $iElementA = array(); foreach ($elementA as $elementI)
@@ -328,7 +334,7 @@ class Indi_Db {
                         'aliases' => array_values($eFieldA[$entityI['id']]['aliases'] ?: array()),
                         'ids' => array_values($eFieldA[$entityI['id']]['ids'] ?: array()),
                         'rowClass' => 'Field_Row',
-                        'found' => count($eFieldA[$entityI['id']]['rows'])
+                        'found' => count($eFieldA[$entityI['id']]['rows'] ?: array())
                     ))
                 );
 

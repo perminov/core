@@ -48,7 +48,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 '`toggle` = "y"',
                 'FIND_IN_SET("' . $_SESSION['admin']['profileId'] . '", `profileIds`)',
                 'FIND_IN_SET(`actionId`, "' . implode(',', Indi_Trail_Admin::$toggledActionIdA) . '")',
-                '`actionId` IN (1, 3)'
+                '`actionId` IN (1, 2, 3)'
             ),
             'order' => 'move',
             'foreign' => 'actionId'
@@ -57,7 +57,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         // Collect inaccessbile subsections ids from subsections list
         foreach ($sectionR->nested('section') as $subsection)
             if (!$subsection->nested('section2action')->count()) $exclude[] = $subsection->id;
-            else if (!$subsection->nested('section2action')->gb(3, 'actionId')) $subsection->disableAdd = 1;
+            else if ($subsection->nested('section2action')->select('3,2', 'actionId')->count() != 2)
+                $subsection->disableAdd = 1;
 
         // Exclude inaccessible sections
         $this->sections->exclude($exclude);
@@ -66,7 +67,23 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         if (count(Indi_Trail_Admin::$items) == 0) {
 
             // Setup filters
-            $this->filters = $sectionR->nested('search');
+            foreach ($this->filters = $sectionR->nested('search') as $filterR) {
+
+                // Get field
+                if (!$fieldR = $this->fields($filterR->fieldId)) continue;
+
+                // If further-foreign field is not defined for current filter - skip
+                if (!$filterR->further) continue;
+
+                // Get further-foreign field
+                $fieldR_further = clone $fieldR->rel()->fields($filterR->further);
+
+                // Prepend foreign field alias to further-foreign field alias
+                $fieldR_further->alias = $fieldR->alias . '_' . $fieldR_further->alias;
+
+                // Append to fields list
+                $this->fields->append($fieldR_further);
+            }
 
             // Setup action
             foreach ($this->actions as $actionR)
@@ -74,18 +91,32 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                     $this->action = $actionR;
 
             // Set fields, that will be used as grid columns in case if current action is 'index'
-            if ($this->action->rowRequired == 'n') $this->gridFields($sectionR);
+            if ($this->action->rowRequired == 'n' || Indi::uri()->phantom) $this->gridFields($sectionR);
 
             // Alter fields
+            $originalDefaults = array();
             foreach ($sectionR->nested(entity('alteredField') ? 'alteredField' : 'disabledField') as $_) {
-                $alter = array();
-                if (strlen($_->rename)) $alter['title'] = $_->rename;
-                if (strlen($_->defaultValue)) $alter['defaultValue'] = $_->defaultValue;
-                if (!$_->mode) $alter['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
-                else if ($_->mode != 'inherit') $alter['mode'] = $_->mode;
-                $this->fields->gb($_->fieldId)->assign($alter);
+
+                // Prepare modifications
+                $modify = array();
+                if (strlen($_->rename)) $modify['title'] = $_->rename;
+                if (strlen($_->defaultValue)) $modify['defaultValue'] = $_->defaultValue;
+                if (!$_->mode) $modify['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
+                else if ($_->mode != 'inherit') $modify['mode'] = $_->mode;
+
+                // Apply modifications
+                $fieldR = $this->fields->gb($_->fieldId);
+                $fieldR->assign($modify);
+
+                // If field's `defaultValue` prop changed - collect 'field's alias' => 'original default value' pairs
+                if ($fieldR->isModified('defaultValue'))
+                    $originalDefaults[$fieldR->alias] = $fieldR->original('defaultValue');
             }
 
+            // Save save those pairs under 'originalDefaults' key within section's system data
+            $this->section->system('originalDefaults', $originalDefaults);
+
+        // Else
         } else {
 
             // Setup action as 'index'
@@ -104,30 +135,43 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         // If $sectionR arg is not given / null / false / zero - use $this->section instead
         if (!$sectionR) $sectionR = $this->section;
 
-        // Declare array for grid fields
-        $gridFieldA = array();
+        // Set `grid`
+        $this->grid = $sectionR->nested('grid');
 
-        // Foreach nested `grid`  entry
-        foreach ($sectionR->nested('grid') as $gridR) {
-            foreach ($this->fields as $fieldR) {
-                if ($gridR->fieldId == $fieldR->id) {
-                    if (!$gridR->access || $gridR->access == 'all' || ($gridR->access == 'only' && in(Indi::admin()->profileId, $gridR->profileIds)) || ($gridR->access == 'except' && !in(Indi::admin()->profileId, $gridR->profileIds))) {
-                        $gridFieldI = $fieldR;
-                        $gridFieldA[] = $gridFieldI;
-                        $gridFieldAliasA[] = $gridFieldI->alias;
-                    }
-                }
-            }
-        }
+        // If `groupBy` is non-zero, and there is no such grid column yet - append
+        if ($sectionR->groupBy && !$this->grid->gb($sectionR->groupBy, 'fieldId'))
+            $this->grid->append(array('fieldId' => $sectionR->groupBy));
 
         // Build and assign `gridFields` prop
-        $this->gridFields = Indi::model('Field')->createRowset(array(
-            'rows' => $gridFieldA,
-            'aliases' => $gridFieldAliasA
-        ));
+        $this->gridFields = Indi::model('Field')->createRowset();
 
-        // todo: check do we need this line
-        $this->grid = $sectionR->nested('grid');
+        // Foreach grid column
+        foreach ($this->grid as $gridR) {
+
+            // Skip inaccessible
+            if (!$gridR->accessible()) continue;
+
+            // Get field
+            if (!$fieldR = $this->fields($gridR->fieldId)) continue;
+
+            // If further-foreign field defined for current grid column
+            if ($gridR->further) {
+
+                // Get further-foreign field
+                $fieldR_further = clone $fieldR->rel()->fields($gridR->further);
+
+                // Prepend foreign field alias to further-foreign field alias
+                $fieldR_further->alias = $fieldR->alias . '_' . $fieldR_further->alias;
+
+                // Append to fields list
+                $this->fields->append($fieldR_further);
+
+            // Else set false
+            } else $fieldR_further = false;
+
+            // Append to grid fields list
+            $this->gridFields->append($fieldR_further ?: $fieldR);
+        }
 
         // Return
         return $this->gridFields;
@@ -196,6 +240,19 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 // Create an empty row object
                 $this->row = $this->model->createRow();
 
+                // If original defaults collected
+                if ($od = $this->section->system('originalDefaults'))
+
+                    // Foreach original default value
+                    foreach ($od as $fieldAlias => $originalDefaultValue) {
+
+                        // Directly set current value as modified
+                        $this->row->modified($fieldAlias, $this->row->original($fieldAlias));
+
+                        // Directly set collected value as original
+                        $this->row->original($fieldAlias, $originalDefaultValue);
+                    }
+
                 // If current cms user is an alternate, and if there is corresponding column-field within current entity structure
                 if (Indi::admin()->alternate && in($aid = Indi::admin()->alternate . 'Id', $this->model->fields(null, 'columns')))
 
@@ -233,6 +290,11 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             $connector = Indi::trail($index-1)->section->parentSectionConnector
                 ? Indi::trail($index-1)->section->foreign('parentSectionConnector')->alias
                 : Indi::trail($index)->model->table() . 'Id';
+
+            // Create empty row to be used as parent row, if need
+            if (Indi::uri('id') === '0' && Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1)
+                if ($this->row = $this->model->createRow())
+                    return;
 
             // Get the id
             $id = Indi::trail($index-1)->action->rowRequired == 'n' && $index == 1
@@ -537,5 +599,26 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
 
         // Get the action-view instance
         return $this->view = new $actionClass();
+    }
+
+    /**
+     * Retrieve summary definitions from $_GET['summary'] if given, else from `grid`.`summaryType`
+     *
+     * @param bool $json
+     * @return array|string|void
+     */
+    public function summary($json = true) {
+
+        // If summary definitions given by $_GET['summary'] - return as is
+        if ($summary = Indi::get('summary')) return $json ? $summary : json_decode($summary);
+
+        // Else collect default definitions
+        $summary = array();
+        foreach ($this->grid as $gridR)
+            if ($gridR->summaryType != 'none')
+                $summary[$gridR->summaryType] []= $gridR->foreign('fieldId')->alias;
+
+        // Return array, but before json-encode it if need
+        return $json ? json_encode($summary) : $summary;
     }
 }

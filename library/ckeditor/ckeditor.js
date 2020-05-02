@@ -6,7 +6,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
     if (window.CKEDITOR && window.CKEDITOR.dom) return;
     window.CKEDITOR || (window.CKEDITOR = function () {
         var b = {
-            timestamp: "D2LL2",
+            timestamp: "D2LL4",
             version: "4.1",
             revision: "80c139aa",
             rnd: Math.floor(900 * Math.random()) + 100,
@@ -16420,11 +16420,11 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
                         k.baseProto.detach.call(this);
                         this.clearCustomData();
                         c.getDocumentElement().clearCustomData();
-                        d.clearCustomData();
+                        if (d) d.clearCustomData();
                         CKEDITOR.tools.removeFunction(this._.frameLoadedHandler);
-                        (c = d.removeCustomData("onResize")) && c.removeListener();
+                        d && (c = d.removeCustomData("onResize")) && c.removeListener();
                         a.fire("contentDomUnload");
-                        d.remove()
+                        if (d) d.remove()
                     }
                 }
             })

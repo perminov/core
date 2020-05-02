@@ -58,7 +58,14 @@ class Indi {
      *
      * @var string
      */
-    public static $cmpOut = '';
+    public static $cmpOut = array();
+
+    /**
+     * Array of prompt answers
+     *
+     * @var array
+     */
+    public static $answer = array();
 
     /**
      * Regular expressions patterns for common usage
@@ -946,12 +953,13 @@ class Indi {
      * Short-hand access for current cms user (admin) object
      *
      * @static
+     * @param bool $refresh Mind whether $_SESSION['admin']['id'] still ok
      * @return mixed|null
      */
-    public static function admin(){
+    public static function admin($refresh = false){
 
         // If there is no value for 'uri' key in registry yet, we setup it
-        if (is_null(Indi::store('admin'))) {
+        if (is_null(Indi::store('admin')) || $refresh) {
 
             // Get the database table name, where current cms user was found in
             $table = $_SESSION['admin']['alternate'] ? $_SESSION['admin']['alternate'] : 'admin';
@@ -1319,14 +1327,19 @@ class Indi {
         // Determine title column name
         if ($titleColumn = $model->comboDataOrder ?: current(array_intersect($columnA, array('title', '_title')))) {
 
+            // Check whether $titleColumn contains some expression rather than just some column name,
+            // and if so - use it as is but strip '$dir' from it or replace with actual direction ($dir)
+            // else wrap $titleColumn with '`' and append $dir
+            $expr = preg_match('~^[a-zA-Z0-9]+$~', $titleColumn)
+                ? '`' . $titleColumn . '` ' . $dir
+                : str_replace('$dir', $dir, $titleColumn);
+
             // Setup a new order for $idA
             $idA = Indi::db()->query('
-
                 SELECT `id`
                 FROM `' . $model->table() . '`
                 WHERE `id` IN (' . implode(',', $idA) . ')
-                ORDER BY `' . $titleColumn . '` ' . $dir . '
-
+                ORDER BY ' . $expr . '
             ')->fetchAll(PDO::FETCH_COLUMN);
         }
 
@@ -1536,7 +1549,7 @@ class Indi {
         preg_match($rex, $subject, $found);
 
         // Return
-        return $found ? (func_num_args() == 3 ? $found[$sub] : $found) : $found;
+        return $found ? (func_num_args() == 3 ? $found[$sub] : $found) : ($found ?: '');
     }
 
     /**
@@ -1550,7 +1563,7 @@ class Indi {
     public static function rexma($rex, $subject) {
 
         // Check that self::$_rex array has a value under $alias key
-        if (!$rex = Indi::rex($rex)) jflush(false, '"' . $rex . '" is not a key within Indi::$_rex array');
+        if ($_ = Indi::rex($rex)) $rex = $_;
 
         // Match
         $success = preg_match_all($rex, $subject, $found);
@@ -2141,8 +2154,11 @@ class Indi {
      */
     public static function iflush($flag) {
 
-        // Set up no cache
-        if ($flag && !headers_sent()) header('Cache-Control: no-cache');
+        // Set up headers
+        if ($flag && !headers_sent()) {
+            header('Cache-Control: no-cache');
+            header('X-Accel-Buffering: no');
+        }
 
         // Set up output buffering implicit flush mode
         ob_implicit_flush($flag);
@@ -2416,14 +2432,23 @@ class Indi {
         // Protocol
         $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
 
-        // Create client
-        $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
+        // Try send websocket-message
+        try {
 
-        // Send message
-        $client->send(json_encode($data));
+            // Log
+            if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
 
-        // Close client
-        $client->close();
+            // Create client
+            $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
+
+            // Send message
+            $client->send(json_encode($data));
+
+            // Close client
+            $client->close();
+
+        // Catch exception
+        } catch (Exception $e) { wslog($e->getMessage()); }
     }
 
     /**

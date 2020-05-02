@@ -107,7 +107,7 @@ class Indi_Trail_Admin {
         // Setup grid columns
         $sectionRs->nested('grid', array(
             'where' => $gridWHERE,
-            'order' => 'move'
+            'order' => '`group` = "locked" DESC, `move`'
         ));
 
         // Altered field WHERE clause
@@ -173,7 +173,7 @@ class Indi_Trail_Admin {
 
         // Else if 'id' param is mentioned in uri, but it's value either not specified,
         // or does not match allowed format - setup an error
-        } else if (array_key_exists('id', (array) Indi::uri()) && !preg_match('/^[1-9][0-9]*$/', Indi::uri()->id))
+        } else if (array_key_exists('id', (array) Indi::uri()) && !preg_match('/^[0-9]+$/', Indi::uri()->id))
             $error = I_URI_ERROR_ID_FORMAT;
 
         // Setup row for each trail item, or setup an access error
@@ -188,7 +188,7 @@ class Indi_Trail_Admin {
         // Setup blank scope object for each trail item
         for ($i = 0; $i < count(self::$items) - 1; $i++)
             if (Indi::trail($i)->section->sectionId) {
-                if (Indi::trail($i)->row) Indi::trail($i)->row->compileDefaults();
+                if (Indi::trail($i)->row) Indi::trail($i)->row->compileDefaults($level = 'trail');
                 Indi::trail($i)->scope = new Indi_Trail_Admin_Item_Scope($i);
                 Indi::trail($i)->filtersSharedRow($i);
             }

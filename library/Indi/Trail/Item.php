@@ -151,7 +151,8 @@ class Indi_Trail_Item {
 
             // Append original values for other modified props
             if (!$this->row->id) foreach ($this->row->modified() as $prop => $value)
-                $array['row']['_original'][$prop] = $this->row->original($prop);
+                if (!in($this->fields($prop)->mode, 'hidden,readonly'))
+                    $array['row']['_original'][$prop] = $this->row->original($prop);
 
             // If demo-mode is turned On - unset value for each shaded field
             if (Indi::demo(false)) foreach ($this->fields as $fieldR)
@@ -241,5 +242,17 @@ class Indi_Trail_Item {
             array(Indi::model($this->section->entityId), $call['function']),
             func_num_args() ? func_get_args() : $call['args']
         );
+    }
+
+    /**
+     * Retrieve summary definitions from $_GET['summary']
+     *
+     * @param bool $json
+     * @return mixed|string
+     */
+    public function summary($json = true) {
+
+        // If summary definitions given by $_GET['summary'] - return as is
+        if ($summary = Indi::get('summary')) return $json ? $summary : json_decode($summary);
     }
 }

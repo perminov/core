@@ -39,7 +39,7 @@ class Indi_View_Action_Admin_Row_Print extends Indi_View_Action_Admin_Row {
 
                     // Prepare regexp snap points
                     $rex = array(
-                        '<span\s{2,}class=MsoCommentReference.*? id="_anchor_' . ($idx = $m1[1]) . '"',
+                        '<span[^>]+class=MsoCommentReference.*? id="_anchor_' . ($idx = $m1[1]) . '"',
                         'mso-special-character:comment\'>&nbsp;</span></span></span>'
                     );
 
@@ -49,12 +49,18 @@ class Indi_View_Action_Admin_Row_Print extends Indi_View_Action_Admin_Row {
                         // Move strip start position to be earlier
                         array_unshift($rex, '<a style=\'mso-comment-reference:w_' . $idx . ';');
 
+                    // Prepare regexp
+                    $_rex = '~' . im($rex, '[^\~]*?') . '~sui';
+
                     // Strip
-                    $this->plain = preg_replace('~' . im($rex, '.*?') . '~s', '', $this->plain);
-                }
+                    $this->plain = preg_replace($_rex, '', $this->plain);
+            }
 
             // Remove bottom comments list
             $this->plain = str_replace($clb[0], '', $this->plain);
+
+            // Remove '[w1]' links
+            // $this->plain = preg_replace('~\[w[0-9]+\]~', '', $this->plain);
         }
 
         // Replace static variables

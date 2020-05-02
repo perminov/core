@@ -103,6 +103,10 @@ function jerror($errno, $errstr, $errfile, $errline) {
     // Send HTTP 500 code
     if (!headers_sent() && !isIE()) header('HTTP/1.1 500 Internal Server Error');
 
+    // If Indi Engine standalone client-app is in use - flush first error
+    // todo: collect all non-fatal errors and flush collected either on end on execution or on fatal-error
+    if (APP) jflush(false, array('errors' => array($error)));
+
     // Return that info via json encode, wrapped with '<error>' tag, for error to be easy pickable with javascript
     return '<error>' . json_encode($error) . '</error>';
 }
@@ -835,7 +839,7 @@ function jflush($success, $msg1 = null, $msg2 = null, $die = true) {
     }
 
     // If $die arg is an url - do not flush data
-    if (!$redir) echo json_encode($flush);
+    if (!$redir) echo version_compare(PHP_VERSION, '5.4.0', 'ge') ? json_encode($flush, JSON_UNESCAPED_UNICODE) : json_encode($flush);
 
     // Exit if need
     if ($redir) die(header('Location: ' . $die)); else if ($die) iexit();
@@ -897,7 +901,7 @@ function mflush($field, $msg = '') {
 function jconfirm($msg, $buttons = 'OKCANCEL') {
 
     // Start building data for flushing
-    $flush = array('confirm' => true, 'msg' => $msg, 'buttons' => $buttons);
+    $flush = array('confirm' => Indi::$answer ? count(Indi::$answer) + 1 : true, 'msg' => $msg, 'buttons' => $buttons);
 
     // Send content type header
     if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
@@ -919,7 +923,7 @@ function jconfirm($msg, $buttons = 'OKCANCEL') {
 function jprompt($msg, array $cfg) {
 
     // Start building data for flushing
-    $flush = array('prompt' => true, 'msg' => $msg, 'cfg' => $cfg);
+    $flush = array('prompt' => Indi::$answer ? count(Indi::$answer) + 1 : true, 'msg' => $msg, 'cfg' => $cfg);
 
     // Send content type header
     if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
@@ -932,12 +936,16 @@ function jprompt($msg, array $cfg) {
 }
 
 /**
- * Flush text to be shown within <textarea>
+ * Flush text to be shown within <textarea>.
+ * If $text are is not a scalar, it will be preliminary stringified by print_r() fn
  *
  * @param bool $success
- * @param string $text
+ * @param mixed $text
  */
 function jtextarea($success, $text) {
+
+    // If $text is not a scalar - stringify it using print_r() fn
+    if (!is_scalar($text)) $text = print_r($text, true);
 
     // Flush
     jflush($success, '<textarea style="width: 500px; height: 400px;">' . $text . '</textarea>');
@@ -1338,6 +1346,12 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // Shortcut to $data[$prop]
         $value = $data[$prop];
 
+        // Get meta
+        $meta = isset($data['_meta'][$prop]) ? $data['_meta'][$prop] : array();
+        
+        // Get label, or use $prop if label/meta is not given
+        $label = $meta['fieldLabel'] ?: $prop;
+        
         // Flush fn
         $flushFn = $fn == 'mflush' ? 'mflush' : 'jflush';
 
@@ -1348,16 +1362,16 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         $c = 'I_' . ($flushFn == 'mflush' ? 'M' : 'J') . 'CHECK_';
 
         // If prop is required, but has empty/null/zero value - flush error
-        if ($rule['req'] && (!strlen($value) || (!$value && $rule['key']))) $flushFn($arg1, sprintf(constant($c . 'REQ'), $prop));
+        if (($rule['req'] || $rule['unq']) && (!strlen($value) || (!$value && $rule['key']))) $flushFn($arg1, sprintf(constant($c . 'REQ'), $label));
 
         // If prop's value should match certain regular expression, but it does not - flush error
-        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $prop));
+        if ($rule['rex'] && strlen($value) && !Indi::rexm($rule['rex'], $value)) $flushFn($arg1, sprintf(constant($c . 'REG'), $value, $label));
 
         // If value should be a json-encoded expression, and it is - decode
         if ($rule['rex'] == 'json') $rowA[$prop] = json_decode($value);
 
         // If value should not be in the list of disabled values - flush error
-        if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $prop));
+        if ($rule['dis'] && in($value, $rule['dis'])) $flushFn($arg1, sprintf(constant($c . 'DIS'), $value, $label));
 
         // If prop's value should be an identifier of an existing object, but such object not found - flush error
         if ($rule['key'] && strlen($value) && $value != '0') {
@@ -1382,6 +1396,11 @@ function jcheck($ruleA, $data, $fn = 'jflush') {
         // If prop's value should be equal to some certain value, but it's not equal - flush error
         if (array_key_exists('eql', $rule) && $value != $rule['eql'])
             $flushFn($arg1, sprintf(constant($c . 'EQL'), $rule['eql'], $value));
+        
+        // If prop's value should be unique within the whole database table, but it's not - flush error
+        if ($rule['unq'] && count($_ = explode('.', $rule['unq'])) == 2 && Indi::model($_[0])->fetchRow(array(
+            '`' . $_[1] . '` = "' . $value . '"'
+        ))) $flushFn($arg1, sprintf(constant($c . 'UNQ'), $value, $label));
     }
 
     // Return *_Row objects, collected for props, that have 'key' rule
@@ -1444,6 +1463,15 @@ function t($arg = null) {
 }
 
 /**
+ * Shortcut for accessing Indi::model()
+ *
+ * @return Indi_Db_Table
+ */
+function m($arg = null) {
+    return Indi::model($arg);
+}
+
+/**
  * Shortcut to Project::user(), or Indi::user() in case if class 'Project' is not declared,
  * or declared but no 'user' method declared in it
  *
@@ -1467,11 +1495,11 @@ function u() {
  */
 function wrap($val, $html, $cond = null) {
 
-    // Detect html-tagname
-    preg_match('~<([a-zA-Z]+)\s*~', $html, $m);
+    // Detect html-tagname, and arg ($val or $cond) that should be used as condition
+    preg_match('~<([a-zA-Z]+)\s*~', $html, $m); $if = func_num_args() > 2 ? $cond : $val;
 
     // Return $value, wrapped with $html, if $cond arg is true
-    return (func_num_args() > 2 ? $cond : $val) ? $html . $val . '</' . $m[1] . '>' : $val;
+    return $if ? str_replace('$1', is_scalar($if) ? $if : '$1', $html) . $val . '</' . $m[1] . '>' : $val;
 }
 
 /**
@@ -1609,12 +1637,31 @@ function grid($section, $field, $ctor = false) {
     // Get `sectionId` and `fieldId` according to $section and $field args
     $sectionR = section($section);
     $sectionId = $sectionR->id;
-    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id ?: 0;
+    $fieldR = field($sectionR->foreign('entityId')->table, $field);
+    $fieldId = $fieldR->id ?: 0;
     if (!$fieldId) $alias = $field;
 
     // Build WHERE clause
     $w = array('`sectionId` = "' . $sectionId . '"');
-    $w []= $fieldId ? '`fieldId` = "' . $fieldId . '"' : '`alias` = "' . $field . '"';
+
+    // If $field arg points to existing `field` entry
+    if ($fieldId) {
+
+        // Append to WHERE clause
+        $w []= '`fieldId` = "' . $fieldId . '"';
+
+        // Detect $further
+        if (func_num_args() > 3) {
+            $further = $ctor; $ctor = func_get_arg(3);
+        } else if (func_num_args() == 3 && is_string($ctor)) {
+            $further = $ctor; $ctor = false;
+        }
+
+        // Mind `further` field
+        if ($further) $w []= '`further` = "' . $fieldR->rel()->fields($further)->id . '"';
+
+    // Else involve $field arg into WHERE clause
+    } else $w []= '`alias` = "' . $field . '"';
 
     // Try to find `grid` entry
     $gridR = Indi::model('Grid')->fetchRow($w);
@@ -1627,15 +1674,18 @@ function grid($section, $field, $ctor = false) {
     // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
     // - use values given by $section and $fields args
     if (!is_array($ctor)) $ctor = array();
-    foreach (ar('sectionId,fieldId,alias') as $prop)
-        if (!array_key_exists($prop, $ctor))
+    foreach (ar('sectionId,fieldId,alias,further') as $prop)
+        if (!array_key_exists($prop, $ctor) && isset($$prop))
             $ctor[$prop] = $$prop;
 
     // If `grid` entry was not found - create it
     if (!$gridR) $gridR = Indi::model('Grid')->createRow();
 
-    // Assign `sectionId` prop first
+    // Assign `sectionId` prop first, to be able to detect `fieldId`
     if ($ctor['sectionId'] && $gridR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign `fieldId` prop first, to be able to detect `further`
+    if ($ctor['fieldId'] && $gridR->fieldId = $ctor['fieldId']) unset($ctor['fieldId']);
 
     // Assign other props and save
     $gridR->assign($ctor)->save();
@@ -1867,24 +1917,35 @@ function filter($section, $field, $ctor = false) {
     // Get `sectionId` and `fieldId` according to $section and $field args
     $sectionR = section($section);
     $sectionId = $sectionR->id;
-    $fieldId = field($sectionR->foreign('entityId')->table, $field)->id;
+    $fieldR = field($sectionR->foreign('entityId')->table, $field);
+    $fieldId = $fieldR->id;
+
+    // Initial WHERE clause
+    $w = array('`sectionId` = "' . $sectionId . '"', '`fieldId` = "' . $fieldId . '"');
+
+    // Detect $further
+    if (func_num_args() > 3) {
+        $further = $ctor; $ctor = func_get_arg(3);
+    } else if (func_num_args() == 3 && is_string($ctor)) {
+        $further = $ctor; $ctor = false;
+    }
+
+    // Mind `further` field
+    if ($further) $w []= '`further` = "' . $fieldR->rel()->fields($further)->id . '"';
 
     // Try to find `filter` entry
-    $filterR = Indi::model('Search')->fetchRow(array(
-        '`sectionId` = "' . $sectionId . '"',
-        '`fieldId` = "' . $fieldId . '"'
-    ));
+    $filterR = Indi::model('Search')->fetchRow($w);
 
     // If $ctor arg is non-false and is not and empty array - return found `filter` entry, or null otherwise
     // This part of this function differs from such part if other similar functions, for example field() function,
     // because presence of $section and $field args - is minimum enough for `filter` entry to be created
-    if (!$ctor && !is_array($ctor)) return $gridR;
+    if (!$ctor && !is_array($ctor)) return $filterR;
 
     // If `sectionId` and/or `fieldId` prop are not defined within $ctor arg
     // - use values given by $section and $fields args
     if (!is_array($ctor)) $ctor = array();
-    foreach (ar('sectionId,fieldId') as $prop)
-        if (!array_key_exists($prop, $ctor))
+    foreach (ar('sectionId,fieldId,further') as $prop)
+        if (isset($$prop) && !array_key_exists($prop, $ctor))
             $ctor[$prop] = $$prop;
 
     // If `filter` entry was not found - create it
@@ -1892,6 +1953,9 @@ function filter($section, $field, $ctor = false) {
 
     // Assign `sectionId` prop first
     if ($ctor['sectionId'] && $filterR->sectionId = $ctor['sectionId']) unset($ctor['sectionId']);
+
+    // Assign `fieldId` prop first, to be able to detect `further`
+    if ($ctor['fieldId'] && $filterR->fieldId = $ctor['fieldId']) unset($ctor['fieldId']);
 
     // Assign other props and save
     $filterR->assign($ctor)->save();
@@ -2051,7 +2115,7 @@ function monthYm($monthId = null) {
  * @param string $else
  */
 function eif($if, $then, $else = '') {
-    echo $if ? $then : $else;
+    echo $if ? str_replace('$1', is_scalar($if) ? $if : '$1', $then) : $else;
 }
 
 /**
@@ -2063,7 +2127,7 @@ function eif($if, $then, $else = '') {
  * @return string
  */
 function rif($if, $then, $else = '') {
-    return $if ? $then : $else;
+    return $if ? str_replace('$1', is_scalar($if) ? $if : '$1', $then) : $else;
 }
 
 /**
@@ -2262,4 +2326,97 @@ function rootNodes($innerHtml, $debug = false) {
 
     // Return root nodes
     return $rootNodes;
+}
+
+/**
+ * Get call stack
+ *
+ * @return string
+ */
+function stack() {
+    ob_start(); debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS); return ob_get_clean();
+}
+
+/**
+ * Scan dir recursively and return array of filepaths
+ *
+ * @param $dir
+ * @param array $fileA
+ * @return array list of all files in $dir and it's ALL subdirs
+ */
+function scandirr($dir, &$fileA = array()) {
+
+    // Foreach path-entry inside $dir
+    if (is_dir($dir)) foreach (scandir($dir) as $value) {
+
+        // Get full path
+        $path = realpath($dir .DIRECTORY_SEPARATOR . $value);
+
+        // If it's not a dir - collect path
+        if (!is_dir($path)) $fileA[] = $path;
+
+        // Else go deeper
+        else if ($value != '.' && $value != '..') scandirr($path, $fileA);
+    }
+
+    // Return
+    return $fileA;
+}
+
+/**
+ * Get imploded contents of all files, found in $dir
+ *
+ * @param string $dir Can be array or comma-separated list of directory names relative to DOC . STD . '/www'
+ * @return string
+ */
+function appjs($dir = '/js/admin') {
+
+    // Collect raw contents
+    $raw = array();
+    foreach (ar($dir) as $_dir)
+        foreach (scandirr(DOC . STD . '/www' . $_dir) as $file)
+            $raw[$file] = file_get_contents($file);
+
+    // Return all app's js files concatenated into single string
+    return implode(';' . "\n\n", $raw);
+}
+
+/**
+ * Write string to ws.err file
+ *
+ * @param $msg
+ */
+function wslog($msg, $path = null) {
+    file_put_contents(($path ?: DOC . STD . '/core/application') . '/ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+}
+
+/**
+ * Log websocket messages to ws.$log.msg file
+ *
+ * $log should be:
+ * evt - msgs, sent by Indi::ws()
+ * rcv - msgs, received by ws.php
+ * snt - msgs, sent by ws.php
+ *
+ * @param $msg
+ */
+function wsmsglog($msg, $logtype, $path = null) {
+    file_put_contents(($path ?: DOC . STD . '/core/application') . '/ws.' . $logtype . '.msg', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+}
+
+/**
+ * Check whether process exists having given $pid
+ *
+ * @param $pid
+ * @return bool
+ */
+function checkpid($pid) {
+
+    // Prepare command, that will check whether process is still running
+    $cmd = preg_match('/^WIN/i', PHP_OS)
+        ? 'tasklist /FI "PID eq ' . $pid . '" | find "' . $pid . '"'
+        : 'ps -p ' . $pid . ' -o comm=';
+
+    // If such process is found - return string output found within process list, else return false
+    return shell_exec($cmd) ?: false;
 }

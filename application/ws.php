@@ -5,6 +5,12 @@ error_reporting(version_compare(PHP_VERSION, '5.4.0', 'ge') ? E_ALL ^ E_NOTICE ^
 // Change dir
 chdir(__DIR__);
 
+// Include func.php
+include '../library/func.php';
+
+// Log that execution reached ws.php
+wslog('mypid: ' . getmypid() . ', ' . 'Reached ws.php', __DIR__);
+
 /**
  * Error logging
  *
@@ -19,15 +25,32 @@ function err($msg = null, $exit = false) {
 
     // Log errors
     if (func_num_args() >= 4) err(func_get_arg(1) . '[' . func_get_arg(0) . '] at ' . func_get_arg(2) . ' on line ' . func_get_arg(3));
-    else file_put_contents('ws.err', date('Y-m-d H:i:s => ') . print_r($msg, true) . "\n", FILE_APPEND);
+    else file_put_contents(rtrim(__DIR__, '\\/') . '/' . 'ws.err', date('Y-m-d H:i:s => ') . 'mypid: ' . getmypid() . ', ' . print_r($msg, true) . "\n", FILE_APPEND);
 
     // Exit
     if ($exit === true) exit;
 }
 
+/**
+ * Shutdown function, for use as a shutdown handler
+ */
+function shutdown() {
+
+    // Erase pid-file and release the lock
+    if ($GLOBALS['pid']) {
+        ftruncate($GLOBALS['pid'], 0);
+        flock($GLOBALS['pid'], LOCK_UN);
+    }
+
+    // Close server stream
+    if ($GLOBALS['server']) fclose($GLOBALS['server']);
+
+    // Log shutdown
+    err('ws.pid: ' . ($GLOBALS['PID'] ?: 'truncated') . '. mypid => shutdown', false);
+}
+
 // Register shutdown handler functions
 register_shutdown_function('shutdown');
-register_shutdown_function('err', error_reporting());
 
 // Set error handler
 set_error_handler('err');
@@ -39,6 +62,43 @@ if (!array_key_exists('ws', $ini)) err('No [ws] section found in ini-file', true
 if (!$ini = $ini['ws']) err('[ws] section found, but it is empty', true);
 if (!array_key_exists('port', $ini)) err('No socket port specified in ini-file', true);
 if (!$port = (int) $ini['port']) err('Invalid socket port specified in ini-file', true);
+
+// If last execution of ws.php was initiated less than 5 seconds ago - prevent duplicate
+if (file_exists('ws.run') && strtotime(date('Y-m-d H:i:s')) >= strtotime(file_get_contents('ws.run')) + 5)
+    unlink('ws.run');
+
+if ($run = @fopen('ws.run', 'x')) {
+    fwrite($run, date('Y-m-d H:i:s'));
+    fclose($run);
+    err('First instance');
+} else {
+    err('Prevent duplicate. mypid => process will be shut down', true);
+}
+
+// If ws.pid file exists
+if (file_exists('ws.pid'))
+
+    // If it contains PID of process
+    if ($PID = trim(file_get_contents('ws.pid'))) {
+
+        // If process having such PID still running
+        if (checkpid($PID)) {
+
+            // Log that, and initiate shutting down of current process to prevent duplicate
+            err('ws.pid: ' . $PID . ' => process found. mypid => process will be shut down', true);
+
+        // Else
+        }  else {
+
+            // Backup PID value and truncate ws.pid
+            $wasPID = $PID; file_put_contents('ws.pid', $PID = '');
+
+            // Log that before going further
+            err('ws.pid: ' . $wasPID . ' => proc not found => truncated. mypid => going further');
+        }
+
+    // Else if ws.pid is empty - log that before going further
+    } else err('ws.pid: truncated. mypid => going further');
 
 // Open pid-file
 $pid = fopen('ws.pid', 'c');
@@ -59,24 +119,6 @@ set_time_limit(0);
 // Ignore user about
 ignore_user_abort(1);
 
-// Erase pid-file and write current pid into it
-ftruncate($pid, 0); fwrite($pid, getmypid());
-
-/**
- * Shutdown function, for use as a shutdown handler
- */
-function shutdown() {
-
-    // Erase pid-file and release the lock
-    if ($GLOBALS['pid']) {
-        ftruncate($GLOBALS['pid'], 0);
-        flock($GLOBALS['pid'], LOCK_UN);
-    }
-
-    // Close server stream
-    if ($GLOBALS['server']) fclose($GLOBALS['server']);
-}
-
 // Create context
 $context = stream_context_create();
 
@@ -91,7 +133,13 @@ if (!is_file('ws.pem')) $prot = 'tcp'; else {
 $server = stream_socket_server($prot . '://0.0.0.0:' . $port . '/', $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
 
 // If socket server creation failed - exit
-if (!$server) err('Can\'t start socket server: $errstr ($errno)', true);
+if (!$server) err('Can\'t start socket server: ' . $errstr . '(' . $errno . '), mypid => process will be shut down', true);
+
+// Write current pid into ws.pid
+fwrite($pid, getmypid());
+
+// Log that we successfully started websocket-server
+err('socket server started, ws.pid: ' . getmypid() . ' => updated');
 
 // Clients' streams array
 $clientA = array();
@@ -125,6 +173,7 @@ while (true) {
 
             // Write empty json
             fwrite($clientI, encode('{}'));
+            file_put_contents('ws.chl', date('Y-m-d H:i:s') . ' => handshake: ' . print_r($info, true) . "\n", FILE_APPEND);
         }
 
         // Remove server's socket from the list of sockets to be listened
@@ -148,8 +197,17 @@ while (true) {
 
             // Unset meta info, related to current stream
             foreach ($channelA as $rid => $byrid)
-                foreach ($channelA[$rid] as $uid => $byuid)
-                    unset($channelA[$rid][$uid][$index]);
+                foreach ($channelA[$rid] as $uid => $byuid) {
+                    if (isset($channelA[$rid][$uid][$index])) {
+
+                        // Remove channel from channels registry
+                        unset($channelA[$rid][$uid][$index]);
+
+                        // Log that channel was closed
+                        if ($ini['log']) file_put_contents('ws.chl',
+                            date('Y-m-d H:i:s') . ' => close: ' . $rid . '-' . $uid . '-' . $index . "\n", FILE_APPEND);
+                    }
+                }
 
             // Unset current stream
             unset($clientA[$index]); echo 'close';
@@ -158,12 +216,17 @@ while (true) {
             continue;
         }
 
+        // Log that channel was closed
+        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
+            date('Y-m-d H:i:s') . ' => chl:' . $index . ', raw:' . print_r($data, true) . "\n", FILE_APPEND);
+
         // Decode data
         $data = decode($data);
 
-        // If logging is On - do log
-        if ($ini['log']) file_put_contents('ws.log', print_r($data, true) . "\n", FILE_APPEND);
-        
+        // Log that channel was closed
+        if ($ini['log']) file_put_contents('ws.' . getmypid() . '.data',
+            date('Y-m-d H:i:s') . ' => chl:' . $index . ', obj:' . print_r($data, true) . "\n", FILE_APPEND);
+
         // Here we skip messages having 'type' not 'text'
         if ($data['type'] != 'text') continue;
 
@@ -181,8 +244,32 @@ while (true) {
             if (!is_array($channelA[$rid][$uid])) $channelA[$rid][$uid] = array();
             $channelA[$rid][$uid][$index] = $index;
 
-        // Else
+            // Log that channel was opened
+            if ($ini['log']) file_put_contents('ws.chl',
+                date('Y-m-d H:i:s') . ' => open: ' . $data['uid'] . '-' . $index . "\n", FILE_APPEND);
+
+            // Write message into channel
+            fwrite($clientA[$channelA[$rid][$uid][$index]], encode(json_encode(array('type' => 'opened', 'cid' => $index))));
+
+        // Else if previously connected user pings the server
+        } else if ($data['type'] == 'ping') {
+
+            // Get user's role id and self id
+            list($rid, $uid) = explode('-', $data['uid']);
+
+            // If logging is On - do log
+            if ($ini['log']) file_put_contents('ws.ping.msg', date('Y-m-d H:i:s => ') . print_r($data, true) . "\n", FILE_APPEND);
+
+            // Change type to 'pong'
+            $data['type'] = 'pong';
+
+            // Write pong-message into channel
+            fwrite($clientA[$channelA[$rid][$uid][$data['cid']]], encode(json_encode($data)));
+
         } else if ($data['type'] == 'notice') {
+
+            // If logging is On - do log
+            if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
 
             // Walk through roles, that recipients should have
             // If there are channels already exist for recipients, having such role
@@ -191,15 +278,27 @@ while (true) {
                 // If all recipients having such role should be messaged
                 // Send message to all recipients having such role
                 if ($data['to'][$rid] === true) foreach ($channelA[$rid] as $uid => $byrole)
-                    foreach ($channelA[$rid][$uid] as $cid)
+                    foreach ($channelA[$rid][$uid] as $cid) {
+
+                        // If logging is On - do log
+                        if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.snt.msg', date('Y-m-d H:i:s => ') . print_r($data + compact('rid', 'uid', 'cid'), true) . "\n", FILE_APPEND);
+
+                        // Write message into channel
                         fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
+                    }
 
                 // Else if we have certain list of recipients
                 // Send message to certain recipients
                 else foreach ($data['to'][$rid] as $uid)
                     if ($channelA[$rid][$uid])
-                        foreach ($channelA[$rid][$uid] as $cid)
+                        foreach ($channelA[$rid][$uid] as $cid) {
+
+                            // If logging is On - do log
+                            if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.snt.msg', date('Y-m-d H:i:s => ') . print_r($data + compact('rid', 'uid', 'cid'), true) . "\n", FILE_APPEND);
+
+                            // Write message into channel
                             fwrite($clientA[$channelA[$rid][$uid][$cid]], encode(json_encode($data)));
+                        }
             }
         }
     }
