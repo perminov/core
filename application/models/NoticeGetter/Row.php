@@ -90,6 +90,9 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
     
         // Append audio if need
         if ($audio) $msg['audio'] = $audio;
+
+        // Trim body
+        $msg['body'] = usubstr($msg['body'], 350);
     
         // Send web-socket messages
         Indi::ws(array(

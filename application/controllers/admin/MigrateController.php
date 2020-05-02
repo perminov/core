@@ -598,6 +598,12 @@ class Admin_MigrateController extends Indi_Controller {
         die('xx');
     }
 
+
+    public function rowexpanderAction() {
+        enumset('grid', 'toggle', 'e', array('title' => '<span class="i-color-box" style="background: lightgray; border: 1px solid blue;"></span>Скрыт, но показан в развороте'));
+        die('ok');
+    }
+
     public function fieldsmodeAction() {
         action('activate', array('title' => 'Активировать', 'rowRequired' => 'y', 'type' => 's'));
         section2action('fields','activate', array ('profileIds' => '1', 'rename' => 'Выбрать режим'))->move(1);

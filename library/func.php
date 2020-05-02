@@ -1495,6 +1495,15 @@ function t($arg = null) {
 }
 
 /**
+ * Shortcut for accessing Indi::model()
+ *
+ * @return Indi_Db_Table
+ */
+function m($arg = null) {
+    return Indi::model($arg);
+}
+
+/**
  * Shortcut to Project::user(), or Indi::user() in case if class 'Project' is not declared,
  * or declared but no 'user' method declared in it
  *

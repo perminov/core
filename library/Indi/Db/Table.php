@@ -1727,4 +1727,13 @@ class Indi_Db_Table
     public function preloadedAll($keys) {
         return Indi::db()->preloadedAll($this->_table, $keys);
     }
+
+    /**
+     * Get next insert id
+     *
+     * @return mixed
+     */
+    public function nid() {
+        return Indi::db()->query('SHOW TABLE STATUS LIKE "' . $this->_table . '"')->fetch(PDO::FETCH_OBJ)->Auto_increment;
+    }
 }
