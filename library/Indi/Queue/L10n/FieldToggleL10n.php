@@ -108,7 +108,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                 list ($ptable, $pfield) = explode(':', $queueChunkR->foreign('queueChunkId')->location);
 
                 //
-                self::$l10n[$ptable][$pfield] = $queueChunkR->queueChunkId;
+                self::$l10n[$ptable][$pfield] = Indi::db()->query('
+                    SELECT `target`, `result` FROM `queueItem` WHERE `queueChunkId` = "' . $queueChunkR->queueChunkId . '"
+                ')->fetchAll(PDO::FETCH_KEY_PAIR);
             }
 
             // If it's parent chunk
@@ -341,7 +343,8 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
 
-            if (!$queueChunkR->queueChunkId || !field($table, $field)->hasLocalizedDependency())
+            //
+            if ($params['toggle'] != 'n' || !$queueChunkR->queueChunkId || !field($table, $field)->hasLocalizedDependency())
                 field($table, $field, ['l10n' => $params['toggle'] ?: 'y']);
         }
     }
