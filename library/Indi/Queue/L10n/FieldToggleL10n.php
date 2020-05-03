@@ -2,6 +2,11 @@
 class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
     /**
+     * @var array
+     */
+    public static $l10n = [];
+
+    /**
      * Create queue chunks
      *
      * @param array $params
@@ -93,6 +98,22 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             'order' => '`queueState` = "progress" DESC, `id`'
         ]) as $queueChunkR) {
 
+            // Split `location` on $table and $field
+            list ($table, $field) = explode(':', $queueChunkR->location);
+
+            //
+            if ($queueChunkR->queueChunkId) {
+
+                // Split `location` on $table and $field
+                list ($ptable, $pfield) = explode(':', $queueChunkR->foreign('queueChunkId')->location);
+
+                //
+                self::$l10n[$ptable][$pfield] = $queueChunkR->queueChunkId;
+            }
+
+            // If it's parent chunk
+            if ($queueChunkR->system('disabled')) continue;
+
             // Remember that we're going to count
             $queueChunkR->assign(array('queueState' => 'progress'))->basicUpdate();
 
@@ -100,17 +121,50 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "items"';
 
             // Get queue items by 50 entries at a time
-            Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $targets) {
+            Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $targets, $table, $field) {
 
-                // Get values
-                $values = $rs->column('value');
+                // If chunk's field is a dependent field
+                if ($queueChunkR->queueChunkId) {
 
-                // Foreach target language - make api call to google passing source values
-                foreach (ar($targets) as $target)
-                    $resultByLang[$target] = array_column($gapi->translateBatch($values, [
-                        'source' => $source,
-                        'target' => $target,
-                    ]), 'text');
+                    // Foreach chunk's `queueItem` entry
+                    foreach ($rs as $idx => $r) {
+
+                        // Get target entry
+                        $te = m($table)->fetchRow($r->target);
+
+                        // Backup current language
+                        $_lang = Indi::ini('lang')->admin;
+
+                        // Foreach target language
+                        foreach (ar($targets) as $target) {
+
+                            // Spoof current language
+                            Indi::ini('lang')->admin = $target;
+
+                            // Rebuild value
+                            $te->{'set' . ucfirst($field)}();
+
+                            // Collect it
+                            $resultByLang[$target][$idx] = $te->$field;
+                        }
+
+                        // Restore current language
+                        Indi::ini('lang')->admin = $_lang;
+                    }
+
+                // Else
+                } else {
+
+                    // Get values
+                    $values = $rs->column('value');
+
+                    // Foreach target language - make api call to google passing source values
+                    foreach (ar($targets) as $target)
+                        $resultByLang[$target] = array_column($gapi->translateBatch($values, [
+                            'source' => $source,
+                            'target' => $target,
+                        ]), 'text');
+                }
 
                 // Foreach fetched `queueItem` entry
                 foreach ($rs as $idx => $r) {
@@ -168,6 +222,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             'order' => '`applyState` = "progress" DESC, `id`'
         ]) as $queueChunkR) {
 
+            // Skip parent entries
+            if ($queueChunkR->system('disabled')) continue;
+
             // Remember that we're going to count
             $queueChunkR->assign(array('applyState' => 'progress'))->basicUpdate();
 
@@ -180,11 +237,49 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             // Convert column type to TEXT
             if (field($table, $field)->relation != 6 && $params['toggle'] != 'n') field($table, $field, ['columnTypeId' => 'TEXT']);
 
+            // Setup $hasLD flag
+            $hasLD = field($table, $field)->hasLocalizedDependency();
+
             // Get queue items
-            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field) {
+            Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field, $hasLD) {
 
                 // If localization is going to turned Off - use `queueItem` entry's `value` as target value, else
-                if ($params['toggle'] == 'n') $value = $r->value; else {
+                if ($params['toggle'] == 'n') {
+
+                    // If it's a dependent field
+                    if (!$queueChunkR->queueChunkId || !$hasLD) $value = $r->value; else {
+
+                        // Get target entry
+                        $target = m($table)->fetchRow($r->target);
+
+                        // Get field's l10n-versions
+                        $value = $target->language($field);
+
+                        // Backup current language
+                        $_lang = Indi::ini('lang')->admin;
+
+                        // Foreach active language
+                        foreach (ar('en,ru') as $lang) {
+
+                            // Set current language to $lang
+                            Indi::ini('lang')->admin = $lang;
+
+                            // Get value according to required language
+                            $target->{'set' . ucfirst($field)}();
+
+                            // Pick refreshed value
+                            $value[$lang] = $target->$field;
+                        }
+
+                        // Restore current language back
+                        Indi::ini('lang')->admin = $_lang;
+
+                        // Rebuild value
+                        $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+                    }
+
+                // Else
+                } else {
 
                     // Get cell's current value
                     $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
@@ -223,7 +318,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             }, $where, '`id` ASC');
 
             // Convert column type to TEXT
-            if (field($table, $field)->relation != 6 && $params['toggle'] == 'n') field($table, $field, ['columnTypeId' => 'VARCHAR(255)']);
+            if (field($table, $field)->relation != 6 && $params['toggle'] == 'n')
+                if (!$queueChunkR->queueChunkId || !$hasLD)
+                    field($table, $field, ['columnTypeId' => 'VARCHAR(255)']);
 
             // Remember that our try to count was successful
             $queueChunkR->assign(array('applyState' => 'finished'))->basicUpdate();
@@ -238,11 +335,14 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         // Foreach finished `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', ['where' => '`applyState` = "finished"', 'order' => '`id`']) as $queueChunkR) {
 
+            // Skip parent chunks
+            if ($queueChunkR->system('disabled')) continue;
+
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
 
-            // Find field and update it's `l10n` prop
-            field($table, $field, ['l10n' => $params['toggle'] ?: 'y']);
+            if (!$queueChunkR->queueChunkId || !field($table, $field)->hasLocalizedDependency())
+                field($table, $field, ['l10n' => $params['toggle'] ?: 'y']);
         }
     }
 
@@ -278,5 +378,27 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Trim space after ending span
         $result = str_replace('"></span> ', '"></span>', $result);
+    }
+
+    /**
+     * @param $queueTaskR
+     * @param $entityR
+     * @param $fieldR_having_l10nY
+     * @param $where
+     */
+    public function appendChunk(&$queueTaskR, $entityR, $fieldR, $where = array()) {
+
+        // Create `queueChunk` entry and setup basic props
+        $queueChunkR = parent::appendChunk($queueTaskR, $entityR, $fieldR, $where);
+
+        foreach (m('Consider')->fetchAll('"' . $fieldR->id . '" = IF(`foreign` = "0", `consider`, `foreign`)') as $considerR) {
+            $dependent = $this->appendChunk($queueTaskR,
+                $considerR->foreign('fieldId')->foreign('entityId'),
+                $considerR->foreign('fieldId'));
+            $dependent->assign(['queueChunkId' => $queueChunkR->id])->save();
+        }
+
+        // Return `queueChunk` entry
+        return $queueChunkR;
     }
 }

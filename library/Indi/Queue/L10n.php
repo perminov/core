@@ -173,6 +173,9 @@ class Indi_Queue_L10n extends Indi_Queue {
         // Increment `countChunk`
         $queueTaskR->chunk ++;
         $queueTaskR->basicUpdate();
+
+        // Return `queueChunk` entry
+        return $queueChunkR;
     }
 
     /**

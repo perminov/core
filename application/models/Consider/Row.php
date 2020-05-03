@@ -59,7 +59,7 @@ class Consider_Row extends Indi_Db_Table_Row {
 
         // 2. Assign zero-values to `foreign` and `connector` props, as they're applicable
         // only in cases when dependent field's `relation` prop is not zero
-        $this->zero('foreign,connector', true);
+        $this->zero('connector', true);
     }
 
     /**

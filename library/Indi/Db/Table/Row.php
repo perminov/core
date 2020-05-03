@@ -183,6 +183,14 @@ class Indi_Db_Table_Row implements ArrayAccess
                     if ($this->_language[$field] = json_decode($data[$field], true))
                         $data[$field] = $this->_language[$field][Indi::ini('lang')->admin];
 
+        // Get localized
+        foreach (Indi_Queue_L10n_FieldToggleL10n::$l10n[$this->_table] ?: [] as $field => $queueChunkId)
+            if (array_key_exists($field, $data))
+                if ($this->_language[$field] = json_decode(m('queueItem')->fetchRow([
+                    '`target` = "' . $this->id . '"', '`queueChunkId` = "' . $queueChunkId . '"'
+                ])->result, true))
+                    $data[$field] = $this->_language[$field][Indi::ini('lang')->admin];
+
         // Return data
         return $data;
     }
@@ -6391,7 +6399,7 @@ class Indi_Db_Table_Row implements ArrayAccess
      * @param $lang
      * @return array|mixed
      */
-    public function language($prop, $lang) {
+    public function language($prop = null, $lang = null) {
 
         // If no args given - return $this->_language
         if (func_num_args() == 0) return $this->_language;

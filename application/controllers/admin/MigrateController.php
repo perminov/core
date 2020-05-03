@@ -10,6 +10,17 @@ class Admin_MigrateController extends Indi_Controller {
             'columnTypeId' => 'TEXT',
             'elementId' => 'html',
         ));
+        field('queueChunk', 'queueChunkId', array (
+            'title' => 'Родительский сегмент',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+            'relation' => 'queueChunk',
+            'storeRelationAbility' => 'one',
+            'mode' => 'readonly',
+        ))->move(14);
+        entity('queueChunk', array('titleFieldId' => 'location'));
+
         die('xx');
         /** medstom */
 
