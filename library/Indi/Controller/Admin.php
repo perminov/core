@@ -3094,6 +3094,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             WHERE 1
               AND `criteriaRelyOn` = "getter"
               AND `profileId` = "' . Indi::admin()->profileId . '"
+              AND `toggle` = "y"
         ')->fetchAll(PDO::FETCH_COLUMN);
 
         // Get ids of relyOnEvent-notices, that should be used to setup menu-qty counters for current user's menu
@@ -3103,6 +3104,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             WHERE 1
               AND `criteriaRelyOn` = "event"
               AND `profileId` = "' . Indi::admin()->profileId . '"
+              AND `toggle` = "y"
         ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // Remove relyOnEvent-notices having criteria that current user/getter not match
