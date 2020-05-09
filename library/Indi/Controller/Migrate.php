@@ -50,6 +50,20 @@ class Indi_Controller_Migrate extends Indi_Controller {
         foreach (ar('grid,alteredField,search') as $table) Indi::db()->query('
             UPDATE `' . $table . '` `g`, `field` `f` SET `g`.`title` = `f`.`title` WHERE `g`.`fieldId` = `f`.`id`
         ');
+        field('queueTask', 'stageState', array (
+            'title' => 'Этап - Статус',
+            'columnTypeId' => 'VARCHAR(255)',
+            'elementId' => 'string',
+            'mode' => 'hidden',
+        ))->move(14);
+        consider('queueTask', 'stageState', 'stage', array (
+            'required' => 'y',
+        ));
+        consider('queueTask', 'stageState', 'state', array (
+            'required' => 'y',
+        ));
+        section('queueTask', ['groupBy' => 'stageState']);
+        m('QueueTask')->batch(function($r){$r->setStageState(); $r->save();});
         die('xx');
     }
     public function l10nAction() {
@@ -202,10 +216,8 @@ class Indi_Controller_Migrate extends Indi_Controller {
         section2action('lang','up', array('profileIds' => '1'));
         section2action('lang','down', array('profileIds' => '1'));
         action('dict', array('title' => 'Доступные языки', 'rowRequired' => 'n', 'type' => 's'));
-        action('constants', array('title' => 'Константы', 'rowRequired' => 'y', 'type' => 's'));
         action('run', array('title' => 'Запустить', 'rowRequired' => 'y', 'type' => 's'));
         section2action('lang','dict', array('profileIds' => '1'));
-        section2action('lang','constants', array('profileIds' => '1'));
         grid('lang', 'title', true);
         grid('lang', 'alias', true);
         grid('lang', 'admin', true);

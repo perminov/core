@@ -51,6 +51,9 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
         // If $cell is not 'l10n' - skip
         if ($cell != 'l10n') return;
 
+        // If current field depends on other fields - deny
+        if (t()->row->nested('consider')->count()) jflush(false, 'Нельзя вручную менять мультиязычность для зависимых полей');
+
         // If we're going to create queue task for turning selected language either On or Off
         if (in($value, 'qy,qn')) {
 

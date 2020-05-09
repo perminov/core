@@ -14,6 +14,12 @@ class Enumset_Row extends Indi_Db_Table_Row_Noeval {
             if ($this->_language['title'] = json_decode($data['title'], true))
                 $data['title'] = $this->_language['title'][Indi::ini('lang')->admin];
 
+        // Get localized
+        foreach (Indi_Queue_L10n_FieldToggleL10n::$l10n[$this->_table] ?: [] as $field => $l10n)
+            if (array_key_exists($field, $data))
+                if ($this->_language[$field] = json_decode($l10n[$this->id], true))
+                    $data[$field] = $this->_language[$field][Indi::ini('lang')->admin];
+
         // Return data
         return $data;
     }
