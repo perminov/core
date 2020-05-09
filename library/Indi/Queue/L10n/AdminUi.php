@@ -7,21 +7,34 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
     public $master = null;
 
     /**
+     * If of specific field, that we need to detect WHERE clause for
+     *
+     * @var bool
+     */
+    public $fieldId = false;
+
+    /**
      * Create queue chunks
      *
      * @param array $params
      */
-    public function chunk(array $params) {
+    public function chunk($params) {
 
-        // Create `queueTask` entry
-        $queueTaskR = Indi::model('QueueTask')->createRow(array(
-            'title' => array_pop(explode('_', get_class($this))),
-            'params' => json_encode($params),
-            'queueState' => $params['toggle'] == 'n' ? 'noneed' : 'waiting'
-        ), true);
+        // If $params arg is an array
+        if (is_array($params)) {
 
-        // Save `queueTask` entries
-        $queueTaskR->save();
+            // Create `queueTask` entry
+            $queueTaskR = Indi::model('QueueTask')->createRow(array(
+                'title' => array_pop(explode('_', get_class($this))),
+                'params' => json_encode($params),
+                'queueState' => $params['toggle'] == 'n' ? 'noneed' : 'waiting'
+            ), true);
+
+            // Save `queueTask` entries
+            $queueTaskR->save();
+
+        // Else assume is's and ID of specific field, that we need to detect WHERE clause for
+        } else $this->fieldId = $params;
 
         // Dict of entities having purpose-distinction
         $master = $this->master;
@@ -49,8 +62,17 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
             // Else no WHERE clause
             else $where = false;
 
+            // If $this->fieldId prop is set, it means that we're here
+            // because of Indi_Queue_L10n_FieldToggleL10n->getFractionChunkWHERE() call
+            // so out aim here to obtain WHERE clause for certain field's chunk,
+            // and appendChunk() call will return WHERE clause rather than `queueChunk` instance
+            if ($this->fieldId) {
+                if ($fieldR_certain = m($entityR->id)->fields($this->fieldId))
+                    if ($master['entity']['value'] == 'y' || ($where && $fieldR_certain->relation != 6))
+                        return $this->appendChunk($queueTaskR, $entityR, $fieldR_certain, $where ? [$where] : []);
+
             // Foreach `field` entry, having `l10n` = "y"
-            foreach (Indi::model($entityR->id)->fields()->select('y', 'l10n') as $fieldR_having_l10nY)
+            } else foreach (m($entityR->id)->fields()->select('y', 'l10n') as $fieldR_having_l10nY)
                 if ($master['entity']['value'] == 'y' || ($where && $fieldR_having_l10nY->relation != 6))
                     $this->appendChunk($queueTaskR, $entityR, $fieldR_having_l10nY, $where ? [$where] : []);
         }

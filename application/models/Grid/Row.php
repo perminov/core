@@ -201,4 +201,11 @@ class Grid_Row extends Indi_Db_Table_Row {
         $this->foreign('gridId')->width += $this->adelta('width');
         $this->foreign('gridId')->save();
     }
+
+    /**
+     * Setter for `title` prop
+     */
+    public function setTitle() {
+        $this->title = $this->foreign('fieldId')->title;
+    }
 }

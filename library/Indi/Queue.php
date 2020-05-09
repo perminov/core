@@ -1,6 +1,6 @@
 <?php
 class Indi_Queue implements Indi_Queue_Interface {
-    public function chunk(array $params) {
+    public function chunk($params) {
     }
     public function count($queueTaskId) {
     }

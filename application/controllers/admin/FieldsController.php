@@ -118,9 +118,22 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
             'source' => $_['langId']->alias
         ];
 
+        // If we're dealing with `action` entity's `title` field
+        if ($params['field'] == 'action:title' && !$_ = []) {
+
+            // Collect all target languages
+            foreach ($target as $targets) $_ = array_unique(array_merge($_, ar($targets)));
+
+            // Pass separately, to be used for root-level `queueChunk` entry ('action:title')
+            $params['rootTarget'] = im($_);
+        }
+
+        // Prepare params
+        $params['target'] = $target;
+
         // If we're going to turn l10n On for this field - specify target languages,
         // else setup 'toggle' param as 'n', indicating that l10n will be turned On for this field
-        if ($value == 'qy') $params['target'] = count($target) > 1 ? $target : current($target); else $params['toggle'] = 'n';
+        if ($value != 'qy') $params['toggle'] = 'n';
 
         // Run first stage
         $queue->chunk($params);

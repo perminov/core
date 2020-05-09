@@ -99,4 +99,11 @@ class Search_Row extends Indi_Db_Table_Row {
             $this->foreign('fieldId')->alias . "', " .
             $this->_ctor() . ");";
     }
+
+    /**
+     * Setter for `title` prop
+     */
+    public function setTitle() {
+        $this->title = $this->foreign('fieldId')->title;
+    }
 }

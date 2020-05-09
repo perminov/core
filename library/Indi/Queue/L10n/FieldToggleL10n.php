@@ -11,7 +11,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
      *
      * @param array $params
      */
-    public function chunk(array $params) {
+    public function chunk($params) {
 
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
@@ -26,43 +26,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         // Get table and field
         list ($table, $field) = explode(':', $params['field']);
 
-        // If it's a custom entity - append chunk and return
-        $entityR = entity($table); if ($entityR->system == 'n') return $this->appendChunk($queueTaskR, $entityR, field($table, $field));
-
-        // Dict of entities having purpose-distinction
-        $master = array(
-            'entity' => array('field' => 'system', 'value' => 'y'),
-            'section' => array('field' => 'type', 'value' => 's'),
-            'action' => array('field' => 'type', 'value' => 's'),
-        );
-
-        // Additional info for detecting entries
-        foreach ($master as $table => &$info) $info += array(
-            'connector' => Indi::model($table)->id(),
-            'instances' => Indi::model($table)->fetchAll('`' . $info['field'] . '` = "' . $info['value'] . '"')->column('id', true)
-        );
-
-        // Collect id of enties
-        $masterIds = array_column($master, 'connector');
-
-        // Foreach `entity` entry, having `system` = "n" (e.g. project's custom entities)
-        foreach (Indi::model('Entity')->fetchAll('`system` = "y"') as $entityR) {
-
-            // WHERE clause
-            $where = array();
-
-            // If current entity is a multi-purpore entity
-            if ($master[$entityR->table])
-                $where []= '`' . $master[$entityR->table]['field'] . '` = "' . $master[$entityR->table]['value'] . '"';
-
-            // Else if entries of current entity are nested under at least one of multi-purpose entities entries
-            else foreach (Indi::model($entityR->id)->fields()->select($masterIds, 'relation') as $fieldR)
-                $where []= '`' . $fieldR->alias . '` IN (' . $master[Indi::model($fieldR->relation)->table()]['instances'] . ')';
-
-            // Foreach `field` entry, having `l10n` = "y"
-            foreach (Indi::model($entityR->id)->fields()->select('y', 'l10n') as $fieldR_having_l10nY)
-                $this->appendChunk($queueTaskR, $entityR, $fieldR_having_l10nY, $where);
-        }
+        // Create separate `queueChunk`-trees for each fraction
+        foreach ($params['target'] as $fraction => $targets)
+            $this->appendChunk($queueTaskR, entity($table), field($table, $field), [], $fraction);
     }
 
     /**
@@ -89,8 +55,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         $queueTaskR->basicUpdate();
 
         // Get source and target languages
-        $source = json_decode($queueTaskR->params)->source;
-        $targets = json_decode($queueTaskR->params)->target;
+        $params = json_decode($queueTaskR->params);
+        $source = $params->source;
+        $target = $params->target;
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
@@ -122,11 +89,19 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             // Build WHERE clause for batch() call
             $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "items"';
 
-            // Get queue items by 50 entries at a time
-            Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $targets, $table, $field) {
+            // Target languages
+            $targets = $queueChunkR->location == $params->field && $params->rootTarget
+                ? $params->rootTarget
+                : $target->{$queueChunkR->fraction};
 
-                // If chunk's field is a dependent field
-                if ($queueChunkR->queueChunkId) {
+            // Check whether we should use setter method call instead of google translate api call
+            $setter = $queueChunkR->queueChunkId && method_exists(m($table)->createRow(), $_ = 'set' . ucfirst($field)) ? $_ : false;
+
+            // Get queue items by 50 entries at a time
+            Indi::model('QueueItem')->batch(function(&$rs, &$deduct) use (&$queueTaskR, &$queueChunkR, &$gapi, $source, $targets, $table, $field, $setter) {
+
+                // If chunk's field is a dependent field and setter method exists
+                if ($setter) {
 
                     // Foreach chunk's `queueItem` entry
                     foreach ($rs as $idx => $r) {
@@ -144,7 +119,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                             Indi::ini('lang')->admin = $target;
 
                             // Rebuild value
-                            $te->{'set' . ucfirst($field)}();
+                            $te->{$setter}();
 
                             // Collect it
                             $resultByLang[$target][$idx] = $te->$field;
@@ -172,8 +147,8 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                 foreach ($rs as $idx => $r) {
 
                     // Collect result for each target language
-                    $result = []; foreach ($resultByLang as $target => $byIdx) {
-                        $result[$target] = $byIdx[$idx]; $this->amendResult($result[$target], $r);
+                    $result = new stdClass(); foreach ($targets ? $resultByLang : [] as $target => $byIdx) {
+                        $result->$target = $byIdx[$idx]; $this->amendResult($result->$target, $r);
                     }
 
                     // Write translation result
@@ -236,11 +211,16 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
 
+            // Get `field` entry
+            $fieldR = $table == 'enumset'
+                ? m('Field')->fetchRow(Indi::rexm('~`fieldId` = "([0-9]+)"~', $queueChunkR->where, 1))
+                : field($table, $field);
+
             // Convert column type to TEXT
-            if (field($table, $field)->relation != 6 && $params['toggle'] != 'n') field($table, $field, ['columnTypeId' => 'TEXT']);
+            if ($table != 'enumset' && $params['toggle'] != 'n') field($table, $field, ['columnTypeId' => 'TEXT']);
 
             // Setup $hasLD flag
-            $hasLD = field($table, $field)->hasLocalizedDependency();
+            $hasLD = $fieldR->hasLocalizedDependency();
 
             // Get queue items
             Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field, $hasLD) {
@@ -320,9 +300,13 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             }, $where, '`id` ASC');
 
             // Convert column type to TEXT
-            if (field($table, $field)->relation != 6 && $params['toggle'] == 'n')
+            if ($table != 'enumset' && $params['toggle'] == 'n')
                 if (!$queueChunkR->queueChunkId || !$hasLD)
                     field($table, $field, ['columnTypeId' => 'VARCHAR(255)']);
+
+            // Switch field's l10n-prop from intermediate to final value
+            if ($params['toggle'] != 'n' || !$queueChunkR->queueChunkId || !$hasLD)
+                $fieldR->assign(['l10n' => $params['toggle'] ?: 'y'])->save();
 
             // Remember that our try to count was successful
             $queueChunkR->assign(array('applyState' => 'finished'))->basicUpdate();
@@ -330,23 +314,6 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Mark stage as 'Finished' and save `queueTask` entry
         $queueTaskR->assign(array('state' => 'finished', 'applyState' => 'finished'))->save();
-
-        // Unset previously nested data
-        $queueTaskR->nested('queueChunk', 'unset');
-
-        // Foreach finished `queueChunk` entries, nested under `queueTask` entry
-        foreach ($queueTaskR->nested('queueChunk', ['where' => '`applyState` = "finished"', 'order' => '`id`']) as $queueChunkR) {
-
-            // Skip parent chunks
-            if ($queueChunkR->system('disabled')) continue;
-
-            // Split `location` on $table and $field
-            list ($table, $field) = explode(':', $queueChunkR->location);
-
-            //
-            if ($params['toggle'] != 'n' || !$queueChunkR->queueChunkId || !field($table, $field)->hasLocalizedDependency())
-                field($table, $field, ['l10n' => $params['toggle'] ?: 'y']);
-        }
     }
 
     /**
@@ -355,10 +322,10 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
      *
      * @return int
      */
-    public function itemsBytesMultiplier($params) {
+    public function itemsBytesMultiplier($params, $setter = false) {
 
-        // If we're turning field's localization off - return 0
-        if ($params['toggle'] == 'n') return 0;
+        // If we're turning field's localization off, or using setter method instead of actual api call - return 0
+        if ($params['toggle'] == 'n' || $setter) return 0;
 
         // If target-param is comma-separated string - return number of items
         if (is_string($params['target'])) return count(ar($params['target']));
@@ -389,19 +356,50 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
      * @param $fieldR_having_l10nY
      * @param $where
      */
-    public function appendChunk(&$queueTaskR, $entityR, $fieldR, $where = array()) {
+    public function appendChunk(&$queueTaskR, $entityR, $fieldR, $where = array(), $fraction = 'none') {
 
-        // Create `queueChunk` entry and setup basic props
+        // Create parent `queueChunk` entry and setup basic props
         $queueChunkR = parent::appendChunk($queueTaskR, $entityR, $fieldR, $where);
 
+        // Setup `fraction` and `where` props
+        $queueChunkR->assign([
+            'fraction' => $fraction,
+            'where' => $this->getFractionChunkWHERE($fraction, $fieldR->id)
+        ])->save();
+
         foreach (m('Consider')->fetchAll('"' . $fieldR->id . '" = IF(`foreign` = "0", `consider`, `foreign`)') as $considerR) {
+
+            // Create `queueChunk` entries for dependent fields
             $dependent = $this->appendChunk($queueTaskR,
                 $considerR->foreign('fieldId')->foreign('entityId'),
-                $considerR->foreign('fieldId'));
-            $dependent->assign(['queueChunkId' => $queueChunkR->id])->save();
+                $considerR->foreign('fieldId'), [], $fraction);
+
+            // Make those to be child under parent `queueChunk` entry and setup `fraction` and `where` props
+            $dependent->assign([
+                'queueChunkId' => $queueChunkR->id,
+                'fraction' => $fraction,
+                'where' => $this->getFractionChunkWHERE($fraction, $considerR->fieldId)
+            ])->save();
         }
 
         // Return `queueChunk` entry
         return $queueChunkR;
+    }
+
+    /**
+     * Get WHERE clause for a field according to given fraction
+     *
+     * @param $fraction
+     */
+    public function getFractionChunkWHERE($fraction, $fieldId) {
+
+        // Build queue class name
+        $queueClassName = 'Indi_Queue_L10n_' . ucfirst($fraction);
+
+        // Create queue class instance
+        $queue = new $queueClassName();
+
+        // Run first stage in dict-mode
+        return $queue->chunk($fieldId);
     }
 }

@@ -147,12 +147,15 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // If field's entity is a system-entity
         if ($entityR->system == 'y') {
-            $fraction = 'adminSystemUi,adminCustomUi';
 
-        // Else it's a custom entity
-        } else if ($entityR->system == 'n') {
-            $fraction = 'adminCustomData';
-        }
+            // If it's a enumset-field - set fraction as 'adminSystemUi'
+            if ($this->relation == 6) $fraction = 'adminSystemUi';
+
+            // Else set two fractions
+            else $fraction = 'adminSystemUi,adminCustomUi';
+
+        // Else it's a custom entity - set fraction as 'adminCustomData'
+        } else if ($entityR->system == 'n') $fraction = 'adminCustomData';
 
         // Return fraction
         return $fraction;

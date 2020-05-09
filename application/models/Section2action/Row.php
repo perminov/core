@@ -123,4 +123,11 @@ class Section2action_Row extends Indi_Db_Table_Row {
         // Save section
         $this->foreign('sectionId')->save();
     }
+
+    /**
+     * Setter for `title` prop
+     */
+    public function setTitle() {
+        $this->title = $this->foreign('actionId')->title;
+    }
 }

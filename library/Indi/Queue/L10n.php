@@ -1,7 +1,14 @@
 <?php
 class Indi_Queue_L10n extends Indi_Queue {
 
-    public function chunk(array $params) {
+    /**
+     * Create `queueTask` entry and nested `queueChunk` entries.
+     * Empty method, to be redeclared in child classes
+     *
+     * @param $params
+     */
+    public function chunk($params) {
+
     }
 
     /**
@@ -79,6 +86,9 @@ class Indi_Queue_L10n extends Indi_Queue {
             // Get last target
             $last = Indi::model('QueueItem')->fetchRow('`queueChunkId` = "' . $queueChunkR->id . '"', '`id` DESC')->target;
 
+            // Check whether we will use setter method call (instead of google translate api call) as queue-stage
+            $setter = $queueChunkR->queueChunkId && method_exists(m($table)->createRow(), $_ = 'set' . ucfirst($field)) ? $_ : false;
+
             // Build WHERE clause
             $where = array();
             if ($queueChunkR->where) $where []= $queueChunkR->where;
@@ -86,7 +96,7 @@ class Indi_Queue_L10n extends Indi_Queue {
             $where = $where ? im($where, ' AND ') : null;
 
             // Foreach entry matching chunk's definition
-            Indi::model($table)->batch(function(&$r) use (&$queueTaskR, &$queueChunkR, $field, $params) {
+            Indi::model($table)->batch(function(&$r) use (&$queueTaskR, &$queueChunkR, $field, $params, $setter) {
 
                 // Get value
                 $value = $params['toggle'] == 'n'
@@ -112,7 +122,7 @@ class Indi_Queue_L10n extends Indi_Queue {
 
                 // Increment `itemsSize` prop on `queueTask` entry and save it
                 $queueTaskR->itemsSize ++;
-                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params);
+                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params, $setter);
                 $queueTaskR->basicUpdate();
 
                 // Fetch entries according to chunk's WHERE clause, and order by `id` ASC
@@ -166,6 +176,9 @@ class Indi_Queue_L10n extends Indi_Queue {
 
         // Setup `location`
         $queueChunkR->location = $table . ':' . $field;
+
+        // If current method is used only for detecting WHERE clause - return detected
+        if ($this->fieldId) return $queueChunkR->where;
 
         // Save `queueChunk` entry
         $queueChunkR->save();

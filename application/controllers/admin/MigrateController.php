@@ -20,10 +20,26 @@ class Admin_MigrateController extends Indi_Controller {
             'mode' => 'readonly',
         ))->move(14);
         entity('queueChunk', array('titleFieldId' => 'location'));
+        field('queueChunk', 'fraction', array (
+            'title' => 'Фракция',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'none',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ))->move(14);
+        enumset('queueChunk', 'fraction', 'none', array('title' => 'Не указана'));
+        enumset('queueChunk', 'fraction', 'adminSystemUi', array('title' => 'AdminSystemUi'));
+        enumset('queueChunk', 'fraction', 'adminCustomUi', array('title' => 'AdminCustomUi'));
+        enumset('queueChunk', 'fraction', 'adminCustomData', array('title' => 'AdminCustomData'));
+        section('queueChunk', array ('groupBy' => 'fraction'));
 
+        field('enumset', 'title', array('columnTypeId' => 'TEXT'));
+        if (action('login')) action('login', ['type' => 's']);
+        foreach (ar('grid,alteredField,search') as $table) Indi::db()->query('
+            UPDATE `' . $table . '` `g`, `field` `f` SET `g`.`title` = `f`.`title` WHERE `g`.`fieldId` = `f`.`id`
+        ');
         die('xx');
-        /** medstom */
-
     }
     public function l10nAction() {
         enumset('field', 'l10n', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключена'));

@@ -13,7 +13,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
      *
      * @param array $params
      */
-    public function chunk(array $params) {
+    public function chunk($params) {
 
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
