@@ -26,6 +26,9 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         // field - there should be no notifications sent
         if ($diff != 0 && $this->criteriaRelyOn == 'getter') return;
 
+        // If notice is turned Off for current getter - return
+        if ($this->toggle == 'n') return;
+
         // Else if $diff is 0 (e.g if `notice` entry's `qtyDiffRelyOn` prop's value is 'getter'):
         // 1. Assign `row` prop, that will be visible in compiling context
         $this->row = $row;
