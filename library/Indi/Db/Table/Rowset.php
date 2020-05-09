@@ -593,9 +593,6 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         // Get fields
         $fieldRs = $this->model()->fields(im(ar($fields)), 'rowset');
 
-        // Set up $titleProp variable as an indicator of that titleColumn is within grid fields
-        if (in($titleColumn = $this->model()->titleColumn(), $columnA)) $titleProp = $titleColumn;
-
         // Setup actual info about types of columns, that we will have to deal with
         foreach ($fieldRs as $gridFieldR) {
 
@@ -658,6 +655,9 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             $columnA[] = $gridFieldR->alias;
         }
 
+        // Set up $titleProp variable as an indicator of that titleColumn is within grid fields
+        if (in($titleColumn = $this->model()->titleColumn(), $columnA)) $titleProp = $titleColumn;
+
         // Setup foreign rows, fetched by foreign keys, mentioned in fields, that are set up as grid columns
         if ($foreign = $typeA['foreign']['single'] + $typeA['foreign']['multiple']) $this->foreign($foreign);
 
@@ -665,7 +665,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         $data = array();
 
         // Get tree column
-        $tc = $this->model()->treeColumn();
+        $treeColumn = $this->model()->treeColumn();
 
         // Foreach row within $this rowset
         foreach ($this as $pointer => $r) {
@@ -707,13 +707,13 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // If field column type is a single foreign key, we use title of related foreign row
                 if (isset($typeA['foreign']['single'][$columnI]['title']) && $entry) $data[$pointer][$columnI] = $entry->foreign($further ?: $columnI)
-                    ->{is_string($titleColumn = $typeA['foreign']['single'][$columnI]['title']) ? $titleColumn : 'title'};
+                    ->{is_string($title = $typeA['foreign']['single'][$columnI]['title']) ? $title : 'title'};
 
                 // If field column type is a multiple foreign key, we use comma-separated titles of related foreign rows
                 if (isset($typeA['foreign']['multiple'][$columnI]['title']) && $entry)
                     foreach ($entry->foreign($further ?: $columnI) as $m)
                         $data[$pointer][$columnI] .= $m
-                            ->{is_string($titleColumn = $typeA['foreign']['multiple'][$columnI]['title']) ? $titleColumn : 'title'} .
+                            ->{is_string($title = $typeA['foreign']['multiple'][$columnI]['title']) ? $title : 'title'} .
                             ($entry->foreign($further ?: $columnI)->key() < $entry->foreign($further ?: $columnI)->count() - 1 ? ', ' : '');
 
                 // If field column type is 'date' we adjust it's format if need. If date is '0000-00-00' we set it
@@ -784,12 +784,12 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             // for each grid data row, event if grid does not have `title` property at all, or have, but
             // affected by indents or some other manipulations
             $data[$pointer]['_system']['title'] = $titleProp ? $data[$pointer][$titleProp] : $r->title();
-
+            
             // Implement indents if need
-            if ($data[$pointer]['title'] && $tc)
+            if ($data[$pointer][$_ = $titleProp ?: 'title'] && $treeColumn)
                 if ($r->system('level') !== null || $r->system('level', $r->level()))
-                    $data[$pointer]['_render']['title']
-                        = str_repeat('&nbsp;', 5 * $r->system('level')) . $data[$pointer]['title'];
+                    $data[$pointer]['_render'][$_]
+                        = str_repeat('&nbsp;', 5 * $r->system('level')) . $data[$pointer][$_];
 
             // Unset '_foreign'
             unset($data[$pointer]['_foreign']);
