@@ -1366,7 +1366,13 @@ class Indi_Db_Table_Row implements ArrayAccess
             } else if ($relatedM->fields('move') && $relatedM->treeColumn()) {
                 $order = 'move';
             } else {
-                $order = $titleColumn;
+
+                // Order by title column
+                $order = $orderColumn = $titleColumn;
+
+                // Build l10n-compatible version of $order for usage in sql queries
+                if ($orderColumn != 'id' && $relatedM->fields($orderColumn)->l10n == 'y' && $l10n = true)
+                    $order = 'SUBSTRING_INDEX(`' . $orderColumn . '`, \'"' . Indi::ini('lang')->admin . '":"\', -1)';
             }
 
             // If $order is not null, but is an empty string, we set is as 'id' for results being fetched in the order of
@@ -1392,7 +1398,8 @@ class Indi_Db_Table_Row implements ArrayAccess
             $selectedR = $relatedM->fetchRow('`id` = "' . $selected . '"');
 
             // Setup current value of a sorting field as start point
-            if (!is_array($order) && $order && !preg_match('/[\(,]/', $order)) $keyword = $selectedR->{trim($order, '`')};
+            if (!is_array($order) && $order && !preg_match('/[\(,]/', $orderColumn ?: $order))
+                $keyword = $selectedR->{trim($orderColumn ?: $order, '`')};
         }
 
         // Alternate WHERE
@@ -1482,9 +1489,9 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Else we should get results started from selected value only if consider-fields were not modified
                 } else if (!$hasModifiedConsiderWHERE) {
 
-                    // If $order is a name of a column, and not an SQL expression, we setup results start point as
-                    // current row's column's value
-                    if (!preg_match('/\(/', $order)) {
+                    // If $order is a name of a column, and not an SQL expression (except l10n-expression)
+                    // we setup results start point as current row's column's value
+                    if (!preg_match('/\(/', $order) || $l10n) {
                         $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . str_replace('"', '\"', $keyword) . '"';
                     }
 
