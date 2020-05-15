@@ -174,6 +174,15 @@ class Indi_Db {
                 && in($lang, Indi::db()->query('SELECT `alias` FROM `lang` WHERE `toggle` = "y"')->fetchAll(PDO::FETCH_COLUMN)))
                 Indi::ini('lang')->admin = $_COOKIE['i-language'];
 
+            // Setup json-templates for each possible fractions
+            foreach (['adminSystemUi', 'adminCustomUi', 'adminCustomData', 'adminSystemUi,adminCustomUi'] as $fraction)
+                Lang::$_jtpl[$fraction] = Indi::db()->query('
+                SELECT `alias`, "" AS `holder` 
+                FROM `lang` 
+                WHERE "y" IN (`' . im(ar($fraction), '`,`') . '`)
+                ORDER BY `move`
+            ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
             // Get info about existing control elements
             $elementA = self::$_instance->query('SELECT * FROM `element`')->fetchAll();
             $iElementA = array(); foreach ($elementA as $elementI)
@@ -346,6 +355,7 @@ class Indi_Db {
                     'useCache' => $entityI['useCache'],
                     'titleFieldId' => $entityI['titleFieldId'],
                     'hasRole' => in_array($entityI['id'], self::$_roleA),
+                    'type' => $entityI['system'],
                     'fields' => new Field_Rowset_Base(array(
                         'table' => 'field',
                         'rows' => $eFieldA[$entityI['id']]['rows'],

@@ -765,6 +765,13 @@ class Indi_Db_Table_Row implements ArrayAccess
     }
 
     /**
+     * Detect L10n-fraction
+     */
+    public function fraction() {
+        return $this->model()->fraction($this);
+    }
+
+    /**
      * Setup language-versions for values of localized fields
      *
      * @param array $data
@@ -780,8 +787,11 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If there are localized fields, but none of them were modified - return
         if (!$mlfA = array_intersect($lfA, array_keys($this->_modified))) return;
 
-        // If there are no languages
-        if (!$jtpl = Indi::db()->query('SELECT `alias`, "" AS `holder` FROM `lang`')->fetchAll(PDO::FETCH_KEY_PAIR)) return;
+        // Get fraction
+        $fraction = $this->fraction();
+
+        // Get json-template containing {lang1:"",lang2:"",...} for each language, that is applicable to current fraction
+        if (!$jtpl = Lang::$_jtpl[$fraction]) return;
 
         // For each of localized modified fields
         foreach ($mlfA as $mlfI) {
@@ -795,11 +805,11 @@ class Indi_Db_Table_Row implements ArrayAccess
             // Copy/Reset $json from/to $jtpl
             $json = $jtpl;
 
-            // Build loсalized values
+            // Build localized values
             foreach ($json as $lang => &$holder) {
 
-                // If $mlfI-field has localized dependencies - use transliteration
-                if ($hasLD) {
+                // If $mlfI-field has setter method - call it
+                if (method_exists($this, $setter = 'set' . ucfirst($mlfI))) {
 
                     // Backup current language
                     $_lang = Indi::ini('lang')->admin;
@@ -808,7 +818,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     Indi::ini('lang')->admin = $lang;
 
                     // Get value according to required language
-                    $this->{'set' . ucfirst($mlfI)}(); $holder =  $this->$mlfI;
+                    $this->{$setter}(); $holder =  $this->$mlfI;
 
                     // Restore current language back
                     Indi::ini('lang')->admin = $_lang;
@@ -825,7 +835,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                     else if ($lang == Indi::ini('lang')->admin) $holder = $data[$mlfI];
 
                     // Else use existing language version
-                    else $holder = $this->_language[$mlfI][$lang];
+                    else $holder = $this->_language[$mlfI][$lang] ?: '';
                 }
             }
 
@@ -833,7 +843,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($hasLD) $this->$mlfI = $json[Indi::ini('lang')->admin];
 
             // Get JSON
-            $data[$mlfI] = json_encode($json);
+            $data[$mlfI] = json_encode($json, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
         }
     }
 

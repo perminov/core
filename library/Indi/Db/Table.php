@@ -37,6 +37,13 @@ class Indi_Db_Table
     protected $_hasRole = false;
 
     /**
+     * Type of entity ('y' means 'system', 'n' means 'custom', 'o' means 'public')
+     *
+     * @var string
+     */
+    protected $_type = null;
+
+    /**
      * Flag, indicating that this model instances was preloaded and stored within Indi_Db::$_preloaded[$entity]
      *
      * @var boolean
@@ -132,6 +139,33 @@ class Indi_Db_Table
     );
 
     /**
+     * Info for l10n-fraction detection
+     *
+     * @var array
+     */
+    protected $_fraction = null;
+
+    /**
+     * Detect L10n-fraction
+     *
+     * @param Indi_Db_Table_Row $r
+     */
+    public function fraction($r) {
+
+        // If it's a custom entity
+        if ($this->_type == 'n') return 'adminCustomData';
+
+        // Else if fraction is not defined - assume it's 'adminSystemUi'
+        if ($this->_fraction === null) return 'adminSystemUi';
+
+        // Else if values defined for both 'field' and 'value' keys within $this->_fraction
+        if ($this->_fraction['value']) return $this->_fraction['value'][$r->{$this->_fraction['field']}];
+
+        // Else if value defined only for 'field' key - go upper
+        return $r->foreign($this->_fraction['field'])->fraction();
+    }
+
+    /**
      * Construct the instance - setup table name, fields, and tree column if exists
      *
      * @param array $config
@@ -164,6 +198,9 @@ class Indi_Db_Table
 
         // Setup 'hasRole' flag
         $this->_hasRole = $config['hasRole'];
+
+        // Setup 'system' prop
+        $this->_type = $config['type'];
 
         // Setup 'preload' flag to be false by default
         $this->_preload = false;
@@ -1735,5 +1772,12 @@ class Indi_Db_Table
      */
     public function nid() {
         return Indi::db()->query('SHOW TABLE STATUS LIKE "' . $this->_table . '"')->fetch(PDO::FETCH_OBJ)->Auto_increment;
+    }
+
+    /**
+     * Get type
+     */
+    public function type() {
+        return $this->_type;
     }
 }

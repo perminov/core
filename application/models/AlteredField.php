@@ -18,4 +18,12 @@ class AlteredField extends Indi_Db_Table {
      * @var string
      */
     protected $_rowClass = 'AlteredField_Row';
+
+
+    /**
+     * Info for l10n-fraction detection
+     *
+     * @var array
+     */
+    protected $_fraction = ['field' => 'sectionId'];
 }

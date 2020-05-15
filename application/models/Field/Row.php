@@ -16,109 +16,6 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
     }
 
     /**
-     * Toggle localization on/off for the current field
-     *
-     * @param bool $toggle
-     * @return mixed
-     */
-    public function toggleL10n($toggle = true) {
-
-        // If no 'Lang' model found - return
-        if (!Indi::model('Lang', true)) return;
-
-        // If current field is a non-key field
-        if ($this->storeRelationAbility == 'none') {
-
-            // Get table name
-            $table = Indi::model($this->entityId)->table();
-            $prop = $this->alias;
-
-        // Else if current field is a enumset-field
-        } else if ($this->relation == 6) {
-
-            // Set $table to 'enumset'
-            $table = 'enumset';
-            $prop = 'title';
-        }
-
-        // Set $enumset flag
-        $enumset = $table == 'enumset';
-
-        // Toggle localization for rename-fields
-        $rename = array('grid' => 'alterTitle', 'search' => 'alt', 'section2action' => 'rename', 'alteredField' => 'rename');
-        if ($this->alias == 'title' && $rename[$table] && $fieldR_rename = Indi::model($table)->fields($rename[$table])) {
-            $fieldR_rename->l10n = $toggle ? 'y' : 'n';
-            $fieldR_rename->save();
-        }
-
-        // If 'Consider'-model exists, then for each dependent field
-        if ($considerM = Indi::model('Consider', true))
-            foreach($considerM->fetchAll('`foreign` = "' . $this->id . '"') as $considerR) {
-
-                // If $toggle arg is `true` - toggle localization On for dependent field
-                if ($toggle) {
-                    $considerR->foreign('fieldId')->l10n = 'y';
-                    $considerR->foreign('fieldId')->save();
-
-                // Else $toggle arg is `false`, and current dependent field
-                // has no other dependencies on localized fields
-                // - toggle localization Off for dependent field
-                } else if (!$considerR->foreign('fieldId')->hasLocalizedDependency()) {
-                    $considerR->foreign('fieldId')->l10n = 'n';
-                    $considerR->foreign('fieldId')->save();
-                }
-            }
-
-        // Get usages
-        if (!$enumset && $this->id == Indi::model($this->entityId)->titleField()->id) {
-
-            // Get the model-usages info as entityId and titleFieldAlias
-            $usageA = Indi::db()->query('
-                SELECT `e`.`id` AS `entityId`, `e`.`table`, `f`.`alias` AS `titleFieldAlias`
-                FROM `entity` `e`, `field` `f`
-                WHERE `f`.`relation` = "' . $this->entityId . '" AND `e`.`titleFieldId` = `f`.`id`
-            ')->fetchAll();
-
-            // Foreach usage
-            foreach ($usageA as $usageI) {
-                if ($fieldR_title = Indi::model($usageI['table'])->fields('title')) {
-                    $fieldR_title->l10n = $toggle ? 'y' : 'n';
-                    $fieldR_title->save();
-                }
-            }
-        }
-
-        // If $toggle arg is `true` and current field is not a enumset-field
-        if ($toggle && !$enumset) {
-
-            // Change column type to TEXT
-            $this->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "TEXT"')->id;
-            $this->_onUpdate = false;
-            $this->save();
-        }
-
-        // Append special part of WHERE clause, for enumset-data
-        $where = array($enumset ? '`fieldId` = "' . $this->id . '"' : 1);
-
-        // Start conversion as a background process
-        Indi::cmd('fieldToggleL10n', array(
-            'toggle' => $toggle,
-            'field' => $prop,
-            'table' => $table,
-            'where' => $where,
-        ));
-
-        // If $toggle arg is `false`, and current field is not a enumset-field
-        if (!$toggle && !$enumset) {
-
-            // Change column type to VARCHAR(255)
-            $this->columnTypeId = Indi::model('ColumnType')->fetchRow('`type` = "VARCHAR(255)"')->id;
-            $this->_onUpdate = false;
-            $this->save();
-        }
-    }
-
-    /**
      * Check if current field depends on fields having localization turned On
      */
     public function hasLocalizedDependency() {
@@ -159,15 +56,6 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
 
         // Return fraction
         return $fraction;
-    }
-
-    /**
-     * Ensure that if value of `l10n` prop have been changed - l10n() method will be called
-     */
-    public function onUpdate1() {
-
-        // If value of `l10n` prop have been changed - convert field data
-        if ($this->affected('l10n')) $this->toggleL10n($this->l10n == 'y');
     }
 
     /**
