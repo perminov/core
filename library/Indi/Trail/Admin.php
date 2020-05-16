@@ -73,7 +73,7 @@ class Indi_Trail_Admin {
         $sectionRs->nested('section', array(
             'where' => array(
                 '`sectionId` IN ("' . implode('","', $accessibleSectionIdA) . '")',
-                '`toggle` = "y"'
+                '`toggle` != "n"'
             ),
             'order' => 'move'
         ));

@@ -1882,7 +1882,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         $data = Indi::db()->query('
             SELECT
                 `s`.`id`,
-                `s`.`toggle` = "y" AS `sectionToggle`,
+                `s`.`toggle` != "n" AS `sectionToggle`,
                 `a`.`id` > 0 AS `actionExists`,
                 `a`.`toggle` = "y" AS `actionToggle`,
                 `sa`.`id` > 0 AS `section2actionExists`,
