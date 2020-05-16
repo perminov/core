@@ -136,4 +136,11 @@ class Consider_Row extends Indi_Db_Table_Row {
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
     }
+
+    /**
+     * Setter for `title` prop
+     */
+    public function setTitle() {
+        $this->_setTitle();
+    }
 }

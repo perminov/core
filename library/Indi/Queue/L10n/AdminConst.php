@@ -17,7 +17,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
 
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
-            'title' => array_pop(explode('_', get_class($this))),
+            'title' => 'L10n_' . array_pop(explode('_', get_class($this))),
             'params' => json_encode($params),
             'queueState' => $params['toggle'] == 'n' ? 'noneed' : 'waiting'
         ), true);

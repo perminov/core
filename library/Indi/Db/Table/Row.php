@@ -237,6 +237,16 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function titleUpdate(Field_Row $titleFieldR, $original = array()) {
 
+    }
+
+    /**
+     * Set `title` prop for case when foreign-key titleFieldId defined for current entity
+     */
+    protected function _setTitle() {
+
+        // If no titleField defined - return
+        if ((!$titleFieldR = $this->model()->titleField()) || $titleFieldR->storeRelationAbility == 'none') return;
+
         // If field, used as title field - is storing single foreign key
         if ($titleFieldR->original('storeRelationAbility') == 'one') {
 
@@ -244,7 +254,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             if ($this->foreign($titleFieldR->alias))
 
                 // Set current row's title as value, got by title() call on foreign row
-                $this->title = $this->foreign($titleFieldR->alias)->title();
+                $title = $this->foreign($titleFieldR->alias)->title();
 
         // Else if field, that is used as title field - is storing multiple foreign keys
         } else if ($titleFieldR->storeRelationAbility == 'many') {
@@ -259,20 +269,11 @@ class Indi_Db_Table_Row implements ArrayAccess
                 $titleA[] = $foreignR->title();
 
             // Setup current row's title as values of $titleA array, imploded by comma
-            $this->title = implode(', ', $titleA);
+            $title = implode(', ', $titleA);
         }
 
-        // Update title
-        if (preg_match('/^one|many$/', $titleFieldR->storeRelationAbility)) {
-            $this->model()->update(
-                array('title' => ($this->title = mb_substr($this->title, 0, 255, 'utf-8'))),
-                '`id` = "' . $this->id . '"',
-                $original ?: $this->original()
-            );
-        }
-
-        // Update dependent titles
-        $this->titleUsagesUpdate();
+        // Set `title`
+        $this->title = mb_substr($title, 0, 255, 'utf-8');
     }
 
     /**
@@ -587,6 +588,9 @@ class Indi_Db_Table_Row implements ArrayAccess
             // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
             if (!$mflush && $this->_mismatch) return false;
 
+            // If foreign-key-titleField defined - set `title`
+            $this->_setTitle();
+
             // Backup modified data
             $modified = $update = $this->_modified;
 
@@ -613,6 +617,9 @@ class Indi_Db_Table_Row implements ArrayAccess
 
             // If immediate mismatch flushing is turned Off, but some mismatches detected - return false
             if (!$mflush && $this->_mismatch) return false;
+
+            // If foreign-key-titleField defined - set `title`
+            $this->_setTitle();
 
             // Backup modified data
             $modified = $insert = $this->_modified;
@@ -654,24 +661,6 @@ class Indi_Db_Table_Row implements ArrayAccess
             $this->model()->update($this->_modified, '`id` = "' . $this->_original['id'] . '"');
             $this->_original = (array) array_merge($this->_original, $this->_modified);
             $this->_modified = array();
-        }
-
-        // If current entity has a non-zero `titleFieldId` property
-        if ($titleFieldR = $this->model()->titleField()) {
-
-            // If value of field, that is used as title-field - was modified
-            if (in_array($titleFieldR->alias, array_keys($modified))) {
-
-                // Update title
-                $this->titleUpdate($titleFieldR, $original);
-            }
-
-        // Else if current entity has an empty/zero `titleFieldId` property, but current row was an already existing row
-        // and entity's database table column, that is however used as a title-column - was modified
-        } else if ($original['id'] && in_array($this->model()->titleColumn(), array_keys($modified))) {
-
-            // Search and update usages
-            $this->titleUsagesUpdate();
         }
 
         // Update cache if need
@@ -865,11 +854,31 @@ class Indi_Db_Table_Row implements ArrayAccess
             SELECT `id` FROM `consider` WHERE CONCAT(",", `foreign`, ",") REGEXP ",(' . $affected . '),"
         ')->fetchAll(PDO::FETCH_COLUMN)) return;
 
-        // Run cmd
-        Indi::cmd('updateUsages', array(
-            'id' => $this->id,
+        // Prepare params
+        $params = [
+            'source' => Indi::ini('lang')->admin,
+            'fraction' => $this->fraction(),
+            'table' => $this->_table,
+            'entry' => $this->id,
+            'affected' => [],
             'considerIdA' => $considerIdA
-        ));
+        ];
+
+        // Collect current values of affected props
+        foreach ($this->_affected as $prop => $orig)
+            $params['affected'][$prop] = $this->$prop;
+
+        // Build queue class name
+        $queueClassName = 'Indi_Queue_UsagesUpdate';
+
+        // Check that class exists
+        if (!class_exists($queueClassName)) jflush(false, sprintf('Не найден класс %s', $queueClassName));
+
+        // Create queue class instance
+        $queue = new $queueClassName();
+
+        // Start queue as a background process
+        Indi::cmd('queue', array('queueTaskId' => $queue->chunk($params)->id));
     }
 
     /**

@@ -15,7 +15,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
-            'title' => array_pop(explode('_', __CLASS__)),
+            'title' => 'L10n_' . array_pop(explode('_', __CLASS__)),
             'params' => json_encode($params),
             'queueState' => $params['toggle'] == 'n' ? 'noneed' : 'waiting'
         ), true);

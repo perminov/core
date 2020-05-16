@@ -1354,7 +1354,7 @@ class Indi_Db_Table
      * @return Field_Row
      */
     public function titleField() {
-        return $this->_fields->select($this->_titleFieldId)->rewind()->current();
+        return $this->_fields->field($this->_titleFieldId);
     }
 
     /**
