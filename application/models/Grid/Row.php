@@ -206,6 +206,6 @@ class Grid_Row extends Indi_Db_Table_Row {
      * Setter for `title` prop
      */
     public function setTitle() {
-        $this->title = $this->foreign('fieldId')->title;
+        $this->_setTitle();
     }
 }
