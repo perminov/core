@@ -5,7 +5,7 @@ class Admin_QueueChunkController extends Indi_Controller_Admin {
      * Turn Off grouping for non-FieldToggleL10n `queueTask` entries
      */
     public function adjustTrail() {
-        if (t(1)->row->title != 'FieldToggleL10n') t()->section->zero('groupBy', true);
+        if (t(1)->row->title != 'L10n_FieldToggleL10n') t()->section->zero('groupBy', true);
     }
 
     /**

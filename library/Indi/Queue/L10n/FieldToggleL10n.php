@@ -226,42 +226,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field, $hasLD) {
 
                 // If localization is going to turned Off - use `queueItem` entry's `value` as target value, else
-                if ($params['toggle'] == 'n') {
-
-                    // If it's a dependent field
-                    if (!$queueChunkR->queueChunkId || !$hasLD) $value = $r->value; else {
-
-                        // Get target entry
-                        $target = m($table)->fetchRow($r->target);
-
-                        // Get field's l10n-versions
-                        $value = $target->language($field);
-
-                        // Backup current language
-                        $_lang = Indi::ini('lang')->admin;
-
-                        // Foreach active language
-                        foreach (ar('en,ru') as $lang) {
-
-                            // Set current language to $lang
-                            Indi::ini('lang')->admin = $lang;
-
-                            // Get value according to required language
-                            $target->{'set' . ucfirst($field)}();
-
-                            // Pick refreshed value
-                            $value[$lang] = $target->$field;
-                        }
-
-                        // Restore current language back
-                        Indi::ini('lang')->admin = $_lang;
-
-                        // Rebuild value
-                        $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
-                    }
-
-                // Else
-                } else {
+                if ($params['toggle'] == 'n') $value = $r->value; else {
 
                     // Get cell's current value
                     $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
