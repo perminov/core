@@ -264,4 +264,11 @@ class NoticeGetter_Row extends Indi_Db_Table_Row_Noeval {
         // Return array containing applicable ways and found recipients
         return array('wayA' => $wayA, 'rs' => $rs);
     }
+
+    /**
+     * Setter for `title`
+     */
+    public function setTitle() {
+        $this->_setTitle();
+    }
 }

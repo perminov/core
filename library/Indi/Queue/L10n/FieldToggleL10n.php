@@ -313,6 +313,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Trim space after ending span
         $result = str_replace('"></span> ', '"></span>', $result);
+
+        // Fix ' > ' problem
+        if (preg_match('~[^\s]#[^\s]~', $queueItemR->value))  $result = preg_replace('~([^\s]) # ([^\s])~', '$1#$2', $result);
     }
 
     /**

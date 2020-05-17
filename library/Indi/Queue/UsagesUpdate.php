@@ -55,6 +55,9 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
                 // Foreach dependent-field
                 foreach ($considerRA as $fieldId => $consider) {
 
+                    // If it's a foreign-key field - skip
+                    if ($m->fields($fieldId)->storeRelationAbility != 'none') continue;
+
                     // Create `queueChunk` entry
                     $queueChunkR = Indi::model('QueueChunk')->createRow([
                         'queueTaskId' => $queueTaskR->id,

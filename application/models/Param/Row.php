@@ -43,4 +43,11 @@ class Param_Row extends Indi_Db_Table_Row_Noeval {
             $this->foreign('fieldId')->alias . "', '" .
             $this->foreign('possibleParamId')->alias . "', " . $this->_ctor() . ");";
     }
+
+    /**
+     * Setter method for `title` prop
+     */
+    public function setTitle() {
+        $this->_setTitle();
+    }
 }

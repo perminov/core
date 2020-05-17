@@ -12,6 +12,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         die('xx');
     }
     public function l10n2Action() {
+        action('chart', ['title' => 'График', 'type' => 's']);
         consider('grid', 'alterTitle', 'title', array ('required' => 'y'));
         consider('search', 'alt', 'title', array ('required' => 'y'));
         consider('section2action', 'rename', 'title', array ('required' => 'y'));
