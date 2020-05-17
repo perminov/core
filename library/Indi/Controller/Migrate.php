@@ -647,6 +647,15 @@ class Indi_Controller_Migrate extends Indi_Controller {
         filter('queueItem', 'stage', true);
         die('xx');
     }
+
+    public function filterTipAction() {
+        field('search', 'tooltip', array (
+            'title' => 'Подсказка',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+        ));
+        die('ok');
+    }
     public function sectiontogglehAction() {
         enumset('section', 'toggle', 'h', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Скрыт'));
         die('ok');
