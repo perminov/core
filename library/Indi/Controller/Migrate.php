@@ -279,4 +279,29 @@ class Indi_Controller_Migrate extends Indi_Controller {
             field('field', $field, array('mode' => 'readonly'));
         die('ok');
     }
+    public function admindemoAction() {
+        field('admin', 'demo', array (
+            'title' => 'Демо-режим',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('admin', 'demo', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+        enumset('admin', 'demo', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+        grid('admins', 'demo', array('alterTitle' => 'Демо', 'tooltip' => 'Демо-режим'));
+        field('profile', 'demo', array (
+            'title' => 'Демо-режим',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('profile', 'demo', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+        enumset('profile', 'demo', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+        grid('profiles', 'demo', array('alterTitle' => 'Демо', 'tooltip' => 'Демо-режим'));
+        die('ok');
+    }
 }
