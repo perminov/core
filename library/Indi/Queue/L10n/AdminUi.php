@@ -42,7 +42,7 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
         // Additional info for detecting entries
         foreach ($master as $table => &$info) $info += array(
             'entityId' => Indi::model($table)->id(),
-            'instances' => Indi::model($table)->fetchAll('`' . $info['field'] . '` = "' . $info['value'] . '"')->column('id', true)
+            'instances' => Indi::model($table)->fetchAll('`' . $info['field'] . '` IN ("' . im(ar($info['value']), '","') . '")')->column('id', true)
         );
 
         // Collect id of enties
@@ -51,9 +51,12 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
         // Foreach `entity` entry, having `system` = "n" (e.g. project's custom entities)
         foreach (Indi::model('Entity')->fetchAll('`system` = "y"') as $entityR) {
 
-            // If current entity is a multi-purpore entity
+            // If current entity is a multi-fraction entity
             if ($master[$entityR->table])
-                $where = '`' . $master[$entityR->table]['field'] . '` = "' . $master[$entityR->table]['value'] . '"';
+                $where = '`' . $master[$entityR->table]['field'] . '`'
+                    . (count($ar = ar($v = $master[$entityR->table]['value'])) > 1
+                        ? ' IN ("' . im($ar, '","') . '")'
+                        : ' = "' . $v . '"');
 
             // Else if entries of current entity are nested under at least one of multi-purpose entities entries
             else if ($fieldR = Indi::model($entityR->id)->fields()->select($masterIds, 'relation')->at(0))
