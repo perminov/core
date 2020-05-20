@@ -123,6 +123,9 @@ class Admin_LangController extends Indi_Controller_Admin {
         $queue = new $queueClassName();
 
         // Run first stage
-        $queue->chunk($params);
+        $queueTaskR = $queue->chunk($params);
+
+        // Auto-start queue as a background process, for now only for *Const-fractions
+        if (preg_match('~Const$~', $cell)) Indi::cmd('queue', array('queueTaskId' => $queueTaskR->id));
     }
 }

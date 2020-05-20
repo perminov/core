@@ -62,7 +62,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`queueState` != "finished"',
-            'order' => '`queueState` = "progress" DESC, `id`'
+            'order' => '`queueState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Split `location` on $table and $field
@@ -196,7 +196,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`applyState` != "finished"',
-            'order' => '`applyState` = "progress" DESC, `id`'
+            'order' => '`applyState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Skip parent entries

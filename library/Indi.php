@@ -962,7 +962,7 @@ class Indi {
         if (is_null(Indi::store('admin')) || $refresh) {
 
             // Get the database table name, where current cms user was found in
-            $table = $_SESSION['admin']['alternate'] ? $_SESSION['admin']['alternate'] : 'admin';
+            $table = $_SESSION['admin']['alternate'] ?: 'admin';
 
             // Get the current user row
             $adminR = (int) $_SESSION['admin']['id']

@@ -12,6 +12,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
      * Create queue chunks
      *
      * @param array $params
+     * @return QueueTask_Row
      */
     public function chunk($params) {
 
@@ -34,6 +35,9 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         // Increment `chunk`
         $queueTaskR->chunk ++;
         $queueTaskR->basicUpdate();
+
+        // Return
+        return $queueTaskR;
     }
 
     /**
@@ -50,7 +54,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`countState` != "finished"',
-            'order' => '`countState` = "progress" DESC, `id`'
+            'order' => '`countState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Remember that we're going to count
@@ -106,7 +110,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`itemsState` != "finished"',
-            'order' => '`itemsState` = "progress" DESC, `id`'
+            'order' => '`itemsState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Remember that we're going to count
@@ -159,11 +163,12 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
 
                 // Increment `queued` prop on `queueChunk` entry and save it
                 $queueChunkR->itemsSize ++;
+                $queueChunkR->itemsBytes += ($bytes = mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params));
                 $queueChunkR->basicUpdate();
 
                 // Increment `itemsSize` prop on `queueTask` entry and save it
                 $queueTaskR->itemsSize ++;
-                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params);
+                $queueTaskR->itemsBytes += $bytes;
                 $queueTaskR->basicUpdate();
             }
 
@@ -223,7 +228,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`applyState` != "finished"',
-            'order' => '`applyState` = "progress" DESC, `id`'
+            'order' => '`applyState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Remember that we're going to count
@@ -264,7 +269,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
             Indi::model('QueueItem')->batch(function (&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params, $table, $field, &$l10n_target_raw, $l10n_target_abs) {
 
                 // Replace &#39; with \'
-                $r->result = str_replace('&#39;', "\'", $r->result);
+                $r->result = str_replace(['&#39;', "'"], "\'", $r->result);
 
                 // Replace source-language definition with target-language definition
                 $l10n_target_raw = preg_replace('~(define\(\'' . $r->target . '\', ?\')(.*?)(\'\);)~', '$1' . $r->result . '$3', $l10n_target_raw);

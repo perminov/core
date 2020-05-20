@@ -25,7 +25,7 @@ class Indi_Queue_L10n extends Indi_Queue {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`countState` != "finished"',
-            'order' => '`countState` = "progress" DESC, `id`'
+            'order' => '`countState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Remember that we're going to count
@@ -74,7 +74,7 @@ class Indi_Queue_L10n extends Indi_Queue {
         // Foreach `queueChunk` entries, nested under `queueTask` entry
         foreach ($queueTaskR->nested('queueChunk', [
             'where' => '`itemsState` != "finished"',
-            'order' => '`itemsState` = "progress" DESC, `id`'
+            'order' => '`itemsState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
 
             // Remember that we're going to count
@@ -87,7 +87,7 @@ class Indi_Queue_L10n extends Indi_Queue {
             $last = Indi::model('QueueItem')->fetchRow('`queueChunkId` = "' . $queueChunkR->id . '"', '`id` DESC')->target;
 
             // Check whether we will use setter method call (instead of google translate api call) as queue-stage
-            $setter = $queueChunkR->queueChunkId && method_exists(m($table)->createRow(), $_ = 'set' . ucfirst($field)) ? $_ : false;
+            $setter = method_exists(m($table)->createRow(), $_ = 'set' . ucfirst($field)) ? $_ : false;
 
             // Build WHERE clause
             $where = array();
@@ -118,11 +118,12 @@ class Indi_Queue_L10n extends Indi_Queue {
 
                 // Increment `queued` prop on `queueChunk` entry and save it
                 $queueChunkR->itemsSize ++;
+                $queueChunkR->itemsBytes += ($bytes = mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params, $setter));
                 $queueChunkR->basicUpdate();
 
                 // Increment `itemsSize` prop on `queueTask` entry and save it
                 $queueTaskR->itemsSize ++;
-                $queueTaskR->itemsBytes += mb_strlen($value, 'utf-8') * $this->itemsBytesMultiplier($params, $setter);
+                $queueTaskR->itemsBytes += $bytes;
                 $queueTaskR->basicUpdate();
 
                 // Fetch entries according to chunk's WHERE clause, and order by `id` ASC
@@ -196,8 +197,8 @@ class Indi_Queue_L10n extends Indi_Queue {
      *
      * @return int
      */
-    public function itemsBytesMultiplier($params) {
-        return $params['toggle'] != 'n';
+    public function itemsBytesMultiplier($params, $setter = false) {
+        return $params['toggle'] != 'n' && !$setter;
     }
 
     /**

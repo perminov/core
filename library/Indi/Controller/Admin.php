@@ -1822,6 +1822,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 FROM `entity` `e`, `profile` `p`
                 WHERE `p`.`entityId` != "0"
                     AND `p`.`entityId` = `e`.`id`
+                    AND `e`.`table` != "admin"
             ')->fetchAll();
 
             // Foreach possible place - try to find

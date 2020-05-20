@@ -34,8 +34,15 @@ class Indi_Queue_L10n_AdminCustomData extends Indi_Queue_L10n_AdminUi {
 
         // Foreach `entity` entry, having `system` = "n" (e.g. project's custom entities)
         // Foreach `field` entry, having `l10n` = "y" - append chunk
-        } else foreach (Indi::model('Entity')->fetchAll('`system` = "n"') as $entityR)
-            foreach ($entityR->nested('field', ['where' => '`l10n` = "y"']) as $fieldR)
-                $this->appendChunk($queueTaskR, $entityR, $fieldR);
+        } else {
+
+            // Create chunks
+            foreach (Indi::model('Entity')->fetchAll('`system` = "n"', '`table` ASC') as $entityR)
+                foreach ($entityR->nested('field', ['where' => '`l10n` = "y"']) as $fieldR)
+                    $this->appendChunk($queueTaskR, $entityR, $fieldR);
+
+            // Order chunks to be sure that all dependen fields will be processed after their dependencies
+            $this->orderChunks($queueTaskR->id);
+        }
     }
 }

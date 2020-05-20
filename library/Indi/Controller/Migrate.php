@@ -953,4 +953,38 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('profiles', 'demo', array('alterTitle' => 'Демо', 'tooltip' => 'Демо-режим'));
         die('ok');
     }
+
+    public function queueChunkItemBytesAction() {
+        field('queueChunk', 'itemsBytes', array (
+            'title' => 'Байт',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'number',
+            'defaultValue' => '0',
+        ))->move(6);
+        grid('queueChunk', 'itemsBytes', ['gridId' => 'items', 'summaryType' => 'sum']);
+        grid('queueChunk', 'move');
+        field('queueChunk', 'move', array (
+            'title' => 'Порядок',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'move',
+            'defaultValue' => '0',
+        ));
+        section('queueChunk', array (
+            'defaultSortField' => 'move',
+        ));
+        Indi::db()->query('UPDATE `profile` SET `entityId` = "11" WHERE `entityId` = "0"');
+        field('profile', 'type', array (
+            'title' => 'Тип',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'radio',
+            'defaultValue' => 'p',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('profile', 'type', 's', array('title' => '<font color=red>Системная</font>'));
+        enumset('profile', 'type', 'p', array('title' => 'Проектная'));
+        Indi::db()->query('UPDATE `profile` SET `type` = "s" WHERE `id` = "1"');
+        grid('profiles', 'type', true)->move(3);
+        die('ok');
+    }
 }
