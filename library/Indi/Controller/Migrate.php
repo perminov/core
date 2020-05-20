@@ -1,6 +1,17 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
-
+    public function filterTipAction() {
+        field('search', 'tooltip', array (
+            'title' => 'Подсказка',
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+        ));
+        die('ok');
+    }
+    public function sectiontogglehAction() {
+        enumset('section', 'toggle', 'h', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Скрыт'));
+        die('ok');
+    }
     public function noticegettertoggleAction() {
         field('noticeGetter', 'toggle', array (
             'title' => 'Статус',
@@ -266,6 +277,31 @@ class Indi_Controller_Migrate extends Indi_Controller {
         //Indi::db()->query('UPDATE `field` SET `dependency` = "u", `satellitealias` = "", `satellite` = "0", `alternative` = ""');
         foreach (ar('span,dependency,satellitealias,satellite,alternative') as $field)
             field('field', $field, array('mode' => 'readonly'));
+        die('ok');
+    }
+    public function admindemoAction() {
+        field('admin', 'demo', array (
+            'title' => 'Демо-режим',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('admin', 'demo', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+        enumset('admin', 'demo', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+        grid('admins', 'demo', array('alterTitle' => 'Демо', 'tooltip' => 'Демо-режим'));
+        field('profile', 'demo', array (
+            'title' => 'Демо-режим',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('profile', 'demo', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Нет'));
+        enumset('profile', 'demo', 'y', array('title' => '<span class="i-color-box" style="background: lime;"></span>Да'));
+        grid('profiles', 'demo', array('alterTitle' => 'Демо', 'tooltip' => 'Демо-режим'));
         die('ok');
     }
 }
