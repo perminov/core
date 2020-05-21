@@ -314,6 +314,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'storeRelationAbility' => 'one',
             'filter' => '`entityId` = "<?=$this->id?>" AND `storeRelationAbility` = "one"',
         ));
+        grid('entities', 'filesGroupBy', array('editor' => 1));
         die('ok');
     }
 }
