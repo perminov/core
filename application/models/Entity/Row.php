@@ -233,12 +233,24 @@ class Entity_Row extends Indi_Db_Table_Row {
     }
 
     /**
-     *
+     * Check changes and do things if need
      */
     public function onUpdate() {
 
         // Reload model
         Indi::model($this->id)->reload();
+
+        // Apply spaceScheme changes, if need
+        $this->_spaceScheme();
+
+        // Apply fileGroupBy changes, if need
+        $this->_filesGroupBy();
+    }
+
+    /**
+     * Apply spaceScheme changes, if need
+     */
+    protected function _spaceScheme() {
 
         // If neither `spaceScheme` nor `spaceFields` fields were changed - return
         if (!$this->affected('spaceScheme,spaceFields')) return;
@@ -413,7 +425,7 @@ class Entity_Row extends Indi_Db_Table_Row {
 
         // Provide ability for some entity props to be set using aliases rather than ids
         if (is_string($value) && !Indi::rexm('int11', $value)) {
-            if ($columnName == 'titleFieldId') $value = field($this->table, $value)->id;
+            if ($columnName == 'titleFieldId' || $columnName == 'filesGroupBy') $value = field($this->table, $value)->id;
             else if ($columnName == 'spaceFields') {
                 if ($value && !Indi::rexm('int11list', $value)) {
                     $fieldIdA = array();
@@ -459,7 +471,7 @@ class Entity_Row extends Indi_Db_Table_Row {
 
             // Else if prop contains keys - use aliases instead
             else {
-                if ($prop == 'titleFieldId') $value = field($this->table, $value)->alias;
+                if ($prop == 'titleFieldId' || $prop == 'filesGroupBy') $value = field($this->table, $value)->alias;
                 else if ($prop == 'spaceFields') {
                     $value = ''; if ($sf = $this->foreign('spaceFields')) $value = $sf->column('alias', true);
                 }
@@ -484,7 +496,7 @@ class Entity_Row extends Indi_Db_Table_Row {
 
         // Declare list of `entity` entry's props, that rely on fields,
         // that will be created AFTER `entity` entry's itself creation
-        $deferred = 'titleFieldId,spaceScheme,spaceFields';
+        $deferred = 'titleFieldId,filesGroupBy,spaceScheme,spaceFields';
 
         // Build `entity` entry creation expression
         $lineA[] = "entity('" . $this->table . "', " . $this->_ctor($deferred) . ");";
@@ -501,5 +513,110 @@ class Entity_Row extends Indi_Db_Table_Row {
 
         // Return newline-separated list of creation expressions
         return im($lineA, "\n");
+    }
+
+    /**
+     * Apply filesGroupBy changes, if need
+     */
+    protected function _filesGroupBy() {
+
+        // If `filesGroupBy` prop was not affected - return
+        if (!$this->affected('filesGroupBy')) return;
+
+        // If `filesGroupBy` prop was unzeroed
+        if ($this->filesGroupBy && !$this->_affected['filesGroupBy']) {
+
+            // Do grouping
+            $this->_filesGroupBy_group();
+
+        // Else if `filesGroupBy` prop was zeroed
+        } else if (!$this->filesGroupBy && $this->_affected['filesGroupBy']) {
+
+            // Do ungrouping
+            $this->_filesGroupBy_ungroup();
+
+        // Else if `filesGroupBy` prop changed from one non-zero value to another non-zero value
+        } else {
+
+            // Do ungrouping
+            $this->_filesGroupBy_ungroup();
+
+            // Do grouping
+            $this->_filesGroupBy_group();
+        }
+    }
+
+    /**
+     * Do grouping
+     */
+    protected function _filesGroupBy_group() {
+
+        // Shortcut to model
+        $m = m($this->id);
+
+        // Get group field alias
+        $group = $m->fields($this->filesGroupBy)->alias;
+
+        // Get id => group array
+        $groupByIdA = Indi::db()->query('SELECT `id`, `' . $group . '` FROM `' . $m->table() . '`')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // Model dir
+        $dir = $m->dir();
+
+        // Created group-dirs
+        $mkdirA = [];
+
+        // Foreach file
+        foreach (glob($dir . '*.*', GLOB_NOSORT) as $abs) {
+
+            // Get file base name
+            $bn = pathinfo($abs, PATHINFO_BASENAME);
+
+            // Get id
+            $id = explode('_', $bn)[0];
+
+            // If it's not possible to detect group for a file - skip
+            if (!isset($groupByIdA[$id])) continue;
+
+            // Get group
+            $group = $groupByIdA[$id];
+
+            // Create group-dir, if not exists
+            if (!$mkdirA[$group] && !is_dir($mkdirI = $dir . $group . '/'))
+                if (mkdir($mkdirI))
+                    $mkdirA[$group] = $mkdirI;
+
+            // Move file to group-dir
+            rename($abs, $mkdirA[$group] . $bn);
+        }
+    }
+
+    /**
+     * Do ungroup
+     */
+    protected function _filesGroupBy_ungroup() {
+
+        // Shortcut to model
+        $m = m($this->id);
+
+        // Model dir
+        $dir = $m->dir();
+
+        // Foreach group-dir
+        foreach (glob($dir . '*', GLOB_ONLYDIR) as $group) {
+
+            // Foreach file within group-gir
+            foreach (glob($group . '/*.*') as $abs) {
+
+                // Get file base name
+                $bn = pathinfo($abs, PATHINFO_BASENAME);
+
+                // Move file to upper dir
+                rename($abs, $dir . $bn);
+            }
+
+            // Remove group-dir
+            rmdir($group);
+        }
     }
 }

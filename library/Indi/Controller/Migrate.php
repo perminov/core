@@ -304,4 +304,16 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('profiles', 'demo', array('alterTitle' => 'Демо', 'tooltip' => 'Демо-режим'));
         die('ok');
     }
+    public function filesGroupByAction() {
+        field('entity', 'filesGroupBy', array (
+            'title' => 'Группировать файлы',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'filter' => '`entityId` = "<?=$this->id?>" AND `storeRelationAbility` = "one"',
+        ));
+        die('ok');
+    }
 }

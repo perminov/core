@@ -51,6 +51,13 @@ class Indi_Db_Table
     protected $_titleFieldId = 0;
 
     /**
+     * Id of field, that is used for grouping files into subdirs
+     *
+     * @var boolean
+     */
+    protected $_filesGroupBy = 0;
+
+    /**
      * Store array of fields, that current model consists from
      *
      * @var array
@@ -157,7 +164,10 @@ class Indi_Db_Table
         $this->_treeColumn = $config['fields']->field($this->_table . 'Id') ? $this->_table . 'Id' : '';
 
         // Setup title field id
-        $this->_titleFieldId = $config['titleFieldId'] ? $config['titleFieldId'] : 0;
+        $this->_titleFieldId = $config['titleFieldId'] ?: 0;
+
+        // Setup filesGroupBy field id
+        $this->_filesGroupBy = $config['filesGroupBy'] ?: 0;
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
@@ -1301,6 +1311,15 @@ class Indi_Db_Table
     }
 
     /**
+     * Return id or alias of a field, that is used for files to be grouped into subdirs
+     *
+     * @return string
+     */
+    public function filesGroupBy($alias = false) {
+        return $alias ? $this->_fields->field($this->_filesGroupBy)->alias : $this->_filesGroupBy;
+    }
+
+    /**
      * Apply new values to some of properties of current model
      *
      * @param array $modified
@@ -1346,15 +1365,17 @@ class Indi_Db_Table
      *
      * @param string $mode
      * @param bool|int $ckfinder
+     * @param string $subdir
      * @return string
      */
-    public function dir($mode = '', $ckfinder = false) {
+    public function dir($mode = '', $ckfinder = false, $subdir = '') {
 
         // Build the target directory name
         $dir = DOC . STD . '/' . Indi::ini()->upload->path
             . ($ckfinder ? '/' . Indi::ini()->ckeditor->uploadPath : '')
             . '/' . $this->_table . '/'
-            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '');
+            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '')
+            . $subdir;
 
         // If $mode argument is 'name'
         if ($mode == 'name') return $dir;
