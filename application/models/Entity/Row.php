@@ -564,7 +564,7 @@ class Entity_Row extends Indi_Db_Table_Row {
         $dir = $m->dir();
 
         // Created group-dirs
-        $mkdirA = [];
+        $mkdirA = array();
 
         // Foreach file
         foreach (glob($dir . '*.*', GLOB_NOSORT) as $abs) {
