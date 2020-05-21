@@ -573,7 +573,7 @@ class Entity_Row extends Indi_Db_Table_Row {
             $bn = pathinfo($abs, PATHINFO_BASENAME);
 
             // Get id
-            $id = explode('_', $bn)[0];
+            $id = array_shift(explode('_', $bn));
 
             // If it's not possible to detect group for a file - skip
             if (!isset($groupByIdA[$id])) continue;
