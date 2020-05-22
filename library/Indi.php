@@ -2465,7 +2465,7 @@ class Indi {
      */
     public static function demo($flush = true) {
         if ((Indi::ini('general')->demo && Indi::admin()->profileId != 1)
-            || Indi::admin()->demo == 'y' || Indi::admin()->foreign('profileId')->demo == 'y')
+            || (Indi::admin() && (Indi::admin()->demo == 'y' || Indi::admin()->foreign('profileId')->demo == 'y')))
             return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
 
