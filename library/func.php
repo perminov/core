@@ -901,7 +901,7 @@ function mflush($field, $msg = '') {
 function jconfirm($msg, $buttons = 'OKCANCEL') {
 
     // Start building data for flushing
-    $flush = array('confirm' => true, 'msg' => $msg, 'buttons' => $buttons);
+    $flush = array('confirm' => Indi::$answer ? count(Indi::$answer) + 1 : true, 'msg' => $msg, 'buttons' => $buttons);
 
     // Send content type header
     if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
@@ -923,7 +923,7 @@ function jconfirm($msg, $buttons = 'OKCANCEL') {
 function jprompt($msg, array $cfg) {
 
     // Start building data for flushing
-    $flush = array('prompt' => true, 'msg' => $msg, 'cfg' => $cfg);
+    $flush = array('prompt' => Indi::$answer ? count(Indi::$answer) + 1 : true, 'msg' => $msg, 'cfg' => $cfg);
 
     // Send content type header
     if (!headers_sent()) header('Content-Type: '. (isIE() ? 'text/plain' : 'application/json'));
@@ -1460,6 +1460,15 @@ function _2sec($expr) {
  */
 function t($arg = null) {
     return Indi::trail($arg);
+}
+
+/**
+ * Shortcut for accessing Indi::model()
+ *
+ * @return Indi_Db_Table
+ */
+function m($arg = null) {
+    return Indi::model($arg);
 }
 
 /**

@@ -1880,7 +1880,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         $data = Indi::db()->query('
             SELECT
                 `s`.`id`,
-                `s`.`toggle` = "y" AS `sectionToggle`,
+                `s`.`toggle` != "n" AS `sectionToggle`,
                 `a`.`id` > 0 AS `actionExists`,
                 `a`.`toggle` = "y" AS `actionToggle`,
                 `sa`.`id` > 0 AS `section2actionExists`,
@@ -3085,20 +3085,37 @@ class Indi_Controller_Admin extends Indi_Controller {
         // If no 'Notice' entity found - return
         if (!Indi::model('NoticeGetter', true) || !Indi::model('NoticeGetter')->fields('criteriaRelyOn')) return;
 
-        // Get ids of notices, that should be used to setup menu-qty counters for current user's menu
-        $noticeIdA_relyOnMe = Indi::db()->query('
+        // Get ids of relyOnGetter-notices, that should be used to setup menu-qty counters for current user's menu
+        $noticeIdA_relyOnGetter = Indi::db()->query('
             SELECT `noticeId`
             FROM `noticeGetter`
             WHERE 1
               AND `criteriaRelyOn` = "getter"
               AND `profileId` = "' . Indi::admin()->profileId . '"
+              AND `toggle` = "y"
         ')->fetchAll(PDO::FETCH_COLUMN);
+
+        // Get ids of relyOnEvent-notices, that should be used to setup menu-qty counters for current user's menu
+        $noticeIdA_relyOnEvent = Indi::db()->query('
+            SELECT `noticeId`, `criteriaEvt`
+            FROM `noticeGetter`
+            WHERE 1
+              AND `criteriaRelyOn` = "event"
+              AND `profileId` = "' . Indi::admin()->profileId . '"
+              AND `toggle` = "y"
+        ')->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // Remove relyOnEvent-notices having criteria that current user/getter not match
+        foreach ($noticeIdA_relyOnEvent as $noticeId => $criteriaEvt)
+            if ($criteriaEvt && !Indi::admin()->model()->fetchRow('`id` = "' . Indi::admin()->id . '" AND ' . $criteriaEvt))
+                unset($noticeIdA_relyOnEvent[$noticeId]);
+                $noticeIdA_relyOnEvent = array_keys($noticeIdA_relyOnEvent);
 
         // Get notices
         $_noticeRs = Indi::model('Notice')->fetchAll(array(
             'FIND_IN_SET("' . Indi::admin()->profileId . '", `profileId`)',
             'CONCAT(",", `sectionId`, ",") REGEXP ",(' . im($sectionIdA, '|') . '),"',
-            '(`qtyDiffRelyOn` = "event" OR FIND_IN_SET(`id`, "' . im($noticeIdA_relyOnMe) . '"))',
+            'FIND_IN_SET(`id`, IF(`qtyDiffRelyOn` = "event", "' . im($noticeIdA_relyOnEvent) . '", "' . im($noticeIdA_relyOnGetter) . '"))',
             '`toggle` = "y"'
         ));
 
@@ -3232,8 +3249,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function confirm($msg, $buttons = 'OKCANCEL', $cancelMsg = null) {
 
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
+        // Get answer
+        $answer = Indi::get()->{'answer' . rif(Indi::$answer, count(Indi::$answer) + 1)};
 
         // If no answer, flush confirmation prompt
         if (!$answer) jconfirm(is_array($msg) ? im($msg, '<br>') : $msg, $buttons);
@@ -3242,7 +3259,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         else if ($answer == 'cancel') jflush(false, $cancelMsg);
 
         // Return answer
-        return $answer;
+        return Indi::$answer[count(Indi::$answer)] = $answer;
     }
 
     /**
@@ -3254,8 +3271,8 @@ class Indi_Controller_Admin extends Indi_Controller {
      */
     public function prompt($msg, $cfg = array()) {
 
-        // Get $_GET['answer']
-        $answer = Indi::get()->answer;
+        // Get answer
+        $answer = Indi::get()->{'answer' . rif(Indi::$answer, count(Indi::$answer) + 1)};
 
         // Build meta
         $meta = array(); foreach($cfg as $field) $meta[$field['name']] = $field;
@@ -3265,6 +3282,9 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // If answer is 'cancel' - stop request processing
         else if ($answer == 'cancel') jflush(false);
+
+        // Push answer
+        Indi::$answer[count(Indi::$answer)] = $answer;
 
         // Return prompt data
         return json_decode(Indi::post('_prompt'), true) + array('_meta' => $meta);

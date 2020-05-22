@@ -61,6 +61,13 @@ class Indi {
     public static $cmpOut = array();
 
     /**
+     * Array of prompt answers
+     *
+     * @var array
+     */
+    public static $answer = array();
+
+    /**
      * Regular expressions patterns for common usage
      *
      * @var array
@@ -2418,10 +2425,6 @@ class Indi {
         // Build path
         $path = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT) .'/' . grs(8) . '/websocket';
 
-        // Include scripts
-        include_once('WebSocket/Base.php');
-        include_once('WebSocket/Client.php');
-
         // Protocol
         $prot = is_file(DOC . STD . '/core/application/ws.pem') ? 'wss' : 'ws';
 
@@ -2432,7 +2435,7 @@ class Indi {
             if (Indi::ini('ws')->log) wsmsglog($data, $data['row'] . '.evt');
 
             // Create client
-            $client = new WebSocket\Client($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
+            $client = new WsClient($prot . '://' . Indi::ini('ws')->socket . ':' . Indi::ini('ws')->port . '/' . $path);
 
             // Send message
             $client->send(json_encode($data));
@@ -2461,7 +2464,8 @@ class Indi {
      * Prevent user from doing something when demo-mode is turned On
      */
     public static function demo($flush = true) {
-        if ((Indi::ini('general')->demo && Indi::admin()->profileId != 1) || Indi::admin()->demo == 'y')
+        if ((Indi::ini('general')->demo && Indi::admin()->profileId != 1)
+            || Indi::admin()->demo == 'y' || Indi::admin()->foreign('profileId')->demo == 'y')
             return $flush ? jflush(false, I_DEMO_ACTION_OFF) : true;
     }
 

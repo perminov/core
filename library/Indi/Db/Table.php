@@ -51,6 +51,13 @@ class Indi_Db_Table
     protected $_titleFieldId = 0;
 
     /**
+     * Id of field, that is used for grouping files into subdirs
+     *
+     * @var boolean
+     */
+    protected $_filesGroupBy = 0;
+
+    /**
      * Store array of fields, that current model consists from
      *
      * @var array
@@ -157,7 +164,10 @@ class Indi_Db_Table
         $this->_treeColumn = $config['fields']->field($this->_table . 'Id') ? $this->_table . 'Id' : '';
 
         // Setup title field id
-        $this->_titleFieldId = $config['titleFieldId'] ? $config['titleFieldId'] : 0;
+        $this->_titleFieldId = $config['titleFieldId'] ?: 0;
+
+        // Setup filesGroupBy field id
+        $this->_filesGroupBy = $config['filesGroupBy'] ?: 0;
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
@@ -1332,6 +1342,15 @@ class Indi_Db_Table
     }
 
     /**
+     * Return id or alias of a field, that is used for files to be grouped into subdirs
+     *
+     * @return string
+     */
+    public function filesGroupBy($alias = false) {
+        return $alias ? $this->_fields->field($this->_filesGroupBy)->alias : $this->_filesGroupBy;
+    }
+
+    /**
      * Apply new values to some of properties of current model
      *
      * @param array $modified
@@ -1377,15 +1396,17 @@ class Indi_Db_Table
      *
      * @param string $mode
      * @param bool|int $ckfinder
+     * @param string $subdir
      * @return string
      */
-    public function dir($mode = '', $ckfinder = false) {
+    public function dir($mode = '', $ckfinder = false, $subdir = '') {
 
         // Build the target directory name
         $dir = DOC . STD . '/' . Indi::ini()->upload->path
             . ($ckfinder ? '/' . Indi::ini()->ckeditor->uploadPath : '')
             . '/' . $this->_table . '/'
-            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '');
+            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '')
+            . $subdir;
 
         // If $mode argument is 'name'
         if ($mode == 'name') return $dir;
@@ -1494,9 +1515,10 @@ class Indi_Db_Table
      * @param null $where
      * @param null $order
      * @param int $limit
+     * @param bool $rowset
      * @throws Exception
      */
-    public function batch($operation, $where = null, $order = null, $limit = 500) {
+    public function batch($operation, $where = null, $order = null, $limit = 500, $rowset = false) {
 
         // Check that $operation arg is callable
         if (!is_callable($operation)) throw new Exception('$operation arg is not callable');
@@ -1514,11 +1536,25 @@ class Indi_Db_Table
         // Fetch usages by $limit at a time
         for ($p = 1; $p <= ceil($qty/$limit); $p++) {
 
+            // Count how many entries should be deducted from range.
+            // However here we need this as a flag indicating whether
+            // we should fetch next page as planned, or fetch first page again
+            // with understanding that despite it's a again the first page
+            // it will contain another results
+            $deduct = 0;
+
             // Fetch usages
             $rs = $this->fetchAll($where, $order, $limit, $p);
 
+            // If nothing found - return
+            if (!$rs->count()) return;
+
             // Update usages
-            foreach ($rs as $r) $operation($r);
+            if ($rowset) $operation($rs, $deduct); else foreach ($rs as $r) $operation($r, $deduct);
+
+            // If now (e.g. after $operation() call completed) less entries match WHERE clause,
+            // it means that we need to fetch same page again rather than fetching next page
+            if ($deduct) $p -= (int) !($deduct = 0);
         }
     }
 
@@ -1722,5 +1758,14 @@ class Indi_Db_Table
      */
     public function preloadedAll($keys) {
         return Indi::db()->preloadedAll($this->_table, $keys);
+    }
+
+    /**
+     * Get next insert id
+     *
+     * @return mixed
+     */
+    public function nid() {
+        return Indi::db()->query('SHOW TABLE STATUS LIKE "' . $this->_table . '"')->fetch(PDO::FETCH_OBJ)->Auto_increment;
     }
 }
