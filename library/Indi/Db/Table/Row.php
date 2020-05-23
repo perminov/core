@@ -2171,7 +2171,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function deleteFiles($field = '') {
 
         // If upload dir does not exist - return
-        if (($dir = $this->model()->dir('exists')) === false) return;
+        if (($dir = $this->dir('exists')) === false) return;
 
         // If $field argument is not given
         if (!$field) {
@@ -2212,6 +2212,9 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function deleteCKFinderFiles () {
 
+        // If current entry belongs to entity, that is not a role - return
+        if (!$this->model()->hasRole()) return;
+
         // If CKFinder upload dir (special dir for current row instance) does not exist - return
         if (($dir = $this->model()->dir('exists', $this->id)) === false) return;
 
@@ -2249,7 +2252,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $src =  $std . '/' . $uph . '/' . $this->_table . '/';
 
         // Build the filename pattern for using in glob() php function
-        $pat = DOC . $src . $this->id . ($alias ? '_' . $alias : '') . ($copy ? ',' . $copy : '') . '.' ;
+        $pat = DOC . $src . $this->filesGroup() . $this->id . ($alias ? '_' . $alias : '') . ($copy ? ',' . $copy : '') . '.' ;
 
         // Get the files, matching $pat pattern
         $files = glob($pat . '*');
@@ -2259,6 +2262,19 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // Else return absolute path to first found file
         return $files[0];
+    }
+
+    /**
+     * Check whether `fileGroupBy` prop defined for current entity,
+     * and if yes - build and return group-subdir name with trailing slash
+     */
+    public function filesGroup() {
+
+        // If files grouping is not defined - return
+        if (!$groupBy = $this->model()->filesGroupBy(true)) return;
+
+        // Return group subdir with trailing slash
+        return $this->$groupBy . '/';
     }
 
     /**
@@ -3949,7 +3965,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         if (is_array($fields) && !count($fields)) return;
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if ((is_array($fields) ?: $this->_files) && !Indi::rexm('dir', $dir = $this->model()->dir())) {
+        if ((is_array($fields) ?: $this->_files) && !Indi::rexm('dir', $dir = $this->dir())) {
 
             // Assume it is a error message, and put it under '#model' key within $this->_mismatch property
             $this->_mismatch['#model'] = $dir;
@@ -4171,7 +4187,7 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function wget($url, $field) {
 
         // If value, got by $this->model()->dir() call, is not a directory name
-        if (!Indi::rexm('dir', $dir = $this->model()->dir())) {
+        if (!Indi::rexm('dir', $dir = $this->dir())) {
 
             // Assume it is a error message, and put it under $field key within $this->_mismatch property
             $this->_mismatch[$field] = $dir;
@@ -6411,6 +6427,8 @@ class Indi_Db_Table_Row implements ArrayAccess
 
     /**
      * Get nesting-level, if applicable
+     *
+     * @return int
      */
     public function level() {
         $level = 0; $up = $this; while ($up = $up->parent()) $level ++; return $level;
@@ -6433,5 +6451,15 @@ class Indi_Db_Table_Row implements ArrayAccess
 
         // If $prop and $lang args given - return certain translation for certain prop
         if (func_num_args() == 2) return $this->_language[$prop][$lang];
+    }
+
+    /**
+     * Build dirname where current entry's files should be stored
+     *
+     * @param string $mode
+     * @return string
+     */
+    public function dir($mode = '') {
+        return $this->model()->dir($mode, false, $this->filesGroup());
     }
 }

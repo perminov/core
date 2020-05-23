@@ -354,6 +354,7 @@ class Indi_Db {
                     'extends' => $entityI['extends'],
                     'useCache' => $entityI['useCache'],
                     'titleFieldId' => $entityI['titleFieldId'],
+                    'filesGroupBy' => $entityI['filesGroupBy'],
                     'hasRole' => in_array($entityI['id'], self::$_roleA),
                     'type' => $entityI['system'],
                     'fields' => new Field_Rowset_Base(array(

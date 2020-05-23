@@ -58,6 +58,13 @@ class Indi_Db_Table
     protected $_titleFieldId = 0;
 
     /**
+     * Id of field, that is used for grouping files into subdirs
+     *
+     * @var boolean
+     */
+    protected $_filesGroupBy = 0;
+
+    /**
      * Store array of fields, that current model consists from
      *
      * @var array
@@ -191,7 +198,10 @@ class Indi_Db_Table
         $this->_treeColumn = $config['fields']->field($this->_table . 'Id') ? $this->_table . 'Id' : '';
 
         // Setup title field id
-        $this->_titleFieldId = $config['titleFieldId'] ? $config['titleFieldId'] : 0;
+        $this->_titleFieldId = $config['titleFieldId'] ?: 0;
+
+        // Setup filesGroupBy field id
+        $this->_filesGroupBy = $config['filesGroupBy'] ?: 0;
 
         // Setup 'useCache' flag
         $this->_useCache = isset($config['useCache']) ? true : false;
@@ -269,7 +279,7 @@ class Indi_Db_Table
      * @param null|int $offset
      * @return Indi_Db_Table_Rowset
      */
-    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null) {
+    public function fetchAll($where = null, $order = null, $count = null, $page = null, $offset = null, $split = null) {
         // Build WHERE and ORDER clauses
         if (is_array($where) && count($where = un($where, array(null, '')))) $where = implode(' AND ', $where);
         if (is_array($order) && count($order = un($order, array(null, '')))) $order = implode(', ', $order);
@@ -281,7 +291,8 @@ class Indi_Db_Table
                 $count -= abs($offset);
                 $offset = 0;
             }
-            $limit = $offset . ($count ? ',' : '') . $count;
+            $div = $split ? $this->enumset($split)->count() : 1;
+            $limit = ($offset / $div) . ($count ? ',' : '') . ($count / $div);
 
             // the SQL_CALC_FOUND_ROWS flag
             if (!is_null($page) || !is_null($count)) $calcFoundRows = 'SQL_CALC_FOUND_ROWS ';
@@ -295,6 +306,20 @@ class Indi_Db_Table
             . ($order ? ' ORDER BY ' . $order : '')
             . ($limit ? ' LIMIT ' . $limit : '');
 
+        // If $split arg is given - prepare UNION query chunks
+        if ($split) {
+            $union = array();
+            foreach ($this->enumset($split) as $idx => $enumsetR) {
+                $sw = '`' . $split .'` = "' . $enumsetR->alias . '"';
+                $su = $where 
+                    ? preg_replace('~WHERE ~', '$0 ' . $sw . ' AND ', $sql)
+                    : preg_replace('ORDER BY', 'WHERE ' . $sw . ' $0');
+                $su = preg_replace('~SQL_CALC_FOUND_ROWS ~', '', $su);
+                $union []= $su;
+            }
+            $sql = '(' . im($union, ') UNION (') . ')';
+        }
+
         // Fetch data
         $data = Indi::db()->query($sql)->fetchAll();
 
@@ -303,7 +328,7 @@ class Indi_Db_Table
             'table'   => $this->_table,
             'data' => $data,
             'rowClass' => $this->_rowClass,
-            'found'=> $limit ? $this->_found($where) : count($data),
+            'found'=> $limit ? $this->_found($where, $union) : count($data),
             'page' => $page,
             'query' => $sql
         );
@@ -320,7 +345,23 @@ class Indi_Db_Table
      * @param $where
      * @return array|int|string
      */
-    protected function _found($where = '') {
+    protected function _found($where = '', $union = null) {
+        
+        // If $union arg given
+        if ($union) {
+            
+            // Foreach SELECT query calc found rows
+            foreach ($union as $select) {
+                $select = preg_replace('~\* FROM~', 'COUNT(*) FROM', $select);
+                $select = preg_replace('~ LIMIT [0-9,]+$~', '', $select);
+                $found[] = (int) Indi::db()->query($select)->fetchColumn();
+            }
+            
+            // Use max
+            return max($found);
+        }
+        
+        // Default logic
         return Indi::db()->query('SELECT FOUND_ROWS()')->fetchColumn();
     }
 
@@ -1358,6 +1399,15 @@ class Indi_Db_Table
     }
 
     /**
+     * Return id or alias of a field, that is used for files to be grouped into subdirs
+     *
+     * @return string
+     */
+    public function filesGroupBy($alias = false) {
+        return $alias ? $this->_fields->field($this->_filesGroupBy)->alias : $this->_filesGroupBy;
+    }
+
+    /**
      * Apply new values to some of properties of current model
      *
      * @param array $modified
@@ -1403,15 +1453,17 @@ class Indi_Db_Table
      *
      * @param string $mode
      * @param bool|int $ckfinder
+     * @param string $subdir
      * @return string
      */
-    public function dir($mode = '', $ckfinder = false) {
+    public function dir($mode = '', $ckfinder = false, $subdir = '') {
 
         // Build the target directory name
         $dir = DOC . STD . '/' . Indi::ini()->upload->path
             . ($ckfinder ? '/' . Indi::ini()->ckeditor->uploadPath : '')
             . '/' . $this->_table . '/'
-            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '');
+            . (!is_bool($ckfinder) && preg_match(Indi::rex('int11'), $ckfinder) ? $ckfinder . '/' : '')
+            . $subdir;
 
         // If $mode argument is 'name'
         if ($mode == 'name') return $dir;

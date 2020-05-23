@@ -36,11 +36,8 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         // If row was not found
         if (!$r) die(I_DOWNLOAD_ERROR_NO_SUCH_ROW);
 
-        // Get the directory name
-        $dir = DOC . STD . '/' . Indi::ini()->upload->path . '/' . Indi::model($fieldR->entityId)->table() . '/';
-
         // Get the file
-        list($abs) = glob($dir . $r->id . '_' . $fieldR->alias . '.*');
+        list($abs) = glob($r->dir() . $r->id . '_' . $fieldR->alias . '.*');
 
         // If there is no file
         if (!$abs) die(I_DOWNLOAD_ERROR_NO_FILE);

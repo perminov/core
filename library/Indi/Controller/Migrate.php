@@ -955,7 +955,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
     }
 
     public function queueChunkItemBytesAction() {
-        field('queueChunk', 'itemsBytes', array (
+        field('queueChunk', 'itemsBytes', array(
             'title' => 'Байт',
             'columnTypeId' => 'INT(11)',
             'elementId' => 'number',
@@ -963,17 +963,17 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ))->move(6);
         grid('queueChunk', 'itemsBytes', ['gridId' => 'items', 'summaryType' => 'sum']);
         grid('queueChunk', 'move');
-        field('queueChunk', 'move', array (
+        field('queueChunk', 'move', array(
             'title' => 'Порядок',
             'columnTypeId' => 'INT(11)',
             'elementId' => 'move',
             'defaultValue' => '0',
         ));
-        section('queueChunk', array (
+        section('queueChunk', array(
             'defaultSortField' => 'move',
         ));
         Indi::db()->query('UPDATE `profile` SET `entityId` = "11" WHERE `entityId` = "0"');
-        field('profile', 'type', array (
+        field('profile', 'type', array(
             'title' => 'Тип',
             'columnTypeId' => 'ENUM',
             'elementId' => 'radio',
@@ -985,6 +985,38 @@ class Indi_Controller_Migrate extends Indi_Controller {
         enumset('profile', 'type', 'p', array('title' => 'Проектная'));
         Indi::db()->query('UPDATE `profile` SET `type` = "s" WHERE `id` = "1"');
         grid('profiles', 'type', true)->move(3);
+        die('ok');
+    }
+
+    public function filesGroupByAction() {
+        field('entity', 'filesGroupBy', array (
+            'title' => 'Группировать файлы',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'filter' => '`entityId` = "<?=$this->id?>" AND `storeRelationAbility` = "one"',
+        ));
+        grid('entities', 'filesGroupBy', array('editor' => 1));
+        die('ok');
+    }
+
+    public function exportAction() {
+        section2action('sectionActions','export', array('profileIds' => '1'));
+        section2action('grid','export', array('profileIds' => '1'));
+        section2action('alteredFields','export', array('profileIds' => '1'));
+        section2action('search','export', array('profileIds' => '1'));
+        section2action('fields','export', array('profileIds' => '1'));
+        section2action('enumset','export', array('profileIds' => '1'));
+        section2action('resize','export', array('profileIds' => '1'));
+        section2action('params','export', array('profileIds' => '1'));
+        section2action('consider','export', array('profileIds' => '1'));
+        section('enumset', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
+        section('params', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
+        section('consider', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
+        if ($_ = section2action('entities','cache')) $_->delete();
+        if ($_ = section2action('entities','author')) $_->delete();
         die('ok');
     }
 }
