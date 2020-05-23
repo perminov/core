@@ -317,4 +317,22 @@ class Indi_Controller_Migrate extends Indi_Controller {
         grid('entities', 'filesGroupBy', array('editor' => 1));
         die('ok');
     }
+
+    public function exportAction() {
+        section2action('sectionActions','export', array('profileIds' => '1'));
+        section2action('grid','export', array('profileIds' => '1'));
+        section2action('alteredFields','export', array('profileIds' => '1'));
+        section2action('search','export', array('profileIds' => '1'));
+        section2action('fields','export', array('profileIds' => '1'));
+        section2action('enumset','export', array('profileIds' => '1'));
+        section2action('resize','export', array('profileIds' => '1'));
+        section2action('params','export', array('profileIds' => '1'));
+        section2action('consider','export', array('profileIds' => '1'));
+        section('enumset', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
+        section('params', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
+        section('consider', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
+        if ($_ = section2action('entities','cache')) $_->delete();
+        if ($_ = section2action('entities','author')) $_->delete();
+        die('ok');
+    }
 }
