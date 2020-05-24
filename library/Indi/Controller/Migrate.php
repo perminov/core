@@ -17,6 +17,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
         consider('search', 'alt', 'title', array ('required' => 'y'));
         consider('section2action', 'rename', 'title', array ('required' => 'y'));
         consider('alteredField', 'rename', 'title', array ('required' => 'y'));
+        consider('grid', 'tooltip', 'fieldId', array ('foreign' => 'tooltip', 'required' => 'y'));
         field('queueItem', 'result', array (
             'title' => 'Результат',
             'columnTypeId' => 'TEXT',
@@ -1017,6 +1018,20 @@ class Indi_Controller_Migrate extends Indi_Controller {
         section('consider', array ('extendsPhp' => 'Indi_Controller_Admin_Exportable'));
         if ($_ = section2action('entities','cache')) $_->delete();
         if ($_ = section2action('entities','author')) $_->delete();
+        die('ok');
+    }
+
+    public function noticetypeAction(){
+        field('notice', 'type', array (
+            'title' => 'Тип',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'p',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('notice', 'type', 'p', array('title' => 'Проектное'));
+        enumset('notice', 'type', 's', array('title' => '<font color=red>Системное</font>'));
         die('ok');
     }
 }

@@ -1352,7 +1352,8 @@ function l10n_dataI($dataI, $props) {
     // Localize needed props within data item
     foreach(ar($props) as $prop)
         if (preg_match('/^{"[a-z_A-Z]{2,5}":/', $dataI[$prop]))
-            $dataI[$prop] = json_decode($dataI[$prop])->{Indi::ini('lang')->admin};
+            if ($json = json_decode($dataI[$prop], true))
+            $dataI[$prop] = $json[array_key_exists(Indi::ini('lang')->admin, $json) ? Indi::ini('lang')->admin : key($json)];
 
     // Return
     return $dataI;

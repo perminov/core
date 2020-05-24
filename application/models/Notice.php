@@ -13,4 +13,17 @@ class Notice extends Indi_Db_Table {
      * @var array
      */
     protected $_evalFields = array('event', 'qtySql', 'tplIncBody', 'tplDecBody', 'tplEvtBody');
+
+    /**
+     * Info for l10n-fraction detection
+     *
+     * @var array
+     */
+    protected $_fraction = [
+        'field' => 'type',
+        'value' => [
+            's' => 'adminSystemUi',
+            'p' => 'adminCustomUi'
+        ]
+    ];
 }

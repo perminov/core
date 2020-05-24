@@ -135,12 +135,25 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                     // Get values
                     $values = $rs->column('value');
 
-                    // Foreach target language - make api call to google passing source values
-                    foreach (ar($targets) as $target)
-                        $resultByLang[$target] = array_column($gapi->translateBatch($values, [
-                            'source' => $source,
-                            'target' => $target,
-                        ]), 'text');
+                    // Try to call Google Cloud Translate API
+                    try {
+
+                        // Foreach target language - make api call to google passing source values
+                        foreach (ar($targets) as $target)
+                            $resultByLang[$target] = array_column($gapi->translateBatch($values, [
+                                'source' => $source,
+                                'target' => $target,
+                            ]), 'text');
+
+                    // Catch exception
+                    } catch (Exception $e) {
+
+                        // Log error
+                        ehandler(1, json_decode($e->getMessage())->error->message, __FILE__, __LINE__);
+
+                        // Exit
+                        exit;
+                    }
                 }
 
                 // Foreach fetched `queueItem` entry
@@ -164,7 +177,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                     $deduct ++;
                 }
 
-            }, $where, '`id` ASC', 50, true);
+            }, $where, '`id` ASC', 10, true);
 
             // Remember that our try to count was successful
             $queueChunkR->assign(array('queueState' => 'finished'))->basicUpdate();

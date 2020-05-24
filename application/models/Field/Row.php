@@ -1575,7 +1575,8 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
             $allowed = in($element . ':' . $columnType, array(
                 'string:VARCHAR(255)',
                 'string:TEXT',
-                'textarea:TEXT'
+                'textarea:TEXT',
+                'html:TEXT'
             ));
 
             // Setup array of fields, that should not be localized
