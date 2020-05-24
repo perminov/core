@@ -1029,7 +1029,7 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'defaultValue' => 'p',
             'relation' => 'enumset',
             'storeRelationAbility' => 'one',
-        ));
+        ))->move(19);
         enumset('notice', 'type', 'p', array('title' => 'Проектное'));
         enumset('notice', 'type', 's', array('title' => '<font color=red>Системное</font>'));
         die('ok');
