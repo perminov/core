@@ -142,6 +142,10 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         if ($sectionR->groupBy && !$this->grid->gb($sectionR->groupBy, 'fieldId'))
             $this->grid->append(array('fieldId' => $sectionR->groupBy));
 
+        // If `tileField` is non-zero, and there is no such grid column yet - append
+        if ($sectionR->tileField && !$this->grid->gb($sectionR->tileField, 'fieldId'))
+            $this->grid->append(array('fieldId' => $sectionR->tileField));
+
         // Build and assign `gridFields` prop
         $this->gridFields = Indi::model('Field')->createRowset();
 

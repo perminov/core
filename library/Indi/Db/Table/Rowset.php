@@ -744,7 +744,11 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // If field type is fileupload, we build something like
                 // '<a href="/url/for/file/download/">DOCX » 1.25mb</a>'
-                if (isset($typeA['upload'][$columnI])) $data[$pointer][$columnI] = $entry->file($columnI)->link;
+                if (isset($typeA['upload'][$columnI])) {
+                    $file = $entry->file($columnI);
+                    $data[$pointer][$columnI] = $file->link;
+                    $data[$pointer]['_upload'][$columnI]['type'] = $file->type;
+                }
 
                 // If there the color-value in format 'hue#rrgbb' can probably be found in field value
                 // we do a try, and if found - inject a '.i-color-box' element

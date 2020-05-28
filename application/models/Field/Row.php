@@ -127,6 +127,15 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 $sectionR->save();
             }
 
+        // Prevent deletion of `section` entries, having current `field` entry as `tileField`
+        if (Indi::model('Section')->fields('tileField')
+            && $sectionRs = Indi::model('Section')->fetchAll('`tileField` = "' . $this->id . '"'))
+            foreach ($sectionRs as $sectionR) {
+                $sectionR->tileField = 0;
+                $sectionR->tileThumb = 0;
+                $sectionR->save();
+            }
+
         // Standard deletion
         $return = parent::delete();
 

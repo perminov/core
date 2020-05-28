@@ -236,3 +236,6 @@ define('I_WHEN_TM_AT', 'в');
 define('I_LANG_LAST', 'Нельзя удалять последнюю запись типа "%s"');
 define('I_LANG_CURR', 'Нельзя удалять язык, являющийся текущим языком системы');
 define('I_LANG_FIELD_L10N_DENY', 'Нельзя включить локализацию для поля "%s"');
+
+define('I_TILE_NOTHUMB', 'Нет превью');
+define('I_TILE_NOFILE', 'Нет файла');

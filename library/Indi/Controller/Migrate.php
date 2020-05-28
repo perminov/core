@@ -1034,4 +1034,31 @@ class Indi_Controller_Migrate extends Indi_Controller {
         enumset('notice', 'type', 's', array('title' => '<font color=red>Системное</font>'));
         die('ok');
     }
+    public function tileAction() {
+        field('section', 'tileField', array (
+            'title' => 'Плитка',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'field',
+            'storeRelationAbility' => 'one',
+            'filter' => '`elementId` = "14"',
+        ))->move(7);
+        consider('section', 'tileField', 'entityId', array (
+            'required' => 'y',
+        ));
+        field('section', 'tileThumb', array (
+            'title' => 'Превью',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'resize',
+            'storeRelationAbility' => 'one',
+        ))->move(7);
+        consider('section', 'tileThumb', 'tileField', array (
+            'required' => 'y',
+            'connector' => 'fieldId',
+        ));
+        die('ok');
+    }
 }

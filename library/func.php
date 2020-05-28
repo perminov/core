@@ -1780,6 +1780,52 @@ function enumset($table, $field, $alias, $ctor = false) {
 }
 
 /**
+ * Short-hand function that allows to manipulate `thumb` entry, identified by $table, $field and $alias args.
+ * If only those two args given - function will fetch and return appropriate `thumb` entry (or null, if not found)
+ * If 4th arg - $ctor - is given and it's `true` or an (even empty) array - function will create new `thumb`
+ * entry, or update existing if found
+ **
+ * @param string|int $table Entity ID or table name
+ * @param string $field Field alias
+ * @param string $alias Thumb alias
+ * @param bool|array $ctor
+ * @return Resize_Row|null
+ */
+function thumb($table, $field, $alias, $ctor = false) {
+
+    // Get `fieldId` according to $table and $field args
+    $fieldId = field($table, $field)->id;
+
+    // Try to find `grid` entry
+    $thumbR = Indi::model('Resize')->fetchRow(array(
+        '`fieldId` = "' . $fieldId . '"',
+        '`alias` = "' . $alias . '"'
+    ));
+
+    // If $ctor arg is non-false and is not an empty array - return `thumb` entry, else
+    if (!$ctor && !is_array($ctor)) return $thumbR;
+
+    // If `fieldId` and/or `alias` prop are not defined within $ctor arg
+    // - use values given by $table+$field and $alias args
+    if (!is_array($ctor)) $ctor = array();
+    foreach (ar('fieldId,alias') as $prop)
+        if (!array_key_exists($prop, $ctor))
+            $ctor[$prop] = $$prop;
+
+    // If `thumb` entry already exists - do not allow re-linking it from one field to another
+    if ($thumbR) unset($ctor['fieldId']);
+
+    // Else - create it
+    else $thumbR = Indi::model('Resize')->createRow();
+
+    // Assign other props and save
+    $thumbR->assign($ctor)->save();
+
+    // Return `thumb` entry (newly created, or existing but updated)
+    return $thumbR;
+}
+
+/**
  * Short-hand function for getting `element` entry by it's `alias`
  *
  * @param string $alias

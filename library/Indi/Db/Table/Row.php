@@ -4420,14 +4420,15 @@ class Indi_Db_Table_Row implements ArrayAccess
             'size' => $size = filesize($abs),
             'src' => $this->src($abs, '', false),
             'ext' => $ext,
-            'mime' => Indi::mime($abs),
+            'mime' => $mime = Indi::mime($abs),
+            'type' => array_shift(explode('/', $mime)),
             'text' => $text = strtoupper($ext) . ' » ' . size2str($size),
             'href' => $href = PRE . '/auxiliary/download/id/' . $this->id . '/field/' . $this->model()->fields($field)->id . '/',
             'link' => '<a href="' . $href . '">' . $text . '</a>'
         );
 
         // Get more info, using getimagesize/getflashsize functions
-        if (array_shift(explode('/', $file['mime'])) == 'image') $more = getimagesize($abs);
+        if ($file['type'] == 'image') $more = getimagesize($abs);
         else if ($ext == 'swf') $more = getflashsize($abs);
 
         // If more info was successfully got, append some of it to main info
