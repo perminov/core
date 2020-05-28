@@ -109,6 +109,9 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Adjust trail
             $this->adjustTrail();
 
+            // If tileField defined for current section - change type of view
+            if (t()->section->tileField) $this->actionCfg['view']['index'] = 'tile';
+
             // Adjust action mode and view config.
             $this->adjustActionCfg();
 
@@ -2574,9 +2577,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         $this->adjustGridData($data);
 
         // Adjust grid each data item
-        foreach ($data as &$item) {
-            $this->adjustGridDataItem($item);
-            $this->renderGridDataItem($item);
+        foreach ($data as $idx => &$item) {
+            $r = $this->rowset->at($idx);
+            $this->adjustGridDataItem($item, $r);
+            $this->renderGridDataItem($item, $r);
         }
 
         // Return affected data, prepared for being displayed
@@ -2595,7 +2599,10 @@ class Indi_Controller_Admin extends Indi_Controller {
         $affected = $this->row->affected();
 
         // If grouping is used, append grouping field to the list
-        if ($g = Indi::trail()->section->foreign('groupBy')) $affected[] = $g->alias;
+        if ($g = t()->section->foreign('groupBy')) $affected[] = $g->alias;
+
+        // If tile-field is used, append tile-field to the list
+        if ($t = t()->section->foreign('tileField')) $affected[] = $t->alias;
 
         // Return
         return $affected;

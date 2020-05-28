@@ -23,9 +23,10 @@ class Section_Row_Base extends Indi_Db_Table_Row {
 
         // Provide ability for some field props to be set using aliases rather than ids
         if (is_string($value) && !Indi::rexm('int11', $value)) {
-            if (in($columnName, 'parentSectionConnector,groupBy,defaultSortField')) $value = field($this->entityId, $value)->id;
+            if (in($columnName, 'parentSectionConnector,groupBy,defaultSortField,tileField')) $value = field($this->entityId, $value)->id;
             else if ($columnName == 'entityId') $value = entity($value)->id;
             else if ($columnName == 'sectionId') $value = section($value)->id;
+            else if ($columnName == 'tileThumb') $value = thumb($this->entityId, $this->tileField, $value)->id;
         }
 
         // Standard __set()
@@ -178,7 +179,8 @@ class Section_Row_Base extends Indi_Db_Table_Row {
             else if ($field->storeRelationAbility != 'none') {
                 if ($prop == 'sectionId') $value = section($value)->alias;
                 else if ($prop == 'entityId') $value = entity($value)->table;
-                else if (in($prop, 'parentSectionConnector,groupBy,defaultSortField')) $value = field($this->entityId, $value)->alias;
+                else if (in($prop, 'parentSectionConnector,groupBy,defaultSortField,tileField')) $value = field($this->entityId, $value)->alias;
+                else if ($prop == 'tileThumb') $value = m('Resize')->fetchRow($value)->alias;
             }
         }
 

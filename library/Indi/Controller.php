@@ -787,9 +787,10 @@ class Indi_Controller {
             $this->adjustGridData($data);
 
             // Adjust grid data on a per-item basis
-            foreach ($data as &$item) {
-                $this->adjustGridDataItem($item);
-                $this->renderGridDataItem($item);
+            foreach ($data as $idx => &$item) {
+                $r = $this->rowset->at($idx);
+                $this->adjustGridDataItem($item, $r);
+                $this->renderGridDataItem($item, $r);
             }
 
             // Else if data is gonna be used in the excel spreadsheet building process, pass it to a special function
@@ -1137,7 +1138,7 @@ class Indi_Controller {
      *
      * @param $item
      */
-    public function adjustGridDataItem(&$item) {
+    public function adjustGridDataItem(&$item, $r) {
 
     }
 
@@ -1146,7 +1147,77 @@ class Indi_Controller {
      *
      * @param $item
      */
-    public function renderGridDataItem(&$item) {
+    public function renderGridDataItem(&$item, $r) {
+
+        // If tileField defined for current section
+        if ($t = t()->section->tileField) {
+
+            // Get field alias
+            $field = t()->model->fields($t)->alias;
+
+            // Get thumb
+            $_thumb = t()->section->foreign('tileThumb')->alias;
+
+            // If item's tile-file type is 'image'
+            if ($item['_upload'][$field]['type'] == 'image') {
+
+                // If thumb image exists
+                if ($thumb = $r->src($field, $_thumb)) {
+
+                    // Calc original image src
+                    $image = str_replace(',' . $_thumb, '', $thumb);
+
+                    // Setup css class
+                    $class = 'thumb';
+
+                    // Empty holder text
+                    $holder = '';
+
+                // Else
+                } else {
+
+                    // Get image src
+                    $image = $r->src($field);
+
+                    // Setup css class
+                    $class = 'image';
+
+                    // Setup holder text
+                    $holder = I_TILE_NOTHUMB;
+                }
+
+            // Else if item's tile-file type is not image
+            } else {
+
+                // Set empty $thumb and $image
+                $thumb = $image = '';
+
+                // If item's tile-file is actually exists, e.g. in $item[$field] we have <a>-tag
+                if ($item[$field]) {
+
+                    // Css class
+                    $class = 'other';
+
+                    // Set holder to contain file extension (e.g. 'TXT')
+                    $holder = array_shift(explode(' ', strip_tags($item[$field])));
+
+                // Else
+                } else {
+
+                    // Css class
+                    $class = 'nofile';
+
+                    // Set holder
+                    $holder = I_TILE_NOFILE;
+                }
+            }
+
+            // Append title-attr for download-link
+            $link = str_replace('href', 'title="' . I_FORM_UPLOAD_SAVETOHDD . '" href', $item[$field]);
+
+            // Append params into '_system' prop
+            $item['_system'] += compact('image', 'thumb', 'class', 'holder', 'link');
+        }
 
         // If no 'jump' and 'over' system props defined for given item - return
         if (!($jumpA = &$item['_system']['jump']) && !($overA = &$item['_system']['over'])) return;
