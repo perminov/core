@@ -56,6 +56,11 @@ class Indi_Controller_Admin_ChangeLog extends Indi_Controller_Admin {
 
         // Else force `fieldId`-filter's combo-data to be grouped by `entityId`
         else Indi::trail()->model->fields('fieldId')->param('groupBy', 'entityId');
+
+        // Set grid column titles
+        t()->model->fields('fieldId')->title = I_CHANGELOG_FIELD;
+        t()->model->fields('was')->title = I_CHANGELOG_WAS;
+        t()->model->fields('now')->title = I_CHANGELOG_NOW;
     }
 
     /**
