@@ -2756,6 +2756,9 @@ class Indi_Controller_Admin extends Indi_Controller {
         header('Access-Control-Allow-Headers: x-requested-with, indi-auth');
         header('Access-Control-Allow-Origin: *');
 
+        // Unset language
+        setcookie('i-language', null);
+
         // Unset session
         if ($_SESSION['admin']['id'])  unset($_SESSION['admin'], $_SESSION['indi']['admin']);
 

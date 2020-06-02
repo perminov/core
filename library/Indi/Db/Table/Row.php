@@ -2181,7 +2181,63 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Return false
         return false;
     }
-    
+
+    /**
+     * Get qty of nested entries by simple sql-query
+     *
+     * @param $table
+     * @param $where
+     * @return int
+     */
+    public function qty($table, $where = null) {
+
+        // Connector
+        $connector = $this->_table . 'Id';
+
+        // Build part of WHERE clause, responsible for nesting
+        $nested = array('`' . $connector . '` = "' . $this->id . '"');
+
+        // If $where arg is an array
+        if (is_array($where)) $nested = array_merge($nested, count($where = un($where, array(null, ''))) ? $where : array());
+
+        // Else if where arg is a non-empty string
+        else if (strlen($where)) $nested []= $where;
+
+        // Build the query
+        $sql = 'SELECT COUNT(`id`) FROM `' . $table . '` WHERE ' . im($nested, ' AND ');
+
+        // Get qty
+        return Indi::db()->query($sql)->fetchColumn();
+    }
+
+    /**
+     * Get sum for given column for nested entries using simple sql-query
+     *
+     * @param $table
+     * @param $where
+     * @return int
+     */
+    public function sum($table, $column, $where = null) {
+
+        // Connector
+        $connector = $this->_table . 'Id';
+
+        // Build part of WHERE clause, responsible for nesting
+        $nested = array('`' . $connector . '` = "' . $this->id . '"');
+
+        // If $where arg is an array
+        if (is_array($where)) $nested = array_merge($nested, count($where = un($where, array(null, ''))) ? $where : array());
+
+        // Else if where arg is a non-empty string
+        else if (strlen($where)) $nested []= $where;
+
+        // Build the query
+        $sql = 'SELECT SUM(`' . $column .'`) FROM `' . $table . '` WHERE ' . im($nested, ' AND ');
+
+        // Get qty
+        return Indi::db()->query($sql)->fetchColumn() ?: 0;
+    }
+
     /**
      * Fetch the rowset, nested to current row, assing that rowset within $this->_nested array under certain key,
      * and return that rowset
@@ -3902,7 +3958,7 @@ class Indi_Db_Table_Row implements ArrayAccess
             copy($src, $dst);
 
         // Else
-        } else {
+        } else if (class_exists('Imagick')) {
 
             // Try to create a new Imagick object, and stop function execution, if imagick object creation failed
             try { $imagick = new Imagick($src); } catch (Exception $e) {return;}

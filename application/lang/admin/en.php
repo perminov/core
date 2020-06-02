@@ -238,3 +238,7 @@ define('I_LANG_FIELD_L10N_DENY', 'Localization cannot be turned on for field "%s
 
 define('I_TILE_NOTHUMB', 'No thumb');
 define('I_TILE_NOFILE', 'No file');
+
+define('I_CHANGELOG_FIELD', 'What was changed');
+define('I_CHANGELOG_WAS', 'Was');
+define('I_CHANGELOG_NOW', 'Became');

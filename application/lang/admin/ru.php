@@ -238,3 +238,7 @@ define('I_LANG_FIELD_L10N_DENY', 'Нельзя включить локализа
 
 define('I_TILE_NOTHUMB', 'Нет превью');
 define('I_TILE_NOFILE', 'Нет файла');
+
+define('I_CHANGELOG_FIELD', 'Что изменено');
+define('I_CHANGELOG_WAS', 'Было');
+define('I_CHANGELOG_NOW', 'Стало');
