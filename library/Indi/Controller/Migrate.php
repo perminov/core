@@ -66,6 +66,8 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ));
         section('queueTask', ['groupBy' => 'stageState']);
         m('QueueTask')->batch(function($r){$r->setStageState(); $r->save();});
+        field('queueChunk', 'where', array ('columnTypeId' => 'TEXT'));
+        grid('queueTask', 'itemsBytes', array('summaryType' => 'sum'));
         die('xx');
     }
     public function l10nAction() {
