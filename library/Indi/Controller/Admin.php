@@ -109,6 +109,9 @@ class Indi_Controller_Admin extends Indi_Controller {
             // Adjust trail
             $this->adjustTrail();
 
+            // Edit ui, if need
+            $this->uiedit();
+
             // If tileField defined for current section - change type of view
             if (t()->section->tileField) $this->actionCfg['view']['index'] = 'tile';
 
@@ -260,6 +263,80 @@ class Indi_Controller_Admin extends Indi_Controller {
 
             }
         }
+    }
+
+    /**
+     * Edit ui
+     */
+    public function uiedit() {
+
+        // If uri's 'uiedit' param is not given - return
+        if (!$ui = Indi::uri()->uiedit) return;
+
+        // If current user is not allowed to edit ui - flush failure
+        if (Indi::admin()->uiedit != 'y') jflush(false);
+
+        // Setup mapping that will help to prevent cross-section ui-editing
+        $scope = array('grid' => 'grid', 'field' => 'fields');
+
+        // List of ui allowed for editing
+        if (!in($ui, 'grid')) jflush(false);
+
+        // Validity check
+        $_ = jcheck(array('indiId' => array('req' => true, 'rex' => 'int11', 'key' => $ui)), Indi::post());
+
+        // Access check
+        if (!in($_['indiId']->id, t()->{$scope[$ui]}->column('id'))) jflush(false);
+
+        // If $_POST['rename'] is set, e.g editing type is 'rename'
+        if (isset(Indi::post()->rename)) {
+
+            // Map
+            $rename = array('grid' => 'alterTitle');
+
+            // Do rename
+            $_['indiId']->assign(array($rename[$ui] => Indi::post()->rename))->save();
+
+        // Else if editing type if not rename
+        } else {
+
+            // If ui is grid
+            if ($ui == 'grid') {
+
+                // Validity check
+                $_ += jcheck(array('gridId' => array('req' => false, 'rex' => 'int11', 'key' => $ui)), Indi::post());
+
+                // Get ids of grid columns that are currently accesible for current user
+                $idA = t()->grid->column('id');
+
+                // Access check
+                if ($_['gridId'] && !in($_['gridId']->id, $idA)) jflush(false);
+
+                // Do reattach
+                $_['indiId']->assign(array('gridId' => Indi::post()->gridId, 'group' => Indi::post()->group))->save();
+
+                // Validity check
+                jcheck(array('index' => array('req' => false, 'rex' => 'int11')), Indi::post());
+
+                // Get all grid columns having same `gridId` and same level
+                $siblingIdA = Indi::db()->query('
+                    SELECT `id` 
+                    FROM `grid` 
+                    WHERE 1 
+                      AND `id` IN (' . im($idA) . ') 
+                      AND `group` = "' . $_['indiId']->group . '" 
+                      AND `gridId` = "' . $_['indiId']->gridId . '"
+                    ORDER BY `move`
+                ')->fetchAll(PDO::FETCH_COLUMN);
+
+                // Do reorder
+                if ($move = array_search($_['indiId']->id, $siblingIdA) - Indi::post()->index)
+                    $_['indiId']->move($move, 'FIND_IN_SET(`id`, "' . im($siblingIdA) . '")');
+            }
+        }
+
+        // Flush success
+        jflush(true);
     }
 
     /**
@@ -2265,7 +2342,9 @@ class Indi_Controller_Admin extends Indi_Controller {
                 'menu' => $menu,
                 'auth' => session_id() . ':' . Indi::ini('lang')->admin,
                 'dashboard' => Indi::admin()->foreign('profileId')->dashboard ?: false,
-                'maxWindows' => Indi::admin()->foreign('profileId')->maxWindows ?: 15
+                'maxWindows' => Indi::admin()->foreign('profileId')->maxWindows ?: 15,
+                'uiedit' => Indi::admin()->uiedit == 'y',
+                'isDev' => Indi::admin()->profileId == '1'
             )
         );
     }
