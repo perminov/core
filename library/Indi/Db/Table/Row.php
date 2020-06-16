@@ -1260,7 +1260,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Append additional ORDER clause, for grouping
                 if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
-                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                    if ($groupByFieldOrder = $groupByField->order($dir, $where))
                         $order = array($groupByFieldOrder, $order);
 
                 // Fetch results
@@ -1274,7 +1274,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Append additional ORDER clause, for grouping
                 if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
-                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                    if ($groupByFieldOrder = $groupByField->order($dir, $where))
                         $order = array($groupByFieldOrder, $order);
 
                 if (!$hasModifiedConsiderWHERE) {
@@ -1395,7 +1395,7 @@ class Indi_Db_Table_Row implements ArrayAccess
 
                 // Append additional ORDER clause, for grouping
                 if ($groupByField = $relatedM->fields()->gb($fieldR->params['groupBy'], 'alias'))
-                    if ($groupByFieldOrder = $groupByField->order('ASC', $where))
+                    if ($groupByFieldOrder = $groupByField->order($dir, $where))
                         $order = array($groupByFieldOrder, $order);
 
                 // Fetch raw combo data
