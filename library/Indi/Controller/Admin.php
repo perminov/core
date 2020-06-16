@@ -307,7 +307,7 @@ class Indi_Controller_Admin extends Indi_Controller {
                 $_ += jcheck(array('gridId' => array('req' => false, 'rex' => 'int11', 'key' => $ui)), Indi::post());
 
                 // Get ids of grid columns that are currently accesible for current user
-                $idA = t()->grid->column('id');
+                $idA = t()->grid->select(': != 0')->column('id');
 
                 // Access check
                 if ($_['gridId'] && !in($_['gridId']->id, $idA)) jflush(false);
