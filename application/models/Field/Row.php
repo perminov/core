@@ -1276,7 +1276,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                             $setA = Indi::order($this->relation, $setA);
 
                             // Build the order clause, using FIND_IN_SET function
-                            $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $setA) . '") ' . 'ASC';
+                            $order = 'FIND_IN_SET(`' . $this->alias . '`, "' . implode(',', $setA) . '") ' . $direction;
                         }
                     }
                 }

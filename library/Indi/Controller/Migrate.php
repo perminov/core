@@ -1063,4 +1063,19 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ));
         die('ok');
     }
+
+    public function uieditAction() {
+        field('admin', 'uiedit', array (
+            'title' => 'Правки UI',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('admin', 'uiedit', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключено'));
+        enumset('admin', 'uiedit', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включено'));
+        grid('admins', 'uiedit', true);
+        die('ok');
+    }
 }
