@@ -2202,7 +2202,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             if ($summary[$type])
                 foreach ($summary[$type] as $col)
                     if (in($col, $cols))
-                        $sql[] = $fn . '(`' . $col . '`) AS `' . $col .'`';
+                        $sql[] = 'IFNULL(' . $fn . '(`' . $col . '`), 0) AS `' . $col .'`';
 
         // If no sql-function calls collected - return
         if (!$sql) return;
