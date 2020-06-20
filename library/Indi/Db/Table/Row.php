@@ -6527,4 +6527,14 @@ class Indi_Db_Table_Row implements ArrayAccess
     public function dir($mode = '') {
         return $this->model()->dir($mode, false, $this->filesGroup());
     }
+
+    /**
+     * Return I_PRIVATE_DATA instead of actual field value if demo-mode is currently On and field has shade param
+     *
+     * @param $prop
+     * @return string
+     */
+    public function shade($field) {
+        return Indi::demo(false) && $this->field($field)->param('shade') && $this->$field ? I_PRIVATE_DATA : $this->$field;
+    }
 }
