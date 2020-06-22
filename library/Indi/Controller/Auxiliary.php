@@ -165,7 +165,7 @@ class Indi_Controller_Auxiliary extends Indi_Controller {
         header('Content-Type: application/javascript');
 
         // Check whether `lang` uri-param is given
-        $dirs = Indi::rexm('~^[a-zA-Z_]{2,5}$~', $lang = Indi::uri()->lang)
+        $dirs = Indi::rexm('~^[a-zA-Z_]{2,5}$~', $lang = str_replace('-', '_', Indi::uri()->lang))
             ? '/js/admin/app/locale/' . $lang
             : '/js/admin/app/proxy,/js/admin/app/data,/js/admin/app/lib,/js/admin/app/controller';
 
