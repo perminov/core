@@ -2466,3 +2466,12 @@ function checkpid($pid) {
     // If such process is found - return string output found within process list, else return false
     return shell_exec($cmd) ?: false;
 }
+
+/**
+ * Shortcut for sprintf() function to be used in localization purposes
+ *
+ * @param $str
+ */
+function __($str) {
+    echo call_user_func_array('sprintf', func_get_args());
+}
