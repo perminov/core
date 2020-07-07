@@ -175,13 +175,21 @@ class Indi_Db {
                 Indi::ini('lang')->admin = $_COOKIE['i-language'];
 
             // Setup json-templates for each possible fractions
-            foreach (['adminSystemUi', 'adminCustomUi', 'adminCustomData', 'adminSystemUi,adminCustomUi'] as $fraction)
-                Lang::$_jtpl[$fraction] = Indi::db()->query('
-                SELECT `alias`, "" AS `holder` 
-                FROM `lang` 
-                WHERE "y" IN (`' . im(ar($fraction), '`,`') . '`)
-                ORDER BY `move`
-            ')->fetchAll(PDO::FETCH_KEY_PAIR);
+            if (Indi::db()->query('
+                SELECT COUNT(`column_name`) 
+                FROM `INFORMATION_SCHEMA`.`COLUMNS` 
+                WHERE 1
+                  AND `table_schema` = DATABASE() 
+                  AND `table_name` = "lang" 
+                  AND `column_name` IN ("adminSystemUi", "move")
+            ')->fetchColumn() == 2)
+                foreach (['adminSystemUi', 'adminCustomUi', 'adminCustomData', 'adminSystemUi,adminCustomUi'] as $fraction)
+                    Lang::$_jtpl[$fraction] = Indi::db()->query('
+                    SELECT `alias`, "" AS `holder` 
+                    FROM `lang` 
+                    WHERE "y" IN (`' . im(ar($fraction), '`,`') . '`)
+                    ORDER BY `move`
+                ')->fetchAll(PDO::FETCH_KEY_PAIR);
 
             // Get info about existing control elements
             $elementA = self::$_instance->query('SELECT * FROM `element`')->fetchAll();
