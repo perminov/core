@@ -128,4 +128,174 @@ class Admin_LangController extends Indi_Controller_Admin {
         // Auto-start queue as a background process, for now only for *Const-fractions
         if (preg_match('~Const$~', $cell)) Indi::cmd('queue', array('queueTaskId' => $queueTaskR->id));
     }
+
+    /**
+     * Detect wordings and replace them with constants
+     */
+    public function wordingsAction() {
+
+        //
+        $answer = $this->confirm('Сначала проверить?', 'YESNOCANCEL');
+
+        //
+        if ($answer == 'cancel') jflush(true);
+
+        // Foreach fraction
+        foreach (ar('www') as $fraction) {
+
+            // Create dir, containing l10n-constants files, for current fraction if not yet exists
+            if (!is_dir($_ = DOC . STD . '/' . $fraction . '/application/lang/')) mkdir($_, true, 777);
+
+            // Where will be current language used for building file name
+            $out =  $_ . Indi::ini('lang')->admin . '.php';
+
+            // Lines to be written to php-constants file
+            $lineA = array();
+
+            // Both both php ans js wordings
+            foreach ([
+                         'php' => [
+                             'dir' => ['application/controllers/admin', 'application/models', 'library'],
+                             'rex' => ['~(__\()(\s*)\'(.*?)\'~']
+                         ],
+                         'js'  => [
+                             'dir' => ['js/admin/app/controller', 'js/admin/app/lib/controller'],
+                             'rex' => [
+                                 '~(title|msg|buttonText|regexText|wand|fieldLabel|tooltip|emptyText|text|printButtonTooltip|infoText)(:\s*)\'(.*[a-zA-Zа-яА-Я]+.*?)\'~u',
+                                 '~(wait|alert|update)(\(\s*)\'(.*[a-zA-Zа-яА-Я]+.*?)\'~u',
+                             ]
+                         ]
+                     ] as $type => $cfg) {
+
+                // Collect raw contents
+                foreach ($cfg['dir'] as $dir) {
+
+                    // Build constant-name prefix, pointing to dir
+                    $pref['dir'] = 'I_'; foreach(explode('/', $dir) as $level) $pref['dir'] .= strtoupper(substr($level, 0, 1));
+
+                    // Absolute fraction path
+                    $abs = DOC . STD . '/' . $fraction . '/' . $dir;
+
+                    // Foreach file in dir
+                    foreach (scandirr($abs) as $file) {
+
+                        // Skip tmp file
+                        if (pathinfo($file, PATHINFO_EXTENSION) != $type) continue;
+
+                        // Mind subdirs
+                        $pref['sub'] = '';
+                        foreach(explode('/', str_replace($abs, '', str_replace('\\', '/', pathinfo($file, PATHINFO_DIRNAME)))) as $level)
+                            foreach (preg_split('/(?=[A-Z])/', $level) as $word) {
+                                $first = strtoupper(substr($word, 0, 1));
+                                $last = strtoupper(substr($word, -1, 1));
+                                $middle = substr(substr($word, 1), 0, -1);
+                                $middle = preg_replace('~[aeioг]~', '', $middle);
+                                $middle = strtoupper(substr($middle, 0, 1));
+                                $pref['sub'] .= $first . $middle . $last;
+                            }
+
+                        // Unset if no subdir
+                        if (!$pref['sub']) unset($pref['sub']);
+
+                        // Build constant-name prefix, pointing to file
+                        $pref['file'] = '';
+                        foreach (preg_split('/(?=[A-Z])/', pathinfo($file, PATHINFO_FILENAME)) as $word) {
+                            if ($word == 'Row') $pref['file'] .= 'R'; else if ($word != 'Controller') {
+                                $first = strtoupper(substr($word, 0, 1));
+                                $last = strtoupper(substr($word, -1, 1));
+                                $middle = substr(substr($word, 1), 0, -1);
+                                $middle = preg_replace('~[aeioг]~', '', $middle);
+                                $middle = strtoupper(substr($middle, 0, 1));
+                                $pref['file'] .= $first . $middle . $last;
+                            }
+                        }
+
+                        // Build constant name
+                        $const = im($pref, '_');
+
+                        // Reset
+                        unset($pref['file'], $pref['sub']);
+
+                        // Get raw contents
+                        $raw = file_get_contents($file);
+
+                        // Get wordings
+                        $fidx = 0;
+
+                        // Wordings-by-method array, for counting purposes
+                        $methodA = array();
+
+                        // Foreach regex according to current type
+                        foreach ($cfg['rex'] as $rex) {
+
+                            // Split raw php-code by wordings, for searching method names
+                            $chunkA = preg_split($rex, $raw);
+
+                            //
+                            $raw  = preg_replace_callback($rex, function(&$m) use (&$fidx, &$pref, &$lineA, $const, &$methodA, $chunkA) {
+
+                                // Try to detect method name
+                                if (preg_match_all('~public function ([a-zA-Z0-9_]+)~', $chunkA[$fidx], $__)) {
+                                    $method = array_pop($__);
+                                    $method = array_pop($method);
+                                }
+
+                                // If method was detected
+                                if ($method) {
+
+                                    // Collect wordinds within certain method
+                                    $methodA[$method] [] = $m[1];
+
+                                    // Keep only uppercase chars from method name
+                                    $const .= '_' . preg_replace('~[a-z]~', '', ucfirst($method));
+
+                                    // Counter
+                                    $const .=  rif(count($methodA[$method]) > 1, '_' . count($methodA[$method]));
+
+                                    // Else if method is not detected
+                                } else {
+                                    $const .= rif($fidx, '_' . ($fidx + 1));
+                                    $fidx ++;
+                                }
+
+                                // Tbq
+                                if (preg_match('~^(.{2})[^,]+,\1[^,]+,\1.*$~u', $m[3], $asd)) $const .= '_TBQ';
+
+                                // Append line
+                                $lineA []= sprintf('define(\'%s\', \'%s\');', $const, $m[3]);
+
+                                // Spoof wording by constant usage
+                                if ($type == 'php') return $m[1] . $m[2] . $const;
+                                else if ($type == 'js') return $m[1] . $m[2] . 'Indi.lang.' . $const;
+
+                                //
+                            }, $raw);
+                        }
+
+                        //
+                        $tmp = $answer == 'yes'; $put = $file . rif($tmp, '_');
+
+                        // Replace wordings with constants in source file
+                        file_put_contents($put, $raw);
+
+                        // Remove tmp file
+                        if (!$tmp && file_exists($file . '_')) unlink($file . '_');
+                    }
+                }
+            }
+
+            // If found
+            if ($lineA) {
+
+                // Write constants definitions into constants file
+                file_put_contents($out, '<?php' . "\n" . im($lineA, "\n"));
+
+                // Check for duplicates
+                include($out);
+            }
+        }
+
+        //
+        jflush(true, 'OK');
+    }
 }

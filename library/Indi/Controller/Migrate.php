@@ -1,5 +1,11 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+
+    public function wordingsAction() {
+        action('wordings', ['title' => 'Вординги', 'type' => 's']);
+        section2action('lang','wordings', array('profileIds' => '1'));
+        die('ok');
+    }
     public function titleField2considerAction() {
         foreach (m('Entity')->fetchAll() as $entityR) {
             if (!$entityR->titleFieldId) continue;
