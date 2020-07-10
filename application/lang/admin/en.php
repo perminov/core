@@ -243,3 +243,6 @@ define('I_TILE_NOFILE', 'No file');
 define('I_CHANGELOG_FIELD', 'What was changed');
 define('I_CHANGELOG_WAS', 'Was');
 define('I_CHANGELOG_NOW', 'Became');
+
+define('I_WEEK', 'Week');
+define('I_TODAY', 'Today');

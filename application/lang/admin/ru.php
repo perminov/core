@@ -243,3 +243,6 @@ define('I_TILE_NOFILE', 'Нет файла');
 define('I_CHANGELOG_FIELD', 'Что изменено');
 define('I_CHANGELOG_WAS', 'Было');
 define('I_CHANGELOG_NOW', 'Стало');
+
+define('I_WEEK', 'Неделя');
+define('I_TODAY', 'Сегодня');

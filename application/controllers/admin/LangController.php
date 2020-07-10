@@ -155,7 +155,7 @@ class Admin_LangController extends Indi_Controller_Admin {
             // Both both php ans js wordings
             foreach ([
                          'php' => [
-                             'dir' => ['application/controllers/admin', 'application/models', 'library'],
+                             'dir' => ['application/controllers/admin', 'application/models', 'library/Project'],
                              'rex' => ['~(__\()(\s*)\'(.*?)\'~']
                          ],
                          'js'  => [
@@ -232,7 +232,7 @@ class Admin_LangController extends Indi_Controller_Admin {
                             $chunkA = preg_split($rex, $raw);
 
                             //
-                            $raw  = preg_replace_callback($rex, function(&$m) use (&$fidx, &$pref, &$lineA, $const, &$methodA, $chunkA) {
+                            $raw  = preg_replace_callback($rex, function(&$m) use (&$fidx, &$pref, &$lineA, $const, &$methodA, $chunkA, $type) {
 
                                 // Try to detect method name
                                 if (preg_match_all('~public function ([a-zA-Z0-9_]+)~', $chunkA[$fidx], $__)) {
