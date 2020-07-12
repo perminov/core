@@ -12,7 +12,7 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
             'title' => array_pop(explode('_', __CLASS__)),
-            'params' => json_encode($params, JSON_UNESCAPED_UNICODE)
+            'params' => json_encode($params, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT)
         ), true);
 
         // Save `queueTask` entries

@@ -1,6 +1,12 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
-
+    public function fixQueueTaskParamsAction() {
+        field('queueTask', 'params', array (
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+        ));
+        die('ok');
+    }
     public function wordingsAction() {
         action('wordings', ['title' => 'Вординги', 'type' => 's']);
         section2action('lang','wordings', array('profileIds' => '1'));
