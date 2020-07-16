@@ -103,6 +103,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 if (strlen($_->defaultValue)) $modify['defaultValue'] = $_->defaultValue;
                 if (!$_->mode) $modify['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
                 else if ($_->mode != 'inherit') $modify['mode'] = $_->mode;
+                if ($_->elementId) $modify['elementId'] = $_->elementId;
 
                 // Apply modifications
                 $fieldR = $this->fields->gb($_->fieldId);

@@ -15,6 +15,7 @@ class AlteredField_Row extends Indi_Db_Table_Row_Noeval {
         if (is_string($value) && !Indi::rexm('int11', $value)) {
             if ($columnName == 'sectionId') $value = section($value)->id;
             else if ($columnName == 'fieldId') $value = field(section($this->sectionId)->entityId, $value)->id;
+            else if ($columnName == 'elementId') $value = element($value)->id;
         }
 
         // Call parent
@@ -52,7 +53,11 @@ class AlteredField_Row extends Indi_Db_Table_Row_Noeval {
 
             // Else if prop contains keys - use aliases instead
             else if ($fieldR->storeRelationAbility != 'none') {
-                // Empty for now
+
+                //
+                if ($fieldR->alias == 'elementId') {
+                    $value = element($value)->alias;
+                }
             }
         }
 

@@ -144,7 +144,7 @@ class Admin_LangController extends Indi_Controller_Admin {
         foreach (ar('www') as $fraction) {
 
             // Create dir, containing l10n-constants files, for current fraction if not yet exists
-            if (!is_dir($_ = DOC . STD . '/' . $fraction . '/application/lang/')) mkdir($_, true, 777);
+            if (!is_dir($_ = DOC . STD . '/' . $fraction . '/application/lang/admin/')) mkdir($_, true, 777);
 
             // Where will be current language used for building file name
             $out =  $_ . Indi::ini('lang')->admin . '.php';

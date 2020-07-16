@@ -1501,7 +1501,7 @@ function t($arg = null) {
  * @return Indi_Db_Table
  */
 function m($arg = null) {
-    return Indi::model($arg);
+    return func_num_args() ? Indi::model($arg) : t()->model;
 }
 
 /**

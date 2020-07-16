@@ -5,6 +5,16 @@ class Indi_Controller_Migrate extends Indi_Controller {
             'columnTypeId' => 'TEXT',
             'elementId' => 'textarea',
         ));
+        field('alteredField', 'elementId', array (
+            'title' => 'Элемент',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'combo',
+            'defaultValue' => '0',
+            'relation' => 'element',
+            'storeRelationAbility' => 'one',
+        ))->move(1);
+        param('alteredField', 'elementId', 'placeholder', 'Без изменений');
+        alteredField('queueItem', 'result', array('elementId' => 'string'));
         die('ok');
     }
     public function wordingsAction() {
