@@ -208,6 +208,7 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         $result = str_replace('% s ', '%s ', $result);
         $result = str_replace(',%s ', ', %s', $result);
         $result = preg_replace('~([a-z])% ?s~', '$1 %s', $result);
+        $result = preg_replace('~%s([a-z])~', '%s $1', $result);
 
         // Decode entities
         $result = html_entity_decode($result);
