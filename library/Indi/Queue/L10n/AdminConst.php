@@ -202,8 +202,19 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         // Fix ' > ' problem
         if (preg_match('~ > ~', $queueItemR->value))  $result = preg_replace('~([^\s])(&gt;) ~', '$1 $2 ', $result);
 
+        // Other replacements
+        $result = str_replace('&quot;% s&quot;', '&quot;%s&quot;', $result);
+        $result = str_replace('# %s', '#%s', $result);
+        $result = str_replace('% s ', '%s ', $result);
+        $result = str_replace(',%s ', ', %s', $result);
+        $result = preg_replace('~([a-z])% ?s~', '$1 %s', $result);
+
         // Decode entities
         $result = html_entity_decode($result);
+
+        // More replacements
+        $result = str_replace('" %s"', '"%s"', $result);
+        $result = str_replace('&#39;', "'", $result);
     }
 
     /**
