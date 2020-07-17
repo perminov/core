@@ -215,6 +215,9 @@ class Indi_Queue_L10n_AdminConst extends Indi_Queue_L10n_AdminUi {
         // More replacements
         $result = str_replace('" %s"', '"%s"', $result);
         $result = str_replace('&#39;', "'", $result);
+
+        // Fix tbq-translations
+        if (preg_match('~_TBQ$~', $queueItemR->target)) $result = str_replace(', ', ',', $result);
     }
 
     /**
