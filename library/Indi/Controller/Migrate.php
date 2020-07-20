@@ -40,6 +40,12 @@ class Indi_Controller_Migrate extends Indi_Controller {
         consider('section2action', 'rename', 'title', array ('required' => 'y'));
         consider('alteredField', 'rename', 'title', array ('required' => 'y'));
         consider('grid', 'tooltip', 'fieldId', array ('foreign' => 'tooltip', 'required' => 'y'));
+        field('queueChunk', 'move', array(
+            'title' => 'Порядок',
+            'columnTypeId' => 'INT(11)',
+            'elementId' => 'move',
+            'defaultValue' => '0',
+        ));
         field('queueItem', 'result', array (
             'title' => 'Результат',
             'columnTypeId' => 'TEXT',
@@ -988,12 +994,6 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ))->move(6);
         grid('queueChunk', 'itemsBytes', ['gridId' => 'items', 'summaryType' => 'sum']);
         grid('queueChunk', 'move');
-        field('queueChunk', 'move', array(
-            'title' => 'Порядок',
-            'columnTypeId' => 'INT(11)',
-            'elementId' => 'move',
-            'defaultValue' => '0',
-        ));
         section('queueChunk', array(
             'defaultSortField' => 'move',
         ));

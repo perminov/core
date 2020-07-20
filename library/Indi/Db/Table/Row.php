@@ -2599,8 +2599,8 @@ class Indi_Db_Table_Row implements ArrayAccess
         // then in $this->_original array, and then in $this->_temporary array, and return
         // once value was found
         if (array_key_exists($columnName, $this->_modified)) return $this->_modified[$columnName];
-        else if (array_key_exists($columnName, $this->_language)) return $this->_language[$columnName][
-            array_key_exists(Indi::ini('lang')->admin, $this->_language[$columnName])
+        else if (array_key_exists($columnName, $this->_language) && is_array($this->_language[$columnName]))
+            return $this->_language[$columnName][array_key_exists(Indi::ini('lang')->admin, $this->_language[$columnName])
                 ? Indi::ini('lang')->admin
                 : key(Lang::$_jtpl[$this->fraction()])
         ];

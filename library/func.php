@@ -2506,5 +2506,5 @@ function checkpid($pid) {
  * @param $str
  */
 function __($str) {
-    echo call_user_func_array('sprintf', func_get_args());
+    return call_user_func_array('sprintf', func_get_args());
 }

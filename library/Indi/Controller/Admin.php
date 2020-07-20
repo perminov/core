@@ -279,22 +279,22 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::admin()->uiedit != 'y') jflush(false);
 
         // Setup mapping that will help to prevent cross-section ui-editing
-        $scope = array('grid' => 'grid', 'field' => 'fields');
+        $scope = array('grid' => 'grid', 'field' => 'fields', 'entity' => t()->model->id());
 
         // List of ui allowed for editing
-        if (!in($ui, 'grid')) jflush(false);
+        if (!in($ui, 'grid,field,entity')) jflush(false);
 
         // Validity check
         $_ = jcheck(array('indiId' => array('req' => true, 'rex' => 'int11', 'key' => $ui)), Indi::post());
 
         // Access check
-        if (!in($_['indiId']->id, t()->{$scope[$ui]}->column('id'))) jflush(false);
+        if (!in($_['indiId']->id, is_numeric($scope[$ui]) ? $scope[$ui] : t()->{$scope[$ui]}->column('id'))) jflush(false);
 
         // If $_POST['rename'] is set, e.g editing type is 'rename'
         if (isset(Indi::post()->rename)) {
 
             // Map
-            $rename = array('grid' => 'alterTitle');
+            $rename = array('grid' => 'alterTitle', 'field' => 'title', 'entity' => 'title');
 
             // Do rename
             $_['indiId']->assign(array($rename[$ui] => Indi::post()->rename))->save();

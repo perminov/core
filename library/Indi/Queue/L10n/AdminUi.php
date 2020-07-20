@@ -42,7 +42,7 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
         // Additional info for detecting entries
         foreach ($master as $table => &$info) $info += array(
             'entityId' => Indi::model($table)->id(),
-            'instances' => Indi::model($table)->fetchAll('`' . $info['field'] . '` IN ("' . im(ar($info['value']), '","') . '")')->column('id', true)
+            'instances' => Indi::model($table)->fetchAll('`' . $info['field'] . '` IN ("' . im(ar($info['value']), '","') . '")')->column('id', true) ?: 0
         );
 
         // Collect id of enties
@@ -81,6 +81,12 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
 
                 // Prepend `fieldId`-clause
                 $where = '`fieldId` IN (0' . rif(im($fieldIdA), ',$1') . ') AND ' . $where;
+
+            /**
+             *
+             */
+            } else if ($entityR->table == 'noticeGetter') {
+                $where .= ' AND `profileId` IN (' . $master['profile']['instances'] . ')';
             }
 
             // If $this->fieldId prop is set, it means that we're here

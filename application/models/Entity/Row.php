@@ -238,7 +238,7 @@ class Entity_Row extends Indi_Db_Table_Row {
     public function onUpdate() {
 
         // Reload model
-        Indi::model($this->id)->reload();
+        if (Indi::model($this->id, true)) Indi::model($this->id)->reload();
 
         // Apply spaceScheme changes, if need
         $this->_spaceScheme();
