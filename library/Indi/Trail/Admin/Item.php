@@ -30,14 +30,17 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
 
         // Setup $this->actions
+        $this->actions = Indi::model('Action')->createRowset();
         foreach ($sectionR->nested('section2action') as $section2actionR) {
             $actionI = $section2actionR->foreign('actionId')->toArray();
             if (strlen($section2actionR->rename)) $actionI['title'] = $section2actionR->rename;
+            $actionI['id'] = $section2actionR->id;
             $actionI['south'] = $section2actionR->south;
             $actionI['fitWindow'] = $section2actionR->fitWindow;
-            $actionA[] = $actionI;
+            $actionI['indi'] = array('ui' => 'section2action', 'id' => $section2actionR->id);
+            $actionR = m('Action')->createRow()->assign($actionI);
+            $this->actions->append($actionR);
         }
-        $this->actions = Indi::model('Action')->createRowset(array('data' => $actionA));
 
         // Setup subsections
         $this->sections = $sectionR->nested('section');

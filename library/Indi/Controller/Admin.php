@@ -279,10 +279,11 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::admin()->uiedit != 'y') jflush(false);
 
         // Setup mapping that will help to prevent cross-section ui-editing
-        $scope = array('grid' => 'grid', 'field' => 'fields', 'entity' => t()->model->id());
+        $scope = array('grid' => 'grid', 'field' => 'fields', 'entity' => t()->model->id(),
+            'section' => 'sections', 'section2action' => 'actions', 'search' => 'filters');
 
         // List of ui allowed for editing
-        if (!in($ui, 'grid,field,entity')) jflush(false);
+        if (!in($ui, array_keys($scope))) jflush(false);
 
         // Validity check
         $_ = jcheck(array('indiId' => array('req' => true, 'rex' => 'int11', 'key' => $ui)), Indi::post());
@@ -294,10 +295,19 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (isset(Indi::post()->rename)) {
 
             // Map
-            $rename = array('grid' => 'alterTitle', 'field' => 'title', 'entity' => 'title');
+            $rename = array('grid' => 'alterTitle', 'field' => 'title', 'entity' => 'title', 'search' => 'alt');
 
             // Do rename
             $_['indiId']->assign(array($rename[$ui] => Indi::post()->rename))->save();
+
+        // If $_POST['rename'] is set, e.g editing type is 'rename'
+        } else if (isset(Indi::post()->tooltip)) {
+
+            // Map
+            $rename = array('grid' => 'tooltip', 'section' => 'help', 'section2action' => 'rename', 'search' => 'tooltip');
+
+            // Do rename
+            $_['indiId']->assign(array($rename[$ui] => Indi::post()->tooltip))->save();
 
         // Else if editing type if not rename
         } else {
