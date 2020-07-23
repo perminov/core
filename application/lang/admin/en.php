@@ -246,3 +246,5 @@ define('I_CHANGELOG_NOW', 'Became');
 
 define('I_WEEK', 'Week');
 define('I_TODAY', 'Today');
+
+define('I_PRINT', 'Print');

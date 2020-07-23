@@ -246,3 +246,5 @@ define('I_CHANGELOG_NOW', 'Стало');
 
 define('I_WEEK', 'Неделя');
 define('I_TODAY', 'Сегодня');
+
+define('I_PRINT', 'Распечатать');
