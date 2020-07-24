@@ -199,11 +199,24 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
                 // Else
                 } else {
 
-                    // Get translations from Google Cloud Translate API
-                    $result = array_column($gapi->translateBatch($rs->column('value'), [
-                        'source' => $source,
-                        'target' => $target,
-                    ]), 'text');
+                    // Try to call Google Cloud Translate API
+                    try {
+
+                        // Get translations from Google Cloud Translate API
+                        $result = array_column($gapi->translateBatch($rs->column('value'), [
+                            'source' => $source,
+                            'target' => $target,
+                        ]), 'text');
+
+                        // Catch exception
+                    } catch (Exception $e) {
+
+                        // Log error
+                        ehandler(1, json_decode($e->getMessage())->error->message, __FILE__, __LINE__);
+
+                        // Exit
+                        exit;
+                    }
                 }
 
                 // Foreach fetched `queueItem` entry

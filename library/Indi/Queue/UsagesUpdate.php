@@ -67,6 +67,11 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
                         'location' => $t . ':' . $m->fields($fieldId)->alias
                     ], true);
 
+                    // Mind that `section2action` entries have second field, that is fraction-dependent
+                    // todo: implement more beautiful solution
+                    if ($queueChunkR->location == 'section2action:title' && $m->fields($consider)->alias == 'actionId')
+                        $queueChunkR->where .= ' AND FIND_IN_SET(`sectionId`, "' . m('Section')->fetchAll('`type` != "o"')->column('id', true) . '")';
+
                     // Save `queueChunk` entry
                     $queueChunkR->save();
 
@@ -170,12 +175,25 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
                     // Get values
                     $values = $rs->column('value');
 
-                    // Foreach target language - make api call to google passing source values
-                    foreach (ar($targets) as $target)
-                        $resultByLang[$target] = array_column($gapi->translateBatch($values, [
-                            'source' => $source,
-                            'target' => $target,
-                        ]), 'text');
+                    // Try to call Google Cloud Translate API
+                    try {
+
+                        // Foreach target language - make api call to google passing source values
+                        foreach (ar($targets) as $target)
+                            $resultByLang[$target] = array_column($target == $source ? $values : $gapi->translateBatch($values, [
+                                'source' => $source,
+                                'target' => $target,
+                            ]), 'text');
+
+                        // Catch exception
+                    } catch (Exception $e) {
+
+                        // Log error
+                        ehandler(1, json_decode($e->getMessage())->error->message, __FILE__, __LINE__);
+
+                        // Exit
+                        exit;
+                    }
                 }
 
                 // Foreach fetched `queueItem` entry
