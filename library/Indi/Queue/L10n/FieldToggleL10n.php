@@ -329,6 +329,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Fix ' > ' problem
         if (preg_match('~[^\s]#[^\s]~', $queueItemR->value))  $result = preg_replace('~([^\s]) # ([^\s])~', '$1#$2', $result);
+
+        // Fix tbq-translations
+        if (preg_match('~^tbq: ([^,]+,) ([^,]+,) ([^,]+)$~', $result, $m)) $result = 'tbq:' . $m[1] . $m[2] . $m[3];
     }
 
     /**

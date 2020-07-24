@@ -13,6 +13,6 @@ class Admin_QueueItemController extends Indi_Controller_Admin {
         if ($cell != 'result') return;
 
         // Set up `reapply` flag to `true`
-        if (t(2)->row->title == 'L10n_AdminCustomConst') t()->row->system('reapply', true);
+        t()->row->system('reapply', true);
     }
 }

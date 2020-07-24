@@ -1585,6 +1585,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 'string:VARCHAR(255)',
                 'string:TEXT',
                 'textarea:TEXT',
+                'textarea:VARCHAR(255)',
                 'html:TEXT'
             ));
 

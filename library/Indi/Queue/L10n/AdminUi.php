@@ -87,6 +87,29 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
              */
             } else if ($entityR->table == 'noticeGetter') {
                 $where .= ' AND `profileId` IN (' . $master['profile']['instances'] . ')';
+
+            /**
+             *
+             */
+            } else if ($entityR->table == 'param') {
+
+                //
+                $possibleParamIds = m('possibleElementParam')->fetchAll(
+                    '`alias` IN ("displayDateFormat", "measure", "inputMask")'
+                )->column('id', true);
+
+                // Get field ids
+                $fieldIds = im(Indi::db()->query('
+                    SELECT DISTINCT `p`.`fieldId` 
+                    FROM `param` `p`, `field` `f`
+                    WHERE 1
+                      AND `p`.`possibleParamId` IN (' . $possibleParamIds . ')
+                      AND `p`.`fieldId` = `f`.`id`
+                      AND `f`.`entityId` IN (' . $master['entity']['instances'] . ')
+                ')->fetchAll(PDO::FETCH_COLUMN));
+
+                //
+                $where = '`fieldId` IN ('. $fieldIds . ') AND `possibleParamId` IN (' . $possibleParamIds . ')';
             }
 
             // If $this->fieldId prop is set, it means that we're here

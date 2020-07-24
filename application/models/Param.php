@@ -13,4 +13,11 @@ class Param extends Indi_Db_Table {
      * @var string
      */
     public $_rowClass = 'Param_Row';
+
+    /**
+     * Info for l10n-fraction detection
+     *
+     * @var array
+     */
+    protected $_fraction = ['field' => 'fieldId'];
 }
