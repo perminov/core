@@ -147,7 +147,7 @@ class Admin_LangController extends Indi_Controller_Admin {
             if (!is_dir($_ = DOC . STD . '/' . $fraction . '/application/lang/admin/')) mkdir($_, true, 777);
 
             // Where will be current language used for building file name
-            $out =  $_ . Indi::ini('lang')->admin . '.php';
+            $out =  $_ . t()->row->alias . '.php';
 
             // Lines to be written to php-constants file
             $lineA = array();
@@ -287,10 +287,13 @@ class Admin_LangController extends Indi_Controller_Admin {
             // If found
             if ($lineA) {
 
-                // Write constants definitions into constants file
-                file_put_contents($out, '<?php' . "\n" . im($lineA, "\n"));
+                // Check if const-file already exists, and if yes - get existing contents
+                if (file_exists($out)) $was = file_get_contents($out);
 
-                // Check for duplicates
+                // Write constants definitions into constants file
+                file_put_contents($out, rif($was, '$1' . "\n\n", '<?php' . "\n") . im($lineA, "\n"));
+
+                // Reactivate activate
                 include($out);
             }
         }
