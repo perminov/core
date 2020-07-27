@@ -1607,7 +1607,7 @@ class Indi_Db_Table
             if (!$rs->count()) return;
 
             // Update usages
-            if ($rowset) $operation($rs, $deduct); else foreach ($rs as $r) $operation($r, $deduct);
+            if ($rowset) $operation($rs, $deduct); else foreach ($rs as $i => $r) $operation($r, $deduct, ($p - 1) * $limit + $i);
 
             // If now (e.g. after $operation() call completed) less entries match WHERE clause,
             // it means that we need to fetch same page again rather than fetching next page

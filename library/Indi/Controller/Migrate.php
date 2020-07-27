@@ -15,6 +15,10 @@ class Indi_Controller_Migrate extends Indi_Controller {
         ))->move(1);
         param('alteredField', 'elementId', 'placeholder', 'Без изменений');
         alteredField('queueItem', 'result', array('elementId' => 'string'));
+        field('queueChunk', 'where', array (
+            'columnTypeId' => 'TEXT',
+            'elementId' => 'textarea',
+        ));
         die('ok');
     }
     public function wordingsAction() {

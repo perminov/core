@@ -58,12 +58,26 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
                     // If it's a foreign-key field - skip
                     if ($m->fields($fieldId)->storeRelationAbility != 'none') continue;
 
+                    // If it's consider-field is an enumset-field
+                    if ($m->fields($consider)->rel()->table() == 'enumset') {
+
+                        // Get enumset alias
+                        $alias = m('enumset')->fetchRow($params['entry'])->alias;
+
+                        // Build WHERE clause
+                        $where = $m->fields($consider)->storeRelationAbility == 'one'
+                            ? '`' . $m->fields($consider)->alias . '` = "' . $alias . '"'
+                            : 'FIND_IN_SET("' . $alias . '", `' . $m->fields($consider)->alias . '`)';
+
+                    // Else ordinary behaviour
+                    } else $where = '`' . $m->fields($consider)->alias . '` = "' . $params['entry'] . '"';
+
                     // Create `queueChunk` entry
                     $queueChunkR = Indi::model('QueueChunk')->createRow([
                         'queueTaskId' => $queueTaskR->id,
                         'queueChunkId' => $queueChunkR_affected->id,
                         'queueState' => $queueTaskR->queueState,
-                        'where' => '`' . $m->fields($consider)->alias . '` = "' . $params['entry'] . '"',
+                        'where' => $where,
                         'location' => $t . ':' . $m->fields($fieldId)->alias
                     ], true);
 

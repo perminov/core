@@ -1515,6 +1515,10 @@ class Indi_Db_Table_Row implements ArrayAccess
                     // If $order is a name of a column, and not an SQL expression (except l10n-expression)
                     // we setup results start point as current row's column's value
                     if (!preg_match('/\(/', $order) || $l10n) {
+                        if (preg_match('~/span>~', $keyword)) {
+                            $order = 'SUBSTRING_INDEX(' . $order . ', "/span>", -1)';
+                            $keyword = strip_tags($keyword);
+                        }
                         $where['lookup'] = $order . ' '. (is_null($page) || $page > 0 ? ($dir == 'DESC' ? '<=' : '>=') : ($dir == 'DESC' ? '>' : '<')).' "' . str_replace('"', '\"', $keyword) . '"';
                     }
 

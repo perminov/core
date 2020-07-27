@@ -72,6 +72,9 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
         ), 'OKCANCEL'))
             return;
 
+        // Applicable languages WHERE clause
+        $langId_filter = '"y" IN (`' . im($fraction = ar(t()->row->l10nFraction()), '`, `') . '`)';
+
         // Create phantom `langId` field
         $langId_combo = Indi::model('Field')->createRow([
             'alias' => 'langId',
@@ -79,13 +82,16 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
             'elementId' => 'combo',
             'storeRelationAbility' => 'one',
             'relation' => 'lang',
-            'filter' => '"y" IN (`' . im($fraction = ar(t()->row->l10nFraction()), '`, `') . '`)',
+            'filter' => $langId_filter,
             'mode' => 'hidden',
             'defaultValue' => 0
         ], true);
 
         // Append to fields list
         t()->model->fields()->append($langId_combo);
+
+        // Set active value
+        t()->row->langId = m('lang')->fetchRow($langId_filter, '`move`')->id;
 
         // Build config for langId-combo
         $combo = ['fieldLabel' => '', 'allowBlank' => 0] + t()->row->combo('langId');
@@ -139,6 +145,9 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
         if ($value != 'qy') $params['toggle'] = 'n';
 
         // Run first stage
-        $queue->chunk($params);
+        $queueTaskR = $queue->chunk($params);
+
+        // Auto-start queue as a background process
+        Indi::cmd('queue', array('queueTaskId' => $queueTaskR->id));
     }
 }

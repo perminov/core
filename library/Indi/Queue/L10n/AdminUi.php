@@ -129,6 +129,9 @@ class Indi_Queue_L10n_AdminUi extends Indi_Queue_L10n {
 
         // Order chunks to be sure that all dependen fields will be processed after their dependencies
         $this->orderChunks($queueTaskR->id);
+
+        // Return `queueTask` entry
+        return $queueTaskR;
     }
 
     /**

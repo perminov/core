@@ -304,7 +304,7 @@ function ago($date1, $date2 = null, $mode = 'ago', $exact = false) {
 function tbq($q = 2, $versions012 = '', $showNumber = true, $lang = null) {
 
     // If lang is not 'ru' - use different logic
-    if (($lang ?: Indi::ini('lang')->admin) != 'ru') {
+    if (($lang ?: Indi::ini('lang')->admin) != 'ru' && count(ar($versions012)) == 2) {
 
         // Convert $versions012 string into an array
         // We assume that we need only 2 versions, for example 'item,items'
@@ -2506,5 +2506,42 @@ function checkpid($pid) {
  * @param $str
  */
 function __($str) {
-    return call_user_func_array('sprintf', func_get_args());
+
+    // If $str arg is a constant name, starting with 'I_'
+    if (substr($str, 0, 2) == 'I_' && preg_match('~^I_[A-Z0-9_]+$~', $str)) {
+
+        // If initial language is not same as current
+        if ($COOKIE['i-language'] != Indi::ini('lang')->admin) {
+
+            // Load other-language constants as a variables, if not yet loaded
+            if (!$GLOBALS['const'][Indi::ini('lang')->admin]) {
+
+                // Build filename of a php-file, containing l10n constants for required language
+                $l10n_source_abs = DOC . STD . '/www/application/lang/admin/' . Indi::ini('lang')->admin . '.php';
+
+                // If no file - skip
+                if (!file_exists($l10n_source_abs)) jflush(false, 'File ' . $l10n_source_abs . ' - not found');
+
+                // If emtpy file - skip
+                if (!$l10n_source_raw = file_get_contents($l10n_source_abs))  jflush(false, 'File ' . $l10n_source_abs . ' - is empty');
+
+                // Parse constants-file contents to pick name and value for each constant
+                $const = Indi::rexma('~define\(\'(.*?)\', ?\'(.*?)\'\);~', $l10n_source_raw);
+
+                // Load all constants from constants-file into global variable
+                $GLOBALS['const'][Indi::ini('lang')->admin] = array_combine($const[1], $const[2]);
+            }
+
+            // Mind current language
+            $str = $GLOBALS['const'][Indi::ini('lang')->admin][$str];
+
+        // Get constant value by name
+        } else  $str = constant($str);
+    }
+
+    // Spoof 1st arg
+    $args = func_get_args(); array_shift($args); array_unshift($args, $str);
+
+    // Call sprintf using $args and return result
+    return call_user_func_array('sprintf', $args);
 }

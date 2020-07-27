@@ -1226,6 +1226,10 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                     ? 'IF(`' . $this->alias . '`, "' . I_YES .'", "' . I_NO . '") '
                     : 'IF(`' . $this->alias . '`, "' . I_NO .'", "' . I_YES . '") ') . $direction;
 
+            // Build l10n-compatible version of $order for usage in sql queries
+            } else if ($this->l10n == 'y') {
+                $order = 'SUBSTRING_INDEX(`' . $this->alias . '`, \'"' . Indi::ini('lang')->admin . '":"\', -1) ' . $direction;
+
             // Else build the simplest ORDER clause
             } else $order = '`' . $this->alias . '` ' . $direction;
 

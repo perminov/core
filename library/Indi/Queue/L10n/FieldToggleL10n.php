@@ -29,6 +29,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         // Create separate `queueChunk`-trees for each fraction
         foreach ($params['target'] as $fraction => $targets)
             $this->appendChunk($queueTaskR, entity($table), field($table, $field), [], $fraction);
+
+        // Return
+        return $queueTaskR;
     }
 
     /**
@@ -352,6 +355,9 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         ])->save();
 
         foreach (m('Consider')->fetchAll('"' . $fieldR->id . '" = IF(`foreign` = "0", `consider`, `foreign`)') as $considerR) {
+
+            // Skip foreign-key fields
+            if ($considerR->foreign('fieldId')->storeRelationAbility != "none") continue;
 
             // Create `queueChunk` entries for dependent fields
             $dependent = $this->appendChunk($queueTaskR,
