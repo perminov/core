@@ -1,5 +1,21 @@
 <?php
 class Indi_Controller_Migrate extends Indi_Controller {
+    public function actionsl10nAction(){
+        field('section2action', 'l10n', array (
+            'title' => 'Мультиязычность',
+            'columnTypeId' => 'ENUM',
+            'elementId' => 'combo',
+            'defaultValue' => 'n',
+            'relation' => 'enumset',
+            'storeRelationAbility' => 'one',
+        ));
+        enumset('section2action', 'l10n', 'qy', array('title' => '<span class="i-color-box" style="background: lightgray; border: 3px solid blue;"></span>В очереди на включение'));
+        enumset('section2action', 'l10n', 'y', array('title' => '<span class="i-color-box" style="background: blue;"></span>Включена'));
+        enumset('section2action', 'l10n', 'qn', array('title' => '<span class="i-color-box" style="background: blue; border: 3px solid lightgray;"></span>В очереди на выключение'));
+        enumset('section2action', 'l10n', 'n', array('title' => '<span class="i-color-box" style="background: lightgray;"></span>Выключена'));
+        grid('sectionActions', 'l10n', true)->move(6);
+        die('ok');
+    }
     public function fixQueueTaskParamsAction() {
         field('queueTask', 'params', array (
             'columnTypeId' => 'TEXT',

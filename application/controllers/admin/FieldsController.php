@@ -108,6 +108,9 @@ class Admin_FieldsController extends Indi_Controller_Admin_Exportable {
         // Build queue class name
         $queueClassName = 'Indi_Queue_L10n_FieldToggleL10n';
 
+        // If field's element is file-upload - use special queue class
+        if (t()->row->foreign('elementId')->alias == 'upload') $queueClassName .= 'Upload';
+
         // Check that class exists
         if (!class_exists($queueClassName)) jflush(false, sprintf('Не найден класс %s', $queueClassName));
 

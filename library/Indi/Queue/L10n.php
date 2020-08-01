@@ -156,27 +156,82 @@ class Indi_Queue_L10n extends Indi_Queue {
             'queueState' => $queueTaskR->queueState
         ), true);
 
-        // If it's an enumset-field
-        if ($fieldR_having_l10nY->relation == 6) {
-
-            // Table and field names
-            $table = 'enumset'; $field = 'title';
-
-            // Build WHERE clause
-            $queueChunkR->where = sprintf('`fieldId` = "%s"', $fieldR_having_l10nY->id);
-
-            // Else
-        } else {
+        // If $entity arg is really entity
+        if ($entityR instanceof Entity_Row) {
 
             // Table and field names
             $table = $entityR->table; $field = $fieldR_having_l10nY->alias;
 
-            // Build WHERE clause
-            if ($where) $queueChunkR->where = im($where, ' AND ');
-        }
+            // If field have real column within db table
+            if ($fieldR_having_l10nY->columnTypeId) {
 
-        // Setup `location`
-        $queueChunkR->location = $table . ':' . $field;
+                // If it's an enumset-field
+                if ($fieldR_having_l10nY->relation == 6) {
+
+                    // Table and field names
+                    $table = 'enumset'; $field = 'title';
+
+                    // Build WHERE clause
+                    $queueChunkR->where = sprintf('`fieldId` = "%s"', $fieldR_having_l10nY->id);
+
+                // Else
+                } else {
+
+                    // Build WHERE clause
+                    if ($where) $queueChunkR->where = im($where, ' AND ');
+                }
+
+                // Setup `location`
+                $queueChunkR->location = $table . ':' . $field;
+
+            // Else if it's a file-upload field
+            } else if ($fieldR_having_l10nY->foreign('elementId')->alias == 'upload') {
+
+                // Get params
+                $params = json_decode($queueTaskR->params, true);
+
+                // Get tpldoc file abs path
+                $tpl = m($table)->tpldoc($field, true, $fieldR_having_l10nY->l10n == 'y' ? $params['source'] : false);
+
+                // If exists
+                if (is_file($tpl)) {
+
+                    // If l10n is turned on, e.g. we're going to turn it Off, spoof tpldoc path
+                    // for it to be pointing to filename of a template, that will remaining after turning Off
+                    if ($fieldR_having_l10nY->l10n == 'y') $tpl = m($table)->tpldoc($field, true, false);
+
+                    // Set location
+                    $queueChunkR->location = str_replace(DOC . STD , '', $tpl);
+                }
+            }
+
+        // Else if it is an instance of Section_Row
+        } else {
+
+            // Get params
+            $params = json_decode($queueTaskR->params, true);
+
+            // Get table and field
+            list ($section, $action) = explode(':', $params['action']);
+
+            // Set `section2action` entry
+            $section2actionR = section2action($section, $action);
+
+            // Get tpldoc file abs path
+            $tpl = DOC . STD . '/www/' . Indi::ini('view')->scriptPath . '/admin/'
+                . $section . '/' . $action . rif($section2actionR->l10n == 'y', '-' . $params['source']) . '.php';
+
+            // If exists
+            if (is_file($tpl)) {
+
+                // If l10n is turned on, e.g. we're going to turn it Off, spoof tpldoc path
+                // for it to be pointing to filename of a template, that will remaining after turning Off
+                if ($section2actionR->l10n == 'y') $tpl = preg_replace('~-' . $params['source'] . '.php$~', '.php', $tpl);
+
+                // Set location
+                $queueChunkR->location = str_replace(DOC . STD , '', $tpl);
+            }
+        }
 
         // If current method is used only for detecting WHERE clause - return detected
         if ($this->fieldId) return $queueChunkR->where;

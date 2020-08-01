@@ -248,3 +248,15 @@ define('I_WEEK', 'Week');
 define('I_TODAY', 'Today');
 
 define('I_PRINT', 'Print');
+
+define('I_NUM2STR_ZERO', 'zero');
+define('I_NUM2STR_1TO9', 'one,two,three,four,five,six,seven,eight,nine');
+define('I_NUM2STR_1TO9_2', 'one,two,three,four,five,six,seven,eight,nine');
+define('I_NUM2STR_10TO19', 'ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen,seventeen,eighteen,nineteen');
+define('I_NUM2STR_20TO90', 'twenty,thirty,forty,fifty,sixty,seventy,eighty,ninety');
+define('I_NUM2STR_100TO900', 'one hundred,two hundred,three hundred,four hundred,five hundred,six hundred,seven hundred,eight hundred,nine hundred');
+define('I_NUM2STR_TBQ_KOP', 'kopeck,kopecks,kopecks');
+define('I_NUM2STR_TBQ_RUB', 'ruble,rubles,rubles');
+define('I_NUM2STR_TBQ_THD', 'thousand,thousand,thousand');
+define('I_NUM2STR_TBQ_MLN', 'million,million,million');
+define('I_NUM2STR_TBQ_BLN', 'billion,billion,billion');

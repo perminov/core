@@ -1590,6 +1590,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                 'string:TEXT',
                 'textarea:TEXT',
                 'textarea:VARCHAR(255)',
+                'upload:',
                 'html:TEXT'
             ));
 

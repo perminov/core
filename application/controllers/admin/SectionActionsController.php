@@ -22,16 +22,13 @@ class Admin_SectionActionsController extends Indi_Controller_Admin_Multinew {
         // If $cell is not 'l10n' - skip
         if ($cell != 'l10n') return;
 
-        // If current field depends on other fields - deny
-        if (t()->row->nested('consider')->count()) jflush(false, 'Нельзя вручную менять мультиязычность для зависимых полей');
-
         // If we're going to create queue task for turning selected language either On or Off
         if (in($value, 'qy,qn')) {
 
             // Ask whether we want to turn l10n On/Off,
             // or want to arrange value of `l10n` for it to match real situation.
             if ('no' == $this->confirm(sprintf(
-                    'Если вы хотите %s мультиязычность для поля "%s" нажмите "%s". ' .
+                    'Если вы хотите %s мультиязычность для действия "%s" нажмите "%s". ' .
                     'Если просто нужно привести в соответствие с текущим состоянием - нажмите "%s"',
                     $value == 'qy' ? 'включить' : 'выключить', t()->row->title, I_YES, I_NO), 'YESNOCANCEL'))
                 return;
@@ -44,7 +41,7 @@ class Admin_SectionActionsController extends Indi_Controller_Admin_Multinew {
             return;
 
         // Applicable languages WHERE clause
-        $langId_filter = '"y" IN (`' . im($fraction = ar(t()->row->l10nFraction()), '`, `') . '`)';
+        $langId_filter = '"y" IN (`' . im($fraction = ar(t()->row->fraction()), '`, `') . '`)';
 
         // Create phantom `langId` field
         $langId_combo = Indi::model('Field')->createRow([
@@ -69,7 +66,7 @@ class Admin_SectionActionsController extends Indi_Controller_Admin_Multinew {
 
         // Prompt for source language
         $prompt = $this->prompt(sprintf(
-            $value == 'qy' ? 'Выберите текущий язык поля "%s"' : 'Выберите язык который должен остаться в поле "%s"',
+            $value == 'qy' ? 'Выберите текущий язык действия "%s"' : 'Выберите язык который должен остаться для действия "%s"',
             t()->row->title
         ), [$combo]);
 
@@ -77,10 +74,7 @@ class Admin_SectionActionsController extends Indi_Controller_Admin_Multinew {
         $_ = jcheck(['langId' => ['req' => true, 'rex' => 'int11', 'key' => 'lang']], $prompt);
 
         // Build queue class name
-        $queueClassName = 'Indi_Queue_L10n_FieldToggleL10n';
-
-        //
-        if (t()->row->foreign('elementId')->alias == 'upload') $queueClassName .= 'Upload';
+        $queueClassName = 'Indi_Queue_L10n_Action';
 
         // Check that class exists
         if (!class_exists($queueClassName)) jflush(false, sprintf('Не найден класс %s', $queueClassName));
@@ -97,19 +91,9 @@ class Admin_SectionActionsController extends Indi_Controller_Admin_Multinew {
 
         // Prepare params
         $params = [
-            'field' => Indi::model(t()->row->entityId)->table() . ':' . t()->row->alias,
+            'action' => t(1)->row->alias . ':' . t()->row->foreign('actionId')->alias,
             'source' => $_['langId']->alias
         ];
-
-        // If we're dealing with `action` entity's `title` field
-        if ($params['field'] == 'action:title' && !$_ = []) {
-
-            // Collect all target languages
-            foreach ($target as $targets) $_ = array_unique(array_merge($_, ar($targets)));
-
-            // Pass separately, to be used for root-level `queueChunk` entry ('action:title')
-            $params['rootTarget'] = im($_);
-        }
 
         // Prepare params
         $params['target'] = $target;

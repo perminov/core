@@ -1832,4 +1832,26 @@ class Indi_Db_Table
     public function type() {
         return $this->_type;
     }
+
+    /**
+     * Build and return path to the php-template, used to build the html-file,
+     * that is autoattached to a fileupload field. So $field arg should be an alias
+     * of a fileupload-field
+     *
+     * @param $field
+     * @param bool $abs
+     * @param string $lang
+     * @return string
+     */
+    public function tpldoc($field, $abs = false, $lang = '') {
+
+        // Append script path
+        Indi::view()->addScriptPath($dir = DOC . STD . '/www/data/tpldoc');
+
+        // If localization is turned On for this field - append language definition to file name
+        if ($this->fields($field)->l10n == 'y' && !$lang && $lang !== false) $lang = Indi::ini('lang')->admin;
+
+        // Build template file name
+        return rif($abs, $dir . '/') . $this->_table . '-' . $field .  rif($lang, '-$1') . '.php';
+    }
 }

@@ -102,9 +102,6 @@ class Indi_Queue_L10n_FieldToggleL10nUpload extends Indi_Queue_L10n_FieldToggleL
             // Remember that we're going to count
             $queueChunkR->assign(array('itemsState' => 'progress'))->basicUpdate();
 
-            // Split `location` on $table and $field
-            list ($table, $field) = explode(':', $params['field']);
-
             //
             $langA = [$source]; foreach ($target as $fraction => $targets) $langA = array_merge($langA, ar($targets));
 
@@ -178,9 +175,6 @@ class Indi_Queue_L10n_FieldToggleL10nUpload extends Indi_Queue_L10n_FieldToggleL
             'where' => '`queueState` != "finished"',
             'order' => '`queueState` = "progress" DESC, `move`'
         ]) as $queueChunkR) {
-
-            // Split `location` on $table and $field
-            list ($table, $field) = explode(':', $params->field);
 
             // Get existing template current contents
             $value = file_get_contents($tpl = DOC . STD . $queueChunkR->location);
@@ -279,11 +273,8 @@ class Indi_Queue_L10n_FieldToggleL10nUpload extends Indi_Queue_L10n_FieldToggleL
             // Build WHERE clause for batch() call
             $where = '`queueChunkId` = "' . $queueChunkR->id . '" AND `stage` = "' . ($params['toggle'] == 'n' ? 'items' : 'queue') . '"';
 
-            // Split `location` on $table and $field
-            list ($table, $field) = explode(':', $params['field']);
-
             // Get field
-            $fieldR = m($table)->fields($field);
+            $localizable = $this->getLocalizable($params);
 
             // Get queue items
             Indi::model('QueueItem')->batch(function(&$r, &$deduct) use (&$queueTaskR, &$queueChunkR, $params) {
@@ -319,7 +310,7 @@ class Indi_Queue_L10n_FieldToggleL10nUpload extends Indi_Queue_L10n_FieldToggleL
             }, $where, '`id` ASC');
 
             // Switch field's l10n-prop from intermediate to final value
-            $fieldR->assign(['l10n' => $params['toggle'] ?: 'y'])->save();
+            $localizable->assign(['l10n' => $params['toggle'] ?: 'y'])->save();
 
             // Remove original tpldoc file
             if ($params['toggle'] != 'n') unlink(DOC . STD . $queueChunkR->location);
@@ -340,5 +331,18 @@ class Indi_Queue_L10n_FieldToggleL10nUpload extends Indi_Queue_L10n_FieldToggleL
      */
     public function amendResult(&$result) {
         $result = str_replace(['<!-- <?', '?> -->'], ['<?', '?>'], $result);
+    }
+
+    /**
+     * @param $params
+     * @return Field_Row|Field_Rowset
+     */
+    public function getLocalizable($params) {
+
+        // Split `location` on $table and $field
+        list ($table, $field) = explode(':', $params['field']);
+
+        // Return `field` entry
+        return m($table)->fields($field);
     }
 }

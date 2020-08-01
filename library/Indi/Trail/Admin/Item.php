@@ -38,6 +38,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
             $actionI['south'] = $section2actionR->south;
             $actionI['fitWindow'] = $section2actionR->fitWindow;
             $actionI['indi'] = array('ui' => 'section2action', 'id' => $section2actionR->id);
+            $actionI['l10n'] = $section2actionR->l10n;
             $actionR = m('Action')->createRow()->assign($actionI);
             $this->actions->append($actionR);
         }
@@ -479,7 +480,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $section = $this->section->alias;
 
         // Construct filename of the template, that should be rendered by default
-        $script = $section . '/' . $action . '.php';
+        $script = $section . '/' . $action . rif($this->action->l10n == 'y', '-' . Indi::ini('lang')->admin) . '.php';
 
         // Build action-view class name
         $actionClass = 'Admin_' . ucfirst($section) . 'Controller' . ucfirst($action) . 'ActionView';
