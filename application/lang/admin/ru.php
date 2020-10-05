@@ -12,6 +12,7 @@ define('I_LOGIN_BOX_RESET', 'Сброс');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Ошибка');
 define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Имя пользователя не указано');
 define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Пароль не указан');
+define('I_LOGIN_BOX_LANGUAGE', 'Язык');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Нет такого аккаунта');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Вы ввели неправильный пароль');
@@ -242,3 +243,20 @@ define('I_TILE_NOFILE', 'Нет файла');
 define('I_CHANGELOG_FIELD', 'Что изменено');
 define('I_CHANGELOG_WAS', 'Было');
 define('I_CHANGELOG_NOW', 'Стало');
+
+define('I_WEEK', 'Неделя');
+define('I_TODAY', 'Сегодня');
+
+define('I_PRINT', 'Распечатать');
+
+define('I_NUM2STR_ZERO', 'ноль');
+define('I_NUM2STR_1TO9', 'один,два,три,четыре,пять,шесть,семь,восемь,девять');
+define('I_NUM2STR_1TO9_2', 'одна,две,три,четыре,пять,шесть,семь,восемь,девять');
+define('I_NUM2STR_10TO19', 'десять,одиннадцать,двенадцать,тринадцать,четырнадцать,пятнадцать,шестнадцать,семнадцать,восемнадцать,девятнадцать');
+define('I_NUM2STR_20TO90', 'двадцать,тридцать,сорок,пятьдесят,шестьдесят,семьдесят,восемьдесят,девяносто');
+define('I_NUM2STR_100TO900', 'сто,двести,триста,четыреста,пятьсот,шестьсот,семьсот,восемьсот,девятьсот');
+define('I_NUM2STR_TBQ_KOP', 'копейка,копейки,копеек');
+define('I_NUM2STR_TBQ_RUB', 'рубль,рубля,рублей');
+define('I_NUM2STR_TBQ_THD', 'тысяча,тысячи,тысяч');
+define('I_NUM2STR_TBQ_MLN', 'миллион,миллиона,миллионов');
+define('I_NUM2STR_TBQ_BLN', 'миллиард,милиарда,миллиардов');

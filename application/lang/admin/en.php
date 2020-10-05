@@ -12,6 +12,7 @@ define('I_LOGIN_BOX_RESET', 'Reset');
 define('I_LOGIN_ERROR_MSGBOX_TITLE', 'Error');
 define('I_LOGIN_ERROR_ENTER_YOUR_USERNAME', 'Username not specified');
 define('I_LOGIN_ERROR_ENTER_YOUR_PASSWORD', 'Password not specified');
+define('I_LOGIN_BOX_LANGUAGE', 'Language');
 
 define('I_LOGIN_ERROR_NO_SUCH_ACCOUNT', 'Such account does not exist');
 define('I_LOGIN_ERROR_WRONG_PASSWORD', 'Wrong password');
@@ -242,3 +243,20 @@ define('I_TILE_NOFILE', 'No file');
 define('I_CHANGELOG_FIELD', 'What was changed');
 define('I_CHANGELOG_WAS', 'Was');
 define('I_CHANGELOG_NOW', 'Became');
+
+define('I_WEEK', 'Week');
+define('I_TODAY', 'Today');
+
+define('I_PRINT', 'Print');
+
+define('I_NUM2STR_ZERO', 'zero');
+define('I_NUM2STR_1TO9', 'one,two,three,four,five,six,seven,eight,nine');
+define('I_NUM2STR_1TO9_2', 'one,two,three,four,five,six,seven,eight,nine');
+define('I_NUM2STR_10TO19', 'ten,eleven,twelve,thirteen,fourteen,fifteen,sixteen,seventeen,eighteen,nineteen');
+define('I_NUM2STR_20TO90', 'twenty,thirty,forty,fifty,sixty,seventy,eighty,ninety');
+define('I_NUM2STR_100TO900', 'one hundred,two hundred,three hundred,four hundred,five hundred,six hundred,seven hundred,eight hundred,nine hundred');
+define('I_NUM2STR_TBQ_KOP', 'kopeck,kopecks,kopecks');
+define('I_NUM2STR_TBQ_RUB', 'ruble,rubles,rubles');
+define('I_NUM2STR_TBQ_THD', 'thousand,thousand,thousand');
+define('I_NUM2STR_TBQ_MLN', 'million,million,million');
+define('I_NUM2STR_TBQ_BLN', 'billion,billion,billion');
