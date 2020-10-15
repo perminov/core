@@ -3588,7 +3588,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         if (Indi::view()->lang) return Indi::view()->lang;
 
         // Get available languages
-        $langA = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang` WHERE `toggle` = "y"')->fetchAll();
+        $langA = Indi::db()->query('SELECT `alias`, `title`, `toggle` FROM `lang` WHERE `toggle` = "y" ORDER BY `move`')->fetchAll();
 
         // Get default/current language
         $lang = in($_COOKIE['lang'], array_column($langA, 'alias')) ? $_COOKIE['lang'] : Indi::ini('lang')->admin;
