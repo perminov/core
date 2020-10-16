@@ -29,7 +29,7 @@ Ext.define('Indi.lib.form.field.CkEditor', {
     /**
      * Default config for CKEDITOR instance, that current component is daling with
      */
-    editorCfg: {
+    _editorCfg: {
         toolbar: [
             {items: ['Source', 'Print']},
             {items: [ 'Paste', 'PasteText', 'PasteFromWord', 'Table']},
@@ -56,6 +56,9 @@ Ext.define('Indi.lib.form.field.CkEditor', {
     // @inheritdoc
     constructor: function(config) {
         var me = this;
+
+        // Prevent editorCfg to be overridden in case is more than 1 instance exists
+        me.editorCfg = Ext.Object.merge({}, this._editorCfg);
 
         // Merge field params into editor config
         if (config.field && config.field.params) Ext.Object.merge(me.editorCfg, config.field.params);
