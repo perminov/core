@@ -20,5 +20,5 @@ class Search extends Indi_Db_Table {
      *
      * @var array
      */
-    protected $_fraction = ['field' => 'sectionId'];
+    protected $_fraction = array('field' => 'sectionId');
 }

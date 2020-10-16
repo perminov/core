@@ -23,10 +23,10 @@ class Indi_Queue_L10n extends Indi_Queue {
         $queueTaskR = Indi::model('QueueTask')->fetchRow($queueTaskId);
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
-        foreach ($queueTaskR->nested('queueChunk', [
+        foreach ($queueTaskR->nested('queueChunk', array(
             'where' => '`countState` != "finished"',
             'order' => '`countState` = "progress" DESC, `move`'
-        ]) as $queueChunkR) {
+        )) as $queueChunkR) {
 
             // Remember that we're going to count
             $queueChunkR->assign(array('countState' => 'progress'))->basicUpdate();
@@ -72,10 +72,10 @@ class Indi_Queue_L10n extends Indi_Queue {
         $params = json_decode($queueTaskR->params, true);
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
-        foreach ($queueTaskR->nested('queueChunk', [
+        foreach ($queueTaskR->nested('queueChunk', array(
             'where' => '`itemsState` != "finished"',
             'order' => '`itemsState` = "progress" DESC, `move`'
-        ]) as $queueChunkR) {
+        )) as $queueChunkR) {
 
             // Remember that we're going to count
             $queueChunkR->assign(array('itemsState' => 'progress'))->basicUpdate();

@@ -183,7 +183,7 @@ class Indi_Db {
                   AND `table_name` = "lang" 
                   AND `column_name` IN ("adminSystemUi", "move")
             ')->fetchColumn() == 2)
-                foreach (['adminSystemUi', 'adminCustomUi', 'adminCustomData', 'adminSystemUi,adminCustomUi'] as $fraction)
+                foreach (array('adminSystemUi', 'adminCustomUi', 'adminCustomData', 'adminSystemUi,adminCustomUi') as $fraction)
                     Lang::$_jtpl[$fraction] = Indi::db()->query('
                     SELECT `alias`, "" AS `holder` 
                     FROM `lang` 

@@ -33,7 +33,7 @@ class Field_Base extends Indi_Db_Table {
      *
      * @var array
      */
-    protected $_fraction = ['field' => 'entityId'];
+    protected $_fraction = array('field' => 'entityId');
 
     /**
      * Create Indi_Db_Table_Rowset object with some data, if passed

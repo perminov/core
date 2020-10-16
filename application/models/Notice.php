@@ -19,11 +19,11 @@ class Notice extends Indi_Db_Table {
      *
      * @var array
      */
-    protected $_fraction = [
+    protected $_fraction = array(
         'field' => 'type',
-        'value' => [
+        'value' => array(
             's' => 'adminSystemUi',
             'p' => 'adminCustomUi'
-        ]
-    ];
+        )
+    );
 }

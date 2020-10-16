@@ -58,8 +58,8 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                 return {
                     hidden: true,
                     value: me.ti().row.id && Ext.isNumeric(item.value)
-                        ? (item.value < 100 ? 100 : item.value)
-                        : Indi.form.CkEditor.prototype.editorCfg.defaultWidth
+                        ? (item.value < 100 ? 100 : item.value) 
+                        : (Indi.form.CkEditor.prototype.editorCfg || Indi.form.CkEditor.prototype._editorCfg).defaultWidth
                 }
             },
 
@@ -76,8 +76,8 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                 return {
                     hidden: true,
                     value: me.ti().row.id && Ext.isNumeric(item.value)
-                        ? (item.value < 50 ? 50 : item.value)
-                        : Indi.form.CkEditor.prototype.editorCfg.defaultHeight
+                        ? (item.value < 50 ? 50 : item.value) 
+                        : (Indi.form.CkEditor.prototype.editorCfg || Indi.form.CkEditor.prototype._editorCfg).defaultHeight
                 }
             },
             formItem$DetailsHtmlBodyClass: {

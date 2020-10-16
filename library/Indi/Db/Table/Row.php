@@ -188,7 +188,7 @@ class Indi_Db_Table_Row implements ArrayAccess
                         ];
 
         // Pull tarnslations from `queueItem` entries if need
-        foreach (Indi_Queue_L10n_FieldToggleL10n::$l10n[$this->_table] ?: [] as $field => $l10n)
+        foreach (Indi_Queue_L10n_FieldToggleL10n::$l10n[$this->_table] ?: array() as $field => $l10n)
             if (array_key_exists($field, $data))
                 if ($this->_language[$field] = json_decode($l10n[$this->id], true))
                     $data[$field] = $this->_language[$field][Indi::ini('lang')->admin];
@@ -859,14 +859,14 @@ class Indi_Db_Table_Row implements ArrayAccess
         ')->fetchAll(PDO::FETCH_COLUMN)) return;
 
         // Prepare params
-        $params = [
+        $params = array(
             'source' => Indi::ini('lang')->admin,
             'fraction' => $this->fraction(),
             'table' => $this->_table,
             'entry' => $this->id,
-            'affected' => [],
+            'affected' => array(),
             'considerIdA' => $considerIdA
-        ];
+        );
 
         // Collect current values of affected props
         foreach ($this->_affected as $prop => $orig)
