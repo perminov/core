@@ -68,11 +68,11 @@ Ext.onReady(function() {
 
     if (Ext.util && Ext.util.Format) {
         Ext.apply(Ext.util.Format, {
-            thousandSeparator: '.',
-            decimalSeparator: ',',
+            //thousandSeparator: '.',
+            //decimalSeparator: ',',
             currencySign: '\u20ac',
             // Spanish Euro
-            dateFormat: 'd/m/Y'
+            //dateFormat: 'd/m/Y'
         });
     }
 });

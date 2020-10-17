@@ -50,11 +50,11 @@ Ext.onReady(function() {
         };
 
         Ext.apply(Ext.util.Format, {
-            thousandSeparator: '.',
-            decimalSeparator: ',',
+            //thousandSeparator: '.',
+            //decimalSeparator: ',',
             currencySign: '\u20ac',
             // German Euro
-            dateFormat: 'd.m.Y'
+            //dateFormat: 'd.m.Y'
         });
     }
 });

@@ -59,11 +59,11 @@ Ext.onReady(function() {
 
     if (Ext.util && Ext.util.Format) {
         Ext.apply(Ext.util.Format, {
-            thousandSeparator: ',',
-            decimalSeparator: '.',
+            //thousandSeparator: ',',
+            //decimalSeparator: '.',
             currencySign: '\u00a5',
             // Japanese Yen
-            dateFormat: 'Y/m/d'
+            //dateFormat: 'Y/m/d'
         });
     }
 });

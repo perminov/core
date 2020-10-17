@@ -62,10 +62,10 @@ Ext.onReady(function() {
     
     if (Ext.util && Ext.util.Format) {
         Ext.apply(Ext.util.Format, {
-            thousandSeparator: ',',
-            decimalSeparator: '.',
+            //thousandSeparator: ',',
+            //decimalSeparator: '.',
             currencySign: '$',
-            dateFormat: 'm/d/Y'
+            //dateFormat: 'm/d/Y'
         });
     }
 });
