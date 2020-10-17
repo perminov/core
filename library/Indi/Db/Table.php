@@ -1852,6 +1852,11 @@ class Indi_Db_Table
         if ($this->fields($field)->l10n == 'y' && !$lang && $lang !== false) $lang = Indi::ini('lang')->admin;
 
         // Build template file name
-        return rif($abs, $dir . '/') . $this->_table . '-' . $field .  rif($lang, '-$1') . '.php';
+        $tpl = rif($abs, $dir . '/') . $this->_table . '-' . $field .  rif($lang, '-$1') . '.php';
+        if (!file_exists($tpl) && ($lang = Indi::ini('lang')->admin))
+            $tpl = rif($abs, $dir . '/') . $this->_table . '-' . $field .  rif($lang, '-$1') . '.php';
+
+        // Build template file name
+        return $tpl;
     }
 }
