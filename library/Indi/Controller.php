@@ -1219,14 +1219,21 @@ class Indi_Controller {
             $item['_system'] += compact('image', 'thumb', 'class', 'holder', 'link');
         }
 
+        $jumpA = &$item['_system']['jump'];
+        $overA = &$item['_system']['over'];
+        $colorA = &$item['_system']['color'];
+        
         // If no 'jump' and 'over' system props defined for given item - return
-        if (!($jumpA = &$item['_system']['jump']) && !($overA = &$item['_system']['over'])) return;
+        if (!$jumpA && !$overA && !$colorA) return;
 
         // Foreach prop
-        foreach ($jumpA as $prop => &$jump) {
+        if ($jumpA) foreach ($jumpA as $prop => &$jump) {
 
             // Shortcut to hover title
             $over = &$overA[$prop];
+
+            // Shortcut to color definition
+            $color = &$colorA[$prop];
 
             // If it's array
             if (is_array($jump)) {
@@ -1243,10 +1250,19 @@ class Indi_Controller {
 
             // Else use just as jump-attribute
             } else $item['_render'][$prop] = wrap($item[$prop], '<span' . rif($over, ' title="$1"') . ' jump="' . $jump . '">');
+
+        // 
+        } else if ($overA) foreach ($overA as $prop => &$over) {
+
+            // Shortcut to color definition
+            $color = &$colorA[$prop];
+            
+            // Use just as title attribute
+            $item['_render'][$prop] = wrap($item[$prop], '<span' . rif($color, ' style="color: $1;"') . rif($over, ' title="$1"') . '>');
         }
 
         // Unset
-        unset($item['_system']['jump'], $item['_system']['over']);
+        unset($item['_system']['jump'], $item['_system']['over'], $item['_system']['color']);
     }
 
     /**

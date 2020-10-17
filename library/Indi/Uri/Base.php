@@ -189,7 +189,7 @@ class Indi_Uri_Base {
     public function trailingSlash() {
 
         // If current uri end with no slash
-        if ($_SERVER['REQEST_URI'] != '/' && !preg_match('~/$~', $_SERVER['REQUEST_URI']) && !preg_match('/\?/', $_SERVER['REQUEST_URI'])) {
+        if ($_SERVER['REQEST_URI'] != '/' && !preg_match('~/$~', $_SERVER['REQUEST_URI']) && !preg_match('/\?/', $_SERVER['REQUEST_URI']) && $_SERVER['REQUEST_METHOD'] == 'GET') {
 
             // Setup 301 header
             header('HTTP/1.1 301 Moved Permanently');
