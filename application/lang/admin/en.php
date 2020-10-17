@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <?php
 define('I_URI_ERROR_SECTION_FORMAT', 'Section name is in wrong format');
 define('I_URI_ERROR_ACTION_FORMAT', 'Action name is in wrong format');
@@ -260,6 +259,7 @@ define('I_NUM2STR_TBQ_KOP', 'kopeck,kopecks,kopecks');
 define('I_NUM2STR_TBQ_RUB', 'ruble,rubles,rubles');
 define('I_NUM2STR_TBQ_THD', 'thousand,thousand,thousand');
 define('I_NUM2STR_TBQ_MLN', 'million,million,million');
+<<<<<<< HEAD
 =======
 <?php
 define('I_URI_ERROR_SECTION_FORMAT', 'Section name is in wrong format');
@@ -522,5 +522,4 @@ define('I_NUM2STR_TBQ_KOP', 'kopeck,kopecks,kopecks');
 define('I_NUM2STR_TBQ_RUB', 'ruble,rubles,rubles');
 define('I_NUM2STR_TBQ_THD', 'thousand,thousand,thousand');
 define('I_NUM2STR_TBQ_MLN', 'million,million,million');
->>>>>>> master_beforel10nmerge
 define('I_NUM2STR_TBQ_BLN', 'billion,billion,billion');
