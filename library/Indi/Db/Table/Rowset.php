@@ -583,6 +583,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             'boolean' => array(),
             'price' => array(),
             'date' => array(),
+            'time' => array(),
             'datetime' => array(),
             'upload' => array(),
             'other' => array('id' => true),
@@ -638,6 +639,8 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                 $typeA['date'][$gridFieldR->alias] = $gridFieldR->params;
             else if ($gridFieldR->foreign('columnTypeId')->type == 'DATETIME')
                 $typeA['datetime'][$gridFieldR->alias] = $gridFieldR->params;
+            else if ($gridFieldR->foreign('columnTypeId')->type == 'TIME')
+                $typeA['time'][$gridFieldR->alias] = $gridFieldR->params;
 
             // File-uploads
             else if ($gridFieldR->foreign('elementId')->alias == 'upload')
@@ -725,6 +728,16 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
                     $data[$pointer][$columnI] = $value == '0000-00-00'
                         ? ''
                         : date($typeA['date'][$columnI]['displayFormat'], strtotime($value));
+
+                // If field column type is 'time' we adjust it's format if need. If time is '00:00:00' we set it
+                // to empty string
+                if (isset($typeA['time'][$columnI])
+                    && $typeA['time'][$columnI]['displayFormat']
+                    && preg_match(Indi::rex('time'), $value))
+
+                    $data[$pointer][$columnI] = $value == '00:00:00'
+                        ? ''
+                        : date($typeA['time'][$columnI]['displayFormat'], strtotime($value));
 
                 // If field column type is datetime, we adjust it's format if need. If datetime is '0000-00-00 00:00:00'
                 // we set it to empty string

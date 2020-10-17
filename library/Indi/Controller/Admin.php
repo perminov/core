@@ -703,7 +703,7 @@ class Indi_Controller_Admin extends Indi_Controller {
 
         // Get grouping info
         $group = json_decode(Indi::get()->group, true);
-        if (!array_key_exists($group['property'], $data[0])) $group = false;
+        if (!array_key_exists($group['property'], $data[0] ?: array())) $group = false;
 
         // Setup a row index, which data rows are starting from
         $currentRowIndex = 1;
@@ -1730,15 +1730,16 @@ class Indi_Controller_Admin extends Indi_Controller {
         // Create writer
         $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, $formatCfg[$format]['writer']);
 
+
         // Create temporary file
         $tmp = tempnam(ini_get('upload_tmp_dir'), 'xls');
-		
+
         // Save into temporary file
         $objWriter->save($tmp);
 
         // Get raw file contents
         $raw = file_get_contents($tmp);
-		
+
         // Flush Content-Length header
         header('Content-Length: ' . strlen($raw));
 
