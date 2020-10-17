@@ -41,11 +41,11 @@ Ext.onReady(function() {
 
     if (Ext.util && Ext.util.Format) {
         Ext.apply(Ext.util.Format, {
-            thousandSeparator: '.',
-            decimalSeparator: ',',
+            //thousandSeparator: '.',
+            //decimalSeparator: ',',
             currencySign: '\u0e3f',
             // Thai Baht
-            dateFormat: 'm/d/Y'
+            //dateFormat: 'm/d/Y'
         });
     }
 });
