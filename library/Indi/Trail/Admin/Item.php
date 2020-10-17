@@ -30,14 +30,18 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $this->section->href = (COM ? '' : '/admin') . '/' . $this->section->alias;
 
         // Setup $this->actions
+        $this->actions = Indi::model('Action')->createRowset();
         foreach ($sectionR->nested('section2action') as $section2actionR) {
             $actionI = $section2actionR->foreign('actionId')->toArray();
             if (strlen($section2actionR->rename)) $actionI['title'] = $section2actionR->rename;
+            $actionI['id'] = $section2actionR->id;
             $actionI['south'] = $section2actionR->south;
             $actionI['fitWindow'] = $section2actionR->fitWindow;
-            $actionA[] = $actionI;
+            $actionI['indi'] = array('ui' => 'section2action', 'id' => $section2actionR->id);
+            $actionI['l10n'] = $section2actionR->l10n;
+            $actionR = m('Action')->createRow()->assign($actionI);
+            $this->actions->append($actionR);
         }
-        $this->actions = Indi::model('Action')->createRowset(array('data' => $actionA));
 
         // Setup subsections
         $this->sections = $sectionR->nested('section');
@@ -103,6 +107,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
                 if (strlen($_->defaultValue)) $modify['defaultValue'] = $_->defaultValue;
                 if (!$_->mode) $modify['mode'] = $_->displayInForm ? 'readonly' : 'hidden';
                 else if ($_->mode != 'inherit') $modify['mode'] = $_->mode;
+                if ($_->elementId) $modify['elementId'] = $_->elementId;
 
                 // Apply modifications
                 $fieldR = $this->fields->gb($_->fieldId);
@@ -475,7 +480,7 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $section = $this->section->alias;
 
         // Construct filename of the template, that should be rendered by default
-        $script = $section . '/' . $action . '.php';
+        $script = $section . '/' . $action . rif($this->action->l10n == 'y', '-' . Indi::ini('lang')->admin) . '.php';
 
         // Build action-view class name
         $actionClass = 'Admin_' . ucfirst($section) . 'Controller' . ucfirst($action) . 'ActionView';
@@ -484,7 +489,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $actionClassDefinition = false;
 
         // If template with such filename exists, render the template
-        if ($actionClassFile = Indi::view()->exists($script)) {
+        if ($actionClassFile = Indi::view()->exists($script)
+            ?: Indi::view()->exists($script = $section . '/' . $action . '-' . Indi::ini('lang')->admin . '.php')) {
 
             // If $render argument is set to `true`
             if ($render) {

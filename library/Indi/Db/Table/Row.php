@@ -4839,7 +4839,12 @@ class Indi_Db_Table_Row implements ArrayAccess
                 return false;
 
             // Else if single prop name is given as $prop arg - detect whether or not it is in the list of affected props
-            } else return $prev ? $this->_affected[$prop] : array_key_exists($prop, $this->_affected);
+            } else if (is_string($prop) && $prop) {
+                return $prev ? $this->_affected[$prop] : array_key_exists($prop, $this->_affected);
+
+            } else if ($prop === true) {
+                $prev = true;
+            }
         }
 
         // Return array of affected props
@@ -6284,5 +6289,19 @@ class Indi_Db_Table_Row implements ArrayAccess
      */
     public function shade($field) {
         return Indi::demo(false) && $this->field($field)->param('shade') && $this->$field ? I_PRIVATE_DATA : $this->$field;
+    }
+
+    /**
+     * Build and return path to the php-template, used to build the html-file,
+     * that is autoattached to a fileupload field. So $field arg should be an alias
+     * of a fileupload-field
+     *
+     * @param $field
+     * @param bool $abs
+     * @param string $lang
+     * @return string
+     */
+    public function tpldoc($field, $abs = false, $lang = null) {
+        return $this->model()->tpldoc($field, $abs, $lang);
     }
 }

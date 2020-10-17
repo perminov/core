@@ -678,6 +678,10 @@ class Indi_View {
      */
     public function same($name) {
         $file = str_replace('\\', '/', array_shift(array_shift(debug_backtrace(false))));
-        include preg_replace('/\/[a-z0-9A-Z]+\/([a-z0-9A-Z]+)\.php/', '/' . $name . '/$1.php', $file);
+        $rex = '~\/[a-z0-9A-Z]+\/([a-z0-9A-Z]+)\.php~';
+        $lang = '-' . Indi::ini('lang')->admin;
+        if (!file_exists($tpl = preg_replace($rex, '/' . $name . '/$1-' . Indi::ini('lang')->admin . '.php', $file)))
+            $tpl = preg_replace($rex, '/' . $name . '/$1.php', $file);
+        include $tpl;
     }
 }
