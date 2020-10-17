@@ -2510,7 +2510,7 @@ class Indi_Controller_Admin extends Indi_Controller {
             $this->row->system('ref', $ref ?: 'rowset');
 
             // Call onBeforeCellSave(), if need
-            if ($cell) $this->onBeforeCellSave($cell, Indi::post($cell));
+            if ($cell) $this->onBeforeCellSave($cell, Indi::post()->$cell);
         }
 
         // Get array of aliases of fields, that are actually represented in database table
