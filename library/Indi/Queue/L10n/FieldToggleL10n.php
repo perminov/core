@@ -4,7 +4,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
     /**
      * @var array
      */
-    public static $l10n = [];
+    public static $l10n = array();
 
     /**
      * Create queue chunks
@@ -28,7 +28,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
         // Create separate `queueChunk`-trees for each fraction
         foreach ($params['target'] as $fraction => $targets)
-            $this->appendChunk($queueTaskR, entity($table), field($table, $field), [], $fraction);
+            $this->appendChunk($queueTaskR, entity($table), field($table, $field), array(), $fraction);
 
         // Return
         return $queueTaskR;
@@ -63,10 +63,10 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         $target = $params->target;
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
-        foreach ($queueTaskR->nested('queueChunk', [
+        foreach ($queueTaskR->nested('queueChunk', array(
             'where' => '`queueState` != "finished"',
             'order' => '`queueState` = "progress" DESC, `move`'
-        ]) as $queueChunkR) {
+        )) as $queueChunkR) {
 
             // Split `location` on $table and $field
             list ($table, $field) = explode(':', $queueChunkR->location);
@@ -143,10 +143,10 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
 
                         // Foreach target language - make api call to google passing source values
                         foreach (ar($targets) as $target)
-                            $resultByLang[$target] = array_column($gapi->translateBatch($values, [
+                            $resultByLang[$target] = array_column($gapi->translateBatch($values, array(
                                 'source' => $source,
                                 'target' => $target,
-                            ]), 'text');
+                            )), 'text');
 
                     // Catch exception
                     } catch (Exception $e) {
@@ -163,7 +163,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                 foreach ($rs as $idx => $r) {
 
                     // Collect result for each target language
-                    $result = new stdClass(); foreach ($targets ? $resultByLang : [] as $target => $byIdx) {
+                    $result = new stdClass(); foreach ($targets ? $resultByLang : array() as $target => $byIdx) {
                         $result->$target = $byIdx[$idx]; $this->amendResult($result->$target, $r);
                     }
 
@@ -210,10 +210,10 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         $params = json_decode($queueTaskR->params, true);
 
         // Foreach `queueChunk` entries, nested under `queueTask` entry
-        foreach ($queueTaskR->nested('queueChunk', [
+        foreach ($queueTaskR->nested('queueChunk', array(
             'where' => '`applyState` != "finished"',
             'order' => '`applyState` = "progress" DESC, `move`'
-        ]) as $queueChunkR) {
+        )) as $queueChunkR) {
 
             // Skip parent entries
             if ($queueChunkR->system('disabled')) continue;
@@ -233,7 +233,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                 : field($table, $field);
 
             // Convert column type to TEXT
-            if ($table != 'enumset' && $params['toggle'] != 'n') field($table, $field, ['columnTypeId' => 'TEXT']);
+            if ($table != 'enumset' && $params['toggle'] != 'n') field($table, $field, array('columnTypeId' => 'TEXT'));
 
             // Setup $hasLD flag
             $hasLD = $fieldR->hasLocalizedDependency();
@@ -248,7 +248,7 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
                     $json = Indi::db()->query('SELECT `:p` FROM `:p` WHERE `id` = :p', $field, $table, $r->target)->fetchColumn();
 
                     // If cell value is not an empty string, but is not a json - force it to be json
-                    if (!preg_match('~^{"~', $json)) $json = json_encode([$params['source'] => $json], JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+                    if (!preg_match('~^{"~', $json)) $json = json_encode(array($params['source'] => $json), JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
 
                     // Temporary thing
                     if (!is_array($result = json_decode($r->result, true)))
@@ -283,11 +283,11 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             // Convert column type to TEXT
             if ($table != 'enumset' && $params['toggle'] == 'n')
                 if (!$queueChunkR->queueChunkId || !$hasLD)
-                    field($table, $field, ['columnTypeId' => 'VARCHAR(255)']);
+                    field($table, $field, array('columnTypeId' => 'VARCHAR(255)'));
 
             // Switch field's l10n-prop from intermediate to final value
             if ($params['toggle'] != 'n' || !$queueChunkR->queueChunkId || !$hasLD)
-                $fieldR->assign(['l10n' => $params['toggle'] ?: 'y'])->save();
+                $fieldR->assign(array('l10n' => $params['toggle'] ?: 'y'))->save();
 
             // Remember that our try to count was successful
             $queueChunkR->assign(array('applyState' => 'finished'))->basicUpdate();
@@ -349,10 +349,10 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
         $queueChunkR = parent::appendChunk($queueTaskR, $entityR, $fieldR, $where);
 
         // Setup `fraction` and `where` props
-        $queueChunkR->assign([
+        $queueChunkR->assign(array(
             'fraction' => $fraction,
             'where' => $this->getFractionChunkWHERE($fraction, $fieldR->id)
-        ])->save();
+        ))->save();
 
         foreach (m('Consider')->fetchAll('"' . $fieldR->id . '" = IF(`foreign` = "0", `consider`, `foreign`)') as $considerR) {
 
@@ -362,14 +362,14 @@ class Indi_Queue_L10n_FieldToggleL10n extends Indi_Queue_L10n {
             // Create `queueChunk` entries for dependent fields
             $dependent = $this->appendChunk($queueTaskR,
                 $considerR->foreign('fieldId')->foreign('entityId'),
-                $considerR->foreign('fieldId'), [], $fraction);
+                $considerR->foreign('fieldId'), array(), $fraction);
 
             // Make those to be child under parent `queueChunk` entry and setup `fraction` and `where` props
-            $dependent->assign([
+            $dependent->assign(array(
                 'queueChunkId' => $queueChunkR->id,
                 'fraction' => $fraction,
                 'where' => $this->getFractionChunkWHERE($fraction, $considerR->fieldId)
-            ])->save();
+            ))->save();
         }
 
         // Return `queueChunk` entry

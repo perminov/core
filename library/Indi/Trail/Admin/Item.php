@@ -489,7 +489,8 @@ class Indi_Trail_Admin_Item extends Indi_Trail_Item {
         $actionClassDefinition = false;
 
         // If template with such filename exists, render the template
-        if ($actionClassFile = Indi::view()->exists($script)) {
+        if ($actionClassFile = Indi::view()->exists($script)
+            ?: Indi::view()->exists($script = $section . '/' . $action . '-' . Indi::ini('lang')->admin . '.php')) {
 
             // If $render argument is set to `true`
             if ($render) {
