@@ -47,6 +47,9 @@ class Consider_Row extends Indi_Db_Table_Row {
      */
     public function onBeforeSave() {
 
+        // Set `entityId`
+        $this->entityId = $this->foreign('fieldId')->entityId;
+
         // If dependent field's `relation` prop is not zero - return
         if (!$this->foreign('fieldId')->zero('relation')) return;
 
@@ -56,7 +59,7 @@ class Consider_Row extends Indi_Db_Table_Row {
 
         // 2. Assign zero-values to `foreign` and `connector` props, as they're applicable
         // only in cases when dependent field's `relation` prop is not zero
-        $this->zero('foreign,connector', true);
+        $this->zero('connector', true);
     }
 
     /**
