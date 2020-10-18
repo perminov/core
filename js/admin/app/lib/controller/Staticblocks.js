@@ -43,6 +43,39 @@ Ext.define('Indi.lib.controller.Staticblocks', {
                 }
             },
 
+            /**
+             * Here we provide 'detailsHtmlWidth' and 'detailsHtmlHeight' components values to be autoset after
+             * each resize of ckeditor instance, for ability ckeditor sizing to be remembered by the system
+             *
+             * @param item
+             * @return {Object}
+             */
+            formItem$DetailsHtmlDraft: function(item) {
+                var me = this;
+
+                return {
+                    considerOn: [{
+                        name: 'type',
+                        clear: false
+                    }],
+                    editorCfg: {
+                        resize_dir: 'both',
+                        on: {
+                            resize: function(evt) {
+                                var size = Ext.get(evt.editor.ui.space('contents').$).getSize();
+                                Ext.getCmp(me.row.id).query('[name="detailsHtmlWidth"]')[0].setValue(size.width);
+                                Ext.getCmp(me.row.id).query('[name="detailsHtmlHeight"]')[0].setValue(size.height);
+                            }
+                        }
+                    },
+                    listeners: {
+                        considerchange: function(c, d) {
+                            c.setVisible(d.type == 'html');
+                        }
+                    }
+                }
+            },
+
             formItem$Type: {nojs: true},
 
             /**
