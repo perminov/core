@@ -9,6 +9,21 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
      */
     public function chunk($params) {
 
+        // Fetch usage map entries
+        $considerRs = Indi::model('Consider')->fetchAll('`id` IN (' . im($params['considerIdA']) . ')');
+
+        // Group usages by: affected field's id (`foreign` or `consider`) and then by `entityId`
+        foreach ($considerRs as $considerR)
+            if ($considerR->foreign($considerR->foreign ? 'foreign': 'consider')->storeRelationAbility == 'none') 
+                $considerRA_byAffected
+                    [$considerR->foreign ?: $considerR->consider]
+                    [$considerR->entityId]
+                    [$considerR->fieldId]
+                        = $considerR->consider;
+        
+        // If no appropriate dependencies found - return    
+        if (!$considerRA_byAffected) return;
+        
         // Create `queueTask` entry
         $queueTaskR = Indi::model('QueueTask')->createRow(array(
             'title' => array_pop(explode('_', __CLASS__)),
@@ -17,16 +32,6 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
 
         // Save `queueTask` entries
         $queueTaskR->save();
-
-        // Fetch usage map entries
-        $considerRs = Indi::model('Consider')->fetchAll('`id` IN (' . im($params['considerIdA']) . ')');
-
-        // Group usages by: affected field's id (`foreign` or `consider`) and then by `entityId`
-        foreach ($considerRs as $considerR) $considerRA_byAffected
-            [$considerR->foreign ?: $considerR->consider]
-            [$considerR->entityId]
-            [$considerR->fieldId]
-                = $considerR->consider;
 
         // Foreach affected field
         foreach ($considerRA_byAffected as $fieldId_affected => $considerRA_byEntityId) {
@@ -324,6 +329,6 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
         $queueTaskR->assign(array('state' => 'finished', 'applyState' => 'finished'))->save();
 
         // Delete `queueTask` entry
-        $queueTaskR->delete();
+        //$queueTaskR->delete();
     }
 }

@@ -853,10 +853,12 @@ class Indi_Db_Table_Row implements ArrayAccess
         // If no affected fields - return
         if (!$affected = $this->model()->fields(array_keys($this->_affected))->column('id', '|')) return;
 
+        // Build query to fetch appropriate `consider` entries
+        $sql = 'SELECT `id` FROM `consider` WHERE CONCAT(",", IF(`foreign` > 0, `foreign`, `consider`), ",") REGEXP ",(' . $affected . '),"';
+        if ($this->_table == 'enumset') $sql .= ' AND `consider` = "' . $this->fieldId . '"';
+
         // Fetch usage map entries ids, and if ono found - return
-        if (!$considerIdA = Indi::db()->query('
-            SELECT `id` FROM `consider` WHERE CONCAT(",", `foreign`, ",") REGEXP ",(' . $affected . '),"
-        ')->fetchAll(PDO::FETCH_COLUMN)) return;
+        if (!$considerIdA = Indi::db()->query($sql)->fetchAll(PDO::FETCH_COLUMN)) return;
 
         // Prepare params
         $params = array(
@@ -882,7 +884,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         $queue = new $queueClassName();
 
         // Start queue as a background process
-        Indi::cmd('queue', array('queueTaskId' => $queue->chunk($params)->id));
+        if ($queueTaskR = $queue->chunk($params)) Indi::cmd('queue', array('queueTaskId' => $queueTaskR->id));
     }
 
     /**
