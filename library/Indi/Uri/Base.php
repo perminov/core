@@ -8,7 +8,7 @@ class Indi_Uri_Base {
 
         // Include l10n constants
         foreach (ar('www,coref,core') as $fraction)
-            foreach (['', '/admin'] as $_)
+            foreach (array('', '/admin') as $_)
                 if (file_exists($file = DOC . STD . '/'. $fraction . '/application/lang' . $_ . '/' . Indi::ini('lang')->front . '.php'))
                     include_once($file);
 
