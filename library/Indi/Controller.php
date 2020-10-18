@@ -1262,7 +1262,7 @@ class Indi_Controller {
         }
 
         // Unset
-        unset($item['_system']['jump'], $item['_system']['over'], $item['_system']['color']);
+        unset($item['_system']['jump'], $item['_system']['over']);
     }
 
     /**
