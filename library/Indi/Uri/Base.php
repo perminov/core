@@ -9,7 +9,7 @@ class Indi_Uri_Base {
         // Include l10n constants
         foreach (ar('www,coref,core') as $fraction)
             foreach (array('', '/admin') as $_)
-                if (file_exists($file = DOC . STD . '/'. $fraction . '/application/lang' . $_ . '/' . Indi::ini('lang')->front . '.php'))
+                if (file_exists($file = DOC . STD . '/'. $fraction . '/application/lang' . $_ . '/' . Indi::ini('lang')->{trim($_, '/') ?: 'front'} . '.php'))
                     include_once($file);
 
         // Parse the existing $_SERVER['REQUEST_URI']
