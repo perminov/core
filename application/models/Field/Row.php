@@ -1223,7 +1223,7 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
                         $setA = Indi::db()->query('
                             SELECT DISTINCT `' . $this->alias . '` AS `id`
                             FROM `' . Indi::model($this->entityId)->table() . '`
-                            ' . ($where ? 'WHERE ' . (is_array($where) ? implode($where, ' AND ') : $where) : '') . '
+                            ' . ($where ? 'WHERE ' . (is_array($where) ? implode(' AND ', $where) : $where) : '') . '
                         ')->fetchAll(PDO::FETCH_COLUMN);
 
                         // If at least one key was found
