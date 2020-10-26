@@ -2169,7 +2169,7 @@ class Indi_Controller_Admin extends Indi_Controller {
         }
 
         // If current request had a only aim to check access - report that all is ok
-        if (array_key_exists('check', Indi::get())) die('ok');
+        if (array_key_exists('check', (array) Indi::get())) die('ok');
     }
 
     /**
