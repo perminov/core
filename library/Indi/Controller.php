@@ -48,7 +48,7 @@ class Indi_Controller {
             }
 
         // If more than 1 designs detected for current domain
-        if (count(Indi::ini()->design) > 1) {
+        if (count((array) Indi::ini()->design) > 1) {
 
             // Views dir shortcut
             $dir = DOC . STD . '/www/application/views/';
