@@ -139,7 +139,7 @@ class Indi_Uri_Base {
         $this->setCookieDomain();
 
         // If 'Indi-Auth' header given - use it's value as session id
-        if ($id = $_COOKIE['PHPSESSID']) session_id($id);
+        if (!session_id()) if ($id = $_COOKIE['PHPSESSID']) session_id($id);
 
         // Start session
         session_start();
