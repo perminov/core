@@ -5255,7 +5255,7 @@ class Indi_Db_Table_Row implements ArrayAccess
         foreach ($ruleA as $props => $rule) foreach (ar($props) as $prop) {
 
             // If $prop exists as a key in $data arg - assign in
-            if (array_key_exists($prop, $data)) $this->$prop = $data[$prop];
+            if (array_key_exists($prop, (array) $data)) $this->$prop = $data[$prop];
 
             // If $prop is an alias of thу existing field
             if ($fieldR = $this->field($prop)) {
