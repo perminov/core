@@ -266,7 +266,7 @@ while (true) {
             // Write pong-message into channel
             fwrite($clientA[$channelA[$rid][$uid][$data['cid']]], encode(json_encode($data)));
 
-        } else if ($data['type'] == 'notice') {
+        } else if ($data['type'] == 'notice' || $data['type'] == 'reload') {
 
             // If logging is On - do log
             if ($ini['log']) file_put_contents('ws.' . $data['row'] . '.rcv.msg', date('Y-m-d H:i:s') . ' => ' . print_r($data, true) . "\n", FILE_APPEND);
