@@ -162,7 +162,7 @@ class Indi_Db {
 
             // Collect localized fields
             foreach ($fieldA as $fieldI)
-                if ($fieldI['l10n'] == 'y' || $fieldI['l10n'] == 'qn')
+                if ($fieldI['storeRelationAbility'] == 'none' && in($fieldI['l10n'], 'y,qn'))
                     self::$_l10nA[$_[$fieldI['entityId']]][] = $fieldI['alias'];
 
             // Unset tmp variable

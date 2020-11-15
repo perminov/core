@@ -1643,6 +1643,6 @@ class Field_Row extends Indi_Db_Table_Row_Noeval {
      * @return Indi_Db_Table
      */
     public function rel() {
-        return Indi::model($this->relation);
+        return Indi::model($this->relation, true);
     }
 }

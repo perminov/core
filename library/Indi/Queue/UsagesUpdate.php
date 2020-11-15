@@ -64,7 +64,7 @@ class Indi_Queue_UsagesUpdate extends Indi_Queue_L10n_FieldToggleL10n {
                     if ($m->fields($fieldId)->storeRelationAbility != 'none') continue;
 
                     // If it's consider-field is an enumset-field
-                    if ($m->fields($consider)->rel()->table() == 'enumset') {
+                    if (($rel = $m->fields($consider)->rel()) && $rel->table() == 'enumset') {
 
                         // Get enumset alias
                         $alias = m('enumset')->fetchRow($params['entry'])->alias;

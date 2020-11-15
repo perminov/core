@@ -786,57 +786,140 @@ class Indi_Db_Table_Row implements ArrayAccess
         // Get json-template containing {lang1:"",lang2:"",...} for each language, that is applicable to current fraction
         if (!$jtpl = Lang::$_jtpl[$fraction]) return;
 
+        // Aux variables
+        $setterA = $batch = $json = $keep = [];
+
+        // For each localized modified field
+        foreach ($mlfA as $mlfI) {
+
+            // Prepare blank template and setup first value - for current language
+            $json[$mlfI] = $jtpl; $json[$mlfI][Indi::ini('lang')->admin] = $data[$mlfI];
+
+            // Check whether setter-method exists and if yes - remember that
+            if (method_exists($this, $setter = 'set' . ucfirst($mlfI))) $setterA[$mlfI] = $setter;
+
+            // Else if value should be translated - collect such values for further batch translate
+            else if (!$this->id || $this->field($mlfI)->param('refreshL10nsOnUpdate')) $batch[$mlfI] = $data[$mlfI];
+
+            // Else collect props, those translations (except the one for current language) should be kept as is,
+            // so we will know what fields should be used for spoofing the $this->_modified
+            else $keep []= $mlfI;
+        }
+
+        // Get target languages
+        $targets = $jtpl; unset($targets[Indi::ini('lang')->admin]); $targets = array_keys($targets);
+
+        // If both $batch and $targets are not empty
+        if ($batch && $targets) {
+
+            // Require and instantiate Google Cloud Translation PHP API and
+            require_once('google-cloud-php-translate-1.6.0/vendor/autoload.php');
+            $gapi = new Google\Cloud\Translate\V2\TranslateClient(array('key' => Indi::ini('lang')->gapi->key));
+
+            // Try to call Google Cloud Translate API
+            try {
+
+                // Foreach target language - make api call to google passing source values
+                foreach (ar($targets) as $target) $resultByLang[$target] = array_combine(
+                        array_keys($batch),
+                        array_column($gapi->translateBatch(array_values($batch), [
+                            'source' => Indi::ini('lang')->admin,
+                            'target' => $target,
+                        ]), 'text')
+                    );
+
+                // For each of localized modified fields
+                foreach ($mlfA as $mlfI) {
+
+                    // If $mlfI-field has no setter method - call it
+                    if (!$setterA[$mlfI]) {
+
+                        // Build localized values
+                        foreach ($json[$mlfI] as $lang => &$holder) {
+
+                            // Else if $lang is same as current system lang - use as is
+                            if ($lang == Indi::ini('lang')->admin) $holder = $data[$mlfI];
+
+                            // Else if translation result defined - use it
+                            else if (array_key_exists($mlfI, $resultByLang[$lang])) $holder = $resultByLang[$lang][$mlfI];
+
+                            // Else use existing language version
+                            else $holder = $this->_language[$mlfI][$lang] ?: '';
+                        }
+
+                        // Update $this->_language
+                        $this->_language[$mlfI] = $json[$mlfI];
+                    }
+                }
+
+            // Catch exception
+            } catch (Exception $e) {
+
+                // Log error
+                ehandler(1, json_decode($e->getMessage())->error->message, __FILE__, __LINE__);
+
+                // Exit
+                exit;
+            }
+        }
+
+        // Backup modified state
+        $modified = $this->_modified;
+
+        // Here results built by setters will be collected
+        $resultBySetter = [];
+
         // For each of localized modified fields
         foreach ($mlfA as $mlfI) {
 
-            // If field contain keys - skip (this may happen for enumset-fields)
-            if ($this->field($mlfI)->storeRelationAbility != 'none') continue;
+            // If $mlfI-field has setter method - call it
+            if ($setter = $setterA[$mlfI]) {
 
-            // Setup flag, indicating whether or not $mlfI-field has localized dependency
-            $hasLD = $this->field($mlfI)->hasLocalizedDependency();
-
-            // Copy/Reset $json from/to $jtpl
-            $json = $jtpl;
-
-            // Build localized values
-            foreach ($json as $lang => &$holder) {
-
-                // If $mlfI-field has setter method - call it
-                if (method_exists($this, $setter = 'set' . ucfirst($mlfI))) {
+                // Build localized values
+                foreach ($json[$mlfI] as $lang => &$holder) {
 
                     // Backup current language
                     $_lang = Indi::ini('lang')->admin;
 
-                    // Set current language to $lang
+                    // Temporary spoof values within $this->_modified for localized fields, as they may be involved by setters
+                    $this->_modified = array_merge(
+                        $modified,
+                        $resultByLang[$lang] ?: [],
+                        $resultBySetter[$lang] ?: []
+                    );
+
+                    // If current language is not the same we're going to call setter for - spoof modified with existing translation
+                    // This is used in this way because of that setter for $mlfI-prop may involve getter for other props,
+                    // having only current-language verion modified while other-languages versions are not modified,
+                    // but we directly assign the into $this->_modified because of *_Row->__get($columnName) value pickup priority logic
+                    if ($_lang != $lang) foreach ($keep as $keep_) $this->_modified[$keep_] = $this->_language['alias'][$lang];
+
+                    // Temporary spoof current language with $lang
                     Indi::ini('lang')->admin = $lang;
 
-                    // Get value according to required language
+                    // Call setter and get value according to required language
                     $this->{$setter}(); $holder =  $this->$mlfI;
+
+                    // Collect values, built by setters, as they can be used by other setters
+                    $resultBySetter[$lang][$mlfI] = $holder;
 
                     // Restore current language back
                     Indi::ini('lang')->admin = $_lang;
 
-                // Else if $mlfI-field has no localized dependencies
-                } else {
-
-                    // If this is a new entry, or existing entry but field having 'refreshL10nsOnUpdate'
-                    // flag turned On - use transliteration, where possible
-                    if (!$this->id || $this->field($mlfI)->param('refreshL10nsOnUpdate'))
-                        $holder = Indi::l10n($this->_modified[$mlfI], $lang);
-
-                    // Else if $lang is same as current system lang - use as is
-                    else if ($lang == Indi::ini('lang')->admin) $holder = $data[$mlfI];
-
-                    // Else use existing language version
-                    else $holder = $this->_language[$mlfI][$lang] ?: '';
+                    // Restore $this->_modified
+                    $this->_modified = $modified;
                 }
-            }
 
-            // Revert value back to current language
-            if ($hasLD) $this->$mlfI = $json[Indi::ini('lang')->admin];
+                // Revert value back to current language
+                $this->$mlfI = $json[$mlfI][Indi::ini('lang')->admin];
+
+            // Else
+            } else if (!array_key_exists($mlfI, $batch))
+                foreach ($json[$mlfI] as $lang => &$holder)
+                    $holder = $lang == Indi::ini('lang')->admin ? $data[$mlfI] : $this->_language[$mlfI][$lang];
 
             // Get JSON
-            $data[$mlfI] = json_encode($json, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
+            $data[$mlfI] = json_encode($json[$mlfI], JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT);
         }
     }
 
