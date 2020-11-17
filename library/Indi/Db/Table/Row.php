@@ -2086,8 +2086,31 @@ class Indi_Db_Table_Row implements ArrayAccess
                 if ($fieldR->original('storeRelationAbility') == 'one' || strlen($val) || $aux) {
 
                     // Determine a model, for foreign row to be got from. If consider type is 'variable entity',
-                    // then model is a value of consider-field. Otherwise model is field's `relation` property
-                    $model = $fieldR->relation ?: $this->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
+                    // then model is a value of consider-field, or it's foreign field. Otherwise model is field's `relation` property
+                    if ($fieldR->relation) $model = $fieldR->relation; else {
+
+                        // Get first `consider` entry
+                        $considerR = $fieldR->nested('consider')->at(0);
+
+                        // Get `field` entry that `consider` entry is representing
+                        $cField = $considerR->foreign('consider');
+
+                        // Get model
+                        $model = $cValue = $this->{$cField->alias};
+
+                        // If `consider` entry has non-zero `foreign` prop
+                        if ($considerR->foreign) {
+
+                            // Get that foreign-key field
+                            $cField_foreign = $considerR->foreign('foreign');
+
+                            // Get entry, identified by current value of consider-field
+                            $cEntryR = Indi::model($cField->relation)->fetchRow('`id` = "' . $cValue . '"');
+
+                            // Spoof model
+                            $model = $cValue = $cEntryR->{$cField_foreign->alias};
+                        }
+                    }
 
                     // Determine a fetch method
                     $methodType = $fieldR->original('storeRelationAbility') == 'many' ? 'All' : 'Row';

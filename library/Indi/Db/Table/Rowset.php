@@ -1098,13 +1098,43 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
             if ($fieldR->relation == 0 && $fieldR->nested('consider')->count()) {
 
                 // Get consider-field, e.g. field, that current field depends on
-                $consider = $fieldR->nested('consider')->at(0)->foreign('consider')->alias;
+                $considerR = $fieldR->nested('consider')->at(0);
+
+                // Get consider-field, e.g. field, that current field depends on
+                $cField = $considerR->foreign('consider');
+
+                // Get consider-field's name
+                $consider = $cField->alias;
+
+                // Mappings to be further used to distribute foreign rows
+                $entityIdByConsiderFieldA = [];
 
                 // Foreach row within current rowset
                 foreach ($this as $r) {
 
-                    // Get the id of entity, that current foreign key is related to
-                    $entityId = $r->$consider;
+                    // If consider-field's foreign-key field should be used instead of consider-field itself
+                    if ($considerR->foreign) {
+
+                        // Get that foreign-key field
+                        $cField_foreign = $considerR->foreign('foreign');
+
+                        // Consider-field's value
+                        $cValue = $r->$consider;
+
+                        // Get entry, identified by current value of consider-field
+                        $cEntryR = Indi::model($cField->relation)->fetchRow('`id` = "' . $cValue . '"');
+
+                        // Get it's value
+                        $cValueForeign = $cEntryR->{$cField_foreign->alias};
+
+                        // Add mapping
+                        $entityIdByConsiderFieldA[$cValue] = $cValueForeign;
+
+                        // Spoof variables before usage
+                        $entityId = $cValueForeign;
+
+                    // Else assume that consider-field's value is a direct entityId
+                    } else $entityId = $r->$consider;
 
                     // Collect foreign key values, grouped by entity id
                     $distinctA[$entityId] = array_merge(
@@ -1264,7 +1294,14 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
 
                 // Get the id of entity, that current row's foreign key is related to. If foreign key field
                 // dependency is 'Variable entity' - entity id is dynamic, that mean is may differ for each row
-                $foreignKeyEntityId = $fieldR->relation ?: $r->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
+                if ($fieldR->relation) $foreignKeyEntityId = $fieldR->relation; else {
+
+                    // Get consider-value
+                    $cValue = $r->{$fieldR->nested('consider')->at(0)->foreign('consider')->alias};
+
+                    // Use mapping to spoof consider-value if need
+                    $foreignKeyEntityId = $entityIdByConsiderFieldA[$cValue] ?: $cValue;
+                }
 
                 // Get the column name, which value will be used for match
                 $col = $foreignKeyEntityId == 6 ? 'alias' : 'id';
@@ -1417,7 +1454,7 @@ class Indi_Db_Table_Rowset implements SeekableIterator, Countable, ArrayAccess {
         $titleMaxIndent = 0;
 
         // Get title-column field. If it's a foreig-key field - pull foreign data
-        if ($tc = $this->model()->fields($this->titleColumn))
+        if ($this->_table && $tc = $this->model()->fields($this->titleColumn))
             if ($tc->storeRelationAbility != 'none')
                 $this->foreign($foreign = $tc->alias);
 
