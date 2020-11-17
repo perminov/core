@@ -1427,10 +1427,18 @@ class Indi_Db_Table_Row implements ArrayAccess
                 // Get that foreign-key field
                 $cField_foreign = $considerR->foreign('foreign');
 
+                // Get entry, identified by current value of consider-field
+                $cEntryR = Indi::model($cField->relation)->fetchRow('`id` = "' . $cValue . '"');
+
                 // Get it's value
-                $cValueForeign = Indi::model($cField->relation)
-                    ->fetchRow('`id` = "' . $cValue . '"')
-                    ->{$cField_foreign->alias};
+                $cValueForeign = $cEntryR->{$cField_foreign->alias};
+
+                // If current field itself is not linked to any entity, it mean that this entity would be identified by
+                // the value of consider-entry's foreign field's value, and in this case there may be a need to anyway
+                // involve consider-field's name and value in combo data WHERE clause. First faced case is to to this
+                // for consider-fields linked to `profile`-entity, as different `profile` entries may have same `entityId`
+                if (!$fieldR->relation && $cValueForeign)
+                    $cEntryR->_comboDataConsiderWHERE($where, $fieldR, $cField, $cValue, $considerR->required, $cValueForeign);
 
                 // Spoof variables before usage
                 $cField = $cField_foreign; $cValue = $cValueForeign;
